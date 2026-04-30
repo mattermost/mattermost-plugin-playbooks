@@ -2313,14 +2313,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeType = assigneeType
-	switch assigneeType {
-	case AssigneeTypeOwner:
-		itemToCheck.AssigneeID = resolvedAssigneeID
-	case AssigneeTypeCreator:
-		itemToCheck.AssigneeID = resolvedAssigneeID
-	default:
-		itemToCheck.AssigneeID = ""
-	}
+	itemToCheck.AssigneeID = resolvedAssigneeID
 	itemToCheck.AssigneePropertyFieldID = ""
 	itemToCheck.AssigneeModified = timestamp
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)
@@ -5314,7 +5307,6 @@ func resolveRoleAssignments(checklists []Checklist, ownerID, creatorID string) {
 }
 
 // resolveOwnerRoleAssignments re-resolves ONLY Owner role assignments when ownership changes.
-// Called in ChangeOwner service method.
 func resolveOwnerRoleAssignments(checklists []Checklist, ownerID string) {
 	for ci := range checklists {
 		for ii := range checklists[ci].Items {
@@ -5361,10 +5353,7 @@ func extractUserIDFromPropertyValue(value json.RawMessage) string {
 	return userID
 }
 
-// resolvePropertyUserAssignmentsForField walks all checklist items and updates AssigneeID
-// for any item with AssigneeType==property_user and AssigneePropertyFieldID==fieldID.
-// Uses applyPropertyUserAssigneeUpdate as the mutation primitive.
-// Returns true if any item's AssigneeID changed.
+// resolvePropertyUserAssignmentsForField returns true if any item's AssigneeID changed.
 func resolvePropertyUserAssignmentsForField(checklists []Checklist, fieldID, userID string) bool {
 	anyChanged := false
 	for ci := range checklists {

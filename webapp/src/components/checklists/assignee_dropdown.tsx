@@ -1,13 +1,18 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
-import {ChecklistItem, AssigneeTypeOwner, AssigneeTypeCreator, AssigneeTypePropertyUser} from 'src/types/playbook';
+import {
+    AssigneeTypeCreator,
+    AssigneeTypeOwner,
+    AssigneeTypePropertyUser,
+    ChecklistItem,
+} from 'src/types/playbook';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
 
 interface Props {
@@ -72,7 +77,10 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         });
     }, [checklistItem, onChanged]);
 
-    const userPropertyFields = propertyFields?.filter((f) => f.type === PropertyFieldType.User) ?? [];
+    const userPropertyFields = useMemo(
+        () => propertyFields?.filter((f) => f.type === PropertyFieldType.User) ?? [],
+        [propertyFields],
+    );
 
     // In run or template view with a role-based assignment, show the role badge (run view also shows the resolved user)
     if (!editable && (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator)) {

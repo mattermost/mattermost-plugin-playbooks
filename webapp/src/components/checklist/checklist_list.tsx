@@ -83,10 +83,7 @@ interface Props {
     onExitBulkEdit?: () => void;
 }
 
-// mapChecklistItemToInput converts a ChecklistItem from the frontend type to the
-// GraphQL PlaybookUpdates input shape. Every field used by the server must appear
-// here; omitting a field causes it to be silently dropped from the mutation payload
-// and the server will reset it to its zero value.
+// Omitting a field silently drops it from the mutation and the server resets it to its zero value.
 export const mapChecklistItemToInput = (ci: ChecklistItem) => ({
     title: ci.title,
     description: ci.description,

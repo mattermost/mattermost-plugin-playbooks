@@ -26,7 +26,14 @@ import {
     setPropertyUserAssignee,
     setRoleAssignee,
 } from 'src/client';
-import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType, AssigneeTypeOwner, AssigneeTypeCreator, AssigneeTypePropertyUser} from 'src/types/playbook';
+import {
+    AssigneeTypeCreator,
+    AssigneeTypeOwner,
+    AssigneeTypePropertyUser,
+    ChecklistItemState,
+    ChecklistItem as ChecklistItemType,
+    TaskAction as TaskActionType,
+} from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';

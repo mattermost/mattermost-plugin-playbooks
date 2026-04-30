@@ -25,6 +25,7 @@ import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation
 
 import {useProxyState} from 'src/hooks';
 import {getDistinctAssignees} from 'src/utils';
+import {mapChecklistItemToInput} from 'src/components/checklist/checklist_list';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
@@ -80,19 +81,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         const checklists = playbook.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
-                title: ci.title,
-                description: ci.description,
-                state: ci.state,
-                stateModified: ci.state_modified || 0,
-                assigneeID: ci.assignee_id === userId ? '' : ci.assignee_id || '',
-                assigneeType: ci.assignee_type || '',
-                assigneePropertyFieldID: ci.assignee_property_field_id || '',
-                assigneeModified: ci.assignee_modified || 0,
-                command: ci.command,
-                commandLastRun: ci.command_last_run,
-                dueDate: ci.due_date,
-                taskActions: ci.task_actions,
+                ...mapChecklistItemToInput(ci),
                 conditionID: ci.condition_id || '',
+                assigneeID: ci.assignee_id === userId ? '' : ci.assignee_id || '',
             })),
         }));
         const idx = playbook.invited_user_ids.indexOf(userId);
@@ -107,19 +98,11 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         const checklists = playbook.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
-                title: ci.title,
-                description: ci.description,
-                state: ci.state,
-                stateModified: ci.state_modified || 0,
+                ...mapChecklistItemToInput(ci),
+                conditionID: ci.condition_id || '',
                 assigneeID: '',
                 assigneeType: '',
                 assigneePropertyFieldID: '',
-                assigneeModified: ci.assignee_modified || 0,
-                command: ci.command,
-                commandLastRun: ci.command_last_run,
-                dueDate: ci.due_date,
-                taskActions: ci.task_actions,
-                conditionID: ci.condition_id || '',
             })),
         }));
         updatePlaybook({
