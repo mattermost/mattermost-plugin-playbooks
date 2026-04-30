@@ -11,8 +11,6 @@ import React, {
 
 import {useIntl} from 'react-intl';
 
-import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
-
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
@@ -22,7 +20,6 @@ import {savePlaybook} from 'src/client';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
-import {Section as BaseSection, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -193,20 +190,14 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
             {showAdminSettings && effectiveRestPlaybook && (
                 <Section
                     id={'settings'}
-                    title={''}
+                    title={formatMessage({defaultMessage: 'Settings'})}
                 >
-                    <StyledSettingsSection>
-                        <StyledSettingsSectionTitle>
-                            <SettingsOutlineIcon size={22}/>
-                            {formatMessage({defaultMessage: 'Settings'})}
-                        </StyledSettingsSectionTitle>
-                        <SettingsRow data-testid='admin-only-edit-toggle'>
-                            <AdminOnlyEditToggle
-                                playbook={effectiveRestPlaybook}
-                                onChange={handleAdminOnlyEditChange}
-                            />
-                        </SettingsRow>
-                    </StyledSettingsSection>
+                    <div data-testid='admin-only-edit-toggle'>
+                        <AdminOnlyEditToggle
+                            playbook={effectiveRestPlaybook}
+                            onChange={handleAdminOnlyEditChange}
+                        />
+                    </div>
                 </Section>
             )}
             <PlaybookActionsModal
@@ -223,13 +214,11 @@ type SectionItem = {id: string, title: string};
 
 type SectionsProps = {
     children: ReactNode;
-    'data-testid'?: string;
 }
 
 const SectionsImpl = ({
     children,
     className,
-    'data-testid': dataTestId,
 }: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
@@ -249,10 +238,7 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div
-                className={className}
-                data-testid={dataTestId}
-            >
+            <div className={className}>
                 {children}
             </div>
         </>
@@ -269,31 +255,6 @@ export const Sections = styled(SectionsImpl)`
     margin-bottom: 40px;
     background: var(--center-channel-bg);
     box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
-`;
-
-const StyledSettingsSection = styled(BaseSection)`
-    padding: 2rem;
-    padding-bottom: 0;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 8px;
-    margin: 0;
-`;
-
-const StyledSettingsSectionTitle = styled(SectionTitle)`
-    display: flex;
-    align-items: center;
-    margin: 0 0 24px;
-    font-size: 16px;
-    font-weight: 600;
-    gap: 8px;
-
-    svg {
-        color: rgba(var(--center-channel-color-rgb), 0.48);
-    }
-`;
-
-const SettingsRow = styled.div`
-    padding: 8px 0;
 `;
 
 const HoverMenuContainer = styled.div`

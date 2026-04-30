@@ -17,7 +17,6 @@ jest.mock('react-intl', () => {
     const reactIntl = jest.requireActual('react-intl');
     return {...reactIntl, useIntl: () => reactIntl.createIntl({locale: 'en'})};
 });
-jest.mock('@mattermost/compass-icons/components', () => ({SettingsOutlineIcon: () => null}));
 jest.mock('src/components/markdown_edit', () => () => null);
 jest.mock('src/components/checklist/checklist_list', () => () => null);
 jest.mock('src/components/playbook_actions_modal', () => () => null);
@@ -61,14 +60,18 @@ const makeFullPlaybook = (overrides: Record<string, unknown> = {}) => ({
 const makeRestPlaybook = (adminOnlyEdit: boolean) =>
     makeBasePlaybook({admin_only_edit: adminOnlyEdit}) as unknown as PlaybookWithChecklist;
 
-const renderOutline = (adminOnlyEdit: boolean, archived = false) =>
+const renderOutline = (
+    adminOnlyEdit: boolean,
+    archived = false,
+    {showAdminSettings = true}: {showAdminSettings?: boolean} = {},
+) =>
     renderer.create(
         <Outline
             playbook={makeFullPlaybook({delete_at: archived ? 1 : 0}) as any}
             refetch={jest.fn()}
             canEdit={true}
             restPlaybook={makeRestPlaybook(adminOnlyEdit)}
-            showAdminSettings={true}
+            showAdminSettings={showAdminSettings}
         />,
     );
 
@@ -135,5 +138,11 @@ describe('Outline > handleAdminOnlyEditChange', () => {
         });
 
         expect(mockSavePlaybook).not.toHaveBeenCalled();
+    });
+
+    it('does not render the admin-only-edit toggle when showAdminSettings is false', () => {
+        renderOutline(false, false, {showAdminSettings: false});
+
+        expect(toggleProps).toBeNull();
     });
 });

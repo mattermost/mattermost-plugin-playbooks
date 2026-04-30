@@ -81,7 +81,9 @@ const PlaybookEditor = () => {
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
     const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
-    const canEdit = !restPlaybook?.admin_only_edit || isPlaybookAdmin || isSystemAdmin;
+
+    // Default to read-only until restPlaybook loads, so non-admins never briefly see editable UI on an admin-locked playbook.
+    const canEdit = restPlaybook != null && (!restPlaybook.admin_only_edit || isPlaybookAdmin || isSystemAdmin);
 
     if (error) {
         // not found

@@ -187,8 +187,8 @@ func (p *PermissionsService) PlaybookEdit(userID string, playbook Playbook) erro
 
 // IsPlaybookAdmin reports whether the user holds the playbook's admin role.
 // Uses DefaultPlaybookAdminRole when set, falling back to PlaybookRoleAdmin.
-// Returns false if the user lacks team view access, so callers can treat this
-// as "admin actor we trust right now" rather than a stale membership check.
+// Returns false if the user is not an active member of the playbook's team,
+// even if their playbook membership record carries the admin role.
 func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
 	adminRole := playbook.DefaultPlaybookAdminRole
 	if adminRole == "" {
@@ -241,8 +241,6 @@ func (p *PermissionsService) RunViewConditions(userID string, runID string) erro
 // performs permissions checks that can be resolved though modification of the input.
 // This function modifies the playbook argument.
 func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Playbook, oldPlaybook Playbook) error {
-	// It is assumed that if you are calling this function there are properties changes
-	// This means that you need the manage properties permission to manage members for now.
 	if err := p.PlaybookEdit(userID, oldPlaybook); err != nil {
 		return err
 	}

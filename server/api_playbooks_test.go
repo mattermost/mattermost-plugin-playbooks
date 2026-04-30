@@ -2105,3 +2105,69 @@ func TestAdminOnlyEdit_Import(t *testing.T) {
 		require.NotEmpty(t, newID)
 	})
 }
+
+// TestAdminOnlyEdit_PropertyFields verifies that property field CRUD endpoints honor
+// AdminOnlyEdit. The four mutating handlers (create/update/delete/reorder) all go
+// through PlaybookEdit, so a non-admin member must be blocked while playbook admins
+// and system admins must succeed.
+func TestAdminOnlyEdit_PropertyFields(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence() // property fields require license
+
+	// Source playbook is admin-locked. RegularUser is a plain member; RegularUser2 is a playbook admin.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit PropertyFields Source",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	makeFieldRequest := func(name string) client.PropertyFieldRequest {
+		return client.PropertyFieldRequest{
+			Name: name,
+			Type: "text",
+			Attrs: &client.PropertyFieldAttrsInput{
+				Visibility: stringPtr("when_set"),
+				SortOrder:  float64Ptr(1.0),
+			},
+		}
+	}
+
+	t.Run("non-admin member create returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("blocked"))
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	// Seed a field as the playbook admin so update/delete/reorder have something to operate on.
+	seeded, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("seed"))
+	require.NoError(t, err)
+	fieldID := seeded.ID
+
+	t.Run("non-admin member update returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, fieldID, makeFieldRequest("renamed"))
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("non-admin member delete returns 403", func(t *testing.T) {
+		err := e.PlaybooksClient.Playbooks.DeletePropertyField(context.Background(), playbookID, fieldID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin (non-sysadmin) can create a property field", func(t *testing.T) {
+		created, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("admin-created"))
+		require.NoError(t, err)
+		require.NotEmpty(t, created.ID)
+	})
+
+	t.Run("system admin can update a property field", func(t *testing.T) {
+		_, err := e.PlaybooksAdminClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, fieldID, makeFieldRequest("sysadmin-updated"))
+		require.NoError(t, err)
+	})
+}

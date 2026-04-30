@@ -251,7 +251,6 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	// Force parsed playbook id to be URL parameter id
 	playbook.ID = vars["id"]
-
 	oldPlaybook, err := h.playbookService.Get(playbook.ID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -652,12 +651,12 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	// When the source playbook is admin-locked, restrict duplication to playbook admins
-	// of the source (or system admins). This mirrors the symmetric flip rule and prevents
-	// non-admin members from spawning editable copies of curated configurations.
-	if playbook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) && !h.permissions.IsPlaybookAdmin(userID, playbook) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only a playbook admin or system admin can duplicate an admin-locked playbook", nil)
-		return
+	// When the source playbook is admin-locked, the duplicator must be authorized to edit it.
+	// Otherwise non-admin members could spawn editable copies of curated configurations.
+	if playbook.AdminOnlyEdit {
+		if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookEdit(userID, playbook)) {
+			return
+		}
 	}
 
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
@@ -888,26 +887,6 @@ func GetStartOfDayForTimeRange(timeRange string, location *time.Location) (*time
 	return &resultTime, nil
 }
 
-func (h *PlaybookHandler) authorisePropertyFieldEdit(w http.ResponseWriter, logger logrus.FieldLogger, userID, playbookID string) bool {
-	if !model.IsValidId(playbookID) {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid playbook ID", nil)
-		return false
-	}
-	playbook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return false
-	}
-	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, playbook)) {
-		return false
-	}
-	if playbook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", nil)
-		return false
-	}
-	return true
-}
-
 func (h *PlaybookHandler) getPlaybookPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
@@ -957,7 +936,18 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.authorisePropertyFieldEdit(w, logger, userID, playbookID) {
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
 		return
 	}
 
@@ -991,7 +981,18 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.authorisePropertyFieldEdit(w, logger, userID, playbookID) {
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
 		return
 	}
 
@@ -1045,7 +1046,18 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.authorisePropertyFieldEdit(w, logger, userID, playbookID) {
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
 		return
 	}
 
@@ -1089,7 +1101,18 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.authorisePropertyFieldEdit(w, logger, userID, playbookID) {
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
 		return
 	}
 
