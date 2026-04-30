@@ -755,7 +755,7 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 var reservedFieldNames = []string{"OWNER", "CREATOR", "PROPERTY_USER"}
 
 // validateReservedFieldName rejects field names that would conflict with built-in
-// template placeholders or system fields. Reserved names: OWNER, CREATOR (case-insensitive).
+// template placeholders or system fields. Reserved names: OWNER, CREATOR, PROPERTY_USER (case-insensitive).
 func validateReservedFieldName(name string) error {
 	for _, r := range reservedFieldNames {
 		if strings.EqualFold(name, r) {

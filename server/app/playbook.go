@@ -548,8 +548,8 @@ const (
 	AssigneeTypePropertyUser = "property_user" // resolved via a User-type property field
 )
 
-// IsValidAssigneeType returns true for all recognised AssigneeType values.
-// AssigneeTypeCreator, and AssigneeTypePropertyUser.
+// IsValidAssigneeType returns true for all recognised AssigneeType values:
+// AssigneeTypeSpecificUser, AssigneeTypeOwner, AssigneeTypeCreator, and AssigneeTypePropertyUser.
 func IsValidAssigneeType(assigneeType string) bool {
 	return assigneeType == AssigneeTypeSpecificUser ||
 		assigneeType == AssigneeTypeOwner ||

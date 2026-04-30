@@ -72,15 +72,11 @@ const PropertyTypeSelector = ({
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
 
-    const TYPE_OPTIONS: Array<{
-        type: PropertyType;
-        icon: React.ComponentType<{size?: number}>;
-        label: string;
-    }> = PROPERTY_TYPE_DEFS.map(({type, icon}) => ({
+    const TYPE_OPTIONS = React.useMemo(() => PROPERTY_TYPE_DEFS.map(({type, icon}) => ({
         type,
         icon,
         label: formatMessage(propertyTypeMessages[type]),
-    }));
+    })), [formatMessage]);
     const handleTypeSelect = (option: TypeOption | null | undefined) => {
         if (!option) {
             return;

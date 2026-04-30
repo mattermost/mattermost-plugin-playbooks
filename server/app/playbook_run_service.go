@@ -2129,14 +2129,14 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	}
 
 	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
-		subjectUser, userErr := s.pluginAPI.User.Get(userID)
-		if userErr != nil {
-			return errors.Wrapf(userErr, "failed to resolve user %s", userID)
+		if subjectUser, userErr := s.pluginAPI.User.Get(userID); userErr != nil {
+			s.pluginAPI.Log.Warn("failed to get user for assignee DM", "user_id", userID, "err", userErr.Error())
+		} else {
+			runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
+			dmMsg := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
+				subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
+			s.notifyAssignee(playbookRunID, itemToCheck.AssigneeID, userID, dmMsg)
 		}
-		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
-		dmMsg := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
-			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
-		s.notifyAssignee(playbookRunID, itemToCheck.AssigneeID, userID, dmMsg)
 	}
 
 	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
@@ -2222,7 +2222,7 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 		originalRun = playbookRun.Clone()
 	}
 
-	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, runFieldID, resolvedUserID)
+	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, propertyFieldID, resolvedUserID)
 	if noChangeNeeded {
 		auditRec.Success()
 		return nil
@@ -5048,6 +5048,11 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		return nil, errors.Wrap(ErrPropertyFieldNotOnRun, "property field does not belong to this run")
 	}
 
+	// Items set via SetPropertyUserAssignee store the caller's field ID, which may be the
+	// playbook-level parent ID rather than the run-level field ID. Compute the parent so
+	// resolvePropertyUserAssignmentsForField can find both kinds of items.
+	parentFieldID := propertyField.Attrs.ParentID
+
 	var currentValue json.RawMessage
 	for _, pfv := range run.PropertyValues {
 		if pfv.FieldID == propertyFieldID {
@@ -5099,7 +5104,8 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	for ci := range run.Checklists {
 		for ii := range run.Checklists[ci].Items {
 			item := &run.Checklists[ci].Items[ii]
-			if item.AssigneeType == AssigneeTypePropertyUser && item.AssigneePropertyFieldID == propertyFieldID {
+			if item.AssigneeType == AssigneeTypePropertyUser &&
+				(item.AssigneePropertyFieldID == propertyFieldID || (parentFieldID != "" && item.AssigneePropertyFieldID == parentFieldID)) {
 				affectedItemSnapshots = append(affectedItemSnapshots, propertyUserItemSnapshot{
 					checklistIdx:  ci,
 					itemIdx:       ii,
@@ -5123,6 +5129,9 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 
 		resolvePropertyUserAssignmentsForField(run.Checklists, propertyFieldID, newUserID)
+		if parentFieldID != "" {
+			resolvePropertyUserAssignmentsForField(run.Checklists, parentFieldID, newUserID)
+		}
 
 		if _, err := s.store.UpdatePlaybookRun(run); err != nil {
 			return nil, errors.Wrap(err, "failed to update run checklists")
@@ -5135,6 +5144,9 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	} else {
 		// Value unchanged — still resolve assignees in case new condition tasks were added.
 		assigneesChanged := resolvePropertyUserAssignmentsForField(run.Checklists, propertyFieldID, newUserID)
+		if parentFieldID != "" {
+			assigneesChanged = resolvePropertyUserAssignmentsForField(run.Checklists, parentFieldID, newUserID) || assigneesChanged
+		}
 		if assigneesChanged {
 			shouldSendWS = true
 			if _, err := s.store.UpdatePlaybookRun(run); err != nil {
@@ -5364,7 +5376,7 @@ func (s *PlaybookRunServiceImpl) notifyAssignee(playbookRunID, assigneeID, reque
 		return
 	}
 	if err := s.poster.DM(assigneeID, &model.Post{Message: message}); err != nil {
-		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to send DM to assignee")
+		s.pluginAPI.Log.Warn("failed to send DM to assignee", "playbook_run_id", playbookRunID, "assignee_id", assigneeID, "err", err.Error())
 	}
 }
 
@@ -5406,6 +5418,7 @@ func extractUserIDFromPropertyValue(value json.RawMessage) string {
 // resolvePropertyUserAssignmentsForField returns true if any item's AssigneeID changed.
 func resolvePropertyUserAssignmentsForField(checklists []Checklist, fieldID, userID string) bool {
 	anyChanged := false
+	now := model.GetMillis()
 	for ci := range checklists {
 		for ii := range checklists[ci].Items {
 			item := &checklists[ci].Items[ii]
@@ -5414,7 +5427,7 @@ func resolvePropertyUserAssignmentsForField(checklists []Checklist, fieldID, use
 			if item.AssigneeType == AssigneeTypePropertyUser && item.AssigneePropertyFieldID == fieldID {
 				noChangeNeeded := applyPropertyUserAssigneeUpdate(item, fieldID, userID)
 				if !noChangeNeeded {
-					item.AssigneeModified = model.GetMillis()
+					item.AssigneeModified = now
 					anyChanged = true
 				}
 			}

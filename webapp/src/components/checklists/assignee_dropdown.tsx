@@ -14,8 +14,9 @@ import {
     ChecklistItem,
 } from 'src/types/playbook';
 
-const ROLE_NONE = 'none';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
+
+const ROLE_NONE = 'none';
 
 interface Props {
     checklistItem: ChecklistItem;

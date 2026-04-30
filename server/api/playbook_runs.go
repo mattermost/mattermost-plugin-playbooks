@@ -481,10 +481,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
-	if len(playbookRun.Summary) > 4096 {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "summary exceeds maximum length of 4096 characters")
-	}
-
 	// Retrieve channel if needed and validate it
 	// If a channel is specified, ensure it's from the given team (if one provided), or
 	// just grab the team for that channel.
@@ -521,7 +517,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbook = &pb
 
 		if playbook.DeleteAt != 0 {
-			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook is archived, cannot create a new run using an archived playbook")
 		}
 
 		if err = h.permissions.RunCreate(userID, *playbook, playbookRun.TeamID); err != nil {
@@ -1423,6 +1419,10 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 
 	switch {
 	case params.AssigneePropertyFieldID != "":
+		if !model.IsValidId(params.AssigneePropertyFieldID) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_property_field_id", errors.New("invalid id format"))
+			return
+		}
 		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
 			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
