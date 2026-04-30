@@ -16,7 +16,12 @@ import {DateTime} from 'luxon';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
-import {getProfilesInCurrentTeam, getUser, makeGetProfilesInChannel} from 'mattermost-redux/selectors/entities/users';
+import {
+    getProfilesInCurrentTeam,
+    getUser,
+    makeGetProfilesInChannel,
+    getProfilesInTeam as selectProfilesInTeam,
+} from 'mattermost-redux/selectors/entities/users';
 import {getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
@@ -222,15 +227,21 @@ export function useProfilesInTeam() {
 // useProfilesForRun returns profiles appropriate for a playbook run context.
 // For team-based runs, it returns profiles in the run's team.
 // For DM/GM runs (empty teamId), it returns profiles in the channel via redux.
+// Falls back to the current team when neither teamId nor channelId is provided (editor context).
 export function useProfilesForRun(teamId?: string, channelId?: string) {
     const dispatch = useAppDispatch();
-    const profilesInTeam = useAppSelector(getProfilesInCurrentTeam);
+
+    // Read from the run's specific team, not the current UI team.
+    const profilesInRunTeam = useAppSelector(
+        (state) => (teamId ? selectProfilesInTeam(state, teamId) : []),
+    );
+    const profilesInCurrentTeam = useAppSelector(getProfilesInCurrentTeam);
     const selectChannelProfiles = useMemo(() => makeGetProfilesInChannel(), []);
     const channelProfiles = useAppSelector((state) => selectChannelProfiles(state, channelId ?? ''));
 
     useEffect(() => {
         if (teamId) {
-            if (profilesInTeam.length > 0) {
+            if (profilesInRunTeam.length > 0) {
                 lockProfilesInTeamFetch.delete(teamId);
                 return;
             }
@@ -242,7 +253,7 @@ export function useProfilesForRun(teamId?: string, channelId?: string) {
 
             dispatch(getProfilesInTeam(teamId, 0, PROFILE_CHUNK_SIZE));
         }
-    }, [teamId, profilesInTeam, dispatch]);
+    }, [teamId, profilesInRunTeam, dispatch]);
 
     useEffect(() => {
         if (!teamId && channelId && channelProfiles.length === 0 && !lockProfilesInChannelFetch.has(channelId)) {
@@ -252,12 +263,12 @@ export function useProfilesForRun(teamId?: string, channelId?: string) {
     }, [teamId, channelId, channelProfiles.length, dispatch]);
 
     if (teamId) {
-        return profilesInTeam;
+        return profilesInRunTeam;
     }
     if (channelId) {
         return channelProfiles;
     }
-    return profilesInTeam;
+    return profilesInCurrentTeam;
 }
 
 /**
