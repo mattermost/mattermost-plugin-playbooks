@@ -12,10 +12,6 @@ import React, {
 
 import {useIntl} from 'react-intl';
 
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-
-import {useAppSelector} from 'src/hooks/redux';
-
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
@@ -25,7 +21,6 @@ import {savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookRole} from 'src/types/permissions';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
 
@@ -39,25 +34,25 @@ interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
     restPlaybook?: PlaybookWithChecklist;
+    isPlaybookAdmin: boolean;
+    ownerGroupOnlyActionsOverride: boolean | undefined;
+    setOwnerGroupOnlyActionsOverride: (value: boolean | undefined) => void;
 }
 
 type StyledAttrs = {className?: string};
 
-type RestOnlyOverrides = Pick<PlaybookWithChecklist, 'owner_group_only_actions'>;
-
-const Outline = ({playbook, refetch, restPlaybook}: Props) => {
+const Outline = ({playbook, refetch, restPlaybook, isPlaybookAdmin, ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const toaster = useToaster();
     const archived = playbook.delete_at !== 0;
-    const currentUserId = useAppSelector(getCurrentUserId);
-    const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
-    const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
-    const [restOverrides, setRestOverrides] = useState<Partial<RestOnlyOverrides>>({});
     const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
     const isSavingRef = useRef(false);
-    const effectiveRestPlaybook = restPlaybook ? {...restPlaybook, ...restOverrides} : restPlaybook;
+    const effectiveOwnerGroupOnlyActions = ownerGroupOnlyActionsOverride ?? restPlaybook?.owner_group_only_actions;
+    const effectiveRestPlaybook = restPlaybook && effectiveOwnerGroupOnlyActions !== undefined ?
+        {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} :
+        restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -95,14 +90,14 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         if (archived || !restPlaybook || isSavingRef.current) {
             return;
         }
-        const prev = restPlaybook.owner_group_only_actions;
+        const prev = ownerGroupOnlyActionsOverride ?? restPlaybook.owner_group_only_actions;
         isSavingRef.current = true;
         setIsSavingOwnerGroupOnlyActions(true);
-        setRestOverrides((o) => ({...o, owner_group_only_actions: updated.owner_group_only_actions}));
+        setOwnerGroupOnlyActionsOverride(updated.owner_group_only_actions);
         try {
             await savePlaybook({...restPlaybook, owner_group_only_actions: updated.owner_group_only_actions});
         } catch {
-            setRestOverrides((o) => ({...o, owner_group_only_actions: prev}));
+            setOwnerGroupOnlyActionsOverride(prev);
             toaster.add({
                 content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
                 toastStyle: ToastStyle.Failure,
@@ -111,7 +106,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             isSavingRef.current = false;
             setIsSavingOwnerGroupOnlyActions(false);
         }
-    }, [archived, restPlaybook, toaster, formatMessage]);
+    }, [archived, restPlaybook, ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride, toaster, formatMessage]);
 
     return (
         <Sections
