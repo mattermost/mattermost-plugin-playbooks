@@ -64,6 +64,7 @@ describe('SectionRetrospective', () => {
         expect(treeStr).toContain('A retrospective is not expected.');
         expect(treeStr).not.toContain('retrospective-interval-selector');
         expect(treeStr).not.toContain('retrospective-metrics');
+        expect(treeStr).not.toContain('markdown-edit');
         expect(treeStr).not.toContain('Retrospective template');
     });
 
@@ -81,5 +82,6 @@ describe('SectionRetrospective', () => {
         expect(treeStr).not.toContain('A retrospective is not expected.');
         expect(treeStr).toContain('retrospective-interval-selector');
         expect(treeStr).toContain('retrospective-metrics');
+        expect(treeStr).toContain('markdown-edit');
     });
 });

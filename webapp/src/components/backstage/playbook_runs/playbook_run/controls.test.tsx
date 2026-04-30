@@ -16,8 +16,15 @@ jest.mock('react-redux', () => ({
 }));
 
 jest.mock('src/hooks/run_permissions', () => ({
-    useCanModifyRun: () => true,
+    useCanModifyRun: jest.fn(() => true),
 }));
+
+const useCanModifyRunMock = jest.mocked(jest.requireMock('src/hooks/run_permissions').useCanModifyRun);
+
+beforeEach(() => {
+    useCanModifyRunMock.mockReset();
+    useCanModifyRunMock.mockReturnValue(true);
+});
 
 jest.mock('./enable_disable_retrospective', () => ({
     useToggleRunRetrospective: () => jest.fn(),
@@ -117,12 +124,9 @@ describe('ToggleRunRetrospectiveMenuItem', () => {
     });
 
     it('renders nothing when the user cannot modify the run', () => {
-        jest.requireMock('src/hooks/run_permissions').useCanModifyRun = () => false;
+        useCanModifyRunMock.mockReturnValue(false);
         const run = makeRun({retrospective_enabled: true});
         const tree = renderMenuItem(run).toJSON();
         expect(tree).toBeNull();
-
-        // restore
-        jest.requireMock('src/hooks/run_permissions').useCanModifyRun = () => true;
     });
 });

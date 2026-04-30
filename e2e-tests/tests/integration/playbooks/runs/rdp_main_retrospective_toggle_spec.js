@@ -195,6 +195,10 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             openContextMenu();
             cy.findByTestId('disable-retrospective-menu-item').should('be.visible');
             cy.findByTestId('enable-retrospective-menu-item').should('not.exist');
+
+            cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
+                expect(updatedRun.retrospective_enabled).to.equal(true);
+            });
         });
     });
 });
