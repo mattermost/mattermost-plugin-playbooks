@@ -1924,23 +1924,49 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 	})
 
 	t.Run("set property_user assignee dispatches to SetPropertyUserAssignee", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		// Create a playbook with a user-type property field so we have a valid field ID.
+		pbID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Dispatch Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		userField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Lead", Type: "user"},
+		)
+		require.NoError(t, err)
+
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Run name",
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
-			PlaybookID:  e.BasicPlaybook.ID,
+			PlaybookID:  pbID,
 		})
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		// A non-existent property field must not silently succeed; if dispatch
-		// drops the field the handler would return 200 OK with no change.
-		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, "nonexistent000000000000000")
-		require.Error(t, err)
+		// Happy path: valid user field — dispatch must succeed and persist the field ID.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, userField.ID)
+		require.NoError(t, err)
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
-		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+		assert.Equal(t, userField.ID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+
+		// A non-existent property field must not silently succeed; if dispatch
+		// drops the field the handler would return 200 OK with no change.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, "nonexistent000000000000000")
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		// Field ID from the successful call must still be set (error did not reset it).
+		assert.Equal(t, userField.ID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
 	})
 
 	t.Run("invalid role assignee type rejected with 400", func(t *testing.T) {

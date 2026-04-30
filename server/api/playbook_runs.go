@@ -481,6 +481,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
+	if len(playbookRun.Summary) > 4096 {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "summary exceeds maximum length of 4096 characters")
+	}
+
 	// Retrieve channel if needed and validate it
 	// If a channel is specified, ensure it's from the given team (if one provided), or
 	// just grab the team for that channel.
@@ -819,17 +823,6 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 
 	if err := app.ValidateOwnerID(params.OwnerID); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid owner ID", err)
-		return
-	}
-
-	if err := h.permissions.RunManageProperties(userID, vars["id"]); err != nil {
-		// Return 403 for both ErrNotFound and ErrNoPermissions to avoid leaking run existence.
-		// Other errors (e.g., DB failures) are returned as 500.
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to change the owner of this run.", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
 		return
 	}
 
@@ -1426,7 +1419,7 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	switch {
 	case params.AssigneePropertyFieldID != "":
 		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
-			if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			} else {
 				h.HandleError(w, c.logger, err)

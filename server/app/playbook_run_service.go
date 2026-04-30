@@ -1883,9 +1883,11 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		SubjectUserID: userID,
 	}
 
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+	createdEvent, err := s.store.CreateTimelineEvent(event)
+	if err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
+	playbookRunToModify.TimelineEvents = append(playbookRunToModify.TimelineEvents, *createdEvent)
 
 	// Re-read the run to pick up any changes from AddParticipants before sending the WS event.
 	// Use the service-level GetPlaybookRun (not store-level) so PropertyFields/PropertyValues
@@ -2288,7 +2290,18 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
 
-	if itemToCheck.AssigneeType == assigneeType {
+	// Resolve the concrete user ID for the role upfront so the idempotency check
+	// can compare both the type AND the resolved ID — if the owner changed since
+	// the role was last set, AssigneeType matches but AssigneeID is stale.
+	var resolvedAssigneeID string
+	switch assigneeType {
+	case AssigneeTypeOwner:
+		resolvedAssigneeID = playbookRunToModify.OwnerUserID
+	case AssigneeTypeCreator:
+		resolvedAssigneeID = playbookRunToModify.ReporterUserID
+	}
+
+	if itemToCheck.AssigneeType == assigneeType && itemToCheck.AssigneeID == resolvedAssigneeID {
 		auditRec.Success()
 		return nil
 	}
@@ -2300,13 +2313,11 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeType = assigneeType
-	// Resolve the concrete user ID for the role so the assignee is immediately
-	// visible rather than appearing empty until a re-resolution event occurs.
 	switch assigneeType {
 	case AssigneeTypeOwner:
-		itemToCheck.AssigneeID = playbookRunToModify.OwnerUserID
+		itemToCheck.AssigneeID = resolvedAssigneeID
 	case AssigneeTypeCreator:
-		itemToCheck.AssigneeID = playbookRunToModify.ReporterUserID
+		itemToCheck.AssigneeID = resolvedAssigneeID
 	default:
 		itemToCheck.AssigneeID = ""
 	}
@@ -5037,9 +5048,13 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		return nil, errors.New("upsert property value returned nil without error")
 	}
 
-	// Capture pre-update property values for WS incremental diff before in-place modification.
-	prevPropertyValues := make([]PropertyValue, len(run.PropertyValues))
-	copy(prevPropertyValues, run.PropertyValues)
+	// Capture the full pre-mutation run for the WS incremental diff. Must be a deep clone
+	// because resolvePropertyUserAssignmentsForField mutates run.Checklists in-place, and a
+	// shallow struct copy would share the same backing slice.
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = run.Clone()
+	}
 
 	// replace it in the run object we have at hand
 	var found bool
@@ -5055,6 +5070,29 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	}
 
 	newUserID := extractUserIDFromPropertyValue(value)
+
+	// Snapshot old AssigneeIDs for items that will be affected by resolvePropertyUserAssignmentsForField
+	// so we can emit per-item AssigneeChanged timeline events after the mutation.
+	type propertyUserItemSnapshot struct {
+		checklistIdx  int
+		itemIdx       int
+		title         string
+		oldAssigneeID string
+	}
+	var affectedItemSnapshots []propertyUserItemSnapshot
+	for ci := range run.Checklists {
+		for ii := range run.Checklists[ci].Items {
+			item := &run.Checklists[ci].Items[ii]
+			if item.AssigneeType == AssigneeTypePropertyUser && item.AssigneePropertyFieldID == propertyFieldID {
+				affectedItemSnapshots = append(affectedItemSnapshots, propertyUserItemSnapshot{
+					checklistIdx:  ci,
+					itemIdx:       ii,
+					title:         item.Title,
+					oldAssigneeID: item.AssigneeID,
+				})
+			}
+		}
+	}
 
 	var valueChanged bool
 	var evaluationResult *ConditionEvaluationResult
@@ -5089,6 +5127,28 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
+	// Create AssigneeChanged timeline events for items whose resolved assignee changed.
+	for _, snap := range affectedItemSnapshots {
+		item := &run.Checklists[snap.checklistIdx].Items[snap.itemIdx]
+		if item.AssigneeID == snap.oldAssigneeID {
+			continue
+		}
+		summary := fmt.Sprintf("changed assignee of checklist item **%s** via property field", stripmd.Strip(snap.title))
+		te := &TimelineEvent{
+			PlaybookRunID: playbookRunID,
+			CreateAt:      item.AssigneeModified,
+			EventAt:       item.AssigneeModified,
+			EventType:     AssigneeChanged,
+			Summary:       summary,
+			SubjectUserID: userID,
+		}
+		if createdTE, teErr := s.store.CreateTimelineEvent(te); teErr != nil {
+			logrus.WithError(teErr).WithField("run_id", playbookRunID).Warn("failed to create AssigneeChanged event for property_user")
+		} else {
+			run.TimelineEvents = append(run.TimelineEvents, *createdTE)
+		}
+	}
+
 	// Create timeline event for the property change and append it to the run so the
 	// WS diff includes the new event and the frontend is notified without a page reload.
 	if valueChanged {
@@ -5101,9 +5161,7 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 
 	// Send WS notification when the value changed or assignees were re-resolved.
 	if valueChanged || assigneeOnlyUpdate {
-		prevRun := *run
-		prevRun.PropertyValues = prevPropertyValues
-		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, &prevRun, run)
+		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, run)
 	}
 
 	auditRec.Success()
@@ -5367,6 +5425,13 @@ func remapAssigneePropertyFieldIDs(checklists []Checklist, fieldMappings map[str
 			}
 			if newID, ok := fieldMappings[item.AssigneePropertyFieldID]; ok {
 				item.AssigneePropertyFieldID = newID
+			} else {
+				// Field not copied to the run (e.g., deleted from the playbook).
+				// Clear the stale reference so the item falls back to unassigned
+				// rather than remaining permanently unresolvable.
+				item.AssigneePropertyFieldID = ""
+				item.AssigneeType = ""
+				item.AssigneeID = ""
 			}
 		}
 	}

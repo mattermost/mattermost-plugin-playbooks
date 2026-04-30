@@ -131,11 +131,11 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
     const roleOptions = [
         {value: 'none', displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.role_none', defaultMessage: 'None'})},
-        {value: AssigneeTypeOwner, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.owner_hint', defaultMessage: 'Resolves to run owner at creation'})},
-        {value: AssigneeTypeCreator, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.creator_hint', defaultMessage: 'Resolves to run creator at creation'})},
+        {value: AssigneeTypeOwner, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_owner_with_hint', defaultMessage: 'Run Owner \u2014 Resolves to run owner at creation'})},
+        {value: AssigneeTypeCreator, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_creator_with_hint', defaultMessage: 'Run Creator \u2014 Resolves to run creator at creation'})},
         ...(userPropertyFields.length > 0 ? [{
             value: AssigneeTypePropertyUser,
-            displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.property_user_hint', defaultMessage: 'Resolves to a user-type attribute at creation'}),
+            displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_user_with_hint', defaultMessage: 'Run User \u2014 Resolves to a user-type attribute at creation'}),
         }] : []),
     ];
 

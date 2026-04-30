@@ -686,6 +686,9 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 		if err := json.Unmarshal(value, &userID); err != nil {
 			return nil, errors.New("user field value must be a string")
 		}
+		if userID != "" && !model.IsValidId(userID) {
+			return nil, errors.New("user field value must be a valid user ID")
+		}
 		return value, nil
 	default:
 		return nil, errors.Errorf("property field type '%s' is not supported", propertyField.Type)
@@ -754,6 +757,7 @@ var reservedFieldNames = []struct {
 }{
 	{"OWNER", "the built-in run owner placeholder"},
 	{"CREATOR", "the built-in run creator placeholder"},
+	{"PROPERTY_USER", "the built-in property-user assignee type"},
 }
 
 // validateReservedFieldName rejects field names that would conflict with built-in
