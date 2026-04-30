@@ -681,6 +681,12 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 			return nil, errors.New("multiselect field value must be an array of strings")
 		}
 		return value, s.validateMultiselectValue(propertyField, arrayValue)
+	case model.PropertyFieldTypeUser:
+		var userID string
+		if err := json.Unmarshal(value, &userID); err != nil {
+			return nil, errors.New("user field value must be a string")
+		}
+		return value, nil
 	default:
 		return nil, errors.Errorf("property field type '%s' is not supported", propertyField.Type)
 	}

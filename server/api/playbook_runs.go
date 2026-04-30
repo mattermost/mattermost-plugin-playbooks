@@ -481,6 +481,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
+	if len(playbookRun.Summary) > 4096 {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "summary must be at most 4096 characters")
+	}
+
 	// Retrieve channel if needed and validate it
 	// If a channel is specified, ensure it's from the given team (if one provided), or
 	// just grab the team for that channel.
@@ -1434,7 +1438,7 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 
 	switch {
 	case params.AssigneePropertyFieldID != "":
-		if err := h.playbookRunService.SetPropertyUserAssignee(userID, id, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
+		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
 			h.HandleError(w, c.logger, err)
 			return
 		}

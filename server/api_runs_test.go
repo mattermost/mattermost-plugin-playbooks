@@ -686,12 +686,8 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
-		require.NoError(t, err)
-		assert.Equal(t, http.StatusOK, result.StatusCode)
-		var dialogResp model.SubmitDialogResponse
-		decodeErr := json.NewDecoder(result.Body).Decode(&dialogResp)
-		require.NoError(t, decodeErr)
-		require.NotEmpty(t, dialogResp.Error, "expected permission error in dialog response")
+		require.Error(t, err)
+		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
@@ -1945,6 +1941,128 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("invalid role assignee type rejected with 400", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		body, err := json.Marshal(map[string]string{
+			"assignee_type": "member",
+		})
+		require.NoError(t, err)
+
+		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+		resp, _ := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		require.NotNil(t, resp)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("property field of non-user type rejected", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		freshPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PropType Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		selectField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			freshPlaybookID,
+			client.PropertyFieldRequest{
+				Name: "Status",
+				Type: "select",
+				Attrs: &client.PropertyFieldAttrsInput{
+					Options: &[]client.PropertyOptionInput{{Name: "Active"}},
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  freshPlaybookID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, selectField.ID)
+		require.Error(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("SetRoleAssignee creates AssigneeChanged timeline event", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, app.AssigneeTypeOwner)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, run.TimelineEvents)
+		lastEvent := run.TimelineEvents[len(run.TimelineEvents)-1]
+		assert.Equal(t, client.AssigneeChanged, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("SetPropertyUserAssignee creates AssigneeChanged timeline event", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		freshPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PropUser Timeline Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		userField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			freshPlaybookID,
+			client.PropertyFieldRequest{
+				Name: "Manager",
+				Type: "user",
+			},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  freshPlaybookID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, userField.ID)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, run.TimelineEvents)
+		lastEvent := run.TimelineEvents[len(run.TimelineEvents)-1]
+		assert.Equal(t, client.AssigneeChanged, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
 	})
 
 	t.Run("mutually exclusive fields rejected with 400", func(t *testing.T) {

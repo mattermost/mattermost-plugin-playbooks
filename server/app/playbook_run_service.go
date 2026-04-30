@@ -469,7 +469,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	// Resolve role-based task assignments (Owner/Creator) before persisting
-	playbookRun.Checklists = resolveRoleAssignments(playbookRun.Checklists, playbookRun.OwnerUserID, playbookRun.ReporterUserID)
+	resolveRoleAssignments(playbookRun.Checklists, playbookRun.OwnerUserID, playbookRun.ReporterUserID)
 
 	playbookRun, err = s.store.CreatePlaybookRun(playbookRun)
 	if err != nil {
@@ -2184,7 +2184,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 // SetCommandToChecklistItem sets command to checklist item
 // SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
 // property field resolves to on this run.
-func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(userID, playbookRunID string, checklistNumber, itemNumber int, propertyFieldID string) error {
+func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID string, checklistNumber, itemNumber int, propertyFieldID string) error {
 	auditRec := plugin.MakeAuditRecord("setChecklistItemPropertyUserAssignee", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -2199,31 +2199,31 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(userID, playbookRunID s
 		return err
 	}
 
-	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklistNumber, itemNumber) {
-		return errors.Wrap(ErrMalformedPlaybookRun, "invalid checklist item indices")
-	}
-
 	itemToCheck := &playbookRun.Checklists[checklistNumber].Items[itemNumber]
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
 
-	field, err := s.propertyService.GetPropertyField(propertyFieldID)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return errors.Wrapf(ErrNotFound, "property field %s not found", propertyFieldID)
+	// Find the run-level field that matches either by its own ID (run-level) or its parent ID
+	// (playbook-level). Callers may pass either form.
+	var runFieldID string
+	for _, pf := range playbookRun.PropertyFields {
+		if pf.ID == propertyFieldID || pf.Attrs.ParentID == propertyFieldID {
+			if pf.Type != model.PropertyFieldTypeUser {
+				return errors.Wrap(ErrMalformedPlaybookRun, "property field is not of user type")
+			}
+			runFieldID = pf.ID
+			break
 		}
-		return errors.Wrap(err, "failed to get property field for property_user assignee")
 	}
-	if field.Type != model.PropertyFieldTypeUser {
-		return errors.Wrap(ErrMalformedPlaybookRun, "property field is not of user type")
+	if runFieldID == "" {
+		return errors.Wrapf(ErrNotFound, "property field %s not found on run", propertyFieldID)
 	}
 
 	var resolvedUserID string
-	propValue, err := s.propertyService.GetRunPropertyValueByFieldID(playbookRunID, propertyFieldID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get run property value")
-	}
-	if propValue != nil {
-		resolvedUserID = extractUserIDFromPropertyValue(propValue.Value)
+	for _, pv := range playbookRun.PropertyValues {
+		if pv.FieldID == runFieldID {
+			resolvedUserID = extractUserIDFromPropertyValue(pv.Value)
+			break
+		}
 	}
 
 	var originalRun *PlaybookRun
@@ -2231,7 +2231,7 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(userID, playbookRunID s
 		originalRun = playbookRun.Clone()
 	}
 
-	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, propertyFieldID, resolvedUserID)
+	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, runFieldID, resolvedUserID)
 	if noChangeNeeded {
 		auditRec.Success()
 		return nil
@@ -2244,6 +2244,19 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(userID, playbookRunID s
 	playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
+	}
+
+	modifyMessage := fmt.Sprintf("set assignee of checklist item **%s** to property field %s", stripmd.Strip(itemToCheck.Title), runFieldID)
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      timestamp,
+		EventAt:       timestamp,
+		EventType:     AssigneeChanged,
+		Summary:       modifyMessage,
+		SubjectUserID: userID,
+	}
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun)
@@ -2266,17 +2279,13 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
 	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
 
-	if !IsValidAssigneeType(assigneeType) || assigneeType == AssigneeTypeSpecificUser || assigneeType == AssigneeTypePropertyUser {
+	if assigneeType != AssigneeTypeOwner && assigneeType != AssigneeTypeCreator {
 		return errors.Wrap(ErrMalformedPlaybookRun, "invalid role assignee type: must be 'owner' or 'creator'")
 	}
 
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
-	}
-
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.Wrap(ErrMalformedPlaybookRun, "invalid checklist item indices")
 	}
 
 	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -5238,32 +5247,18 @@ func (s *PlaybookRunServiceImpl) PostPropertyChangeMessage(userID string, run *P
 	}
 }
 
-func resolveRoleAssignments(checklists []Checklist, ownerID, creatorID string) []Checklist {
-	if len(checklists) == 0 {
-		return checklists
-	}
-	result := make([]Checklist, len(checklists))
-	for ci, cl := range checklists {
-		items := make([]ChecklistItem, len(cl.Items))
-		copy(items, cl.Items)
-		for ii := range items {
-			switch items[ii].AssigneeType {
+func resolveRoleAssignments(checklists []Checklist, ownerID, creatorID string) {
+	for ci := range checklists {
+		for ii := range checklists[ci].Items {
+			item := &checklists[ci].Items[ii]
+			switch item.AssigneeType {
 			case AssigneeTypeOwner:
-				items[ii].AssigneeID = ownerID
-				// Keep AssigneeType="owner" so ChangeOwner can re-resolve
+				item.AssigneeID = ownerID
 			case AssigneeTypeCreator:
-				items[ii].AssigneeID = creatorID
-				// Keep AssigneeType="creator" so the role badge is visible and
-				// task lockdown can check the creator role.
-			default:
-				// AssigneeTypeSpecificUser ("") and any unrecognized values are left as-is.
-				// Validation at the API layer should prevent unrecognized values.
+				item.AssigneeID = creatorID
 			}
 		}
-		result[ci] = cl
-		result[ci].Items = items
 	}
-	return result
 }
 
 // resolveOwnerRoleAssignments re-resolves ONLY Owner role assignments when ownership changes.

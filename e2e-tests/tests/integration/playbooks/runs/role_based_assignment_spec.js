@@ -510,6 +510,78 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
         });
     });
 
+    it('assigning a task to a user-type property field shows the resolved user in the checklist', () => {
+        // # Create a playbook with a user-type property field and a plain task
+        cy.apiCreatePlaybookWithProperties(
+            {
+                teamId: testTeam.id,
+                title: 'PropUser Assignment Flow PB ' + getRandomId(),
+                memberIDs: [testOwner.id, testNewOwner.id],
+                makePublic: true,
+                createPublicPlaybookRun: true,
+                checklists: [{title: 'Stage 1', items: [{title: 'Manager Task'}]}],
+            },
+            [{name: 'Manager', type: 'user'}],
+        ).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.apiGetPropertyFieldByName(playbook.id, 'Manager').then((managerField) => {
+                expect(managerField).to.exist;
+
+                // # Patch the task to use property_user assignment pointing at the Manager field
+                cy.apiPatchPlaybook(playbook.id, {
+                    checklists: [{
+                        title: 'Stage 1',
+                        items: [{
+                            title: 'Manager Task',
+                            assignee_type: 'property_user',
+                            assignee_property_field_id: managerField.id,
+                        }],
+                    }],
+                });
+
+                // * Verify the server persisted the property_user assignee_type
+                cy.apiGetPlaybook(playbook.id).then((resp) => {
+                    const item = resp.checklists[0].items[0];
+                    expect(item.assignee_type).to.equal('property_user');
+                    expect(item.assignee_property_field_id).to.equal(managerField.id);
+                });
+
+                // # Start a run
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: 'PropUser Assignment Flow Run ' + getRandomId(),
+                    ownerUserId: testOwner.id,
+                }).then((run) => {
+                    cy.apiAddUsersToRun(run.id, [testNewOwner.id]);
+
+                    // # Set the Manager property to testNewOwner so the task resolves
+                    cy.apiSetRunPropertyValueByName(run.id, 'Manager', testNewOwner.id);
+
+                    // # Visit the run channel — RHS opens automatically
+                    cy.playbooksVisitRunChannel(testTeam.name, run);
+
+                    // * The task should show the property-user badge AND the resolved user's name
+                    cy.findByTestId('pb-checklists-inner-container').within(() => {
+                        cy.contains('[data-testid="checkbox-item-container"]', 'Manager Task').within(() => {
+                            cy.findByTestId('property-user-indicator-badge').should('exist').and('contain', 'Manager');
+                            cy.contains(testNewOwner.username).should('exist');
+                        });
+                    });
+
+                    // * Verify via API that assignee_id is the resolved user and assignee_type is preserved
+                    cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
+                        const task = runData.checklists[0].items[0];
+                        expect(task.assignee_type).to.equal('property_user');
+                        expect(task.assignee_property_field_id).to.equal(managerField.id);
+                        expect(task.assignee_id).to.equal(testNewOwner.id);
+                    });
+                });
+            });
+        });
+    });
+
     it('changing owner in RHS preserves property_user task display', () => {
         // Regression: changing the run owner via the RHS profile selector used to
         // wipe property_values from the WebSocket update, causing the resolved

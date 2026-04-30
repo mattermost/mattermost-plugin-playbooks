@@ -34,7 +34,7 @@ func TestResolveAssigneeRoles(t *testing.T) {
 			},
 		}
 
-		checklists = resolveRoleAssignments(checklists, ownerID, creatorID)
+		resolveRoleAssignments(checklists, ownerID, creatorID)
 
 		require.Equal(t, specificUserID, checklists[0].Items[0].AssigneeID)
 		assert.Equal(t, AssigneeTypeSpecificUser, checklists[0].Items[0].AssigneeType)
@@ -54,7 +54,7 @@ func TestResolveAssigneeRoles(t *testing.T) {
 			},
 		}
 
-		checklists = resolveRoleAssignments(checklists, ownerID, creatorID)
+		resolveRoleAssignments(checklists, ownerID, creatorID)
 
 		require.Equal(t, ownerID, checklists[0].Items[0].AssigneeID)
 	})
@@ -73,7 +73,7 @@ func TestResolveAssigneeRoles(t *testing.T) {
 			},
 		}
 
-		checklists = resolveRoleAssignments(checklists, ownerID, creatorID)
+		resolveRoleAssignments(checklists, ownerID, creatorID)
 
 		require.Equal(t, creatorID, checklists[0].Items[0].AssigneeID)
 	})
@@ -94,7 +94,7 @@ func TestResolveAssigneeRoles(t *testing.T) {
 			},
 		}
 
-		checklists = resolveRoleAssignments(checklists, "" /*ownerID*/, creatorID)
+		resolveRoleAssignments(checklists, "" /*ownerID*/, creatorID)
 
 		assert.Equal(t, "", checklists[0].Items[0].AssigneeID)
 	})
@@ -111,7 +111,7 @@ func TestResolveAssigneeRoles(t *testing.T) {
 			},
 		}
 
-		checklists = resolveRoleAssignments(checklists, ownerID, creatorID)
+		resolveRoleAssignments(checklists, ownerID, creatorID)
 
 		require.Equal(t, ownerID, checklists[0].Items[0].AssigneeID, "owner item")
 		require.Equal(t, creatorID, checklists[0].Items[1].AssigneeID, "creator item")
@@ -132,7 +132,7 @@ func TestResolveAssigneeRoles(t *testing.T) {
 			},
 		}
 
-		checklists = resolveRoleAssignments(checklists, ownerID, creatorID)
+		resolveRoleAssignments(checklists, ownerID, creatorID)
 
 		assert.Equal(t, AssigneeTypeOwner, checklists[0].Items[0].AssigneeType,
 			"AssigneeType should remain 'owner' after resolution")
@@ -154,7 +154,7 @@ func TestResolveAssigneeRoles(t *testing.T) {
 			},
 		}
 
-		checklists = resolveRoleAssignments(checklists, ownerID, creatorID)
+		resolveRoleAssignments(checklists, ownerID, creatorID)
 
 		require.Equal(t, ownerID, checklists[0].Items[0].AssigneeID)
 		require.Equal(t, creatorID, checklists[1].Items[0].AssigneeID)

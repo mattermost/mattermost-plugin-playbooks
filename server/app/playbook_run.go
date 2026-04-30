@@ -1250,7 +1250,7 @@ type PlaybookRunService interface {
 
 	// SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
 	// property field resolves to on this run.
-	SetPropertyUserAssignee(userID, playbookRunID string, checklistNumber, itemNumber int, propertyFieldID string) error
+	SetPropertyUserAssignee(playbookRunID, userID string, checklistNumber, itemNumber int, propertyFieldID string) error
 
 	// SetCommandToChecklistItem sets command to checklist item
 	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
