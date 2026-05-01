@@ -576,11 +576,18 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                     });
 
                     // * Verify via API that assignee_id is the resolved user and assignee_type is preserved
-                    cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
-                        const task = runData.checklists[0].items[0];
-                        expect(task.assignee_type).to.equal(ROLE_PROPERTY_USER);
-                        expect(task.assignee_property_field_id).to.equal(managerField.id);
-                        expect(task.assignee_id).to.equal(testNewOwner.id);
+                    // The run gets its own scoped property field IDs (different from the playbook's),
+                    // so we look up the run-level Manager field to get the correct ID to compare against.
+                    cy.apiGetRunPropertyFields(run.id).then((runFields) => {
+                        const runManagerField = runFields.find((f) => f.name === 'Manager');
+                        expect(runManagerField, 'run-level Manager field should exist').to.exist;
+
+                        cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
+                            const task = runData.checklists[0].items[0];
+                            expect(task.assignee_type).to.equal(ROLE_PROPERTY_USER);
+                            expect(task.assignee_property_field_id).to.equal(runManagerField.id);
+                            expect(task.assignee_id).to.equal(testNewOwner.id);
+                        });
                     });
                 });
             });
