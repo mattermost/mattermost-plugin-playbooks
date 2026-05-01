@@ -40,7 +40,7 @@ type Playbook struct {
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
 	RunNumberPrefix                         string                 `json:"run_number_prefix"`
-	NextRunNumber                           int64                  `json:"next_run_number"` // exposed as Float! in GraphQL (GraphQL Int is 32-bit; Float is used for 64-bit integers)
+	NextRunNumber                           int64                  `json:"next_run_number"`
 	ChannelNameTemplate                     string                 `json:"channel_name_template"`
 }
 

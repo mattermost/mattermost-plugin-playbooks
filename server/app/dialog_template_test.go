@@ -13,9 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// newDialogTestService creates a minimal PlaybookRunServiceImpl with a mocked
-// pluginAPI that returns a test user for any GetUser call. Only the fields
-// needed by newPlaybookRunDialog are populated.
+// newDialogTestService returns a minimal PlaybookRunServiceImpl; only fields needed by newPlaybookRunDialog are set.
 func newDialogTestService(t *testing.T) *PlaybookRunServiceImpl {
 	t.Helper()
 	mockAPI := &plugintest.API{}

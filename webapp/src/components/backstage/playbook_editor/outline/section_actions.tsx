@@ -13,6 +13,7 @@ import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
+import {savePlaybook} from 'src/client';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -40,20 +41,31 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
 
-    // Use restPlaybook for CreateAChannel since it needs run_number_prefix/next_run_number (REST-only fields)
+    // Use restPlaybook as source for CreateAChannel — it carries REST-only fields (run_number_prefix, next_run_number).
+    // Updates go through REST (savePlaybook) so we never need runNumberPrefix in the GraphQL schema.
     const channelPlaybookSource = restPlaybook ?? playbook;
     const [
         playbookForCreateChannel,
         setPlaybookForCreateChannel,
     ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(channelPlaybookSource as ComponentProps<typeof CreateAChannel>['playbook'], useCallback((update) => {
-        updatePlaybook({
-            createPublicPlaybookRun: update.create_public_playbook_run,
-            channelNameTemplate: update.channel_name_template,
-            runNumberPrefix: update.run_number_prefix,
-            channelMode: update.channel_mode,
-            channelId: update.channel_id,
-        });
-    }, [updatePlaybook]));
+        if (restPlaybook) {
+            savePlaybook({
+                ...restPlaybook,
+                create_public_playbook_run: update.create_public_playbook_run,
+                channel_name_template: update.channel_name_template,
+                run_number_prefix: update.run_number_prefix,
+                channel_mode: update.channel_mode,
+                channel_id: update.channel_id,
+            });
+        } else {
+            updatePlaybook({
+                createPublicPlaybookRun: update.create_public_playbook_run,
+                channelNameTemplate: update.channel_name_template,
+                channelMode: update.channel_mode,
+                channelId: update.channel_id,
+            });
+        }
+    }, [restPlaybook, updatePlaybook]));
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);

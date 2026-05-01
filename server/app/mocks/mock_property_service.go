@@ -95,20 +95,6 @@ func (mr *MockPropertyServiceMockRecorder) DeletePropertyField(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePropertyField", reflect.TypeOf((*MockPropertyService)(nil).DeletePropertyField), arg0, arg1)
 }
 
-// GetGroupID mocks base method.
-func (m *MockPropertyService) GetGroupID() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGroupID")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetGroupID indicates an expected call of GetGroupID.
-func (mr *MockPropertyServiceMockRecorder) GetGroupID() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGroupID", reflect.TypeOf((*MockPropertyService)(nil).GetGroupID))
-}
-
 // GetPropertyField mocks base method.
 func (m *MockPropertyService) GetPropertyField(arg0 string) (*app.PropertyField, error) {
 	m.ctrl.T.Helper()
@@ -272,21 +258,6 @@ func (m *MockPropertyService) GetRunsPropertyValues(arg0 []string) (map[string][
 func (mr *MockPropertyServiceMockRecorder) GetRunsPropertyValues(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsPropertyValues", reflect.TypeOf((*MockPropertyService)(nil).GetRunsPropertyValues), arg0)
-}
-
-// GetRunIDsByPropertyValue mocks base method.
-func (m *MockPropertyService) GetRunIDsByPropertyValue(arg0, arg1 string) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRunIDsByPropertyValue", arg0, arg1)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRunIDsByPropertyValue indicates an expected call of GetRunIDsByPropertyValue.
-func (mr *MockPropertyServiceMockRecorder) GetRunIDsByPropertyValue(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunIDsByPropertyValue", reflect.TypeOf((*MockPropertyService)(nil).GetRunIDsByPropertyValue), arg0, arg1)
 }
 
 // ReorderPropertyFields mocks base method.

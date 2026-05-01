@@ -28,6 +28,10 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         cy.viewport('macbook-13');
     });
 
+    afterEach(() => {
+        cy.apiLogin(testUser);
+    });
+
     describe('name field is not required when template is set', () => {
         let seqTemplatePlaybook;
 
@@ -40,13 +44,16 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
-                const playbookId = playbook.id;
-                cy.apiPatchPlaybook(playbookId, {channel_name_template: '{OWNER}'}).then(() => {
-                    cy.apiGetPlaybook(playbookId).then((finalPlaybook) => {
-                        seqTemplatePlaybook = finalPlaybook;
-                    });
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{OWNER}'}).then((updatedPlaybook) => {
+                    seqTemplatePlaybook = updatedPlaybook;
                 });
             });
+        });
+
+        afterEach(() => {
+            if (seqTemplatePlaybook) {
+                cy.apiArchivePlaybook(seqTemplatePlaybook.id);
+            }
         });
 
         it('submit button is enabled even when name input shows template (no required fields)', () => {
@@ -82,6 +89,12 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
             }).then((playbook) => {
                 plainPlaybook = playbook;
             });
+        });
+
+        afterEach(() => {
+            if (plainPlaybook) {
+                cy.apiArchivePlaybook(plainPlaybook.id);
+            }
         });
 
         it('shows free-text name input without "(optional)" label', () => {

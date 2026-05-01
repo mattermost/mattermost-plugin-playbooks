@@ -54,6 +54,25 @@ type playbookMember struct {
 // pgUniqueViolation is the PostgreSQL error code for unique constraint violations.
 const pgUniqueViolation = "23505"
 
+const (
+	playbookPrefixConstraint = "ir_playbook_teamid_runnumberprefix_unique"
+	runNumberConstraint      = "ir_incident_playbookid_runnumber_unique"
+)
+
+// wrapUniqueConstraintViolation maps a PostgreSQL unique-violation error to
+// app.ErrDuplicateEntry. When constraint matches, msg is used; otherwise the
+// pq error message is used. Returns nil if err is not a pq unique violation.
+func wrapUniqueConstraintViolation(err error, constraint, msg string) error {
+	var pqErr *pq.Error
+	if !errors.As(err, &pqErr) || pqErr.Code != pgUniqueViolation {
+		return nil
+	}
+	if pqErr.Constraint == constraint {
+		return errors.Wrap(app.ErrDuplicateEntry, msg)
+	}
+	return errors.Wrap(app.ErrDuplicateEntry, pqErr.Error())
+}
+
 // txDefaultTimeout is the context timeout applied to every short transactional query.
 const txDefaultTimeout = 10 * time.Second
 
@@ -284,16 +303,11 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
 			"RunNumberPrefix":                         rawPlaybook.RunNumberPrefix,
-			// NextRunNumber is intentionally not set here; the DB default (1) is always
-			// correct for newly created playbooks. Use IncrementRunNumber to advance it.
+			// NextRunNumber omitted: DB default (1) is always correct for new playbooks.
 		}))
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
-			if pqErr.Constraint == "ir_playbook_teamid_runnumberprefix_unique" {
-				return "", errors.Wrap(app.ErrDuplicateEntry, "run_number_prefix is already in use by another playbook on this team")
-			}
-			return "", errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		if conflict := wrapUniqueConstraintViolation(err, playbookPrefixConstraint, "run_number_prefix is already in use by another playbook in this team"); conflict != nil {
+			return "", conflict
 		}
 		return "", errors.Wrap(err, "failed to store new playbook")
 	}
@@ -697,12 +711,8 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
-			if pqErr.Constraint == "ir_playbook_teamid_runnumberprefix_unique" {
-				return errors.Wrap(app.ErrDuplicateEntry, "run_number_prefix is already used by another playbook in this team")
-			}
-			return errors.Wrap(app.ErrDuplicateEntry, pqErr.Error())
+		if conflict := wrapUniqueConstraintViolation(err, playbookPrefixConstraint, "run_number_prefix is already in use by another playbook in this team"); conflict != nil {
+			return conflict
 		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
 	}
@@ -775,12 +785,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
-			if pqErr.Constraint == "ir_playbook_teamid_runnumberprefix_unique" {
-				return errors.Wrap(app.ErrDuplicateEntry, "run_number_prefix is already used by another playbook in this team")
-			}
-			return errors.Wrap(app.ErrDuplicateEntry, pqErr.Error())
+		if conflict := wrapUniqueConstraintViolation(err, playbookPrefixConstraint, "run_number_prefix is already in use by another playbook in this team"); conflict != nil {
+			return conflict
 		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
 	}
@@ -809,10 +815,7 @@ func (p *playbookStore) Archive(id string) error {
 	_, err := p.store.execBuilder(p.store.db, sq.
 		Update("IR_Playbook").
 		Set("DeleteAt", model.GetMillis()).
-		// RunNumberPrefix is intentionally preserved so that a restored playbook retains
-		// its sequential ID sequence. The partial unique index (WHERE RunNumberPrefix != ''
-		// AND DeleteAt = 0) already excludes archived rows, so no uniqueness conflict can
-		// arise while the playbook is archived.
+		// RunNumberPrefix preserved: partial unique index (WHERE DeleteAt=0) excludes archived rows.
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
@@ -834,12 +837,8 @@ func (p *playbookStore) Restore(id string) error {
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
-			if pqErr.Constraint == "ir_playbook_teamid_runnumberprefix_unique" {
-				return errors.Wrap(app.ErrDuplicateEntry, "run_number_prefix is already in use by another playbook on this team")
-			}
-			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		if conflict := wrapUniqueConstraintViolation(err, playbookPrefixConstraint, "run_number_prefix is already in use by another playbook in this team"); conflict != nil {
+			return conflict
 		}
 		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
 	}
@@ -1331,10 +1330,7 @@ func (p *playbookStore) IncrementRunNumber(playbookID string) (int64, error) {
 	}
 
 	var runNumber int64
-	// Raw SQL with RETURNING is used here instead of the squirrel builder because we need
-	// atomic increment-and-read in a single statement. A two-query approach (UPDATE + SELECT)
-	// would introduce a race condition between concurrent run creations.
-	// Rebind is omitted: New() enforces PostgreSQL-only so $N placeholders need no translation.
+	// Raw SQL: squirrel cannot express RETURNING for atomic increment-and-read (UPDATE + SELECT would race).
 	if err := p.store.db.Get(
 		&runNumber,
 		`UPDATE IR_Playbook SET NextRunNumber = NextRunNumber + 1 WHERE ID = $1 AND DeleteAt = 0 RETURNING NextRunNumber - 1`,
@@ -1349,10 +1345,6 @@ func (p *playbookStore) IncrementRunNumber(playbookID string) (int64, error) {
 }
 
 func (p *playbookStore) UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error {
-	// Guard before acquiring any lock: transformFn must not be nil.
-	// transformFn is called while holding the IR_Playbook row lock (FOR UPDATE), so any
-	// blocking operation inside it would hold that lock for its full duration. The nil check
-	// is a fast precondition that belongs before the transaction begins.
 	if transformFn == nil {
 		return errors.New("transformFn cannot be nil")
 	}
@@ -1387,8 +1379,6 @@ func (p *playbookStore) UpdateChannelNameTemplateAtomically(playbookID string, t
 		return errors.Wrapf(err, "failed to load name templates for playbook '%s'", playbookID)
 	}
 
-	// NOTE: transformFn is invoked while the IR_Playbook row lock is held.
-	// Keep transformFn pure (no I/O, no DB calls) to avoid blocking other writers.
 	newChannelNameTemplate := transformFn(channelNameTemplate)
 
 	// Skip the write if the template did not change

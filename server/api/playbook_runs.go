@@ -595,8 +595,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	// Apply DefaultOwnerID fallback. Team membership is validated inside ResolveRunCreationParams;
-	// if the owner is not a team member, OwnerUserID is cleared and re-validated before creation proceeds.
+	// DefaultOwnerID fallback: team membership is checked inside ResolveRunCreationParams.
 	if playbookRun.OwnerUserID == "" && playbookRun.DefaultOwnerID != "" {
 		playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
 	}
@@ -604,13 +603,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
 	}
 
-	// Resolve template placeholders and allocate sequential run numbers.
-	// Creation rules evaluated inside ResolveRunCreationParams may inject a new ChannelID;
-	// re-check channel access afterwards if it changed.
 	var resolvedChannelName string
 	if playbook != nil {
 		// Pre-set ReporterUserID so {CREATOR} resolves during template resolution.
-		// CreatePlaybookRun will set it again (same value).
 		playbookRun.ReporterUserID = userID
 		resolvedChannelName, err = h.playbookRunService.ResolveRunCreationParams(&playbookRun, playbook, initialPropertyValues, source)
 		if err != nil {

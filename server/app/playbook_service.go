@@ -471,11 +471,7 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 	}
 	newPlaybook.Title = "Copy of " + playbook.Title
 
-	// RunNumberPrefix has a per-team unique constraint; clear it so the
-	// duplicate can be created without conflicting. The user can configure
-	// a new prefix after duplication. Also reset the counter and clear
-	// ChannelNameTemplate since it may reference property fields that will
-	// get new IDs or the {SEQ} token which requires a prefix.
+	// Clear prefix (per-team unique constraint) and template (may reference {SEQ} or property fields with new IDs).
 	newPlaybook.RunNumberPrefix = ""
 	newPlaybook.NextRunNumber = 0
 	newPlaybook.ChannelNameTemplate = ""

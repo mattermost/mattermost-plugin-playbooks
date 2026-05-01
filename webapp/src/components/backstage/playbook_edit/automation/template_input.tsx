@@ -12,7 +12,7 @@ import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
-import {SYSTEM_TOKENS, buildTemplatePreview} from 'src/utils/template_utils';
+import {SYSTEM_TOKENS, buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
 
 const TOKEN_DESCRIPTIONS: Record<string, {id: string; defaultMessage: string}> = {
     SEQ: {id: 'playbooks.template_input.seq_desc', defaultMessage: 'Sequential ID'},
@@ -76,30 +76,19 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         if (triggerPos === null) {
             return [];
         }
-        const q = input.slice(triggerPos + 1, cursorPosRef.current).toLowerCase();
-        return allOptions.filter((opt) => opt.value.toLowerCase().includes(q));
-    }, [triggerPos, input, allOptions]);
+        return allOptions.filter((opt) => opt.value.toLowerCase().includes(query.toLowerCase()));
+    }, [triggerPos, allOptions, query]);
 
     // Reset selection when filter changes
     useEffect(() => {
         setSelectedIndex(0);
     }, [filteredOptions]);
 
-    const unknownFields = useMemo(() => {
-        const knownUpper = new Set([
-            ...[...SYSTEM_TOKENS].map((t) => t.toUpperCase()),
-            ...fieldNames.map((n) => n.toUpperCase()),
-        ]);
-        const unknown: string[] = [];
-        for (const match of input.matchAll(/\{([^}]+)\}/g)) {
-            if (!knownUpper.has(match[1].trim().toUpperCase())) {
-                unknown.push(match[1].trim());
-            }
-        }
-        return unknown;
-    }, [input, fieldNames]);
-
     const fieldNamesUpperSet = useMemo(() => new Set(fieldNames.map((n) => n.toUpperCase())), [fieldNames]);
+
+    const unknownFields = useMemo(() => {
+        return extractTemplateFieldNames(input).filter((name) => !fieldNamesUpperSet.has(name.toUpperCase()));
+    }, [input, fieldNamesUpperSet]);
 
     const previewText = useMemo(() => {
         if (!input) {

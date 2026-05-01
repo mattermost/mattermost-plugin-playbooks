@@ -88,16 +88,9 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
 
         if (defaultOwnerEnabled) {
             cy.get('#assign-owner').within(() => {
-                // * Verify that the toggle is unchecked
                 // TODO: add data-testid to Toggle's input in production code to avoid structural selector
                 cy.get('label input').should('not.be.checked');
-
-                // # Click on the toggle to enable the setting
-                // TODO: add data-testid to Toggle's input in production code to avoid structural selector
                 cy.get('label input').click({force: true});
-
-                // * Verify that the toggle is checked
-                // TODO: add data-testid to Toggle's input in production code to avoid structural selector
                 cy.get('label input').should('be.checked');
             });
         }

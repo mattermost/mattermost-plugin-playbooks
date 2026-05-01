@@ -205,8 +205,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	// Validate that template field placeholders reference existing property fields.
-	// At creation time no fields exist yet, so any field placeholder other than built-ins is invalid.
+	// At creation time no property fields exist, so only system tokens are allowed in the template.
 	if !h.validateChannelNameTemplate(w, c.logger, &playbook) {
 		return
 	}
@@ -299,8 +298,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	// Cross-field validation: use effective values so that changing RunNumberPrefix alone
-	// (without resending ChannelNameTemplate) is still validated against the existing template.
+	// Use effective values so partial PUTs (e.g. RunNumberPrefix only) are still cross-validated.
 	effectiveTemplate := playbook.ChannelNameTemplate
 	if effectiveTemplate == "" {
 		effectiveTemplate = oldPlaybook.ChannelNameTemplate
@@ -315,8 +313,6 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
 			return
 		}
-		// Fall back to the stored prefix when the request omits it, mirroring the
-		// effectiveTemplate fallback above so that partial PUTs are validated correctly.
 		effectivePrefix := playbook.RunNumberPrefix
 		if effectivePrefix == "" {
 			effectivePrefix = oldPlaybook.RunNumberPrefix
@@ -711,10 +707,7 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	// Validate the channel name template against the source playbook's property
-	// fields, which will be copied into the duplicate. validateChannelNameTemplate
-	// uses an empty field list (for brand-new playbooks), so we must perform a
-	// field-aware check here instead.
+	// validateChannelNameTemplate uses an empty field list (new playbook), so check against source fields here.
 	if playbook.ChannelNameTemplate != "" {
 		sourceFields, pfErr := h.propertyService.GetPropertyFields(playbookID)
 		if pfErr != nil {
@@ -840,8 +833,7 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 	return nil
 }
 
-// validateChannelNameTemplate validates the channel name template for a new playbook
-// (no existing property fields — only system tokens are allowed).
+// validateChannelNameTemplate validates templates for new playbooks (no property fields yet, system tokens only).
 func (h *PlaybookHandler) validateChannelNameTemplate(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook) bool {
 	if playbook.ChannelNameTemplate == "" {
 		return true

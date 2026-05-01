@@ -40,6 +40,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
     });
 
     beforeEach(() => {
+        createdPlaybookIds = [];
         cy.viewport('macbook-13');
     });
 

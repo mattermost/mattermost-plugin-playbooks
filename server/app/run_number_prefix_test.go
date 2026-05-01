@@ -99,11 +99,7 @@ func TestPlaybookService_IncrementRunNumber(t *testing.T) {
 	})
 
 	t.Run("service passes through unexpected zero runNumber from store", func(t *testing.T) {
-		// This is a defensive interface-contract test. In production, IncrementRunNumber
-		// always returns >= 1 (NextRunNumber starts at 1; RETURNING NextRunNumber-1 => 1
-		// on the first call). CreatePlaybookRun hard-rejects RunNumber == 0, so this
-		// path is not a valid production outcome — it tests that the service layer does
-		// not silently swallow an unexpected zero from the store.
+		// Defensive: IncrementRunNumber always returns >= 1 in production; test that the service doesn't swallow an unexpected 0.
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 

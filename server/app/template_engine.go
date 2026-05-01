@@ -2,12 +2,7 @@
 // See LICENSE.txt for license information.
 
 // Template engine for resolving channel/run name placeholders.
-//
-// KEEP IN SYNC with webapp/src/utils/template_utils.ts. The webapp computes a
-// client-side preview using the same {Token} placeholder syntax, the same set
-// of system tokens (SEQ, OWNER, CREATOR), and the same per-type formatting
-// rules. Diverging the two implementations causes the preview shown in the
-// run-creation modal to drift from the resolved name the server actually stores.
+// KEEP IN SYNC with webapp/src/utils/template_utils.ts (same token syntax, system tokens, formatting rules).
 
 package app
 
@@ -28,9 +23,8 @@ var placeholderRegex = regexp.MustCompile(`\{([^}]+)\}`)
 // consistent with the whitespace-trimming behaviour of ResolveTemplate.
 var seqTokenRegex = regexp.MustCompile(`(?i)\{\s*SEQ\s*\}`)
 
-// epochMsMin is the minimum value (Sep 2001) treated as an epoch-millisecond timestamp;
-// values below this are not formatted as dates. KEEP IN SYNC with EPOCH_MS_MIN in
-// webapp/src/utils/template_utils.ts.
+// epochMsMin is the minimum epoch-millisecond value (Sep 2001) treated as a date.
+// KEEP IN SYNC with EPOCH_MS_MIN in webapp/src/utils/template_utils.ts.
 const epochMsMin = 1_000_000_000_000
 
 var (
@@ -49,9 +43,8 @@ func fieldRegex(fieldName string) *regexp.Regexp {
 	return actual.(*regexp.Regexp)
 }
 
-// FormatFunc is a function that formats a property field's raw JSON value as a string.
-// It replaces the default formatting behavior when provided in ResolveOptions.
-// Returns the formatted string and whether the value is empty.
+// FormatFunc formats a property field's raw JSON value as a string.
+// Returns the formatted string and whether the value is empty; replaces default behavior when set in ResolveOptions.
 type FormatFunc func(field *PropertyField, raw json.RawMessage) (string, bool)
 
 // ResolveOptions carries the data needed to resolve a template.
@@ -62,9 +55,8 @@ type ResolveOptions struct {
 	FormatFunc   FormatFunc        // Nil uses DefaultFormatPropertyValue.
 }
 
-// systemTokens are the built-in token names recognized by ValidateTemplate.
-// These are always valid in templates, even when no fields are provided.
-// Reserved as property field names — see validateReservedFieldName.
+// systemTokens are the built-in token names always valid in templates (even without property fields).
+// These names are reserved as property field names — see validateReservedFieldName.
 var systemTokens = []struct {
 	Name        string
 	Description string
@@ -84,11 +76,8 @@ func isSystemToken(name string) bool {
 	return false
 }
 
-// ResolveTemplate resolves a template string by substituting {TokenName} placeholders.
-// System tokens from opts.SystemTokens are resolved first (case-insensitive match),
-// then property field values are looked up. FormatFunc (if provided) is used for
-// property values only — system tokens bypass it.
-// Returns the resolved string and a list of placeholder names that could not be resolved.
+// ResolveTemplate substitutes {TokenName} placeholders in a template string.
+// System tokens (opts.SystemTokens) are resolved first; unknown tokens are returned in unresolved.
 func ResolveTemplate(template string, opts ResolveOptions) (string, []string) {
 	if template == "" {
 		return "", nil
@@ -159,9 +148,8 @@ func ResolveTemplate(template string, opts ResolveOptions) (string, []string) {
 	return result, unresolved
 }
 
-// ValidateTemplate checks if all {FieldName} placeholders in a template reference known
-// fields or system tokens. Returns the list of unrecognized placeholder names.
-// System tokens (SEQ, OWNER, CREATOR) are always recognized as valid.
+// ValidateTemplate checks if all {FieldName} placeholders reference known fields or system tokens.
+// Returns unrecognized placeholder names; SEQ/OWNER/CREATOR are always valid.
 func ValidateTemplate(template string, opts ResolveOptions) []string {
 	if template == "" {
 		return nil
@@ -222,8 +210,7 @@ func ReplaceFieldInTemplate(tmpl, oldName, newName string) string {
 }
 
 // DefaultFormatPropertyValue formats a property field's raw JSON value as a human-readable string.
-// Returns ("", true) for null/empty values. No truncation.
-// Exported for testing and for callers that need the default behavior.
+// Returns ("", true) for null/empty values; no truncation is applied.
 func DefaultFormatPropertyValue(field *PropertyField, raw json.RawMessage) (string, bool) {
 	if field == nil {
 		return "", true
@@ -307,9 +294,7 @@ func DefaultFormatPropertyValue(field *PropertyField, raw json.RawMessage) (stri
 		}
 		return stringValue, false
 
-	// NOTE: user and multiuser fields return raw Mattermost user IDs here.
-	// To resolve IDs to display names, pass a FormatFunc to ResolveTemplate
-	// (see makeRunNameFormatFunc in playbook_run_service.go).
+	// User/multiuser fields return raw IDs; pass a FormatFunc to ResolveTemplate to get display names.
 	case model.PropertyFieldTypeUser:
 		var stringValue string
 		if err := json.Unmarshal(raw, &stringValue); err != nil {

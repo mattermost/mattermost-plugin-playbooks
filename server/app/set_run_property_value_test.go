@@ -199,12 +199,6 @@ func (s *stubRunStoreGetOnly) BumpRunUpdatedAt(_ string) error { panic("not impl
 func (s *stubRunStoreGetOnly) GetRunIDsByParentFieldValue(_, _, _ string, _ int) ([]string, error) {
 	panic("not implemented")
 }
-func (s *stubRunStoreGetOnly) UpdatePlaybookRunOwner(_, _ string, _ func([]Checklist) []Checklist) error {
-	panic("not implemented")
-}
-func (s *stubRunStoreGetOnly) UpdatePlaybookRunChecklistsAtomic(_ string, _ func([]Checklist) []Checklist) error {
-	panic("not implemented")
-}
 
 // TestSetRunPropertyValue_FieldOwnershipValidation covers the guard added at
 // server/app/playbook_run_service.go:4897: if propertyField is not found in

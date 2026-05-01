@@ -190,7 +190,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		RemoveChannelMemberOnRemovedParticipant *bool
 		ChannelID                               *string
 		ChannelMode                             *string
-		RunNumberPrefix                         *string
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -300,28 +299,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
-	if args.Updates.RunNumberPrefix != nil {
-		normalized := app.NormalizeRunNumberPrefix(*args.Updates.RunNumberPrefix)
-		if err := app.ValidateRunNumberPrefix(normalized); err != nil {
-			return "", errors.Wrap(err, "invalid RunNumberPrefix")
-		}
-		args.Updates.RunNumberPrefix = &normalized
-	}
-	addToSetmap(setmap, "RunNumberPrefix", args.Updates.RunNumberPrefix)
-
-	if args.Updates.ChannelNameTemplate != nil || args.Updates.RunNumberPrefix != nil {
-		effectiveTemplate := currentPlaybook.ChannelNameTemplate
-		if args.Updates.ChannelNameTemplate != nil {
-			effectiveTemplate = *args.Updates.ChannelNameTemplate
-		}
-		effectivePrefix := currentPlaybook.RunNumberPrefix
-		if args.Updates.RunNumberPrefix != nil {
-			effectivePrefix = *args.Updates.RunNumberPrefix
-		}
-		if err := app.ValidateChannelNameTemplateWithPrefix(effectiveTemplate, effectivePrefix); err != nil {
-			return "", err
-		}
-	}
 
 	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {

@@ -138,6 +138,55 @@ describe('playbook_run_updates utilities', () => {
             expect(result.property_fields).toEqual(runWithProperties.property_fields);
         });
 
+        it('should update run_number when present in changed_fields', () => {
+            const update = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    run_number: 5,
+                },
+            };
+
+            const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+            expect(result.run_number).toBe(5);
+        });
+
+        it('should update sequential_id when present in changed_fields', () => {
+            const update = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    sequential_id: 'INC-00005',
+                },
+            };
+
+            const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+            expect(result.sequential_id).toBe('INC-00005');
+        });
+
+        it('should preserve run_number and sequential_id when absent from changed_fields', () => {
+            const runWithIds = {
+                ...testPlaybookRun,
+                run_number: 3,
+                sequential_id: 'INC-00003',
+            };
+
+            const update = {
+                id: runWithIds.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    name: 'Updated Name',
+                },
+            };
+
+            const result = applyIncrementalUpdate(runWithIds, update);
+
+            expect(result.run_number).toBe(3);
+            expect(result.sequential_id).toBe('INC-00003');
+        });
+
         it('should wipe property_values if server incorrectly includes null property_values in changed_fields', () => {
             // This documents the bug behavior before the server fix: if the server
             // uses store-level GetPlaybookRun (nil properties) for updatedRun,

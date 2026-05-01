@@ -38,10 +38,7 @@ const (
 	RunTypeChannelChecklist = "channelChecklist"
 )
 
-// FormatSequentialID returns the formatted sequential identifier string.
-// Returns empty string only when RunNumber == 0 (unset run).
-// Otherwise returns the formatted number (00001, 00042, etc), optionally prefixed with dash if prefix is configured.
-// Playbook-backed runs always have RunNumber >= 1 after the migration.
+// FormatSequentialID returns the formatted sequential identifier (e.g. "INC-00042") or empty string when RunNumber is 0.
 func FormatSequentialID(prefix string, runNumber int64) string {
 	if runNumber == 0 {
 		return ""
@@ -234,7 +231,6 @@ type PlaybookRun struct {
 	RunNumber int64 `json:"run_number"`
 
 	// SequentialID is the human-readable sequential identifier (e.g., "INC-00042").
-	// Stored in IR_Incident at creation time via ResolveRunCreationParams/FormatSequentialID.
 	SequentialID string `json:"sequential_id"`
 }
 
@@ -1198,19 +1194,11 @@ type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
-	// CreatePlaybookRun persists a new playbook run. When a Playbook is supplied, callers MUST
-	// call ResolveRunCreationParams first to allocate the sequential run number and resolve
-	// template placeholders. Calling CreatePlaybookRun alone produces a run with RunNumber==0
-	// and unresolved template names. source identifies the creation path (RunSourcePost,
-	// RunSourceDialog, RunSourceCommand). channelDisplayName, when non-empty, overrides
-	// playbookRun.Name for the channel DisplayName. initialPropertyValues are playbook-scoped
-	// field ID → JSON value pairs upserted after property copy.
+	// CreatePlaybookRun persists a new playbook run. Callers MUST call ResolveRunCreationParams first when a Playbook is provided.
 	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool, source string, channelDisplayName string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error)
 
-	// ResolveRunCreationParams allocates a sequential run number, evaluates creation rules,
-	// validates owner team membership, and resolves template placeholders in the run name
-	// and channel name. It MUST be called before CreatePlaybookRun when a Playbook is provided.
-	// Returns the resolved channel display name (empty when no channel name template is used).
+	// ResolveRunCreationParams allocates a sequential run number, evaluates creation rules, and resolves template placeholders.
+	// MUST be called before CreatePlaybookRun when a Playbook is provided.
 	ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (resolvedChannelName string, err error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
@@ -1546,20 +1534,6 @@ type PlaybookRunStore interface {
 
 	// BumpRunUpdatedAt updates the UpdateAt timestamp for a playbook run
 	BumpRunUpdatedAt(playbookRunID string) error
-
-	// UpdatePlaybookRunOwner atomically updates CommanderUserID and applies the provided
-	// checklist transform inside a SELECT FOR UPDATE transaction, preventing TOCTOU races
-	// with concurrent checklist mutations.
-	// CONTRACT: checklistTransform MUST be a pure in-memory computation (no I/O, no DB calls).
-	// It is invoked while the IR_Incident row lock is held.
-	UpdatePlaybookRunOwner(playbookRunID, ownerUserID string, checklistTransform func([]Checklist) []Checklist) error
-
-	// UpdatePlaybookRunChecklistsAtomic applies the provided transform to the run's
-	// checklists inside a SELECT FOR UPDATE transaction. This prevents TOCTOU races
-	// when concurrent checklist mutations occur between property evaluation and write.
-	// CONTRACT: transform MUST be a pure in-memory computation (no I/O, no DB calls).
-	// It is invoked while the IR_Incident row lock is held.
-	UpdatePlaybookRunChecklistsAtomic(playbookRunID string, transform func([]Checklist) []Checklist) error
 }
 
 type JobOnceScheduler interface {
@@ -1662,6 +1636,7 @@ func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	if len(o.Types) > 0 {
 		newPlaybookRunFilterOptions.Types = append([]string{}, o.Types...)
 	}
+
 	return newPlaybookRunFilterOptions
 }
 

@@ -36,9 +36,10 @@ import PlaybooksSelector from 'src/components/playbooks_selector';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
 import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import {useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
+import {useEnsureProfiles, useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {TemplatePropertyField, buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
+import {PropertyFieldType} from 'src/types/properties';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -110,9 +111,26 @@ export const RunPlaybookModal = ({
     }, [teammateNameDisplaySetting]);
     const effectiveUserMap = useMemo(() => ({...userMap, ...pickerUserNames}), [userMap, pickerUserNames]);
 
-    // Initialize all form fields atomically when the playbook loads for the selected ID.
-    // A single effect prevents race conditions between independent effects that could
-    // briefly expose stale state from the previous playbook.
+    // Ensure user profiles for user-type property values are loaded so the preview
+    // resolves IDs to display names even for users outside the first team-profiles page.
+    const userIdsInPropertyValues = useMemo(() => {
+        if (!playbookAttributes) {
+            return [];
+        }
+        const ids: string[] = [];
+        for (const field of playbookAttributes) {
+            const val = propertyValues[field.id];
+            if (field.type === PropertyFieldType.User && typeof val === 'string' && val) {
+                ids.push(val);
+            } else if (field.type === PropertyFieldType.Multiuser && Array.isArray(val)) {
+                ids.push(...val.filter((v): v is string => typeof v === 'string' && v !== ''));
+            }
+        }
+        return ids;
+    }, [playbookAttributes, propertyValues]);
+    useEnsureProfiles(userIdsInPropertyValues);
+
+    // Single effect for atomic init: prevents race conditions from independent effects exposing stale state.
     useEffect(() => {
         // Reset form state first; skip isSubmitting if a submission is already in flight
         // to avoid a split-brain where the button looks clickable but isSubmittingRef blocks clicks.
@@ -144,7 +162,6 @@ export const RunPlaybookModal = ({
         setCreatePublicRun(playbook.create_public_playbook_run);
     }, [playbook?.id, selectedPlaybookId]);
 
-    // Determine which property fields the template references
     const templateFieldNames = useMemo(() => {
         const names = new Set<string>();
         if (playbook?.channel_name_template) {
@@ -172,7 +189,6 @@ export const RunPlaybookModal = ({
     // we cannot validate required-field coverage until the attribute list arrives.
     const attributesLoading = playbookAttributes === undefined && templateFieldNames.size > 0;
 
-    // Track template field names that don't match any loaded attribute
     const unmatchedTemplateNames = useMemo(() => {
         if (!playbook?.channel_name_template || templateFieldNames.size === 0) {
             return [];
@@ -219,7 +235,6 @@ export const RunPlaybookModal = ({
 
     const namePreviewTooLong = hasTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
 
-    // All template-referenced fields must have values
     const requiredFieldsFilled = templateFields.every((field) => {
         const val = propertyValues[field.id];
         if (val === undefined || val === null || val === '') {
@@ -251,7 +266,7 @@ export const RunPlaybookModal = ({
         setSelectedPlaybookId(id);
         setStep('run-details');
     }, []);
-    const buildStatsData = (isNewChannel: boolean, isLinkedChannel: boolean): Parameters<typeof onRunCreated>[2] => ({
+    const buildStatsData = useCallback((isNewChannel: boolean, isLinkedChannel: boolean): Parameters<typeof onRunCreated>[2] => ({
         playbookId: selectedPlaybookId,
         channelMode,
         public: isNewChannel ? createPublicRun : undefined,
@@ -261,7 +276,7 @@ export const RunPlaybookModal = ({
         hasChannelModeChanged: channelMode !== playbook!.channel_mode,
         hasChannelIdChanged: channelId !== playbook!.channel_id,
         hasPublicChanged: !isLinkedChannel && createPublicRun !== playbook!.create_public_playbook_run,
-    });
+    }), [selectedPlaybookId, channelMode, createPublicRun, playbookId, runName, runSummary, channelId, playbook]);
 
     const resetSubmitting = useCallback(() => {
         isSubmittingRef.current = false;
@@ -599,8 +614,8 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                                 onChange={() => onSetCreatePublicRun(true)}
                             />
                             <Icon
-                                disabled={false}
-                                active={createPublicRun}
+                                $disabled={false}
+                                $active={createPublicRun}
                                 className={'icon-globe'}
                             />
                             <BigText>{formatMessage({defaultMessage: 'Public channel'})}</BigText>
@@ -614,8 +629,8 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                                 onChange={() => onSetCreatePublicRun(false)}
                             />
                             <Icon
-                                disabled={false}
-                                active={!createPublicRun}
+                                $disabled={false}
+                                $active={!createPublicRun}
                                 className={'icon-lock-outline'}
                             />
                             <BigText>{formatMessage({defaultMessage: 'Private channel'})}</BigText>
@@ -728,8 +743,8 @@ const SelectorWrapper = styled.div`
     margin-left: 28px;
 `;
 
-const Icon = styled.i<{ active?: boolean, disabled: boolean }>`
-    color: ${({active, disabled}) => (active && !disabled ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+const Icon = styled.i<{ $active?: boolean, $disabled: boolean }>`
+    color: ${({$active, $disabled}) => ($active && !$disabled ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
     font-size: 16px;
     line-height: 16px;
 `;
@@ -848,15 +863,7 @@ type PropertyFieldInputProps = {
     onUserKnown?: (user: {id: string} & Record<string, unknown>) => void;
 };
 
-type UserFieldInputProps = {
-    field: TemplatePropertyField;
-    value?: unknown;
-    onChange: (fieldId: string, value: unknown) => void;
-    fetchAllUsersInTeam: () => Promise<ReturnType<typeof useProfilesInTeam>>;
-    onUserKnown?: (user: {id: string} & Record<string, unknown>) => void;
-};
-
-const UserFieldInput = ({field, value, onChange, fetchAllUsersInTeam, onUserKnown}: UserFieldInputProps) => {
+const UserFieldInput = ({field, value, onChange, fetchAllUsersInTeam, onUserKnown}: Omit<PropertyFieldInputProps, 'inputId'>) => {
     const {formatMessage} = useIntl();
     const selectedUserId = typeof value === 'string' && value ? value : undefined;
 
@@ -882,7 +889,7 @@ const UserFieldInput = ({field, value, onChange, fetchAllUsersInTeam, onUserKnow
 const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputId, onUserKnown}: PropertyFieldInputProps) => {
     const {formatMessage} = useIntl();
 
-    if (field.type === 'user') {
+    if (field.type === PropertyFieldType.User) {
         return (
             <UserFieldInput
                 field={field}
@@ -894,7 +901,7 @@ const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputI
         );
     }
 
-    if (field.type === 'multiuser') {
+    if (field.type === PropertyFieldType.Multiuser) {
         const selectedIds = Array.isArray(value) ? value as string[] : [];
         return (
             <MultiuserFieldContainer>
@@ -940,7 +947,7 @@ const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputI
         );
     }
 
-    if (field.type === 'date') {
+    if (field.type === PropertyFieldType.Date) {
         return (
             <BaseInput
                 id={inputId}
@@ -961,13 +968,13 @@ const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputI
         );
     }
 
-    if (field.type === 'select' || field.type === 'multiselect') {
+    if (field.type === PropertyFieldType.Select || field.type === PropertyFieldType.Multiselect) {
         const options = (field.attrs.options ?? []).map((opt) => ({
             value: opt.id,
             label: opt.name,
         }));
 
-        const isMulti = field.type === 'multiselect';
+        const isMulti = field.type === PropertyFieldType.Multiselect;
 
         const selectedValue = isMulti ? options.filter((opt) => Array.isArray(value) && (value as string[]).includes(opt.value)) : options.find((opt) => opt.value === value) ?? null;
 

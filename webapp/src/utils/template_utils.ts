@@ -1,13 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// Client-side template preview for the run-creation modal.
-//
-// KEEP IN SYNC with server/app/template_engine.go. The server is the source of
-// truth for resolved run/channel names; this module produces a best-effort
-// preview using the same {Token} syntax, the same SEQ/OWNER/CREATOR system
-// tokens, and the same per-type formatting rules. Drift between the two causes
-// the preview to disagree with the persisted name.
+// KEEP IN SYNC with server/app/template_engine.go (same token syntax, system tokens, and per-type formatting rules).
 
 import {PropertyField, PropertyFieldType} from 'src/types/properties';
 

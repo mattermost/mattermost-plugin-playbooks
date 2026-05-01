@@ -65,7 +65,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 	t.Run("removes options for non-option field types", func(t *testing.T) {
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeText,
 			},
 			Attrs: Attrs{
@@ -87,7 +86,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeSelect,
 			},
 			Attrs: Attrs{
@@ -105,7 +103,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 	t.Run("sets default visibility when empty", func(t *testing.T) {
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeText,
 			},
 			Attrs: Attrs{
@@ -128,7 +125,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 		for _, visibility := range validVisibilities {
 			pf := &PropertyField{
 				PropertyField: model.PropertyField{
-					Name: "Test Field",
 					Type: model.PropertyFieldTypeText,
 				},
 				Attrs: Attrs{
@@ -145,7 +141,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 	t.Run("returns error for invalid visibility", func(t *testing.T) {
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeText,
 			},
 			Attrs: Attrs{
@@ -164,7 +159,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeSelect,
 			},
 			Attrs: Attrs{
@@ -184,7 +178,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeSelect,
 			},
 			Attrs: Attrs{
@@ -205,7 +198,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeSelect,
 			},
 			Attrs: Attrs{
@@ -223,7 +215,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 	t.Run("preserves valid value_type url", func(t *testing.T) {
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeText,
 			},
 			Attrs: Attrs{
@@ -239,7 +230,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 	t.Run("preserves empty value_type", func(t *testing.T) {
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeText,
 			},
 			Attrs: Attrs{
@@ -255,7 +245,6 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 	t.Run("converts invalid value_type to empty string", func(t *testing.T) {
 		pf := &PropertyField{
 			PropertyField: model.PropertyField{
-				Name: "Test Field",
 				Type: model.PropertyFieldTypeText,
 			},
 			Attrs: Attrs{

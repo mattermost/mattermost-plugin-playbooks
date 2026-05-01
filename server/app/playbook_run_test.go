@@ -12,6 +12,40 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
+func TestFormatSequentialID(t *testing.T) {
+	t.Run("zero runNumber returns empty string", func(t *testing.T) {
+		require.Equal(t, "", FormatSequentialID("INC", 0))
+	})
+
+	t.Run("zero runNumber with empty prefix returns empty string", func(t *testing.T) {
+		require.Equal(t, "", FormatSequentialID("", 0))
+	})
+
+	t.Run("prefix and runNumber produces hyphen-separated result", func(t *testing.T) {
+		require.Equal(t, "INC-00042", FormatSequentialID("INC", 42))
+	})
+
+	t.Run("empty prefix returns zero-padded number only", func(t *testing.T) {
+		require.Equal(t, "00042", FormatSequentialID("", 42))
+	})
+
+	t.Run("runNumber 1 produces five-digit padded result", func(t *testing.T) {
+		require.Equal(t, "INC-00001", FormatSequentialID("INC", 1))
+	})
+
+	t.Run("runNumber exactly at five digits", func(t *testing.T) {
+		require.Equal(t, "INC-99999", FormatSequentialID("INC", 99999))
+	})
+
+	t.Run("runNumber exceeds five digits is not truncated", func(t *testing.T) {
+		require.Equal(t, "INC-100000", FormatSequentialID("INC", 100000))
+	})
+
+	t.Run("multi-segment prefix", func(t *testing.T) {
+		require.Equal(t, "INC-PROD-00007", FormatSequentialID("INC-PROD", 7))
+	})
+}
+
 func TestPlaybookRun_MarshalJSON(t *testing.T) {
 	t.Run("marshal pointer", func(t *testing.T) {
 		testPlaybookRun := &PlaybookRun{}

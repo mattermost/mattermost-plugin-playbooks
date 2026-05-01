@@ -106,13 +106,13 @@ export function resolvedDisplayName(user) {
 }
 
 /**
- * Escapes curly braces in a string so cy.type() treats them as literal characters.
- * Cypress intercepts '{' as the start of a special key sequence (e.g. {enter}).
+ * Escapes opening curly braces so cy.type() treats them as literal characters.
+ * Cypress uses {{} to type a literal '{'; closing '}' is always typed literally.
  * @param {string} str
  * @returns {string}
  */
 export function typeEscape(str) {
-    return str.replace(/{/g, '{{').replace(/}/g, '}}');
+    return str.replace(/{/g, '{{}');
 }
 
 export function stubClipboard() {

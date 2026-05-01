@@ -4,25 +4,11 @@
 /* eslint-disable formatjs/no-literal-string-in-jsx */
 
 import React from 'react';
-import renderer, {ReactTestRendererJSON} from 'react-test-renderer';
+import renderer from 'react-test-renderer';
+
+import {findNodeByTestId} from 'src/utils/test_helpers';
 
 import SequentialIdDisplay from './sequential_id_display';
-
-const findTestId = (node: ReactTestRendererJSON | ReactTestRendererJSON[] | null, testId: string): boolean => {
-    if (!node) {
-        return false;
-    }
-    if (Array.isArray(node)) {
-        return node.some((child) => findTestId(child, testId));
-    }
-    if (node.props?.['data-testid'] === testId) {
-        return true;
-    }
-    if (node.children) {
-        return findTestId(node.children as ReactTestRendererJSON[], testId);
-    }
-    return false;
-};
 
 describe('SequentialIdDisplay', () => {
     it('renders the sequential_id when run_number is greater than 0', () => {
@@ -64,7 +50,7 @@ describe('SequentialIdDisplay', () => {
         );
 
         const tree = component.toJSON();
-        expect(findTestId(tree, 'run-sequential-id')).toBe(true);
+        expect(findNodeByTestId(tree, 'run-sequential-id')).not.toBeNull();
     });
 
     it('returns null when run_number is 0 even if sequentialId is accidentally non-empty', () => {
@@ -94,6 +80,6 @@ describe('SequentialIdDisplay', () => {
         );
 
         const tree = component.toJSON();
-        expect(findTestId(tree, 'run-sequential-id')).toBe(false);
+        expect(findNodeByTestId(tree, 'run-sequential-id')).toBeNull();
     });
 });
