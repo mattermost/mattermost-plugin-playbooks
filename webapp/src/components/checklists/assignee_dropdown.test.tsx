@@ -117,16 +117,16 @@ describe('AssigneeDropdown', () => {
             />,
         );
 
-        const instance = component.root;
-
-        const roleSelect = instance.findByProps({'data-testid': 'role-options'});
-        const profileSelector = instance.findByProps({'data-testid': 'profile-selector'});
-
-        expect(roleSelect).toBeTruthy();
-        expect(profileSelector).toBeTruthy();
-
         const tree = component.toJSON() as ReactTestRendererJSON;
         expect(tree).not.toBeNull();
+
+        const treeStr = JSON.stringify(tree);
+        const profileIdx = treeStr.indexOf('"data-testid":"profile-selector"');
+        const roleIdx = treeStr.indexOf('"data-testid":"role-options"');
+
+        expect(profileIdx).toBeGreaterThan(-1);
+        expect(roleIdx).toBeGreaterThan(-1);
+        expect(profileIdx).toBeLessThan(roleIdx);
     });
 
     it('selecting Run Owner sets assignee_type to owner and clears assignee_id', () => {

@@ -530,6 +530,9 @@ func (s *propertyService) copyPropertyFieldForPlaybook(sourceProperty *model.Pro
 		}
 	}
 
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrapf(err, "failed to validate playbook property field for %s", sourceProperty.Name)
 	}
@@ -555,6 +558,9 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 		}
 	}
 
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrapf(err, "failed to validate run property field for %s", playbookProperty.Name)
 	}
