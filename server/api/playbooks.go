@@ -696,15 +696,13 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 	}
 
 	// validateChannelNameTemplate uses an empty field list (new playbook), so check against source fields here.
-	if playbook.ChannelNameTemplate != "" {
-		sourceFields, pfErr := h.propertyService.GetPropertyFields(playbookID)
-		if pfErr != nil {
-			h.HandleError(w, c.logger, pfErr)
-			return
-		}
-		if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, sourceFields) {
-			return
-		}
+	sourceFields, pfErr := h.propertyService.GetPropertyFields(playbookID)
+	if pfErr != nil {
+		h.HandleError(w, c.logger, pfErr)
+		return
+	}
+	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, sourceFields) {
+		return
 	}
 
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
@@ -770,17 +768,14 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if playbook.ChannelNameTemplate != "" {
-		// Validate the template against the fields bundled in the import payload.
-		importFields := make([]app.PropertyField, 0, len(importBlock.Properties))
-		for _, epf := range importBlock.Properties {
-			var pf app.PropertyField
-			pf.Name = epf.Name
-			importFields = append(importFields, pf)
-		}
-		if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, importFields) {
-			return
-		}
+	importFields := make([]app.PropertyField, 0, len(importBlock.Properties))
+	for _, epf := range importBlock.Properties {
+		var pf app.PropertyField
+		pf.Name = epf.Name
+		importFields = append(importFields, pf)
+	}
+	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, importFields) {
+		return
 	}
 
 	id, err := h.playbookService.Import(app.PlaybookImportData{
@@ -1178,16 +1173,19 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	if currentPlaybook.ChannelNameTemplate != "" {
-		allFields, err := h.propertyService.GetPropertyFields(playbookID)
-		if err != nil {
-			h.HandleError(w, logger, err)
-			return
+	allFields, err := h.propertyService.GetPropertyFields(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+	remaining := make([]app.PropertyField, 0, len(allFields))
+	for _, f := range allFields {
+		if f.ID != fieldID {
+			remaining = append(remaining, f)
 		}
-		if err := app.ValidateTemplateAfterFieldDeletion(currentPlaybook.ChannelNameTemplate, fieldID, allFields); err != nil {
-			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "Cannot delete property field: it is referenced by the run name template.", err)
-			return
-		}
+	}
+	if !h.validateTemplateWithFields(w, logger, currentPlaybook.ChannelNameTemplate, currentPlaybook.RunNumberPrefix, remaining) {
+		return
 	}
 
 	if err := h.playbookService.DeletePropertyField(playbookID, fieldID); err != nil {
