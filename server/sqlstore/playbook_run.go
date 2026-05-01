@@ -13,6 +13,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
 
@@ -509,8 +510,9 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		}))
 
 	if err != nil {
-		if conflict := wrapUniqueConstraintViolation(err, runNumberConstraint, "run number already exists for this playbook"); conflict != nil {
-			return nil, conflict
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" && pqErr.Constraint == runNumberConstraint {
+			return nil, errors.Wrap(app.ErrDuplicateEntry, "run number already exists for this playbook")
 		}
 		return nil, errors.Wrapf(err, "failed to store new playbook run")
 	}

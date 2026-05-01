@@ -57,19 +57,13 @@ type ResolveOptions struct {
 
 // systemTokens are the built-in token names always valid in templates (even without property fields).
 // These names are reserved as property field names — see validateReservedFieldName.
-var systemTokens = []struct {
-	Name        string
-	Description string
-}{
-	{"SEQ", "the built-in sequential ID placeholder"},
-	{"OWNER", "the built-in run owner placeholder"},
-	{"CREATOR", "the built-in run creator placeholder"},
-}
+// SEQ: sequential run number; OWNER: run owner display name; CREATOR: run creator display name.
+var systemTokens = []string{"SEQ", "OWNER", "CREATOR"}
 
 // isSystemToken checks if a name matches a built-in system token (case-insensitive).
 func isSystemToken(name string) bool {
 	for _, tok := range systemTokens {
-		if strings.EqualFold(name, tok.Name) {
+		if strings.EqualFold(name, tok) {
 			return true
 		}
 	}
@@ -139,8 +133,6 @@ func ResolveTemplate(template string, opts ResolveOptions) (string, []string) {
 			return formatted
 		}
 
-		// Unknown field — but if it matches a system token name that wasn't
-		// in SystemTokens map, it's still unresolved (not an error in validate).
 		unresolved = append(unresolved, name)
 		return match
 	})
@@ -151,24 +143,19 @@ func ResolveTemplate(template string, opts ResolveOptions) (string, []string) {
 // ValidateTemplate checks if all {FieldName} placeholders reference known fields or system tokens.
 // Returns unrecognized placeholder names; SEQ/OWNER/CREATOR are always valid.
 func ValidateTemplate(template string, opts ResolveOptions) []string {
-	if template == "" {
-		return nil
-	}
+	_, unresolved := ResolveTemplate(template, ResolveOptions{Fields: opts.Fields})
 
-	// Pre-build a case-insensitive set for O(1) field lookups.
-	fieldNames := make(map[string]struct{}, len(opts.Fields))
-	for i := range opts.Fields {
-		fieldNames[strings.ToLower(opts.Fields[i].Name)] = struct{}{}
+	knownNames := make(map[string]struct{}, len(opts.Fields))
+	for _, f := range opts.Fields {
+		knownNames[strings.ToLower(f.Name)] = struct{}{}
 	}
 
 	var unknown []string
-	matches := placeholderRegex.FindAllStringSubmatch(template, -1)
-	for _, match := range matches {
-		name := strings.TrimSpace(match[1])
+	for _, name := range unresolved {
 		if isSystemToken(name) {
 			continue
 		}
-		if _, ok := fieldNames[strings.ToLower(name)]; !ok {
+		if _, ok := knownNames[strings.ToLower(name)]; !ok {
 			unknown = append(unknown, name)
 		}
 	}

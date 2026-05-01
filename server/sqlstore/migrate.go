@@ -38,16 +38,6 @@ func (sqlStore *SQLStore) RunMigrations() error {
 	// 	return fmt.Errorf("failed to complete migrations (with morph): %w", err)
 	// }
 
-	// If the DB version is ahead of LatestVersion, the server was previously running
-	// a newer plugin build. Refuse to start rather than silently rewriting the version
-	// counter, which could cause non-idempotent migrations to double-apply on re-upgrade.
-	if currentSchemaVersion.GT(LatestVersion()) {
-		return errors.Errorf(
-			"database schema version %s is ahead of plugin version %s; "+
-				"downgrade is not supported — restore the newer plugin version or manually reconcile the schema",
-			currentSchemaVersion, LatestVersion())
-	}
-
 	if currentSchemaVersion.LT(LatestVersion()) {
 		if err := sqlStore.runMigrationsLegacy(currentSchemaVersion); err != nil {
 			return errors.Wrapf(err, "failed to complete migrations")

@@ -1767,15 +1767,6 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed creating index idx_ir_incident_sequential_id")
 			}
 
-			// Prefix must be unique per team among active (non-archived) playbooks only.
-			if _, err := e.Exec(createPGUniquePartialIndex(
-				"IR_Playbook_TeamID_RunNumberPrefix_Unique",
-				"IR_Playbook",
-				"TeamID, RunNumberPrefix",
-				"RunNumberPrefix != '' AND DeleteAt = 0",
-			)); err != nil {
-				return errors.Wrapf(err, "failed creating unique index IR_Playbook_TeamID_RunNumberPrefix_Unique")
-			}
 			// Run numbers come from an ever-incrementing counter; partial index covers live runs only.
 			if _, err := e.Exec(createPGUniquePartialIndex(
 				"IR_Incident_PlaybookID_RunNumber_Unique",

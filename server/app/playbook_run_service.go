@@ -356,9 +356,6 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 // CreatePlaybookRun creates a new playbook run. Callers MUST call ResolveRunCreationParams first when a Playbook is provided.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool, source string, channelDisplayName string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error) {
-	if playbookRun == nil {
-		return nil, errors.New("playbookRun cannot be nil")
-	}
 	if pb != nil {
 		if strings.TrimSpace(playbookRun.Name) == "" {
 			return nil, errors.Wrap(ErrInternalPrecondition, "run name is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
@@ -561,12 +558,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 					} else {
 						playbookRun = updatedRun
 					}
-				}
-			} else if len(playbookRun.PropertyValues) > 0 {
-				if updatedRun, err := s.store.UpdatePlaybookRun(playbookRun); err != nil {
-					logger.WithError(err).Warn("failed to update run at creation")
-				} else {
-					playbookRun = updatedRun
 				}
 			}
 		}
@@ -5108,9 +5099,6 @@ func (s *PlaybookRunServiceImpl) PostPropertyChangeMessage(userID string, run *P
 
 // ResolveRunCreationParams resolves template placeholders and allocates a sequential run number.
 func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (string, error) {
-	if playbookRun == nil {
-		return "", errors.New("playbookRun cannot be nil")
-	}
 	if pb == nil {
 		return "", nil
 	}

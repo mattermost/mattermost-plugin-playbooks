@@ -540,6 +540,10 @@ type PlaybookStore interface {
 	// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
 	BumpPlaybookUpdatedAt(playbookID string) error
 
+	// IsRunNumberPrefixUsed returns true if another active playbook in teamID already uses prefix.
+	// Pass excludePlaybookID to skip the playbook being updated/restored.
+	IsRunNumberPrefixUsed(teamID, prefix, excludePlaybookID string) (bool, error)
+
 	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
 	IncrementRunNumber(playbookID string) (int64, error)
 

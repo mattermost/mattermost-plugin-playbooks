@@ -341,6 +341,21 @@ func (mr *MockPlaybookStoreMockRecorder) GraphqlUpdate(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GraphqlUpdate", reflect.TypeOf((*MockPlaybookStore)(nil).GraphqlUpdate), arg0, arg1)
 }
 
+// IsRunNumberPrefixUsed mocks base method.
+func (m *MockPlaybookStore) IsRunNumberPrefixUsed(arg0, arg1, arg2 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRunNumberPrefixUsed", arg0, arg1, arg2)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsRunNumberPrefixUsed indicates an expected call of IsRunNumberPrefixUsed.
+func (mr *MockPlaybookStoreMockRecorder) IsRunNumberPrefixUsed(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunNumberPrefixUsed", reflect.TypeOf((*MockPlaybookStore)(nil).IsRunNumberPrefixUsed), arg0, arg1, arg2)
+}
+
 // IncrementRunNumber mocks base method.
 func (m *MockPlaybookStore) IncrementRunNumber(arg0 string) (int64, error) {
 	m.ctrl.T.Helper()

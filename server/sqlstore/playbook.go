@@ -13,7 +13,6 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -49,25 +48,6 @@ type playbookMember struct {
 	PlaybookID string
 	MemberID   string
 	Roles      string
-}
-
-// pgUniqueViolation is the PostgreSQL error code for unique constraint violations.
-const pgUniqueViolation = "23505"
-
-const playbookPrefixConstraint = "ir_playbook_teamid_runnumberprefix_unique"
-
-// wrapUniqueConstraintViolation maps a PostgreSQL unique-violation error to
-// app.ErrDuplicateEntry. When constraint matches, msg is used; otherwise the
-// pq error message is used. Returns nil if err is not a pq unique violation.
-func wrapUniqueConstraintViolation(err error, constraint, msg string) error {
-	var pqErr *pq.Error
-	if !errors.As(err, &pqErr) || pqErr.Code != pgUniqueViolation {
-		return nil
-	}
-	if pqErr.Constraint == constraint {
-		return errors.Wrap(app.ErrDuplicateEntry, msg)
-	}
-	return errors.Wrap(app.ErrDuplicateEntry, "a unique constraint was violated")
 }
 
 // txDefaultTimeout is the context timeout applied to every short transactional query.
@@ -303,9 +283,6 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			// NextRunNumber omitted: DB default (1) is always correct for new playbooks.
 		}))
 	if err != nil {
-		if conflict := wrapUniqueConstraintViolation(err, playbookPrefixConstraint, "run_number_prefix is already in use by another playbook in this team"); conflict != nil {
-			return "", conflict
-		}
 		return "", errors.Wrap(err, "failed to store new playbook")
 	}
 
@@ -416,8 +393,8 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 // GetPlaybooks retrieves all playbooks that are not deleted.
 // Members are not retrieved for this as the query would be large and we don't need it for this for now.
 func (p *playbookStore) GetActivePlaybooks() ([]app.Playbook, error) {
-	var rawPlaybooks []sqlPlaybook
-	err := p.store.selectBuilder(p.store.db, &rawPlaybooks,
+	var playbooks []app.Playbook
+	err := p.store.selectBuilder(p.store.db, &playbooks,
 		selectAllPlaybooks(p.store.builder).Where(sq.Eq{"p.DeleteAt": 0}),
 	)
 	if err == sql.ErrNoRows {
@@ -426,22 +403,14 @@ func (p *playbookStore) GetActivePlaybooks() ([]app.Playbook, error) {
 		return nil, errors.Wrap(err, "failed to get playbooks")
 	}
 
-	playbooks := make([]app.Playbook, 0, len(rawPlaybooks))
-	for _, raw := range rawPlaybooks {
-		pb, convErr := toPlaybook(raw)
-		if convErr != nil {
-			return nil, errors.Wrap(convErr, "failed to convert playbook")
-		}
-		playbooks = append(playbooks, pb)
-	}
 	return playbooks, nil
 }
 
 // GetPlaybooks retrieves all playbooks, even deleted ones.
 // Members are not retrieved for this as the query would be large and we don't need it for this for now.
 func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
-	var rawPlaybooks []sqlPlaybook
-	err := p.store.selectBuilder(p.store.db, &rawPlaybooks,
+	var playbooks []app.Playbook
+	err := p.store.selectBuilder(p.store.db, &playbooks,
 		selectAllPlaybooks(p.store.builder),
 	)
 	if err == sql.ErrNoRows {
@@ -450,14 +419,6 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 		return nil, errors.Wrap(err, "failed to get playbooks")
 	}
 
-	playbooks := make([]app.Playbook, 0, len(rawPlaybooks))
-	for _, raw := range rawPlaybooks {
-		pb, convErr := toPlaybook(raw)
-		if convErr != nil {
-			return nil, errors.Wrap(convErr, "failed to convert playbook")
-		}
-		playbooks = append(playbooks, pb)
-	}
 	return playbooks, nil
 }
 
@@ -556,21 +517,12 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		queryForTotal = queryForTotal.Where(sq.Eq{"DeleteAt": 0})
 	}
 
-	var rawPlaybooks []sqlPlaybook
-	err = p.store.selectBuilder(p.store.db, &rawPlaybooks, queryForResults)
+	var playbooks []app.Playbook
+	err = p.store.selectBuilder(p.store.db, &playbooks, queryForResults)
 	if err == sql.ErrNoRows {
 		return app.GetPlaybooksResults{}, errors.Wrap(app.ErrNotFound, "no playbooks found")
 	} else if err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks")
-	}
-
-	playbooks := make([]app.Playbook, 0, len(rawPlaybooks))
-	for _, raw := range rawPlaybooks {
-		pb, convErr := toPlaybook(raw)
-		if convErr != nil {
-			return app.GetPlaybooksResults{}, errors.Wrap(convErr, "failed to convert playbook")
-		}
-		playbooks = append(playbooks, pb)
 	}
 
 	var total int
@@ -708,9 +660,6 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
-		if conflict := wrapUniqueConstraintViolation(err, playbookPrefixConstraint, "run_number_prefix is already in use by another playbook in this team"); conflict != nil {
-			return conflict
-		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
 	}
 
@@ -782,9 +731,6 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
 	if err != nil {
-		if conflict := wrapUniqueConstraintViolation(err, playbookPrefixConstraint, "run_number_prefix is already in use by another playbook in this team"); conflict != nil {
-			return conflict
-		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
 	}
 
@@ -812,7 +758,6 @@ func (p *playbookStore) Archive(id string) error {
 	_, err := p.store.execBuilder(p.store.db, sq.
 		Update("IR_Playbook").
 		Set("DeleteAt", model.GetMillis()).
-		// RunNumberPrefix preserved: partial unique index (WHERE DeleteAt=0) excludes archived rows.
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
@@ -834,13 +779,26 @@ func (p *playbookStore) Restore(id string) error {
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
-		if conflict := wrapUniqueConstraintViolation(err, playbookPrefixConstraint, "run_number_prefix is already in use by another playbook in this team"); conflict != nil {
-			return conflict
-		}
 		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
 	}
 
 	return nil
+}
+
+func (p *playbookStore) IsRunNumberPrefixUsed(teamID, prefix, excludePlaybookID string) (bool, error) {
+	if prefix == "" {
+		return false, nil
+	}
+	var count int64
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_Playbook").
+		Where(sq.Eq{"TeamID": teamID, "RunNumberPrefix": prefix, "DeleteAt": 0}).
+		Where(sq.NotEq{"ID": excludePlaybookID})
+	if err := p.store.getBuilder(p.store.db, &count, query); err != nil {
+		return false, errors.Wrap(err, "failed to check run number prefix uniqueness")
+	}
+	return count > 0, nil
 }
 
 // Get number of active playbooks.
@@ -1176,46 +1134,6 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	}, nil
 }
 
-func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
-	p := rawPlaybook.Playbook
-	if len(rawPlaybook.ChecklistsJSON) > 0 {
-		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
-			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
-		}
-	}
-
-	p.InvitedUserIDs = []string(nil)
-	if rawPlaybook.ConcatenatedInvitedUserIDs != "" {
-		p.InvitedUserIDs = strings.Split(rawPlaybook.ConcatenatedInvitedUserIDs, ",")
-	}
-
-	p.InvitedGroupIDs = []string(nil)
-	if rawPlaybook.ConcatenatedInvitedGroupIDs != "" {
-		p.InvitedGroupIDs = strings.Split(rawPlaybook.ConcatenatedInvitedGroupIDs, ",")
-	}
-
-	p.SignalAnyKeywords = []string(nil)
-	if rawPlaybook.ConcatenatedSignalAnyKeywords != "" {
-		p.SignalAnyKeywords = strings.Split(rawPlaybook.ConcatenatedSignalAnyKeywords, ",")
-	}
-
-	p.BroadcastChannelIDs = []string(nil)
-	if rawPlaybook.ConcatenatedBroadcastChannelIDs != "" {
-		p.BroadcastChannelIDs = strings.Split(rawPlaybook.ConcatenatedBroadcastChannelIDs, ",")
-	}
-
-	p.WebhookOnCreationURLs = []string(nil)
-	if rawPlaybook.ConcatenatedWebhookOnCreationURLs != "" {
-		p.WebhookOnCreationURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnCreationURLs, ",")
-	}
-
-	p.WebhookOnStatusUpdateURLs = []string(nil)
-	if rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs != "" {
-		p.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs, ",")
-	}
-	return p, nil
-}
-
 // insights - store manager functions
 
 func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *app.InsightsOpts) (*app.PlaybooksInsightsList, error) {
@@ -1399,4 +1317,44 @@ func (p *playbookStore) UpdateChannelNameTemplateAtomically(playbookID string, t
 		return errors.Wrapf(err, "failed to commit transaction for playbook '%s'", playbookID)
 	}
 	return nil
+}
+
+func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
+	p := rawPlaybook.Playbook
+	if len(rawPlaybook.ChecklistsJSON) > 0 {
+		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
+			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+		}
+	}
+
+	p.InvitedUserIDs = []string(nil)
+	if rawPlaybook.ConcatenatedInvitedUserIDs != "" {
+		p.InvitedUserIDs = strings.Split(rawPlaybook.ConcatenatedInvitedUserIDs, ",")
+	}
+
+	p.InvitedGroupIDs = []string(nil)
+	if rawPlaybook.ConcatenatedInvitedGroupIDs != "" {
+		p.InvitedGroupIDs = strings.Split(rawPlaybook.ConcatenatedInvitedGroupIDs, ",")
+	}
+
+	p.SignalAnyKeywords = []string(nil)
+	if rawPlaybook.ConcatenatedSignalAnyKeywords != "" {
+		p.SignalAnyKeywords = strings.Split(rawPlaybook.ConcatenatedSignalAnyKeywords, ",")
+	}
+
+	p.BroadcastChannelIDs = []string(nil)
+	if rawPlaybook.ConcatenatedBroadcastChannelIDs != "" {
+		p.BroadcastChannelIDs = strings.Split(rawPlaybook.ConcatenatedBroadcastChannelIDs, ",")
+	}
+
+	p.WebhookOnCreationURLs = []string(nil)
+	if rawPlaybook.ConcatenatedWebhookOnCreationURLs != "" {
+		p.WebhookOnCreationURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnCreationURLs, ",")
+	}
+
+	p.WebhookOnStatusUpdateURLs = []string(nil)
+	if rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs != "" {
+		p.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs, ",")
+	}
+	return p, nil
 }

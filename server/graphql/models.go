@@ -3,11 +3,6 @@
 
 package graphql
 
-type EnumRunStatus string
-
-const EnumRunStatusInProgress EnumRunStatus = "InProgress"
-const EnumRunStatusFinished EnumRunStatus = "Finished"
-
 type EnumPropertyFieldType string
 
 const EnumPropertyFieldTypetext EnumPropertyFieldType = "text"
@@ -59,6 +54,11 @@ type EnumPlaybookRunType string
 
 const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
 const EnumPlaybookRunTypechannelChecklist EnumPlaybookRunType = "channelChecklist"
+
+type EnumRunStatus string
+
+const EnumRunStatusInProgress EnumRunStatus = "InProgress"
+const EnumRunStatusFinished EnumRunStatus = "Finished"
 
 type __Schema struct {
 	Types            []__Type      `json:"types"`

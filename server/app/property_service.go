@@ -522,7 +522,6 @@ func (s *propertyService) copyPropertyFieldForPlaybook(sourceProperty *model.Pro
 	}
 
 	propertyField.ID = ""
-	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypePlaybook
 	propertyField.TargetID = targetPlaybookID
 
@@ -546,23 +545,13 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 	}
 
 	propertyField.ID = ""
-	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypeRun
 	propertyField.TargetID = runID
 	propertyField.Attrs.ParentID = playbookProperty.ID
 
 	if propertyField.SupportsOptions() {
 		for i := range propertyField.Attrs.Options {
-			// parent_id links run-level option IDs back to playbook-level (used for runs-list filtering).
-			opt := propertyField.Attrs.Options[i]
-			if opt == nil {
-				continue
-			}
-			if opt.Data == nil {
-				opt.Data = make(map[string]string)
-			}
-			opt.Data["parent_id"] = opt.GetID()
-			opt.SetID("")
+			propertyField.Attrs.Options[i].SetID("")
 		}
 	}
 
@@ -845,10 +834,8 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 // validateReservedFieldName rejects field names that would conflict with built-in
 // template placeholders. Reserved names: SEQ, OWNER, CREATOR (case-insensitive).
 func validateReservedFieldName(name string) error {
-	for _, tok := range systemTokens {
-		if strings.EqualFold(name, tok.Name) {
-			return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+tok.Name+"' is reserved for "+tok.Description)
-		}
+	if isSystemToken(name) {
+		return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+name+"' is reserved as a system token")
 	}
 	return nil
 }

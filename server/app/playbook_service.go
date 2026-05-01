@@ -59,6 +59,16 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	playbook.CreateAt = model.GetMillis()
 	playbook.UpdateAt = playbook.CreateAt
 
+	if playbook.RunNumberPrefix != "" {
+		used, err := s.store.IsRunNumberPrefixUsed(playbook.TeamID, playbook.RunNumberPrefix, "")
+		if err != nil {
+			return "", err
+		}
+		if used {
+			return "", ErrDuplicateEntry
+		}
+	}
+
 	// Perform the actual operation
 	newID, err := s.store.Create(playbook)
 	if err != nil {
@@ -306,6 +316,16 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 
 	playbook.UpdateAt = model.GetMillis()
 
+	if playbook.RunNumberPrefix != "" {
+		used, err := s.store.IsRunNumberPrefixUsed(playbook.TeamID, playbook.RunNumberPrefix, playbook.ID)
+		if err != nil {
+			return err
+		}
+		if used {
+			return ErrDuplicateEntry
+		}
+	}
+
 	// Perform the actual operation
 	if err := s.store.Update(playbook); err != nil {
 		auditRec.AddErrorDesc(err.Error())
@@ -371,6 +391,16 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 		auditRec.Success()
 		auditRec.AddEventResultState(playbook)
 		return nil
+	}
+
+	if playbook.RunNumberPrefix != "" {
+		used, err := s.store.IsRunNumberPrefixUsed(playbook.TeamID, playbook.RunNumberPrefix, playbook.ID)
+		if err != nil {
+			return err
+		}
+		if used {
+			return ErrDuplicateEntry
+		}
 	}
 
 	// Perform the actual operation
