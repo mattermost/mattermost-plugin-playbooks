@@ -41,31 +41,31 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
 
-    // Use restPlaybook as source for CreateAChannel — it carries REST-only fields (run_number_prefix, next_run_number).
-    // Updates go through REST (savePlaybook) so we never need runNumberPrefix in the GraphQL schema.
-    const channelPlaybookSource = restPlaybook ?? playbook;
+    // Merge GraphQL playbook with REST-only fields so CreateAChannel can display run_number_prefix.
+    const channelPlaybookSource = useMemo(() => ({
+        ...playbook,
+        run_number_prefix: restPlaybook?.run_number_prefix,
+        next_run_number: restPlaybook?.next_run_number,
+    }), [playbook, restPlaybook?.run_number_prefix, restPlaybook?.next_run_number]);
+
     const [
         playbookForCreateChannel,
         setPlaybookForCreateChannel,
     ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(channelPlaybookSource as ComponentProps<typeof CreateAChannel>['playbook'], useCallback((update) => {
+        updatePlaybook({
+            createPublicPlaybookRun: update.create_public_playbook_run,
+            channelNameTemplate: update.channel_name_template,
+            channelMode: update.channel_mode,
+            channelId: update.channel_id,
+        });
+    }, [updatePlaybook]));
+
+    // run_number_prefix is REST-only (not in GraphQL schema): save via REST PUT when it changes.
+    const handleRunNumberPrefixSave = useCallback((prefix: string) => {
         if (restPlaybook) {
-            savePlaybook({
-                ...restPlaybook,
-                create_public_playbook_run: update.create_public_playbook_run,
-                channel_name_template: update.channel_name_template,
-                run_number_prefix: update.run_number_prefix,
-                channel_mode: update.channel_mode,
-                channel_id: update.channel_id,
-            });
-        } else {
-            updatePlaybook({
-                createPublicPlaybookRun: update.create_public_playbook_run,
-                channelNameTemplate: update.channel_name_template,
-                channelMode: update.channel_mode,
-                channelId: update.channel_id,
-            });
+            savePlaybook({...restPlaybook, run_number_prefix: prefix});
         }
-    }, [restPlaybook, updatePlaybook]));
+    }, [restPlaybook]);
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);
@@ -188,6 +188,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                         setPlaybook={setPlaybookForCreateChannel}
                         fieldNames={fieldNames}
                         disabled={disabled}
+                        onRunNumberPrefixChange={handleRunNumberPrefixSave}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>

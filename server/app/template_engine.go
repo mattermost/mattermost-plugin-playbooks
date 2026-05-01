@@ -193,7 +193,9 @@ func StripFieldFromTemplate(tmpl, fieldName string) string {
 	result = collapseMultiSpaceRe.ReplaceAllString(result, " ")
 	result = strings.TrimSpace(result)
 	result = strings.TrimPrefix(result, "- ")
+	result = strings.TrimPrefix(result, "-")
 	result = strings.TrimSuffix(result, " -")
+	result = strings.TrimSuffix(result, "-")
 	result = strings.TrimSpace(result)
 	return result
 }

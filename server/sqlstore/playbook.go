@@ -54,10 +54,7 @@ type playbookMember struct {
 // pgUniqueViolation is the PostgreSQL error code for unique constraint violations.
 const pgUniqueViolation = "23505"
 
-const (
-	playbookPrefixConstraint = "ir_playbook_teamid_runnumberprefix_unique"
-	runNumberConstraint      = "ir_incident_playbookid_runnumber_unique"
-)
+const playbookPrefixConstraint = "ir_playbook_teamid_runnumberprefix_unique"
 
 // wrapUniqueConstraintViolation maps a PostgreSQL unique-violation error to
 // app.ErrDuplicateEntry. When constraint matches, msg is used; otherwise the
@@ -70,7 +67,7 @@ func wrapUniqueConstraintViolation(err error, constraint, msg string) error {
 	if pqErr.Constraint == constraint {
 		return errors.Wrap(app.ErrDuplicateEntry, msg)
 	}
-	return errors.Wrap(app.ErrDuplicateEntry, pqErr.Error())
+	return errors.Wrap(app.ErrDuplicateEntry, "a unique constraint was violated")
 }
 
 // txDefaultTimeout is the context timeout applied to every short transactional query.

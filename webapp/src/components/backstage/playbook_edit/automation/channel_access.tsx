@@ -33,9 +33,10 @@ interface Props {
     setChangesMade?: (b: boolean) => void;
     fieldNames?: string[];
     disabled?: boolean;
+    onRunNumberPrefixChange?: (prefix: string) => void;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
@@ -65,6 +66,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
             run_number_prefix: runNumberPrefix,
         });
         setChangesMade?.(true);
+        onRunNumberPrefixChange?.(runNumberPrefix);
     };
 
     const handleChannelModeChange = (mode: 'create_new_channel' | 'link_existing_channel') => {

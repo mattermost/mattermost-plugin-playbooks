@@ -305,6 +305,19 @@ Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
 });
 
 /**
+ * Register an intercept alias for the REST PUT /playbooks/:id endpoint.
+ * Use when waiting for the debounced playbook save triggered by editor changes.
+ *
+ * Usage:
+ *   cy.playbooksInterceptUpdatePlaybook();
+ *   // ... trigger UI action ...
+ *   cy.wait('@UpdatePlaybook');
+ */
+Cypress.Commands.add('playbooksInterceptUpdatePlaybook', () => {
+    cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*').as('UpdatePlaybook');
+});
+
+/**
  * Change the run owner via the RHS profile selector.
  * Must be called while already on the run's channel page (after playbooksVisitRunChannel).
  * @param {String} newOwnerUsername - Username of the new owner to select

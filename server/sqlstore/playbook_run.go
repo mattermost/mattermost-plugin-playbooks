@@ -23,6 +23,7 @@ import (
 
 const (
 	legacyEventTypeCommanderChanged = "commander_changed"
+	runNumberConstraint             = "ir_incident_playbookid_runnumber_unique"
 )
 
 type sqlPlaybookRun struct {

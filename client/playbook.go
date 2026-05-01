@@ -40,8 +40,6 @@ type Playbook struct {
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
 	RunNumberPrefix                         string                 `json:"run_number_prefix"`
-	NextRunNumber                           int64                  `json:"next_run_number"`
-	ChannelNameTemplate                     string                 `json:"channel_name_template"`
 }
 
 type PlaybookMember struct {
@@ -121,8 +119,6 @@ type PlaybookCreateOptions struct {
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
 	RunNumberPrefix                         string                 `json:"run_number_prefix"`
-	NextRunNumber                           int64                  `json:"next_run_number"`
-	ChannelNameTemplate                     string                 `json:"channel_name_template"`
 }
 
 type PlaybookMetricConfig struct {

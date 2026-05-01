@@ -562,7 +562,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 						playbookRun = updatedRun
 					}
 				}
-			} else {
+			} else if len(playbookRun.PropertyValues) > 0 {
 				if updatedRun, err := s.store.UpdatePlaybookRun(playbookRun); err != nil {
 					logger.WithError(err).Warn("failed to update run at creation")
 				} else {
@@ -5239,9 +5239,13 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 			sanitizedValues[fieldID] = sanitized
 		}
 
-		// Dry-run: validate field values before consuming the sequential run number (system tokens use representative widths).
+		// Dry-run: validate field values before consuming the sequential run number.
 		dryRunSeq := FormatSequentialID(pb.RunNumberPrefix, 99999)
-		dryRunTokens := map[string]string{"SEQ": dryRunSeq, "OWNER": "x", "CREATOR": "x"}
+		dryRunTokens := map[string]string{
+			"SEQ":     dryRunSeq,
+			"OWNER":   s.resolveUserDisplayName(playbookRun.OwnerUserID),
+			"CREATOR": s.resolveUserDisplayName(playbookRun.ReporterUserID),
+		}
 		_, unresolvedPre := ResolveTemplate(channelNameTemplate, ResolveOptions{
 			Fields:       fields,
 			Values:       sanitizedValues,

@@ -73,18 +73,20 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # alphanumeric character (regex: ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$),
         // # so a trailing dash like 'INC-' is invalid. FormatSequentialID appends the
         // # separator dash automatically when building the sequential ID (e.g. 'INC-1').
-        cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+        // # Prefix is saved via REST PUT; intercept that route.
+        cy.playbooksInterceptUpdatePlaybook();
         cy.findByTestId('channel-access-run-number-prefix').clear().type('INC');
 
-        // # Wait for the debounced save to reach the server, then reload so the page
-        // # re-initialises with the server-confirmed prefix. This guarantees the
-        // # channel_access handleChannelNameTemplateChange closure is fresh and
-        // # free of any stale run_number_prefix value before we set the template.
+        // # Wait for the debounced REST save, then reload so the page re-initialises with
+        // # the server-confirmed prefix before we set the template.
         cy.wait('@UpdatePlaybook');
         cy.reload();
 
         // * Prefix persists after reload
         cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
+
+        // # Template is saved via GraphQL UpdatePlaybook mutation; intercept that route.
+        cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
         // # Now set template value on the fresh page — no stale-closure risk
         // # Type the template and dismiss the dropdown that opens when typing '{'

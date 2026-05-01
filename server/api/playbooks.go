@@ -312,11 +312,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
 			return
 		}
-		effectivePrefix := playbook.RunNumberPrefix
-		if effectivePrefix == "" {
-			effectivePrefix = oldPlaybook.RunNumberPrefix
-		}
-		if err := app.ValidateChannelNameTemplateWithPrefix(effectiveTemplate, effectivePrefix); err != nil {
+		if err := app.ValidateChannelNameTemplateWithPrefix(effectiveTemplate, playbook.RunNumberPrefix); err != nil {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			return
 		}
@@ -784,9 +780,22 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	// At import time no property fields exist, so any non-built-in placeholder is invalid.
-	if !h.validateChannelNameTemplate(w, c.logger, &playbook) {
-		return
+	if playbook.ChannelNameTemplate != "" {
+		// Validate the template against the fields bundled in the import payload.
+		importFields := make([]app.PropertyField, 0, len(importBlock.Properties))
+		for _, epf := range importBlock.Properties {
+			var pf app.PropertyField
+			pf.Name = epf.Name
+			importFields = append(importFields, pf)
+		}
+		if unknown := app.ValidateTemplate(playbook.ChannelNameTemplate, app.ResolveOptions{Fields: importFields}); len(unknown) > 0 {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
+			return
+		}
+		if err := app.ValidateChannelNameTemplateWithPrefix(playbook.ChannelNameTemplate, playbook.RunNumberPrefix); err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 	}
 
 	id, err := h.playbookService.Import(app.PlaybookImportData{

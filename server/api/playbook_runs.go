@@ -598,7 +598,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	var resolvedChannelName string
 	if playbook != nil {
 		// Pre-set ReporterUserID so {CREATOR} resolves during template resolution.
-		// ResolveRunCreationParams also applies the DefaultOwnerID fallback.
+		// DefaultOwnerID fallback is applied inside ResolveRunCreationParams (only when playbook != nil).
 		playbookRun.ReporterUserID = userID
 		resolvedChannelName, err = h.playbookRunService.ResolveRunCreationParams(&playbookRun, playbook, initialPropertyValues, source)
 		if err != nil {

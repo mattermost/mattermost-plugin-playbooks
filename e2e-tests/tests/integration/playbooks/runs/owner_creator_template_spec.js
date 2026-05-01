@@ -168,7 +168,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
-            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'TST', channel_name_template: '{SEQ} by {CREATOR} owned by {OWNER}'}).then(() => {
+            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'TST' + getRandomId().slice(0, 3).toUpperCase(), channel_name_template: '{SEQ} by {CREATOR} owned by {OWNER}'}).then(() => {
                 cy.apiLogin(testCreator);
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,

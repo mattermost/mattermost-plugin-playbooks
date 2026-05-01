@@ -44,8 +44,8 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
-                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{OWNER}'}).then((updatedPlaybook) => {
-                    seqTemplatePlaybook = updatedPlaybook;
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{OWNER}'}).then(() => {
+                    seqTemplatePlaybook = playbook;
                 });
             });
         });

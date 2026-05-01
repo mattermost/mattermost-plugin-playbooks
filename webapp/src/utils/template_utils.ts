@@ -95,11 +95,17 @@ export function resolveTemplatePreview(
     systemTokens?: Record<string, string>,
     userMap?: Record<string, string>,
 ): string {
+    const normalizedSystemTokens: Record<string, string> = {};
+    if (systemTokens) {
+        for (const [k, v] of Object.entries(systemTokens)) {
+            normalizedSystemTokens[k.toUpperCase()] = v;
+        }
+    }
     const defaultSystemTokens: Record<string, string> = {
         SEQ: 'N',
         OWNER: DEFAULT_OWNER_TOKEN,
         CREATOR: DEFAULT_CREATOR_TOKEN,
-        ...systemTokens,
+        ...normalizedSystemTokens,
     };
 
     return template.replace(/\{([^}]+)\}/g, (match, inner: string) => {
