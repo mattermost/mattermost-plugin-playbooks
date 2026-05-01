@@ -308,12 +308,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 			h.HandleError(w, c.logger, err)
 			return
 		}
-		if unknown := app.ValidateTemplate(effectiveTemplate, app.ResolveOptions{Fields: propertyFields}); len(unknown) > 0 {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
-			return
-		}
-		if err := app.ValidateChannelNameTemplateWithPrefix(effectiveTemplate, playbook.RunNumberPrefix); err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		if !h.validateTemplateWithFields(w, c.logger, effectiveTemplate, playbook.RunNumberPrefix, propertyFields) {
 			return
 		}
 	}
@@ -707,12 +702,7 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 			h.HandleError(w, c.logger, pfErr)
 			return
 		}
-		if unknown := app.ValidateTemplate(playbook.ChannelNameTemplate, app.ResolveOptions{Fields: sourceFields}); len(unknown) > 0 {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
-			return
-		}
-		if err := app.ValidateChannelNameTemplateWithPrefix(playbook.ChannelNameTemplate, playbook.RunNumberPrefix); err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, sourceFields) {
 			return
 		}
 	}
@@ -788,12 +778,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 			pf.Name = epf.Name
 			importFields = append(importFields, pf)
 		}
-		if unknown := app.ValidateTemplate(playbook.ChannelNameTemplate, app.ResolveOptions{Fields: importFields}); len(unknown) > 0 {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
-			return
-		}
-		if err := app.ValidateChannelNameTemplateWithPrefix(playbook.ChannelNameTemplate, playbook.RunNumberPrefix); err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, importFields) {
 			return
 		}
 	}
@@ -847,20 +832,26 @@ func (h *PlaybookHandler) handlePlaybookWriteError(w http.ResponseWriter, logger
 	return false
 }
 
-// validateChannelNameTemplate validates templates for new playbooks (no property fields yet, system tokens only).
-func (h *PlaybookHandler) validateChannelNameTemplate(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook) bool {
-	if playbook.ChannelNameTemplate == "" {
+// validateTemplateWithFields validates a channel name template against a known field list and prefix.
+// Empty template is always valid. Pass nil fields to allow system tokens only (new-playbook case).
+func (h *PlaybookHandler) validateTemplateWithFields(w http.ResponseWriter, logger logrus.FieldLogger, template, prefix string, fields []app.PropertyField) bool {
+	if template == "" {
 		return true
 	}
-	if unknown := app.ValidateTemplate(playbook.ChannelNameTemplate, app.ResolveOptions{}); len(unknown) > 0 {
+	if unknown := app.ValidateTemplate(template, app.ResolveOptions{Fields: fields}); len(unknown) > 0 {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
 		return false
 	}
-	if err := app.ValidateChannelNameTemplateWithPrefix(playbook.ChannelNameTemplate, playbook.RunNumberPrefix); err != nil {
+	if err := app.ValidateChannelNameTemplateWithPrefix(template, prefix); err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return false
 	}
 	return true
+}
+
+// validateChannelNameTemplate validates templates for new playbooks (no property fields yet, system tokens only).
+func (h *PlaybookHandler) validateChannelNameTemplate(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook) bool {
+	return h.validateTemplateWithFields(w, logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, nil)
 }
 
 func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWriter, r *http.Request) {

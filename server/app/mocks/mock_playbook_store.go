@@ -413,18 +413,19 @@ func (mr *MockPlaybookStoreMockRecorder) Update(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPlaybookStore)(nil).Update), arg0)
 }
 
-// UpdateChannelNameTemplateAtomically mocks base method.
-func (m *MockPlaybookStore) UpdateChannelNameTemplateAtomically(arg0 string, arg1 func(string) string) error {
+// UpdateChannelNameTemplateIfUnchanged mocks base method.
+func (m *MockPlaybookStore) UpdateChannelNameTemplateIfUnchanged(arg0, arg1, arg2 string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateChannelNameTemplateAtomically", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "UpdateChannelNameTemplateIfUnchanged", arg0, arg1, arg2)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// UpdateChannelNameTemplateAtomically indicates an expected call of UpdateChannelNameTemplateAtomically.
-func (mr *MockPlaybookStoreMockRecorder) UpdateChannelNameTemplateAtomically(arg0, arg1 interface{}) *gomock.Call {
+// UpdateChannelNameTemplateIfUnchanged indicates an expected call of UpdateChannelNameTemplateIfUnchanged.
+func (mr *MockPlaybookStoreMockRecorder) UpdateChannelNameTemplateIfUnchanged(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChannelNameTemplateAtomically", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateChannelNameTemplateAtomically), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChannelNameTemplateIfUnchanged", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateChannelNameTemplateIfUnchanged), arg0, arg1, arg2)
 }
 
 // UpdateMetric mocks base method.

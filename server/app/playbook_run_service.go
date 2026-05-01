@@ -5181,18 +5181,10 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 				cleaned = StripFieldFromTemplate(cleaned, f)
 			}
 			if cleaned != channelNameTemplate {
-				// SELECT FOR UPDATE inside UpdateChannelNameTemplateAtomically prevents concurrent admin edits from being overwritten.
-				snapshotTemplate := channelNameTemplate
-				var concurrentEdit bool
-				if err := s.playbookService.UpdateChannelNameTemplateAtomically(pb.ID, func(current string) string {
-					if current != snapshotTemplate {
-						concurrentEdit = true
-						return current
-					}
-					return cleaned
-				}); err != nil {
+				updated, err := s.playbookService.UpdateChannelNameTemplateIfUnchanged(pb.ID, channelNameTemplate, cleaned)
+				if err != nil {
 					logger.WithError(err).Warn("failed to persist cleaned channel name template; proceeding with stale template stripped in-memory")
-				} else if concurrentEdit {
+				} else if !updated {
 					logger.Warn("channel name template changed concurrently; skipping self-heal write to avoid overwriting admin edit")
 				}
 				channelNameTemplate = cleaned

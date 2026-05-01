@@ -1763,19 +1763,6 @@ var migrations = []Migration{
 			if err := addColumnToPGTable(e, "IR_Incident", "SequentialID", "VARCHAR(64) NOT NULL DEFAULT ''"); err != nil {
 				return errors.Wrapf(err, "failed adding SequentialID to IR_Incident")
 			}
-			if _, err := e.Exec(createPGPartialIndex("idx_ir_incident_sequential_id", "IR_Incident", "SequentialID", "SequentialID != ''")); err != nil {
-				return errors.Wrapf(err, "failed creating index idx_ir_incident_sequential_id")
-			}
-
-			// Run numbers come from an ever-incrementing counter; partial index covers live runs only.
-			if _, err := e.Exec(createPGUniquePartialIndex(
-				"IR_Incident_PlaybookID_RunNumber_Unique",
-				"IR_Incident",
-				"PlaybookID, RunNumber",
-				"RunNumber > 0 AND DeleteAt = 0",
-			)); err != nil {
-				return errors.Wrapf(err, "failed creating unique index IR_Incident_PlaybookID_RunNumber_Unique")
-			}
 
 			return nil
 		},

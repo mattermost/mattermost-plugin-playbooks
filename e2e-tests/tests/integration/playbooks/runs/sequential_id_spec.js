@@ -386,8 +386,8 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                     cy.playbooksVisitRunChannel(testTeam.name, run);
 
                     // * Assert the sequential ID chip is shown in the channel RHS
-                    cy.findByTestId('rhs-sequential-id').should('exist');
-                    cy.findByTestId('rhs-sequential-id').should('contain', formatSequentialID(rhsPrefix, 1));
+                    cy.findByTestId('run-sequential-id').should('exist');
+                    cy.findByTestId('run-sequential-id').should('contain', formatSequentialID(rhsPrefix, 1));
                 });
             });
         });

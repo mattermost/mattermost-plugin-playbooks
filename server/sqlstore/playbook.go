@@ -4,7 +4,6 @@
 package sqlstore
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -1134,6 +1133,46 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	}, nil
 }
 
+func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
+	p := rawPlaybook.Playbook
+	if len(rawPlaybook.ChecklistsJSON) > 0 {
+		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
+			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+		}
+	}
+
+	p.InvitedUserIDs = []string(nil)
+	if rawPlaybook.ConcatenatedInvitedUserIDs != "" {
+		p.InvitedUserIDs = strings.Split(rawPlaybook.ConcatenatedInvitedUserIDs, ",")
+	}
+
+	p.InvitedGroupIDs = []string(nil)
+	if rawPlaybook.ConcatenatedInvitedGroupIDs != "" {
+		p.InvitedGroupIDs = strings.Split(rawPlaybook.ConcatenatedInvitedGroupIDs, ",")
+	}
+
+	p.SignalAnyKeywords = []string(nil)
+	if rawPlaybook.ConcatenatedSignalAnyKeywords != "" {
+		p.SignalAnyKeywords = strings.Split(rawPlaybook.ConcatenatedSignalAnyKeywords, ",")
+	}
+
+	p.BroadcastChannelIDs = []string(nil)
+	if rawPlaybook.ConcatenatedBroadcastChannelIDs != "" {
+		p.BroadcastChannelIDs = strings.Split(rawPlaybook.ConcatenatedBroadcastChannelIDs, ",")
+	}
+
+	p.WebhookOnCreationURLs = []string(nil)
+	if rawPlaybook.ConcatenatedWebhookOnCreationURLs != "" {
+		p.WebhookOnCreationURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnCreationURLs, ",")
+	}
+
+	p.WebhookOnStatusUpdateURLs = []string(nil)
+	if rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs != "" {
+		p.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs, ",")
+	}
+	return p, nil
+}
+
 // insights - store manager functions
 
 func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *app.InsightsOpts) (*app.PlaybooksInsightsList, error) {
@@ -1259,102 +1298,25 @@ func (p *playbookStore) IncrementRunNumber(playbookID string) (int64, error) {
 	return runNumber, nil
 }
 
-func (p *playbookStore) UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error {
-	if transformFn == nil {
-		return errors.New("transformFn cannot be nil")
-	}
+func (p *playbookStore) UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error) {
 	if playbookID == "" {
-		return errors.New("playbookID cannot be empty")
+		return false, errors.New("playbookID cannot be empty")
 	}
 
-	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
-	defer txCancel()
-	tx, err := p.store.db.BeginTxx(txCtx, nil)
-	if err != nil {
-		return errors.Wrapf(err, "failed to begin transaction for playbook '%s'", playbookID)
-	}
-	defer p.store.finalizeTransaction(tx)
-
-	if _, err := tx.Exec("SET LOCAL lock_timeout = '4s'"); err != nil {
-		return errors.Wrap(err, "failed to set lock timeout")
-	}
-
-	selectBuilder := p.store.builder.
-		Select("COALESCE(ChannelNameTemplate, '')").
-		From("IR_Playbook").
-		Where(sq.Eq{"ID": playbookID}).
-		Where(sq.Eq{"DeleteAt": 0}).
-		Suffix("FOR UPDATE")
-
-	var channelNameTemplate string
-	if err = p.store.getBuilder(tx, &channelNameTemplate, selectBuilder); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return errors.Wrapf(app.ErrNotFound, "playbook '%s' not found or is archived", playbookID)
-		}
-		return errors.Wrapf(err, "failed to load name templates for playbook '%s'", playbookID)
-	}
-
-	newChannelNameTemplate := transformFn(channelNameTemplate)
-
-	// Skip the write if the template did not change
-	if newChannelNameTemplate == channelNameTemplate {
-		if err := tx.Commit(); err != nil {
-			return errors.Wrapf(err, "failed to commit transaction for playbook '%s'", playbookID)
-		}
-		return nil
-	}
-
-	if _, err := p.store.execBuilder(tx, sq.
+	result, err := p.store.execBuilder(p.store.db, sq.
 		Update("IR_Playbook").
-		Set("ChannelNameTemplate", newChannelNameTemplate).
+		Set("ChannelNameTemplate", newTemplate).
 		Set("UpdateAt", model.GetMillis()).
 		Where(sq.Eq{"ID": playbookID}).
-		Where(sq.Eq{"DeleteAt": 0}),
-	); err != nil {
-		return errors.Wrapf(err, "failed to update channel name template for playbook '%s'", playbookID)
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"ChannelNameTemplate": oldTemplate}),
+	)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to update channel name template for playbook '%s'", playbookID)
 	}
-	if err := tx.Commit(); err != nil {
-		return errors.Wrapf(err, "failed to commit transaction for playbook '%s'", playbookID)
+	n, err := result.RowsAffected()
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to read rows affected for playbook '%s'", playbookID)
 	}
-	return nil
-}
-
-func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
-	p := rawPlaybook.Playbook
-	if len(rawPlaybook.ChecklistsJSON) > 0 {
-		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
-			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
-		}
-	}
-
-	p.InvitedUserIDs = []string(nil)
-	if rawPlaybook.ConcatenatedInvitedUserIDs != "" {
-		p.InvitedUserIDs = strings.Split(rawPlaybook.ConcatenatedInvitedUserIDs, ",")
-	}
-
-	p.InvitedGroupIDs = []string(nil)
-	if rawPlaybook.ConcatenatedInvitedGroupIDs != "" {
-		p.InvitedGroupIDs = strings.Split(rawPlaybook.ConcatenatedInvitedGroupIDs, ",")
-	}
-
-	p.SignalAnyKeywords = []string(nil)
-	if rawPlaybook.ConcatenatedSignalAnyKeywords != "" {
-		p.SignalAnyKeywords = strings.Split(rawPlaybook.ConcatenatedSignalAnyKeywords, ",")
-	}
-
-	p.BroadcastChannelIDs = []string(nil)
-	if rawPlaybook.ConcatenatedBroadcastChannelIDs != "" {
-		p.BroadcastChannelIDs = strings.Split(rawPlaybook.ConcatenatedBroadcastChannelIDs, ",")
-	}
-
-	p.WebhookOnCreationURLs = []string(nil)
-	if rawPlaybook.ConcatenatedWebhookOnCreationURLs != "" {
-		p.WebhookOnCreationURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnCreationURLs, ",")
-	}
-
-	p.WebhookOnStatusUpdateURLs = []string(nil)
-	if rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs != "" {
-		p.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs, ",")
-	}
-	return p, nil
+	return n > 0, nil
 }

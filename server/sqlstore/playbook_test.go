@@ -2175,16 +2175,16 @@ func TestIncrementRunNumber(t *testing.T) {
 	})
 }
 
-func TestUpdateChannelNameTemplateAtomically(t *testing.T) {
+func TestUpdateChannelNameTemplateIfUnchanged(t *testing.T) {
 	db := setupTestDB(t)
 	playbookStore := setupPlaybookStore(t, db)
 
 	t.Run("empty playbookID returns error", func(t *testing.T) {
-		err := playbookStore.UpdateChannelNameTemplateAtomically("", func(s string) string { return s })
+		_, err := playbookStore.UpdateChannelNameTemplateIfUnchanged("", "old", "new")
 		require.Error(t, err)
 	})
 
-	t.Run("replaces field in ChannelNameTemplate", func(t *testing.T) {
+	t.Run("updates when old template matches", func(t *testing.T) {
 		pb := NewPBBuilder().
 			WithTitle("Template Replace Playbook").
 			WithTeamID(model.NewId()).
@@ -2194,39 +2194,18 @@ func TestUpdateChannelNameTemplateAtomically(t *testing.T) {
 		pbID, err := playbookStore.Create(pb)
 		require.NoError(t, err)
 
-		err = playbookStore.UpdateChannelNameTemplateAtomically(pbID, func(current string) string {
-			return app.ReplaceFieldInTemplate(current, "Priority", "Severity")
-		})
+		updated, err := playbookStore.UpdateChannelNameTemplateIfUnchanged(pbID, "{Priority} - Channel", "{Severity} - Channel")
 		require.NoError(t, err)
+		require.True(t, updated)
 
-		updated, err := playbookStore.Get(pbID)
+		got, err := playbookStore.Get(pbID)
 		require.NoError(t, err)
-		require.Equal(t, "{Severity} - Channel", updated.ChannelNameTemplate)
+		require.Equal(t, "{Severity} - Channel", got.ChannelNameTemplate)
 	})
 
-	t.Run("strips field from ChannelNameTemplate", func(t *testing.T) {
+	t.Run("skips update when old template does not match", func(t *testing.T) {
 		pb := NewPBBuilder().
-			WithTitle("Template Strip Playbook").
-			WithTeamID(model.NewId()).
-			ToPlaybook()
-		pb.ChannelNameTemplate = "{SEQ} - {Priority}"
-
-		pbID, err := playbookStore.Create(pb)
-		require.NoError(t, err)
-
-		err = playbookStore.UpdateChannelNameTemplateAtomically(pbID, func(current string) string {
-			return app.StripFieldFromTemplate(current, "Priority")
-		})
-		require.NoError(t, err)
-
-		updated, err := playbookStore.Get(pbID)
-		require.NoError(t, err)
-		require.Equal(t, "{SEQ}", updated.ChannelNameTemplate)
-	})
-
-	t.Run("no-op when transform returns same value", func(t *testing.T) {
-		pb := NewPBBuilder().
-			WithTitle("Template NoOp Playbook").
+			WithTitle("Template Concurrent Edit Playbook").
 			WithTeamID(model.NewId()).
 			ToPlaybook()
 		pb.ChannelNameTemplate = "{SEQ} - Channel"
@@ -2234,22 +2213,19 @@ func TestUpdateChannelNameTemplateAtomically(t *testing.T) {
 		pbID, err := playbookStore.Create(pb)
 		require.NoError(t, err)
 
-		err = playbookStore.UpdateChannelNameTemplateAtomically(pbID, func(current string) string {
-			return current
-		})
+		updated, err := playbookStore.UpdateChannelNameTemplateIfUnchanged(pbID, "stale-value", "new-value")
 		require.NoError(t, err)
+		require.False(t, updated)
 
-		updated, err := playbookStore.Get(pbID)
+		got, err := playbookStore.Get(pbID)
 		require.NoError(t, err)
-		require.Equal(t, "{SEQ} - Channel", updated.ChannelNameTemplate)
+		require.Equal(t, "{SEQ} - Channel", got.ChannelNameTemplate)
 	})
 
-	t.Run("not found returns error", func(t *testing.T) {
-		err := playbookStore.UpdateChannelNameTemplateAtomically("nonexistent-id", func(s string) string {
-			return "new"
-		})
-		require.Error(t, err)
-		require.ErrorIs(t, err, app.ErrNotFound)
+	t.Run("nonexistent playbook returns not-updated without error", func(t *testing.T) {
+		updated, err := playbookStore.UpdateChannelNameTemplateIfUnchanged("nonexistent-id", "old", "new")
+		require.NoError(t, err)
+		require.False(t, updated)
 	})
 }
 

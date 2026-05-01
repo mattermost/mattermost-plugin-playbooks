@@ -84,8 +84,6 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 		sort = "CurrentStatus"
 	case app.SortByLastStatusUpdateAt:
 		sort = "LastStatusUpdateAt"
-	case app.SortBySequentialID:
-		sort = "SequentialID"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"

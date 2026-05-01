@@ -457,8 +457,9 @@ type PlaybookService interface {
 	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
 	IncrementRunNumber(playbookID string) (int64, error)
 
-	// UpdateChannelNameTemplateAtomically atomically reads and updates the channel name template inside SELECT FOR UPDATE.
-	UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error
+	// UpdateChannelNameTemplateIfUnchanged updates the channel name template only if it still equals oldTemplate.
+	// Returns true if the row was updated, false if a concurrent edit changed the value first.
+	UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -547,9 +548,9 @@ type PlaybookStore interface {
 	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
 	IncrementRunNumber(playbookID string) (int64, error)
 
-	// UpdateChannelNameTemplateAtomically applies transformFn inside SELECT FOR UPDATE.
-	// transformFn MUST be a pure in-memory computation (no I/O, no DB calls).
-	UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error
+	// UpdateChannelNameTemplateIfUnchanged updates the channel name template only if it still equals oldTemplate.
+	// Returns true if the row was updated, false if a concurrent edit changed the value first.
+	UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error)
 }
 
 const (

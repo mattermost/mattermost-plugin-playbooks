@@ -18,6 +18,7 @@ import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import TextEdit from 'src/components/text_edit';
 import {SemiBoldHeading} from 'src/styles/headings';
+import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {usePlaybookName} from 'src/hooks';
@@ -80,9 +81,10 @@ const RHSAboutTitle = (props: Props) => {
                         <>
                             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                             <ChipSeparator>{'/'}</ChipSeparator>
-                            <SequentialIdChip data-testid='rhs-sequential-id'>
-                                {props.playbookRun.sequential_id}
-                            </SequentialIdChip>
+                            <SequentialIdDisplay
+                                runNumber={props.playbookRun.run_number}
+                                sequentialId={props.playbookRun.sequential_id}
+                            />
                         </>
                     )}
                 </PlaybookChipContainer>
@@ -156,16 +158,6 @@ const ChipSeparator = styled.span`
     font-weight: 600;
 `;
 
-const SequentialIdChip = styled.span`
-    font-weight: 600;
-    font-size: 10px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    background: rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 4px;
-    padding: 0 4px;
-    white-space: nowrap;
-`;
 
 const PlaybookChip = styled.button`
     display: inline-flex;
