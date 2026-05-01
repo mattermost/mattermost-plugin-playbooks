@@ -1764,6 +1764,11 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed adding SequentialID to IR_Incident")
 			}
 
+			// Index for the per-team prefix uniqueness check in IsRunNumberPrefixUsed.
+			if _, err := e.Exec(createPGIndex("IR_Playbook_TeamID_RunNumberPrefix", "IR_Playbook", "TeamID, RunNumberPrefix, DeleteAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Playbook_TeamID_RunNumberPrefix")
+			}
+
 			return nil
 		},
 	},

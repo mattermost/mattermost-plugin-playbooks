@@ -352,10 +352,7 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
  * @param {String} expectedIdFragment - Substring expected inside the sequential-id-badge
  */
 Cypress.Commands.add('playbooksAssertSequentialIdInList', (runName, expectedIdFragment) => {
-    cy.get('#playbookRunList').findByText(runName).
-        parents('[data-testid="run-list-item"]').
-        findByTestId('run-sequential-id').
-        should('contain', expectedIdFragment);
+    cy.playbooksGetRunListRow(runName).findByTestId('run-sequential-id').should('contain', expectedIdFragment);
 });
 
 /**

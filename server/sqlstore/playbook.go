@@ -792,7 +792,8 @@ func (p *playbookStore) IsRunNumberPrefixUsed(teamID, prefix, excludePlaybookID 
 	query := p.store.builder.
 		Select("COUNT(*)").
 		From("IR_Playbook").
-		Where(sq.Eq{"TeamID": teamID, "RunNumberPrefix": prefix, "DeleteAt": 0}).
+		Where(sq.Eq{"TeamID": teamID, "DeleteAt": 0}).
+		Where(sq.Expr("LOWER(RunNumberPrefix) = LOWER(?)", prefix)).
 		Where(sq.NotEq{"ID": excludePlaybookID})
 	if err := p.store.getBuilder(p.store.db, &count, query); err != nil {
 		return false, errors.Wrap(err, "failed to check run number prefix uniqueness")
@@ -1285,6 +1286,8 @@ func (p *playbookStore) IncrementRunNumber(playbookID string) (int64, error) {
 
 	var runNumber int64
 	// Raw SQL: squirrel cannot express RETURNING for atomic increment-and-read (UPDATE + SELECT would race).
+	// p.store.db.Get uses a replica-safe connection outside any caller-managed transaction; number gaps
+	// (e.g. from rolled-back run creation) are acceptable by design.
 	if err := p.store.db.Get(
 		&runNumber,
 		`UPDATE IR_Playbook SET NextRunNumber = NextRunNumber + 1 WHERE ID = $1 AND DeleteAt = 0 RETURNING NextRunNumber - 1`,

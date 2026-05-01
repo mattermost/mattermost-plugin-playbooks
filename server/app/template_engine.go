@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -30,17 +29,10 @@ const epochMsMin = 1_000_000_000_000
 var (
 	collapseOrphanedSeparatorsRe = regexp.MustCompile(`\s*-\s*-\s*`)
 	collapseMultiSpaceRe         = regexp.MustCompile(`\s{2,}`)
-
-	fieldRegexCache sync.Map // map[string]*regexp.Regexp, keyed by field name
 )
 
 func fieldRegex(fieldName string) *regexp.Regexp {
-	if cached, ok := fieldRegexCache.Load(fieldName); ok {
-		return cached.(*regexp.Regexp)
-	}
-	re := regexp.MustCompile(`(?i)\{\s*` + regexp.QuoteMeta(fieldName) + `\s*\}`)
-	actual, _ := fieldRegexCache.LoadOrStore(fieldName, re)
-	return actual.(*regexp.Regexp)
+	return regexp.MustCompile(`(?i)\{\s*` + regexp.QuoteMeta(fieldName) + `\s*\}`)
 }
 
 // FormatFunc formats a property field's raw JSON value as a string.

@@ -58,7 +58,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
 
         // # Set the run_number_prefix on the playbook (no trailing dash — FormatSequentialID adds it)
         cy.then(() => {
-            cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: incPrefix});
+            return cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: incPrefix});
         });
 
         // # Start first run via API
@@ -159,7 +159,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         });
 
         cy.then(() => {
-            cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: prefix});
+            return cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: prefix});
         });
 
         // # Start a run
@@ -177,7 +177,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
 
         // * Changing to a different prefix succeeds
         cy.then(() => {
-            cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: newPrefix});
+            return cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: newPrefix});
         });
 
         // * Existing run keeps its original sequential_id (frozen at creation time)

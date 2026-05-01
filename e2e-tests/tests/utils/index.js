@@ -105,16 +105,6 @@ export function resolvedDisplayName(user) {
     return full || user.username;
 }
 
-/**
- * Escapes opening curly braces so cy.type() treats them as literal characters.
- * Cypress uses {{} to type a literal '{'; closing '}' is always typed literally.
- * @param {string} str
- * @returns {string}
- */
-export function typeEscape(str) {
-    return str.replace(/{/g, '{{}');
-}
-
 export function stubClipboard() {
     const clipboard = {contents: '', wasCalled: false};
 

@@ -30,6 +30,7 @@ import (
 
 const checklistItemDescriptionCharLimit = 4000
 const propertyValueMaxDisplayLength = 50
+const MaxRunNameLength = 1024
 
 const (
 	// PlaybookRunCreatedWSEvent is for playbook run creation.
@@ -5308,12 +5309,17 @@ func (s *PlaybookRunServiceImpl) buildSystemTokens(run *PlaybookRun, seqID strin
 }
 
 // resolveUserDisplayName resolves a user ID to a display name, falling back to the raw ID.
+// Honors PrivacySettings.ShowFullName: when false, returns the username instead of the full/nickname name.
 func (s *PlaybookRunServiceImpl) resolveUserDisplayName(userID string) string {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil || user == nil {
 		return userID
 	}
-	displayName := model.SanitizeUnicode(user.GetDisplayName(model.ShowNicknameFullName))
+	nameFormat := model.ShowNicknameFullName
+	if showFullName := s.pluginAPI.Configuration.GetConfig().PrivacySettings.ShowFullName; showFullName != nil && !*showFullName {
+		nameFormat = model.ShowUsername
+	}
+	displayName := model.SanitizeUnicode(user.GetDisplayName(nameFormat))
 	if displayName == "" {
 		return user.Username
 	}

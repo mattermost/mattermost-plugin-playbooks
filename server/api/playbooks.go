@@ -182,6 +182,9 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// NextRunNumber is a server-managed counter; callers must not set it.
+	playbook.NextRunNumber = 0
+
 	if playbook.ReminderTimerDefaultSeconds <= 0 {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
 		return
@@ -735,6 +738,9 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 	playbook := importBlock.Playbook
 
+	// NextRunNumber is a server-managed counter; import files must not set it.
+	playbook.NextRunNumber = 0
+
 	if playbook.ID != "" {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook import should not have ID field", nil)
 		return
@@ -834,10 +840,11 @@ func (h *PlaybookHandler) validateTemplateWithFields(w http.ResponseWriter, logg
 		return true
 	}
 	if unknown := app.ValidateTemplate(template, app.ResolveOptions{Fields: fields}); len(unknown) > 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, fmt.Sprintf("channel name template references unknown field(s): %s", strings.Join(unknown, ", ")), nil)
 		return false
 	}
-	if err := app.ValidateChannelNameTemplateWithPrefix(template, prefix); err != nil {
+	if app.TemplateUsesSeqToken(template) && strings.TrimSpace(prefix) == "" {
+		err := errors.Wrap(app.ErrMalformedPlaybookRun, "channel name template uses {SEQ} but no run number prefix is configured")
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return false
 	}
