@@ -1178,7 +1178,6 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	// Validate the field isn't referenced by the ChannelNameTemplate
 	if currentPlaybook.ChannelNameTemplate != "" {
 		allFields, err := h.propertyService.GetPropertyFields(playbookID)
 		if err != nil {

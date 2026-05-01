@@ -5120,7 +5120,6 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 	if playbookRun.PlaybookID != "" && pb.ID != playbookRun.PlaybookID {
 		return "", errors.Wrap(ErrMalformedPlaybookRun, "playbook ID mismatch between run and supplied playbook")
 	}
-	// Ensure PlaybookID is set on the run when a playbook is supplied.
 	if playbookRun.PlaybookID == "" {
 		playbookRun.PlaybookID = pb.ID
 	}
@@ -5142,6 +5141,11 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 			}
 			fields = propertyFields
 		}
+	}
+
+	// Apply DefaultOwnerID when no explicit owner was supplied.
+	if playbookRun.OwnerUserID == "" && playbookRun.DefaultOwnerID != "" {
+		playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
 	}
 
 	// Validate owner team membership; clear OwnerUserID if invalid so CreatePlaybookRun does not persist it.
