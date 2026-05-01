@@ -59,16 +59,6 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	playbook.CreateAt = model.GetMillis()
 	playbook.UpdateAt = playbook.CreateAt
 
-	playbook.RunNumberPrefix = NormalizeRunNumberPrefix(playbook.RunNumberPrefix)
-	if err := ValidateRunNumberPrefix(playbook.RunNumberPrefix); err != nil {
-		auditRec.AddErrorDesc(err.Error())
-		return "", err
-	}
-	if err := ValidateChannelNameTemplate(playbook.ChannelNameTemplate); err != nil {
-		auditRec.AddErrorDesc(err.Error())
-		return "", err
-	}
-
 	// Perform the actual operation
 	newID, err := s.store.Create(playbook)
 	if err != nil {
@@ -310,16 +300,6 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 
 	if playbook.DeleteAt != 0 {
 		err := errors.New("cannot update a playbook that is archived")
-		auditRec.AddErrorDesc(err.Error())
-		return err
-	}
-
-	playbook.RunNumberPrefix = NormalizeRunNumberPrefix(playbook.RunNumberPrefix)
-	if err := ValidateRunNumberPrefix(playbook.RunNumberPrefix); err != nil {
-		auditRec.AddErrorDesc(err.Error())
-		return err
-	}
-	if err := ValidateChannelNameTemplate(playbook.ChannelNameTemplate); err != nil {
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}

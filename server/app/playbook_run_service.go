@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -3239,16 +3238,8 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 		displayName = playbookRun.Name
 	}
 
-	if utf8.RuneCountInString(displayName) > maxChannelDisplayNameRunes {
-		runes := []rune(displayName)
-		displayName = string(runes[:maxChannelDisplayNameRunes])
-	}
-
-	channelSlug := cleanChannelName(displayName)
-	if utf8.RuneCountInString(channelSlug) > maxChannelSlugLength {
-		runes := []rune(channelSlug)
-		channelSlug = string(runes[:maxChannelSlugLength])
-	}
+	displayName = truncateRunes(displayName, maxChannelDisplayNameRunes)
+	channelSlug := truncateRunes(cleanChannelName(displayName), maxChannelSlugLength)
 
 	channel := &model.Channel{
 		TeamId:      playbookRun.TeamID,
@@ -4453,10 +4444,7 @@ func cleanChannelName(channelName string) string {
 
 func addRandomBits(name string) string {
 	// Fix too long names (we're adding 5 chars):
-	if utf8.RuneCountInString(name) > maxChannelSlugLength {
-		runes := []rune(name)
-		name = string(runes[:maxChannelSlugLength])
-	}
+	name = truncateRunes(name, maxChannelSlugLength)
 	randBits := model.NewId()
 	return fmt.Sprintf("%s-%s", name, randBits[:4])
 }
@@ -4930,9 +4918,6 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		return nil, errors.New("upsert property value returned nil without error")
 	}
 
-	// Snapshot before mutation; Clone() deep-copies so subsequent mutations don't affect prevRun.
-	prevRun := run.Clone()
-
 	// replace it in the run object we have at hand
 	var found bool
 	for i, pfv := range run.PropertyValues {
@@ -4946,11 +4931,11 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		run.PropertyValues = append(run.PropertyValues, *propertyValue)
 	}
 
-	var valueChanged bool
-	var evaluationResult *ConditionEvaluationResult
-
 	if !s.propertyValuesEqual(propertyField, currentValue, value) {
-		valueChanged = true
+		// Snapshot before any mutation; Clone() deep-copies so the WS diff is accurate.
+		prevRun := run.Clone()
+
+		var evaluationResult *ConditionEvaluationResult
 		evalResult, evalErr := s.conditionService.EvaluateConditionsOnValueChanged(run, propertyFieldID)
 		if evalErr != nil {
 			// Value is already durably saved; treat condition evaluation as best-effort.
@@ -4962,19 +4947,15 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 				s.PostPropertyChangeMessage(userID, run, propertyField, value, evaluationResult)
 			}
 		}
-	}
 
-	// Append to run so the WS diff carries the new event and the frontend is notified without a reload.
-	if valueChanged {
+		// Append to run so the WS diff carries the new event and the frontend is notified without a reload.
 		if createdEvent, err := s.createPropertyChangeTimelineEvent(userID, playbookRunID, propertyField, currentValue, value); err != nil {
 			logrus.WithError(err).WithField("run_id", playbookRunID).Warn("failed to create timeline event for property change")
 		} else {
 			run.TimelineEvents = append(run.TimelineEvents, *createdEvent)
 		}
-	}
 
-	// Persist condition-driven checklist mutations and bump the run's UpdateAt timestamp.
-	if valueChanged {
+		// Persist condition-driven checklist mutations and bump the run's UpdateAt timestamp.
 		if evaluationResult != nil && evaluationResult.AnythingChanged() {
 			if updatedRun, err := s.store.UpdatePlaybookRun(run); err != nil {
 				return nil, errors.Wrap(err, "failed to update playbook run")
@@ -4986,10 +4967,7 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 				return nil, errors.Wrap(err, "failed to bump playbook run timestamp")
 			}
 		}
-	}
 
-	// Send WS notification when the value changed.
-	if valueChanged {
 		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, prevRun, run)
 	}
 
@@ -5186,10 +5164,11 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 		}
 	}
 
-	// unknownFieldsNoSchema: field placeholders unresolved when no property fields are provided (schema-free validator).
-	unknownFieldsNoSchema := ValidateTemplate(channelNameTemplate, ResolveOptions{})
+	// propertyFieldPlaceholders holds any {FIELD_ID} tokens that are not system tokens —
+	// they require a licensed property schema and cannot be resolved via dialog or command.
+	propertyFieldPlaceholders := ValidateTemplate(channelNameTemplate, ResolveOptions{})
 
-	if len(unknownFieldsNoSchema) > 0 {
+	if len(propertyFieldPlaceholders) > 0 {
 		if !attributesLicensed {
 			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates but the attributes license is not active")
 		}
@@ -5306,9 +5285,7 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 			}
 			return "", errors.Wrapf(ErrMalformedPlaybookRun, "channel name template references unknown or unresolved fields: %s", strings.Join(unresolved, ", "))
 		}
-		if runes := []rune(resolved); len(runes) > maxChannelDisplayNameRunes {
-			resolved = string(runes[:maxChannelDisplayNameRunes])
-		}
+		resolved = truncateRunes(resolved, maxChannelDisplayNameRunes)
 		resolvedRunName = strings.TrimSpace(resolved)
 		resolvedChannelName = strings.Join(strings.Fields(resolvedRunName), " ")
 	}
@@ -5508,3 +5485,11 @@ const maxChannelSlugLength = 59
 
 // maxChannelDisplayNameRunes is the maximum rune length for a channel display name.
 const maxChannelDisplayNameRunes = 64
+
+func truncateRunes(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) > max {
+		return string(runes[:max])
+	}
+	return s
+}

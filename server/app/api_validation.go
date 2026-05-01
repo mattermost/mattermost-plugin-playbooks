@@ -20,11 +20,7 @@ func ValidateTemplateAfterFieldDeletion(channelNameTemplate, deletedFieldID stri
 	if channelNameTemplate == "" {
 		return nil
 	}
-	remainingCap := len(allFields) - 1
-	if remainingCap < 0 {
-		remainingCap = 0
-	}
-	remaining := make([]PropertyField, 0, remainingCap)
+	remaining := make([]PropertyField, 0, len(allFields))
 	for _, f := range allFields {
 		if f.ID != deletedFieldID {
 			remaining = append(remaining, f)

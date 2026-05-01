@@ -224,8 +224,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
-		if errors.Is(err, app.ErrDuplicateEntry) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, err.Error(), err)
+		if h.handlePlaybookWriteError(w, c.logger, err) {
 			return
 		}
 		h.HandleError(w, c.logger, err)
@@ -337,8 +336,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	err = h.playbookService.Update(playbook, userID)
 	if err != nil {
-		if errors.Is(err, app.ErrDuplicateEntry) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, err.Error(), err)
+		if h.handlePlaybookWriteError(w, c.logger, err) {
 			return
 		}
 		h.HandleError(w, c.logger, err)
@@ -415,8 +413,7 @@ func (h *PlaybookHandler) restorePlaybook(c *Context, w http.ResponseWriter, r *
 
 	err = h.playbookService.Restore(playbookToRestore, userID)
 	if err != nil {
-		if errors.Is(err, app.ErrDuplicateEntry) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, err.Error(), err)
+		if h.handlePlaybookWriteError(w, c.logger, err) {
 			return
 		}
 		h.HandleError(w, c.logger, err)
@@ -799,8 +796,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		Conditions: importBlock.Conditions,
 	}, userID)
 	if err != nil {
-		if errors.Is(err, app.ErrDuplicateEntry) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, err.Error(), err)
+		if h.handlePlaybookWriteError(w, c.logger, err) {
 			return
 		}
 		h.HandleError(w, c.logger, err)
@@ -831,6 +827,15 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 		titles[m.Title] = true
 	}
 	return nil
+}
+
+// handlePlaybookWriteError maps known playbook write errors to HTTP status codes and returns true when handled.
+func (h *PlaybookHandler) handlePlaybookWriteError(w http.ResponseWriter, logger logrus.FieldLogger, err error) bool {
+	if errors.Is(err, app.ErrDuplicateEntry) {
+		h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+		return true
+	}
+	return false
 }
 
 // validateChannelNameTemplate validates templates for new playbooks (no property fields yet, system tokens only).
@@ -1052,6 +1057,10 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 
 	createdField, err := h.playbookService.CreatePropertyField(playbookID, *propertyField)
 	if err != nil {
+		if errors.Is(err, app.ErrReservedPropertyFieldName) {
+			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, logger, err)
 		return
 	}
@@ -1116,6 +1125,10 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 		}
 		if errors.Is(err, app.ErrPropertyFieldTypeChangeNotAllowed) {
 			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
+		if errors.Is(err, app.ErrReservedPropertyFieldName) {
+			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 			return
 		}
 		h.HandleError(w, logger, err)

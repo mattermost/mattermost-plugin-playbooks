@@ -534,7 +534,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			public = pb.CreatePublicPlaybookRun
 		}
 
-		// Second name guard: reject empty names for non-template playbooks
+		// Playbook is now loaded; reject an empty name only when no ChannelNameTemplate will generate one.
 		if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && pb.ChannelNameTemplate == "" {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 		}
