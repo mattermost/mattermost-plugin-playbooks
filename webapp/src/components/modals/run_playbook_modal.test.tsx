@@ -61,6 +61,7 @@ jest.mock('src/hooks', () => ({
 jest.mock('src/hooks/general', () => ({
     useProfilesInTeam: jest.fn(() => []),
     useUserDisplayNameMap: jest.fn(() => ({})),
+    useEnsureProfiles: jest.fn(),
 }));
 
 jest.mock('mattermost-redux/selectors/entities/users', () => ({

@@ -300,18 +300,17 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	// Use effective values so partial PUTs (e.g. RunNumberPrefix only) are still cross-validated.
-	effectiveTemplate := playbook.ChannelNameTemplate
-	if effectiveTemplate == "" {
-		effectiveTemplate = oldPlaybook.ChannelNameTemplate
-	}
-	if effectiveTemplate != "" {
+	// Validate the template that will actually be stored after this PUT.
+	// Only cross-validate when the user is keeping or updating a non-empty template.
+	// Sending ChannelNameTemplate: "" (intent: clear it) skips validation so both
+	// template and prefix can be cleared atomically in a single PUT.
+	if playbook.ChannelNameTemplate != "" {
 		propertyFields, err := h.propertyService.GetPropertyFields(playbook.ID)
 		if err != nil {
 			h.HandleError(w, c.logger, err)
 			return
 		}
-		if !h.validateTemplateWithFields(w, c.logger, effectiveTemplate, playbook.RunNumberPrefix, propertyFields) {
+		if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, propertyFields) {
 			return
 		}
 	}
@@ -698,16 +697,6 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	// validateChannelNameTemplate uses an empty field list (new playbook), so check against source fields here.
-	sourceFields, pfErr := h.propertyService.GetPropertyFields(playbookID)
-	if pfErr != nil {
-		h.HandleError(w, c.logger, pfErr)
-		return
-	}
-	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, sourceFields) {
-		return
-	}
-
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -827,7 +816,11 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 // handlePlaybookWriteError maps known playbook write errors to HTTP status codes and returns true when handled.
 func (h *PlaybookHandler) handlePlaybookWriteError(w http.ResponseWriter, logger logrus.FieldLogger, err error) bool {
 	if errors.Is(err, app.ErrDuplicateEntry) {
-		h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+		h.HandleErrorWithCode(w, logger, http.StatusConflict, app.ErrDuplicateEntry.Error(), err)
+		return true
+	}
+	if errors.Is(err, app.ErrReservedPropertyFieldName) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, app.ErrReservedPropertyFieldName.Error(), err)
 		return true
 	}
 	return false
@@ -845,7 +838,7 @@ func (h *PlaybookHandler) validateTemplateWithFields(w http.ResponseWriter, logg
 	}
 	if app.TemplateUsesSeqToken(template) && strings.TrimSpace(prefix) == "" {
 		err := errors.Wrap(app.ErrMalformedPlaybookRun, "channel name template uses {SEQ} but no run number prefix is configured")
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "channel name template uses {SEQ} but no run number prefix is configured", err)
 		return false
 	}
 	return true
@@ -1059,8 +1052,7 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 
 	createdField, err := h.playbookService.CreatePropertyField(playbookID, *propertyField)
 	if err != nil {
-		if errors.Is(err, app.ErrReservedPropertyFieldName) {
-			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		if h.handlePlaybookWriteError(w, logger, err) {
 			return
 		}
 		h.HandleError(w, logger, err)
@@ -1129,12 +1121,20 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
 			return
 		}
-		if errors.Is(err, app.ErrReservedPropertyFieldName) {
-			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		if h.handlePlaybookWriteError(w, logger, err) {
 			return
 		}
 		h.HandleError(w, logger, err)
 		return
+	}
+
+	if existingField.Name != propertyField.Name && currentPlaybook.ChannelNameTemplate != "" {
+		newTemplate := app.ReplaceFieldInTemplate(currentPlaybook.ChannelNameTemplate, existingField.Name, propertyField.Name)
+		if newTemplate != currentPlaybook.ChannelNameTemplate {
+			if _, err := h.playbookService.UpdateChannelNameTemplateIfUnchanged(playbookID, currentPlaybook.ChannelNameTemplate, newTemplate); err != nil {
+				logger.WithError(err).Warn("failed to update channel name template after field rename")
+			}
+		}
 	}
 
 	ReturnJSON(w, updatedField, http.StatusOK)

@@ -139,7 +139,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                 inputRef.current.setSelectionRange(newPos, newPos);
             }
         }, 0);
-    }, [input, triggerPos, insertMode, query.length, onChange, closeSuggestions]);
+    }, [input, triggerPos, insertMode, query, onChange, closeSuggestions]);
 
     const findTrigger = useCallback((val: string, cursor: number): number | null => {
         for (let i = cursor - 1; i >= 0; i--) {
@@ -389,7 +389,7 @@ const Warning = styled.div`
     margin-top: 4px;
     padding: 4px 8px;
     border-radius: 4px;
-    background: rgba(var(--error-text-color-rgb), 0.08);
+    background: rgba(var(--error-text-rgb), 0.08);
     color: var(--error-text);
     font-size: 12px;
 `;

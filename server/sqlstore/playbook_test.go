@@ -2173,6 +2173,42 @@ func TestIncrementRunNumber(t *testing.T) {
 		_, err := playbookStore.IncrementRunNumber("")
 		require.Error(t, err)
 	})
+
+	t.Run("archived playbook returns ErrNotFound", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Archived Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+
+		archivedID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		err = playbookStore.Archive(archivedID)
+		require.NoError(t, err)
+
+		_, err = playbookStore.IncrementRunNumber(archivedID)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, app.ErrNotFound))
+	})
+}
+
+func TestCreatePlaybookDuplicateID(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	pb := NewPBBuilder().
+		WithTitle("Duplicate ID Playbook").
+		WithTeamID(model.NewId()).
+		ToPlaybook()
+
+	firstID, err := playbookStore.Create(pb)
+	require.NoError(t, err)
+
+	// Force the same ID on a second create.
+	pb.ID = firstID
+	_, err = playbookStore.Create(pb)
+	require.Error(t, err)
+	require.True(t, errors.Is(err, app.ErrDuplicateEntry))
 }
 
 func TestUpdateChannelNameTemplateIfUnchanged(t *testing.T) {

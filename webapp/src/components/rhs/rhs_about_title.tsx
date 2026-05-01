@@ -158,7 +158,6 @@ const ChipSeparator = styled.span`
     font-weight: 600;
 `;
 
-
 const PlaybookChip = styled.button`
     display: inline-flex;
     max-width: 100%;

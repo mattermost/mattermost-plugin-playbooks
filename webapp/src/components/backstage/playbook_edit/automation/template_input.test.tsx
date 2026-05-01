@@ -30,6 +30,7 @@ jest.mock('src/components/backstage/playbook_edit/automation/styles', () => ({
 jest.mock('src/utils/template_utils', () => ({
     buildTemplatePreview: (template: string) => `preview:${template}`,
     SYSTEM_TOKENS: new Set(['SEQ', 'OWNER', 'CREATOR']),
+    extractTemplateFieldNames: jest.requireActual('src/utils/template_utils').extractTemplateFieldNames,
 }));
 
 // ---------------------------------------------------------------------------

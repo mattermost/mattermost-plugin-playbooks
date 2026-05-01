@@ -647,7 +647,7 @@ func (s *playbookService) checkRunNumberPrefixUnique(teamID, prefix, excludeID s
 	}
 	used, err := s.store.IsRunNumberPrefixUsed(teamID, prefix, excludeID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to check run number prefix uniqueness for team %s, prefix %q", teamID, prefix)
 	}
 	if used {
 		return ErrDuplicateEntry

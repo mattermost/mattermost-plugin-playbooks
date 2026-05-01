@@ -80,7 +80,7 @@ type Playbook struct {
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
 
 	RunNumberPrefix string `json:"run_number_prefix" export:"run_number_prefix"`
-	NextRunNumber   int64  `json:"next_run_number" export:"-"`
+	NextRunNumber   int64  `json:"-" export:"-"`
 
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`

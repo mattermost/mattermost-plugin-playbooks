@@ -109,6 +109,22 @@ func TestNormalizeRunNumberPrefix(t *testing.T) {
 	t.Run("interior hyphens are preserved", func(t *testing.T) {
 		require.Equal(t, "INC-PROD", NormalizeRunNumberPrefix("INC-PROD"))
 	})
+
+	t.Run("single hyphen becomes empty", func(t *testing.T) {
+		require.Equal(t, "", NormalizeRunNumberPrefix("-"))
+	})
+
+	t.Run("multiple hyphens become empty", func(t *testing.T) {
+		require.Equal(t, "", NormalizeRunNumberPrefix("---"))
+	})
+
+	t.Run("hyphen with surrounding whitespace becomes empty", func(t *testing.T) {
+		require.Equal(t, "", NormalizeRunNumberPrefix(" - "))
+	})
+
+	t.Run("hyphens around inner text are trimmed", func(t *testing.T) {
+		require.Equal(t, "abc", NormalizeRunNumberPrefix("-abc-"))
+	})
 }
 
 func TestPlaybook_MarshalJSON(t *testing.T) {

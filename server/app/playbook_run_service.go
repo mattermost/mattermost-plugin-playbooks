@@ -371,7 +371,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "source", source)
-	model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+	if playbookRun != nil {
+		model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+	}
 	if pb != nil {
 		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
 	}
@@ -404,7 +406,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	} else {
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get existing channel %s during run creation", playbookRun.ChannelID)
+			return nil, err
 		}
 
 	}
@@ -472,7 +474,59 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	if pb != nil && s.licenseChecker.PlaybookAttributesAllowed() {
-		playbookRun = s.applyInitialProperties(playbookRun, pb.ID, initialPropertyValues, logger)
+		propertyCopyResult, err := s.propertyService.CopyPlaybookPropertiesToRun(pb.ID, playbookRun.ID)
+		if err != nil {
+			logger.WithError(err).Warn("failed to copy playbook properties to run")
+		} else {
+			// Assign the copied property fields to the run
+			playbookRun.PropertyFields = propertyCopyResult.CopiedFields
+
+			// Copy conditions from playbook to run using the field mappings if license allows
+			if s.licenseChecker.ConditionalPlaybooksAllowed() {
+				conditionMapping, err := s.conditionService.CopyPlaybookConditionsToRun(pb.ID, playbookRun.ID, propertyCopyResult)
+				if err != nil {
+					logger.WithError(err).Warn("failed to copy playbook conditions to run")
+				} else {
+					// Update checklist item condition IDs to reference the new condition IDs
+					playbookRun.SwapConditionIDs(conditionMapping)
+
+					// Evaluate all conditions to set initial visibility state
+					if len(conditionMapping) > 0 {
+						evalResult, evalErr := s.conditionService.EvaluateAllConditionsForRun(playbookRun)
+						if evalErr != nil {
+							logger.WithError(evalErr).Warn("failed to evaluate conditions for run")
+						} else if evalResult != nil && evalResult.AnythingAdded() {
+							var parts []string
+							for checklistTitle, changes := range evalResult.ChecklistChanges {
+								if changes.Added > 0 {
+									if changes.Added == 1 {
+										parts = append(parts, fmt.Sprintf("1 new task to **%s** checklist", checklistTitle))
+									} else {
+										parts = append(parts, fmt.Sprintf("%d new tasks to **%s** checklist", changes.Added, checklistTitle))
+									}
+								}
+							}
+							if len(parts) > 0 {
+								msg := "Conditions added " + strings.Join(parts, ", ") + " based on initial property values."
+								if _, postErr := s.poster.PostMessage(playbookRun.ChannelID, msg); postErr != nil {
+									logger.WithError(postErr).Warn("failed to post initial condition evaluation message")
+								}
+							}
+						}
+					}
+
+					// Save the updated playbook run with correct condition IDs and visibility states
+					playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+					if err != nil {
+						logger.WithError(err).Warn("failed to update playbook run with new condition IDs")
+					}
+				}
+			}
+
+			if len(initialPropertyValues) > 0 {
+				playbookRun = s.applyInitialPropertyValues(playbookRun, propertyCopyResult, initialPropertyValues, logger)
+			}
+		}
 	}
 
 	s.metricsService.IncrementRunsCreatedCount(1)
@@ -522,16 +576,12 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
-	// Cap invited users to prevent unbounded memory and N+1 calls in AddParticipants.
-	const maxInvitedUsers = 1000
-	if len(invitedUserIDs) > maxInvitedUsers {
-		logger.WithField("total_invited", len(invitedUserIDs)).Warn("invited user list exceeds cap; truncating to maxInvitedUsers")
-		invitedUserIDs = invitedUserIDs[:maxInvitedUsers]
-	}
-
 	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
 	if err != nil {
-		logger.WithError(err).WithField("invited_user_count", len(invitedUserIDs)).Warn("failed to add invited users on playbook run creation")
+		logrus.WithError(err).WithFields(map[string]any{
+			"playbookRunId":  playbookRun.ID,
+			"invitedUserIDs": invitedUserIDs,
+		}).Warn("failed to add invited users on playbook run creation")
 	}
 
 	var reporter *model.User
@@ -547,9 +597,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		startMessage := fmt.Sprintf("You have been assigned ownership of the run: [%s](%s), reported by @%s.",
 			playbookRun.Name, GetRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
 
-		// DM notification to owner is best-effort: a delivery failure must not abort run creation.
 		if err = s.poster.DM(playbookRun.OwnerUserID, &model.Post{Message: startMessage}); err != nil {
-			logger.WithError(err).Warn("failed to send DM to owner on CreatePlaybookRun")
+			err := errors.Wrapf(err, "failed to send DM on CreatePlaybookRun")
+			auditRec.AddErrorDesc(err.Error())
+			return nil, err
 		}
 	}
 
@@ -569,7 +620,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		// dm to users who are auto-following the playbook
 		err = s.dmPostToAutoFollows(&model.Post{Message: message}, pb.ID, playbookRun.ID, userID)
 		if err != nil {
-			logger.WithError(err).Warn("failed to dm post to auto follows")
+			logger.WithError(err).Error("failed to dm post to auto follows")
 		}
 	}
 
@@ -662,7 +713,7 @@ func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []
 	}
 
 	if _, err := s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
-		logrus.WithError(err).WithField("channel_id", channel.Id).Error("failedInvitedUserActions: failed to post to channel")
+		logrus.WithError(err).Error("failedInvitedUserActions: failed to post to channel")
 	}
 }
 
@@ -703,7 +754,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, userID, t
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	message := ""
@@ -777,7 +828,7 @@ func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo Requester
 func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, playbookRunID string, checklist int) error {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	T := i18n.GetUserTranslations(user.Locale)
@@ -1115,7 +1166,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	numOutstanding := 0
@@ -1209,12 +1260,12 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	endAt := model.GetMillis()
 	if err = s.store.FinishPlaybookRun(playbookRunID, endAt); err != nil {
-		return errors.Wrap(err, "failed to finish playbook run in store")
+		return err
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
@@ -1319,14 +1370,14 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	playbookRunToModify.StatusUpdateEnabled = enable
 
 	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		return errors.Wrap(err, "failed to update playbook run when toggling status updates")
+		return err
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
-	}
 	T := i18n.GetUserTranslations(user.Locale)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
 
 	statusUpdate := "enabled"
 	eventType := StatusUpdatesEnabled
@@ -1481,16 +1532,6 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		}
 
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
-	}
-
-	// Cancel pending retrospective reminder — run is back in progress.
-	s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
-
-	// Re-schedule status update reminder if it was active before the run was finished.
-	if playbookRunToRestore.StatusUpdateEnabled && playbookRunToRestore.PreviousReminder > 0 {
-		if reminderErr := s.SetNewReminder(playbookRunID, playbookRunToRestore.PreviousReminder); reminderErr != nil {
-			logger.WithError(reminderErr).Warn("failed to re-schedule status update reminder on run restore")
-		}
 	}
 
 	// Mark success and add result state for audit
@@ -2016,7 +2057,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.New("invalid checklist item indices")
 	}
 
-	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	// Add current context to audit
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
@@ -2037,7 +2078,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		var newUser *model.User
 		newUser, err = s.pluginAPI.User.Get(assigneeID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to resolve user %s", assigneeID)
+			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 		newAssigneeUserAtMention = "@" + newUser.Username
 	}
@@ -2047,7 +2088,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		var oldUser *model.User
 		oldUser, err = s.pluginAPI.User.Get(itemToCheck.AssigneeID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to resolve user %s", itemToCheck.AssigneeID)
+			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 		oldAssigneeUserAtMention = "@" + oldUser.Username
 	}
@@ -2055,7 +2096,8 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	itemToCheck.AssigneeID = assigneeID
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeModified = timestamp
-	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
@@ -2084,16 +2126,15 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		var subjectUser *model.User
 		subjectUser, err = s.pluginAPI.User.Get(userID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to resolve user %s", assigneeID)
+			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 
 		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
 
-		// DM notification to assignee is best-effort: a delivery failure must not abort task assignment.
 		if err = s.poster.DM(itemToCheck.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
-			logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to send DM to assignee in SetAssignee")
+			return errors.Wrapf(err, "failed to send DM in SetAssignee")
 		}
 	}
 
@@ -3207,7 +3248,6 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 		_, userRoleID, adminRoleID := s.GetSchemeRolesForChannel(channel)
 		if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
-				"run_id":        playbookRun.ID,
 				"channel_id":    channel.Id,
 				"owner_user_id": playbookRun.OwnerUserID,
 			}).Warn("failed to promote owner to admin")
@@ -3293,13 +3333,14 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 	}
 
 	// Name is optional when a single playbook has a ChannelNameTemplate (template generates the name).
+	// Do not pre-fill nameDefault with the raw template string — it contains unresolved {TOKEN} placeholders
+	// that the dialog flow cannot substitute, and users would submit the literal tokens as the run name.
 	nameOptional := false
 	nameMinLength := 1
 	nameDefault := ""
 	if len(playbooks) == 1 && playbooks[0].ChannelNameTemplate != "" {
 		nameOptional = true
 		nameMinLength = 0
-		nameDefault = playbooks[0].ChannelNameTemplate
 	}
 
 	return &model.Dialog{
@@ -3408,7 +3449,7 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookRun, postID, userID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", userID)
+		return nil, errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	T := i18n.GetUserTranslations(user.Locale)
@@ -4011,10 +4052,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 
 	// To be added to the UI as an optional action
 	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"run_id":  playbookRun.ID,
-			"user_id": userID,
-		}).Error("failed to remove user from linked channel")
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to remove user from linked channel")
 	}
 }
 
@@ -4067,10 +4105,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"run_id":     playbookRunID,
-			"channel_id": playbookRun.ChannelID,
-		}).Error("failed to get channel")
+		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("failed to get channel")
 	}
 
 	s.failedInvitedUserActions(usersFailedToInvite, channel)
@@ -4205,10 +4240,7 @@ func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, us
 
 	// Add user to the channel
 	if _, err := s.api.AddChannelMember(playbookRun.ChannelID, user.Id); err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"run_id":  playbookRun.ID,
-			"user_id": user.Id,
-		}).Error("participateActions: failed to add user to linked channel")
+		logrus.WithError(err).WithField("user_id", user.Id).Error("participateActions: failed to add user to linked channel")
 	}
 }
 
@@ -4666,7 +4698,6 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(post *model.Post) {
 							err := s.doActions(ta.Actions, runID, post.UserId, ChecklistItemStateClosed, checklistNum, itemNum)
 							if err != nil {
 								logrus.WithError(err).WithFields(logrus.Fields{
-									"run_id":       runID,
 									"checklistNum": checklistNum,
 									"itemNum":      itemNum,
 								}).Error("can't process task actions")
@@ -4836,7 +4867,7 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 
 	if !propertyValuesEqual(propertyField, currentValue, value) {
 		var err error
-		run, err = s.handlePropertyValueChanged(userID, run, propertyField, currentValue, value)
+		_, err = s.handlePropertyValueChanged(userID, run, propertyField, currentValue, value)
 		if err != nil {
 			return nil, err
 		}
@@ -4847,78 +4878,40 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	return propertyValue, nil
 }
 
-// applyInitialProperties copies playbook property fields and conditions to the run,
-// then upserts any caller-supplied initial values. Mutations are applied in-place on playbookRun.
-func (s *PlaybookRunServiceImpl) applyInitialProperties(playbookRun *PlaybookRun, playbookID string, initialValues map[string]json.RawMessage, logger *logrus.Entry) *PlaybookRun {
-	propertyCopyResult, err := s.propertyService.CopyPlaybookPropertiesToRun(playbookID, playbookRun.ID)
-	if err != nil {
-		logger.WithError(err).Warn("failed to copy playbook properties to run; run created without property fields")
-		return playbookRun
+// applyInitialPropertyValues upserts caller-supplied initial property values onto a newly-created run.
+// propertyCopyResult must come from CopyPlaybookPropertiesToRun so field/option mappings are available.
+func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *PlaybookRun, propertyCopyResult *PropertyCopyResult, initialValues map[string]json.RawMessage, logger *logrus.Entry) *PlaybookRun {
+	runFieldByID := make(map[string]*PropertyField, len(propertyCopyResult.CopiedFields))
+	for i := range propertyCopyResult.CopiedFields {
+		runFieldByID[propertyCopyResult.CopiedFields[i].ID] = &propertyCopyResult.CopiedFields[i]
 	}
-	playbookRun.PropertyFields = propertyCopyResult.CopiedFields
-
-	if len(initialValues) > 0 {
-		runFieldByID := make(map[string]*PropertyField, len(propertyCopyResult.CopiedFields))
-		for i := range propertyCopyResult.CopiedFields {
-			runFieldByID[propertyCopyResult.CopiedFields[i].ID] = &propertyCopyResult.CopiedFields[i]
+	upsertedValues := make([]PropertyValue, 0, len(initialValues))
+	for playbookFieldID, rawValue := range initialValues {
+		runFieldID, ok := propertyCopyResult.FieldMappings[playbookFieldID]
+		if !ok {
+			logger.WithField("field_id", playbookFieldID).Warn("initial property value references unknown playbook field ID, skipping")
+			continue
 		}
-		upsertedValues := make([]PropertyValue, 0, len(initialValues))
-		for playbookFieldID, rawValue := range initialValues {
-			runFieldID, ok := propertyCopyResult.FieldMappings[playbookFieldID]
-			if !ok {
-				logger.WithField("field_id", playbookFieldID).Warn("initial property value references unknown playbook field ID, skipping")
-				continue
-			}
-			if len(rawValue) == 0 {
-				continue
-			}
-			translatedValue, err := translateOptionIDs(rawValue, propertyCopyResult.OptionMappings)
-			if err != nil {
-				logger.WithError(err).WithField("field_id", playbookFieldID).Warn("failed to translate option IDs for initial property value, skipping")
-				continue
-			}
-			runField, ok := runFieldByID[runFieldID]
-			if !ok {
-				logger.WithField("field_id", runFieldID).Warn("run field not found in copied fields, skipping")
-				continue
-			}
-			if _, err := s.propertyService.UpsertRunPropertyValueWithField(playbookRun.ID, runField, translatedValue); err != nil {
-				logger.WithError(err).WithField("field_id", runFieldID).Warn("failed to upsert initial property value, skipping")
-				continue
-			}
-			upsertedValues = append(upsertedValues, PropertyValue{FieldID: runFieldID, Value: translatedValue})
+		if len(rawValue) == 0 {
+			continue
 		}
-		playbookRun.PropertyValues = append(playbookRun.PropertyValues, upsertedValues...)
-	}
-
-	if !s.licenseChecker.ConditionalPlaybooksAllowed() {
-		return playbookRun
-	}
-
-	conditionMapping, err := s.conditionService.CopyPlaybookConditionsToRun(playbookID, playbookRun.ID, propertyCopyResult)
-	if err != nil {
-		logger.WithError(err).Warn("failed to copy playbook conditions to run")
-		return playbookRun
-	}
-
-	playbookRun.SwapConditionIDs(conditionMapping)
-
-	if len(conditionMapping) > 0 {
-		if _, err = s.conditionService.EvaluateAllConditionsForRun(playbookRun); err != nil {
-			logger.WithError(err).Warn("failed to evaluate conditions for run")
+		translatedValue, err := translateOptionIDs(rawValue, propertyCopyResult.OptionMappings)
+		if err != nil {
+			logger.WithError(err).WithField("field_id", playbookFieldID).Warn("failed to translate option IDs for initial property value, skipping")
+			continue
 		}
-	}
-
-	if updatedRun, updateErr := s.store.UpdatePlaybookRun(playbookRun); updateErr != nil {
-		logger.WithError(updateErr).Warn("failed to update playbook run with new condition IDs; run created with stale condition references")
-		if freshRun, readErr := s.GetPlaybookRun(playbookRun.ID); readErr == nil {
-			return freshRun
-		} else {
-			logger.WithError(readErr).Warn("failed to re-read run after condition update failure; WS event may reflect stale state")
+		runField, ok := runFieldByID[runFieldID]
+		if !ok {
+			logger.WithField("field_id", runFieldID).Warn("run field not found in copied fields, skipping")
+			continue
 		}
-	} else {
-		playbookRun = updatedRun
+		if _, err := s.propertyService.UpsertRunPropertyValueWithField(playbookRun.ID, runField, translatedValue); err != nil {
+			logger.WithError(err).WithField("field_id", runFieldID).Warn("failed to upsert initial property value, skipping")
+			continue
+		}
+		upsertedValues = append(upsertedValues, PropertyValue{FieldID: runFieldID, Value: translatedValue})
 	}
+	playbookRun.PropertyValues = append(playbookRun.PropertyValues, upsertedValues...)
 	return playbookRun
 }
 
@@ -5126,21 +5119,9 @@ func (s *PlaybookRunServiceImpl) prepareTemplate(pb *Playbook, source string, fi
 	// Snapshot to local to avoid TOCTOU with concurrent playbook mutations.
 	template := pb.ChannelNameTemplate
 
-	// Property placeholders require an active attributes license and cannot be supplied
-	// via dialog or slash command (those sources have no property value input).
-	if propertyPlaceholders := ValidateTemplate(template, ResolveOptions{}); len(propertyPlaceholders) > 0 {
-		if !attributesLicensed {
-			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates but the attributes license is not active")
-		}
-		switch source {
-		case RunSourceDialog:
-			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires property values that cannot be provided via the dialog; use the webapp creation flow instead")
-		case RunSourceCommand:
-			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates; please create runs via the web interface")
-		}
-	}
-
 	// Self-heal: strip unknown field placeholders left by a failed delete, then persist atomically.
+	// Run this before the license check so that a lapsed license doesn't permanently block
+	// run creation for playbooks that still reference a deleted property field.
 	if template != "" {
 		if unknownFields := ValidateTemplate(template, ResolveOptions{Fields: fields}); len(unknownFields) > 0 {
 			cleaned := template
@@ -5156,6 +5137,21 @@ func (s *PlaybookRunServiceImpl) prepareTemplate(pb *Playbook, source string, fi
 				}
 				template = cleaned
 			}
+		}
+	}
+
+	// Property placeholders require an active attributes license and cannot be supplied
+	// via dialog or slash command (those sources have no property value input).
+	// Check against the cleaned template so deleted-field ghosts don't trip this gate.
+	if propertyPlaceholders := ValidateTemplate(template, ResolveOptions{}); len(propertyPlaceholders) > 0 {
+		if !attributesLicensed {
+			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates but the attributes license is not active")
+		}
+		switch source {
+		case RunSourceDialog:
+			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires property values that cannot be provided via the dialog; use the webapp creation flow instead")
+		case RunSourceCommand:
+			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates; please create runs via the web interface")
 		}
 	}
 

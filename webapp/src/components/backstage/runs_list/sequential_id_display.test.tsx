@@ -70,6 +70,22 @@ describe('SequentialIdDisplay', () => {
         }
     });
 
+    it('renders the run name but not the sequential-id element when run_number is positive and sequentialId is empty', () => {
+        const component = renderer.create(
+            <SequentialIdDisplay
+                runNumber={1}
+                sequentialId=''
+                runName='My Run'
+            />,
+        );
+
+        const tree = component.toJSON();
+        const json = JSON.stringify(tree);
+
+        expect(json).toContain('My Run');
+        expect(findNodeByTestId(tree, 'run-sequential-id')).toBeNull();
+    });
+
     it('does not render the sequential-id element when run_number is 0', () => {
         const component = renderer.create(
             <SequentialIdDisplay

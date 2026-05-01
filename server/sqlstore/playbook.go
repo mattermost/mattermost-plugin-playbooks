@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"math"
 	"strings"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -48,9 +48,6 @@ type playbookMember struct {
 	MemberID   string
 	Roles      string
 }
-
-// txDefaultTimeout is the context timeout applied to every short transactional query.
-const txDefaultTimeout = 10 * time.Second
 
 // definied to call a common insights query builder for both user and team insights
 const insightsQueryTypeUser = "insights_query_type_user"
@@ -282,6 +279,9 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			// NextRunNumber omitted: DB default (1) is always correct for new playbooks.
 		}))
 	if err != nil {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == "23505" {
+			return "", errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
 		return "", errors.Wrap(err, "failed to store new playbook")
 	}
 
@@ -730,6 +730,9 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
 	if err != nil {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == "23505" {
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
 	}
 
@@ -1286,7 +1289,7 @@ func (p *playbookStore) IncrementRunNumber(playbookID string) (int64, error) {
 
 	var runNumber int64
 	// Raw SQL: squirrel cannot express RETURNING for atomic increment-and-read (UPDATE + SELECT would race).
-	// p.store.db.Get uses a replica-safe connection outside any caller-managed transaction; number gaps
+	// p.store.db.Get uses the master (write) connection outside any caller-managed transaction; number gaps
 	// (e.g. from rolled-back run creation) are acceptable by design.
 	if err := p.store.db.Get(
 		&runNumber,

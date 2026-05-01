@@ -187,6 +187,111 @@ describe('playbook_run_updates utilities', () => {
             expect(result.sequential_id).toBe('INC-00003');
         });
 
+        it('should return the original run reference unchanged when update is older than current state', () => {
+            const currentRun = {...testPlaybookRun, update_at: 2000};
+            const update = {
+                id: currentRun.id,
+                playbook_run_updated_at: 1000,
+                changed_fields: {
+                    name: 'Stale Name',
+                },
+            };
+
+            const result = applyIncrementalUpdate(currentRun, update);
+
+            expect(result).toBe(currentRun);
+        });
+
+        it('should apply update when update timestamp is newer than current state', () => {
+            const currentRun = {...testPlaybookRun, update_at: 1000};
+            const update = {
+                id: currentRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    name: 'Newer Name',
+                },
+            };
+
+            const result = applyIncrementalUpdate(currentRun, update);
+
+            expect(result).not.toBe(currentRun);
+            expect(result.name).toBe('Newer Name');
+        });
+
+        it('should remove checklist specified in checklist_deletes', () => {
+            const runWith2Checklists = {
+                ...testPlaybookRun,
+                checklists: [
+                    {
+                        id: 'checklist_1',
+                        title: 'Checklist One',
+                        items: [],
+                    },
+                    {
+                        id: 'checklist_2',
+                        title: 'Checklist Two',
+                        items: [],
+                    },
+                ],
+            };
+
+            const update = {
+                id: runWith2Checklists.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {},
+                checklist_deletes: ['checklist_1'],
+            };
+
+            const result = applyIncrementalUpdate(runWith2Checklists, update);
+
+            expect(result.checklists).toHaveLength(1);
+            expect(result.checklists[0].id).toBe('checklist_2');
+        });
+
+        it('should remove timeline event specified in timeline_event_deletes', () => {
+            const runWith2Events = {
+                ...testPlaybookRun,
+                timeline_events: [
+                    {id: 'event_1', create_at: 100, delete_at: 0, event_at: 100, playbook_run_id: 'run_123', type: 0, subject_user_id: '', post_id: '', subject_display_name: '', parent_id: '', details: ''},
+                    {id: 'event_2', create_at: 200, delete_at: 0, event_at: 200, playbook_run_id: 'run_123', type: 0, subject_user_id: '', post_id: '', subject_display_name: '', parent_id: '', details: ''},
+                ],
+            };
+
+            const update = {
+                id: runWith2Events.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {},
+                timeline_event_deletes: ['event_1'],
+            };
+
+            const result = applyIncrementalUpdate(runWith2Events, update);
+
+            expect(result.timeline_events).toHaveLength(1);
+            expect(result.timeline_events![0].id).toBe('event_2');
+        });
+
+        it('should remove status post specified in status_post_deletes', () => {
+            const runWith2Posts = {
+                ...testPlaybookRun,
+                status_posts: [
+                    {id: 'post_1', create_at: 100, delete_at: 0},
+                    {id: 'post_2', create_at: 200, delete_at: 0},
+                ],
+            };
+
+            const update = {
+                id: runWith2Posts.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {},
+                status_post_deletes: ['post_1'],
+            };
+
+            const result = applyIncrementalUpdate(runWith2Posts, update);
+
+            expect(result.status_posts).toHaveLength(1);
+            expect(result.status_posts![0].id).toBe('post_2');
+        });
+
         it('should wipe property_values if server incorrectly includes null property_values in changed_fields', () => {
             // This documents the bug behavior before the server fix: if the server
             // uses store-level GetPlaybookRun (nil properties) for updatedRun,

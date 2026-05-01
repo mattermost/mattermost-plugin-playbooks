@@ -6,6 +6,7 @@ import {
     TemplatePropertyField,
     buildTemplatePreview,
     extractTemplateFieldNames,
+    formatSequentialID,
     resolveTemplatePreview,
 } from './template_utils';
 
@@ -20,6 +21,40 @@ describe('template_utils', () => {
         it('should not contain unknown tokens', () => {
             expect(SYSTEM_TOKENS.has('UNKNOWN')).toBe(false);
             expect(SYSTEM_TOKENS.has('NAME')).toBe(false);
+        });
+    });
+
+    describe('formatSequentialID', () => {
+        it('should return empty string when runNumber is 0 and prefix is empty', () => {
+            expect(formatSequentialID('', 0)).toBe('');
+        });
+
+        it('should return empty string when runNumber is 0 regardless of prefix', () => {
+            expect(formatSequentialID('INC', 0)).toBe('');
+        });
+
+        it('should return zero-padded number when prefix is empty', () => {
+            expect(formatSequentialID('', 3)).toBe('00003');
+        });
+
+        it('should return prefix-padded number when prefix is set', () => {
+            expect(formatSequentialID('INC', 42)).toBe('INC-00042');
+        });
+
+        it('should pad single digit run number to 5 digits with prefix', () => {
+            expect(formatSequentialID('INC', 1)).toBe('INC-00001');
+        });
+
+        it('should return zero-padded number for 5-digit run number without prefix', () => {
+            expect(formatSequentialID('', 99999)).toBe('99999');
+        });
+
+        it('should not truncate numbers exceeding 5 digits without prefix', () => {
+            expect(formatSequentialID('', 100000)).toBe('100000');
+        });
+
+        it('should not truncate numbers exceeding 5 digits with prefix', () => {
+            expect(formatSequentialID('INC', 100000)).toBe('INC-100000');
         });
     });
 

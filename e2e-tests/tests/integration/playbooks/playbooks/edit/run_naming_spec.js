@@ -320,4 +320,55 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             });
         });
     });
+
+    it('template using {SEQ} cannot be saved without a run number prefix', () => {
+        // # Visit the playbook outline editor
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+
+        // * Wait for the page to load
+        cy.findByTestId('channel-access-run-number-prefix').should('exist');
+
+        // # Ensure the prefix input is empty (no prefix set)
+        cy.findByTestId('channel-access-run-number-prefix').clear();
+
+        // # Type {SEQ} into the template input with no prefix
+        cy.findByTestId('channel-access-run-name-template-input').type(TOKEN_SEQ, {parseSpecialCharSequences: false});
+        cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
+
+        // * Assert that a warning is shown when {SEQ} is used with no prefix
+        cy.findByTestId('channel-access-run-name-template-warning').should('exist');
+
+        // * Assert the save button is disabled when {SEQ} is used with no prefix
+        cy.findByTestId('channel-access-run-name-template-save').should('be.disabled');
+    });
+
+    it('clearing both channel_name_template and run_number_prefix in a single update succeeds', () => {
+        // # Create a playbook with both fields set
+        cy.apiPatchPlaybook(testPlaybook.id, {
+            run_number_prefix: 'INC',
+            channel_name_template: TOKEN_SEQ,
+        }).then(() => {
+            // * Verify both fields are set before clearing
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.run_number_prefix).to.equal('INC');
+                expect(pb.channel_name_template).to.equal(TOKEN_SEQ);
+            });
+
+            // # Clear both fields in a single PATCH call
+            cy.apiPatchPlaybook(testPlaybook.id, {
+                run_number_prefix: '',
+                channel_name_template: '',
+            }).then((updated) => {
+                // * Both fields are cleared in the response
+                expect(updated.run_number_prefix).to.equal('');
+                expect(updated.channel_name_template).to.equal('');
+            });
+
+            // * Verify the cleared values are persisted server-side
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.run_number_prefix).to.equal('');
+                expect(pb.channel_name_template).to.equal('');
+            });
+        });
+    });
 });

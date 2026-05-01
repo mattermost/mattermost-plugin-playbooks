@@ -219,6 +219,49 @@ describe('playbooks > overview', {testIsolation: true}, () => {
         cy.findByTestId('playbook-members').should('contain', '1');
     });
 
+    it('duplicating a playbook clears the run_number_prefix', () => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
+        // # Create a playbook with a run_number_prefix
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Prefix Playbook to Duplicate ' + Date.now(),
+            memberIDs: [],
+        }).then((playbook) => {
+            // # Set a run_number_prefix on the source playbook
+            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'INC'}).then(() => {
+                // # Navigate to the playbook page
+                cy.visit(`/playbooks/playbooks/${playbook.id}`);
+
+                // # Click on playbook title to open the menu
+                cy.findByTestId('playbook-editor-title').click();
+
+                // # Click on duplicate
+                cy.findByText('Duplicate').click();
+
+                // * Verify the duplicate is shown
+                cy.findByTestId('playbook-editor-title').should('contain', 'Copy of Prefix Playbook to Duplicate');
+
+                // # Extract the new playbook ID from the URL
+                cy.url().then((url) => {
+                    const newPlaybookId = url.split('/playbooks/playbooks/')[1].split('/')[0].split('?')[0];
+
+                    // * Assert the duplicated playbook has an empty run_number_prefix
+                    cy.apiGetPlaybook(newPlaybookId).then((duplicated) => {
+                        expect(duplicated.run_number_prefix).to.equal('');
+                    });
+
+                    // # Clean up the duplicated playbook
+                    cy.apiArchivePlaybook(newPlaybookId);
+                });
+
+                // # Clean up the original playbook
+                cy.apiArchivePlaybook(playbook.id);
+            });
+        });
+    });
+
     describe('checklists', () => {
         describe('header', () => {
             beforeEach(() => {

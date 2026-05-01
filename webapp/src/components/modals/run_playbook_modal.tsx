@@ -92,7 +92,7 @@ export const RunPlaybookModal = ({
         };
     }, []);
     const [submitError, setSubmitError] = useState('');
-    const [propertyValues, setPropertyValues] = useState<Record<string, unknown>>({});
+    const [propertyValues, setPropertyValues] = useState<Record<string, string | number | boolean | null | string[]>>({});
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
     const currentChannelId = useAppSelector(getCurrentChannelId);
@@ -792,8 +792,8 @@ const NamePreview = styled.div`
 
 type PropertyFieldsSectionProps = {
     fields: TemplatePropertyField[];
-    values: Record<string, unknown>;
-    onSetValues: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
+    values: Record<string, string | number | boolean | null | string[]>;
+    onSetValues: React.Dispatch<React.SetStateAction<Record<string, string | number | boolean | null | string[]>>>;
     onUserKnown?: (user: {id: string} & Record<string, unknown>) => void;
 };
 
@@ -804,7 +804,7 @@ const PropertyFieldsSection = ({fields, values, onSetValues, onUserKnown}: Prope
     profilesRef.current = profilesInTeam;
     const fetchAllUsersInTeam = useCallback(async () => profilesRef.current, []);
 
-    const updateValue = useCallback((fieldId: string, value: unknown) => {
+    const updateValue = useCallback((fieldId: string, value: string | number | boolean | null | string[]) => {
         onSetValues((prev) => ({...prev, [fieldId]: value}));
     }, [onSetValues]);
 
@@ -856,8 +856,8 @@ function formatDateInputValue(value: string | number): string {
 
 type PropertyFieldInputProps = {
     field: TemplatePropertyField;
-    value?: unknown;
-    onChange: (fieldId: string, value: unknown) => void;
+    value?: string | number | boolean | null | string[];
+    onChange: (fieldId: string, value: string | number | boolean | null | string[]) => void;
     fetchAllUsersInTeam: () => Promise<ReturnType<typeof useProfilesInTeam>>;
     inputId?: string;
     onUserKnown?: (user: {id: string} & Record<string, unknown>) => void;
