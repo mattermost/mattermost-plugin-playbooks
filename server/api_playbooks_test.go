@@ -1616,6 +1616,73 @@ func TestPlaybooksDuplicate(t *testing.T) {
 		assert.Equal(t, e.BasicPlaybook.Description, duplicatedPlaybook.Description)
 		assert.Equal(t, e.BasicPlaybook.TeamID, duplicatedPlaybook.TeamID)
 	})
+
+	t.Run("AssigneeType and AssigneePropertyFieldID are preserved on duplicate", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Assignee Placeholder Source",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "Tasks",
+					Items: []client.ChecklistItem{
+						{Title: "Specific user task", AssigneeType: ""},
+						{Title: "Owner task", AssigneeType: "owner"},
+						{Title: "Creator task", AssigneeType: "creator"},
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		duplicated, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		require.Len(t, duplicated.Checklists, 1)
+		require.Len(t, duplicated.Checklists[0].Items, 3)
+		assert.Equal(t, "", duplicated.Checklists[0].Items[0].AssigneeType)
+		assert.Equal(t, "owner", duplicated.Checklists[0].Items[1].AssigneeType)
+		assert.Equal(t, "creator", duplicated.Checklists[0].Items[2].AssigneeType)
+	})
+}
+
+func TestAssigneePlaceholderImportExport(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+
+	t.Run("AssigneeType is preserved through export/import", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Assignee Placeholder Export",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "Tasks",
+					Items: []client.ChecklistItem{
+						{Title: "Owner task", AssigneeType: "owner"},
+						{Title: "Creator task", AssigneeType: "creator"},
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		exported, err := e.PlaybooksClient.Playbooks.Export(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), exported, e.BasicTeam.Id)
+		require.NoError(t, err)
+
+		imported, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		require.Len(t, imported.Checklists, 1)
+		require.Len(t, imported.Checklists[0].Items, 2)
+		assert.Equal(t, "owner", imported.Checklists[0].Items[0].AssigneeType)
+		assert.Equal(t, "creator", imported.Checklists[0].Items[1].AssigneeType)
+	})
 }
 
 func TestAddPostToTimeline(t *testing.T) {

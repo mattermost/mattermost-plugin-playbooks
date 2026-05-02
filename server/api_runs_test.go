@@ -3207,3 +3207,53 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 	require.NotNil(t, run)
 	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
 }
+
+// TestRunCreationFromPlaybook_AssigneeTypePropagation verifies that checklist items
+// with role-based AssigneeType (owner, creator) are copied from the playbook template
+// to the run, and that their AssigneeID is resolved to the concrete user at creation time.
+func TestRunCreationFromPlaybook_AssigneeTypePropagation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Role Assignee Template Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Checklists: []client.Checklist{
+			{
+				Title: "Tasks",
+				Items: []client.ChecklistItem{
+					{Title: "Explicit user task", AssigneeType: ""},
+					{Title: "Owner task", AssigneeType: app.AssigneeTypeOwner},
+					{Title: "Creator task", AssigneeType: app.AssigneeTypeCreator},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Role Assignee Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  playbookID,
+	})
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 1)
+	require.Len(t, run.Checklists[0].Items, 3)
+
+	explicit := run.Checklists[0].Items[0]
+	ownerItem := run.Checklists[0].Items[1]
+	creatorItem := run.Checklists[0].Items[2]
+
+	assert.Equal(t, "", explicit.AssigneeType)
+	assert.Empty(t, explicit.AssigneeID)
+
+	assert.Equal(t, app.AssigneeTypeOwner, ownerItem.AssigneeType)
+	assert.Equal(t, e.RegularUser.Id, ownerItem.AssigneeID,
+		"owner-type item must be resolved to the run owner at creation time")
+
+	assert.Equal(t, app.AssigneeTypeCreator, creatorItem.AssigneeType)
+	assert.Equal(t, e.RegularUser.Id, creatorItem.AssigneeID,
+		"creator-type item must be resolved to the run creator at creation time")
+}

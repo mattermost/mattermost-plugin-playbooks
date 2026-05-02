@@ -260,6 +260,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 cy.findByTestId('pb-checklists-inner-container').within(() => {
                     cy.contains('[data-testid="checkbox-item-container"]', 'Creator Task').within(() => {
                         cy.contains(testCreator.username).should('exist');
+                        cy.findByTestId('role-indicator-badge').should('contain', 'Run Creator');
                     });
                 });
 
@@ -363,6 +364,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
             // This triggers a full checklists save that previously overwrote
             // assignee_type='' on Owner Task.
             cy.visit('/playbooks/playbooks/' + playbook.id + '/outline');
+            cy.get('#checklists').should('be.visible');
 
             cy.get('#checklists').within(() => {
                 cy.contains('[data-testid="checkbox-item-container"]', 'Unassigned Task').within(($item) => {
@@ -497,7 +499,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 // # Pick the user from the profile selector dropdown (rendered as @username)
                 cy.get('.playbook-react-select').contains('@' + testOwner.username).click();
 
-                // Wait for both mutations: the role-clear and the user-pick
+                // # Wait for both mutations: the role-clear and the user-pick
                 cy.wait('@UpdatePlaybook');
                 cy.wait('@UpdatePlaybook');
 
@@ -578,11 +580,14 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                     // * Verify via API that assignee_id is the resolved user and assignee_type is preserved
                     // The run gets its own scoped property field IDs (different from the playbook's),
                     // so we look up the run-level Manager field to get the correct ID to compare against.
-                    cy.apiGetRunPropertyFields(run.id).then((runFields) => {
+                    cy.apiGetRunPropertyFields(run.id).as('runFields');
+                    cy.apiGetPlaybookRun(run.id).as('runResponse');
+
+                    cy.get('@runFields').then((runFields) => {
                         const runManagerField = runFields.find((f) => f.name === 'Manager');
                         expect(runManagerField, 'run-level Manager field should exist').to.exist;
 
-                        cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
+                        cy.get('@runResponse').then(({body: runData}) => {
                             const task = runData.checklists[0].items[0];
                             expect(task.assignee_type).to.equal(ROLE_PROPERTY_USER);
                             expect(task.assignee_property_field_id).to.equal(runManagerField.id);
