@@ -289,7 +289,7 @@ func DefaultFormatPropertyValue(field *PropertyField, raw json.RawMessage) (stri
 			return t.Format("2006-01-02"), false
 		}
 		// Numeric-string millisecond timestamp
-		if ms, err := strconv.ParseInt(stringValue, 10, 64); err == nil && ms > 0 {
+		if ms, err := strconv.ParseInt(stringValue, 10, 64); err == nil && ms > epochMsMin {
 			return time.UnixMilli(ms).UTC().Format("2006-01-02"), false
 		}
 		return stringValue, false

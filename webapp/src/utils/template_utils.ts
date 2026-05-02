@@ -147,7 +147,7 @@ export function resolveTemplatePreview(
             // Require > 1e12 to distinguish epoch-ms values from compact YYYYMMDD
             // integers (e.g. parseInt('20250101') === 20250101 which is > 0 but
             // represents 1970-01-01 as a timestamp, not 2025-01-01).
-            if (!isNaN(epoch) && epoch > EPOCH_MS_MIN) {
+            if (!isNaN(epoch) && epoch >= EPOCH_MS_MIN) {
                 return new Date(epoch).toISOString().split('T')[0];
             }
 

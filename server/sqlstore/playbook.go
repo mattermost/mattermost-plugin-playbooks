@@ -783,7 +783,31 @@ func (p *playbookStore) Restore(id string) error {
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
 		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) UpdateRunNumberPrefix(id, prefix string) error {
+	if id == "" {
+		return errors.New("ID cannot be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("RunNumberPrefix", prefix).
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
+		return errors.Wrapf(err, "failed to update run number prefix for playbook '%s'", id)
 	}
 
 	return nil

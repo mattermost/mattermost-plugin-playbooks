@@ -6,7 +6,6 @@ import React, {
     useCallback,
     useEffect,
     useMemo,
-    useRef,
 } from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import debounce from 'debounce';
@@ -20,7 +19,7 @@ import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {savePlaybook} from 'src/client';
+import {updatePlaybookRunNumberPrefix} from 'src/client';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -67,20 +66,12 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
         });
     }, [updatePlaybook]));
 
-    // run_number_prefix is REST-only (not in GraphQL schema): save via REST PUT when it changes.
-    // Use a ref to avoid stale closures in the debounced function.
-    const restPlaybookRef = useRef(restPlaybook);
-    useEffect(() => {
-        restPlaybookRef.current = restPlaybook;
-    }, [restPlaybook]);
-
+    // run_number_prefix is REST-only (not in GraphQL schema): save via PATCH when it changes.
     const handleRunNumberPrefixSave = useMemo(
         () => debounce((prefix: string) => {
-            if (restPlaybookRef.current) {
-                savePlaybook({...restPlaybookRef.current, run_number_prefix: prefix});
-            }
+            updatePlaybookRunNumberPrefix(playbook.id, prefix);
         }, 500),
-        [],
+        [playbook.id],
     );
 
     useEffect(() => {

@@ -460,6 +460,9 @@ type PlaybookService interface {
 	// UpdateChannelNameTemplateIfUnchanged updates the channel name template only if it still equals oldTemplate.
 	// Returns true if the row was updated, false if a concurrent edit changed the value first.
 	UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error)
+
+	// UpdateRunNumberPrefix updates only the run number prefix for a playbook.
+	UpdateRunNumberPrefix(playbookID, prefix, userID string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -551,6 +554,9 @@ type PlaybookStore interface {
 	// UpdateChannelNameTemplateIfUnchanged updates the channel name template only if it still equals oldTemplate.
 	// Returns true if the row was updated, false if a concurrent edit changed the value first.
 	UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error)
+
+	// UpdateRunNumberPrefix updates only the RunNumberPrefix column for the given playbook.
+	UpdateRunNumberPrefix(id, prefix string) error
 }
 
 const (

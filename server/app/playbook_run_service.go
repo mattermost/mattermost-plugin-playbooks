@@ -361,7 +361,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		if strings.TrimSpace(playbookRun.Name) == "" {
 			return nil, errors.Wrap(ErrInternalPrecondition, "run name is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
 		}
-		if playbookRun.PlaybookID != "" && playbookRun.RunNumber == 0 {
+		if playbookRun.PlaybookID == "" {
+			return nil, errors.Wrap(ErrInternalPrecondition, "playbook ID is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
+		}
+		if playbookRun.RunNumber == 0 {
 			return nil, errors.Wrap(ErrInternalPrecondition, "run number is 0: ResolveRunCreationParams must be called before CreatePlaybookRun to allocate a sequential run number")
 		}
 	}
@@ -382,6 +385,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.ID = model.NewId()
 
 	logger := logrus.WithField("playbook_run_id", playbookRun.ID)
+
+	if playbookRun.Type != RunTypePlaybook && playbookRun.Type != RunTypeChannelChecklist {
+		return nil, errors.Wrap(ErrMalformedPlaybookRun, "invalid run type")
+	}
 
 	var err error
 	var channel *model.Channel
@@ -460,10 +467,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 				Items: []ChecklistItem{},
 			},
 		}
-	}
-
-	if playbookRun.Type != RunTypePlaybook && playbookRun.Type != RunTypeChannelChecklist {
-		return nil, errors.Wrap(ErrMalformedPlaybookRun, "invalid run type")
 	}
 
 	playbookRun, err = s.store.CreatePlaybookRun(playbookRun)
@@ -3314,14 +3317,18 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 		defaultPlaybookID = playbooks[0].ID
 	}
 
-	// Name is optional when a single playbook has a ChannelNameTemplate (template generates the name).
+	// Name is optional when a single playbook has a ChannelNameTemplate that is dialog-safe
+	// (i.e. has no property placeholders — those are rejected for RunSourceDialog in prepareTemplate).
 	nameOptional := false
 	nameMinLength := 1
 	nameDefault := ""
 	if len(playbooks) == 1 && playbooks[0].ChannelNameTemplate != "" {
-		nameOptional = true
-		nameMinLength = 0
-		nameDefault = playbooks[0].ChannelNameTemplate
+		hasPropertyPlaceholders := len(ValidateTemplate(playbooks[0].ChannelNameTemplate, ResolveOptions{})) > 0
+		if !hasPropertyPlaceholders {
+			nameOptional = true
+			nameMinLength = 0
+			nameDefault = playbooks[0].ChannelNameTemplate
+		}
 	}
 
 	return &model.Dialog{
@@ -5248,9 +5255,8 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 			}
 			return "", errors.Wrapf(ErrMalformedPlaybookRun, "channel name template references unknown or unresolved fields: %s", strings.Join(unresolved, ", "))
 		}
-		resolved = truncateRunes(resolved, model.ChannelDisplayNameMaxRunes)
-		resolvedRunName = strings.TrimSpace(resolved)
-		resolvedChannelName = strings.Join(strings.Fields(resolvedRunName), " ")
+		resolvedRunName = strings.TrimSpace(truncateRunes(resolved, MaxRunNameLength))
+		resolvedChannelName = strings.Join(strings.Fields(truncateRunes(resolvedRunName, model.ChannelDisplayNameMaxRunes)), " ")
 	}
 
 	if resolvedRunName == "" {

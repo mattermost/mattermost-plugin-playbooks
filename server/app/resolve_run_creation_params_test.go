@@ -154,6 +154,7 @@ func (s *stubPBServiceRunNumber) ReorderPropertyFields(_, _ string, _ int) ([]Pr
 func (s *stubPBServiceRunNumber) UpdateChannelNameTemplateIfUnchanged(_, _, _ string) (bool, error) {
 	panic("not called")
 }
+func (s *stubPBServiceRunNumber) UpdateRunNumberPrefix(_, _, _ string) error { panic("not called") }
 
 // ---------------------------------------------------------------------------
 // Tests for applyInitialPropertyValues

@@ -254,6 +254,7 @@ describe('TemplateInput', () => {
                 input='{SEQ} - Incident'
                 onChange={onChange}
                 fieldNames={[]}
+                prefix='INC'
                 testId='tpl'
             />,
         );

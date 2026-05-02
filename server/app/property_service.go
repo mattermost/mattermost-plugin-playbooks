@@ -609,7 +609,7 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 	if getErr != nil {
 		runFields, rfErr := s.GetRunPropertyFields(runID)
 		if rfErr != nil {
-			return nil, errors.Wrap(getErr, "failed to get property field")
+			return nil, errors.Wrap(rfErr, "failed to get property field")
 		}
 		for _, rf := range runFields {
 			if rf.ID == propertyFieldID {
@@ -653,6 +653,9 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 
 // UpsertRunPropertyValueWithField skips the GetPropertyField DB round-trip (fails for run-scoped fields right after creation).
 func (s *propertyService) UpsertRunPropertyValueWithField(runID string, field *PropertyField, value json.RawMessage) (*PropertyValue, error) {
+	if field == nil {
+		return nil, errors.Wrap(ErrInternalPrecondition, "field must not be nil")
+	}
 	mmField := field.ToMattermostPropertyField()
 	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(mmField, value, true)
 	if err != nil {

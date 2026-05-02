@@ -666,3 +666,25 @@ func (s *playbookService) IncrementRunNumber(playbookID string) (int64, error) {
 func (s *playbookService) UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error) {
 	return s.store.UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate)
 }
+
+func (s *playbookService) UpdateRunNumberPrefix(playbookID, prefix, userID string) error {
+	prefix = NormalizeRunNumberPrefix(prefix)
+	if err := ValidateRunNumberPrefix(prefix); err != nil {
+		return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+	}
+
+	playbook, err := s.store.Get(playbookID)
+	if err != nil {
+		return err
+	}
+
+	if NormalizeRunNumberPrefix(playbook.RunNumberPrefix) != prefix && playbook.NextRunNumber > 1 {
+		return ErrRunNumberPrefixImmutable
+	}
+
+	if err := s.checkRunNumberPrefixUnique(playbook.TeamID, prefix, playbookID); err != nil {
+		return err
+	}
+
+	return s.store.UpdateRunNumberPrefix(playbookID, prefix)
+}

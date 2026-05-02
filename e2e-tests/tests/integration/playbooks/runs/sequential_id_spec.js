@@ -127,8 +127,8 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                     cy.findAllByText(runName).should('have.length', 1);
                 });
 
-                // * Assert no sequential ID badge is shown (no element matching INC- or seq-id pattern)
-                cy.findByTestId('playbookRunList').within(() => {
+                // * Assert no sequential ID badge is shown in this run's row
+                cy.playbooksGetRunListRow(runName).within(() => {
                     cy.findByTestId('run-sequential-id').should('not.exist');
                 });
 
@@ -344,9 +344,11 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         const sharedPrefix = 'XTM' + getRandomId().slice(0, 3).toUpperCase();
         let playbookOnTestTeam;
 
-        // # Create a second team
+        // # Create a second team (requires admin privileges)
+        cy.apiAdminLogin();
         cy.apiCreateTeam('cross-team-' + getRandomId(), 'Cross Team ' + getRandomId()).then(({team: secondTeam}) => {
             cy.apiAddUserToTeam(secondTeam.id, testUser.id);
+            cy.apiLogin(testUser);
 
             // # Create playbook A on testTeam with the prefix
             cy.apiCreatePlaybook({

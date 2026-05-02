@@ -40,3 +40,6 @@ var ErrReservedPropertyFieldName = errors.New("reserved property field name")
 
 // ErrInternalPrecondition occurs when a caller skipped a mandatory setup step; maps to HTTP 500.
 var ErrInternalPrecondition = errors.New("internal precondition violated")
+
+// ErrRunNumberPrefixImmutable occurs when a caller tries to change the run number prefix after runs exist.
+var ErrRunNumberPrefixImmutable = errors.New("run number prefix cannot be changed after runs have been created")

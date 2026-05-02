@@ -80,6 +80,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", withContext(handler.getPlaybook)).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", withContext(handler.updatePlaybook)).Methods(http.MethodPut)
+	playbookRouter.HandleFunc("", withContext(handler.patchRunNumberPrefix)).Methods(http.MethodPatch)
 	playbookRouter.HandleFunc("", withContext(handler.archivePlaybook)).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
@@ -296,6 +297,12 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	// Preserve server-managed counters that must not be set via REST PUT.
 	playbook.NextRunNumber = oldPlaybook.NextRunNumber
 
+	// Reject prefix changes once runs have been created.
+	if app.NormalizeRunNumberPrefix(playbook.RunNumberPrefix) != app.NormalizeRunNumberPrefix(oldPlaybook.RunNumberPrefix) && oldPlaybook.NextRunNumber > 1 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusConflict, app.ErrRunNumberPrefixImmutable.Error(), app.ErrRunNumberPrefixImmutable)
+		return
+	}
+
 	if !h.validPlaybook(w, c.logger, &playbook) {
 		return
 	}
@@ -337,6 +344,46 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookHandler) patchRunNumberPrefix(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var body struct {
+		RunNumberPrefix string `json:"run_number_prefix"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageProperties(userID, playbook)) {
+		return
+	}
+
+	if playbook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Playbook cannot be modified", fmt.Errorf("playbook with id '%s' is archived", playbookID))
+		return
+	}
+
+	err = h.playbookService.UpdateRunNumberPrefix(playbookID, body.RunNumberPrefix, userID)
+	if err != nil {
+		if h.handlePlaybookWriteError(w, c.logger, err) {
+			return
+		}
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func validatePreAssignment(pb app.Playbook) error {
@@ -817,6 +864,10 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 func (h *PlaybookHandler) handlePlaybookWriteError(w http.ResponseWriter, logger logrus.FieldLogger, err error) bool {
 	if errors.Is(err, app.ErrDuplicateEntry) {
 		h.HandleErrorWithCode(w, logger, http.StatusConflict, app.ErrDuplicateEntry.Error(), err)
+		return true
+	}
+	if errors.Is(err, app.ErrRunNumberPrefixImmutable) {
+		h.HandleErrorWithCode(w, logger, http.StatusConflict, app.ErrRunNumberPrefixImmutable.Error(), err)
 		return true
 	}
 	if errors.Is(err, app.ErrReservedPropertyFieldName) {

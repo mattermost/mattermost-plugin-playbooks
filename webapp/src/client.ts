@@ -249,6 +249,13 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
     return data;
 }
 
+export async function updatePlaybookRunNumberPrefix(playbookId: Playbook['id'], runNumberPrefix: string) {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({run_number_prefix: runNumberPrefix}),
+    });
+}
+
 export async function restorePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
         method: 'PUT',

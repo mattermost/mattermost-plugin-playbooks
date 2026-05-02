@@ -160,6 +160,8 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
     it('{SEQ}, {OWNER}, and {CREATOR} all resolve together in the same template', () => {
         cy.apiLogin(testOwner);
 
+        const seqPrefix = 'TST' + getRandomId().slice(0, 3).toUpperCase();
+
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
             title: 'All System Tokens Playbook ' + getRandomId(),
@@ -168,7 +170,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
-            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'TST' + getRandomId().slice(0, 3).toUpperCase(), channel_name_template: '{SEQ} by {CREATOR} owned by {OWNER}'}).then(() => {
+            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: seqPrefix, channel_name_template: '{SEQ} by {CREATOR} owned by {OWNER}'}).then(() => {
                 cy.apiLogin(testCreator);
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
@@ -184,7 +186,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
                     cy.get('h1').should('not.contain', '{SEQ}');
                     cy.get('h1').should('not.contain', '{OWNER}');
                     cy.get('h1').should('not.contain', '{CREATOR}');
-                    cy.get('h1').should('contain', 'TST-');
+                    cy.get('h1').should('contain', seqPrefix + '-');
 
                     cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
                         // * All three system tokens must be resolved — no raw token remains
@@ -193,13 +195,13 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
                         expect(runData.name).to.not.include('{CREATOR}');
 
                         // * Sequential ID prefix must appear
-                        expect(runData.name, 'SEQ token should resolve to prefix').to.include('TST-');
+                        expect(runData.name, 'SEQ token should resolve to prefix').to.include(seqPrefix + '-');
                         expect(runData.name, 'owner name should appear').to.include(ownerName);
                         expect(runData.name, 'creator name should appear').to.include(creatorName);
 
                         // * sequential_id must be stored (not just rendered)
                         expect(runData.sequential_id).to.not.be.empty;
-                        expect(runData.sequential_id).to.include('TST-');
+                        expect(runData.sequential_id).to.include(seqPrefix + '-');
                     });
                 });
             });
