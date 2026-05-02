@@ -4,8 +4,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import ReactSelect, {StylesConfig} from 'react-select';
-import {defineMessages, useIntl} from 'react-intl';
-
 import {
     AccountOutlineIcon,
     CheckIcon,
@@ -14,10 +12,9 @@ import {
     LinkVariantIcon,
     MenuVariantIcon,
 } from '@mattermost/compass-icons/components';
+
 import {FieldType} from '@mattermost/types/properties';
 
-import {useToaster} from 'src/components/backstage/toast_banner';
-import {ToastStyle} from 'src/components/backstage/toast';
 import type {PropertyField} from 'src/types/properties';
 
 import Dropdown from 'src/components/dropdown';
@@ -26,7 +23,7 @@ import {hasOptions, supportsOptions} from './property_utils';
 
 interface Props {
     field: PropertyField;
-    updateField: (field: PropertyField) => void | Promise<void>;
+    updateField: (field: PropertyField) => void;
     onClose?: () => void;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
@@ -41,25 +38,37 @@ type TypeOption = {
     type: PropertyType;
 };
 
-const propertyTypeMessages = defineMessages({
-    text: {id: 'playbook.property_type.text', defaultMessage: 'Text'},
-    url: {id: 'playbook.property_type.url', defaultMessage: 'URL'},
-    select: {id: 'playbook.property_type.select', defaultMessage: 'Select'},
-    multiselect: {id: 'playbook.property_type.multiselect', defaultMessage: 'Multi-select'},
-    user: {id: 'playbook.property_type.user', defaultMessage: 'User'},
-    defaultOptionName: {id: 'playbook.property_type.default_option_name', defaultMessage: 'Option 1'},
-});
-
-const PROPERTY_TYPE_DEFS: Array<{
+const TYPE_OPTIONS: Array<{
     type: PropertyType;
     icon: React.ComponentType<{size?: number}>;
-}> = [
-    {type: 'text', icon: MenuVariantIcon},
-    {type: 'url', icon: LinkVariantIcon},
-    {type: 'select', icon: ChevronDownCircleOutlineIcon},
-    {type: 'multiselect', icon: FormatListBulletedIcon},
-    {type: 'user', icon: AccountOutlineIcon},
-];
+    label: string;
+}> = ([
+    {
+        type: 'text',
+        icon: MenuVariantIcon,
+        label: 'Text',
+    },
+    {
+        type: 'url',
+        icon: LinkVariantIcon,
+        label: 'URL',
+    },
+    {
+        type: 'select',
+        icon: ChevronDownCircleOutlineIcon,
+        label: 'Select',
+    },
+    {
+        type: 'multiselect',
+        icon: FormatListBulletedIcon,
+        label: 'Multi-select',
+    },
+    {
+        type: 'user',
+        icon: AccountOutlineIcon,
+        label: 'User',
+    },
+]) as const;
 
 const PropertyTypeSelector = ({
     field,
@@ -69,14 +78,6 @@ const PropertyTypeSelector = ({
     onOpenChange,
     target,
 }: Props) => {
-    const {formatMessage} = useIntl();
-    const addToast = useToaster().add;
-
-    const TYPE_OPTIONS = React.useMemo(() => PROPERTY_TYPE_DEFS.map(({type, icon}) => ({
-        type,
-        icon,
-        label: formatMessage(propertyTypeMessages[type]),
-    })), [formatMessage]);
     const handleTypeSelect = (option: TypeOption | null | undefined) => {
         if (!option) {
             return;
@@ -108,7 +109,7 @@ const PropertyTypeSelector = ({
             break;
         }
 
-        const nextField = {...field, type: actualType, attrs: {...(field.attrs || {}), value_type: valueType}};
+        const nextField = {...field, type: actualType, attrs: {...field.attrs, value_type: valueType}};
 
         if (!supportsOptions(nextField) && hasOptions(nextField)) {
             // Remove options if not supported
@@ -120,17 +121,12 @@ const PropertyTypeSelector = ({
                 ...nextField.attrs,
                 options: [{
                     id: '',
-                    name: formatMessage(propertyTypeMessages.defaultOptionName),
+                    name: 'Option 1',
                 }],
             };
         }
 
-        Promise.resolve(updateField(nextField)).catch(() => {
-            addToast({
-                content: formatMessage({defaultMessage: 'Failed to update attribute type'}),
-                toastStyle: ToastStyle.Failure,
-            });
-        });
+        updateField(nextField);
         onClose?.();
         onOpenChange(false);
     };
@@ -181,7 +177,7 @@ const PropertyTypeSelector = ({
                 hideSelectedOptions={false}
                 menuIsOpen={true}
                 options={typeOptions}
-                placeholder={formatMessage({defaultMessage: 'Select type'})}
+                placeholder='Select type'
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selectedOption}

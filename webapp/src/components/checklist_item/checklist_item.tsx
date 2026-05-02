@@ -237,7 +237,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [props.checklistItem.due_date]);
 
     useUpdateEffect(() => {
-        setTaskActions(props.checklistItem.task_actions);
+        setTaskActions(taskActions);
     }, [props.checklistItem.task_actions]);
 
     const assigneeCallSeqRef = useRef(0);
@@ -350,10 +350,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (props.playbookRunId) {
             const response = await clientSetDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp);
             if (response.error) {
-                toaster.add({
-                    content: formatMessage({id: 'playbooks.checklist_item.due_date_error', defaultMessage: 'Failed to update due date.'}),
-                    toastStyle: ToastStyle.Failure,
-                });
+                console.log(response.error); // eslint-disable-line no-console
             }
         } else {
             const newItem = {...props.checklistItem};
@@ -728,7 +725,7 @@ export const CheckboxContainer = styled.div`
         margin-top: 2px;
         margin-right: 8px;
         appearance: none;
-        background: var(--center-channel-bg);
+        background: #fff;
         cursor: pointer;
     }
 
@@ -740,7 +737,7 @@ export const CheckboxContainer = styled.div`
 
     input[type="checkbox"]::before {
         position: relative;
-        color: var(--center-channel-bg);
+        color: #fff;
         content: "\f012c";
         font-family: compass-icons, mattermosticons;
         font-size: 12px;

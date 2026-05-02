@@ -1826,16 +1826,16 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	if playbookRunToModify.OwnerUserID != "" {
 		oldOwner, err = s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to resolve user %s", playbookRunToModify.OwnerUserID)
+			return errors.Wrapf(err, "failed to to resolve user %s", playbookRunToModify.OwnerUserID)
 		}
 	}
 	newOwner, err := s.pluginAPI.User.Get(ownerID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", ownerID)
+		return errors.Wrapf(err, "failed to to resolve user %s", ownerID)
 	}
 	subjectUser, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	// add owner as user
@@ -3639,7 +3639,7 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookRun, postID, userID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", userID)
+		return nil, errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	T := i18n.GetUserTranslations(user.Locale)
@@ -4295,15 +4295,9 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"run_id":     playbookRunID,
-			"channel_id": playbookRun.ChannelID,
-		}).Error("failed to get channel")
+		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("failed to get channel")
 	}
-
-	if channel != nil {
-		s.failedInvitedUserActions(usersFailedToInvite, channel)
-	}
+	s.failedInvitedUserActions(usersFailedToInvite, channel)
 
 	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
 	if err != nil {
