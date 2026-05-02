@@ -209,7 +209,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	// At creation time no property fields exist, so only system tokens are allowed in the template.
-	if !h.validateChannelNameTemplate(w, c.logger, &playbook) {
+	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, nil) {
 		return
 	}
 
@@ -842,11 +842,6 @@ func (h *PlaybookHandler) validateTemplateWithFields(w http.ResponseWriter, logg
 		return false
 	}
 	return true
-}
-
-// validateChannelNameTemplate validates templates for new playbooks (no property fields yet, system tokens only).
-func (h *PlaybookHandler) validateChannelNameTemplate(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook) bool {
-	return h.validateTemplateWithFields(w, logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, nil)
 }
 
 func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWriter, r *http.Request) {

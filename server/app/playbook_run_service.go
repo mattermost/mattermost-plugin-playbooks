@@ -2050,7 +2050,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
-
 	if assigneeID == itemToCheck.AssigneeID {
 		auditRec.Success()
 		return nil
@@ -3165,7 +3164,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 		displayName = playbookRun.Name
 	}
 
-	displayName = truncateRunes(displayName, maxChannelDisplayNameRunes)
+	displayName = truncateRunes(displayName, model.ChannelDisplayNameMaxRunes)
 	channelSlug := truncateRunes(cleanChannelName(displayName), maxChannelSlugLength)
 
 	channel := &model.Channel{
@@ -4392,6 +4391,7 @@ func min(a, b int) int {
 	return b
 }
 
+// Helper function to Trigger webhooks
 func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) {
 	for i := range webhooks {
 		url := webhooks[i]
@@ -5248,7 +5248,7 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 			}
 			return "", errors.Wrapf(ErrMalformedPlaybookRun, "channel name template references unknown or unresolved fields: %s", strings.Join(unresolved, ", "))
 		}
-		resolved = truncateRunes(resolved, maxChannelDisplayNameRunes)
+		resolved = truncateRunes(resolved, model.ChannelDisplayNameMaxRunes)
 		resolvedRunName = strings.TrimSpace(resolved)
 		resolvedChannelName = strings.Join(strings.Fields(resolvedRunName), " ")
 	}
@@ -5441,13 +5441,13 @@ func (s *PlaybookRunServiceImpl) resolveAttributePlaceholders(msg string, run *P
 // random collision-avoidance bits (5 chars: "-XXXX"). 59 + 5 = 64 = ChannelNameMaxLength.
 const maxChannelSlugLength = 59
 
-// maxChannelDisplayNameRunes is the maximum rune length for a channel display name.
-const maxChannelDisplayNameRunes = 64
-
 func truncateRunes(s string, max int) string {
-	runes := []rune(s)
-	if len(runes) > max {
-		return string(runes[:max])
+	if len(s) <= max {
+		return s
 	}
-	return s
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max])
 }

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {MetricType} from 'src/graphql/generated/graphql';
-import {TemplatePropertyField} from 'src/utils/template_utils';
+import {PropertyField} from 'src/types/properties';
 
 export {MetricType};
 
@@ -76,7 +76,7 @@ export interface PlaybookWithChecklist extends Playbook {
     webhook_on_creation_enabled: boolean;
 
     // Property fields from GraphQL
-    propertyFields: TemplatePropertyField[];
+    propertyFields: PropertyField[];
 }
 
 export interface Metric {

@@ -38,8 +38,8 @@ import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useEnsureProfiles, useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {TemplatePropertyField, buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
-import {PropertyFieldType} from 'src/types/properties';
+import {buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
+import {PropertyField, PropertyFieldType} from 'src/types/properties';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -182,7 +182,7 @@ export const RunPlaybookModal = ({
                 return true;
             }
             return false;
-        }) as unknown as TemplatePropertyField[];
+        }) as unknown as PropertyField[];
     }, [playbookAttributes, templateFieldNames]);
 
     // Block submission while attributes are loading for a template that references fields:
@@ -210,7 +210,7 @@ export const RunPlaybookModal = ({
         }
         return buildTemplatePreview(
             tpl,
-            (playbookAttributes ?? []) as unknown as TemplatePropertyField[],
+            (playbookAttributes ?? []) as unknown as PropertyField[],
             propertyValues,
             {
                 prefix: playbook?.run_number_prefix,
@@ -235,7 +235,7 @@ export const RunPlaybookModal = ({
 
     const namePreviewTooLong = hasTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
 
-    const requiredFieldsFilled = templateFields.every((field) => {
+    const requiredFieldsFilled = useMemo(() => templateFields.every((field) => {
         const val = propertyValues[field.id];
         if (val === undefined || val === null || val === '') {
             return false;
@@ -244,7 +244,7 @@ export const RunPlaybookModal = ({
             return false;
         }
         return true;
-    });
+    }), [templateFields, propertyValues]);
 
     const isFormValid = !attributesLoading && nameValid && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
 
@@ -766,7 +766,7 @@ const HeaderButtonWrapper = styled.div`
     margin-left: auto;
 `;
 const CreatePlaybookButton = styled.button`
-    /* no additional styles */
+    font-family: 'Open Sans';
 `;
 
 const RunNameLabel = styled(InlineLabel)<{invalid?: boolean}>`
@@ -791,7 +791,7 @@ const NamePreview = styled.div`
 `;
 
 type PropertyFieldsSectionProps = {
-    fields: TemplatePropertyField[];
+    fields: PropertyField[];
     values: Record<string, string | number | boolean | null | string[]>;
     onSetValues: React.Dispatch<React.SetStateAction<Record<string, string | number | boolean | null | string[]>>>;
     onUserKnown?: (user: {id: string} & Record<string, unknown>) => void;
@@ -855,7 +855,7 @@ function formatDateInputValue(value: string | number): string {
 }
 
 type PropertyFieldInputProps = {
-    field: TemplatePropertyField;
+    field: PropertyField;
     value?: string | number | boolean | null | string[];
     onChange: (fieldId: string, value: string | number | boolean | null | string[]) => void;
     fetchAllUsersInTeam: () => Promise<ReturnType<typeof useProfilesInTeam>>;

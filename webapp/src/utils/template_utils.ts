@@ -5,8 +5,6 @@
 
 import {PropertyField, PropertyFieldType} from 'src/types/properties';
 
-export type TemplatePropertyField = PropertyField;
-
 // System token names recognized by the template engine (case-insensitive)
 export const SYSTEM_TOKENS = new Set(['SEQ', 'OWNER', 'CREATOR']);
 
@@ -62,7 +60,7 @@ export type BuildTemplatePreviewOptions = {
 // a localized string from formatMessage; defaults to English for non-React contexts).
 export function buildTemplatePreview(
     template: string,
-    fields: TemplatePropertyField[],
+    fields: PropertyField[],
     values: Record<string, unknown>,
     options: BuildTemplatePreviewOptions = {},
 ): string {
@@ -90,7 +88,7 @@ export function buildTemplatePreview(
 // userMap maps user IDs to display names for resolving user/multiuser field values.
 export function resolveTemplatePreview(
     template: string,
-    fields: TemplatePropertyField[],
+    fields: PropertyField[],
     values: Record<string, unknown>,
     systemTokens?: Record<string, string>,
     userMap?: Record<string, string>,
@@ -108,6 +106,8 @@ export function resolveTemplatePreview(
         ...normalizedSystemTokens,
     };
 
+    const fieldByName = new Map(fields.map((f) => [f.name.toLowerCase(), f]));
+
     return template.replace(/\{([^}]+)\}/g, (match, inner: string) => {
         const name = inner.trim();
         const upper = name.toUpperCase();
@@ -117,7 +117,7 @@ export function resolveTemplatePreview(
             return defaultSystemTokens[upper];
         }
 
-        const field = fields.find((f) => f.name.toLowerCase() === name.toLowerCase());
+        const field = fieldByName.get(name.toLowerCase());
         if (!field) {
             return match;
         }

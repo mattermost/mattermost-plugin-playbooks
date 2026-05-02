@@ -30,7 +30,7 @@ import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_i
 import {ToastStyle} from 'src/components/backstage/toast';
 
 const SmallText = styled.div`
-    margin: 2px 0 0;
+    margin: 5px 0;
     color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 11px;
     font-weight: 400;
@@ -118,6 +118,7 @@ const Row = (props: Props) => {
         <PlaybookRunItem
             className='row'
             key={props.playbookRun.id}
+            data-testid='run-list-item'
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
             <div className='col-sm-4'>

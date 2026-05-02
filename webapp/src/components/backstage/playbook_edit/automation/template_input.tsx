@@ -97,6 +97,8 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         return extractTemplateFieldNames(input).filter((name) => !fieldNamesUpperSet.has(name.toUpperCase()));
     }, [input, fieldNamesUpperSet]);
 
+    const seqWithoutPrefix = useMemo(() => (/\{\s*SEQ\s*\}/i).test(input) && !prefix?.trim(), [input, prefix]);
+
     const previewText = useMemo(() => {
         if (!input) {
             return '';
@@ -298,12 +300,14 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                     <PreviewText aria-live='polite'>{previewText}</PreviewText>
                 </Preview>
             )}
-            {unknownFields.length > 0 && (
+            {(unknownFields.length > 0 || seqWithoutPrefix) && (
                 <Warning
                     role='alert'
                     data-testid={testId ? `${testId}-warning` : undefined}
                 >
-                    {formatMessage({id: 'playbooks.template_input.unknown_fields_warning', defaultMessage: 'Unknown field references: {fields}'}, {fields: unknownFields.join(', ')})}
+                    {seqWithoutPrefix && unknownFields.length === 0 ?
+                        formatMessage({id: 'playbooks.template_input.seq_without_prefix_warning', defaultMessage: "'{SEQ}' requires a run number prefix"}) :
+                        formatMessage({id: 'playbooks.template_input.unknown_fields_warning', defaultMessage: 'Unknown field references: {fields}'}, {fields: unknownFields.join(', ')})}
                 </Warning>
             )}
         </SelectorWrapper>
@@ -393,3 +397,4 @@ const Warning = styled.div`
     color: var(--error-text);
     font-size: 12px;
 `;
+

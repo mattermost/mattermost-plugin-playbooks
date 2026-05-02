@@ -1,9 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {PropertyField} from 'src/types/properties';
+
 import {
     SYSTEM_TOKENS,
-    TemplatePropertyField,
     buildTemplatePreview,
     extractTemplateFieldNames,
     formatSequentialID,
@@ -111,7 +112,7 @@ describe('template_utils', () => {
             {id: 'field-4', name: 'Assignee', type: 'user', group_id: 'g1', attrs: baseAttrs},
             {id: 'field-5', name: 'Members', type: 'multiuser', group_id: 'g1', attrs: baseAttrs},
             {id: 'field-6', name: 'DueDate', type: 'date', group_id: 'g1', attrs: baseAttrs},
-        ] as TemplatePropertyField[];
+        ] as PropertyField[];
 
         it('should return template unchanged for empty string', () => {
             expect(resolveTemplatePreview('', fields, {})).toBe('');
@@ -213,7 +214,7 @@ describe('template_utils', () => {
     describe('buildTemplatePreview', () => {
         const fields = [
             {id: 'field-1', name: 'Project', type: 'text', group_id: 'g1', attrs: {visibility: 'always', sort_order: 0}},
-        ] as TemplatePropertyField[];
+        ] as PropertyField[];
 
         it('should resolve SEQ with prefix and run number', () => {
             const result = buildTemplatePreview('{SEQ}', fields, {}, {prefix: 'RUN', userMap: {}, nextRunNumber: 5});

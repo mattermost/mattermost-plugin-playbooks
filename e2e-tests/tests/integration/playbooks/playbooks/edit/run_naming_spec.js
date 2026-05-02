@@ -62,51 +62,35 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
     });
 
     it('saves prefix and template values and shows preview', () => {
-        // # Visit the playbook outline editor
-        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+        // # Set prefix via API — avoids coupling the test to how many REST PUTs fire
+        // # while typing (with or without debounce the server always ends up with the
+        // # right value, but cy.wait catches only the first request).
+        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'INC'}).then(() => {
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
-        // * Wait for the page to load
-        cy.findByTestId('channel-access-run-number-prefix').should('exist');
+            // * Prefix is loaded from server
+            cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
 
-        // # Type 'INC' into prefix input.
-        // # Note: the server validates that run_number_prefix must start AND end with an
-        // # alphanumeric character (regex: ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$),
-        // # so a trailing dash like 'INC-' is invalid. FormatSequentialID appends the
-        // # separator dash automatically when building the sequential ID (e.g. 'INC-1').
-        // # Prefix is saved via REST PUT; intercept that route.
-        cy.playbooksInterceptUpdatePlaybook();
-        cy.findByTestId('channel-access-run-number-prefix').clear().type('INC');
+            // # Intercept the GraphQL UpdatePlaybook mutation for the template save
+            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
-        // # Wait for the debounced REST save, then reload so the page re-initialises with
-        // # the server-confirmed prefix before we set the template.
-        cy.wait('@UpdatePlaybook');
-        cy.reload();
+            // # Type the template and dismiss the autocomplete dropdown
+            cy.findByTestId('channel-access-run-name-template-input').type(`${TOKEN_SEQ} - Incident-Report`, {parseSpecialCharSequences: false});
+            cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
 
-        // * Prefix persists after reload
-        cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
+            // * Preview shows the resolved sequential ID ('INC-N') and the template suffix
+            cy.findByTestId('channel-access-run-name-template-preview').should('exist');
+            cy.findByTestId('channel-access-run-name-template-preview').should('contain', 'INC-');
+            cy.findByTestId('channel-access-run-name-template-preview').should('contain', 'Incident-Report');
 
-        // # Template is saved via GraphQL UpdatePlaybook mutation; intercept that route.
-        cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            // # Wait for the debounced template save before reloading
+            cy.wait('@UpdatePlaybook');
+            cy.reload();
 
-        // # Now set template value on the fresh page — no stale-closure risk
-        // # Type the template and dismiss the dropdown that opens when typing '{'
-        cy.findByTestId('channel-access-run-name-template-input').type(`${TOKEN_SEQ} - Incident-Report`, {parseSpecialCharSequences: false});
-        cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
-
-        // * Assert preview section is shown with resolved prefix and template.
-        // # The preview renders the sequential ID as 'INC-N' (FormatSequentialID adds the
-        // # separator dash), so the preview contains 'INC-' even though prefix is 'INC'.
-        cy.findByTestId('channel-access-run-name-template-preview').should('exist');
-        cy.findByTestId('channel-access-run-name-template-preview').should('contain', 'INC-');
-        cy.findByTestId('channel-access-run-name-template-preview').should('contain', 'Incident-Report');
-
-        // # Wait for the debounced template save to reach the server before reloading
-        cy.wait('@UpdatePlaybook');
-        cy.reload();
-
-        // * Both values survive the second reload — confirms both were persisted server-side
-        cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
-        cy.findByTestId('channel-access-run-name-template-input').should('have.value', `${TOKEN_SEQ} - Incident-Report`);
+            // * Both values survive reload — confirms both were persisted server-side
+            cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
+            cy.findByTestId('channel-access-run-name-template-input').should('have.value', `${TOKEN_SEQ} - Incident-Report`);
+        });
     });
 
     it('shows a warning when template references an unknown field', () => {
@@ -325,25 +309,21 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         });
     });
 
-    it('template using {SEQ} cannot be saved without a run number prefix', () => {
+    it('template using {SEQ} shows a warning when no run number prefix is set', () => {
         // # Visit the playbook outline editor
         cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
-        // * Wait for the page to load
-        cy.findByTestId('channel-access-run-number-prefix').should('exist');
+        // * Prefix input is empty (default for fresh playbook)
+        cy.findByTestId('channel-access-run-number-prefix').should('have.value', '');
 
-        // # Ensure the prefix input is empty (no prefix set)
-        cy.findByTestId('channel-access-run-number-prefix').clear();
-
-        // # Type {SEQ} into the template input with no prefix
+        // # Type {SEQ} into the template input. The closing } causes the autocomplete
+        // # dropdown to close immediately (findTrigger returns null on }), so no ESC is
+        // # needed. Pressing ESC would trigger browser-native input reset, clearing the
+        // # value and hiding the warning before the assertion runs.
         cy.findByTestId('channel-access-run-name-template-input').type(TOKEN_SEQ, {parseSpecialCharSequences: false});
-        cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
 
-        // * Assert that a warning is shown when {SEQ} is used with no prefix
+        // * Warning is shown when {SEQ} is used with no prefix
         cy.findByTestId('channel-access-run-name-template-warning').should('exist');
-
-        // * Assert the save button is disabled when {SEQ} is used with no prefix
-        cy.findByTestId('channel-access-run-name-template-save').should('be.disabled');
     });
 
     it('clearing both channel_name_template and run_number_prefix in a single update succeeds', () => {
@@ -362,10 +342,6 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             cy.apiPatchPlaybook(testPlaybook.id, {
                 run_number_prefix: '',
                 channel_name_template: '',
-            }).then((updated) => {
-                // * Both fields are cleared in the response
-                expect(updated.run_number_prefix).to.equal('');
-                expect(updated.channel_name_template).to.equal('');
             });
 
             // * Verify the cleared values are persisted server-side

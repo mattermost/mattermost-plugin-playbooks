@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -33,8 +34,15 @@ var (
 	collapseMultiSpaceRe         = regexp.MustCompile(`\s{2,}`)
 )
 
+var fieldRegexCache sync.Map // map[string]*regexp.Regexp
+
 func fieldRegex(fieldName string) *regexp.Regexp {
-	return regexp.MustCompile(`(?i)\{\s*` + regexp.QuoteMeta(fieldName) + `\s*\}`)
+	if v, ok := fieldRegexCache.Load(fieldName); ok {
+		return v.(*regexp.Regexp)
+	}
+	re := regexp.MustCompile(`(?i)\{\s*` + regexp.QuoteMeta(fieldName) + `\s*\}`)
+	fieldRegexCache.Store(fieldName, re)
+	return re
 }
 
 // FormatFunc formats a property field's raw JSON value as a string.

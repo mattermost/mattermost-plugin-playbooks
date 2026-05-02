@@ -1,8 +1,15 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useCallback, useMemo} from 'react';
+import React, {
+    ComponentProps,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
+import debounce from 'debounce';
 
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
@@ -61,11 +68,24 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
     }, [updatePlaybook]));
 
     // run_number_prefix is REST-only (not in GraphQL schema): save via REST PUT when it changes.
-    const handleRunNumberPrefixSave = useCallback((prefix: string) => {
-        if (restPlaybook) {
-            savePlaybook({...restPlaybook, run_number_prefix: prefix});
-        }
+    // Use a ref to avoid stale closures in the debounced function.
+    const restPlaybookRef = useRef(restPlaybook);
+    useEffect(() => {
+        restPlaybookRef.current = restPlaybook;
     }, [restPlaybook]);
+
+    const handleRunNumberPrefixSave = useMemo(
+        () => debounce((prefix: string) => {
+            if (restPlaybookRef.current) {
+                savePlaybook({...restPlaybookRef.current, run_number_prefix: prefix});
+            }
+        }, 500),
+        [],
+    );
+
+    useEffect(() => {
+        return () => handleRunNumberPrefixSave.clear();
+    }, [handleRunNumberPrefixSave]);
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);

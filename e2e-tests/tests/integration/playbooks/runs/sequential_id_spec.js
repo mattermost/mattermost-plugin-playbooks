@@ -213,6 +213,8 @@ describe('runs > sequential id', {testIsolation: true}, () => {
     });
 
     it('prefix can be changed before any runs exist and affects all subsequent runs', () => {
+        const fooRunName = 'Run With FOO Prefix ' + getRandomId();
+
         // # Create a playbook with prefix IH
         cy.apiCreateTestPlaybook({
             teamId: testTeam.id,
@@ -234,7 +236,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                     cy.apiRunPlaybook({
                         teamId: testTeam.id,
                         playbookId: playbook.id,
-                        playbookRunName: 'Run With FOO Prefix',
+                        playbookRunName: fooRunName,
                         ownerUserId: testUser.id,
                     }).then(({id: runId}) => {
                         // * Run gets the FOO prefix (the prefix active at creation time)
@@ -249,7 +251,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                         cy.visit('/playbooks/runs');
                         cy.findByTestId('playbookRunList').should('be.visible');
 
-                        cy.playbooksGetRunListRow('Run With FOO Prefix').within(() => {
+                        cy.playbooksGetRunListRow(fooRunName).within(() => {
                             cy.findByTestId('run-sequential-id').should('contain', 'FOO-');
                         });
                     });

@@ -56,6 +56,7 @@ func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 		updated := basePlaybook
 		updated.RunNumberPrefix = "CHANGED"
 
+		mockStore.EXPECT().IsRunNumberPrefixUsed("team1", "CHANGED", "pb1").Return(false, nil)
 		mockStore.EXPECT().Update(gomock.Any()).Return(nil)
 
 		err := svc.Update(updated, "user1")
