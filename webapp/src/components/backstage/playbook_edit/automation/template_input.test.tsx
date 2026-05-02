@@ -264,6 +264,127 @@ describe('TemplateInput', () => {
         expect(warningNode).toBeNull();
     });
 
+    it('navigates suggestions with ArrowDown/ArrowUp and selects with Enter', () => {
+        const onChange = jest.fn();
+
+        const component = renderer.create(
+            <TemplateInput
+                enabled={true}
+                placeholderText='Enter template'
+                input='Hello {'
+                onChange={onChange}
+                fieldNames={[]}
+                testId='tpl'
+            />,
+        );
+
+        // Open suggestions
+        simulateInput(component, 'Hello {');
+
+        // Verify initial selected index renders SEQ as highlighted (index 0)
+        let tree = component.toJSON();
+        const inputNode = findNodeByTestId(tree, 'tpl-input');
+
+        // ArrowDown moves to index 1 (OWNER)
+        act(() => {
+            inputNode.props.onKeyDown({key: 'ArrowDown', preventDefault: jest.fn()});
+        });
+
+        // ArrowDown again wraps around (3 options: SEQ, OWNER, CREATOR) — moves to index 2
+        act(() => {
+            const updated = findNodeByTestId(component.toJSON(), 'tpl-input');
+            updated.props.onKeyDown({key: 'ArrowDown', preventDefault: jest.fn()});
+        });
+
+        // ArrowUp moves back to index 1
+        act(() => {
+            const updated = findNodeByTestId(component.toJSON(), 'tpl-input');
+            updated.props.onKeyDown({key: 'ArrowUp', preventDefault: jest.fn()});
+        });
+
+        // Enter selects the currently highlighted option (index 1 = OWNER)
+        act(() => {
+            const updated = findNodeByTestId(component.toJSON(), 'tpl-input');
+            updated.props.onKeyDown({key: 'Enter', preventDefault: jest.fn()});
+        });
+
+        expect(onChange).toHaveBeenLastCalledWith('Hello {OWNER}');
+
+        // Suggestions should be closed after selection
+        tree = component.toJSON();
+        expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(true);
+    });
+
+    it('closes suggestions with Escape without inserting a token', () => {
+        const onChange = jest.fn();
+
+        const component = renderer.create(
+            <TemplateInput
+                enabled={true}
+                placeholderText='Enter template'
+                input='Hello {'
+                onChange={onChange}
+                fieldNames={[]}
+                testId='tpl'
+            />,
+        );
+
+        simulateInput(component, 'Hello {');
+
+        // Clear the mock after the input event so we can assert Escape does not trigger onChange
+        onChange.mockClear();
+
+        let tree = component.toJSON();
+        expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(false);
+
+        act(() => {
+            const inputNode = findNodeByTestId(tree, 'tpl-input');
+            inputNode.props.onKeyDown({key: 'Escape', preventDefault: jest.fn()});
+        });
+
+        tree = component.toJSON();
+        expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(true);
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('opens suggestions at cursor position when openInsertToggle changes', () => {
+        const onChange = jest.fn();
+
+        const component = renderer.create(
+            <TemplateInput
+                enabled={true}
+                placeholderText='Enter template'
+                input='Incident '
+                onChange={onChange}
+                fieldNames={[]}
+                testId='tpl'
+                openInsertToggle={0}
+            />,
+        );
+
+        // Suggestions not open initially
+        let tree = component.toJSON();
+        expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(true);
+
+        // Change openInsertToggle to simulate button click
+        act(() => {
+            component.update(
+                <TemplateInput
+                    enabled={true}
+                    placeholderText='Enter template'
+                    input='Incident '
+                    onChange={onChange}
+                    fieldNames={[]}
+                    testId='tpl'
+                    openInsertToggle={1}
+                />,
+            );
+        });
+
+        tree = component.toJSON();
+        expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(false);
+    });
+
     it('closes suggestions when focus leaves the container', () => {
         jest.useFakeTimers();
         const onChange = jest.fn();

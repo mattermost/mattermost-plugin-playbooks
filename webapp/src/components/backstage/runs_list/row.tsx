@@ -124,8 +124,7 @@ const Row = (props: Props) => {
                 <NameRow>
                     {(props.playbookRun.run_number ?? 0) > 0 && props.playbookRun.sequential_id && (
                         <SequentialIdDisplay
-                            runNumber={props.playbookRun.run_number ?? 0}
-                            sequentialId={props.playbookRun.sequential_id ?? ''}
+                            sequentialId={props.playbookRun.sequential_id}
                         />
                     )}
                     <RunName>{props.playbookRun.name}</RunName>

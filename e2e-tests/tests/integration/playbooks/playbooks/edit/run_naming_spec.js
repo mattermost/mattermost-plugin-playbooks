@@ -229,8 +229,10 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * The suggestion list should appear
             cy.findByTestId('channel-access-run-name-template-suggestions').should('be.visible');
 
-            // # Select a token using keyboard navigation (downArrow moves to OWNER, then enter selects it)
-            cy.findByTestId('channel-access-run-name-template-input').type('{downArrow}{enter}');
+            // # Select the {OWNER} suggestion by clicking it directly (avoids index-order fragility)
+            cy.findByTestId('channel-access-run-name-template-suggestions').within(() => {
+                cy.findByText('{OWNER}').click({force: true});
+            });
 
             // * The template input should now have the second suggestion appended (OWNER)
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');
@@ -261,8 +263,10 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * The suggestion list should appear
             cy.findByTestId('channel-access-run-name-template-suggestions').should('be.visible');
 
-            // # Select the {OWNER} suggestion by pressing arrow down once (SEQ is at 0, OWNER is at 1) and enter
-            cy.findByTestId('channel-access-run-name-template-input').type('{downArrow}{enter}');
+            // # Select the {OWNER} suggestion by clicking it directly (avoids index-order fragility)
+            cy.findByTestId('channel-access-run-name-template-suggestions').within(() => {
+                cy.findByText('{OWNER}').click({force: true});
+            });
 
             // * The template should have the token appended
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');

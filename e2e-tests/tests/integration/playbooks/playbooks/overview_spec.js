@@ -9,7 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
-import {stubClipboard} from '../../../utils';
+import {stubClipboard, getRandomId} from '../../../utils';
 
 describe('playbooks > overview', {testIsolation: true}, () => {
     let testTeam;
@@ -226,7 +226,7 @@ describe('playbooks > overview', {testIsolation: true}, () => {
         // # Create a playbook with a run_number_prefix
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
-            title: 'Prefix Playbook to Duplicate ' + Date.now(),
+            title: 'Prefix Playbook to Duplicate ' + getRandomId(),
             memberIDs: [],
         }).then((playbook) => {
             // # Set a run_number_prefix on the source playbook

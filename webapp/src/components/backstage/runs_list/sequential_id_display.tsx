@@ -5,33 +5,14 @@ import React from 'react';
 import styled from 'styled-components';
 
 interface Props {
-    runNumber: number;
     sequentialId: string;
-    runName?: string;
 }
 
-const SequentialIdDisplay = ({runNumber, sequentialId, runName = ''}: Props) => {
-    if (runNumber === 0) {
-        return <span>{runName}</span>;
-    }
-
-    return (
-        <Container>
-            {sequentialId && (
-                <SequentialId data-testid='run-sequential-id'>
-                    {sequentialId}
-                </SequentialId>
-            )}
-            {runName}
-        </Container>
-    );
-};
-
-const Container = styled.span`
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-`;
+const SequentialIdDisplay = ({sequentialId}: Props) => (
+    <SequentialId data-testid='run-sequential-id'>
+        {sequentialId}
+    </SequentialId>
+);
 
 const SequentialId = styled.span`
     font-weight: 600;

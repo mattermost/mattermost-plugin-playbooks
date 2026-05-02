@@ -5030,6 +5030,18 @@ func (s *PlaybookRunServiceImpl) PostPropertyChangeMessage(userID string, run *P
 	}
 }
 
+// formatPropertyValueForDisplay formats a property value for bot messages; returns ("", true) when empty.
+func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) (string, bool) {
+	str, empty := DefaultFormatPropertyValue(propertyField, value)
+	if empty {
+		return "", true
+	}
+	if len(str) > propertyValueMaxDisplayLength {
+		return str[:propertyValueMaxDisplayLength-3] + "...", false
+	}
+	return str, false
+}
+
 // ResolveRunCreationParams resolves template placeholders and allocates a sequential run number.
 func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (string, error) {
 	if pb == nil {
@@ -5102,9 +5114,10 @@ func (s *PlaybookRunServiceImpl) prepareTemplate(pb *Playbook, source string, fi
 	template := pb.ChannelNameTemplate
 
 	// Self-heal: strip unknown field placeholders left by a failed delete, then persist atomically.
-	// Run this before the license check so that a lapsed license doesn't permanently block
-	// run creation for playbooks that still reference a deleted property field.
-	if template != "" {
+	// Only runs when the license is active so that fields are loaded and the known-field set is
+	// accurate. When the license is inactive the second check below returns an error immediately,
+	// leaving the template intact for when the license is re-activated.
+	if template != "" && attributesLicensed {
 		if unknownFields := ValidateTemplate(template, ResolveOptions{Fields: fields}); len(unknownFields) > 0 {
 			cleaned := template
 			for _, f := range unknownFields {
@@ -5146,7 +5159,7 @@ func (s *PlaybookRunServiceImpl) prepareTemplate(pb *Playbook, source string, fi
 }
 
 // sanitizePropertyValues filters initialValues to known fields and sanitizes each value.
-// Invalid values are dropped with a warning; they will be re-validated in CreatePlaybookRun.
+// Invalid values are dropped with a warning.
 func (s *PlaybookRunServiceImpl) sanitizePropertyValues(fields []PropertyField, initialValues map[string]json.RawMessage, logger *logrus.Entry) map[string]json.RawMessage {
 	fieldByID := make(map[string]*PropertyField, len(fields))
 	for i := range fields {
@@ -5206,7 +5219,7 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 		runNumber, err = s.playbookService.IncrementRunNumber(playbookRun.PlaybookID)
 		if err != nil {
 			if errors.Is(err, ErrNotFound) {
-				return "", errors.Wrap(err, "playbook not found during run creation")
+				return "", errors.Wrap(ErrMalformedPlaybookRun, "playbook not found during run creation")
 			}
 			return "", errors.Wrap(err, "failed to allocate run number")
 		}
@@ -5348,18 +5361,6 @@ func (s *PlaybookRunServiceImpl) makeRunNameFormatFunc() FormatFunc {
 	}
 }
 
-// formatPropertyValueForDisplay formats a property value for bot messages; returns ("", true) when empty.
-func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) (string, bool) {
-	str, empty := DefaultFormatPropertyValue(propertyField, value)
-	if empty {
-		return "", true
-	}
-	if len(str) > propertyValueMaxDisplayLength {
-		return str[:propertyValueMaxDisplayLength-3] + "...", false
-	}
-	return str, false
-}
-
 // translateOptionIDs remaps playbook-scoped option IDs to run-scoped IDs using the provided mapping.
 // Handles both single-option (JSON string) and multi-option (JSON array) values.
 func translateOptionIDs(raw json.RawMessage, optionMappings map[string]string) (json.RawMessage, error) {
@@ -5383,12 +5384,16 @@ func translateOptionIDs(raw json.RawMessage, optionMappings map[string]string) (
 	var multi []string
 	if err := json.Unmarshal(raw, &multi); err == nil {
 		translated := make([]string, 0, len(multi))
+		var dropped []string
 		for _, id := range multi {
 			if mapped, ok := optionMappings[id]; ok {
 				translated = append(translated, mapped)
 			} else {
-				logrus.WithField("option_id", id).Warn("translateOptionIDs: option ID not found in mapping, skipping")
+				dropped = append(dropped, id)
 			}
+		}
+		if len(dropped) > 0 {
+			logrus.WithField("option_ids", dropped).Warn("translateOptionIDs: option IDs not found in mapping, dropping from multiselect value")
 		}
 		b, err := json.Marshal(translated)
 		if err != nil {

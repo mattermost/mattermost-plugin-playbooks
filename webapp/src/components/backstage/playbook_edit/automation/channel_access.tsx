@@ -160,8 +160,9 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                         </ButtonLabel>
                     </VerticalSplit>
                     <RunNamingBlock>
-                        <InputLabel>{formatMessage({defaultMessage: 'Run number prefix'})}</InputLabel>
+                        <InputLabel htmlFor='channel-access-run-number-prefix'>{formatMessage({defaultMessage: 'Run number prefix'})}</InputLabel>
                         <BaseInput
+                            id='channel-access-run-number-prefix'
                             data-testid='channel-access-run-number-prefix'
                             type='text'
                             disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
@@ -170,7 +171,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                             placeholder={formatMessage({defaultMessage: 'e.g. INC-'})}
                         />
                         <LabelRow>
-                            <InputLabel>{formatMessage({defaultMessage: 'Run name template'})}</InputLabel>
+                            <InputLabel as='div'>{formatMessage({defaultMessage: 'Run name template'})}</InputLabel>
                             {templateEnabled && (
                                 <InsertVariableButton
                                     type='button'
@@ -289,7 +290,7 @@ const RunNamingBlock = styled.div`
     margin-top: 8px;
 `;
 
-const InputLabel = styled.div`
+const InputLabel = styled.label`
     font-size: 12px;
     font-weight: 600;
     color: rgba(var(--center-channel-color-rgb), 0.72);
@@ -316,5 +317,13 @@ const InsertVariableButton = styled.button`
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--button-bg);
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    &.a11y--focused {
+        box-shadow: 0 0 0 2px var(--button-bg);
     }
 `;

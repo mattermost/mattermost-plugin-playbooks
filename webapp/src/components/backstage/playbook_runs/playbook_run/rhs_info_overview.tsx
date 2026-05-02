@@ -138,9 +138,8 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
     return (
         <Section>
             <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}>
-                {run.run_number != null && run.run_number > 0 && run.sequential_id && (
+                {(run.run_number ?? 0) > 0 && run.sequential_id && (
                     <SequentialIdDisplay
-                        runNumber={run.run_number}
                         sequentialId={run.sequential_id}
                     />
                 )}

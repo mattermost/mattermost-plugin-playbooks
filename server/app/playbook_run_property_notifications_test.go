@@ -13,42 +13,42 @@ import (
 )
 
 func TestPlaybookRunServiceImpl_propertyValuesEqual(t *testing.T) {
-	svc := &PlaybookRunServiceImpl{}
+	service := &PlaybookRunServiceImpl{}
 
 	t.Run("text field comparisons", func(t *testing.T) {
 		field := &PropertyField{PropertyField: model.PropertyField{Type: "text"}}
 
 		// Both nil values are equal
-		result := svc.propertyValuesEqual(field, nil, nil)
+		result := service.propertyValuesEqual(field, nil, nil)
 		require.True(t, result)
 
 		// Both empty values are equal
-		result = svc.propertyValuesEqual(field, json.RawMessage(""), json.RawMessage(""))
+		result = service.propertyValuesEqual(field, json.RawMessage(""), json.RawMessage(""))
 		require.True(t, result)
 
 		// Null strings are treated as empty
-		result = svc.propertyValuesEqual(field, json.RawMessage("null"), json.RawMessage(""))
+		result = service.propertyValuesEqual(field, json.RawMessage("null"), json.RawMessage(""))
 		require.True(t, result)
 
-		result = svc.propertyValuesEqual(field, json.RawMessage(""), json.RawMessage("null"))
+		result = service.propertyValuesEqual(field, json.RawMessage(""), json.RawMessage("null"))
 		require.True(t, result)
 
 		// Identical non-empty values are equal
 		val1 := json.RawMessage(`"test value"`)
 		val2 := json.RawMessage(`"test value"`)
-		result = svc.propertyValuesEqual(field, val1, val2)
+		result = service.propertyValuesEqual(field, val1, val2)
 		require.True(t, result)
 
 		// Different non-empty values are not equal
 		val3 := json.RawMessage(`"value1"`)
 		val4 := json.RawMessage(`"value2"`)
-		result = svc.propertyValuesEqual(field, val3, val4)
+		result = service.propertyValuesEqual(field, val3, val4)
 		require.False(t, result)
 
 		// Empty quoted string vs null
 		val5 := json.RawMessage(`""`)
 		val6 := json.RawMessage("null")
-		result = svc.propertyValuesEqual(field, val5, val6)
+		result = service.propertyValuesEqual(field, val5, val6)
 		require.True(t, result) // Both are treated as empty for text fields
 	})
 
@@ -58,13 +58,13 @@ func TestPlaybookRunServiceImpl_propertyValuesEqual(t *testing.T) {
 		// Same option IDs
 		val1 := json.RawMessage(`"option1"`)
 		val2 := json.RawMessage(`"option1"`)
-		result := svc.propertyValuesEqual(field, val1, val2)
+		result := service.propertyValuesEqual(field, val1, val2)
 		require.True(t, result)
 
 		// Different option IDs
 		val3 := json.RawMessage(`"option1"`)
 		val4 := json.RawMessage(`"option2"`)
-		result = svc.propertyValuesEqual(field, val3, val4)
+		result = service.propertyValuesEqual(field, val3, val4)
 		require.False(t, result)
 	})
 
@@ -74,28 +74,28 @@ func TestPlaybookRunServiceImpl_propertyValuesEqual(t *testing.T) {
 		// Same arrays
 		val1 := json.RawMessage(`["item1", "item2"]`)
 		val2 := json.RawMessage(`["item1", "item2"]`)
-		result := svc.propertyValuesEqual(field, val1, val2)
+		result := service.propertyValuesEqual(field, val1, val2)
 		require.True(t, result)
 
 		// Different arrays
 		val3 := json.RawMessage(`["item1", "item3"]`)
-		result = svc.propertyValuesEqual(field, val1, val3)
+		result = service.propertyValuesEqual(field, val1, val3)
 		require.False(t, result)
 
 		// Different order (should be equal for multiselect)
 		val4 := json.RawMessage(`["item2", "item1"]`)
-		result = svc.propertyValuesEqual(field, val1, val4)
+		result = service.propertyValuesEqual(field, val1, val4)
 		require.True(t, result)
 
 		// Empty arrays
 		val5 := json.RawMessage(`[]`)
 		val6 := json.RawMessage(`[]`)
-		result = svc.propertyValuesEqual(field, val5, val6)
+		result = service.propertyValuesEqual(field, val5, val6)
 		require.True(t, result)
 
 		// Null vs empty array
 		val7 := json.RawMessage("null")
-		result = svc.propertyValuesEqual(field, val5, val7)
+		result = service.propertyValuesEqual(field, val5, val7)
 		require.True(t, result)
 	})
 }

@@ -1764,19 +1764,14 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed adding SequentialID to IR_Incident")
 			}
 
-			// Unique partial functional index for per-team prefix uniqueness.
-			// LOWER() makes the uniqueness check case-insensitive, matching IsRunNumberPrefixUsed.
-			// Partial (DeleteAt = 0, prefix non-empty) so archived playbooks and prefix-less playbooks are excluded.
-			if _, err := e.Exec(`
-				DO $$
-				BEGIN
-					IF to_regclass('IR_Playbook_TeamID_RunNumberPrefix') IS NULL THEN
-						CREATE UNIQUE INDEX IR_Playbook_TeamID_RunNumberPrefix
-						ON IR_Playbook (TeamID, LOWER(RunNumberPrefix))
-						WHERE DeleteAt = 0 AND RunNumberPrefix <> '';
-					END IF;
-				END $$;
-			`); err != nil {
+			// Partial functional index: case-insensitive prefix uniqueness per team,
+			// excluding archived playbooks (DeleteAt=0) and prefix-less ones (prefix<>'').
+			if _, err := e.Exec(createPartialUniquePGIndex(
+				"IR_Playbook_TeamID_RunNumberPrefix",
+				"IR_Playbook",
+				"TeamID, LOWER(RunNumberPrefix)",
+				"DeleteAt = 0 AND RunNumberPrefix <> ''",
+			)); err != nil {
 				return errors.Wrapf(err, "failed creating unique index IR_Playbook_TeamID_RunNumberPrefix")
 			}
 

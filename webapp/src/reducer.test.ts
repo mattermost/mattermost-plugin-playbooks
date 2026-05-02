@@ -194,6 +194,8 @@ describe('websocket event actions', () => {
 
             expect(newState.myPlaybookRuns[baseRun.id].run_number).toBe(42);
             expect(newState.myPlaybookRuns[baseRun.id].sequential_id).toBe('INC-00042');
+            expect(newState.myPlaybookRunsByTeam[baseRun.team_id]![baseRun.channel_id].run_number).toBe(42);
+            expect(newState.myPlaybookRunsByTeam[baseRun.team_id]![baseRun.channel_id].sequential_id).toBe('INC-00042');
         });
 
         it('should ignore updates for runs not in state', () => {

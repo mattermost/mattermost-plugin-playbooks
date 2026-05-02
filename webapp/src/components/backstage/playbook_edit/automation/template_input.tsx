@@ -8,11 +8,12 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {SYSTEM_TOKENS, buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
+import {BaseInput} from 'src/components/assets/inputs';
 
 const TOKEN_DESCRIPTIONS: Record<string, {id: string; defaultMessage: string}> = {
     SEQ: {id: 'playbooks.template_input.seq_desc', defaultMessage: 'Sequential ID'},
@@ -25,6 +26,10 @@ type TokenOption = {
     description: string;
     isSystem: boolean;
 };
+
+// pos: where the `{` was typed (keyboard mode) or where the cursor was when insert button was clicked.
+// filterStart: index in the string where the user started typing to filter (only advances in insert mode).
+type TriggerState = {pos: number; isInsert: boolean; filterStart: number} | null;
 
 interface Props {
     enabled: boolean;
@@ -47,9 +52,9 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
     const cursorPosRef = useRef(0);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
-    // Track whether the suggestion list is open and where the `{` trigger started
-    const [triggerPos, setTriggerPos] = useState<number | null>(null);
-    const [insertMode, setInsertMode] = useState(false);
+    // Track whether the suggestion list is open and where the `{` trigger started.
+    // isInsert=true when opened via the insert button (no `{` was typed).
+    const [trigger, setTrigger] = useState<TriggerState>(null);
 
     const systemTokenOptions = useMemo<TokenOption[]>(() =>
         [...SYSTEM_TOKENS].map((token) => ({
@@ -70,14 +75,16 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         ...fieldOptions,
     ], [systemTokenOptions, fieldOptions]);
 
-    const query = triggerPos === null ? '' : input.slice(triggerPos + 1, cursorPosRef.current);
+    // In keyboard mode: query = text between `{` and cursor.
+    // In insert mode: query = text typed since the button was clicked (filterStart tracks where typing began).
+    const query = trigger === null ? '' : input.slice(trigger.filterStart, cursorPosRef.current);
 
     const filteredOptions = useMemo(() => {
-        if (triggerPos === null) {
+        if (trigger === null) {
             return [];
         }
         return allOptions.filter((opt) => opt.value.toLowerCase().includes(query.toLowerCase()));
-    }, [triggerPos, allOptions, query]);
+    }, [trigger, allOptions, query]);
 
     // Reset selection when filter changes
     useEffect(() => {
@@ -103,28 +110,27 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
     }, [input, fieldNamesUpperSet, prefix, formatMessage]);
 
     const closeSuggestions = useCallback(() => {
-        setTriggerPos(null);
-        setInsertMode(false);
+        setTrigger(null);
         setSelectedIndex(0);
     }, []);
 
     const acceptOption = useCallback((option: TokenOption) => {
         const token = `{${option.value}}`;
 
-        if (triggerPos === null) {
+        if (trigger === null) {
             return;
         }
 
         let before: string;
         let after: string;
-        if (insertMode) {
-            // Insert-button mode — no `{` was typed, insert at triggerPos
-            before = input.slice(0, triggerPos);
-            after = input.slice(triggerPos);
+        if (trigger.isInsert) {
+            // Insert-button mode — no `{` was typed, insert at trigger.pos
+            before = input.slice(0, trigger.pos);
+            after = input.slice(trigger.pos);
         } else {
             // Keyboard mode — replace from the `{` through the partial query
-            before = input.slice(0, triggerPos);
-            after = input.slice(triggerPos + 1 + query.length);
+            before = input.slice(0, trigger.pos);
+            after = input.slice(trigger.pos + 1 + query.length);
         }
 
         const newValue = before + token + after;
@@ -139,7 +145,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                 inputRef.current.setSelectionRange(newPos, newPos);
             }
         }, 0);
-    }, [input, triggerPos, insertMode, query, onChange, closeSuggestions]);
+    }, [input, trigger, query, onChange, closeSuggestions]);
 
     const findTrigger = useCallback((val: string, cursor: number): number | null => {
         for (let i = cursor - 1; i >= 0; i--) {
@@ -160,20 +166,24 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         onChange(val);
 
         // Detect or dismiss the trigger on every keystroke
-        if (insertMode) {
+        if (trigger?.isInsert) {
+            // Update filterStart on the first character typed so subsequent chars filter correctly.
+            if (trigger.filterStart === trigger.pos) {
+                setTrigger({...trigger, filterStart: cursor - 1});
+            }
             return;
         }
         const pos = findTrigger(val, cursor);
         if (pos === null) {
-            setTriggerPos(null);
+            setTrigger(null);
             setSelectedIndex(0);
         } else {
-            setTriggerPos(pos);
+            setTrigger({pos, isInsert: false, filterStart: pos + 1});
         }
-    }, [onChange, insertMode, findTrigger]);
+    }, [onChange, trigger, findTrigger]);
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (triggerPos !== null && filteredOptions.length > 0) {
+        if (trigger !== null && filteredOptions.length > 0) {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 setSelectedIndex((prev) => (prev + 1) % filteredOptions.length);
@@ -194,7 +204,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                 closeSuggestions();
             }
         }
-    }, [triggerPos, filteredOptions, selectedIndex, acceptOption, closeSuggestions]);
+    }, [trigger, filteredOptions, selectedIndex, acceptOption, closeSuggestions]);
 
     // Handle the external insert-variable button toggle
     const prevToggleRef = useRef(openInsertToggle);
@@ -202,8 +212,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         if (openInsertToggle !== undefined && openInsertToggle !== prevToggleRef.current) {
             prevToggleRef.current = openInsertToggle;
             const pos = inputRef.current?.selectionStart ?? inputRef.current?.value.length ?? 0;
-            setTriggerPos(pos);
-            setInsertMode(true);
+            setTrigger({pos, isInsert: true, filterStart: pos});
             setSelectedIndex(0);
             inputRef.current?.focus();
         }
@@ -229,7 +238,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         };
     }, []);
 
-    const showSuggestions = triggerPos !== null && enabled && filteredOptions.length > 0;
+    const showSuggestions = trigger !== null && enabled && filteredOptions.length > 0;
     const suggestionsId = testId ? `${testId}-suggestions-listbox` : 'template-suggestions';
 
     return (
@@ -249,6 +258,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                     maxLength={maxLength}
                     data-testid={testId ? `${testId}-input` : undefined}
                     role='combobox'
+                    aria-haspopup='listbox'
                     aria-label={placeholderText}
                     aria-expanded={showSuggestions}
                     aria-autocomplete='list'
@@ -285,11 +295,14 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
             {input && (
                 <Preview data-testid={testId ? `${testId}-preview` : undefined}>
                     <PreviewLabel>{formatMessage({id: 'playbooks.template_input.preview_label', defaultMessage: 'Preview: '})}</PreviewLabel>
-                    <PreviewText>{previewText}</PreviewText>
+                    <PreviewText aria-live='polite'>{previewText}</PreviewText>
                 </Preview>
             )}
             {unknownFields.length > 0 && (
-                <Warning data-testid={testId ? `${testId}-warning` : undefined}>
+                <Warning
+                    role='alert'
+                    data-testid={testId ? `${testId}-warning` : undefined}
+                >
                     {formatMessage({id: 'playbooks.template_input.unknown_fields_warning', defaultMessage: 'Unknown field references: {fields}'}, {fields: unknownFields.join(', ')})}
                 </Warning>
             )}
@@ -342,28 +355,15 @@ const TokenDesc = styled.span`
     font-size: 12px;
 `;
 
-const TextBox = styled.input<{disabled: boolean}>`
+const TextBox = styled(BaseInput)`
+    width: 100%;
+    color: var(--center-channel-color);
+    background: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.04)' : 'var(--center-channel-bg)')};
+
     ::placeholder {
         color: var(--center-channel-color);
         opacity: 0.64;
     }
-
-    background: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.04)' : 'var(--center-channel-bg)')};
-    height: 40px;
-    width: 100%;
-    color: var(--center-channel-color);
-    border-radius: 4px;
-    border: none;
-    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
-    font-size: 14px;
-    padding-left: 16px;
-    padding-right: 16px;
-
-    ${(props) => !props.disabled && props.value && css`
-        :invalid:not(:focus) {
-            box-shadow: inset 0 0 0 1px var(--error-text);
-        }
-    `}
 `;
 
 const Preview = styled.div`

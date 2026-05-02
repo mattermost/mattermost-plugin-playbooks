@@ -77,12 +77,11 @@ const RHSAboutTitle = (props: Props) => {
                             <PlaybookChipText>{playbookName}</PlaybookChipText>
                         </PlaybookChip>
                     </OverlayTrigger>
-                    {props.playbookRun.run_number != null && props.playbookRun.run_number > 0 && props.playbookRun.sequential_id && (
+                    {(props.playbookRun.run_number ?? 0) > 0 && props.playbookRun.sequential_id && (
                         <>
                             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                            <ChipSeparator>{'/'}</ChipSeparator>
+                            <ChipSeparator aria-hidden={true}>{'/'}</ChipSeparator>
                             <SequentialIdDisplay
-                                runNumber={props.playbookRun.run_number}
                                 sequentialId={props.playbookRun.sequential_id}
                             />
                         </>

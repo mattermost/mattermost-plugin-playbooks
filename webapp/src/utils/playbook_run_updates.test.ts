@@ -293,12 +293,11 @@ describe('playbook_run_updates utilities', () => {
             expect(result.status_posts![0].id).toBe('post_2');
         });
 
-        it('should wipe property_values if server incorrectly includes null property_values in changed_fields', () => {
-            // This documents the bug behavior before the server fix: if the server
-            // uses store-level GetPlaybookRun (nil properties) for updatedRun,
-            // DetectChangedFields sends property_values: null, which overwrites the
-            // existing values on the frontend. The server fix prevents this, but this
-            // test documents the frontend's pass-through behavior.
+        it('should preserve property_values when server sends null in changed_fields', () => {
+            // If the server erroneously sends property_values: null (e.g. when using the
+            // store-level GetPlaybookRun path that returns nil properties), the frontend
+            // must not overwrite the existing values. Null in changed_fields means "not
+            // computed", not "cleared".
             const runWithProperties = {
                 ...testPlaybookRun,
                 property_fields: [
@@ -321,9 +320,7 @@ describe('playbook_run_updates utilities', () => {
             const result = applyIncrementalUpdate(runWithProperties, update);
 
             expect(result.owner_user_id).toBe('new-owner');
-
-            // null overwrites the existing array — this is the bug symptom on the frontend
-            expect(result.property_values).toBeNull();
+            expect(result.property_values).toEqual(runWithProperties.property_values);
         });
     });
 });

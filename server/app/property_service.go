@@ -602,8 +602,8 @@ func (s *propertyService) GetRunPropertyValueByFieldID(runID, propertyFieldID st
 }
 
 func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
-	// Get the property field to validate against.
-	// GetPropertyField is scoped to the playbook group; run-level fields (targettype=run) may not be found — fall back.
+	// CopyPlaybookPropertiesToRun creates run-scoped field copies (TargetType=run) that
+	// GetPropertyField(groupID) cannot find. Fall back to GetRunPropertyFields in that case.
 	mmPropertyField, getErr := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
 	var propertyField *model.PropertyField
 	if getErr != nil {
@@ -829,15 +829,6 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 	}
 
 	return registeredGroup.ID, nil
-}
-
-// validateReservedFieldName rejects field names that would conflict with built-in
-// template placeholders. Reserved names: SEQ, OWNER, CREATOR (case-insensitive).
-func validateReservedFieldName(name string) error {
-	if isSystemToken(name) {
-		return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+name+"' is reserved as a system token")
-	}
-	return nil
 }
 
 // GetRunsPropertyFields retrieves all property fields for multiple runs efficiently

@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
@@ -48,7 +50,7 @@ type ResolveOptions struct {
 }
 
 // systemTokens are the built-in token names always valid in templates (even without property fields).
-// These names are reserved as property field names — see validateReservedFieldName.
+// These names are reserved as property field names — enforced by validateReservedFieldName.
 // SEQ: sequential run number; OWNER: run owner display name; CREATOR: run creator display name.
 var systemTokens = []string{"SEQ", "OWNER", "CREATOR"}
 
@@ -60,6 +62,15 @@ func isSystemToken(name string) bool {
 		}
 	}
 	return false
+}
+
+// validateReservedFieldName rejects field names that would conflict with built-in
+// template placeholders. Reserved names: SEQ, OWNER, CREATOR (case-insensitive).
+func validateReservedFieldName(name string) error {
+	if isSystemToken(name) {
+		return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+name+"' is reserved as a system token")
+	}
+	return nil
 }
 
 // ResolveTemplate substitutes {TokenName} placeholders in a template string.

@@ -201,6 +201,10 @@ jest.mock('@mattermost/compass-icons/components', () => ({
     CloseIcon: () => <svg data-testid='close-icon'/>,
 }));
 
+import {useSelector} from 'react-redux';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {usePlaybook, usePlaybookAttributes} from 'src/hooks';
@@ -210,6 +214,7 @@ import {findNodeByTestId} from 'src/utils/test_helpers';
 
 import {RunPlaybookModal} from './run_playbook_modal';
 
+const mockUseSelector = useSelector as unknown as jest.Mock;
 const mockUseUserDisplayNameMap = useUserDisplayNameMap as jest.Mock;
 const mockDisplayUsername = displayUsername as jest.Mock;
 
@@ -261,6 +266,18 @@ const toJson = (component: renderer.ReactTestRenderer) => JSON.stringify(compone
 describe('RunPlaybookModal — template mode', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockUseSelector.mockImplementation((sel: (state: unknown) => unknown) => {
+            if (sel === getCurrentUserId) {
+                return 'mock-user-id';
+            }
+            if (sel === getCurrentChannelId) {
+                return '';
+            }
+            if (sel === getTeammateNameDisplaySetting) {
+                return 0;
+            }
+            return 'mock-user-id';
+        });
     });
 
     const playbookWithTemplate = {
@@ -730,6 +747,18 @@ describe('RunPlaybookModal — template mode', () => {
 describe('RunPlaybookModal — no template (free-text mode)', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockUseSelector.mockImplementation((sel: (state: unknown) => unknown) => {
+            if (sel === getCurrentUserId) {
+                return 'mock-user-id';
+            }
+            if (sel === getCurrentChannelId) {
+                return '';
+            }
+            if (sel === getTeammateNameDisplaySetting) {
+                return 0;
+            }
+            return 'mock-user-id';
+        });
         mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
     });
 

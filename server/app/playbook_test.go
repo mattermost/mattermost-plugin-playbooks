@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -66,6 +67,30 @@ func TestValidateRunNumberPrefix(t *testing.T) {
 	t.Run("unicode-only prefix counts runes not bytes for length", func(t *testing.T) {
 		// 32 × 'A' followed by 'B' = 33 runes; multi-byte chars should not slip under the limit
 		require.Error(t, ValidateRunNumberPrefix("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567"))
+	})
+}
+
+func TestValidateChannelNameTemplate(t *testing.T) {
+	t.Run("empty string is valid", func(t *testing.T) {
+		require.NoError(t, ValidateChannelNameTemplate(""))
+	})
+
+	t.Run("whitespace-only string is invalid", func(t *testing.T) {
+		require.Error(t, ValidateChannelNameTemplate("   "))
+	})
+
+	t.Run("normal template is valid", func(t *testing.T) {
+		require.NoError(t, ValidateChannelNameTemplate("Incident - {SEQ}"))
+	})
+
+	t.Run("exactly MaxChannelNameTemplateLength runes is valid", func(t *testing.T) {
+		tmpl := strings.Repeat("a", MaxChannelNameTemplateLength)
+		require.NoError(t, ValidateChannelNameTemplate(tmpl))
+	})
+
+	t.Run("exceeding MaxChannelNameTemplateLength runes is invalid", func(t *testing.T) {
+		tmpl := strings.Repeat("a", MaxChannelNameTemplateLength+1)
+		require.Error(t, ValidateChannelNameTemplate(tmpl))
 	})
 }
 

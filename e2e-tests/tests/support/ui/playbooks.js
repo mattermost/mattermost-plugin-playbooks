@@ -362,7 +362,7 @@ Cypress.Commands.add('playbooksAssertSequentialIdInList', (runName, expectedIdFr
  */
 Cypress.Commands.add('playbooksOpenRunModal', (playbookId) => {
     cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
-    cy.findByTestId('run-playbook').click();
+    cy.findByTestId('run-playbook').should('not.be.disabled').click();
 });
 
 /**

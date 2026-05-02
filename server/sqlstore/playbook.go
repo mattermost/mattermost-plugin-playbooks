@@ -19,6 +19,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
+const pgUniqueViolation = "23505"
+
 type sqlPlaybook struct {
 	app.Playbook
 	ChecklistsJSON                        json.RawMessage
@@ -279,7 +281,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			// NextRunNumber omitted: DB default (1) is always correct for new playbooks.
 		}))
 	if err != nil {
-		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == "23505" {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
 			return "", errors.Wrap(app.ErrDuplicateEntry, err.Error())
 		}
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -649,7 +651,7 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 	// if checklists are passed and len (as string) is bigger than limit -> fails
 	if _, exists := setmap["ChecklistsJSON"]; exists {
 		if len(string(setmap["ChecklistsJSON"].([]uint8))) > maxJSONLength {
-			return errors.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
+			return fmt.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
 		}
 	}
 
@@ -730,7 +732,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
 	if err != nil {
-		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == "23505" {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
 			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
 		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
