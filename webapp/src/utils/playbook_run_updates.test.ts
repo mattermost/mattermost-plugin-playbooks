@@ -3,6 +3,7 @@
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {TimelineEventType} from 'src/types/rhs';
 
 import {applyIncrementalUpdate} from './playbook_run_updates';
 
@@ -252,8 +253,8 @@ describe('playbook_run_updates utilities', () => {
             const runWith2Events = {
                 ...testPlaybookRun,
                 timeline_events: [
-                    {id: 'event_1', create_at: 100, delete_at: 0, event_at: 100, playbook_run_id: 'run_123', type: 0, subject_user_id: '', post_id: '', subject_display_name: '', parent_id: '', details: ''},
-                    {id: 'event_2', create_at: 200, delete_at: 0, event_at: 200, playbook_run_id: 'run_123', type: 0, subject_user_id: '', post_id: '', subject_display_name: '', parent_id: '', details: ''},
+                    {id: 'event_1', create_at: 100, delete_at: 0, event_at: 100, playbook_run_id: 'run_123', event_type: TimelineEventType.RunCreated, summary: '', details: '', post_id: '', subject_user_id: '', creator_user_id: ''},
+                    {id: 'event_2', create_at: 200, delete_at: 0, event_at: 200, playbook_run_id: 'run_123', event_type: TimelineEventType.RunCreated, summary: '', details: '', post_id: '', subject_user_id: '', creator_user_id: ''},
                 ],
             };
 

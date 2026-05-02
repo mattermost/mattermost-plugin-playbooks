@@ -492,26 +492,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 					// Evaluate all conditions to set initial visibility state
 					if len(conditionMapping) > 0 {
-						evalResult, evalErr := s.conditionService.EvaluateAllConditionsForRun(playbookRun)
-						if evalErr != nil {
-							logger.WithError(evalErr).Warn("failed to evaluate conditions for run")
-						} else if evalResult != nil && evalResult.AnythingAdded() {
-							var parts []string
-							for checklistTitle, changes := range evalResult.ChecklistChanges {
-								if changes.Added > 0 {
-									if changes.Added == 1 {
-										parts = append(parts, fmt.Sprintf("1 new task to **%s** checklist", checklistTitle))
-									} else {
-										parts = append(parts, fmt.Sprintf("%d new tasks to **%s** checklist", changes.Added, checklistTitle))
-									}
-								}
-							}
-							if len(parts) > 0 {
-								msg := "Conditions added " + strings.Join(parts, ", ") + " based on initial property values."
-								if _, postErr := s.poster.PostMessage(playbookRun.ChannelID, msg); postErr != nil {
-									logger.WithError(postErr).Warn("failed to post initial condition evaluation message")
-								}
-							}
+						_, err = s.conditionService.EvaluateAllConditionsForRun(playbookRun)
+						if err != nil {
+							logger.WithError(err).Warn("failed to evaluate conditions for run")
 						}
 					}
 
@@ -4733,18 +4716,18 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]stri
 	return s.store.GetPlaybookRunIDsForUser(userID)
 }
 
-// createPropertyChangeTimelineEvent creates a timeline event for property changes and returns it.
+// createPropertyChangeTimelineEvent creates a timeline event for property changes
 func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 	userID string,
 	playbookRunID string,
 	propertyField *PropertyField,
 	oldValue json.RawMessage,
 	newValue json.RawMessage,
-) (*TimelineEvent, error) {
+) error {
 	// Get user info for summary
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to resolve user %s", userID)
 	}
 
 	// Format values for display
@@ -4784,7 +4767,7 @@ func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 
 	detailsJSON, err := json.Marshal(details)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal property change details")
+		return errors.Wrap(err, "failed to marshal property change details")
 	}
 
 	// Create timeline event
@@ -4799,25 +4782,16 @@ func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 		SubjectUserID: userID,
 	}
 
-	createdEvent, err := s.store.CreateTimelineEvent(event)
+	_, err = s.store.CreateTimelineEvent(event)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create timeline event for property change")
+		return errors.Wrap(err, "failed to create timeline event for property change")
 	}
 
-	return createdEvent, nil
+	return nil
 }
 
 // SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
 func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
-	auditRec := plugin.MakeAuditRecord("setRunPropertyValue", model.AuditStatusFail)
-	if s.api != nil {
-		defer s.api.LogAuditRec(auditRec)
-	}
-
-	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-	model.AddEventParameterToAuditRec(auditRec, "propertyFieldID", propertyFieldID)
-
 	run, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get playbook run")
@@ -4832,10 +4806,6 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
-	if propertyField == nil {
-		return nil, errors.Errorf("field %s does not belong to run %s", propertyFieldID, playbookRunID)
-	}
-
 	var currentValue json.RawMessage
 	for _, pfv := range run.PropertyValues {
 		if pfv.FieldID == propertyFieldID {
@@ -4847,9 +4817,6 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upsert property value")
-	}
-	if propertyValue == nil {
-		return nil, errors.New("upsert property value returned nil without error")
 	}
 
 	// replace it in the run object we have at hand
@@ -4866,15 +4833,33 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	}
 
 	if !s.propertyValuesEqual(propertyField, currentValue, value) {
-		var err error
-		_, err = s.handlePropertyValueChanged(userID, run, propertyField, currentValue, value)
+		evaluationResult, err := s.conditionService.EvaluateConditionsOnValueChanged(run, propertyFieldID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to evaluate property conditions")
+		}
+
+		if err = s.createPropertyChangeTimelineEvent(userID, playbookRunID, propertyField, currentValue, value); err != nil {
+			return nil, errors.Wrap(err, "failed to create timeline event for property change")
+		}
+
+		// ONLY post channel message if new tasks were added
+		if evaluationResult != nil && evaluationResult.AnythingAdded() {
+			s.PostPropertyChangeMessage(userID, run, propertyField, value, evaluationResult)
+		}
+
+		if evaluationResult.AnythingChanged() {
+			if _, err := s.store.UpdatePlaybookRun(run); err != nil {
+				return nil, errors.Wrap(err, "failed to update playbook run")
+			}
+		} else {
+			// Update the playbook run's updated_at timestamp when property value changes
+			if err := s.store.BumpRunUpdatedAt(playbookRunID); err != nil {
+				return nil, errors.Wrap(err, "failed to bump playbook run timestamp")
+			}
 		}
 	}
 
-	auditRec.Success()
-
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	return propertyValue, nil
 }
 
@@ -4913,44 +4898,6 @@ func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *Playboo
 	}
 	playbookRun.PropertyValues = append(playbookRun.PropertyValues, upsertedValues...)
 	return playbookRun
-}
-
-// handlePropertyValueChanged fires side effects after a property value has been durably saved:
-// condition evaluation, channel message, timeline event, store persist/bump, and WS broadcast.
-func (s *PlaybookRunServiceImpl) handlePropertyValueChanged(userID string, run *PlaybookRun, propertyField *PropertyField, currentValue, newValue json.RawMessage) (*PlaybookRun, error) {
-	prevRun := run.Clone()
-
-	var evaluationResult *ConditionEvaluationResult
-	evalResult, evalErr := s.conditionService.EvaluateConditionsOnValueChanged(run, propertyField.ID)
-	if evalErr != nil {
-		logrus.WithError(evalErr).WithField("run_id", run.ID).Warn("failed to evaluate property conditions after value save")
-	} else {
-		evaluationResult = evalResult
-		if evaluationResult != nil && evaluationResult.AnythingAdded() {
-			s.PostPropertyChangeMessage(userID, run, propertyField, newValue, evaluationResult)
-		}
-	}
-
-	if createdEvent, err := s.createPropertyChangeTimelineEvent(userID, run.ID, propertyField, currentValue, newValue); err != nil {
-		logrus.WithError(err).WithField("run_id", run.ID).Warn("failed to create timeline event for property change")
-	} else {
-		run.TimelineEvents = append(run.TimelineEvents, *createdEvent)
-	}
-
-	if evaluationResult != nil && evaluationResult.AnythingChanged() {
-		updatedRun, err := s.store.UpdatePlaybookRun(run)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to update playbook run")
-		}
-		run = updatedRun
-	} else {
-		if err := s.store.BumpRunUpdatedAt(run.ID); err != nil {
-			return nil, errors.Wrap(err, "failed to bump playbook run timestamp")
-		}
-	}
-
-	s.sendPlaybookRunObjectUpdatedWS(run.ID, prevRun, run)
-	return run, nil
 }
 
 // propertyValuesEqual compares two property values for equality based on the property field type
