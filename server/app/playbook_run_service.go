@@ -4865,7 +4865,7 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		run.PropertyValues = append(run.PropertyValues, *propertyValue)
 	}
 
-	if !propertyValuesEqual(propertyField, currentValue, value) {
+	if !s.propertyValuesEqual(propertyField, currentValue, value) {
 		var err error
 		_, err = s.handlePropertyValueChanged(userID, run, propertyField, currentValue, value)
 		if err != nil {
@@ -4953,28 +4953,53 @@ func (s *PlaybookRunServiceImpl) handlePropertyValueChanged(userID string, run *
 	return run, nil
 }
 
-func propertyValuesEqual(field *PropertyField, oldValue, newValue json.RawMessage) bool {
-	if field.Type == model.PropertyFieldTypeMultiselect {
-		return multiselectValuesEqual(oldValue, newValue)
+// propertyValuesEqual compares two property values for equality based on the property field type
+func (s *PlaybookRunServiceImpl) propertyValuesEqual(field *PropertyField, oldValue, newValue json.RawMessage) bool {
+	switch field.Type {
+	case "text":
+		return s.compareTextValues(oldValue, newValue)
+	case "select":
+		return s.compareSelectValues(oldValue, newValue)
+	case "multiselect":
+		return s.compareMultiselectValues(oldValue, newValue)
 	}
-	return normalizeStringValue(oldValue) == normalizeStringValue(newValue)
+	return s.compareTextValues(oldValue, newValue)
 }
 
-func multiselectValuesEqual(oldValue, newValue json.RawMessage) bool {
+// compareTextValues compares text property values
+func (s *PlaybookRunServiceImpl) compareTextValues(oldValue, newValue json.RawMessage) bool {
+	oldStr := s.normalizeStringValue(oldValue)
+	newStr := s.normalizeStringValue(newValue)
+	return oldStr == newStr
+}
+
+// compareSelectValues compares select property values
+func (s *PlaybookRunServiceImpl) compareSelectValues(oldValue, newValue json.RawMessage) bool {
+	oldStr := s.normalizeStringValue(oldValue)
+	newStr := s.normalizeStringValue(newValue)
+	return oldStr == newStr
+}
+
+// compareMultiselectValues compares multiselect property values as sets (order doesn't matter)
+func (s *PlaybookRunServiceImpl) compareMultiselectValues(oldValue, newValue json.RawMessage) bool {
 	var oldArray, newArray []string
+
 	if len(oldValue) > 0 && string(oldValue) != "null" {
 		if err := json.Unmarshal(oldValue, &oldArray); err != nil {
 			return false
 		}
 	}
+
 	if len(newValue) > 0 && string(newValue) != "null" {
 		if err := json.Unmarshal(newValue, &newArray); err != nil {
 			return false
 		}
 	}
+
 	if len(oldArray) != len(newArray) {
 		return false
 	}
+
 	newMap := make(map[string]struct{}, len(newArray))
 	for _, val := range newArray {
 		newMap[val] = struct{}{}
@@ -4984,18 +5009,28 @@ func multiselectValuesEqual(oldValue, newValue json.RawMessage) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
-func normalizeStringValue(value json.RawMessage) string {
-	if len(value) == 0 || string(value) == "null" {
+// normalizeStringValue converts a JSON value to a normalized string
+func (s *PlaybookRunServiceImpl) normalizeStringValue(value json.RawMessage) string {
+	if len(value) == 0 {
 		return ""
 	}
+
+	str := string(value)
+	if str == "null" {
+		return ""
+	}
+
+	// Try to unmarshal as string to handle quoted strings
 	var unquoted string
 	if err := json.Unmarshal(value, &unquoted); err == nil {
 		return unquoted
 	}
-	return string(value)
+
+	return str
 }
 
 // PostPropertyChangeMessage posts a bot message when a property value changes
