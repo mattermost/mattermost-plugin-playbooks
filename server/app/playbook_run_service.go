@@ -3316,14 +3316,13 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 	}
 
 	// Name is optional when a single playbook has a ChannelNameTemplate (template generates the name).
-	// Do not pre-fill nameDefault with the raw template string — it contains unresolved {TOKEN} placeholders
-	// that the dialog flow cannot substitute, and users would submit the literal tokens as the run name.
 	nameOptional := false
 	nameMinLength := 1
 	nameDefault := ""
 	if len(playbooks) == 1 && playbooks[0].ChannelNameTemplate != "" {
 		nameOptional = true
 		nameMinLength = 0
+		nameDefault = playbooks[0].ChannelNameTemplate
 	}
 
 	return &model.Dialog{
@@ -4804,6 +4803,10 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 			propertyField = &pf
 			break
 		}
+	}
+
+	if propertyField == nil {
+		return nil, errors.Errorf("property field %s does not belong to run %s", propertyFieldID, playbookRunID)
 	}
 
 	var currentValue json.RawMessage
