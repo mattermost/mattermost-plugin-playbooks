@@ -2024,7 +2024,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		run = addSimpleChecklistToTun(t, run.ID)
 
 		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, selectField.ID)
-		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)

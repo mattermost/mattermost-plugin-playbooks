@@ -615,6 +615,9 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 	mmPropertyField, getErr := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
 	var propertyField *model.PropertyField
 	if getErr != nil {
+		if getErr != pluginapi.ErrNotFound {
+			return nil, errors.Wrapf(getErr, "failed to get property field %s", propertyFieldID)
+		}
 		runFields, rfErr := s.GetRunPropertyFields(runID)
 		if rfErr != nil {
 			return nil, errors.Wrapf(getErr, "failed to get property field %s (run-field lookup also failed: %v)", propertyFieldID, rfErr)

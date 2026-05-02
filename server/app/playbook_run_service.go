@@ -1826,7 +1826,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	if playbookRunToModify.OwnerUserID != "" {
 		oldOwner, err = s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to to resolve user %s", playbookRunToModify.OwnerUserID)
+			s.pluginAPI.Log.Warn("failed to resolve previous owner; proceeding with owner change", "user_id", playbookRunToModify.OwnerUserID, "err", err.Error())
 		}
 	}
 	newOwner, err := s.pluginAPI.User.Get(ownerID)
@@ -2259,7 +2259,7 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
@@ -2352,7 +2352,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
@@ -3527,7 +3527,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 	nameOptional := false
 	nameMinLength := 1
 	nameDefault := ""
-	if len(playbooks) == 1 && playbooks[0].ChannelNameTemplate != "" {
+	if len(playbooks) == 1 && playbooks[0].ChannelMode == PlaybookRunCreateNewChannel && playbooks[0].ChannelNameTemplate != "" {
 		nameOptional = true
 		nameMinLength = 0
 		nameDefault = playbooks[0].ChannelNameTemplate

@@ -296,7 +296,8 @@ Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
     // options refresh once the API response arrives and Redux updates, so we
     // wait up to HALF_MIN for the option to become available.
     cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
-    cy.wait('@SetRunOwner');
+    cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
 });
 
 Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {

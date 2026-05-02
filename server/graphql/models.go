@@ -3,33 +3,6 @@
 
 package graphql
 
-type Enum__DirectiveLocation string
-
-const Enum__DirectiveLocationQUERY Enum__DirectiveLocation = "QUERY"
-const Enum__DirectiveLocationMUTATION Enum__DirectiveLocation = "MUTATION"
-const Enum__DirectiveLocationSUBSCRIPTION Enum__DirectiveLocation = "SUBSCRIPTION"
-const Enum__DirectiveLocationFIELD Enum__DirectiveLocation = "FIELD"
-const Enum__DirectiveLocationFRAGMENT_DEFINITION Enum__DirectiveLocation = "FRAGMENT_DEFINITION"
-const Enum__DirectiveLocationFRAGMENT_SPREAD Enum__DirectiveLocation = "FRAGMENT_SPREAD"
-const Enum__DirectiveLocationINLINE_FRAGMENT Enum__DirectiveLocation = "INLINE_FRAGMENT"
-const Enum__DirectiveLocationSCHEMA Enum__DirectiveLocation = "SCHEMA"
-const Enum__DirectiveLocationSCALAR Enum__DirectiveLocation = "SCALAR"
-const Enum__DirectiveLocationOBJECT Enum__DirectiveLocation = "OBJECT"
-const Enum__DirectiveLocationFIELD_DEFINITION Enum__DirectiveLocation = "FIELD_DEFINITION"
-const Enum__DirectiveLocationARGUMENT_DEFINITION Enum__DirectiveLocation = "ARGUMENT_DEFINITION"
-const Enum__DirectiveLocationINTERFACE Enum__DirectiveLocation = "INTERFACE"
-const Enum__DirectiveLocationUNION Enum__DirectiveLocation = "UNION"
-const Enum__DirectiveLocationENUM Enum__DirectiveLocation = "ENUM"
-const Enum__DirectiveLocationENUM_VALUE Enum__DirectiveLocation = "ENUM_VALUE"
-const Enum__DirectiveLocationINPUT_OBJECT Enum__DirectiveLocation = "INPUT_OBJECT"
-const Enum__DirectiveLocationINPUT_FIELD_DEFINITION Enum__DirectiveLocation = "INPUT_FIELD_DEFINITION"
-
-type EnumMetricType string
-
-const EnumMetricTypemetric_duration EnumMetricType = "metric_duration"
-const EnumMetricTypemetric_currency EnumMetricType = "metric_currency"
-const EnumMetricTypemetric_integer EnumMetricType = "metric_integer"
-
 type EnumPlaybookRunType string
 
 const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
@@ -59,6 +32,33 @@ const Enum__TypeKindENUM Enum__TypeKind = "ENUM"
 const Enum__TypeKindINPUT_OBJECT Enum__TypeKind = "INPUT_OBJECT"
 const Enum__TypeKindLIST Enum__TypeKind = "LIST"
 const Enum__TypeKindNON_NULL Enum__TypeKind = "NON_NULL"
+
+type Enum__DirectiveLocation string
+
+const Enum__DirectiveLocationQUERY Enum__DirectiveLocation = "QUERY"
+const Enum__DirectiveLocationMUTATION Enum__DirectiveLocation = "MUTATION"
+const Enum__DirectiveLocationSUBSCRIPTION Enum__DirectiveLocation = "SUBSCRIPTION"
+const Enum__DirectiveLocationFIELD Enum__DirectiveLocation = "FIELD"
+const Enum__DirectiveLocationFRAGMENT_DEFINITION Enum__DirectiveLocation = "FRAGMENT_DEFINITION"
+const Enum__DirectiveLocationFRAGMENT_SPREAD Enum__DirectiveLocation = "FRAGMENT_SPREAD"
+const Enum__DirectiveLocationINLINE_FRAGMENT Enum__DirectiveLocation = "INLINE_FRAGMENT"
+const Enum__DirectiveLocationSCHEMA Enum__DirectiveLocation = "SCHEMA"
+const Enum__DirectiveLocationSCALAR Enum__DirectiveLocation = "SCALAR"
+const Enum__DirectiveLocationOBJECT Enum__DirectiveLocation = "OBJECT"
+const Enum__DirectiveLocationFIELD_DEFINITION Enum__DirectiveLocation = "FIELD_DEFINITION"
+const Enum__DirectiveLocationARGUMENT_DEFINITION Enum__DirectiveLocation = "ARGUMENT_DEFINITION"
+const Enum__DirectiveLocationINTERFACE Enum__DirectiveLocation = "INTERFACE"
+const Enum__DirectiveLocationUNION Enum__DirectiveLocation = "UNION"
+const Enum__DirectiveLocationENUM Enum__DirectiveLocation = "ENUM"
+const Enum__DirectiveLocationENUM_VALUE Enum__DirectiveLocation = "ENUM_VALUE"
+const Enum__DirectiveLocationINPUT_OBJECT Enum__DirectiveLocation = "INPUT_OBJECT"
+const Enum__DirectiveLocationINPUT_FIELD_DEFINITION Enum__DirectiveLocation = "INPUT_FIELD_DEFINITION"
+
+type EnumMetricType string
+
+const EnumMetricTypemetric_duration EnumMetricType = "metric_duration"
+const EnumMetricTypemetric_currency EnumMetricType = "metric_currency"
+const EnumMetricTypemetric_integer EnumMetricType = "metric_integer"
 
 type __Schema struct {
 	Types            []__Type      `json:"types"`
