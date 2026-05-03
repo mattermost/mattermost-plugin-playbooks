@@ -534,8 +534,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			public = pb.CreatePublicPlaybookRun
 		}
 
-		// Playbook is now loaded; reject an empty name only when no ChannelNameTemplate will generate one.
-		if strings.TrimSpace(playbookRun.Name) == "" && pb.ChannelNameTemplate == "" {
+		// Playbook is now loaded; reject an empty name only when no ChannelNameTemplate will generate one
+		// and no existing channel is being linked (ChannelID != "" means no new channel is created).
+		if strings.TrimSpace(playbookRun.Name) == "" && pb.ChannelNameTemplate == "" && playbookRun.ChannelID == "" {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 		}
 
