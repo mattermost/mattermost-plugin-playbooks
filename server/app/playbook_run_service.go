@@ -1598,6 +1598,9 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userI
 	} else if s.licenseChecker.RetrospectiveAllowed() &&
 		playbookRunToModify.CurrentStatus == StatusFinished &&
 		playbookRunToModify.RetrospectivePublishedAt == 0 {
+		// Reminder/scheduler errors are intentionally non-fatal: the toggle has already
+		// been persisted to the DB. Failure here means the owner won't be automatically
+		// prompted, but the retrospective is still enabled and can be submitted manually.
 		if remErr := s.postRetrospectiveReminder(playbookRunToModify, false); remErr != nil {
 			s.pluginAPI.Log.Error("failed to post retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
 		}

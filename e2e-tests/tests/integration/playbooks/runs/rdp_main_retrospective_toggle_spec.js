@@ -14,6 +14,7 @@ import {getRandomId} from '../../../utils';
 describe('runs > run details page > retrospective toggle (context menu)', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
+    let createdPlaybookIds = [];
 
     before(() => {
         cy.apiRequireLicense();
@@ -28,11 +29,20 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
         cy.viewport('macbook-13');
     });
 
+    afterEach(() => {
+        cy.apiLogin(testUser);
+        createdPlaybookIds.forEach((id) => cy.apiArchivePlaybook(id));
+        createdPlaybookIds = [];
+    });
+
     const openContextMenu = () => {
         cy.findByTestId('run-header-section').findByTestId('menuButton').click();
         cy.findByTestId('dropdownmenu').should('be.visible');
     };
 
+    // The confirmation modal component exposes HTML id attributes (id="confirmModalButton",
+    // id="cancelModalButton", id="confirmModal") rather than data-testid attributes.
+    // These CSS id selectors are the correct way to target the modal buttons.
     const confirmModal = () => {
         cy.get('#confirmModalButton').click();
         cy.get('#confirmModal').should('not.exist');
@@ -44,12 +54,15 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             title: 'Retro Toggle Playbook ' + getRandomId(),
             memberIDs: [testUser.id],
             retrospectiveEnabled: true,
-        }).then((playbook) => cy.apiRunPlaybook({
-            teamId: testTeam.id,
-            playbookId: playbook.id,
-            playbookRunName: 'Retro Enabled Run ' + getRandomId(),
-            ownerUserId: testUser.id,
-        })).then((run) => {
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Retro Enabled Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
             cy.visit(`/playbooks/runs/${run.id}`);
             cy.assertRunDetailsPageRenderComplete(testUser.username);
 
@@ -67,12 +80,15 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             title: 'Retro Toggle Playbook ' + getRandomId(),
             memberIDs: [testUser.id],
             retrospectiveEnabled: false,
-        }).then((playbook) => cy.apiRunPlaybook({
-            teamId: testTeam.id,
-            playbookId: playbook.id,
-            playbookRunName: 'Retro Disabled Run ' + getRandomId(),
-            ownerUserId: testUser.id,
-        })).then((run) => {
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Retro Disabled Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
             cy.visit(`/playbooks/runs/${run.id}`);
             cy.assertRunDetailsPageRenderComplete(testUser.username);
 
@@ -90,12 +106,15 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             title: 'Retro Toggle Playbook ' + getRandomId(),
             memberIDs: [testUser.id],
             retrospectiveEnabled: true,
-        }).then((playbook) => cy.apiRunPlaybook({
-            teamId: testTeam.id,
-            playbookId: playbook.id,
-            playbookRunName: 'Disable Retro Run ' + getRandomId(),
-            ownerUserId: testUser.id,
-        })).then((run) => {
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Disable Retro Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
             cy.visit(`/playbooks/runs/${run.id}`);
             cy.assertRunDetailsPageRenderComplete(testUser.username);
 
@@ -132,12 +151,15 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             title: 'Retro Toggle Playbook ' + getRandomId(),
             memberIDs: [testUser.id],
             retrospectiveEnabled: false,
-        }).then((playbook) => cy.apiRunPlaybook({
-            teamId: testTeam.id,
-            playbookId: playbook.id,
-            playbookRunName: 'Enable Retro Run ' + getRandomId(),
-            ownerUserId: testUser.id,
-        })).then((run) => {
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Enable Retro Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
             cy.visit(`/playbooks/runs/${run.id}`);
             cy.assertRunDetailsPageRenderComplete(testUser.username);
 
@@ -174,12 +196,15 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             title: 'Retro Toggle Playbook ' + getRandomId(),
             memberIDs: [testUser.id],
             retrospectiveEnabled: true,
-        }).then((playbook) => cy.apiRunPlaybook({
-            teamId: testTeam.id,
-            playbookId: playbook.id,
-            playbookRunName: 'Cancel Disable Run ' + getRandomId(),
-            ownerUserId: testUser.id,
-        })).then((run) => {
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Cancel Disable Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
             cy.visit(`/playbooks/runs/${run.id}`);
             cy.assertRunDetailsPageRenderComplete(testUser.username);
 
@@ -187,7 +212,7 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             openContextMenu();
             cy.findByTestId('disable-retrospective-menu-item').click();
 
-            // # Cancel the confirmation modal
+            // # Cancel the confirmation modal (uses HTML id attribute, not data-testid)
             cy.get('#cancelModalButton').click();
             cy.get('#confirmModal').should('not.exist');
 

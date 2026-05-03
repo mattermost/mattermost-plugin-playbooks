@@ -87,7 +87,6 @@ const makeRun = (overrides: Partial<PlaybookRun> = {}): PlaybookRun => ({
 
 describe('useToggleRunRetrospective', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
         mockToggleRunRetrospective.mockResolvedValue({});
     });
 
@@ -191,5 +190,23 @@ describe('useToggleRunRetrospective', () => {
         });
 
         expect(mockAddToast).not.toHaveBeenCalled();
+    });
+
+    it('shows a toast when toggleRunRetrospective rejects (catch branch)', async () => {
+        mockToggleRunRetrospective.mockRejectedValueOnce(new Error('network error'));
+
+        const run = makeRun({retrospective_enabled: true});
+        const {result} = renderHook(() => useToggleRunRetrospective(run));
+
+        act(() => {
+            result.current(false);
+        });
+
+        const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
+        await act(async () => {
+            await modalArgs.onConfirm();
+        });
+
+        expect(mockAddToast).toHaveBeenCalledTimes(1);
     });
 });

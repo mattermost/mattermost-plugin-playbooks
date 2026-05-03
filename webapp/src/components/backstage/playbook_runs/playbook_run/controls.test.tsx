@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import renderer from 'react-test-renderer';
+import renderer, {ReactTestRendererJSON} from 'react-test-renderer';
 import {IntlProvider} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -22,7 +22,6 @@ jest.mock('src/hooks/run_permissions', () => ({
 const useCanModifyRunMock = jest.mocked(jest.requireMock('src/hooks/run_permissions').useCanModifyRun);
 
 beforeEach(() => {
-    useCanModifyRunMock.mockReset();
     useCanModifyRunMock.mockReturnValue(true);
 });
 
@@ -87,6 +86,24 @@ const makeRun = (overrides: Partial<PlaybookRun> = {}): PlaybookRun => ({
     ...overrides,
 });
 
+// hasTestId performs a depth-first search of a react-test-renderer tree looking
+// for a node whose data-testid prop matches testId.
+function hasTestId(node: ReactTestRendererJSON | ReactTestRendererJSON[] | null, testId: string): boolean {
+    if (!node) {
+        return false;
+    }
+    if (Array.isArray(node)) {
+        return node.some((n) => hasTestId(n, testId));
+    }
+    if (node.props?.['data-testid'] === testId) {
+        return true;
+    }
+    if (node.children) {
+        return hasTestId(node.children as ReactTestRendererJSON[], testId);
+    }
+    return false;
+}
+
 const renderMenuItem = (run: PlaybookRun) =>
     renderer.create(
         <IntlProvider locale='en'>
@@ -98,17 +115,15 @@ describe('ToggleRunRetrospectiveMenuItem', () => {
     it('renders data-testid="disable-retrospective-menu-item" when retrospective is enabled', () => {
         const run = makeRun({retrospective_enabled: true});
         const tree = renderMenuItem(run).toJSON();
-        const treeStr = JSON.stringify(tree);
-        expect(treeStr).toContain('disable-retrospective-menu-item');
-        expect(treeStr).not.toContain('enable-retrospective-menu-item');
+        expect(hasTestId(tree, 'disable-retrospective-menu-item')).toBe(true);
+        expect(hasTestId(tree, 'enable-retrospective-menu-item')).toBe(false);
     });
 
     it('renders data-testid="enable-retrospective-menu-item" when retrospective is disabled', () => {
         const run = makeRun({retrospective_enabled: false});
         const tree = renderMenuItem(run).toJSON();
-        const treeStr = JSON.stringify(tree);
-        expect(treeStr).toContain('enable-retrospective-menu-item');
-        expect(treeStr).not.toContain('disable-retrospective-menu-item');
+        expect(hasTestId(tree, 'enable-retrospective-menu-item')).toBe(true);
+        expect(hasTestId(tree, 'disable-retrospective-menu-item')).toBe(false);
     });
 
     it('renders "Disable retrospective" text when retrospective is enabled', () => {

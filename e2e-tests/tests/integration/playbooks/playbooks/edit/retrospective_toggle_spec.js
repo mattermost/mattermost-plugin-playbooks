@@ -10,6 +10,7 @@
 // Group: @playbooks
 
 import {getRandomId} from '../../../../utils';
+import * as TIMEOUTS from '../../../../fixtures/timeouts';
 
 describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () => {
     const RETRO_REMINDER_TEXT = 'fill out the retrospective';
@@ -215,8 +216,10 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             cy.apiFinishRun(playbookRun.id);
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
 
-            // # Wait for the run-finished system post to confirm the channel has settled
-            cy.contains('as finished', {timeout: 10000}).should('exist');
+            // # Wait for the run-finished system post to confirm the channel has settled.
+            // The server posts any retrospective reminder synchronously in the same finish
+            // request, so once this post is visible all channel posts are present.
+            cy.contains('as finished', {timeout: TIMEOUTS.TEN_SEC}).should('exist');
 
             // * Assert no retrospective prompt bot message was posted
             cy.contains(RETRO_REMINDER_TEXT).should('not.exist');
@@ -246,7 +249,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
 
             // # Wait for the run-finished system post to confirm the channel has settled
-            cy.contains('as finished', {timeout: 10000}).should('exist');
+            cy.contains('as finished', {timeout: TIMEOUTS.TEN_SEC}).should('exist');
 
             // * Assert the retrospective prompt bot message was posted
             cy.findByTestId('retrospective-reminder').should('be.visible');

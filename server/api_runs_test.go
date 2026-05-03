@@ -2998,9 +2998,9 @@ type playbookWithRetro struct {
 	RetrospectiveEnabled bool `json:"retrospective_enabled"`
 }
 
-// setRetrospectiveEnabled performs a raw PUT /plugins/playbooks/api/v0/playbooks/{id}
-// with the retrospective_enabled flag set, using the provided Mattermost auth token.
-func setRetrospectiveEnabled(t *testing.T, e *TestEnvironment, playbookID string, enabled bool) {
+// setRetrospectiveEnabledAsAdmin performs a raw PUT /plugins/playbooks/api/v0/playbooks/{id}
+// with the retrospective_enabled flag set. Always acts as the system admin user.
+func setRetrospectiveEnabledAsAdmin(t *testing.T, e *TestEnvironment, playbookID string, enabled bool) {
 	t.Helper()
 
 	pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
@@ -3027,7 +3027,7 @@ func setRetrospectiveEnabled(t *testing.T, e *TestEnvironment, playbookID string
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		t.Fatalf("setRetrospectiveEnabled failed: status=%d body=%s", resp.StatusCode, string(body))
+		t.Fatalf("setRetrospectiveEnabledAsAdmin failed: status=%d body=%s", resp.StatusCode, string(body))
 	}
 }
 
@@ -3075,7 +3075,7 @@ func TestToggleRunRetrospective(t *testing.T) {
 			RemoveChannelMemberOnRemovedParticipant: true,
 		})
 		require.NoError(t, err)
-		setRetrospectiveEnabled(t, e, playbookID, true)
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, true)
 
 		var creator *client.Client
 		if ownerID == e.AdminUser.Id {
@@ -3180,6 +3180,44 @@ func TestToggleRunRetrospective(t *testing.T) {
 		assert.Equal(t, client.RetrospectiveEnabled, lastEvent.EventType)
 		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
 	})
+
+	t.Run("idempotent: same value returns 200 and creates no new timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Idempotent Same Value", e.RegularUser.Id)
+
+		// Run starts with retro enabled; count events before the no-op toggle
+		before, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		eventCountBefore := len(before.TimelineEvents)
+
+		// Toggle to the same value (enabled → enabled)
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true)
+		assert.Equal(t, http.StatusOK, status)
+
+		after, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, after.RetrospectiveEnabled)
+		assert.Equal(t, eventCountBefore, len(after.TimelineEvents), "no-op toggle must not create a timeline event")
+	})
+
+	t.Run("re-enabling on a finished unpublished run persists and creates timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Re-enable Finished", e.RegularUser.Id)
+
+		// Disable retro, then finish the run (retro is off so no reminder fires on finish)
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		// Re-enable retro on the finished, unpublished run — exercises the scheduler
+		// restart branch in ToggleRetrospectiveEnabled (playbook_run_service.go:1598-1608)
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusFinished, fetched.CurrentStatus)
+		assert.True(t, fetched.RetrospectiveEnabled)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveEnabled, lastEvent.EventType)
+	})
 }
 
 // TestRetrospectiveDisabled_RunCreation verifies that the RetrospectiveEnabled flag on
@@ -3203,7 +3241,7 @@ func TestRetrospectiveDisabled_RunCreation(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		setRetrospectiveEnabled(t, e, playbookID, false)
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, false)
 
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Retro Disabled Run",
@@ -3234,7 +3272,7 @@ func TestRetrospectiveDisabled_RunCreation(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		setRetrospectiveEnabled(t, e, playbookID, true)
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, true)
 
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Retro Enabled Run",

@@ -5,80 +5,119 @@ package app
 
 import (
 	"testing"
+	"time"
 
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// TestRetrospectiveGuardLogic verifies the guard conditions in handleReminderToFillRetro
-// by testing the boolean logic directly. The actual handler at reminder.go:28 uses
-// these exact conditions to decide whether to cancel, skip, or post a reminder.
-func TestRetrospectiveGuardLogic(t *testing.T) {
-	tests := []struct {
-		name                   string
-		retrospectiveEnabled   bool
-		retrospectivePublished int64
-		currentStatus          string
-		expectCancel           bool // should scheduler.Cancel be called
-		expectReminderEligible bool // should the reminder be posted
+// recordingScheduler is a minimal JobOnceScheduler that records Cancel calls.
+// All other methods are no-ops so that handleReminderToFillRetro can run without
+// a full plugin environment.
+type recordingScheduler struct {
+	cancelCalls []string
+}
+
+func (r *recordingScheduler) Cancel(key string) {
+	r.cancelCalls = append(r.cancelCalls, key)
+}
+func (r *recordingScheduler) SetCallback(func(string, any)) error                           { return nil }
+func (r *recordingScheduler) Start() error                                                  { return nil }
+func (r *recordingScheduler) ScheduleOnce(string, time.Time, any) (*cluster.JobOnce, error) { return nil, nil }
+func (r *recordingScheduler) ListScheduledJobs() ([]cluster.JobOnceMetadata, error)         { return nil, nil }
+
+// stubRunStore satisfies PlaybookRunStore via interface embedding.
+// Only GetPlaybookRun is implemented; any other method panics on nil deref,
+// which is intentional — these tests must not trigger them.
+type stubRunStore struct {
+	PlaybookRunStore
+	run *PlaybookRun
+}
+
+func (s *stubRunStore) GetPlaybookRun(_ string) (*PlaybookRun, error) {
+	return s.run, nil
+}
+
+// stubLicenseChecker satisfies LicenseChecker, returning false for all checks so
+// that GetPlaybookRun skips property-field enrichment in unit tests.
+type stubLicenseChecker struct{}
+
+func (stubLicenseChecker) PlaybookAllowed(bool) bool           { return false }
+func (stubLicenseChecker) RetrospectiveAllowed() bool          { return false }
+func (stubLicenseChecker) TimelineAllowed() bool               { return false }
+func (stubLicenseChecker) StatsAllowed() bool                  { return false }
+func (stubLicenseChecker) ChecklistItemDueDateAllowed() bool   { return false }
+func (stubLicenseChecker) PlaybookAttributesAllowed() bool     { return false }
+func (stubLicenseChecker) ConditionalPlaybooksAllowed() bool   { return false }
+
+// TestHandleReminderToFillRetro_Cancel verifies that handleReminderToFillRetro calls
+// scheduler.Cancel exactly once when RetrospectiveEnabled is false, regardless of
+// the run's current status.
+func TestHandleReminderToFillRetro_Cancel(t *testing.T) {
+	cases := []struct {
+		name string
+		run  PlaybookRun
 	}{
 		{
-			name:                   "retro disabled: cancel scheduler",
-			retrospectiveEnabled:   false,
-			retrospectivePublished: 0,
-			currentStatus:          StatusFinished,
-			expectCancel:           true,
-			expectReminderEligible: false,
+			name: "retro disabled when finished: cancel scheduler",
+			run:  PlaybookRun{ID: "run1", RetrospectiveEnabled: false, CurrentStatus: StatusFinished},
 		},
 		{
-			name:                   "retro enabled, finished, not published: eligible for reminder",
-			retrospectiveEnabled:   true,
-			retrospectivePublished: 0,
-			currentStatus:          StatusFinished,
-			expectCancel:           false,
-			expectReminderEligible: true,
-		},
-		{
-			name:                   "retro enabled but already published: skip",
-			retrospectiveEnabled:   true,
-			retrospectivePublished: 12345678,
-			currentStatus:          StatusFinished,
-			expectCancel:           false,
-			expectReminderEligible: false,
-		},
-		{
-			name:                   "retro enabled, not finished: skip",
-			retrospectiveEnabled:   true,
-			retrospectivePublished: 0,
-			currentStatus:          StatusInProgress,
-			expectCancel:           false,
-			expectReminderEligible: false,
-		},
-		{
-			name:                   "retro disabled even if in-progress: cancel",
-			retrospectiveEnabled:   false,
-			retrospectivePublished: 0,
-			currentStatus:          StatusInProgress,
-			expectCancel:           true,
-			expectReminderEligible: false,
+			name: "retro disabled when in-progress: still cancel scheduler",
+			run:  PlaybookRun{ID: "run2", RetrospectiveEnabled: false, CurrentStatus: StatusInProgress},
 		},
 	}
 
-	for _, tc := range tests {
+	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			run := &PlaybookRun{
-				RetrospectiveEnabled:     tc.retrospectiveEnabled,
-				RetrospectivePublishedAt: tc.retrospectivePublished,
-				CurrentStatus:            tc.currentStatus,
+			sched := &recordingScheduler{}
+			svc := &PlaybookRunServiceImpl{
+				store:          &stubRunStore{run: &tc.run},
+				scheduler:      sched,
+				licenseChecker: stubLicenseChecker{},
 			}
 
-			// Mirror the guard logic from handleReminderToFillRetro (reminder.go:38-51)
-			shouldCancel := !run.RetrospectiveEnabled
-			shouldSkipPublished := run.RetrospectiveEnabled && run.RetrospectivePublishedAt != 0
-			shouldSkipNotFinished := run.RetrospectiveEnabled && run.RetrospectivePublishedAt == 0 && run.CurrentStatus != StatusFinished
-			reminderEligible := !shouldCancel && !shouldSkipPublished && !shouldSkipNotFinished
+			svc.handleReminderToFillRetro(tc.run.ID)
 
-			assert.Equal(t, tc.expectCancel, shouldCancel, "cancel mismatch")
-			assert.Equal(t, tc.expectReminderEligible, reminderEligible, "reminder eligibility mismatch")
+			require.Len(t, sched.cancelCalls, 1, "expected exactly one Cancel call")
+			assert.Equal(t, RetrospectivePrefix+tc.run.ID, sched.cancelCalls[0])
+		})
+	}
+}
+
+// TestHandleReminderToFillRetro_Skip verifies that handleReminderToFillRetro returns
+// early without touching the scheduler when the run is retro-enabled but either
+// already published or not yet finished.
+func TestHandleReminderToFillRetro_Skip(t *testing.T) {
+	cases := []struct {
+		name string
+		run  PlaybookRun
+	}{
+		{
+			name: "retro enabled but already published: no scheduler call",
+			run:  PlaybookRun{ID: "run3", RetrospectiveEnabled: true, RetrospectivePublishedAt: 12345678, CurrentStatus: StatusFinished},
+		},
+		{
+			name: "retro enabled, not yet finished: no scheduler call",
+			run:  PlaybookRun{ID: "run4", RetrospectiveEnabled: true, RetrospectivePublishedAt: 0, CurrentStatus: StatusInProgress},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sched := &recordingScheduler{}
+			svc := &PlaybookRunServiceImpl{
+				store:          &stubRunStore{run: &tc.run},
+				scheduler:      sched,
+				licenseChecker: stubLicenseChecker{},
+			}
+
+			require.NotPanics(t, func() {
+				svc.handleReminderToFillRetro(tc.run.ID)
+			})
+
+			assert.Empty(t, sched.cancelCalls, "Cancel must not be called for a skip case")
 		})
 	}
 }
