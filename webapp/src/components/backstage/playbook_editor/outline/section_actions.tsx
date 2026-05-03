@@ -271,7 +271,7 @@ const LegacyActionsEdit = ({playbook, restPlaybook, autoArchiveChannel, onAutoAr
             {restPlaybook && (
                 <StyledSection>
                     <StyledSectionTitle>
-                        <CheckCircleOutlineIcon size={22}/>
+                        <CheckCircleOutlineIcon size={22} aria-hidden={true}/>
                         <FormattedMessage
                             id='V3tvkc'
                             defaultMessage='When a run finishes'

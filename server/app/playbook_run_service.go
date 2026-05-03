@@ -1304,7 +1304,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	s.metricsService.IncrementRunsFinishedCount(1)
 
-	if s.shouldAutoArchiveChannel(playbookRunToModify, logger) {
+	if s.shouldAutoArchiveChannel(playbookRunToModify) {
 		// Persist the flag first so that if the archive call fails and we reset the flag,
 		// the worst-case double-failure leaves AutoArchivedChannel=true in the DB (safe: the
 		// next restore will call restoreChannelByID which no-ops on an already-active channel
@@ -1593,7 +1593,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 // shouldAutoArchiveChannel returns true if the run's channel should be auto-archived on finish:
 // AutoArchiveChannel was snapshotted from the playbook at run creation and the channel was
 // created by this run (not linked).
-func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun, _ *logrus.Entry) bool {
+func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun) bool {
 	return run.AutoArchiveChannel && run.ChannelCreatedByRun && run.ChannelID != ""
 }
 
@@ -1601,8 +1601,7 @@ func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun, _ *l
 // NOTE: Get→mutate→Update is not atomic. Channel.Update sends the full channel object, so any
 // concurrent channel property edit (display name, purpose) made between Get and Update will be
 // silently overwritten. This is acceptable as a best-effort operation until the plugin API
-// exposes a dedicated RestoreChannel method. TODO: replace with pluginapi.Channel.Restore() once
-// available — https://github.com/mattermost/mattermost/issues
+// exposes a dedicated RestoreChannel method.
 func (s *PlaybookRunServiceImpl) restoreChannelByID(channelID string, logger *logrus.Entry) bool {
 	ch, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
