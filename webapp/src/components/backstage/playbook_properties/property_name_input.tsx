@@ -34,9 +34,9 @@ const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updat
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Auto-focus and select on mount if requested, but skip if already focused (user is mid-edit)
+    // Auto-focus and select on mount if requested
     useEffect(() => {
-        if (autoFocus && inputRef.current && document.activeElement !== inputRef.current) {
+        if (autoFocus && inputRef.current) {
             inputRef.current.focus();
             inputRef.current.select();
         }

@@ -7,6 +7,7 @@ import React from 'react';
 import renderer from 'react-test-renderer';
 
 import {usePlaybook} from 'src/graphql/hooks';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 
 import {RunPlaybookModal} from './run_playbook_modal';
 
@@ -49,6 +50,10 @@ jest.mock('src/graphql/hooks', () => ({
     usePlaybook: jest.fn(),
 }));
 
+jest.mock('src/hooks/crud', () => ({
+    usePlaybook: jest.fn(),
+}));
+
 jest.mock('src/client', () => ({
     createPlaybookRun: jest.fn(),
 }));
@@ -78,6 +83,7 @@ jest.mock('mattermost-redux/selectors/entities/channels', () => ({
 
 jest.mock('mattermost-redux/selectors/entities/preferences', () => ({
     getTeammateNameDisplaySetting: () => 'username',
+    isCollapsedThreadsEnabled: () => false,
 }));
 
 jest.mock('mattermost-redux/utils/user_utils', () => ({
@@ -189,6 +195,7 @@ const makePlaybookWithNewChannelOnly = (newChannelOnly: boolean) => ({
 });
 
 const mockUsePlaybook = usePlaybook as jest.Mock;
+const mockUseRestPlaybook = useRestPlaybook as jest.Mock;
 
 describe('RunPlaybookModal - new_channel_only behavior', () => {
     beforeEach(() => {
@@ -198,6 +205,7 @@ describe('RunPlaybookModal - new_channel_only behavior', () => {
     it('renders both channel mode radios when new_channel_only is false', () => {
         const playbook = makePlaybookWithNewChannelOnly(false);
         mockUsePlaybook.mockReturnValue([playbook, {error: null, isFetching: false}]);
+        mockUseRestPlaybook.mockReturnValue([playbook]);
 
         const onRunCreated = jest.fn();
         const component = renderer.create(
@@ -230,6 +238,7 @@ describe('RunPlaybookModal - new_channel_only behavior', () => {
     it('channel mode defaults to create_new_channel based on playbook config', () => {
         const playbook = makePlaybookWithNewChannelOnly(false);
         mockUsePlaybook.mockReturnValue([playbook, {error: null, isFetching: false}]);
+        mockUseRestPlaybook.mockReturnValue([playbook]);
 
         const onRunCreated = jest.fn();
         const component = renderer.create(
@@ -253,6 +262,7 @@ describe('RunPlaybookModal - new_channel_only behavior', () => {
     it('when new_channel_only is true: "Link to existing channel" radio is disabled', () => {
         const playbook = makePlaybookWithNewChannelOnly(true);
         mockUsePlaybook.mockReturnValue([playbook, {error: null, isFetching: false}]);
+        mockUseRestPlaybook.mockReturnValue([playbook]);
 
         const onRunCreated = jest.fn();
         const component = renderer.create(
@@ -275,6 +285,7 @@ describe('RunPlaybookModal - new_channel_only behavior', () => {
     it('when new_channel_only is true: tooltip shows enforcement message', () => {
         const playbook = makePlaybookWithNewChannelOnly(true);
         mockUsePlaybook.mockReturnValue([playbook, {error: null, isFetching: false}]);
+        mockUseRestPlaybook.mockReturnValue([playbook]);
 
         const onRunCreated = jest.fn();
         const component = renderer.create(
@@ -292,6 +303,7 @@ describe('RunPlaybookModal - new_channel_only behavior', () => {
     it('when new_channel_only is true: channel selector is not rendered', () => {
         const playbook = makePlaybookWithNewChannelOnly(true);
         mockUsePlaybook.mockReturnValue([playbook, {error: null, isFetching: false}]);
+        mockUseRestPlaybook.mockReturnValue([playbook]);
 
         const onRunCreated = jest.fn();
         const component = renderer.create(

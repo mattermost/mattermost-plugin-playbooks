@@ -2127,12 +2127,10 @@ func TestNewChannelOnlyRoundTrip(t *testing.T) {
 	id, err := playbookStore.Create(pb)
 	require.NoError(t, err)
 
-	// Verify NewChannelOnly persists through Create
 	got, err := playbookStore.Get(id)
 	require.NoError(t, err)
 	require.True(t, got.NewChannelOnly)
 
-	// Verify NewChannelOnly persists through Update
 	got.NewChannelOnly = false
 	err = playbookStore.Update(got)
 	require.NoError(t, err)

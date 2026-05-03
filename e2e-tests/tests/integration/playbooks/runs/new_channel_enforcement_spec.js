@@ -88,7 +88,6 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
                 createdPlaybookIds.push(playbook.id);
 
                 // # Attempt to create a run with channel_id set (should be rejected)
-                // cy.apiRunPlaybook internally asserts the 400 status when expectedStatusCode is set
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: playbook.id,
