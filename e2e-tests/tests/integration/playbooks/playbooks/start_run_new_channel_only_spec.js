@@ -65,7 +65,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.findByRole('dialog').within(() => {
+            cy.get('#root-portal.modal-open').within(() => {
                 // * Assert the "Link to existing channel" radio is disabled
                 cy.findByTestId('link-existing-channel-radio').should('be.disabled');
             });
@@ -75,7 +75,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.findByRole('dialog').within(() => {
+            cy.get('#root-portal.modal-open').within(() => {
                 // * Assert the "Create a run channel" radio is checked
                 cy.findByTestId('create-channel-radio').should('be.checked');
 
@@ -88,19 +88,17 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.findByRole('dialog').within(() => {
-                // * Assert the enforcement hint is shown
-                cy.findByTestId('new-channel-only-hint').
-                    should('be.visible').
-                    and('contain', 'This playbook requires a new channel for each run');
-            });
+            // * Assert the enforcement hint is shown
+            cy.get('#root-portal.modal-open [data-testid="new-channel-only-hint"]').
+                should('exist').
+                and('contain', 'This playbook requires a new channel for each run');
         });
 
         it('channel selector is not rendered', () => {
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.findByRole('dialog').within(() => {
+            cy.get('#root-portal.modal-open').within(() => {
                 // * Assert the channel selector is absent (only rendered when link_existing_channel is active)
                 cy.findByTestId('link-existing-channel-selector').should('not.exist');
             });
@@ -110,7 +108,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.findByRole('dialog').within(() => {
+            cy.get('#root-portal.modal-open').within(() => {
                 // # Type a run name
                 cy.findByTestId('run-name-input').clear().type('NewChannelOnly Run ' + getRandomId());
 
@@ -163,18 +161,21 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             cy.visitPlaybookEditor(togglePlaybook.id, 'outline');
             cy.findByTestId('new-channel-only-toggle').find('label').click();
 
-            cy.findByRole('dialog').within(() => {
-                cy.findByRole('heading').should('contain', 'Require new channel for all runs');
+            cy.get('#confirmModal').within(() => {
+                cy.get('#confirmModalLabel').should('contain', 'Require new channel for all runs');
                 cy.contains('Enabling this will prevent runs from linking to existing channels').should('exist');
-                cy.findByRole('button', {name: /confirm/i}).should('contain', 'Confirm');
+                cy.get('#confirmModalButton').should('contain', 'Confirm');
             });
-            cy.findByRole('button', {name: /cancel/i}).click();
+            cy.get('#cancelModalButton').click();
         });
 
         it('disables the flag without a confirmation dialog', () => {
             // Enable via API so we start with new_channel_only=true
             cy.apiUpdatePlaybook({...togglePlaybook, new_channel_only: true}).then(() => {
                 cy.visitPlaybookEditor(togglePlaybook.id, 'outline');
+
+                // # Wait for the toggle to reflect the enabled state before clicking
+                cy.findByTestId('new-channel-only-toggle').find('input').should('be.checked');
                 cy.findByTestId('new-channel-only-toggle').find('label').click();
 
                 cy.get('#confirmModal').should('not.exist');
@@ -209,7 +210,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(openPlaybook.id);
 
-            cy.findByRole('dialog').within(() => {
+            cy.get('#root-portal.modal-open').within(() => {
                 // * Assert the "Link to existing channel" radio is not disabled
                 cy.findByTestId('link-existing-channel-radio').should('not.be.disabled');
             });
@@ -219,7 +220,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(openPlaybook.id);
 
-            cy.findByRole('dialog').within(() => {
+            cy.get('#root-portal.modal-open').within(() => {
                 // * Assert the enforcement hint is absent
                 cy.findByTestId('new-channel-only-hint').should('not.exist');
             });

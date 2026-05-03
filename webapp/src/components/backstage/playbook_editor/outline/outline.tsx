@@ -53,14 +53,13 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         if (archived || !restPlaybook) {
             return;
         }
-        const prev = restPlaybook.new_channel_only ?? false;
+        const prev = effectiveNewChannelOnly;
         if (prev === new_channel_only) {
             return;
         }
         setNewChannelOnlyOverride(new_channel_only);
         const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
         savePlaybook(updated)
-            .then(() => setNewChannelOnlyOverride(undefined))
             .catch(() => setNewChannelOnlyOverride(prev));
     };
 
