@@ -355,7 +355,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
             cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
             // # Create a blank checklist first so the header with dropdown is reliably visible
-            cy.get('#rhsContainer').findByTestId('create-blank-checklist').click();
+            cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').first().click();
             cy.wait(1000);
 
             // # Click the dropdown next to the "New checklist" button
