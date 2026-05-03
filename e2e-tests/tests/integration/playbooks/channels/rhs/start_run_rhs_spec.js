@@ -354,12 +354,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
             // # Open playbooks RHS
             cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-            // # Create a blank checklist first so the header with dropdown is reliably visible
-            cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').first().click();
-            cy.wait(1000);
-
-            // # Click the dropdown next to the "New checklist" button
-            cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
+            // # Click the dropdown next to the "New checklist" header button
+            cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').first().parent().find('.icon-chevron-down').click();
 
             // # Click "Run a playbook" from the dropdown
             cy.findByTestId('create-from-playbook').click();
