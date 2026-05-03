@@ -52,7 +52,10 @@ const AutoArchiveToggle = ({playbook, onChange, disabled}: Props) => {
                 </Tooltip>
             ) : toggle}
             {autoArchive && (
-                <ToggleBanner role='status' data-testid='auto-archive-confirmation-banner'>
+                <ToggleBanner
+                    role='status'
+                    data-testid='auto-archive-confirmation-banner'
+                >
                     {formatMessage({defaultMessage: 'The channel will be auto-archived when the run is finished.'})}
                 </ToggleBanner>
             )}
