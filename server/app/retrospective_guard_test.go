@@ -22,10 +22,12 @@ type recordingScheduler struct {
 func (r *recordingScheduler) Cancel(key string) {
 	r.cancelCalls = append(r.cancelCalls, key)
 }
-func (r *recordingScheduler) SetCallback(func(string, any)) error                           { return nil }
-func (r *recordingScheduler) Start() error                                                  { return nil }
-func (r *recordingScheduler) ScheduleOnce(string, time.Time, any) (*cluster.JobOnce, error) { return nil, nil }
-func (r *recordingScheduler) ListScheduledJobs() ([]cluster.JobOnceMetadata, error)         { return nil, nil }
+func (r *recordingScheduler) SetCallback(func(string, any)) error { return nil }
+func (r *recordingScheduler) Start() error                        { return nil }
+func (r *recordingScheduler) ScheduleOnce(string, time.Time, any) (*cluster.JobOnce, error) {
+	return nil, nil
+}
+func (r *recordingScheduler) ListScheduledJobs() ([]cluster.JobOnceMetadata, error) { return nil, nil }
 
 // stubRunStore satisfies PlaybookRunStore via interface embedding.
 // Only GetPlaybookRun is implemented; any other method panics on nil deref,
@@ -43,13 +45,13 @@ func (s *stubRunStore) GetPlaybookRun(_ string) (*PlaybookRun, error) {
 // that GetPlaybookRun skips property-field enrichment in unit tests.
 type stubLicenseChecker struct{}
 
-func (stubLicenseChecker) PlaybookAllowed(bool) bool           { return false }
-func (stubLicenseChecker) RetrospectiveAllowed() bool          { return false }
-func (stubLicenseChecker) TimelineAllowed() bool               { return false }
-func (stubLicenseChecker) StatsAllowed() bool                  { return false }
-func (stubLicenseChecker) ChecklistItemDueDateAllowed() bool   { return false }
-func (stubLicenseChecker) PlaybookAttributesAllowed() bool     { return false }
-func (stubLicenseChecker) ConditionalPlaybooksAllowed() bool   { return false }
+func (stubLicenseChecker) PlaybookAllowed(bool) bool         { return false }
+func (stubLicenseChecker) RetrospectiveAllowed() bool        { return false }
+func (stubLicenseChecker) TimelineAllowed() bool             { return false }
+func (stubLicenseChecker) StatsAllowed() bool                { return false }
+func (stubLicenseChecker) ChecklistItemDueDateAllowed() bool { return false }
+func (stubLicenseChecker) PlaybookAttributesAllowed() bool   { return false }
+func (stubLicenseChecker) ConditionalPlaybooksAllowed() bool { return false }
 
 // TestHandleReminderToFillRetro_Cancel verifies that handleReminderToFillRetro calls
 // scheduler.Cancel exactly once when RetrospectiveEnabled is false, regardless of
