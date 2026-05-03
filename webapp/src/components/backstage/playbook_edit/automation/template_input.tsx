@@ -306,7 +306,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                     data-testid={testId ? `${testId}-warning` : undefined}
                 >
                     {seqWithoutPrefix && unknownFields.length === 0 ?
-                        formatMessage({id: 'playbooks.template_input.seq_without_prefix_warning', defaultMessage: "'{SEQ}' requires a run number prefix"}) :
+                        formatMessage({id: 'playbooks.template_input.seq_without_prefix_warning', defaultMessage: "Without a run number prefix, '{SEQ}' will display as a bare number (e.g. 00001)"}) :
                         formatMessage({id: 'playbooks.template_input.unknown_fields_warning', defaultMessage: 'Unknown field references: {fields}'}, {fields: unknownFields.join(', ')})}
                 </Warning>
             )}

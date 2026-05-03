@@ -5160,11 +5160,6 @@ func (s *PlaybookRunServiceImpl) prepareTemplate(pb *Playbook, source string, fi
 		}
 	}
 
-	// Defence-in-depth: {SEQ} requires a prefix to produce meaningful names.
-	if TemplateUsesSeqToken(template) && strings.TrimSpace(pb.RunNumberPrefix) == "" {
-		return "", errors.Wrap(ErrMalformedPlaybookRun, "channel name template uses {SEQ} but playbook has no run number prefix configured")
-	}
-
 	return template, nil
 }
 

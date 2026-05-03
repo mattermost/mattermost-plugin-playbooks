@@ -297,12 +297,6 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	// Preserve server-managed counters that must not be set via REST PUT.
 	playbook.NextRunNumber = oldPlaybook.NextRunNumber
 
-	// Reject prefix changes once runs have been created.
-	if app.NormalizeRunNumberPrefix(playbook.RunNumberPrefix) != app.NormalizeRunNumberPrefix(oldPlaybook.RunNumberPrefix) && oldPlaybook.NextRunNumber > 1 {
-		h.HandleErrorWithCode(w, c.logger, http.StatusConflict, app.ErrRunNumberPrefixImmutable.Error(), app.ErrRunNumberPrefixImmutable)
-		return
-	}
-
 	if !h.validPlaybook(w, c.logger, &playbook) {
 		return
 	}
@@ -885,11 +879,6 @@ func (h *PlaybookHandler) validateTemplateWithFields(w http.ResponseWriter, logg
 	}
 	if unknown := app.ValidateTemplate(template, app.ResolveOptions{Fields: fields}); len(unknown) > 0 {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, fmt.Sprintf("channel name template references unknown field(s): %s", strings.Join(unknown, ", ")), nil)
-		return false
-	}
-	if app.TemplateUsesSeqToken(template) && strings.TrimSpace(prefix) == "" {
-		err := errors.Wrap(app.ErrMalformedPlaybookRun, "channel name template uses {SEQ} but no run number prefix is configured")
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "channel name template uses {SEQ} but no run number prefix is configured", err)
 		return false
 	}
 	return true

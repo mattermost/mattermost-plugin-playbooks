@@ -99,7 +99,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         cy.then(() => cy.playbooksAssertSequentialIdInList(secondRunName, formatSequentialID(incPrefix, 2)));
     });
 
-    it('does not show sequential ID badge when no prefix is configured', () => {
+    it('shows sequential ID badge as bare number when no prefix is configured', () => {
         // # Create a playbook WITHOUT a run_number_prefix
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
@@ -118,6 +118,11 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                 playbookRunName: runName,
                 ownerUserId: testUser.id,
             }).then((testRun) => {
+                // * Assert backend: sequential_id is a bare padded number when no prefix is configured
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.sequential_id).to.equal(formatSequentialID('', 1));
+                });
+
                 // # Visit the runs list
                 cy.visit('/playbooks/runs');
                 cy.findByTestId('playbookRunList').should('be.visible');
@@ -127,14 +132,10 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                     cy.findAllByText(runName).should('have.length', 1);
                 });
 
-                // * Assert no sequential ID badge is shown in this run's row
+                // * Assert sequential ID badge is shown with the bare number
                 cy.playbooksGetRunListRow(runName).within(() => {
-                    cy.findByTestId('run-sequential-id').should('not.exist');
-                });
-
-                // * Assert backend: sequential_id contains formatted number even when no prefix is configured
-                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-                    expect(run.sequential_id).to.equal(formatSequentialID('', 1));
+                    cy.findByTestId('run-sequential-id').should('exist');
+                    cy.findByTestId('run-sequential-id').should('contain', formatSequentialID('', 1));
                 });
             });
         });

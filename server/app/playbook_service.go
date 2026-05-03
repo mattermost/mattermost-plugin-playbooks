@@ -678,10 +678,6 @@ func (s *playbookService) UpdateRunNumberPrefix(playbookID, prefix, userID strin
 		return err
 	}
 
-	if NormalizeRunNumberPrefix(playbook.RunNumberPrefix) != prefix && playbook.NextRunNumber > 1 {
-		return ErrRunNumberPrefixImmutable
-	}
-
 	if err := s.checkRunNumberPrefixUnique(playbook.TeamID, prefix, playbookID); err != nil {
 		return err
 	}

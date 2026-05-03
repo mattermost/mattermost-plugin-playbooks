@@ -677,6 +677,11 @@ Cypress.Commands.add('apiCreateAndAddUserToTeam', (teamId) => {
  */
 Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode = StatusOK) => {
     return cy.apiGetPlaybook(playbookId).then((fullPlaybook) => {
-        return cy.apiUpdatePlaybook({...fullPlaybook, ...updates}, expectedHttpCode);
+        return cy.apiUpdatePlaybook({...fullPlaybook, ...updates}, expectedHttpCode).then(() => {
+            if (expectedHttpCode === StatusOK) {
+                return cy.apiGetPlaybook(playbookId);
+            }
+            return null;
+        });
     });
 });
