@@ -64,11 +64,9 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         if (!archived && restPlaybook) {
             const prev = restPlaybook.auto_archive_channel ?? false;
             setAutoArchiveOverride(updated.auto_archive_channel);
-            savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel}).catch(
-                () => {
-                    setAutoArchiveOverride(prev);
-                },
-            );
+            savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel})
+                .then(() => refetch())
+                .catch(() => setAutoArchiveOverride(prev));
         }
     };
 
