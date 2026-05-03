@@ -30,9 +30,11 @@ import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    newChannelOnly?: boolean;
+    onNewChannelOnlyChange?: (updated: {new_channel_only: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook}: Props) => {
+const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyChange}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
@@ -173,14 +175,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'new-channel-only'}>
                     <NewChannelOnlyToggle
-                        playbook={playbook}
+                        playbook={{new_channel_only: newChannelOnly}}
                         disabled={archived}
-                        onChange={({new_channel_only}) => {
-                            updatePlaybook({
-                                newChannelOnly: new_channel_only,
-                                ...(new_channel_only && {channelMode: 'create_new_channel'}),
-                            });
-                        }}
+                        onChange={onNewChannelOnlyChange}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>

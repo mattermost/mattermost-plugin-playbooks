@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestNormalizeAndValidateRunCreationParams tests the normalizeAndValidateRunCreationParams helper that
-// CreatePlaybookRun delegates to for parameter normalization and validation.
 func TestNormalizeAndValidateRunCreationParams(t *testing.T) {
 	t.Run("nil playbookRun is rejected", func(t *testing.T) {
 		err := normalizeAndValidateRunCreationParams(nil, &Playbook{ID: "pb-A"})
@@ -85,8 +83,6 @@ func TestNormalizeAndValidateRunCreationParams(t *testing.T) {
 	})
 }
 
-// TestValidateNewChannelOnlyMode tests the package-level helper that guards playbook
-// save-time validation and the run-creation enforcement inside CreatePlaybookRun.
 func TestValidateNewChannelOnlyMode(t *testing.T) {
 	t.Run("NewChannelOnly true with link-existing-channel mode returns error", func(t *testing.T) {
 		err := ValidateNewChannelOnlyMode(true, PlaybookRunLinkExistingChannel)

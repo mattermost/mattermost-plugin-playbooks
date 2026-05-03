@@ -16,6 +16,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {usePlaybook} from 'src/graphql/hooks';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
@@ -62,6 +63,7 @@ export const RunPlaybookModal = ({
     const [step, setStep] = useState(playbookId === undefined ? 'select-playbook' : 'run-details');
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook] = usePlaybook(selectedPlaybookId || '');
+    const [restPlaybook] = useRestPlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
@@ -77,7 +79,7 @@ export const RunPlaybookModal = ({
         userId = playbook.default_owner_id;
     }
 
-    const effectiveChannelMode = playbook?.new_channel_only ? 'create_new_channel' : playbook?.channel_mode;
+    const effectiveChannelMode = restPlaybook?.new_channel_only ? 'create_new_channel' : playbook?.channel_mode;
 
     useEffect(() => {
         if (!effectiveChannelMode) {
@@ -211,7 +213,7 @@ export const RunPlaybookModal = ({
                         channelId={channelId}
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
-                        newChannelOnly={playbook?.new_channel_only}
+                        newChannelOnly={restPlaybook?.new_channel_only}
                         onSetCreatePublicRun={setCreatePublicRun}
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
@@ -328,7 +330,10 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                 <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
             {newChannelOnly && (
-                <HelpText id='new-channel-only-hint'>
+                <HelpText
+                    id='new-channel-only-hint'
+                    data-testid='new-channel-only-hint'
+                >
                     {formatMessage({defaultMessage: 'This playbook requires a new channel for each run'})}
                 </HelpText>
             )}
@@ -336,6 +341,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                 <SelectorWrapper>
                     <StyledChannelSelector
                         id={'link-existing-channel-selector'}
+                        data-testid={'link-existing-channel-selector'}
                         onChannelSelected={(channel_id: string) => onSetChannelId(channel_id)}
                         channelIds={channelId ? [channelId] : []}
                         isClearable={true}

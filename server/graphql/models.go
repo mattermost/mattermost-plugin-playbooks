@@ -152,7 +152,6 @@ type PlaybookUpdates struct {
 	RemoveChannelMemberOnRemovedParticipant *bool              `json:"removeChannelMemberOnRemovedParticipant"`
 	ChannelId                               *string            `json:"channelId"`
 	ChannelMode                             *string            `json:"channelMode"`
-	NewChannelOnly                          *bool              `json:"newChannelOnly"`
 }
 
 type ChecklistUpdates struct {
@@ -239,7 +238,6 @@ type Playbook struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"removeChannelMemberOnRemovedParticipant"`
 	ChannelID                               string                 `json:"channelID"`
 	ChannelMode                             string                 `json:"channelMode"`
-	NewChannelOnly                          bool                   `json:"newChannelOnly"`
 }
 
 type Checklist struct {

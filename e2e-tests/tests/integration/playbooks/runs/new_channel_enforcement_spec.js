@@ -21,8 +21,7 @@ const createNewChannelOnlyPlaybook = (title, memberIDs, teamId) => {
         makePublic: true,
         createPublicPlaybookRun: true,
     }).then((playbook) => {
-        playbook.new_channel_only = true;
-        return cy.apiUpdatePlaybook(playbook).then(() => playbook);
+        return cy.apiUpdatePlaybook({...playbook, new_channel_only: true}).then(() => cy.apiGetPlaybook(playbook.id));
     });
 };
 
@@ -190,9 +189,10 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
                 createdPlaybookIds.push(playbook.id);
-                playbook.new_channel_only = true;
-                cy.apiUpdatePlaybook(playbook).then(() => {
-                    slashPlaybook = playbook;
+                cy.apiUpdatePlaybook({...playbook, new_channel_only: true}).then(() => {
+                    cy.apiGetPlaybook(playbook.id).then((updatedPlaybook) => {
+                        slashPlaybook = updatedPlaybook;
+                    });
                 });
             });
         });
@@ -215,20 +215,18 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
             // # Create a second channel to use as an existing channel
             cy.apiCreateChannel(testTeam.id, `existing-ch-slash-${getRandomId()}`, 'Existing Ch Slash').then(({channel}) => {
                 // * Assert the API rejects run creation with existing channel_id
-                cy.request({
-                    method: 'POST',
-                    url: '/plugins/playbooks/api/v0/runs',
-                    headers: {'X-Requested-With': 'XMLHttpRequest'},
-                    body: {
-                        name: 'Slash API Reject Test ' + getRandomId(),
-                        owner_user_id: testUser.id,
-                        team_id: testTeam.id,
-                        playbook_id: slashPlaybook.id,
-                        channel_id: channel.id,
-                    },
-                    failOnStatusCode: false,
-                }).then((resp) => {
-                    expect(resp.status).to.equal(400);
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: slashPlaybook.id,
+                    playbookRunName: 'Slash API Reject Test ' + getRandomId(),
+                    ownerUserId: testUser.id,
+                    channelId: channel.id,
+                }, {expectedStatusCode: 400}).then(() => {
+                    // * Verify no run was created with the existing channel
+                    cy.apiGetAllPlaybookRuns(testTeam.id).then(({body: {items}}) => {
+                        const matchingRun = items.find((r) => r.channel_id === channel.id);
+                        expect(matchingRun, 'no run should be created with existing channel').to.not.exist;
+                    });
                 });
             });
         });

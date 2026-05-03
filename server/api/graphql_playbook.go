@@ -19,10 +19,6 @@ func (r *PlaybookResolver) ChannelMode(ctx context.Context) string {
 	return fmt.Sprint(r.Playbook.ChannelMode)
 }
 
-func (r *PlaybookResolver) NewChannelOnly(ctx context.Context) bool {
-	return r.Playbook.NewChannelOnly
-}
-
 func (r *PlaybookResolver) IsFavorite(ctx context.Context) (bool, error) {
 	c, err := getContext(ctx)
 	if err != nil {

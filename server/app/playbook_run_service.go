@@ -354,7 +354,6 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
-// normalizeAndValidateRunCreationParams applies playbook constraints to a run before creation.
 func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
 	if playbookRun == nil {
 		return errors.New("playbookRun cannot be nil")

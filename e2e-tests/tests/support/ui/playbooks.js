@@ -293,7 +293,7 @@ Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
 
 Cypress.Commands.add('playbooksOpenRunModal', (playbookId) => {
     cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
-    cy.findByTestId('run-playbook').click();
+    cy.findByTestId('run-playbook').should('be.visible').and('not.be.disabled').click();
 });
 
 Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName) => {

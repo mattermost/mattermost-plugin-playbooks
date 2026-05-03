@@ -641,56 +641,6 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 	e.CreateBasic()
 	e.CreateGuest()
 
-	t.Run("update playbook with newChannelOnly=true", func(t *testing.T) {
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"newChannelOnly": true})
-		require.NoError(t, err)
-
-		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
-		require.NoError(t, err)
-		assert.True(t, updatedPlaybook.NewChannelOnly)
-	})
-
-	t.Run("update playbook with newChannelOnly=false", func(t *testing.T) {
-		// First enable it
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"newChannelOnly": true})
-		require.NoError(t, err)
-
-		// Then disable it
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"newChannelOnly": false})
-		require.NoError(t, err)
-
-		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
-		require.NoError(t, err)
-		assert.False(t, updatedPlaybook.NewChannelOnly)
-	})
-
-	t.Run("query playbook includes newChannelOnly field", func(t *testing.T) {
-		var pbResultTest struct {
-			Data struct {
-				Playbook struct {
-					ID             string
-					NewChannelOnly bool
-				}
-			}
-		}
-		testPlaybookQuery := `
-			query Playbook($id: String!) {
-				playbook(id: $id) {
-					id
-					newChannelOnly
-				}
-			}
-			`
-		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         testPlaybookQuery,
-			OperationName: "Playbook",
-			Variables:     map[string]interface{}{"id": e.BasicPlaybook.ID},
-		}, &pbResultTest)
-		require.NoError(t, err)
-
-		assert.Equal(t, e.BasicPlaybook.ID, pbResultTest.Data.Playbook.ID)
-	})
-
 	t.Run("update playbook guest not member", func(t *testing.T) {
 		err := gqlTestPlaybookUpdateGuest(e, t, e.BasicPlaybook.ID, map[string]interface{}{"title": "mutated"})
 		require.Error(t, err)

@@ -1635,6 +1635,49 @@ func TestPlaybooksDuplicate(t *testing.T) {
 		assert.Equal(t, e.BasicPlaybook.Description, duplicatedPlaybook.Description)
 		assert.Equal(t, e.BasicPlaybook.TeamID, duplicatedPlaybook.TeamID)
 	})
+
+	t.Run("NewChannelOnly is preserved on duplicate", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:          "New-channel-only Source",
+			TeamID:         e.BasicTeam.Id,
+			Public:         true,
+			NewChannelOnly: true,
+		})
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		duplicated, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		assert.True(t, duplicated.NewChannelOnly)
+	})
+}
+
+func TestNewChannelOnlyImportExport(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+
+	t.Run("NewChannelOnly is preserved through export/import", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:          "New-channel-only Export",
+			TeamID:         e.BasicTeam.Id,
+			Public:         true,
+			NewChannelOnly: true,
+		})
+		require.NoError(t, err)
+
+		exported, err := e.PlaybooksClient.Playbooks.Export(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), exported, e.BasicTeam.Id)
+		require.NoError(t, err)
+
+		imported, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		assert.True(t, imported.NewChannelOnly)
+	})
 }
 
 func TestAddPostToTimeline(t *testing.T) {

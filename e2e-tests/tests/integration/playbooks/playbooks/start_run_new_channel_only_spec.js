@@ -48,9 +48,10 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
                 createdPlaybookIds.push(playbook.id);
 
                 // # Enable new_channel_only directly via API to avoid UI flakiness
-                playbook.new_channel_only = true;
-                cy.apiUpdatePlaybook(playbook).then(() => {
-                    restrictedPlaybook = playbook;
+                cy.apiUpdatePlaybook({...playbook, new_channel_only: true}).then(() => {
+                    cy.apiGetPlaybook(playbook.id).then((updatedPlaybook) => {
+                        restrictedPlaybook = updatedPlaybook;
+                    });
                 });
             });
         });
@@ -64,7 +65,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.get('#root-portal.modal-open').within(() => {
+            cy.findByRole('dialog').within(() => {
                 // * Assert the "Link to existing channel" radio is disabled
                 cy.findByTestId('link-existing-channel-radio').should('be.disabled');
             });
@@ -74,7 +75,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.get('#root-portal.modal-open').within(() => {
+            cy.findByRole('dialog').within(() => {
                 // * Assert the "Create a run channel" radio is checked
                 cy.findByTestId('create-channel-radio').should('be.checked');
 
@@ -87,9 +88,9 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.get('#root-portal.modal-open').within(() => {
+            cy.findByRole('dialog').within(() => {
                 // * Assert the enforcement hint is shown
-                cy.get('#new-channel-only-hint').
+                cy.findByTestId('new-channel-only-hint').
                     should('be.visible').
                     and('contain', 'This playbook requires a new channel for each run');
             });
@@ -99,9 +100,9 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.get('#root-portal.modal-open').within(() => {
+            cy.findByRole('dialog').within(() => {
                 // * Assert the channel selector is absent (only rendered when link_existing_channel is active)
-                cy.get('#link-existing-channel-selector').should('not.exist');
+                cy.findByTestId('link-existing-channel-selector').should('not.exist');
             });
         });
 
@@ -109,7 +110,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
-            cy.get('#root-portal.modal-open').within(() => {
+            cy.findByRole('dialog').within(() => {
                 // # Type a run name
                 cy.findByTestId('run-name-input').clear().type('NewChannelOnly Run ' + getRandomId());
 
@@ -150,7 +151,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
         });
 
         it('persists the flag via the UI toggle', () => {
-            cy.visit(`/playbooks/playbooks/${togglePlaybook.id}/outline`);
+            cy.visitPlaybookEditor(togglePlaybook.id, 'outline');
             cy.playbooksToggleWithConfirmation('new-channel-only-toggle');
 
             cy.apiGetPlaybook(togglePlaybook.id).then((pb) => {
@@ -159,32 +160,31 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
         });
 
         it('shows a confirmation dialog with the correct title, message and button when enabling', () => {
-            cy.visit(`/playbooks/playbooks/${togglePlaybook.id}/outline`);
+            cy.visitPlaybookEditor(togglePlaybook.id, 'outline');
             cy.findByTestId('new-channel-only-toggle').find('label').click();
 
-            cy.get('#confirmModal').within(() => {
-                cy.get('#confirmModalLabel').should('contain', 'Require new channel for all runs');
-                cy.get('#confirmModalBody').should('contain', 'Enabling this will prevent runs from linking to existing channels');
-                cy.get('#confirmModalButton').should('contain', 'Confirm');
+            cy.findByRole('dialog').within(() => {
+                cy.findByRole('heading').should('contain', 'Require new channel for all runs');
+                cy.contains('Enabling this will prevent runs from linking to existing channels').should('exist');
+                cy.findByRole('button', {name: /confirm/i}).should('contain', 'Confirm');
             });
-            cy.get('#cancelModalButton').click();
+            cy.findByRole('button', {name: /cancel/i}).click();
         });
 
         it('disables the flag without a confirmation dialog', () => {
             // Enable via API so we start with new_channel_only=true
-            togglePlaybook.new_channel_only = true;
-            cy.apiUpdatePlaybook(togglePlaybook);
+            cy.apiUpdatePlaybook({...togglePlaybook, new_channel_only: true}).then(() => {
+                cy.visitPlaybookEditor(togglePlaybook.id, 'outline');
+                cy.findByTestId('new-channel-only-toggle').find('label').click();
 
-            cy.visit(`/playbooks/playbooks/${togglePlaybook.id}/outline`);
-            cy.findByTestId('new-channel-only-toggle').find('label').click();
+                cy.get('#confirmModal').should('not.exist');
 
-            cy.get('#confirmModal').should('not.exist');
-
-            // Wait for the UI to reflect the update before querying the API — the PATCH is async
-            // and the API call would otherwise race against it and read stale state.
-            cy.findByTestId('new-channel-only-toggle').find('input').should('not.be.checked');
-            cy.apiGetPlaybook(togglePlaybook.id).then((pb) => {
-                expect(pb.new_channel_only, 'new_channel_only should be false after disabling').to.equal(false);
+                // Wait for the UI to reflect the update before querying the API — the PATCH is async
+                // and the API call would otherwise race against it and read stale state.
+                cy.findByTestId('new-channel-only-toggle').find('input').should('not.be.checked');
+                cy.apiGetPlaybook(togglePlaybook.id).then((pb) => {
+                    expect(pb.new_channel_only, 'new_channel_only should be false after disabling').to.equal(false);
+                });
             });
         });
     });
@@ -209,7 +209,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(openPlaybook.id);
 
-            cy.get('#root-portal.modal-open').within(() => {
+            cy.findByRole('dialog').within(() => {
                 // * Assert the "Link to existing channel" radio is not disabled
                 cy.findByTestId('link-existing-channel-radio').should('not.be.disabled');
             });
@@ -219,9 +219,9 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(openPlaybook.id);
 
-            cy.get('#root-portal.modal-open').within(() => {
+            cy.findByRole('dialog').within(() => {
                 // * Assert the enforcement hint is absent
-                cy.get('#new-channel-only-hint').should('not.exist');
+                cy.findByTestId('new-channel-only-hint').should('not.exist');
             });
         });
     });

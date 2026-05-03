@@ -6,7 +6,7 @@ import React, {useCallback} from 'react';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {useConfirmModal} from 'src/components/widgets/confirmation_modal';
 
-export interface ConfirmationConfig {
+interface ConfirmationConfig {
     title: string;
     message: string;
     confirmButtonText: string;
