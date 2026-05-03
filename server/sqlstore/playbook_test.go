@@ -2157,4 +2157,20 @@ func TestOwnerGroupOnlyActionsRoundTrip(t *testing.T) {
 
 		require.False(t, updated.OwnerGroupOnlyActions)
 	})
+
+	t.Run("OwnerGroupOnlyActions defaults to false on Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("owner-group-only-default").
+			WithTeamID(teamID).
+			ToPlaybook()
+		// Do NOT set OwnerGroupOnlyActions — zero value should be false
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.False(t, got.OwnerGroupOnlyActions)
+	})
 }

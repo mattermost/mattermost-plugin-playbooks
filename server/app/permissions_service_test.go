@@ -677,6 +677,151 @@ func TestRunFinish(t *testing.T) {
 		assert.False(t, errors.Is(err, ErrNoPermissions),
 			"a missing-run error must propagate as-is, not be wrapped in ErrNoPermissions")
 	})
+
+	t.Run("OwnerUserID empty allows reporter when OwnerGroupOnlyActions true", func(t *testing.T) {
+		const reporterID = "reporter-user-id"
+		runWithEmptyOwner := &PlaybookRun{
+			ID:             runID,
+			PlaybookID:     pbID,
+			TeamID:         "team-1",
+			OwnerUserID:    "",
+			ReporterUserID: reporterID,
+			ParticipantIDs: []string{reporterID, memberID},
+			Type:           RunTypePlaybook,
+		}
+		pb := makePlaybook(true)
+		svc := newPermissionsServiceForTest(
+			&stubRunService{run: runWithEmptyOwner, err: nil},
+			&stubPlaybookService{playbook: pb, err: nil},
+			newPluginAPIAllowingAdmins(t),
+		)
+
+		// Reporter (run creator) can finish when OwnerUserID is empty
+		require.NoError(t, svc.RunFinish(reporterID, runID))
+
+		// Other participants are still blocked
+		err := svc.RunFinish(memberID, runID)
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, ErrNoPermissions), "got: %v", err)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// TestRunRestore
+// ---------------------------------------------------------------------------
+
+func TestRunRestore(t *testing.T) {
+	const (
+		runID     = "run-restore-id"
+		pbID      = "playbook-id-restore"
+		ownerID   = "owner-user-id"
+		memberID  = "member-non-owner-id"
+		adminID   = "system-admin-user-id"
+		pbAdminID = "playbook-admin-user-id"
+	)
+
+	makePlaybook := func(ownerOnly bool) Playbook {
+		return Playbook{
+			ID:                    pbID,
+			TeamID:                "team-1",
+			OwnerGroupOnlyActions: ownerOnly,
+			Members: []PlaybookMember{
+				{UserID: pbAdminID, SchemeRoles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
+				{UserID: memberID, SchemeRoles: []string{PlaybookRoleMember}},
+				{UserID: ownerID, SchemeRoles: []string{PlaybookRoleMember}},
+			},
+		}
+	}
+
+	baseRun := &PlaybookRun{
+		ID:             runID,
+		PlaybookID:     pbID,
+		TeamID:         "team-1",
+		OwnerUserID:    ownerID,
+		ParticipantIDs: []string{ownerID, memberID, pbAdminID, adminID},
+		Type:           RunTypePlaybook,
+	}
+
+	tests := []struct {
+		name          string
+		ownerOnly     bool
+		userID        string
+		isAdmin       bool
+		shouldSucceed bool
+	}{
+		{"ownerOnly=false allows any participant", false, memberID, false, true},
+		{"ownerOnly=true allows owner", true, ownerID, false, true},
+		{"ownerOnly=true allows system admin", true, adminID, true, true},
+		{"ownerOnly=true rejects playbook admin (non-owner)", true, pbAdminID, false, false},
+		{"ownerOnly=true rejects non-owner member", true, memberID, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pb := makePlaybook(tt.ownerOnly)
+			adminIDs := []string{}
+			if tt.isAdmin {
+				adminIDs = append(adminIDs, tt.userID)
+			}
+			svc := newPermissionsServiceForTest(
+				&stubRunService{run: baseRun, err: nil},
+				&stubPlaybookService{playbook: pb, err: nil},
+				newPluginAPIAllowingAdmins(t, adminIDs...),
+			)
+
+			err := svc.RunRestore(tt.userID, runID)
+
+			if tt.shouldSucceed {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.True(t, errors.Is(err, ErrNoPermissions), "got: %v", err)
+			}
+		})
+	}
+
+	t.Run("channel checklist run has no restriction", func(t *testing.T) {
+		channelChecklistRun := &PlaybookRun{
+			ID: runID, PlaybookID: pbID, TeamID: "team-1", OwnerUserID: ownerID,
+			ChannelID: "channel-1", Type: RunTypeChannelChecklist,
+		}
+		mockAPI := &plugintest.API{}
+		mockAPI.On("HasPermissionToTeam", mock.AnythingOfType("string"), mock.AnythingOfType("string"), model.PermissionViewTeam).Return(true).Maybe()
+		mockAPI.On("GetChannel", "channel-1").Return(&model.Channel{Id: "channel-1"}, nil).Maybe()
+		mockAPI.On("HasPermissionToChannel", memberID, "channel-1", model.PermissionCreatePost).Return(true).Maybe()
+		t.Cleanup(func() { mockAPI.AssertExpectations(t) })
+		svc := newPermissionsServiceForTest(
+			&stubRunService{run: channelChecklistRun, err: nil},
+			&stubPlaybookService{playbook: makePlaybook(true), err: nil},
+			pluginapi.NewClient(mockAPI, nil),
+		)
+		require.NoError(t, svc.RunRestore(memberID, runID))
+	})
+
+	t.Run("standalone run has no restriction", func(t *testing.T) {
+		standaloneRun := &PlaybookRun{
+			ID: runID, PlaybookID: "", TeamID: "team-1", OwnerUserID: ownerID,
+			ParticipantIDs: []string{ownerID, memberID}, Type: RunTypePlaybook,
+		}
+		svc := newPermissionsServiceForTest(
+			&stubRunService{run: standaloneRun, err: nil},
+			&stubPlaybookService{},
+			newPluginAPIAllowingAdmins(t),
+		)
+		require.NoError(t, svc.RunRestore(memberID, runID))
+	})
+
+	t.Run("run not found propagates error without panic", func(t *testing.T) {
+		notFoundErr := errors.New("run not found in store")
+		svc := newPermissionsServiceForTest(
+			&stubRunService{run: nil, err: notFoundErr},
+			&stubPlaybookService{},
+			nil,
+		)
+		err := svc.RunRestore(memberID, runID)
+		require.Error(t, err)
+		assert.False(t, errors.Is(err, ErrNoPermissions))
+	})
 }
 
 // ---------------------------------------------------------------------------

@@ -3093,6 +3093,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a run participant for this test to prove the flag-disabled path is correct")
 
 		// Non-owner participant can finish when OwnerGroupOnlyActions is false
 		err = e.PlaybooksClient2.PlaybookRuns.Finish(context.Background(), run.ID)
@@ -3192,6 +3193,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, run)
+		require.NotContains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must NOT be a participant so the success proves the playbook-admin bypass path, not the participant path")
 
 		// Playbook admin (RegularUser2) with OwnerGroupOnlyActions enabled can reassign ownership
 		// as a handoff mechanism even when not a run participant.
@@ -3489,5 +3491,111 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		// Non-owner (RegularUser2) tries to make themselves owner — should get 403
 		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("non-admin member cannot toggle OwnerGroupOnlyActions via playbook update", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "ToggleGate Non-Admin Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// RegularUser (non-admin member) tries to toggle the flag — should be blocked
+		pb.OwnerGroupOnlyActions = true
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin can toggle OwnerGroupOnlyActions via playbook update", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "ToggleGate Admin Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// Playbook admin (AdminUser via PlaybooksAdminClient) toggles the flag — should succeed
+		pb.OwnerGroupOnlyActions = true
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.True(t, updated.OwnerGroupOnlyActions)
+	})
+
+	t.Run("non-owner cannot finish via status update dialog when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "StatusDialogFinish Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		// RegularUser is the owner; RegularUser2 is a participant but not the owner
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Status Dialog Finish Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a participant so the 403 proves OwnerGroupOnlyActions enforcement")
+
+		// Build an authenticated client for RegularUser2 to submit the dialog
+		serverClient2 := model.NewAPIv4Client(e.ServerClient.URL)
+		_, _, err = serverClient2.Login(context.Background(), e.RegularUser2.Email, "Password123!")
+		require.NoError(t, err)
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: e.BasicTeam.Id,
+			UserId: e.RegularUser2.Id,
+			State:  "{}",
+			Submission: map[string]interface{}{
+				app.DialogFieldMessageKey:           "status update with finish",
+				app.DialogFieldReminderInSecondsKey: "100000",
+				app.DialogFieldFinishRun:            true,
+			},
+		}
+		dialogRequestBytes, err := json.Marshal(dialogRequest)
+		require.NoError(t, err)
+
+		// Non-owner submitting the dialog with FinishRun=true should get 403
+		result, err := serverClient2.DoAPIRequestWithHeaders(context.Background(), "POST",
+			serverClient2.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/update-status-dialog",
+			string(dialogRequestBytes), nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusForbidden, result.StatusCode)
+
+		// Run must remain active
+		still, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusInProgress), still.CurrentStatus)
 	})
 }

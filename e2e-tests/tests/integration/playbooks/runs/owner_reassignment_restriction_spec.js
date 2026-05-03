@@ -18,7 +18,6 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
     let testNewOwner;
     let testPlaybook;
     let testPlaybookRun;
-    let testChannelName;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -37,8 +36,10 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
                         createPublicPlaybookRun: true,
                     }).then((playbook) => {
                         testPlaybook = playbook;
-                        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-                        cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
+
+                        // Set owner_group_only_actions via API to avoid fragile UI navigation
+                        // inside before(), which would make all tests fail on a single page-load error.
+                        cy.apiUpdatePlaybook({...playbook, owner_group_only_actions: true});
                     });
                 });
             });
@@ -68,11 +69,6 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
             cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
                 expect(run.participant_ids).to.have.length.greaterThan(0);
             });
-
-            // # Fetch the channel name so tests can navigate without extra API calls
-            cy.apiGetChannel(testPlaybookRun.channel_id).then(({channel}) => {
-                testChannelName = channel.name;
-            });
         });
     });
 
@@ -97,7 +93,7 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         cy.apiLogin(testOwner);
 
         // # Navigate to the run channel where the RHS owner selector is shown
-        cy.visit(`/${testTeam.name}/channels/${testChannelName}`);
+        cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
 
         // # Change ownership via the owner profile selector
         cy.playbooksChangeRunOwnerViaRHS(testNewOwner.username);
@@ -116,13 +112,13 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         cy.apiLogin(testParticipant);
 
         // # Navigate to the run channel
-        cy.visit(`/${testTeam.name}/channels/${testChannelName}`);
+        cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
 
         // # Attempt to click the owner profile selector
         cy.findByTestId('owner-profile-selector').click();
 
         // * Assert no dropdown options appear — the selector is read-only for non-owners
-        cy.get('.playbook-react-select__option').should('not.exist');
+        cy.findByRole('option').should('not.exist');
 
         // * Assert the owner selector still shows the original owner's username
         cy.findByTestId('owner-profile-selector').should('contain', testOwner.username);
@@ -170,7 +166,7 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
 
             // # Login as playbook admin and navigate to the run channel
             cy.apiLogin(playbookAdminUser);
-            cy.visit(`/${testTeam.name}/channels/${testChannelName}`);
+            cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
 
             // # Change ownership via the owner profile selector
             cy.playbooksChangeRunOwnerViaRHS(testNewOwner.username);
@@ -200,14 +196,12 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
                 ownerUserId: testOwner.id,
             }).then((run) => {
                 cy.apiAddUsersToRun(run.id, [testParticipant.id, testNewOwner.id]);
-                cy.apiGetChannel(run.channel_id).then(({channel}) => {
-                    cy.apiLogin(testParticipant);
-                    cy.visit(`/${testTeam.name}/channels/${channel.name}`);
-                    cy.playbooksChangeRunOwnerViaRHS(testNewOwner.username);
-                    cy.findByTestId('owner-profile-selector').should('contain', testNewOwner.username);
-                    cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
-                        expect(updatedRun.owner_user_id).to.equal(testNewOwner.id);
-                    });
+                cy.apiLogin(testParticipant);
+                cy.playbooksVisitRunChannel(testTeam.name, run);
+                cy.playbooksChangeRunOwnerViaRHS(testNewOwner.username);
+                cy.findByTestId('owner-profile-selector').should('contain', testNewOwner.username);
+                cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
+                    expect(updatedRun.owner_user_id).to.equal(testNewOwner.id);
                 });
             });
         });

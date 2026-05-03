@@ -311,6 +311,27 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 	return "", nil
 }
 
+func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
+	RunID   string
+	OwnerID string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	requesterID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.RunChangeOwner(requesterID, args.RunID); err != nil {
+		return "", errors.Wrap(err, "attempted to modify the run owner without permissions")
+	}
+
+	if err := c.playbookRunService.ChangeOwner(args.RunID, requesterID, args.OwnerID); err != nil {
+		return "", errors.Wrap(err, "failed to change the run owner")
+	}
+
+	return "", nil
+}
+
 func updatesOnlyRequesterMembership(requesterUserID string, userIDs []string) bool {
 	return len(userIDs) == 1 && userIDs[0] == requesterUserID
 }

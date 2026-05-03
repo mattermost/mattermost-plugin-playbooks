@@ -55,6 +55,11 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         let testPlaybook;
         let testPlaybookRun;
 
+        // Tracks resources created inline by individual tests so afterEach can
+        // clean them up even if the test fails mid-assertion.
+        let innerPlaybook;
+        let innerRun;
+
         const assertCanFinish = () => {
             cy.findByTestId('rhs-finish-section').should('be.visible');
         };
@@ -77,6 +82,14 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             // the test (e.g. "old owner cannot finish after reassignment"), which
             // would cause a 403 if we tried to finish as testOwner.
             cy.apiAdminLogin();
+            if (innerRun) {
+                cy.apiFinishRun(innerRun.id);
+                innerRun = null;
+            }
+            if (innerPlaybook) {
+                cy.apiArchivePlaybook(innerPlaybook.id);
+                innerPlaybook = null;
+            }
             if (testPlaybookRun) {
                 cy.apiFinishRun(testPlaybookRun.id);
             }
@@ -314,6 +327,8 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
                 memberIDs: [],
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
+                innerPlaybook = playbook;
+
                 // # Enable owner_group_only_actions via the playbook editor UI toggle
                 cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
                 cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
@@ -324,6 +339,7 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
                     playbookRunName: 'Creator Not Owner Run ' + getRandomId(),
                     ownerUserId: testParticipant.id,
                 }).then((playbookRun) => {
+                    innerRun = playbookRun;
                     cy.apiAddUsersToRun(playbookRun.id, [testOwner.id]);
 
                     // # Login as testOwner (the creator, not the owner) and visit the run channel
@@ -340,10 +356,7 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
                     // * Owner should see the finish section
                     assertCanFinish();
 
-                    // # Cleanup: finish and archive the inner run/playbook
-                    cy.apiAdminLogin();
-                    cy.apiFinishRun(playbookRun.id);
-                    cy.apiArchivePlaybook(playbook.id);
+                    // Cleanup is handled by afterEach via innerRun / innerPlaybook
                 });
             });
         });
@@ -368,7 +381,14 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         afterEach(() => {
             cy.apiAdminLogin();
             if (testPlaybookRun) {
-                cy.apiFinishRun(testPlaybookRun.id);
+                // Some tests restore the run, so it may be InProgress again.
+                // Use failOnStatusCode: false to handle the already-finished case gracefully.
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/${testPlaybookRun.id}/finish`,
+                    method: 'PUT',
+                    failOnStatusCode: false,
+                });
             }
             if (testPlaybook) {
                 cy.apiArchivePlaybook(testPlaybook.id);
