@@ -11,7 +11,7 @@
 
 import {getRandomId} from '../../../../utils';
 
-describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
+describe('playbooks > edit > admin only edit', () => {
     let testTeam;
     let testAdminUser;
     let testMemberUser;
@@ -91,8 +91,9 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         // * Checkbox should now be checked
         cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('be.checked');
 
-        // * API confirms the value was saved
+        // # Fetch playbook via API to confirm the saved value
         cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            // * admin_only_edit should be persisted as true
             expect(pb.admin_only_edit).to.equal(true);
         });
 
@@ -118,8 +119,9 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         // * Checkbox should now be unchecked
         cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('not.be.checked');
 
-        // * API confirms the value was saved
+        // # Fetch playbook via API to confirm the saved value
         cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            // * admin_only_edit should be persisted as false
             expect(pb.admin_only_edit).to.equal(false);
         });
     });
@@ -133,6 +135,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         // # Login as non-admin member and open the outline
         cy.apiLogin(testMemberUser);
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.findByTestId('preview-content').should('be.visible');
 
         // * Status update toggle input is disabled
         cy.findByTestId('status-update-toggle').find('input[type="checkbox"]').should('be.disabled');
@@ -180,23 +183,21 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
     });
 
     it('any user with create permission can import an admin_only_edit playbook', () => {
-        // # Importer becomes admin of the new playbook, so no special gate is needed.
-        // Version must match app.CurrentPlaybookExportVersion.
-        const payload = {
-            title: 'Imported Locked Playbook',
-            admin_only_edit: true,
-            version: 1,
-        };
+        // # Export as admin to get a valid payload with the correct version, then override
+        // # admin_only_edit (excluded from export) before importing as a plain member.
+        cy.apiExportPlaybook(testPlaybook.id).then((exportData) => {
+            const payload = {...exportData, admin_only_edit: true};
 
-        cy.apiLogin(testMemberUser);
-        cy.request({
-            headers: {'X-Requested-With': 'XMLHttpRequest'},
-            url: `/plugins/playbooks/api/v0/playbooks/import?team_id=${testTeam.id}`,
-            method: 'POST',
-            body: payload,
-        }).then((resp) => {
-            expect(resp.status).to.equal(201);
-            expect(resp.body.id).to.be.a('string');
+            cy.apiLogin(testMemberUser);
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                url: `/plugins/playbooks/api/v0/playbooks/import?team_id=${testTeam.id}`,
+                method: 'POST',
+                body: payload,
+            }).then((resp) => {
+                expect(resp.status).to.equal(201);
+                expect(resp.body.id).to.be.a('string');
+            });
         });
     });
 });

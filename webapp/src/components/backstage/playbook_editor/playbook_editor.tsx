@@ -99,7 +99,7 @@ const PlaybookEditor = () => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
-    if (loading || !playbook) {
+    if (loading || !playbook || restPlaybook === undefined) {
         // loading
         return null;
     }

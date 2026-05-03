@@ -21,10 +21,10 @@ const AdminOnlyEditToggle = ({isChecked, onChange}: Props) => {
                 isChecked={isChecked}
                 onChange={() => onChange(!isChecked)}
             >
-                {intl.formatMessage({defaultMessage: 'Only admins can edit this playbook'})}
+                {intl.formatMessage({id: 'app.playbook_editor.admin_only_edit_toggle.label', defaultMessage: 'Only admins can edit this playbook'})}
             </Toggle>
             <HelpText>
-                {intl.formatMessage({defaultMessage: 'Members without admin role will have read-only access.'})}
+                {intl.formatMessage({id: 'app.playbook_editor.admin_only_edit_toggle.help', defaultMessage: 'Members without admin role will have read-only access.'})}
             </HelpText>
         </>
     );
@@ -33,7 +33,7 @@ const AdminOnlyEditToggle = ({isChecked, onChange}: Props) => {
 const HelpText = styled.p`
     color: var(--center-channel-color-56);
     font-size: 12px;
-    margin: 4px 0 0 40px;
+    margin: 4px 0 0 52px;
 `;
 
 export default AdminOnlyEditToggle;

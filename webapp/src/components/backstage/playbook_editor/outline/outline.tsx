@@ -39,10 +39,7 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
-    const [localAdminOnlyEditOverride, setLocalAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
-    const adminOnlyEditOverride = adminOnlyEditOverrideProp ?? localAdminOnlyEditOverride;
-    const setAdminOnlyEditOverride = setAdminOnlyEditOverrideProp ?? setLocalAdminOnlyEditOverride;
-    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
+    const effectiveAdminOnlyEdit = adminOnlyEditOverrideProp ?? restPlaybook?.admin_only_edit ?? false;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -77,11 +74,11 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     };
 
     const handleAdminOnlyEditChange = (value: boolean) => {
-        if (!archived && restPlaybook) {
-            const prev = adminOnlyEditOverride ?? restPlaybook.admin_only_edit;
-            setAdminOnlyEditOverride(value);
+        if (!archived && restPlaybook && setAdminOnlyEditOverrideProp) {
+            const prev = adminOnlyEditOverrideProp ?? restPlaybook.admin_only_edit;
+            setAdminOnlyEditOverrideProp(value);
             savePlaybook({...restPlaybook, admin_only_edit: value}).catch(() => {
-                setAdminOnlyEditOverride(prev);
+                setAdminOnlyEditOverrideProp(prev);
             });
         }
     };

@@ -1892,6 +1892,7 @@ func removeFromPerms(permission string, perms []string) []string {
 
 // TestAdminOnlyEdit_APIEnforcement verifies that the AdminOnlyEdit flag restricts
 // playbook PUT requests to playbook admins only.
+// NOTE: subtests share a single playbook row and must remain sequential — do NOT add t.Parallel().
 func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -2107,7 +2108,7 @@ func TestAdminOnlyEdit_Import(t *testing.T) {
 }
 
 // TestAdminOnlyEdit_PropertyFields verifies that property field CRUD endpoints honor
-// AdminOnlyEdit. The four mutating handlers (create/update/delete/reorder) all go
+// AdminOnlyEdit. The three mutating handlers covered here (create/update/delete) all go
 // through PlaybookEdit, so a non-admin member must be blocked while playbook admins
 // and system admins must succeed.
 func TestAdminOnlyEdit_PropertyFields(t *testing.T) {
@@ -2145,7 +2146,7 @@ func TestAdminOnlyEdit_PropertyFields(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
-	// Seed a field as the playbook admin so update/delete/reorder have something to operate on.
+	// Seed a field as the playbook admin so update/delete have something to operate on.
 	seeded, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("seed"))
 	require.NoError(t, err)
 	fieldID := seeded.ID

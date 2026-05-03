@@ -151,14 +151,16 @@ describe('Outline > handleAdminOnlyEditChange', () => {
         });
         expect(toggleProps!.isChecked).toBe(false);
 
-        // First request now fails — rollback should restore true (the pre-first-toggle optimistic state),
-        // not false (the stale prop value), since the second toggle already moved to false.
+        // First request now fails — rollback restores prev=false (the value captured before the
+        // first toggle fired, when adminOnlyEditOverride was undefined and fell back to
+        // restPlaybook.admin_only_edit=false). The second toggle already moved state to false,
+        // so both the rollback and the current state agree: state stays false.
         await act(async () => {
             rejectFirst!(new Error('network error'));
         });
 
-        // The second toggle landed on false and succeeded; first rollback used prev=true.
-        // Net state should be false (second toggle won).
+        // The second toggle landed on false and succeeded; first rollback restored prev=false.
+        // Net state should be false (both agree).
         expect(toggleProps!.isChecked).toBe(false);
     });
 
