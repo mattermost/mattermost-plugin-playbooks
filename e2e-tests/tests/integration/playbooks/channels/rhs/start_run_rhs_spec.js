@@ -327,4 +327,50 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
             });
         });
     });
+
+    describe('create new playbook from run modal', () => {
+        it('empty state has no dropdown — only the header does', () => {
+            // # Navigate to a channel with no runs
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Open playbooks RHS
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+            // * The empty-state widget has a "New checklist" button but no chevron/dropdown
+            cy.get('#rhsContainer').findByTestId('no-active-runs').within(() => {
+                cy.findByTestId('create-blank-checklist').should('exist');
+                cy.get('.icon-chevron-down').should('not.exist');
+            });
+
+            // * The header (outside the empty-state widget) does have the dropdown
+            cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').first().
+                parent().find('.icon-chevron-down').should('exist');
+        });
+
+        it('opens the playbook editor when clicking Create new playbook', () => {
+            // # Navigate to the channel
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Open playbooks RHS
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+            // # Create a blank checklist first so the header with dropdown is reliably visible
+            cy.get('#rhsContainer').findByTestId('create-blank-checklist').click();
+            cy.wait(1000);
+
+            // # Click the dropdown next to the "New checklist" button
+            cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
+
+            // # Click "Run a playbook" from the dropdown
+            cy.findByTestId('create-from-playbook').click();
+
+            // # Click "Create new playbook" in the run modal header
+            cy.get('#root-portal.modal-open').within(() => {
+                cy.findByText('Create new playbook').should('be.visible').click();
+            });
+
+            // * Verify we navigated to the playbook creation flow
+            cy.findByTestId('modal-confirm-button').should('exist');
+        });
+    });
 });
