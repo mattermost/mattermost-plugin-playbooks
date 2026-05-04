@@ -296,6 +296,7 @@ describe('useOnFinishRun — error handling', () => {
 
         // Refresh LHS should NOT be called when there is an error
         expect(mockRefreshLHS).not.toHaveBeenCalled();
+        expect(mockAddToast).toHaveBeenCalledTimes(1);
     });
 
     it('does not call refreshLHS when location is not backstage', async () => {
