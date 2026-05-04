@@ -620,6 +620,11 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 		return
 	}
 
+	if err := r.permissions.RunManageProperties(r.args.UserId, currentPlaybookRun.ID); err != nil {
+		r.postCommandResponse("Become a participant to interact with this run.")
+		return
+	}
+
 	if err := r.permissions.RunChangeOwner(r.args.UserId, currentPlaybookRun.ID); err != nil {
 		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
 		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
