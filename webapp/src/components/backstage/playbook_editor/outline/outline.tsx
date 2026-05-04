@@ -18,6 +18,8 @@ import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {savePlaybook} from 'src/client';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import StatusUpdates from './section_status_updates';
@@ -39,6 +41,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
+    const toaster = useToaster();
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
     const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
@@ -73,7 +76,13 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             pendingRef.current = true;
             savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel})
                 .then(() => refetch())
-                .catch(() => setAutoArchiveOverride(prev))
+                .catch(() => {
+                    setAutoArchiveOverride(prev);
+                    toaster.add({
+                        content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                })
                 .finally(() => {
                     pendingRef.current = false;
                 });
