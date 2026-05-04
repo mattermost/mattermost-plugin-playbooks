@@ -21,12 +21,13 @@ interface Props {
     onChange: (value: boolean) => void;
     disabled?: boolean;
     confirmationRequired?: ConfirmationConfig;
+    testId?: string;
 }
 
 // BooleanToggle: use for a simple label + optional hint + optional confirm-on-enable toggle.
 // For toggles that need a Tooltip wrapper, confirmation banner, or custom label children,
 // compose with <Toggle> directly instead.
-const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequired}: Props) => {
+const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequired, testId}: Props) => {
     const openConfirmModal = useConfirmModal();
     const pendingRef = useRef(false);
 
@@ -62,7 +63,7 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
     }, [value, confirmationRequired, openConfirmModal, onChange]);
 
     return (
-        <div>
+        <div data-testid={testId}>
             <Toggle
                 disabled={disabled}
                 isChecked={value}

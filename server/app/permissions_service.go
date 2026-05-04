@@ -149,16 +149,6 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create playbook", userID)
 }
 
-// IsPlaybookAdmin returns true if the user has the admin role on the playbook.
-// Team-view access is enforced transitively via getPlaybookRole.
-func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
-	adminRole := playbook.DefaultPlaybookAdminRole
-	if adminRole == "" {
-		adminRole = PlaybookRoleAdmin
-	}
-	return slices.Contains(p.getPlaybookRole(userID, playbook), adminRole)
-}
-
 func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Playbook) error {
 	permission := model.PermissionPrivatePlaybookManageProperties
 	if p.PlaybookIsPublic(playbook) {
@@ -170,6 +160,16 @@ func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Pl
 	}
 
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to playbook `%s`", userID, playbook.ID)
+}
+
+// IsPlaybookAdmin returns true if the user has the admin role on the playbook.
+// Team-view access is enforced transitively via getPlaybookRole.
+func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
+	adminRole := playbook.DefaultPlaybookAdminRole
+	if adminRole == "" {
+		adminRole = PlaybookRoleAdmin
+	}
+	return slices.Contains(p.getPlaybookRole(userID, playbook), adminRole)
 }
 
 // PlaybookManageConditions returns an error if the user cannot manage conditions for the playbook
@@ -765,13 +765,8 @@ func (p *PermissionsService) RunRestore(userID, runID string) error {
 }
 
 // RunChangeOwner checks if the user can change the owner of a run.
-// Requires participant/owner/admin access (base check). When OwnerGroupOnlyActions is set,
-// additionally allows playbook admins to change ownership for legitimate handoffs
-// (e.g., original owner unavailable), unlike RunFinish which is stricter.
-//
-// NOTE: A playbook admin can reassign ownership to themselves and then finish the run,
-// effectively bypassing OwnerGroupOnlyActions in two steps. This is an intentional policy
-// decision to enable legitimate ownership handoffs when the original owner is unavailable.
+// When OwnerGroupOnlyActions is set, playbook admins may change ownership even without
+// being a run participant, enabling handoffs when the original owner is unavailable.
 func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
 	run, playbook, baseErr := p.runRequiresOwnerOrAdmin(userID, runID, "reassign ownership of")
 	if baseErr == nil {
@@ -781,21 +776,16 @@ func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
 	if run == nil {
 		return baseErr
 	}
-	// Playbook admins can also reassign ownership when OwnerGroupOnlyActions is set,
-	// but only if they are already a run participant. The admin bypass relaxes the owner-only
-	// gate, not the membership gate — enabling the flag must not create new access for
-	// non-participants.
+	// Playbook admins can reassign ownership when OwnerGroupOnlyActions is set even if they
+	// are not a run participant — enabling legitimate handoffs when the original owner is unavailable.
 	if playbook != nil && playbook.OwnerGroupOnlyActions && p.IsPlaybookAdmin(userID, *playbook) {
-		if participantErr := p.runManagePropertiesWithPlaybookRun(userID, run); participantErr == nil {
-			logrus.WithFields(logrus.Fields{
-				"event":       "playbook_admin_owner_only_bypass",
-				"user_id":     userID,
-				"run_id":      runID,
-				"playbook_id": playbook.ID,
-			}).Warn("playbook admin taking ownership of OwnerGroupOnlyActions run")
-			return nil
-		}
-		return errors.Wrapf(ErrNoPermissions, "only the run owner, a playbook admin, or a system admin can change ownership when OwnerGroupOnlyActions is set")
+		logrus.WithFields(logrus.Fields{
+			"event":       "playbook_admin_owner_only_bypass",
+			"user_id":     userID,
+			"run_id":      runID,
+			"playbook_id": playbook.ID,
+		}).Warn("playbook admin taking ownership of OwnerGroupOnlyActions run")
+		return nil
 	}
 
 	return baseErr

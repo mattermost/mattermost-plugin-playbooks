@@ -330,10 +330,15 @@ Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
 });
 
 Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
-    cy.intercept('POST', '**/plugins/playbooks/api/v0/runs/*/owner').as('changeRunOwner');
-    cy.findByTestId('owner-profile-selector').click();
+    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').click();
+
+    // Profiles are loaded asynchronously via useProfilesInTeam. The dropdown
+    // options refresh once the API response arrives and Redux updates, so we
+    // wait up to HALF_MIN for the option to become available.
     cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
-    cy.wait('@changeRunOwner');
+    cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
 });
 
 Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId) => {

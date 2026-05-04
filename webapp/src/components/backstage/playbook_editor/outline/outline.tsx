@@ -213,7 +213,7 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) =>
             </Section>
             {showAdminSettings && effectiveRestPlaybook && (
                 <Section
-                    id={'settings'}
+                    id={'run-permissions-settings'}
                     title={formatMessage({defaultMessage: 'Settings'})}
                 >
                     <div data-testid='owner-group-only-actions-toggle'>
