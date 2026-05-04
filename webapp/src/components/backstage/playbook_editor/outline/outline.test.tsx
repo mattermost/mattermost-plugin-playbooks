@@ -89,6 +89,7 @@ const makeGraphQLPlaybook = (overrides: Record<string, unknown> = {}) => ({
     run_summary_template_enabled: false,
     run_summary_template: '',
     checklists: [],
+    members: [],
     ...overrides,
 });
 

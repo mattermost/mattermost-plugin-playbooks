@@ -21,6 +21,11 @@ jest.mock('src/webapp_globals', () => ({
 
 jest.mock('src/components/widgets/confirmation_modal', () => ({
     makeUncontrolledConfirmModalDefinition: (props: any) => ({type: 'CONFIRM_MODAL', props}),
+    useConfirmModal: () => (options: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const {modals: m} = require('src/webapp_globals');
+        m.openModal({type: 'CONFIRM_MODAL', props: options});
+    },
 }));
 
 jest.mock('src/components/backstage/playbook_edit/automation/toggle', () => ({
