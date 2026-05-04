@@ -176,7 +176,7 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                 <Setting id={'new-channel-only'}>
                     <NewChannelOnlyToggle
                         playbook={{new_channel_only: newChannelOnly}}
-                        disabled={archived}
+                        disabled={archived || !onNewChannelOnlyChange}
                         onChange={onNewChannelOnlyChange}
                     />
                 </Setting>
