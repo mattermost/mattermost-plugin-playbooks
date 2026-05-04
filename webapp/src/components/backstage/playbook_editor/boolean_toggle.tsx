@@ -1,12 +1,14 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback} from 'react';
+import React, {useCallback, useRef} from 'react';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {useConfirmModal} from 'src/components/widgets/confirmation_modal';
 
-interface ConfirmationConfig {
+import ToggleHint from './toggle_hint';
+
+export interface ConfirmationConfig {
     title: string;
     message: string;
     confirmButtonText: string;
@@ -14,6 +16,7 @@ interface ConfirmationConfig {
 
 interface Props {
     label: string;
+    hint?: string;
     value: boolean;
     onChange: (value: boolean) => void;
     disabled?: boolean;
@@ -21,20 +24,42 @@ interface Props {
     testId?: string;
 }
 
-const BooleanToggle = ({label, value, onChange, disabled, confirmationRequired, testId}: Props) => {
+// BooleanToggle: use for a simple label + optional hint + optional confirm-on-enable toggle.
+// For toggles that need a Tooltip wrapper, confirmation banner, or custom label children,
+// compose with <Toggle> directly instead.
+const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequired, testId}: Props) => {
     const openConfirmModal = useConfirmModal();
+    const pendingRef = useRef(false);
 
     const handleChange = useCallback(() => {
+        if (pendingRef.current) {
+            return;
+        }
+        pendingRef.current = true;
+
         if (!value && confirmationRequired) {
             openConfirmModal({
                 title: confirmationRequired.title,
                 message: confirmationRequired.message,
                 confirmButtonText: confirmationRequired.confirmButtonText,
-                onConfirm: () => onChange(true),
+                onConfirm: () => {
+                    try {
+                        onChange(true);
+                    } finally {
+                        pendingRef.current = false;
+                    }
+                },
+                onCancel: () => {
+                    pendingRef.current = false;
+                },
             });
             return;
         }
-        onChange(!value);
+        try {
+            onChange(!value);
+        } finally {
+            pendingRef.current = false;
+        }
     }, [value, confirmationRequired, openConfirmModal, onChange]);
 
     return (
@@ -46,6 +71,7 @@ const BooleanToggle = ({label, value, onChange, disabled, confirmationRequired, 
             >
                 {label}
             </Toggle>
+            {hint && <ToggleHint>{hint}</ToggleHint>}
         </div>
     );
 };
