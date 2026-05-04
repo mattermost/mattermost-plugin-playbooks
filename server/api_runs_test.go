@@ -3194,15 +3194,16 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, run)
 		require.NotContains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must NOT be a participant so the success proves the playbook-admin bypass path, not the participant path")
+		require.NotContains(t, run.ParticipantIDs, e.AdminUser.Id, "AdminUser must NOT be a participant initially")
 
 		// Playbook admin (RegularUser2) with OwnerGroupOnlyActions enabled can reassign ownership
-		// as a handoff mechanism even when not a run participant.
-		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
+		// to a different user as a handoff mechanism even when not a run participant.
+		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.AdminUser.Id)
 		require.NoError(t, err)
 
 		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
-		assert.Equal(t, e.RegularUser2.Id, updated.OwnerUserID)
+		assert.Equal(t, e.AdminUser.Id, updated.OwnerUserID)
 	})
 
 	t.Run("playbook admin who is not a participant gets 403 on restore", func(t *testing.T) {

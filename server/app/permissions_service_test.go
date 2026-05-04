@@ -866,9 +866,10 @@ func TestRunChangeOwner(t *testing.T) {
 		})
 	}
 
-	t.Run("ownerOnly=true rejects non-participant playbook admin", func(t *testing.T) {
+	t.Run("ownerOnly=true allows non-participant playbook admin", func(t *testing.T) {
 		// pbAdminID is a playbook admin (in Members) but NOT a run participant.
-		// Enabling OwnerGroupOnlyActions must not grant them new access.
+		// OwnerGroupOnlyActions still permits playbook-admin ownership handoff so
+		// the original owner can be replaced when unavailable.
 		nonParticipantRun := &PlaybookRun{
 			ID: runID, PlaybookID: pbID, TeamID: "team-1", OwnerUserID: ownerID,
 			ParticipantIDs: []string{ownerID, memberID}, Type: RunTypePlaybook,
@@ -879,8 +880,7 @@ func TestRunChangeOwner(t *testing.T) {
 			newPluginAPIAllowingAdmins(t),
 		)
 		err := svc.RunChangeOwner(pbAdminID, runID)
-		require.Error(t, err)
-		assert.True(t, errors.Is(err, ErrNoPermissions), "got: %v", err)
+		require.NoError(t, err)
 	})
 
 	t.Run("channel checklist run has no restriction", func(t *testing.T) {

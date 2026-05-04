@@ -25,6 +25,7 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {useAppSelector} from 'src/hooks/redux';
+import {useIsSystemAdmin} from 'src/hooks/permissions';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PlaybookRole} from 'src/types/permissions';
 import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
@@ -54,6 +55,7 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) =>
     const isPlaybookAdmin = useMemo(() => (
         playbook.members.find((m) => m.user_id === currentUserId)?.scheme_roles?.includes(PlaybookRole.Admin) ?? false
     ), [playbook.members, currentUserId]);
+    const isSystemAdmin = useIsSystemAdmin();
     const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
     const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
     const isSavingRef = useRef(false);
@@ -219,7 +221,7 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) =>
                     <div data-testid='owner-group-only-actions-toggle'>
                         <OwnerGroupOnlyActionsToggle
                             playbook={effectiveRestPlaybook}
-                            isPlaybookAdmin={isPlaybookAdmin}
+                            isPlaybookAdmin={isPlaybookAdmin || isSystemAdmin}
                             disabled={archived || isSavingOwnerGroupOnlyActions}
                             onChange={handleOwnerGroupOnlyActionsChange}
                         />
