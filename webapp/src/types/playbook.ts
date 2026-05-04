@@ -115,6 +115,10 @@ export enum ChecklistItemState {
     Skip = 'skipped',
 }
 
+export const AssigneeTypeOwner = 'owner';
+export const AssigneeTypeCreator = 'creator';
+export const AssigneeTypePropertyUser = 'property_user';
+
 export interface ChecklistItem {
     id?: string;
     title: string;
@@ -122,6 +126,7 @@ export interface ChecklistItem {
     state: ChecklistItemState | string;
     state_modified: number;
     assignee_id: string;
+    assignee_type: string;
     assignee_modified: number;
     command: string;
     command_last_run: number;
@@ -131,6 +136,7 @@ export interface ChecklistItem {
     condition_id: string;
     condition_action: string;
     condition_reason: string;
+    assignee_property_field_id?: string;
 }
 
 export interface TaskAction {
@@ -238,9 +244,11 @@ export function emptyChecklistItem(): ChecklistItem {
         state_modified: 0,
         assignee_modified: 0,
         assignee_id: '',
+        assignee_type: '',
         condition_id: '',
         condition_action: '',
         condition_reason: '',
+        assignee_property_field_id: '',
     };
 }
 
@@ -255,9 +263,11 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state_modified: 0,
     assignee_modified: 0,
     assignee_id: '',
+    assignee_type: '',
     condition_id: '',
     condition_action: '',
     condition_reason: '',
+    assignee_property_field_id: '',
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

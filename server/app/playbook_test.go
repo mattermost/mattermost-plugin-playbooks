@@ -208,3 +208,59 @@ func TestChecklist_GetItemsOrder(t *testing.T) {
 	itemsOrder = checklist.GetItemsOrder()
 	require.Nil(t, itemsOrder)
 }
+
+func TestIsValidAssigneeType(t *testing.T) {
+	tests := []struct {
+		name         string
+		assigneeType string
+		want         bool
+	}{
+		{
+			name:         "empty string is valid (specific user)",
+			assigneeType: AssigneeTypeSpecificUser,
+			want:         true,
+		},
+		{
+			name:         "owner is valid",
+			assigneeType: AssigneeTypeOwner,
+			want:         true,
+		},
+		{
+			name:         "creator is valid",
+			assigneeType: AssigneeTypeCreator,
+			want:         true,
+		},
+		{
+			name:         "invalid string returns false",
+			assigneeType: "invalid",
+			want:         false,
+		},
+		{
+			name:         "admin returns false",
+			assigneeType: "admin",
+			want:         false,
+		},
+		{
+			name:         "uppercase OWNER returns false",
+			assigneeType: "OWNER",
+			want:         false,
+		},
+		{
+			name:         "whitespace returns false",
+			assigneeType: " ",
+			want:         false,
+		},
+		{
+			name:         "property_user is valid",
+			assigneeType: AssigneeTypePropertyUser,
+			want:         true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsValidAssigneeType(tt.assigneeType)
+			require.Equal(t, tt.want, result)
+		})
+	}
+}

@@ -45,6 +45,10 @@ func NewPropertyService(api *pluginapi.Client, conditionStore ConditionStore) (P
 }
 
 func (s *propertyService) CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
+
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrap(err, "invalid property field")
 	}
@@ -153,6 +157,10 @@ func (s *propertyService) GetRunPropertyFieldsSince(runID string, updatedSince i
 }
 
 func (s *propertyService) UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
+
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrap(err, "invalid property field")
 	}
@@ -522,6 +530,9 @@ func (s *propertyService) copyPropertyFieldForPlaybook(sourceProperty *model.Pro
 		}
 	}
 
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrapf(err, "failed to validate playbook property field for %s", sourceProperty.Name)
 	}
@@ -536,6 +547,7 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 	}
 
 	propertyField.ID = ""
+	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypeRun
 	propertyField.TargetID = runID
 	propertyField.Attrs.ParentID = playbookProperty.ID
@@ -546,6 +558,9 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 		}
 	}
 
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrapf(err, "failed to validate run property field for %s", playbookProperty.Name)
 	}
@@ -593,10 +608,33 @@ func (s *propertyService) GetRunPropertyValueByFieldID(runID, propertyFieldID st
 }
 
 func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
-	// Get the property field to validate against
-	propertyField, err := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get property field")
+	// Get the property field to validate against.
+	// GetPropertyField filters by the playbook group scope, so run-level fields (targettype=run)
+	// may return "no rows". When that happens, fall back to searching the run's property fields
+	// directly to find the matching field.
+	mmPropertyField, getErr := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
+	var propertyField *model.PropertyField
+	if getErr != nil {
+		if getErr != pluginapi.ErrNotFound {
+			return nil, errors.Wrapf(getErr, "failed to get property field %s", propertyFieldID)
+		}
+		runFields, rfErr := s.GetRunPropertyFields(runID)
+		if rfErr != nil {
+			return nil, errors.Wrapf(getErr, "failed to get property field %s (run-field lookup also failed: %v)", propertyFieldID, rfErr)
+		}
+		for _, rf := range runFields {
+			if rf.ID == propertyFieldID {
+				propertyField = rf.ToMattermostPropertyField()
+				break
+			}
+		}
+		if propertyField == nil {
+			return nil, errors.Wrapf(getErr, "property field %s not found on run %s", propertyFieldID, runID)
+		}
+	} else if mmPropertyField == nil {
+		return nil, ErrNotFound
+	} else {
+		propertyField = mmPropertyField
 	}
 
 	// Sanitize and validate the value based on field type
@@ -652,6 +690,15 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 			return nil, errors.New("multiselect field value must be an array of strings")
 		}
 		return value, s.validateMultiselectValue(propertyField, arrayValue)
+	case model.PropertyFieldTypeUser:
+		var userID string
+		if err := json.Unmarshal(value, &userID); err != nil {
+			return nil, errors.New("user field value must be a string")
+		}
+		if userID != "" && !model.IsValidId(userID) {
+			return nil, errors.New("user field value must be a valid user ID")
+		}
+		return value, nil
 	default:
 		return nil, errors.Errorf("property field type '%s' is not supported", propertyField.Type)
 	}
@@ -711,6 +758,21 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 	}
 
 	return registeredGroup.ID, nil
+}
+
+// reservedFieldNames lists field names that conflict with built-in assignee types (case-insensitive).
+var reservedFieldNames = []string{"OWNER", "CREATOR", "PROPERTY_USER"}
+
+// validateReservedFieldName rejects field names that would conflict with built-in
+// template placeholders or system fields. Reserved names: OWNER, CREATOR, PROPERTY_USER (case-insensitive).
+func validateReservedFieldName(name string) error {
+	name = strings.TrimSpace(name)
+	for _, r := range reservedFieldNames {
+		if strings.EqualFold(name, r) {
+			return errors.Wrapf(ErrReservedPropertyFieldName, "field name %q is reserved", r)
+		}
+	}
+	return nil
 }
 
 // GetRunsPropertyFields retrieves all property fields for multiple runs efficiently

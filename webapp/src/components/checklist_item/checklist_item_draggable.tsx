@@ -9,7 +9,7 @@ import {ChecklistItem, ButtonsFormat as ItemButtonsFormat} from 'src/components/
 import {ChecklistItemState, ChecklistItem as ChecklistItemType} from 'src/types/playbook';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Condition} from 'src/types/conditions';
-import {PropertyField} from 'src/types/properties';
+import {PropertyField, PropertyValue} from 'src/types/properties';
 
 interface Props {
     playbookRun?: PlaybookRun;
@@ -33,6 +33,9 @@ interface Props {
     availableConditions?: Condition[];
     conditions?: Condition[];
     propertyFields?: PropertyField[];
+    propertyValues?: PropertyValue[];
+    runOwnerId?: string;
+    runCreatorId?: string;
     onEditingChange?: (isEditing: boolean) => void;
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
@@ -81,6 +84,9 @@ const DraggableChecklistItem = (props: Props) => {
                     availableConditions={props.availableConditions}
                     conditions={props.conditions}
                     propertyFields={props.propertyFields}
+                    propertyValues={props.propertyValues}
+                    runOwnerId={props.runOwnerId}
+                    runCreatorId={props.runCreatorId}
                     onEditingChange={props.onEditingChange}
                     hasCondition={props.hasCondition}
                     conditionHeader={props.conditionHeader}

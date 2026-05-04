@@ -12,19 +12,30 @@ import {Placement} from '@floating-ui/react';
 
 import {OVERLAY_DELAY} from 'src/constants';
 
-import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
+import ProfileSelector, {ExtraSection, Option} from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
+export const EXTRA_OPTION_PREFIX_ROLE = 'role:';
+export const EXTRA_OPTION_PREFIX_PROPERTY_USER = 'property_user:';
+
+export interface RoleOption {
+    value: string;
+    label: string;
+}
+
 interface AssignedToProps {
     assignee_id: string;
+    assignee_type?: string;
     participantUserIds: string[];
     editable: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
     onSelectedChange?: (user?: UserProfile) => void;
+    onExtraOptionSelected?: (value: string) => void;
     onOpenChange?: (isOpen: boolean) => void;
     isEditing?: boolean;
+    roleOptions?: RoleOption[];
 }
 
 const AssignTo = (props: AssignedToProps) => {
@@ -36,6 +47,23 @@ const AssignTo = (props: AssignedToProps) => {
         props.onSelectedChange?.();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
+
+    const extraSections: ExtraSection[] = [];
+    if (props.roleOptions && props.roleOptions.length > 0) {
+        extraSections.push({
+            label: formatMessage({defaultMessage: 'RUN ROLES'}),
+            options: props.roleOptions.map((r) => ({
+                value: r.value,
+                label: (
+                    <OptionRow>
+                        <RoleTriangle className='icon-menu-right'/>
+                        {r.label}
+                    </OptionRow>
+                ),
+                isExtraOption: true as const,
+            })),
+        });
+    }
 
     if (props.inHoverMenu) {
         return (
@@ -58,10 +86,12 @@ const AssignTo = (props: AssignedToProps) => {
                     return profilesInTeam;
                 }}
                 onSelectedChange={props.onSelectedChange}
+                onExtraOptionSelected={props.onExtraOptionSelected}
+                extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
                 customControlProps={{
-                    showCustomReset: Boolean(props.assignee_id),
+                    showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
                     onCustomReset: resetAssignee,
                 }}
                 controlledOpenToggle={profileSelectorToggle}
@@ -107,6 +137,8 @@ const AssignTo = (props: AssignedToProps) => {
                     return profilesInTeam;
                 }}
                 onSelectedChange={props.onSelectedChange}
+                onExtraOptionSelected={props.onExtraOptionSelected}
+                extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
                 customControlProps={{
@@ -255,4 +287,17 @@ const ControlComponentAnchor = styled.a`
 
 export const DropdownArrow = styled.i`
     color: var(--center-channel-color-32);
+`;
+
+const OptionRow = styled.div`
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+`;
+
+const RoleTriangle = styled.i`
+    font-size: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    flex-shrink: 0;
 `;

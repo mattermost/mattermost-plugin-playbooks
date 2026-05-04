@@ -109,6 +109,8 @@ input ChecklistItemUpdates {
 	stateModified: Float!
 	assigneeID: String!
 	assigneeModified: Float!
+	assigneeType: String
+	assigneePropertyFieldID: String
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
@@ -200,6 +202,8 @@ type ChecklistItem {
 	state: String!
 	stateModified: Float!
 	assigneeID: String!
+	assigneeType: String!
+	assigneePropertyFieldID: String!
 	assigneeModified: Float!
 	command: String!
 	commandLastRun: Float!
