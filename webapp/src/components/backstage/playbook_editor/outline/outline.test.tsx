@@ -16,6 +16,7 @@ import Outline from './outline';
 
 jest.mock('src/client', () => ({
     savePlaybook: jest.fn(),
+    clientFetchPlaybook: jest.fn(),
 }));
 
 jest.mock('src/graphql/hooks', () => ({
