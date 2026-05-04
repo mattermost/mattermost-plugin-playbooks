@@ -604,11 +604,6 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 
 	targetOwnerUsername := strings.TrimLeft(args[index], "@")
 
-	if err := r.permissions.RunManageProperties(r.args.UserId, playbookRuns[run].ID); err != nil {
-		r.postCommandResponse("Become a participant to interact with this run.")
-		return
-	}
-
 	currentPlaybookRun := playbookRuns[run]
 
 	targetOwnerUser, err := r.pluginAPI.User.GetByUsername(targetOwnerUsername)
@@ -622,6 +617,21 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 
 	if currentPlaybookRun.OwnerUserID == targetOwnerUser.Id {
 		r.postCommandResponse(fmt.Sprintf("User @%s is already owner of this playbook run.", targetOwnerUsername))
+		return
+	}
+
+	if err := r.permissions.RunManageProperties(r.args.UserId, currentPlaybookRun.ID); err != nil {
+		r.postCommandResponse("Become a participant to interact with this run.")
+		return
+	}
+
+	if err := r.permissions.RunChangeOwner(r.args.UserId, currentPlaybookRun.ID); err != nil {
+		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
+		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
+			r.postCommandResponse("You do not have permission to change the owner of this run.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error checking change owner permission: %v", err)
 		return
 	}
 
@@ -760,12 +770,16 @@ func (r *Runner) actionFinishByID(args []string) {
 		return
 	}
 
-	if err := r.permissions.RunManageProperties(r.args.UserId, args[0]); err != nil {
-		if errors.Is(err, app.ErrNoPermissions) {
-			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
-			return
+	if err := r.permissions.RunFinish(r.args.UserId, args[0]); err != nil {
+		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
+		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
+			r.postCommandResponse("You do not have permission to finish this run.")
+			if errors.Is(err, app.ErrNotFound) {
+				logrus.Errorf("Run not found during finish permission check: %v", err)
+			}
+		} else {
+			r.warnUserAndLogErrorf("Error checking finish permissions: %v", err)
 		}
-		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
 		return
 	}
 

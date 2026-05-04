@@ -25,6 +25,7 @@ import {
     useRunFollowers,
     useRunMetadata,
 } from 'src/hooks';
+import {useIsSystemAdmin} from 'src/hooks/permissions';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import RHSAboutTitle from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
@@ -32,12 +33,16 @@ import PropertiesList from 'src/components/rhs/properties_list';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
 import {setRHSAboutCollapsedState} from 'src/actions';
 import {useUpdateRun} from 'src/graphql/hooks';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 interface Props {
     playbookRun: PlaybookRun;
     readOnly?: boolean;
     onReadOnlyInteract?: () => void
     setShowParticipants: React.Dispatch<React.SetStateAction<boolean>>
+    ownerGroupOnlyActions?: boolean;
+    isPlaybookAdmin?: boolean;
 }
 
 const RHSAbout = (props: Props) => {
@@ -46,8 +51,19 @@ const RHSAbout = (props: Props) => {
     const collapsedFromStore = useAppSelector(currentRHSAboutCollapsedState(props.playbookRun.id));
     const profilesInTeam = useProfilesInTeam();
     const updateRun = useUpdateRun(props.playbookRun.id);
+    const toaster = useToaster();
 
     const myUserId = useAppSelector(getCurrentUserId);
+    const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
+    const isOwner = props.playbookRun.owner_user_id === myUserId;
+    const isSystemAdmin = useIsSystemAdmin();
+    const isPlaybookAdmin = props.isPlaybookAdmin ?? false;
+    const canChangeOwner = !props.ownerGroupOnlyActions || isOwner || isSystemAdmin || isPlaybookAdmin;
+
+    // readOnly reflects the generic run-modify gate (non-participant, non-owner users).
+    // System admins and playbook admins may need to hand off ownership even when they
+    // are not participants, so the readOnly gate is bypassed for them here.
+    const canEditOwner = !isFinished && canChangeOwner && (!props.readOnly || isSystemAdmin || isPlaybookAdmin);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
 
     // Hooks for favorite and follow state
@@ -88,6 +104,21 @@ const RHSAbout = (props: Props) => {
         setOwnerUtil(user?.id);
     };
 
+    // When the owner picker is disabled because OwnerGroupOnlyActions blocks this user,
+    // show a toast explaining why — matches the disabled-with-tooltip pattern used by the
+    // FinishRun/RestoreRun menu items for the same restriction.
+    let onOwnerEditDisabledClick: (() => void) | undefined;
+    if (canChangeOwner) {
+        onOwnerEditDisabledClick = props.readOnly ? props.onReadOnlyInteract : undefined;
+    } else {
+        onOwnerEditDisabledClick = () => {
+            toaster.add({
+                content: formatMessage({defaultMessage: 'Only the run owner can reassign ownership of this run.'}),
+                toastStyle: ToastStyle.Failure,
+            });
+        };
+    }
+
     const onTitleEdit = (value: string) => {
         updateRun({name: value});
     };
@@ -98,7 +129,6 @@ const RHSAbout = (props: Props) => {
 
     const [editingSummary, setEditingSummary] = useState(false);
 
-    const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun);
     useEnsureProfiles(props.playbookRun.participant_ids);
 
@@ -135,8 +165,8 @@ const RHSAbout = (props: Props) => {
                                     placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
                                     placeholderButtonClass={'NoAssignee-button'}
                                     profileButtonClass={'Assigned-button'}
-                                    enableEdit={!isFinished && !props.readOnly}
-                                    onEditDisabledClick={props.onReadOnlyInteract}
+                                    enableEdit={canEditOwner}
+                                    onEditDisabledClick={onOwnerEditDisabledClick}
                                     getAllUsers={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}
                                     selfIsFirstOption={true}

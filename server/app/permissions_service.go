@@ -17,12 +17,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
-// ErrNoPermissions if the error is caused by the user not having permissions
-var ErrNoPermissions = errors.New("does not have permissions")
-
-// ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
-var ErrLicensedFeature = errors.New("not covered by current server license")
-
 type LicenseChecker interface {
 	PlaybookAllowed(isPlaybookPublic bool) bool
 	RetrospectiveAllowed() bool
@@ -168,6 +162,16 @@ func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Pl
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to playbook `%s`", userID, playbook.ID)
 }
 
+// IsPlaybookAdmin returns true if the user has the admin role on the playbook.
+// Team-view access is enforced transitively via getPlaybookRole.
+func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
+	adminRole := playbook.DefaultPlaybookAdminRole
+	if adminRole == "" {
+		adminRole = PlaybookRoleAdmin
+	}
+	return slices.Contains(p.getPlaybookRole(userID, playbook), adminRole)
+}
+
 // PlaybookManageConditions returns an error if the user cannot manage conditions for the playbook
 func (p *PermissionsService) PlaybookManageConditions(userID string, playbook Playbook) error {
 	if !p.licenseChecker.ConditionalPlaybooksAllowed() {
@@ -275,6 +279,15 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 			if err := p.PlaybookMakePublic(userID, oldPlaybook); err != nil {
 				return errors.Wrap(err, "attempted to make playbook public without permissions")
 			}
+		}
+	}
+
+	// Toggling OwnerGroupOnlyActions changes who can finish/restore/reassign in-flight runs,
+	// so it must be restricted to playbook admins (matching the UI gate). PlaybookManageProperties
+	// alone is too permissive: any playbook member with that permission could lock or unlock the flag.
+	if oldPlaybook.OwnerGroupOnlyActions != playbook.OwnerGroupOnlyActions {
+		if !p.IsPlaybookAdmin(userID, oldPlaybook) && !IsSystemAdmin(userID, p.pluginAPI) {
+			return errors.Wrapf(ErrNoPermissions, "only a playbook admin can change OwnerGroupOnlyActions")
 		}
 	}
 
@@ -667,4 +680,113 @@ func (p *PermissionsService) isChannelArchived(channelID string) bool {
 		return false
 	}
 	return channel.DeleteAt > 0
+}
+
+// loadRunAndPlaybook loads the run and its associated playbook.
+// Returns (run, playbook, error). When the run has no playbook (channel checklist or
+// standalone), returns (run, nil, nil).
+func (p *PermissionsService) loadRunAndPlaybook(runID string) (*PlaybookRun, *Playbook, error) {
+	run, err := p.runService.GetPlaybookRun(runID)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to get run %s for permission check", runID)
+	}
+	if p.isChannelChecklist(run) || run.PlaybookID == "" {
+		return run, nil, nil
+	}
+	playbook, err := p.playbookService.Get(run.PlaybookID)
+	if err != nil {
+		return run, nil, errors.Wrapf(err, "failed to get playbook %s for run %s", run.PlaybookID, runID)
+	}
+	return run, &playbook, nil
+}
+
+// runRequiresOwnerOrAdmin enforces base participant access, then further restricts to the
+// run owner or a system admin when OwnerGroupOnlyActions is set on the playbook.
+// actionName is used in the denial message (e.g. "finish/restore", "reassign ownership of").
+// Returns the loaded run and playbook so callers can reuse them without a second DB round-trip.
+// NOTE: OwnerGroupOnlyActions is read from the current playbook state, not from a snapshot at
+// run creation time. Toggling OwnerGroupOnlyActions on a playbook immediately affects all existing
+// in-progress runs — participants who could previously finish/restore a run will lose that
+// ability the moment the flag is enabled, with no per-run grandfathering.
+func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName string) (*PlaybookRun, *Playbook, error) {
+	run, playbook, err := p.loadRunAndPlaybook(runID)
+	if err != nil {
+		if run == nil {
+			return nil, nil, err
+		}
+		if !errors.Is(err, ErrNotFound) {
+			return run, nil, err
+		}
+		// Playbook deleted — require team access plus owner or system admin.
+		if !p.canViewTeam(userID, run.TeamID) {
+			return run, nil, errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
+		}
+		if run.OwnerUserID == userID || IsSystemAdmin(userID, p.pluginAPI) {
+			return run, nil, nil
+		}
+		return run, nil, errors.Wrapf(ErrNoPermissions, "only the run owner or a system admin can %s run %s (playbook deleted)", actionName, runID)
+	}
+	// Base participant/membership check
+	if err := p.runManagePropertiesWithPlaybookRun(userID, run); err != nil {
+		return run, playbook, errors.Wrapf(err, "cannot %s run %s", actionName, runID)
+	}
+	if playbook == nil || !playbook.OwnerGroupOnlyActions { // nil == channel checklist or standalone run
+		return run, playbook, nil
+	}
+	if run.OwnerUserID == userID {
+		return run, playbook, nil
+	}
+	if IsSystemAdmin(userID, p.pluginAPI) {
+		logrus.WithFields(logrus.Fields{
+			"event":       "system_admin_owner_only_bypass",
+			"user_id":     userID,
+			"run_id":      run.ID,
+			"playbook_id": playbook.ID,
+			"action":      actionName,
+		}).Warn("system admin performing owner-only action on run they do not own")
+		return run, playbook, nil
+	}
+	return run, playbook, errors.Wrapf(ErrNoPermissions, "only the run owner or admin can %s run %s", actionName, runID)
+}
+
+// RunFinish checks whether userID can finish runID.
+// When Playbook.OwnerGroupOnlyActions is set, only the run owner or a system admin can finish the run.
+func (p *PermissionsService) RunFinish(userID, runID string) error {
+	_, _, err := p.runRequiresOwnerOrAdmin(userID, runID, "finish")
+	return err
+}
+
+// RunRestore checks whether userID can restore runID.
+// Applies the same OwnerGroupOnlyActions gate as RunFinish — only the run owner
+// or a system admin can restore when the flag is set.
+func (p *PermissionsService) RunRestore(userID, runID string) error {
+	_, _, err := p.runRequiresOwnerOrAdmin(userID, runID, "restore")
+	return err
+}
+
+// RunChangeOwner checks if the user can change the owner of a run.
+// When OwnerGroupOnlyActions is set, playbook admins may change ownership even without
+// being a run participant, enabling handoffs when the original owner is unavailable.
+func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
+	run, playbook, baseErr := p.runRequiresOwnerOrAdmin(userID, runID, "reassign ownership of")
+	if baseErr == nil {
+		return nil
+	}
+
+	if run == nil {
+		return baseErr
+	}
+	// Playbook admins can reassign ownership when OwnerGroupOnlyActions is set even if they
+	// are not a run participant — enabling legitimate handoffs when the original owner is unavailable.
+	if playbook != nil && playbook.OwnerGroupOnlyActions && p.IsPlaybookAdmin(userID, *playbook) {
+		logrus.WithFields(logrus.Fields{
+			"event":       "playbook_admin_owner_only_bypass",
+			"user_id":     userID,
+			"run_id":      runID,
+			"playbook_id": playbook.ID,
+		}).Warn("playbook admin taking ownership of OwnerGroupOnlyActions run")
+		return nil
+	}
+
+	return baseErr
 }

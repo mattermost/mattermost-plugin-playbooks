@@ -12,6 +12,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
+import {isCurrentUserAdmin} from 'src/selectors';
+
 import {PlaybookPermissionGeneral, makeGeneralPermissionSpecific} from 'src/types/permissions';
 
 import {usePlaybook} from './crud';
@@ -83,4 +85,21 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
     }
 
     return false;
+};
+
+export const useIsSystemAdmin = (): boolean => {
+    return useAppSelector(isCurrentUserAdmin);
+};
+
+/**
+ * Returns true when the current user is blocked from finishing/restoring a run
+ * because OwnerGroupOnlyActions is enabled and they are not the run owner or a system admin.
+ *
+ * Note: this hook is scoped to finish/restore actions only. The backend RunChangeOwner
+ * permission additionally allows playbook admins through — do not reuse this hook for
+ * change-owner UI guards without adding a playbook-admin check.
+ */
+export const useIsBlockedByOwnerOnlyForFinishRestore = (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined): boolean => {
+    const isSystemAdmin = useIsSystemAdmin();
+    return Boolean(ownerGroupOnlyActions && !isOwner && !isSystemAdmin);
 };
