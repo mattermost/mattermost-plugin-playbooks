@@ -30,7 +30,12 @@ import {copyToClipboard} from 'src/utils';
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/backstage/shared';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
-import {RunPermissionFields, useCanModifyRun, useCanRestoreRun, useCanToggleRunRetrospective} from 'src/hooks/run_permissions';
+import {
+    RunPermissionFields,
+    useCanModifyRun,
+    useCanRestoreRun,
+    useCanToggleRunRetrospective,
+} from 'src/hooks/run_permissions';
 import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
