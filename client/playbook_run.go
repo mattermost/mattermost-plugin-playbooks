@@ -111,6 +111,8 @@ const (
 	RunRestored            TimelineEventType = "run_restored"
 	StatusUpdatesEnabled   TimelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  TimelineEventType = "status_updates_disabled"
+	ChannelArchived        TimelineEventType = "channel_archived"
+	ChannelUnarchived      TimelineEventType = "channel_unarchived"
 )
 
 // TimelineEvent represents an event recorded to a playbook run's timeline.

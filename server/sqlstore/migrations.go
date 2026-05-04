@@ -1742,4 +1742,24 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.67.0"),
+		toVersion:   semver.MustParse("0.68.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Playbook", "AutoArchiveChannel", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AutoArchiveChannel to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "ChannelCreatedByRun", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column ChannelCreatedByRun to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "AutoArchivedChannel", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AutoArchivedChannel to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "AutoArchiveChannel", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AutoArchiveChannel to IR_Incident")
+			}
+
+			return nil
+		},
+	},
 }
