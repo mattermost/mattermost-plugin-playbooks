@@ -13,23 +13,23 @@ interface Props {
 const TaskProgress = ({taskTotal, taskCompleted}: Props) => {
     const {formatMessage} = useIntl();
 
-    if (!taskTotal) {
+    if (taskTotal == null || taskTotal === 0) {
         return null;
     }
 
     const completed = taskCompleted ?? 0;
     const pct = Math.round(Math.min((completed / taskTotal) * 100, 100));
+    const label = formatMessage(
+        {id: 'pqR8tZ', defaultMessage: '{completed, number}/{total, number} tasks'},
+        {completed, total: taskTotal},
+    );
 
     return (
         <Container data-testid='task-progress-indicator'>
-            <Label>
-                {formatMessage(
-                    {id: 'pqR8tZ', defaultMessage: '{completed, number}/{total, number} tasks'},
-                    {completed, total: taskTotal},
-                )}
-            </Label>
+            <Label>{label}</Label>
             <Bar
                 role='progressbar'
+                aria-label={label}
                 aria-valuenow={pct}
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -45,7 +45,7 @@ export default TaskProgress;
 const Container = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     min-width: 80px;
 `;
 

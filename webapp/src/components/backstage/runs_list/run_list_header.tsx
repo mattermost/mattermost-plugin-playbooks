@@ -76,7 +76,7 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
                     />
                 </div>
                 <div className='col-sm-2'>
-                    {formatMessage({defaultMessage: 'Tasks'})}
+                    {formatMessage({id: 'yhU1et', defaultMessage: 'Tasks'})}
                 </div>
                 <div className='col-sm-2'>
                     {formatMessage({defaultMessage: 'Owner / Participants'})}
