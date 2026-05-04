@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useRef,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -38,6 +43,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
     const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
     const [bulkEditMode, setBulkEditMode] = useState(false);
+    const pendingRef = useRef(false);
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -61,12 +67,16 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     };
 
     const handleAutoArchiveChange = (updated: {auto_archive_channel: boolean}) => {
-        if (!archived && restPlaybook) {
+        if (!archived && restPlaybook && !pendingRef.current) {
             const prev = restPlaybook.auto_archive_channel ?? false;
             setAutoArchiveOverride(updated.auto_archive_channel);
+            pendingRef.current = true;
             savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel})
                 .then(() => refetch())
-                .catch(() => setAutoArchiveOverride(prev));
+                .catch(() => setAutoArchiveOverride(prev))
+                .finally(() => {
+                    pendingRef.current = false;
+                });
         }
     };
 

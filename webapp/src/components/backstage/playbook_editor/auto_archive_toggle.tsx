@@ -51,7 +51,7 @@ const AutoArchiveToggle = ({playbook, onChange, disabled}: Props) => {
                     <span tabIndex={0}>{toggle}</span>
                 </Tooltip>
             ) : toggle}
-            {autoArchive && (
+            {!isLinkedChannel && autoArchive && (
                 <ToggleBanner
                     role='status'
                     data-testid='auto-archive-confirmation-banner'
