@@ -145,6 +145,8 @@ describe('incremental updates', () => {
         current_status: PlaybookRunStatus.InProgress,
         type: PlaybookRunType.Playbook,
         items_order: ['checklist_1'],
+        task_total: 0,
+        task_completed: 0,
     };
 
     describe('handleWebsocketPlaybookRunUpdatedIncremental', () => {
@@ -449,6 +451,34 @@ describe('incremental updates', () => {
             expect(dispatchedAction.data).toEqual(update);
             expect(dispatchedAction.data.playbook_run_updated_at).toBe(1500);
             expect(dispatchedAction.data.changed_fields.name).toBe('Updated Name with Timestamp');
+        });
+
+        it('handles task_total and task_completed field updates', () => {
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    task_total: 4,
+                    task_completed: 3,
+                },
+            };
+
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as unknown as BaseWebSocketMessage<{payload: string}>;
+
+            handler(msg);
+
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data.changed_fields.task_total).toBe(4);
+            expect(dispatchedAction.data.changed_fields.task_completed).toBe(3);
         });
     });
 

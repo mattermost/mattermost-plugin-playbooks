@@ -26,6 +26,7 @@ import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
+import TaskProgress from 'src/components/backstage/runs_list/task_progress';
 import {ToastStyle} from 'src/components/backstage/toast';
 
 const SmallText = styled.div`
@@ -111,9 +112,10 @@ const Row = (props: Props) => {
         <PlaybookRunItem
             className='row'
             key={props.playbookRun.id}
+            data-testid='run-list-item'
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
-            <div className='col-sm-4'>
+            <div className='col-sm-3'>
                 <RunName>{props.playbookRun.name}</RunName>
                 {infoLine}
             </div>
@@ -139,6 +141,12 @@ const Row = (props: Props) => {
                 </SmallText>
             </div>
             <div className='col-sm-2'>
+                <TaskProgress
+                    taskTotal={props.playbookRun.task_total}
+                    taskCompleted={props.playbookRun.task_completed}
+                />
+            </div>
+            <div className='col-sm-2'>
                 <SmallProfile userId={props.playbookRun.owner_user_id}/>
                 <SmallText>
                     <FormattedMessage
@@ -147,7 +155,7 @@ const Row = (props: Props) => {
                     />
                 </SmallText>
             </div>
-            <div className='col-sm-2'>
+            <div className='col-sm-1'>
                 <FollowPlaybookRun id={props.playbookRun.id}/>
             </div>
         </PlaybookRunItem>
