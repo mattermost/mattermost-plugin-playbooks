@@ -43,6 +43,7 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import Tooltip from 'src/components/widgets/tooltip';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+import {useIsSystemAdmin} from 'src/hooks/permissions';
 
 import Outline, {ScrollNav, Sections} from './outline/outline';
 import * as Controls from './controls';
@@ -80,6 +81,8 @@ const PlaybookEditor = () => {
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
     const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const isSystemAdmin = useIsSystemAdmin();
+    const showAdminSettings = isSystemAdmin || isPlaybookAdmin;
     if (error) {
         // not found
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
@@ -292,7 +295,7 @@ const PlaybookEditor = () => {
                         playbook={playbook}
                         refetch={refetch}
                         restPlaybook={restPlaybook ?? undefined}
-                        isPlaybookAdmin={isPlaybookAdmin}
+                        showAdminSettings={showAdminSettings}
                     />
                 </Route>
                 <Route

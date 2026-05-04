@@ -6,11 +6,14 @@ import React, {
     Children,
     ReactNode,
     useCallback,
+    useMemo,
     useRef,
     useState,
 } from 'react';
 
 import {useIntl} from 'react-intl';
+
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
@@ -21,7 +24,9 @@ import {savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {useAppSelector} from 'src/hooks/redux';
 import {PlaybookWithChecklist} from 'src/types/playbook';
+import {PlaybookRole} from 'src/types/permissions';
 import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
 
 import StatusUpdates from './section_status_updates';
@@ -34,17 +39,21 @@ interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
     restPlaybook?: PlaybookWithChecklist;
-    isPlaybookAdmin: boolean;
+    showAdminSettings: boolean;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch, restPlaybook, isPlaybookAdmin}: Props) => {
+const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const toaster = useToaster();
     const archived = playbook.delete_at !== 0;
+    const currentUserId = useAppSelector(getCurrentUserId);
+    const isPlaybookAdmin = useMemo(() => (
+        playbook.members.find((m) => m.user_id === currentUserId)?.scheme_roles?.includes(PlaybookRole.Admin) ?? false
+    ), [playbook.members, currentUserId]);
     const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
     const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
     const isSavingRef = useRef(false);
@@ -202,7 +211,7 @@ const Outline = ({playbook, refetch, restPlaybook, isPlaybookAdmin}: Props) => {
                     playbook={playbook}
                 />
             </Section>
-            {isPlaybookAdmin && effectiveRestPlaybook && (
+            {showAdminSettings && effectiveRestPlaybook && (
                 <Section
                     id={'settings'}
                     title={formatMessage({defaultMessage: 'Settings'})}

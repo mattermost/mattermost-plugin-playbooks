@@ -72,6 +72,10 @@ jest.mock('src/components/backstage/playbook_editor/owner_group_only_actions_tog
     return null;
 });
 
+jest.mock('src/hooks/redux', () => ({
+    useAppSelector: () => 'user-1',
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -112,17 +116,6 @@ const makeRestPlaybook = (ownerGroupOnlyActions: boolean) => ({
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-type OutlineWrapperProps = Omit<React.ComponentProps<typeof Outline>, 'isPlaybookAdmin'> & {
-    isPlaybookAdmin?: boolean;
-};
-
-const OutlineWrapper = ({isPlaybookAdmin = true, ...rest}: OutlineWrapperProps) => (
-    <Outline
-        {...rest}
-        isPlaybookAdmin={isPlaybookAdmin}
-    />
-);
-
 beforeEach(() => {
     latestToggleProps.current = null;
     (savePlaybook as jest.Mock).mockReset();
@@ -138,7 +131,8 @@ describe('Outline — handleOwnerGroupOnlyActionsChange', () => {
         const restPlaybook = makeRestPlaybook(false);
 
         renderer.create(
-            <OutlineWrapper
+            <Outline
+                showAdminSettings={true}
                 playbook={makeGraphQLPlaybook() as any}
                 refetch={jest.fn()}
                 restPlaybook={restPlaybook}
@@ -163,7 +157,8 @@ describe('Outline — handleOwnerGroupOnlyActionsChange', () => {
         }));
 
         renderer.create(
-            <OutlineWrapper
+            <Outline
+                showAdminSettings={true}
                 playbook={makeGraphQLPlaybook() as any}
                 refetch={jest.fn()}
                 restPlaybook={makeRestPlaybook(false)}
@@ -191,7 +186,8 @@ describe('Outline — handleOwnerGroupOnlyActionsChange', () => {
         (savePlaybook as jest.Mock).mockRejectedValue(new Error('network error'));
 
         renderer.create(
-            <OutlineWrapper
+            <Outline
+                showAdminSettings={true}
                 playbook={makeGraphQLPlaybook() as any}
                 refetch={jest.fn()}
                 restPlaybook={makeRestPlaybook(false)}
@@ -211,7 +207,8 @@ describe('Outline — handleOwnerGroupOnlyActionsChange', () => {
         (savePlaybook as jest.Mock).mockResolvedValue({});
 
         renderer.create(
-            <OutlineWrapper
+            <Outline
+                showAdminSettings={true}
                 playbook={makeGraphQLPlaybook({delete_at: 123456}) as any}
                 refetch={jest.fn()}
                 restPlaybook={makeRestPlaybook(false)}
@@ -230,7 +227,8 @@ describe('Outline — handleOwnerGroupOnlyActionsChange', () => {
         (savePlaybook as jest.Mock).mockResolvedValue({});
 
         renderer.create(
-            <OutlineWrapper
+            <Outline
+                showAdminSettings={true}
                 playbook={makeGraphQLPlaybook() as any}
                 refetch={jest.fn()}
                 restPlaybook={undefined}

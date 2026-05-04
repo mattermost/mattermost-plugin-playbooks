@@ -3,11 +3,8 @@
 
 import React, {useCallback, useRef} from 'react';
 
-import {useAppDispatch} from 'src/hooks/redux';
-
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import {modals} from 'src/webapp_globals';
-import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
+import {useConfirmModal} from 'src/components/widgets/confirmation_modal';
 
 import ToggleHint from './toggle_hint';
 
@@ -30,7 +27,7 @@ interface Props {
 // For toggles that need a Tooltip wrapper, confirmation banner, or custom label children,
 // compose with <Toggle> directly instead.
 const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequired}: Props) => {
-    const dispatch = useAppDispatch();
+    const openConfirmModal = useConfirmModal();
     const pendingRef = useRef(false);
 
     const handleChange = useCallback(() => {
@@ -40,8 +37,7 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
         pendingRef.current = true;
 
         if (!value && confirmationRequired) {
-            dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
-                show: true,
+            openConfirmModal({
                 title: confirmationRequired.title,
                 message: confirmationRequired.message,
                 confirmButtonText: confirmationRequired.confirmButtonText,
@@ -52,10 +48,10 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
                         pendingRef.current = false;
                     }
                 },
-                onExited: () => {
+                onCancel: () => {
                     pendingRef.current = false;
                 },
-            })));
+            });
             return;
         }
         try {
@@ -63,7 +59,7 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
         } finally {
             pendingRef.current = false;
         }
-    }, [value, confirmationRequired, dispatch, onChange]);
+    }, [value, confirmationRequired, openConfirmModal, onChange]);
 
     return (
         <div>
