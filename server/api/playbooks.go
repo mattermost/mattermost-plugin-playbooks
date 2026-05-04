@@ -348,7 +348,9 @@ func (h *PlaybookHandler) patchRunNumberPrefix(c *Context, w http.ResponseWriter
 	var body struct {
 		RunNumberPrefix string `json:"run_number_prefix"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
 		return
 	}
@@ -1167,7 +1169,8 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 		newTemplate := app.ReplaceFieldInTemplate(currentPlaybook.ChannelNameTemplate, existingField.Name, propertyField.Name)
 		if newTemplate != currentPlaybook.ChannelNameTemplate {
 			if _, err := h.playbookService.UpdateChannelNameTemplateIfUnchanged(playbookID, currentPlaybook.ChannelNameTemplate, newTemplate); err != nil {
-				logger.WithError(err).Warn("failed to update channel name template after field rename")
+				h.HandleError(w, logger, err)
+				return
 			}
 		}
 	}

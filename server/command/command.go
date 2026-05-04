@@ -1417,6 +1417,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		PlaybookID:     playbookID,
 		Checklists:     playbook.Checklists,
 		Type:           app.RunTypePlaybook,
+		CreateAt:       creationTimestamp.UnixMilli(),
 	}
 	channelDisplayName, err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand)
 	if err != nil {
@@ -1948,6 +1949,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			playbookRunName = fmt.Sprintf("[%s] %s", companyName, playbookRunName)
 		}
 
+		createAt := timeutils.GetTimeForMillis(timestamps[i])
 		newRun := &app.PlaybookRun{
 			Name:                 playbookRunName,
 			OwnerUserID:          r.args.UserId,
@@ -1958,6 +1960,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			RetrospectiveEnabled: playbook.RetrospectiveEnabled,
 			StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
 			Type:                 app.RunTypePlaybook,
+			CreateAt:             createAt.UnixMilli(),
 		}
 		channelDisplayName, err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand)
 		if err != nil {
@@ -1970,8 +1973,6 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			r.warnUserAndLogErrorf("Error creating playbook run: %v", err)
 			return
 		}
-
-		createAt := timeutils.GetTimeForMillis(timestamps[i])
 		err = r.playbookRunService.ChangeCreationDate(playbookRun.ID, createAt)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error changing creation date: %v", err)

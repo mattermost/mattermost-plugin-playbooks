@@ -6,6 +6,7 @@ import React, {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
 } from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import debounce from 'debounce';
@@ -67,11 +68,21 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
     }, [updatePlaybook]));
 
     // run_number_prefix is REST-only (not in GraphQL schema): save via PATCH when it changes.
+    const lastSavedPrefixRef = useRef(restPlaybook?.run_number_prefix ?? '');
+    useEffect(() => {
+        lastSavedPrefixRef.current = restPlaybook?.run_number_prefix ?? '';
+    }, [restPlaybook?.run_number_prefix]);
     const handleRunNumberPrefixSave = useMemo(
         () => debounce((prefix: string) => {
-            updatePlaybookRunNumberPrefix(playbook.id, prefix);
+            updatePlaybookRunNumberPrefix(playbook.id, prefix)
+                .then(() => {
+                    lastSavedPrefixRef.current = prefix;
+                })
+                .catch(() => {
+                    setPlaybookForCreateChannel((prev) => ({...prev, run_number_prefix: lastSavedPrefixRef.current}));
+                });
         }, 500),
-        [playbook.id],
+        [playbook.id, setPlaybookForCreateChannel],
     );
 
     useEffect(() => {
@@ -198,13 +209,13 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
                         fieldNames={fieldNames}
-                        disabled={disabled}
+                        disabled={disabled || archived}
                         onRunNumberPrefixChange={handleRunNumberPrefixSave}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
-                        disabled={disabled ?? archived}
+                        disabled={disabled || archived}
                         enabled={playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
@@ -219,7 +230,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner
-                        disabled={disabled ?? archived}
+                        disabled={disabled || archived}
                         enabled={playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
@@ -230,7 +241,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
-                        disabled={disabled ?? archived}
+                        disabled={disabled || archived}
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
@@ -256,7 +267,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={disabled ?? archived}
+                            disabled={disabled || archived}
                             isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
@@ -278,7 +289,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={disabled ?? archived}
+                            disabled={disabled || archived}
                             isChecked={playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
                                 updatePlaybook({

@@ -221,6 +221,9 @@ describe('channels > rhs', {testIsolation: true}, () => {
                 // # Wait a bit
                 cy.wait(TIMEOUTS.FIVE_SEC);
 
+                // * Verify navigation to the run's backstage page first.
+                cy.location('pathname').should('match', /\/playbooks\/runs\/[^/]+$/);
+
                 // * Verify the playbook run RHS is not open (we navigated to the run's backstage page).
                 cy.get('#rhsContainer').should('not.exist');
             });

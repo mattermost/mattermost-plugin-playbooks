@@ -367,6 +367,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		if playbookRun.RunNumber == 0 {
 			return nil, errors.Wrap(ErrInternalPrecondition, "run number is 0: ResolveRunCreationParams must be called before CreatePlaybookRun to allocate a sequential run number")
 		}
+		if playbookRun.SequentialID == "" {
+			return nil, errors.Wrap(ErrInternalPrecondition, "sequential ID is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
+		}
 	}
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
@@ -5137,10 +5140,12 @@ func (s *PlaybookRunServiceImpl) prepareTemplate(pb *Playbook, source string, fi
 				updated, err := s.playbookService.UpdateChannelNameTemplateIfUnchanged(pb.ID, template, cleaned)
 				if err != nil {
 					logger.WithError(err).Warn("failed to persist cleaned channel name template; proceeding with stale template stripped in-memory")
-				} else if !updated {
+					template = cleaned
+				} else if updated {
+					template = cleaned
+				} else {
 					logger.Warn("channel name template changed concurrently; skipping self-heal write to avoid overwriting admin edit")
 				}
-				template = cleaned
 			}
 		}
 	}

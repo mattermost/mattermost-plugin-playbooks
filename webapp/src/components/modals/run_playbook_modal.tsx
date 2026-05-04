@@ -280,7 +280,9 @@ export const RunPlaybookModal = ({
 
     const resetSubmitting = useCallback(() => {
         isSubmittingRef.current = false;
-        setIsSubmitting(false);
+        if (isMountedRef.current) {
+            setIsSubmitting(false);
+        }
     }, []);
 
     const onSubmit = useCallback(() => {

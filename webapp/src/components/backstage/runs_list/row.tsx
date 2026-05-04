@@ -65,9 +65,15 @@ const NameRow = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 `;
 
 const RunName = styled.div`
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 14px;
     font-weight: 600;
     line-height: 16px;

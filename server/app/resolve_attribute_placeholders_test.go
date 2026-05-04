@@ -39,8 +39,11 @@ func newResolveUserTestService(t *testing.T, user *model.User, showFullName *boo
 	t.Helper()
 	mockAPI := &plugintest.API{}
 	mockAPI.On("GetUser", user.Id).Return(user, nil)
-	cfg := &model.Config{}
-	cfg.PrivacySettings.ShowFullName = showFullName
+	cfg := &model.Config{
+		PrivacySettings: model.PrivacySettings{
+			ShowFullName: showFullName,
+		},
+	}
 	mockAPI.On("GetConfig").Return(cfg)
 	t.Cleanup(func() { mockAPI.AssertExpectations(t) })
 	return &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(mockAPI, nil)}
