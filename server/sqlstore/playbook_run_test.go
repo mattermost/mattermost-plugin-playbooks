@@ -2043,3 +2043,39 @@ func TestBumpRunUpdatedAt(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, updatedRun.UpdateAt, int64(1))
 }
+
+func TestRunNumberAndSequentialIDRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupSQLStore(t, db)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	t.Run("non-zero values round-trip", func(t *testing.T) {
+		run := NewBuilder(t).WithName("Numbered Run").ToPlaybookRun()
+		run.RunNumber = 5
+		run.SequentialID = "INC-00005"
+
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		fetched, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		require.Equal(t, int64(5), fetched.RunNumber)
+		require.Equal(t, "INC-00005", fetched.SequentialID)
+	})
+
+	t.Run("zero values round-trip", func(t *testing.T) {
+		run := NewBuilder(t).WithName("Unnumbered Run").ToPlaybookRun()
+
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		fetched, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		require.Equal(t, int64(0), fetched.RunNumber)
+		require.Equal(t, "", fetched.SequentialID)
+	})
+}

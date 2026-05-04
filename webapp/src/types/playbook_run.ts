@@ -60,6 +60,8 @@ export interface PlaybookRun {
     items_order: string[];
 
     type: PlaybookRunType;
+    run_number: number;
+    sequential_id: string;
 
     /** Property fields associated with this run (only included when requested) */
     property_fields?: PropertyField[];

@@ -201,42 +201,18 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.get('#rhsContainer').should('not.exist');
         });
 
-        // Skip: This test relies on accessing "Run a playbook" from an empty channel,
-        // which is no longer supported in the new Checklists UI. The empty channel state
-        // only provides a "New checklist" button without a dropdown.
-        it('when starting a new run of a newly-created playbook created from RHS in a newly-created channel', () => {
-            // # Create a new channel
+        it('when running a playbook from the editor and linking to an existing channel', () => {
+            // # Create a new channel to link the run to
             const channelName = 'playbook-test-' + Date.now();
             cy.apiCreateChannel(testTeam.id, channelName, channelName, 'O').then(({channel}) => {
-                // # Navigate to the new channel
-                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
-
-                // # Open RHS
-                cy.getPlaybooksAppBarIcon().click();
-
-                // # Wait a bit
-                cy.wait(TIMEOUTS.TWO_SEC);
-
-                // # Now click dropdown next to "New checklist" button in header
-                cy.get('[data-testid="create-blank-checklist"]').first().parent().find('.icon-chevron-down').click();
-
-                // # Click "Run a playbook" from the dropdown
-                cy.findByTestId('create-from-playbook').click();
-
-                // # Create a new playbook
-                cy.findByText('Create new playbook').click();
-
-                // # confirm new playbook creation (with defaults)
-                cy.findByTestId('modal-confirm-button').click();
-
-                // * Verify we're in the playbook edit screen
-                cy.findByTestId('playbook-members');
+                // # Navigate to the playbook editor
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                 // # Run the playbook
                 cy.findByTestId('run-playbook').click();
-                cy.findByTestId('run-name-input').type('Playbook Run');
+                cy.findByTestId('run-name-input').clear().type('Playbook Run');
 
-                // # Link to the new channel
+                // # Link to the existing channel instead of creating a new one
                 cy.findByTestId('link-existing-channel-radio').click();
                 cy.get('#link-existing-channel-selector input').type(`${channel.name}{enter}`, {force: true});
 
@@ -245,7 +221,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
                 // # Wait a bit
                 cy.wait(TIMEOUTS.FIVE_SEC);
 
-                // * Verify the playbook run RHS is not open.
+                // * Verify the playbook run RHS is not open (we navigated to the run's backstage page).
                 cy.get('#rhsContainer').should('not.exist');
             });
         });

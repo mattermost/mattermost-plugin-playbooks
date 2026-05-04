@@ -187,7 +187,8 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "RetrospectiveEnabled", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
-			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type").
+			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type",
+			"i.RunNumber", "i.SequentialID").
 		Column(participantsCol).
 		From("IR_Incident AS i")
 
@@ -495,6 +496,8 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
 			"RunType":                                 rawPlaybookRun.Type,
+			"RunNumber":                               rawPlaybookRun.RunNumber,
+			"SequentialID":                            rawPlaybookRun.SequentialID,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",

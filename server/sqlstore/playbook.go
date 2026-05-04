@@ -11,12 +11,15 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
+
+const pgUniqueViolation = "23505"
 
 type sqlPlaybook struct {
 	app.Playbook
@@ -163,6 +166,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.RemoveChannelMemberOnRemovedParticipant",
 			"p.ChannelID",
 			"p.ChannelMode",
+			"p.RunNumberPrefix",
+			"p.NextRunNumber",
 			"p.ChecklistsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
 			"p.RunSummaryTemplateEnabled",
@@ -272,8 +277,13 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
+			"RunNumberPrefix":                         rawPlaybook.RunNumberPrefix,
+			// NextRunNumber omitted: DB default (1) is always correct for new playbooks.
 		}))
 	if err != nil {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
+			return "", errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
 		return "", errors.Wrap(err, "failed to store new playbook")
 	}
 
@@ -366,6 +376,8 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 			CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
 		) AS NumActions`,
 		"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+		"p.RunNumberPrefix",
+		"p.NextRunNumber",
 		"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 		"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 		"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -456,6 +468,8 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+			"p.RunNumberPrefix",
+			"p.NextRunNumber",
 			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -517,7 +531,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get total count")
 	}
 
-	ids := make([]string, len(playbooks))
+	ids := make([]string, 0, len(playbooks))
 	for _, pb := range playbooks {
 		ids = append(ids, pb.ID)
 	}
@@ -713,10 +727,14 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
+			"RunNumberPrefix":                         rawPlaybook.RunNumberPrefix,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
 	if err != nil {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
 	}
 
@@ -765,10 +783,60 @@ func (p *playbookStore) Restore(id string) error {
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
 		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
 	}
 
 	return nil
+}
+
+func (p *playbookStore) UpdateRunNumberPrefix(id, prefix string) error {
+	if id == "" {
+		return errors.New("ID cannot be empty")
+	}
+
+	result, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("RunNumberPrefix", prefix).
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": id}).
+		Where(sq.Eq{"DeleteAt": 0}))
+
+	if err != nil {
+		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
+		return errors.Wrapf(err, "failed to update run number prefix for playbook '%s'", id)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "failed to read rows affected for playbook '%s'", id)
+	}
+	if affected == 0 {
+		return errors.Wrapf(app.ErrNotFound, "playbook '%s' not found or archived", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) IsRunNumberPrefixUsed(teamID, prefix, excludePlaybookID string) (bool, error) {
+	if prefix == "" {
+		return false, nil
+	}
+	var count int64
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_Playbook").
+		Where(sq.Eq{"TeamID": teamID, "DeleteAt": 0}).
+		Where(sq.Expr("LOWER(RunNumberPrefix) = LOWER(?)", prefix)).
+		Where(sq.NotEq{"ID": excludePlaybookID})
+	if err := p.store.getBuilder(p.store.db, &count, query); err != nil {
+		return false, errors.Wrap(err, "failed to check run number prefix uniqueness")
+	}
+	return count > 0, nil
 }
 
 // Get number of active playbooks.
@@ -1247,4 +1315,49 @@ func (p *playbookStore) BumpPlaybookUpdatedAt(playbookID string) error {
 	}
 
 	return nil
+}
+
+func (p *playbookStore) IncrementRunNumber(playbookID string) (int64, error) {
+	if playbookID == "" {
+		return 0, errors.New("playbookID cannot be empty")
+	}
+
+	var runNumber int64
+	// Raw SQL: squirrel cannot express RETURNING for atomic increment-and-read (UPDATE + SELECT would race).
+	// p.store.db.Get uses the master (write) connection outside any caller-managed transaction; number gaps
+	// (e.g. from rolled-back run creation) are acceptable by design.
+	if err := p.store.db.Get(
+		&runNumber,
+		`UPDATE IR_Playbook SET NextRunNumber = NextRunNumber + 1 WHERE ID = $1 AND DeleteAt = 0 RETURNING NextRunNumber - 1`,
+		playbookID,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, errors.Wrapf(app.ErrNotFound, "playbook '%s' not found or archived", playbookID)
+		}
+		return 0, errors.Wrapf(err, "failed to increment run number for playbook %s", playbookID)
+	}
+	return runNumber, nil
+}
+
+func (p *playbookStore) UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error) {
+	if playbookID == "" {
+		return false, errors.New("playbookID cannot be empty")
+	}
+
+	result, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("ChannelNameTemplate", newTemplate).
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"ChannelNameTemplate": oldTemplate}),
+	)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to update channel name template for playbook '%s'", playbookID)
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to read rows affected for playbook '%s'", playbookID)
+	}
+	return n > 0, nil
 }

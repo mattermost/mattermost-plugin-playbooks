@@ -30,6 +30,7 @@ import (
 
 const checklistItemDescriptionCharLimit = 4000
 const propertyValueMaxDisplayLength = 50
+const MaxRunNameLength = 1024
 
 const (
 	// PlaybookRunCreatedWSEvent is for playbook run creation.
@@ -354,13 +355,25 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
-// CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
-func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
+// CreatePlaybookRun creates a new playbook run. Callers MUST call ResolveRunCreationParams first when a Playbook is provided.
+func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool, source string, channelDisplayName string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error) {
+	if pb != nil {
+		if strings.TrimSpace(playbookRun.Name) == "" {
+			return nil, errors.Wrap(ErrInternalPrecondition, "run name is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
+		}
+		if playbookRun.PlaybookID == "" {
+			return nil, errors.Wrap(ErrInternalPrecondition, "playbook ID is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
+		}
+		if playbookRun.RunNumber == 0 {
+			return nil, errors.Wrap(ErrInternalPrecondition, "run number is 0: ResolveRunCreationParams must be called before CreatePlaybookRun to allocate a sequential run number")
+		}
+	}
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
 	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "source", source)
 	if playbookRun != nil {
 		model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
 	}
@@ -368,22 +381,14 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
 	}
 
-	if playbookRun.DefaultOwnerID != "" {
-		// Check if the user is a member of the team to which the playbook run belongs.
-		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
-			logrus.WithFields(logrus.Fields{
-				"user_id": playbookRun.DefaultOwnerID,
-				"team_id": playbookRun.TeamID,
-			}).Warn("default owner specified, but it is not a member of the playbook run's team")
-		} else {
-			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
-		}
-	}
-
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
 
 	logger := logrus.WithField("playbook_run_id", playbookRun.ID)
+
+	if playbookRun.Type != RunTypePlaybook && playbookRun.Type != RunTypeChannelChecklist {
+		return nil, errors.Wrap(ErrMalformedPlaybookRun, "invalid run type")
+	}
 
 	var err error
 	var channel *model.Channel
@@ -398,7 +403,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 				pb.Title, playbookURL, overviewURL)
 		}
 
-		channel, err = s.createPlaybookRunChannel(playbookRun, header, public)
+		channel, err = s.createPlaybookRunChannel(playbookRun, header, public, channelDisplayName)
 		if err != nil {
 			return nil, err
 		}
@@ -411,10 +416,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			return nil, err
 		}
 
-	}
-
-	if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && playbookRun.Name == "" {
-		playbookRun.Name = pb.ChannelNameTemplate
 	}
 
 	if pb != nil && pb.MessageOnJoinEnabled && pb.MessageOnJoin != "" {
@@ -506,6 +507,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 						logger.WithError(err).Warn("failed to update playbook run with new condition IDs")
 					}
 				}
+			}
+
+			if len(initialPropertyValues) > 0 {
+				playbookRun = s.applyInitialPropertyValues(playbookRun, propertyCopyResult, initialPropertyValues, logger)
 			}
 		}
 	}
@@ -748,7 +753,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, userID, t
 		}
 		message = post.Message
 	} else {
-		message = currentPlaybookRun.ReminderMessageTemplate
+		message = s.resolveMessageForRun(currentPlaybookRun.ReminderMessageTemplate, currentPlaybookRun)
 	}
 
 	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Summary, message, len(currentPlaybookRun.BroadcastChannelIDs), currentPlaybookRun.PreviousReminder, user.Locale)
@@ -1060,6 +1065,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
+
+	options.Message = s.resolveMessageForRun(options.Message, playbookRunToModify)
 
 	originalPost, err := s.buildStatusUpdatePost(options.Message, playbookRunID, userID)
 	if err != nil {
@@ -3149,17 +3156,25 @@ func (s *PlaybookRunServiceImpl) ChangeCreationDate(playbookRunID string, creati
 	return s.store.ChangeCreationDate(playbookRunID, creationTimestamp)
 }
 
-func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {
+func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool, channelDisplayName string) (*model.Channel, error) {
 	channelType := model.ChannelTypePrivate
 	if public {
 		channelType = model.ChannelTypeOpen
 	}
 
+	displayName := channelDisplayName
+	if displayName == "" {
+		displayName = playbookRun.Name
+	}
+
+	displayName = truncateRunes(displayName, model.ChannelDisplayNameMaxRunes)
+	channelSlug := truncateRunes(cleanChannelName(displayName), maxChannelSlugLength)
+
 	channel := &model.Channel{
 		TeamId:      playbookRun.TeamID,
 		Type:        channelType,
-		DisplayName: playbookRun.Name,
-		Name:        cleanChannelName(playbookRun.Name),
+		DisplayName: displayName,
+		Name:        channelSlug,
 		Header:      header,
 	}
 
@@ -3298,10 +3313,22 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 	introText := T("app.user.new_run.intro", data)
 
 	defaultPlaybookID := ""
-	defaultChannelNameTemplate := ""
 	if len(playbooks) == 1 {
 		defaultPlaybookID = playbooks[0].ID
-		defaultChannelNameTemplate = playbooks[0].ChannelNameTemplate
+	}
+
+	// Name is optional when a single playbook has a ChannelNameTemplate that is dialog-safe
+	// (i.e. has no property placeholders — those are rejected for RunSourceDialog in prepareTemplate).
+	nameOptional := false
+	nameMinLength := 1
+	nameDefault := ""
+	if len(playbooks) == 1 && playbooks[0].ChannelNameTemplate != "" {
+		hasPropertyPlaceholders := len(ValidateTemplate(playbooks[0].ChannelNameTemplate, ResolveOptions{})) > 0
+		if !hasPropertyPlaceholders {
+			nameOptional = true
+			nameMinLength = 0
+			nameDefault = playbooks[0].ChannelNameTemplate
+		}
 	}
 
 	return &model.Dialog{
@@ -3320,9 +3347,10 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 				DisplayName: T("app.user.new_run.run_name"),
 				Name:        DialogFieldNameKey,
 				Type:        "text",
-				MinLength:   1,
-				MaxLength:   64,
-				Default:     defaultChannelNameTemplate,
+				Default:     nameDefault,
+				MinLength:   nameMinLength,
+				MaxLength:   MaxRunNameLength,
+				Optional:    nameOptional,
 			},
 		},
 		SubmitLabel:    T("app.user.new_run.submit_label"),
@@ -4339,9 +4367,7 @@ func cleanChannelName(channelName string) string {
 
 func addRandomBits(name string) string {
 	// Fix too long names (we're adding 5 chars):
-	if len(name) > 59 {
-		name = name[:59]
-	}
+	name = truncateRunes(name, maxChannelSlugLength)
 	randBits := model.NewId()
 	return fmt.Sprintf("%s-%s", name, randBits[:4])
 }
@@ -4786,6 +4812,10 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
+	if propertyField == nil {
+		return nil, errors.Errorf("property field %s does not belong to run %s", propertyFieldID, playbookRunID)
+	}
+
 	var currentValue json.RawMessage
 	for _, pfv := range run.PropertyValues {
 		if pfv.FieldID == propertyFieldID {
@@ -4841,6 +4871,43 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 
 	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	return propertyValue, nil
+}
+
+// applyInitialPropertyValues upserts caller-supplied initial property values onto a newly-created run.
+// propertyCopyResult must come from CopyPlaybookPropertiesToRun so field/option mappings are available.
+func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *PlaybookRun, propertyCopyResult *PropertyCopyResult, initialValues map[string]json.RawMessage, logger *logrus.Entry) *PlaybookRun {
+	runFieldByID := make(map[string]*PropertyField, len(propertyCopyResult.CopiedFields))
+	for i := range propertyCopyResult.CopiedFields {
+		runFieldByID[propertyCopyResult.CopiedFields[i].ID] = &propertyCopyResult.CopiedFields[i]
+	}
+	upsertedValues := make([]PropertyValue, 0, len(initialValues))
+	for playbookFieldID, rawValue := range initialValues {
+		runFieldID, ok := propertyCopyResult.FieldMappings[playbookFieldID]
+		if !ok {
+			logger.WithField("field_id", playbookFieldID).Warn("initial property value references unknown playbook field ID, skipping")
+			continue
+		}
+		if len(rawValue) == 0 {
+			continue
+		}
+		translatedValue, err := translateOptionIDs(rawValue, propertyCopyResult.OptionMappings)
+		if err != nil {
+			logger.WithError(err).WithField("field_id", playbookFieldID).Warn("failed to translate option IDs for initial property value, skipping")
+			continue
+		}
+		runField, ok := runFieldByID[runFieldID]
+		if !ok {
+			logger.WithField("field_id", runFieldID).Warn("run field not found in copied fields, skipping")
+			continue
+		}
+		if _, err := s.propertyService.UpsertRunPropertyValueWithField(playbookRun.ID, runField, translatedValue); err != nil {
+			logger.WithError(err).WithField("field_id", runFieldID).Warn("failed to upsert initial property value, skipping")
+			continue
+		}
+		upsertedValues = append(upsertedValues, PropertyValue{FieldID: runFieldID, Value: translatedValue})
+	}
+	playbookRun.PropertyValues = append(playbookRun.PropertyValues, upsertedValues...)
+	return playbookRun
 }
 
 // propertyValuesEqual compares two property values for equality based on the property field type
@@ -4973,60 +5040,415 @@ func (s *PlaybookRunServiceImpl) PostPropertyChangeMessage(userID string, run *P
 	}
 }
 
-// formatPropertyValueForDisplay formats a property value for display in bot messages
-// Returns the display string and a boolean indicating if the value is empty
+// formatPropertyValueForDisplay formats a property value for bot messages; returns ("", true) when empty.
 func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) (string, bool) {
-	if len(value) == 0 || string(value) == "null" || string(value) == `""` {
+	str, empty := DefaultFormatPropertyValue(propertyField, value)
+	if empty {
 		return "", true
 	}
+	if len([]rune(str)) > propertyValueMaxDisplayLength {
+		return truncateRunes(str, propertyValueMaxDisplayLength-3) + "...", false
+	}
+	return str, false
+}
 
-	switch propertyField.Type {
-	case "text":
-		var stringValue string
-		if err := json.Unmarshal(value, &stringValue); err != nil {
-			return string(value), false
-		}
-		if len(stringValue) > propertyValueMaxDisplayLength {
-			return stringValue[:propertyValueMaxDisplayLength-3] + "...", false
-		}
-		return stringValue, false
+// ResolveRunCreationParams resolves template placeholders and allocates a sequential run number.
+func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (string, error) {
+	if pb == nil {
+		return "", nil
+	}
 
-	case "select":
-		var stringValue string
-		if err := json.Unmarshal(value, &stringValue); err != nil {
-			return string(value), false
+	logger := logrus.WithField("playbook_id", pb.ID)
+
+	if playbookRun.PlaybookID != "" && pb.ID != playbookRun.PlaybookID {
+		return "", errors.Wrap(ErrMalformedPlaybookRun, "playbook ID mismatch between run and supplied playbook")
+	}
+	if playbookRun.PlaybookID == "" {
+		playbookRun.PlaybookID = pb.ID
+	}
+
+	userSuppliedName := strings.TrimSpace(playbookRun.Name)
+
+	var fields []PropertyField
+	attributesLicensed := s.licenseChecker.PlaybookAttributesAllowed()
+	if attributesLicensed && strings.Contains(pb.ChannelNameTemplate, "{") {
+		var err error
+		fields, err = s.propertyService.GetPropertyFields(pb.ID)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load property fields for template resolution")
 		}
-		// Find the option label for this value
-		for _, option := range propertyField.Attrs.Options {
-			if option.GetID() == stringValue {
-				return option.GetName(), false
+	}
+
+	s.resolveOwner(playbookRun, logger)
+
+	template, err := s.prepareTemplate(pb, source, fields, attributesLicensed, logger)
+	if err != nil {
+		return "", err
+	}
+
+	return s.resolveRunName(playbookRun, pb, template, fields, initialValues, userSuppliedName, logger)
+}
+
+// resolveOwner applies the DefaultOwnerID fallback and validates team membership,
+// falling back to ReporterUserID when the resolved owner is not on the team.
+func (s *PlaybookRunServiceImpl) resolveOwner(playbookRun *PlaybookRun, logger *logrus.Entry) {
+	if playbookRun.OwnerUserID == "" && playbookRun.DefaultOwnerID != "" {
+		playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
+	}
+	if playbookRun.OwnerUserID == "" || playbookRun.TeamID == "" {
+		return
+	}
+	if IsMemberOfTeam(playbookRun.OwnerUserID, playbookRun.TeamID, s.pluginAPI) {
+		return
+	}
+	logger.WithFields(logrus.Fields{
+		"user_id":     playbookRun.OwnerUserID,
+		"team_id":     playbookRun.TeamID,
+		"run_id":      playbookRun.ID,
+		"playbook_id": playbookRun.PlaybookID,
+	}).Warn("resolved owner is not a member of the run's team; falling back to run creator as owner")
+	if playbookRun.ReporterUserID == "" {
+		logger.WithFields(logrus.Fields{
+			"run_id":      playbookRun.ID,
+			"playbook_id": playbookRun.PlaybookID,
+		}).Warn("resolved owner is not a team member and ReporterUserID is empty; OwnerUserID will remain unset")
+		return
+	}
+	playbookRun.OwnerUserID = playbookRun.ReporterUserID
+}
+
+// prepareTemplate validates and self-heals the channel name template from the playbook snapshot.
+// It returns the cleaned template string to use for name resolution.
+func (s *PlaybookRunServiceImpl) prepareTemplate(pb *Playbook, source string, fields []PropertyField, attributesLicensed bool, logger *logrus.Entry) (string, error) {
+	// Snapshot to local to avoid TOCTOU with concurrent playbook mutations.
+	template := pb.ChannelNameTemplate
+
+	// Self-heal: strip unknown field placeholders left by a failed delete, then persist atomically.
+	// Only runs when the license is active so that fields are loaded and the known-field set is
+	// accurate. When the license is inactive the second check below returns an error immediately,
+	// leaving the template intact for when the license is re-activated.
+	if template != "" && attributesLicensed {
+		if unknownFields := ValidateTemplate(template, ResolveOptions{Fields: fields}); len(unknownFields) > 0 {
+			cleaned := template
+			for _, f := range unknownFields {
+				cleaned = StripFieldFromTemplate(cleaned, f)
+			}
+			if cleaned != template {
+				updated, err := s.playbookService.UpdateChannelNameTemplateIfUnchanged(pb.ID, template, cleaned)
+				if err != nil {
+					logger.WithError(err).Warn("failed to persist cleaned channel name template; proceeding with stale template stripped in-memory")
+				} else if !updated {
+					logger.Warn("channel name template changed concurrently; skipping self-heal write to avoid overwriting admin edit")
+				}
+				template = cleaned
 			}
 		}
-		return stringValue, false
+	}
 
-	case "multiselect":
-		var arrayValue []string
-		if err := json.Unmarshal(value, &arrayValue); err != nil {
-			return string(value), false
+	// Property placeholders require an active attributes license and cannot be supplied
+	// via dialog or slash command (those sources have no property value input).
+	// Check against the cleaned template so deleted-field ghosts don't trip this gate.
+	if propertyPlaceholders := ValidateTemplate(template, ResolveOptions{}); len(propertyPlaceholders) > 0 {
+		if !attributesLicensed {
+			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates but the attributes license is not active")
 		}
-		if len(arrayValue) == 0 {
-			return "", true
+		switch source {
+		case RunSourceDialog:
+			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires property values that cannot be provided via the dialog; use the webapp creation flow instead")
+		case RunSourceCommand:
+			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates; please create runs via the web interface")
 		}
-		// Convert option IDs to labels
-		var labels []string
-		for _, val := range arrayValue {
-			label := val // Default to ID if label not found
-			for _, option := range propertyField.Attrs.Options {
-				if option.GetID() == val {
-					label = option.GetName()
-					break
+	}
+
+	return template, nil
+}
+
+// sanitizePropertyValues filters initialValues to known fields and sanitizes each value.
+// Invalid values are dropped with a warning.
+func (s *PlaybookRunServiceImpl) sanitizePropertyValues(fields []PropertyField, initialValues map[string]json.RawMessage, logger *logrus.Entry) map[string]json.RawMessage {
+	fieldByID := make(map[string]*PropertyField, len(fields))
+	for i := range fields {
+		fieldByID[fields[i].ID] = &fields[i]
+	}
+	sanitized := make(map[string]json.RawMessage, len(initialValues))
+	for fieldID, rawVal := range initialValues {
+		f, ok := fieldByID[fieldID]
+		if !ok {
+			continue
+		}
+		val, err := s.propertyService.SanitizePropertyValue(f.Type, rawVal)
+		if err != nil {
+			logger.WithError(err).WithField("field_id", fieldID).Warn("skipping invalid property value during template resolution; will be validated in CreatePlaybookRun")
+			continue
+		}
+		sanitized[fieldID] = val
+	}
+	return sanitized
+}
+
+// resolveRunName allocates the sequential run number, resolves the channel name template,
+// and sets playbookRun.Name, RunNumber, and SequentialID. Returns the channel name.
+func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Playbook, template string, fields []PropertyField, initialValues map[string]json.RawMessage, userSuppliedName string, logger *logrus.Entry) (string, error) {
+	formatFunc := s.makeRunNameFormatFunc()
+
+	// Resolve display names once — shared between dry-run and real resolve to avoid duplicate User.Get calls.
+	systemTokens := s.buildSystemTokens(playbookRun, "")
+
+	var sanitizedValues map[string]json.RawMessage
+	if template != "" {
+		sanitizedValues = s.sanitizePropertyValues(fields, initialValues, logger)
+
+		// Dry-run: validate field values resolve before consuming the sequential run number.
+		// Use a copy so the sentinel value does not leak into systemTokens.
+		const dryRunSeqSentinel int64 = 99999
+		dryRunTokens := make(map[string]string, len(systemTokens))
+		for k, v := range systemTokens {
+			dryRunTokens[k] = v
+		}
+		dryRunTokens["SEQ"] = FormatSequentialID(pb.RunNumberPrefix, dryRunSeqSentinel)
+		_, unresolvedPre := ResolveTemplate(template, ResolveOptions{
+			Fields:       fields,
+			Values:       sanitizedValues,
+			SystemTokens: dryRunTokens,
+			FormatFunc:   formatFunc,
+		})
+		if len(unresolvedPre) > 0 {
+			return "", errors.Wrapf(ErrMalformedPlaybookRun, "channel name template references fields with missing or empty values: %s", strings.Join(unresolvedPre, ", "))
+		}
+	}
+
+	// Allocate sequential run number; gaps are acceptable (Jira-style) if creation fails after this point.
+	var runNumber int64
+	if playbookRun.PlaybookID != "" {
+		var err error
+		runNumber, err = s.playbookService.IncrementRunNumber(playbookRun.PlaybookID)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				return "", errors.Wrap(ErrMalformedPlaybookRun, "playbook not found during run creation")
+			}
+			return "", errors.Wrap(err, "failed to allocate run number")
+		}
+	}
+	playbookRun.RunNumber = runNumber
+	seqID := FormatSequentialID(pb.RunNumberPrefix, runNumber)
+	playbookRun.SequentialID = seqID
+
+	var resolvedRunName, resolvedChannelName string
+	if template != "" {
+		systemTokens["SEQ"] = seqID
+		resolved, unresolved := ResolveTemplate(template, ResolveOptions{
+			Fields:       fields,
+			Values:       sanitizedValues,
+			SystemTokens: systemTokens,
+			FormatFunc:   formatFunc,
+		})
+		if len(unresolved) > 0 {
+			for _, u := range unresolved {
+				if strings.EqualFold(u, "SEQ") && seqID == "" {
+					return "", errors.Wrap(ErrMalformedPlaybookRun, "channel name template uses {SEQ} but run number was not allocated — playbook migration may be incomplete")
 				}
 			}
-			labels = append(labels, label)
+			return "", errors.Wrapf(ErrMalformedPlaybookRun, "channel name template references unknown or unresolved fields: %s", strings.Join(unresolved, ", "))
 		}
-		return strings.Join(labels, ", "), false
-
-	default:
-		return string(value), false
+		resolvedRunName = strings.TrimSpace(truncateRunes(resolved, MaxRunNameLength))
+		resolvedChannelName = strings.Join(strings.Fields(truncateRunes(resolvedRunName, model.ChannelDisplayNameMaxRunes)), " ")
 	}
+
+	if resolvedRunName == "" {
+		switch {
+		case userSuppliedName != "":
+			resolvedRunName = userSuppliedName
+		case seqID != "":
+			resolvedRunName = seqID + " - Untitled"
+		default:
+			resolvedRunName = "Untitled"
+		}
+	}
+
+	playbookRun.Name = resolvedRunName
+	if resolvedChannelName == "" {
+		resolvedChannelName = resolvedRunName
+	}
+	return resolvedChannelName, nil
+}
+
+// resolveRunTemplate runs ResolveTemplate with standard run-context system tokens and FormatFunc.
+// ResolveRunCreationParams calls ResolveTemplate directly (not this helper) so it can share one
+// makeRunNameFormatFunc() instance — and its user-display-name cache — across the dry-run and real
+// resolve passes, avoiding duplicate pluginAPI.User.Get calls for user-type fields.
+func (s *PlaybookRunServiceImpl) resolveRunTemplate(template string, run *PlaybookRun, seqID string, fields []PropertyField, values map[string]json.RawMessage) (string, []string) {
+	return ResolveTemplate(template, ResolveOptions{
+		Fields:       fields,
+		Values:       values,
+		SystemTokens: s.buildSystemTokens(run, seqID),
+		FormatFunc:   s.makeRunNameFormatFunc(),
+	})
+}
+
+// buildSystemTokens returns the SEQ/OWNER/CREATOR token map for template resolution.
+// Empty userID produces an empty token; user lookup failures fall back to the raw user ID.
+func (s *PlaybookRunServiceImpl) buildSystemTokens(run *PlaybookRun, seqID string) map[string]string {
+	ownerName := ""
+	if run.OwnerUserID != "" {
+		ownerName = s.resolveUserDisplayName(run.OwnerUserID)
+	}
+	creatorName := ""
+	if run.ReporterUserID != "" {
+		creatorName = s.resolveUserDisplayName(run.ReporterUserID)
+	}
+	return map[string]string{
+		"SEQ":     seqID,
+		"OWNER":   ownerName,
+		"CREATOR": creatorName,
+	}
+}
+
+// resolveUserDisplayName resolves a user ID to a display name, falling back to the raw ID.
+// Honors PrivacySettings.ShowFullName: when false, returns the username instead of the full/nickname name.
+func (s *PlaybookRunServiceImpl) resolveUserDisplayName(userID string) string {
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil || user == nil {
+		return userID
+	}
+	nameFormat := model.ShowNicknameFullName
+	if showFullName := s.pluginAPI.Configuration.GetConfig().PrivacySettings.ShowFullName; showFullName != nil && !*showFullName {
+		nameFormat = model.ShowUsername
+	}
+	displayName := model.SanitizeUnicode(user.GetDisplayName(nameFormat))
+	if displayName == "" {
+		return user.Username
+	}
+	return displayName
+}
+
+// makeRunNameFormatFunc returns a FormatFunc that resolves user-type fields to display names.
+// The returned closure caches lookups and is NOT safe for concurrent use — create one per invocation.
+func (s *PlaybookRunServiceImpl) makeRunNameFormatFunc() FormatFunc {
+	userCache := map[string]string{}
+	return func(field *PropertyField, raw json.RawMessage) (string, bool) {
+		if field == nil {
+			return "", true
+		}
+		switch field.Type {
+		case model.PropertyFieldTypeUser:
+			var userID string
+			if err := json.Unmarshal(raw, &userID); err != nil || userID == "" {
+				return DefaultFormatPropertyValue(field, raw)
+			}
+			if cached, ok := userCache[userID]; ok {
+				return cached, false
+			}
+			name := s.resolveUserDisplayName(userID)
+			userCache[userID] = name
+			return name, false
+
+		case model.PropertyFieldTypeMultiuser:
+			var userIDs []string
+			if err := json.Unmarshal(raw, &userIDs); err != nil || len(userIDs) == 0 {
+				return DefaultFormatPropertyValue(field, raw)
+			}
+			var names []string
+			for _, uid := range userIDs {
+				if cached, ok := userCache[uid]; ok {
+					names = append(names, cached)
+					continue
+				}
+				name := s.resolveUserDisplayName(uid)
+				userCache[uid] = name
+				names = append(names, name)
+			}
+			return strings.Join(names, ", "), false
+
+		default:
+			return DefaultFormatPropertyValue(field, raw)
+		}
+	}
+}
+
+// translateOptionIDs remaps playbook-scoped option IDs to run-scoped IDs using the provided mapping.
+// Handles both single-option (JSON string) and multi-option (JSON array) values.
+func translateOptionIDs(raw json.RawMessage, optionMappings map[string]string) (json.RawMessage, error) {
+	if len(optionMappings) == 0 {
+		return raw, nil
+	}
+	// Try single string (select field)
+	var single string
+	if err := json.Unmarshal(raw, &single); err == nil {
+		if mapped, ok := optionMappings[single]; ok {
+			b, err := json.Marshal(mapped)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to marshal translated option ID")
+			}
+			return b, nil
+		}
+		// Not a select option ID (e.g. user-type field passing a user ID) — pass through unchanged.
+		return raw, nil
+	}
+	// Try array of strings (multiselect field)
+	var multi []string
+	if err := json.Unmarshal(raw, &multi); err == nil {
+		translated := make([]string, 0, len(multi))
+		var dropped []string
+		for _, id := range multi {
+			if mapped, ok := optionMappings[id]; ok {
+				translated = append(translated, mapped)
+			} else {
+				dropped = append(dropped, id)
+			}
+		}
+		if len(dropped) > 0 {
+			logrus.WithField("option_ids", dropped).Warn("translateOptionIDs: option IDs not found in mapping, dropping from multiselect value")
+		}
+		b, err := json.Marshal(translated)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal translated option IDs")
+		}
+		return b, nil
+	}
+	return raw, nil
+}
+
+// resolveMessageForRun resolves {FieldName}/{SEQ}/{OWNER}/{CREATOR} placeholders in msg for the given run.
+func (s *PlaybookRunServiceImpl) resolveMessageForRun(msg string, run *PlaybookRun) string {
+	if msg == "" || run == nil || !strings.Contains(msg, "{") {
+		return msg
+	}
+	return s.resolveAttributePlaceholders(msg, run)
+}
+
+// resolveAttributePlaceholders replaces {FieldName} and system tokens in msg using the run's property values and metadata.
+// Unknown tokens are left as-is. Uses run.PropertyFields/PropertyValues populated by GetPlaybookRun.
+func (s *PlaybookRunServiceImpl) resolveAttributePlaceholders(msg string, run *PlaybookRun) string {
+	if msg == "" || run == nil {
+		return msg
+	}
+
+	values := run.PropertyValues
+
+	valuesMap := make(map[string]json.RawMessage, len(values))
+	for _, v := range values {
+		valuesMap[v.FieldID] = v.Value
+	}
+
+	resolved, _ := s.resolveRunTemplate(msg, run, run.SequentialID, run.PropertyFields, valuesMap)
+	// Strip {SEQ} from legacy runs (no sequential ID) rather than leaving the placeholder verbatim.
+	if run.SequentialID == "" {
+		resolved = seqTokenRegex.ReplaceAllString(resolved, "")
+	}
+	return resolved
+}
+
+// maxChannelSlugLength is the maximum byte length for a channel slug before appending
+// random collision-avoidance bits (5 chars: "-XXXX"). 59 + 5 = 64 = ChannelNameMaxLength.
+const maxChannelSlugLength = 59
+
+func truncateRunes(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max])
 }

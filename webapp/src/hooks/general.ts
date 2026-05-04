@@ -219,6 +219,20 @@ export function useProfilesInTeam() {
     return profilesInTeam;
 }
 
+// useUserDisplayNameMap builds a userId→displayName map for all profiles in the current team.
+// Shared by components that need to resolve user IDs to display names for template previews.
+export function useUserDisplayNameMap(): Record<string, string> {
+    const profilesInTeam = useProfilesInTeam();
+    const teammateNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
+    return useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const profile of profilesInTeam) {
+            map[profile.id] = displayUsername(profile, teammateNameDisplaySetting);
+        }
+        return map;
+    }, [profilesInTeam, teammateNameDisplaySetting]);
+}
+
 /**
  * Use thing from API and/or Store
  *
