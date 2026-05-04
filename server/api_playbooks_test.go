@@ -333,6 +333,7 @@ func TestCreateInvalidPlaybook(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 		assert.Empty(t, id)
 	})
+
 }
 
 func TestPlaybooksRetrieval(t *testing.T) {

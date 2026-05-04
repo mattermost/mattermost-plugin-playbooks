@@ -43,20 +43,22 @@ const convertToPlaybookWithChecklist = (playbook: FullPlaybook, propertyFields: 
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
+    disabled?: boolean;
 }
 
-const SectionRetrospective = ({playbook, refetch}: Props) => {
+const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
     const {formatMessage} = useIntl();
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const propertyFields = usePlaybookAttributes(playbook.id);
-    const archived = playbook.delete_at !== 0;
 
     if (!retrospectiveAccess) {
         return null;
     }
 
+    // When retrospectives are disabled, short-circuit to the placeholder text.
+    // This guards every input below — they don't need to re-check retrospective_enabled.
     if (!playbook.retrospective_enabled) {
         return (<RetrospectiveTextContainer>
             <FormattedMessage defaultMessage='A retrospective is not expected.'/>
@@ -79,7 +81,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                             retrospectiveReminderIntervalSeconds: seconds,
                         });
                     }}
-                    disabled={!playbook.retrospective_enabled || archived}
+                    disabled={Boolean(disabled)}
                 />
             </SidebarBlock>
             <SidebarBlock id={'retrospective-metrics'}>
@@ -98,7 +100,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
-                    disabled={!playbook.retrospective_enabled || archived}
+                    disabled={Boolean(disabled)}
                 />
             </SidebarBlock>
             <SidebarBlock>
@@ -117,7 +119,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                             retrospectiveTemplate: value,
                         });
                     }}
-                    disabled={!playbook.retrospective_enabled || archived}
+                    disabled={Boolean(disabled)}
                 />
             </SidebarBlock>
         </Card>

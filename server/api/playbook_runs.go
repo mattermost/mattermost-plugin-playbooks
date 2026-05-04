@@ -96,6 +96,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/retrospective-enabled", withContext(handler.toggleRetrospective)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel/{channel_id:[A-Za-z0-9]+}").Subrouter()
 	channelRouter.HandleFunc("", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -1017,6 +1018,31 @@ func (h *PlaybookRunHandler) toggleStatusUpdates(c *Context, w http.ResponseWrit
 
 	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
 
+}
+
+func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var payload struct {
+		RetrospectiveEnabled bool `json:"retrospective_enabled"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunToggleRetrospective(userID, playbookRunID)) {
+		return
+	}
+
+	if err := h.playbookRunService.ToggleRetrospectiveEnabled(playbookRunID, userID, payload.RetrospectiveEnabled); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a

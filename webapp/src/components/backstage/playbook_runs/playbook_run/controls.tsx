@@ -30,10 +30,16 @@ import {copyToClipboard} from 'src/utils';
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/backstage/shared';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
-import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
+import {
+    RunPermissionFields,
+    useCanModifyRun,
+    useCanRestoreRun,
+    useCanToggleRunRetrospective,
+} from 'src/hooks/run_permissions';
 import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
+import {useToggleRunRetrospective} from './enable_disable_retrospective';
 
 import {useOnFinishRun} from './finish_run';
 import {useOnRestoreRun} from './restore_run';
@@ -299,6 +305,41 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
                     </StyledDropdownMenuItem>
                 </>
             }
+        </>
+    );
+};
+
+export const ToggleRunRetrospectiveMenuItem = (props: {playbookRun: PlaybookRun}) => {
+    const toggleRetrospective = useToggleRunRetrospective(props.playbookRun);
+    const currentUserId = useAppSelector(getCurrentUserId);
+
+    const runForPermissions: RunPermissionFields = {
+        type: props.playbookRun.type,
+        channel_id: props.playbookRun.channel_id,
+        team_id: props.playbookRun.team_id,
+        owner_user_id: props.playbookRun.owner_user_id,
+        participant_ids: props.playbookRun.participant_ids,
+        current_status: props.playbookRun.current_status,
+    };
+
+    const canToggle = useCanToggleRunRetrospective(runForPermissions, currentUserId);
+
+    const retrospectiveEnabled = props.playbookRun.retrospective_enabled;
+
+    if (!canToggle) {
+        return null;
+    }
+
+    return (
+        <>
+            <Separator/>
+            <StyledDropdownMenuItem
+                data-testid={retrospectiveEnabled ? 'disable-retrospective-menu-item' : 'enable-retrospective-menu-item'}
+                onClick={() => toggleRetrospective(!retrospectiveEnabled)}
+            >
+                <BookOutlineIcon size={18}/>
+                {retrospectiveEnabled ? <FormattedMessage defaultMessage={'Disable retrospective'}/> : <FormattedMessage defaultMessage={'Enable retrospective'}/>}
+            </StyledDropdownMenuItem>
         </>
     );
 };

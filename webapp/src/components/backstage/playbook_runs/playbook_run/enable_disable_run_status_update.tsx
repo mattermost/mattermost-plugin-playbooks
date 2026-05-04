@@ -9,17 +9,26 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {toggleRunStatusUpdates} from 'src/client';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
+import {useToaster} from 'src/components/backstage/toast_banner';
 
 export const useToggleRunStatusUpdate = (playbookRun: PlaybookRun) => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
+    const {add: addToast} = useToaster();
 
     return (status: boolean) => {
         const confirmTitle = status ? formatMessage({defaultMessage: 'Confirm enable status updates'}) : formatMessage({defaultMessage: 'Confirm disable status updates'});
         const confirmationMessage = status ? formatMessage({defaultMessage: 'Are you sure you want to enable status updates for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status updates for this run?'});
 
         const onConfirm = async () => {
-            await toggleRunStatusUpdates(playbookRun.id, status);
+            try {
+                const result = await toggleRunStatusUpdates(playbookRun.id, status);
+                if (result && 'error' in result) {
+                    addToast({content: formatMessage({defaultMessage: 'Failed to update status updates setting'})});
+                }
+            } catch {
+                addToast({content: formatMessage({defaultMessage: 'Failed to update status updates setting'})});
+            }
         };
 
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({

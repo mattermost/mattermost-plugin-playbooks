@@ -1553,7 +1553,89 @@ func updateChecklistAndItemTimestamp(checklist *Checklist, item *ChecklistItem, 
 	checklist.UpdateAt = timestamp
 }
 
-// GraphqlUpdate updates fields based on a setmap
+func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userID string, enabled bool) error {
+	auditRec := plugin.MakeAuditRecord("togglePlaybookRunRetrospective", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "retrospectiveEnabled", enabled)
+
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s)", playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
+	model.AddEventParameterToAuditRec(auditRec, "currentlyEnabled", playbookRunToModify.RetrospectiveEnabled)
+
+	if enabled == playbookRunToModify.RetrospectiveEnabled {
+		auditRec.Success()
+		auditRec.AddEventResultState(*playbookRunToModify)
+		return nil
+	}
+
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
+	}
+
+	updateAt := model.GetMillis()
+	playbookRunToModify.RetrospectiveEnabled = enabled
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
+		err := errors.Wrapf(err, "failed to update RetrospectiveEnabled for playbook run (runID: %s)", playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
+	// Scheduler side-effects: disabling cancels any pending reminder; re-enabling on a finished,
+	// unpublished run restarts it so the owner still gets prompted.
+	if !enabled {
+		s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
+	} else if s.licenseChecker.RetrospectiveAllowed() &&
+		playbookRunToModify.CurrentStatus == StatusFinished &&
+		playbookRunToModify.RetrospectivePublishedAt == 0 {
+		// Reminder/scheduler errors are intentionally non-fatal: the toggle has already
+		// been persisted to the DB. Failure here means the owner won't be automatically
+		// prompted, but the retrospective is still enabled and can be submitted manually.
+		if remErr := s.postRetrospectiveReminder(playbookRunToModify, false); remErr != nil {
+			s.pluginAPI.Log.Error("failed to post retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
+		}
+		if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
+			if remErr := s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); remErr != nil {
+				s.pluginAPI.Log.Error("failed to restart retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
+			}
+		}
+	}
+
+	eventType := RetrospectiveEnabled
+	if !enabled {
+		eventType = RetrospectiveDisabled
+	}
+	if _, err = s.store.CreateTimelineEvent(&TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      updateAt,
+		EventAt:       updateAt,
+		EventType:     eventType,
+		SubjectUserID: userID,
+	}); err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil, userID)
+
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "updateAt", updateAt)
+	auditRec.AddEventResultState(*playbookRunToModify)
+
+	return nil
+}
+
+// GraphqlUpdate updates fields based on a setmap.
 func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if len(setmap) == 0 {
 		return nil
@@ -1562,17 +1644,14 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	auditRec := plugin.MakeAuditRecord("graphqlUpdatePlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
-	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", id)
 
-	// Capture field names being updated (for audit visibility)
 	fieldNames := make([]string, 0, len(setmap))
 	for fieldName := range setmap {
 		fieldNames = append(fieldNames, fieldName)
 	}
 	model.AddEventParameterToAuditRec(auditRec, "fieldsUpdated", strings.Join(fieldNames, ","))
 
-	// Get the current playbook run state before changes if incremental updates are enabled
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		var err error
@@ -1586,7 +1665,6 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	}
 
 	now := model.GetMillis()
-	// Update checklist timestamps if checklists are being modified
 	if checklists, ok := setmap["Checklists"].([]Checklist); ok {
 		updateAllChecklistsAndItemsTimestamps(checklists, now)
 		model.AddEventParameterToAuditRec(auditRec, "checklistsUpdated", len(checklists))
