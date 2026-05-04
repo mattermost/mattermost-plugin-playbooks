@@ -23,14 +23,18 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 
+import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_channel_only_toggle';
+
 import {useProxyState} from 'src/hooks';
 import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    newChannelOnly?: boolean;
+    onNewChannelOnlyChange?: (updated: {new_channel_only: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook}: Props) => {
+const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyChange}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
@@ -167,6 +171,13 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
+                    />
+                </Setting>
+                <Setting id={'new-channel-only'}>
+                    <NewChannelOnlyToggle
+                        playbook={{new_channel_only: newChannelOnly}}
+                        disabled={archived}
+                        onChange={onNewChannelOnlyChange}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
