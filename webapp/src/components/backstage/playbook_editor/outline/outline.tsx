@@ -180,7 +180,7 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
             </Section>
             {showAdminSettings && restPlaybook && (
                 <Section
-                    id={'settings'}
+                    id={'admin-edit-settings'}
                     title={formatMessage({defaultMessage: 'Settings'})}
                 >
                     <div data-testid='admin-only-edit-toggle'>

@@ -25,7 +25,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {pluginErrorUrl} from 'src/browser_routing';
-import {useForceDocumentTitle, useIsSystemAdmin, useStats} from 'src/hooks';
+import {useForceDocumentTitle, useStats} from 'src/hooks';
+import {useIsSystemAdmin} from 'src/hooks/permissions';
 import {useAllowPlaybookAttributes} from 'src/hooks/license';
 import {PlaybookRole} from 'src/types/permissions';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
