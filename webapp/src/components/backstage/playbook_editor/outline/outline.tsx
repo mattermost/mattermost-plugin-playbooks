@@ -20,7 +20,7 @@ import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
-import {savePlaybook} from 'src/client';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
@@ -105,7 +105,8 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) =>
         setIsSavingOwnerGroupOnlyActions(true);
         setOwnerGroupOnlyActionsOverride(updated.owner_group_only_actions);
         try {
-            await savePlaybook({...restPlaybook, owner_group_only_actions: updated.owner_group_only_actions});
+            const latest = await clientFetchPlaybook(restPlaybook.id) ?? restPlaybook;
+            await savePlaybook({...latest, owner_group_only_actions: updated.owner_group_only_actions});
         } catch {
             setOwnerGroupOnlyActionsOverride(prev);
             toaster.add({
