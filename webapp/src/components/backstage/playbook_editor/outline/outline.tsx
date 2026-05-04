@@ -68,7 +68,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
 
     const handleAutoArchiveChange = (updated: {auto_archive_channel: boolean}) => {
         if (!archived && restPlaybook && !pendingRef.current) {
-            const prev = restPlaybook.auto_archive_channel ?? false;
+            const prev = effectiveAutoArchive;
             setAutoArchiveOverride(updated.auto_archive_channel);
             pendingRef.current = true;
             savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel})
