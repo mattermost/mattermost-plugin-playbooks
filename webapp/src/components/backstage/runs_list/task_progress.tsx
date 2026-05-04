@@ -17,8 +17,8 @@ const TaskProgress = ({taskTotal, taskCompleted}: Props) => {
         return null;
     }
 
-    const completed = taskCompleted ?? 0;
-    const pct = Math.round(Math.min((completed / taskTotal) * 100, 100));
+    const completed = Math.max(0, taskCompleted ?? 0);
+    const pct = Math.round(Math.max(0, Math.min((completed / taskTotal) * 100, 100)));
     const label = formatMessage(
         {id: 'pqR8tZ', defaultMessage: '{completed, number}/{total, number} tasks'},
         {completed, total: taskTotal},
