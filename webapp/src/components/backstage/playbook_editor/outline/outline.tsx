@@ -28,18 +28,17 @@ interface Props {
     canEdit: boolean;
     restPlaybook?: PlaybookWithChecklist;
     showAdminSettings?: boolean;
-    adminOnlyEditOverride?: boolean;
-    setAdminOnlyEditOverride?: (value: boolean | undefined) => void;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = false, adminOnlyEditOverride: adminOnlyEditOverrideProp, setAdminOnlyEditOverride: setAdminOnlyEditOverrideProp}: Props) => {
+const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = false}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
-    const effectiveAdminOnlyEdit = adminOnlyEditOverrideProp ?? restPlaybook?.admin_only_edit ?? false;
+    const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
+    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -74,13 +73,14 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     };
 
     const handleAdminOnlyEditChange = (value: boolean) => {
-        if (!archived && restPlaybook && setAdminOnlyEditOverrideProp) {
-            const prev = adminOnlyEditOverrideProp ?? restPlaybook.admin_only_edit;
-            setAdminOnlyEditOverrideProp(value);
-            savePlaybook({...restPlaybook, admin_only_edit: value}).catch(() => {
-                setAdminOnlyEditOverrideProp(prev);
-            });
+        if (archived || !restPlaybook) {
+            return;
         }
+        const prev = adminOnlyEditOverride ?? restPlaybook.admin_only_edit;
+        setAdminOnlyEditOverride(value);
+        savePlaybook({...restPlaybook, admin_only_edit: value}).catch(() => {
+            setAdminOnlyEditOverride(prev);
+        });
     };
 
     return (

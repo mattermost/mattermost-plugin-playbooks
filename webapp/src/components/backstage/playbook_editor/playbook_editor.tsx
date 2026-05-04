@@ -6,7 +6,6 @@ import React, {
     useEffect,
     useMemo,
     useRef,
-    useState,
 } from 'react';
 import {
     NavLink,
@@ -87,12 +86,9 @@ const PlaybookEditor = () => {
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
     const isPlaybookAdmin = currentUserMember?.roles?.includes(PlaybookRole.Admin) ?? false;
 
-    const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
-    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
-
     const canEdit = restPlaybook == null ?
         false :
-        !effectiveAdminOnlyEdit || isPlaybookAdmin || isSystemAdmin;
+        !(restPlaybook.admin_only_edit) || isPlaybookAdmin || isSystemAdmin;
 
     if (error) {
         // not found
@@ -308,8 +304,7 @@ const PlaybookEditor = () => {
                         canEdit={canEdit}
                         restPlaybook={restPlaybook ?? undefined}
                         showAdminSettings={isSystemAdmin || isPlaybookAdmin}
-                        adminOnlyEditOverride={adminOnlyEditOverride}
-                        setAdminOnlyEditOverride={setAdminOnlyEditOverride}
+
                     />
                 </Route>
                 <Route
