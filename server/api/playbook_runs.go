@@ -1025,7 +1025,7 @@ func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWrit
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var payload struct {
-		RetrospectiveEnabled bool `json:"retrospective_enabled"`
+		RetrospectiveEnabled *bool `json:"retrospective_enabled"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -1037,9 +1037,11 @@ func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if err := h.playbookRunService.ToggleRetrospectiveEnabled(playbookRunID, userID, payload.RetrospectiveEnabled); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
+	if payload.RetrospectiveEnabled != nil {
+		if err := h.playbookRunService.ToggleRetrospectiveEnabled(playbookRunID, userID, *payload.RetrospectiveEnabled); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
 	}
 
 	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
