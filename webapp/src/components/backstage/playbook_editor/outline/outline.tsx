@@ -11,7 +11,10 @@ import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {savePlaybook} from 'src/client';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -22,15 +25,20 @@ import Section from './section';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
+    canEdit: boolean;
+    restPlaybook?: PlaybookWithChecklist;
+    showAdminSettings?: boolean;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch}: Props) => {
+const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = false}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
+    const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
+    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -45,7 +53,7 @@ const Outline = ({playbook, refetch}: Props) => {
     };
 
     const toggleStatusUpdate = () => {
-        if (archived) {
+        if (archived || !canEdit) {
             return;
         }
         updatePlaybook({
@@ -56,11 +64,22 @@ const Outline = ({playbook, refetch}: Props) => {
     };
 
     const toggleRetrospective = () => {
-        if (archived || !retrospectiveAccess) {
+        if (archived || !canEdit || !retrospectiveAccess) {
             return;
         }
         updatePlaybook({
             retrospectiveEnabled: !playbook.retrospective_enabled,
+        });
+    };
+
+    const handleAdminOnlyEditChange = (value: boolean) => {
+        if (archived || !restPlaybook) {
+            return;
+        }
+        const prev = adminOnlyEditOverride ?? restPlaybook.admin_only_edit;
+        setAdminOnlyEditOverride(value);
+        savePlaybook({...restPlaybook, admin_only_edit: value}).catch(() => {
+            setAdminOnlyEditOverride(prev);
         });
     };
 
@@ -73,7 +92,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 title={formatMessage({defaultMessage: 'Summary'})}
             >
                 <MarkdownEdit
-                    disabled={archived}
+                    disabled={archived || !canEdit}
                     placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
                     value={(playbook.run_summary_template_enabled && playbook.run_summary_template) || ''}
                     onSave={(runSummaryTemplate) => {
@@ -92,7 +111,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 headerRight={(
                     <HoverMenuContainer data-testid={'status-update-toggle'}>
                         <Toggle
-                            disabled={archived}
+                            disabled={archived || !canEdit}
                             isChecked={playbook.status_update_enabled}
                             onChange={toggleStatusUpdate}
                         />
@@ -122,7 +141,7 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <ChecklistList
                     playbook={playbook}
-                    isReadOnly={false}
+                    isReadOnly={!canEdit}
                     checklistsCollapseState={checklistCollapseState}
                     onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
                     onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
@@ -138,7 +157,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 headerRight={(
                     <HoverMenuContainer>
                         <Toggle
-                            disabled={archived || !retrospectiveAccess}
+                            disabled={archived || !canEdit || !retrospectiveAccess}
                             isChecked={playbook.retrospective_enabled}
                             onChange={toggleRetrospective}
                         />
@@ -159,9 +178,22 @@ const Outline = ({playbook, refetch}: Props) => {
                     playbook={playbook}
                 />
             </Section>
+            {showAdminSettings && restPlaybook && (
+                <Section
+                    id={'admin-edit-settings'}
+                    title={formatMessage({defaultMessage: 'Settings'})}
+                >
+                    <div data-testid='admin-only-edit-toggle'>
+                        <AdminOnlyEditToggle
+                            isChecked={effectiveAdminOnlyEdit}
+                            onChange={handleAdminOnlyEditChange}
+                        />
+                    </div>
+                </Section>
+            )}
             <PlaybookActionsModal
                 playbook={playbook}
-                readOnly={false}
+                readOnly={!canEdit}
             />
         </Sections>
     );
@@ -173,11 +205,13 @@ type SectionItem = {id: string, title: string};
 
 type SectionsProps = {
     children: ReactNode;
+    'data-testid'?: string;
 }
 
 const SectionsImpl = ({
     children,
     className,
+    'data-testid': dataTestId,
 }: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
@@ -197,7 +231,10 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div className={className}>
+            <div
+                className={className}
+                data-testid={dataTestId}
+            >
                 {children}
             </div>
         </>
