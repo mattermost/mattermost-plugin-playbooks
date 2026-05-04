@@ -34,9 +34,6 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         cy.apiLogin(testUser);
     });
 
-    // -----------------------------------------------------------
-    // TC1: Direct fetch loads backstage detail page
-    // -----------------------------------------------------------
     it('direct fetch loads backstage detail page for DM/GM checklist', () => {
         cy.apiCreateUser().then(({user: freshPartner}) => {
             cy.apiAddUserToTeam(testTeam.id, freshPartner.id);
@@ -74,9 +71,6 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         });
     });
 
-    // -----------------------------------------------------------
-    // TC2: Owner / Participants / Followers visible in RHS Info
-    // -----------------------------------------------------------
     it('overview panel shows Owner, Participants, and Followers entries', () => {
         cy.apiCreateUser().then(({user: freshPartner}) => {
             cy.apiAddUserToTeam(testTeam.id, freshPartner.id);
@@ -135,9 +129,6 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         });
     };
 
-    // -----------------------------------------------------------
-    // TC3: Channel link shows DM partner's display name
-    // -----------------------------------------------------------
     it('channel link in RHS Info shows DM partner display name', () => {
         setupFreshDMChecklist(({freshPartner, run}) => {
             cy.visit(`/playbooks/runs/${run.id}`);
@@ -152,9 +143,6 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         });
     });
 
-    // -----------------------------------------------------------
-    // TC4: Channel link click navigates to DM conversation
-    // -----------------------------------------------------------
     it('clicking channel link navigates to DM conversation', () => {
         setupFreshDMChecklist(({freshPartner, run}) => {
             cy.visit(`/playbooks/runs/${run.id}`);
@@ -166,9 +154,6 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         });
     });
 
-    // -----------------------------------------------------------
-    // TC5: Recent Activity panel is populated after a task action
-    // -----------------------------------------------------------
     it('Recent Activity panel has entries after checking a task', () => {
         setupFreshDMChecklist(({freshPartner, run}) => {
             // # Add a task via the channel RHS so a TaskStateModified event is created
@@ -199,9 +184,6 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         });
     });
 
-    // -----------------------------------------------------------
-    // TC6: Timeline panel opens from backstage detail
-    // -----------------------------------------------------------
     it('Timeline panel shows entries when opened from backstage detail', () => {
         setupFreshDMChecklist(({run}) => {
             cy.visit(`/playbooks/runs/${run.id}`);
@@ -219,9 +201,6 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         });
     });
 
-    // -----------------------------------------------------------
-    // TC7: Save as Playbook from DM checklist navigates to outline
-    // -----------------------------------------------------------
     it('Save as playbook from DM checklist navigates to new playbook outline', () => {
         setupFreshDMChecklist(({run}) => {
             cy.visit(`/playbooks/runs/${run.id}`);
@@ -238,9 +217,6 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         });
     });
 
-    // -----------------------------------------------------------
-    // TC8: Hard refresh keeps team context (regression for team-fallback fix)
-    // -----------------------------------------------------------
     it('hard refresh keeps team context after navigating to DM checklist detail', () => {
         setupFreshDMChecklist(({freshPartner, run}) => {
             cy.visit(`/playbooks/runs/${run.id}`);

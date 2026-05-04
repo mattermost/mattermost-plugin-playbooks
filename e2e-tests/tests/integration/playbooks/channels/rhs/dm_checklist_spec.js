@@ -70,9 +70,6 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
         });
     };
 
-    // -----------------------------------------------------------
-    // TC1: Create checklist in DM
-    // -----------------------------------------------------------
     it('can create a checklist in a DM via the RHS', () => {
         cy.apiCreateUser().then(({user: freshPartner}) => {
             cy.apiAddUserToTeam(testTeam.id, freshPartner.id);
@@ -80,16 +77,10 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // TC3: Create checklist in self-DM
-    // -----------------------------------------------------------
     it('can create a checklist in a self-DM via the RHS', () => {
         createChecklistInDM(testUser.username);
     });
 
-    // -----------------------------------------------------------
-    // TC1 + AC2: Add a task and check it off
-    // -----------------------------------------------------------
     it('can add a task and check it off in a DM checklist', () => {
         cy.apiCreateUser().then(({user: freshPartner}) => {
             cy.apiAddUserToTeam(testTeam.id, freshPartner.id);
@@ -108,9 +99,6 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // TC4/AC2: Post status update via UI
-    // -----------------------------------------------------------
     it('can post a status update in a DM checklist', () => {
         cy.apiCreateUser().then(({user: freshPartner}) => {
             cy.apiAddUserToTeam(testTeam.id, freshPartner.id);
@@ -129,9 +117,6 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // TC7: Task assignment shows DM channel members
-    // -----------------------------------------------------------
     it('shows channel members in task assignee selector', () => {
         createChecklistInDM(dmPartner.username);
 
@@ -152,9 +137,6 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
         cy.findByText(`@${dmPartner.username}`).should('exist');
     });
 
-    // -----------------------------------------------------------
-    // AC4: Playbook run gate — rejects via API
-    // -----------------------------------------------------------
     it('rejects playbook run creation in a DM via API', () => {
         cy.apiCreateDirectChannel([testUser.id, dmPartner.id]).then(({channel}) => {
             cy.apiRunPlaybook({
@@ -167,9 +149,6 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // AC5: "Run a playbook" available in DM (modal gates DM/GM channels)
-    // -----------------------------------------------------------
     it('"Run a playbook" is available in the DM channel dropdown', () => {
         // # Setup: create a fresh DM with 2 checklists via API so the list view shows
         cy.apiCreateUser().then(({user: dropdownPartner}) => {
@@ -205,9 +184,6 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // AC7: Checklist move-channel modal includes DM/GM channels
-    // -----------------------------------------------------------
     it('move-channel modal offers DM channels for checklists', () => {
         cy.apiCreateUser().then(({user: movePartner}) => {
             cy.apiAddUserToTeam(testTeam.id, movePartner.id);
@@ -257,9 +233,6 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // AC3: move DM checklist to a public channel — team_id populates
-    // -----------------------------------------------------------
     it('moving a DM checklist to a public channel populates team_id', () => {
         cy.apiCreateUser().then(({user: movePartner}) => {
             cy.apiAddUserToTeam(testTeam.id, movePartner.id);

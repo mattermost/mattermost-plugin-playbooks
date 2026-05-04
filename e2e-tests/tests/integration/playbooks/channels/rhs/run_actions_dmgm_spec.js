@@ -72,9 +72,6 @@ describe('channels > rhs > DM/GM run actions', {testIsolation: true}, () => {
         cy.get('#run-actions-modal').within(cb);
     };
 
-    // -----------------------------------------------------------
-    // TC1: Channel-membership action toggles disabled with hint
-    // -----------------------------------------------------------
     /**
      * Helper: assert a single channel-membership Action row in the modal
      * shows the DM/GM hint and a disabled toggle. Both the hint and the
@@ -109,9 +106,6 @@ describe('channels > rhs > DM/GM run actions', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // TC2: Broadcast action enabled and persists after save
-    // -----------------------------------------------------------
     it('broadcast action is enabled in DM and the setting persists after save', () => {
         setupFreshDMRunActions(() => {
             // # Intercept the GraphQL UpdateRun mutation so we can wait for it
@@ -147,9 +141,6 @@ describe('channels > rhs > DM/GM run actions', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // TC3: Outgoing webhook action enabled and persists
-    // -----------------------------------------------------------
     it('outgoing webhook action is enabled in DM and the setting persists after save', () => {
         setupFreshDMRunActions(({run}) => {
             cy.intercept('POST', '**/plugins/playbooks/api/v0/query', (req) => {

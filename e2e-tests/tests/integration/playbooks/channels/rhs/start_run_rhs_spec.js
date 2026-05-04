@@ -328,9 +328,6 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // AC6: DM/GM channels excluded from run modal channel selector
-    // -----------------------------------------------------------
     describe('DM/GM channel exclusion in run modal', () => {
         it('does not offer DM channels when linking an existing channel', () => {
             // # Setup: create a DM partner and ensure the DM exists
@@ -339,12 +336,12 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                 cy.apiCreateDirectChannel([testUser.id, dmPartner.id]).then(({channel: dmCh}) => {
                     // # Create 2 checklists in the DM so list view shows
                     const ts = Date.now();
-                    cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'AC6-A-' + ts, ownerUserId: testUser.id, channelId: dmCh.id});
-                    cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'AC6-B-' + ts, ownerUserId: testUser.id, channelId: dmCh.id});
+                    cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'DM Modal A ' + ts, ownerUserId: testUser.id, channelId: dmCh.id});
+                    cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'DM Modal B ' + ts, ownerUserId: testUser.id, channelId: dmCh.id});
 
                     // # Create a playbook for the run modal
                     createPlaybook({
-                        title: 'AC6 Playbook ' + ts,
+                        title: 'DM Modal Playbook ' + ts,
                         channelMode: 'link_existing_channel',
                         channelId: testChannel.id,
                     }).then((playbook) => {
@@ -389,7 +386,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
     });
 
     // -----------------------------------------------------------
-    // OBS-8 regression: opening the run modal from a DM/GM must NOT
+    // Regression: opening the run modal from a DM/GM must NOT
     // pre-select the current channel (it's filtered as DM/GM) and
     // must NOT trigger a flood of getChannel(:id) requests.
     // -----------------------------------------------------------
@@ -397,10 +394,12 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
         cy.apiCreateUser().then(({user: dmPartner}) => {
             cy.apiAddUserToTeam(testTeam.id, dmPartner.id);
 
+            const ts = Date.now();
+            const playbookTitle = 'DM Modal Playbook ' + ts;
             const playbook = createPlaybook({
-                title: 'OBS-8 DM Modal Playbook',
+                title: playbookTitle,
                 channelMode: 'create_new_channel',
-                channelNameTemplate: 'auto-' + Date.now(),
+                channelNameTemplate: 'auto-' + ts,
             });
 
             playbook.then(() => {
@@ -425,7 +424,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
 
                     // # Open the run-playbook modal — pick the playbook
                     cy.get('#root-portal.modal-open').within(() => {
-                        cy.findByText('OBS-8 DM Modal Playbook').should('be.visible').click();
+                        cy.findByText(playbookTitle).should('be.visible').click();
 
                         // # Switch to "Link to existing channel"
                         cy.findByTestId('link-existing-channel-radio').click();
@@ -448,20 +447,18 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // AC7 (GM variant): "Link to existing channel" excludes the
-    // current GM channel when opened from a GM context.
-    // -----------------------------------------------------------
     it('does not offer GM channels when linking an existing channel', () => {
         cy.apiCreateUser().then(({user: gmA}) => {
             cy.apiCreateUser().then(({user: gmB}) => {
                 cy.apiAddUserToTeam(testTeam.id, gmA.id);
                 cy.apiAddUserToTeam(testTeam.id, gmB.id);
 
+                const ts = Date.now();
+                const playbookTitle = 'GM Modal Playbook ' + ts;
                 const playbook = createPlaybook({
-                    title: 'GM Modal Playbook',
+                    title: playbookTitle,
                     channelMode: 'create_new_channel',
-                    channelNameTemplate: 'gm-modal-' + Date.now(),
+                    channelNameTemplate: 'gm-modal-' + ts,
                 });
 
                 playbook.then(() => {
@@ -480,7 +477,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                         cy.get('[data-testid="create-from-playbook"]').click();
 
                         cy.get('#root-portal.modal-open').within(() => {
-                            cy.findByText('GM Modal Playbook').should('be.visible').click();
+                            cy.findByText(playbookTitle).should('be.visible').click();
                             cy.findByTestId('link-existing-channel-radio').click();
 
                             // # Search by GM channel name fragment

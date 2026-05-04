@@ -101,16 +101,10 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
         });
     };
 
-    // -----------------------------------------------------------
-    // TC2: Create checklist in GM
-    // -----------------------------------------------------------
     it('can create a checklist in a GM via the RHS', () => {
         createChecklistInFreshGM();
     });
 
-    // -----------------------------------------------------------
-    // TC2 + AC2: Add a task and check it off
-    // -----------------------------------------------------------
     it('can add a task and check it off in a GM checklist', () => {
         createChecklistInFreshGM();
 
@@ -126,9 +120,6 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // TC4/AC2: Post status update via UI
-    // -----------------------------------------------------------
     it('can post a status update in a GM checklist', () => {
         createChecklistInFreshGM();
 
@@ -140,9 +131,6 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // TC7: Task assignment shows GM channel members
-    // -----------------------------------------------------------
     it('shows channel members in task assignee selector', () => {
         createChecklistInGM();
 
@@ -163,9 +151,6 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
         cy.findByText(`@${gmPartner2.username}`).should('exist');
     });
 
-    // -----------------------------------------------------------
-    // AC4: Playbook run gate — rejects via API
-    // -----------------------------------------------------------
     it('rejects playbook run creation in a GM via API', () => {
         cy.apiRunPlaybook({
             teamId: testTeam.id,
@@ -176,9 +161,6 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
         }, {expectedStatusCode: 400});
     });
 
-    // -----------------------------------------------------------
-    // AC5: "Run a playbook" available in GM dropdown
-    // -----------------------------------------------------------
     it('"Run a playbook" is available in the GM channel dropdown', () => {
         // # Setup: create a fresh GM with 2 checklists via API so list view shows
         cy.apiCreateUser().then(({user: u1}) => {
@@ -214,9 +196,6 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
         });
     });
 
-    // -----------------------------------------------------------
-    // AC3: move GM checklist to a public channel — team_id populates
-    // -----------------------------------------------------------
     it('moving a GM checklist to a public channel populates team_id', () => {
         cy.apiCreateUser().then(({user: gmA}) => {
             cy.apiCreateUser().then(({user: gmB}) => {
