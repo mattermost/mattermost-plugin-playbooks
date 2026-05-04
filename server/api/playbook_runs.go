@@ -96,7 +96,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/retrospective-enabled", withContext(handler.toggleRetrospective)).Methods(http.MethodPut)
+	playbookRunRouter.HandleFunc("/retrospective-enabled", withContext(handler.toggleRetrospective)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel/{channel_id:[A-Za-z0-9]+}").Subrouter()
 	channelRouter.HandleFunc("", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -1033,15 +1033,18 @@ func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWrit
 		return
 	}
 
+	if payload.RetrospectiveEnabled == nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "retrospective_enabled is required", errors.New("missing retrospective_enabled"))
+		return
+	}
+
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunToggleRetrospective(userID, playbookRunID)) {
 		return
 	}
 
-	if payload.RetrospectiveEnabled != nil {
-		if err := h.playbookRunService.ToggleRetrospectiveEnabled(playbookRunID, userID, *payload.RetrospectiveEnabled); err != nil {
-			h.HandleError(w, c.logger, err)
-			return
-		}
+	if err := h.playbookRunService.ToggleRetrospectiveEnabled(playbookRunID, userID, *payload.RetrospectiveEnabled); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
 	}
 
 	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
