@@ -54,7 +54,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('shows run naming fields inside the Actions section', () => {
         // # Visit the playbook outline editor
-        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+        cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
         // * Assert run number prefix and run name template inputs exist in the Actions section
         cy.findByTestId('channel-access-run-number-prefix').should('exist');
@@ -66,7 +66,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # while typing (with or without debounce the server always ends up with the
         // # right value, but cy.wait catches only the first request).
         cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'INC'}).then(() => {
-            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
             // * Prefix is loaded from server
             cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
@@ -95,7 +95,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('shows a warning when template references an unknown field', () => {
         // # Visit the playbook outline editor
-        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+        cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
         // * Wait for the page to load
         cy.findByTestId('channel-access-run-name-template-input').should('exist');
@@ -125,7 +125,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # Note: prefix must be alphanumeric (no trailing dash) — FormatSequentialID adds the dash
         cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'INC', channel_name_template: `${TOKEN_SEQ} - Incident`}).then(() => {
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
             // * Assert prefix value is loaded from API
             cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
@@ -139,7 +139,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # Set prefix and template via API
         cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'SEQ', channel_name_template: `${TOKEN_SEQ} - Convention`}).then(() => {
             // # Open the Run playbook modal from the outline editor
-            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
             cy.findByTestId('channel-access-run-name-template-input').should('exist');
             cy.findByTestId('run-playbook').click();
 
@@ -180,7 +180,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('shows an insert variable button next to the template input', () => {
         // # Visit the playbook outline editor
-        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+        cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
         // * Wait for the page to load — scroll into view first because the
         // Actions section may be below the fold in the scrollable container
@@ -195,7 +195,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # Set up playbook with existing template via API
         cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident - '}).then(() => {
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
             // * Wait for the page to load — scroll into view first because the
             // Actions section may be below the fold in the scrollable container
@@ -234,7 +234,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
     it('insert variable appends token at end when template already has content', () => {
         // # Set an initial template via API
         cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident - '}).then(() => {
-            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
 
@@ -311,7 +311,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('template using {SEQ} shows a warning when no run number prefix is set', () => {
         // # Visit the playbook outline editor
-        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+        cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
         // * Prefix input is empty (default for fresh playbook)
         cy.findByTestId('channel-access-run-number-prefix').should('have.value', '');

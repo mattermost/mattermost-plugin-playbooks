@@ -323,14 +323,15 @@ Cypress.Commands.add('playbooksInterceptUpdatePlaybook', () => {
  * @param {String} newOwnerUsername - Username of the new owner to select
  */
 Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
-    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwnerRHS');
-    cy.findByTestId('owner-profile-selector').click();
+    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').click();
 
     // Profiles are loaded asynchronously via useProfilesInTeam. The dropdown
     // options refresh once the API response arrives and Redux updates, so we
     // wait up to HALF_MIN for the option to become available.
     cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
-    cy.wait('@SetRunOwnerRHS');
+    cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
 });
 
 Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
@@ -429,6 +430,6 @@ Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
  * @param {String} playbookId - The playbook ID
  * @param {String} [tab='outline'] - The tab to navigate to (e.g. 'outline', 'attributes')
  */
-Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
+Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
     cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
 });
