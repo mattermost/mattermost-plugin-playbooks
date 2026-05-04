@@ -87,6 +87,7 @@ const makeRun = (overrides: Partial<PlaybookRun> = {}): PlaybookRun => ({
 
 describe('useToggleRunRetrospective', () => {
     beforeEach(() => {
+        jest.clearAllMocks();
         mockToggleRunRetrospective.mockResolvedValue({});
     });
 

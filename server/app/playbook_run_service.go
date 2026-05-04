@@ -1626,7 +1626,7 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userI
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil, userID)
 
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "updateAt", updateAt)
