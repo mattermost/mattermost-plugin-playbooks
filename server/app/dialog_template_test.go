@@ -86,4 +86,21 @@ func TestNewPlaybookRunDialog_NameFieldOptional(t *testing.T) {
 		assert.Equal(t, 0, nameEl.MinLength)
 		assert.Equal(t, "{SEQ}-ops", nameEl.Default, "default should be ChannelNameTemplate for single playbook")
 	})
+
+	t.Run("single playbook with property placeholder — name is required", func(t *testing.T) {
+		// {Priority} is a custom field token; the dialog cannot supply property values so
+		// the name field must remain required even though there is exactly one playbook.
+		svc := newDialogTestService(t)
+		playbooks := []Playbook{
+			{ID: "pb-1", Title: "Property PB", ChannelNameTemplate: "{Priority}-ops"},
+		}
+
+		dialog, err := svc.newPlaybookRunDialog("team-1", "user-1", "", "client-1", playbooks)
+		require.NoError(t, err)
+
+		nameEl := findNameElement(dialog)
+		require.NotNil(t, nameEl)
+		assert.False(t, nameEl.Optional, "name should be required when template has property placeholders")
+		assert.Equal(t, 1, nameEl.MinLength)
+	})
 }

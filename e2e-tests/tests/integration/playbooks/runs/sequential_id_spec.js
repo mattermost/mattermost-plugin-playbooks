@@ -190,20 +190,19 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         // * Counter continues — next run gets number firstRunNumber+1 with the new prefix.
         // Read the first run's number dynamically so Cypress retries don't fail when the
         // counter has already advanced from a prior attempt.
-        let firstRunNumber;
         cy.then(() => cy.apiGetPlaybookRun(runId)).then(({body: firstRunData}) => {
-            firstRunNumber = parseInt(firstRunData.sequential_id.split('-').pop(), 10);
-        });
+            const firstRunNumber = parseInt(firstRunData.sequential_id.split('-').pop(), 10);
 
-        cy.then(() => cy.apiRunPlaybook({
-            teamId: testTeam.id,
-            playbookId: testPlaybook.id,
-            playbookRunName: 'Second Run ' + getRandomId(),
-            ownerUserId: testUser.id,
-        })).then((run) => {
-            cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
-                const secondRunNumber = parseInt(runData.sequential_id.split('-').pop(), 10);
-                expect(secondRunNumber).to.equal(firstRunNumber + 1);
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: 'Second Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
+                    const secondRunNumber = parseInt(runData.sequential_id.split('-').pop(), 10);
+                    expect(secondRunNumber).to.equal(firstRunNumber + 1);
+                });
             });
         });
 

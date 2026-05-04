@@ -373,7 +373,7 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                // Fill default values (no channel_name_template so user-typed name is used)
+                // # Fill default values (no channel_name_template so user-typed name is used)
                 fillPBE({summary: 'run summary template', channelMode: 'link_to_existing_channel', channelNameToLink: 'Town'});
 
                 // # Click start a run button

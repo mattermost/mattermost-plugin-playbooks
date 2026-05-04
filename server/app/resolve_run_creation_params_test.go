@@ -255,6 +255,24 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 		assert.Equal(t, json.RawMessage(`"run-opt-1"`), stub.lastValue)
 	})
 
+	t.Run("run field not in CopiedFields is skipped", func(t *testing.T) {
+		stub := &stubUpsertPropertyService{}
+		svc := &PlaybookRunServiceImpl{propertyService: stub}
+
+		// FieldMappings maps a playbook field to a run field ID that is NOT in CopiedFields.
+		copyResult := &PropertyCopyResult{
+			CopiedFields:  []PropertyField{},
+			FieldMappings: map[string]string{playbookFieldID: runFieldID},
+		}
+
+		result := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
+			playbookFieldID: json.RawMessage(`"high"`),
+		}, logger)
+
+		assert.Equal(t, 0, stub.upsertCalled)
+		assert.Empty(t, result.PropertyValues)
+	})
+
 	t.Run("multiselect value with one unknown option ID is dropped before upsert", func(t *testing.T) {
 		stub := &stubUpsertPropertyServiceCapture{}
 		svc := &PlaybookRunServiceImpl{propertyService: stub}
@@ -293,6 +311,17 @@ func TestCreatePlaybookRun_PreconditionGuards(t *testing.T) {
 	t.Run("non-nil pb and whitespace-only name returns ErrInternalPrecondition", func(t *testing.T) {
 		svc := &PlaybookRunServiceImpl{}
 		run := &PlaybookRun{Name: "   "}
+		pb := &Playbook{ID: mm_model.NewId()}
+
+		_, err := svc.CreatePlaybookRun(run, pb, "user1", true, "", "", nil)
+
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrInternalPrecondition))
+	})
+
+	t.Run("non-nil pb and empty PlaybookID returns ErrInternalPrecondition", func(t *testing.T) {
+		svc := &PlaybookRunServiceImpl{}
+		run := &PlaybookRun{Name: "my run", PlaybookID: "", RunNumber: 1}
 		pb := &Playbook{ID: mm_model.NewId()}
 
 		_, err := svc.CreatePlaybookRun(run, pb, "user1", true, "", "", nil)

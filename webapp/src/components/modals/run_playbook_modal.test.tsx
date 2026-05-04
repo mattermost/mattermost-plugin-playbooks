@@ -339,6 +339,9 @@ describe('RunPlaybookModal — template mode', () => {
         });
 
         it('does not show property fields when template only uses {SEQ}', () => {
+            // beforeEach still returns the Severity field from usePlaybookAttributes.
+            // This test verifies the modal's own filter: only fields referenced in the
+            // template are shown, so Severity is hidden for a system-token-only template.
             const pb = {...basePlaybook, channel_name_template: '{SEQ}-run', propertyFields: playbookWithTemplate.propertyFields};
             mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
@@ -346,6 +349,7 @@ describe('RunPlaybookModal — template mode', () => {
         });
 
         it('does not show property fields when template only uses system tokens', () => {
+            // Same as above: usePlaybookAttributes still returns fields; modal filters them out.
             const pb = {...basePlaybook, channel_name_template: '{SEQ}-{OWNER}-{CREATOR}', propertyFields: playbookWithTemplate.propertyFields};
             mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);

@@ -627,6 +627,33 @@ func TestDetectChangedFields(t *testing.T) {
 		changes = DetectChangedFields(prev, curr)
 		require.Empty(t, changes)
 	})
+
+	t.Run("run_number change is detected", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", RunNumber: 1, SequentialID: "INC-00001"}
+		curr := &PlaybookRun{ID: "run1", RunNumber: 2, SequentialID: "INC-00002"}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Equal(t, int64(2), changes["run_number"])
+		require.Equal(t, "INC-00002", changes["sequential_id"])
+	})
+
+	t.Run("sequential_id change without run_number change is detected", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", RunNumber: 5, SequentialID: "OLD-00005"}
+		curr := &PlaybookRun{ID: "run1", RunNumber: 5, SequentialID: "INC-00005"}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Equal(t, "INC-00005", changes["sequential_id"])
+		require.NotContains(t, changes, "run_number")
+	})
+
+	t.Run("no sequential change is not detected", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", RunNumber: 3, SequentialID: "INC-00003"}
+		curr := &PlaybookRun{ID: "run1", RunNumber: 3, SequentialID: "INC-00003"}
+
+		changes := DetectChangedFields(prev, curr)
+		require.NotContains(t, changes, "run_number")
+		require.NotContains(t, changes, "sequential_id")
+	})
 }
 
 func TestPlaybookRunFilterOptions_Validate(t *testing.T) {

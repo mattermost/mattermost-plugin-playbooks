@@ -2119,16 +2119,14 @@ func TestIncrementRunNumber(t *testing.T) {
 	db := setupTestDB(t)
 	playbookStore := setupPlaybookStore(t, db)
 
-	team1id := model.NewId()
-	playbook := NewPBBuilder().
-		WithTitle("Test Playbook").
-		WithTeamID(team1id).
-		ToPlaybook()
-
-	id, err := playbookStore.Create(playbook)
-	require.NoError(t, err)
-
 	t.Run("first increment returns 1", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Test Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
 		runNumber, err := playbookStore.IncrementRunNumber(id)
 		require.NoError(t, err)
 		require.Equal(t, int64(1), runNumber)

@@ -451,6 +451,12 @@ func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string
 	if !compareItemsOrder(previous.GetItemsOrder(), current.GetItemsOrder()) {
 		changes["items_order"] = current.GetItemsOrder()
 	}
+	if previous.RunNumber != current.RunNumber {
+		changes["run_number"] = current.RunNumber
+	}
+	if previous.SequentialID != current.SequentialID {
+		changes["sequential_id"] = current.SequentialID
+	}
 }
 
 // detectStringSliceFieldChanges compares string slice fields (unordered sets)

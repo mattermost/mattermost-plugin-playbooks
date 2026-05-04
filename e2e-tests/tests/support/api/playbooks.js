@@ -455,7 +455,8 @@ Cypress.Commands.add('apiUnfollowPlaybookRun', (playbookRunId) => {
     });
 });
 
-//addUsersToRun
+// Uses GraphQL because there is no REST endpoint for adding run participants.
+// The GraphQL mutation is marked deprecated but remains the only server-side path.
 Cypress.Commands.add('apiAddUsersToRun', (playbookRunId, usersIds) => {
     const query = `
         mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
@@ -472,7 +473,7 @@ Cypress.Commands.add('apiAddUsersToRun', (playbookRunId, usersIds) => {
     });
 });
 
-//updateRun
+// Uses GraphQL because there is no REST endpoint for generic run updates.
 Cypress.Commands.add('apiUpdateRun', (playbookRunId, updates) => {
     const query = `
         mutation UpdateRun($id: String!, $updates: RunUpdates!) {

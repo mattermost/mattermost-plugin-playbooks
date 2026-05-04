@@ -452,6 +452,30 @@ describe('incremental updates', () => {
             expect(dispatchedAction.data.playbook_run_updated_at).toBe(1500);
             expect(dispatchedAction.data.changed_fields.name).toBe('Updated Name with Timestamp');
         });
+
+        it('handles run_number and sequential_id field updates', () => {
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    run_number: 42,
+                    sequential_id: 'INC-00042',
+                },
+            };
+
+            const msg = makeWebSocketMessage(JSON.stringify(update));
+
+            handler(msg);
+
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data.changed_fields.run_number).toBe(42);
+            expect(dispatchedAction.data.changed_fields.sequential_id).toBe('INC-00042');
+        });
     });
 
     describe('timeline events incremental updates', () => {
