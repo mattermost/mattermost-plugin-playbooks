@@ -2,11 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {
-    useEffect,
-    useMemo,
-    useRef,
-} from 'react';
+import React, {useEffect, useMemo, useRef} from 'react';
 import {
     NavLink,
     Redirect,
@@ -84,7 +80,7 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
-    const isPlaybookAdmin = currentUserMember?.roles?.includes(PlaybookRole.Admin) ?? false;
+    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
 
     const canEdit = restPlaybook == null ?
         false :

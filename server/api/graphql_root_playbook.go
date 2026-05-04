@@ -211,9 +211,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		return "", errors.New("archived playbooks can not be modified")
 	}
 
-	// NOTE: AdminOnlyEdit is intentionally not included in PlaybookUpdates (input type).
-	// Toggling it requires the extra guard in PlaybookModifyWithFixes (REST path).
-	// If AdminOnlyEdit is ever added here, port that guard before setting it in the setmap.
 	setmap := map[string]interface{}{}
 	addToSetmap(setmap, "Title", args.Updates.Title)
 	addToSetmap(setmap, "Description", args.Updates.Description)
