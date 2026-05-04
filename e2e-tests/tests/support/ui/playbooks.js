@@ -311,7 +311,8 @@ Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
     cy.url().should('include', '/playbooks/runs/');
     return cy.url().then((url) => {
         const urlObj = new URL(url);
-        const runId = urlObj.pathname.split('/playbooks/runs/')[1];
+        const [, afterRuns = ''] = urlObj.pathname.split('/playbooks/runs/');
+        const runId = afterRuns.split('/')[0];
         return cy.wrap(runId);
     });
 });

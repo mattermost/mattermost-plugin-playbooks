@@ -2138,4 +2138,17 @@ func TestNewChannelOnlyRoundTrip(t *testing.T) {
 	updated, err := playbookStore.Get(id)
 	require.NoError(t, err)
 	require.False(t, updated.NewChannelOnly)
+
+	all, err := playbookStore.GetPlaybooks()
+	require.NoError(t, err)
+
+	found := false
+	for _, listed := range all {
+		if listed.ID == id {
+			require.False(t, listed.NewChannelOnly)
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
 }

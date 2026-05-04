@@ -112,11 +112,16 @@ export const RunPlaybookModal = ({
         }
     }, [playbook?.id, playbook?.create_public_playbook_run]);
 
-    const createNewChannel = channelMode === 'create_new_channel';
-    const linkExistingChannel = channelMode === 'link_existing_channel';
+    const isNewChannelOnly = Boolean(restPlaybook?.new_channel_only);
+    const createNewChannel = channelMode === 'create_new_channel' || isNewChannelOnly;
+    const linkExistingChannel = channelMode === 'link_existing_channel' && !isNewChannelOnly;
     const isFormValid = runName !== '' && runName.length <= RUN_NAME_MAX_LENGTH && (createNewChannel || channelId !== '');
 
     const handleSetChannelMode = (mode: 'link_existing_channel' | 'create_new_channel') => {
+        if (isNewChannelOnly && mode === 'link_existing_channel') {
+            return;
+        }
+
         setChannelMode(mode);
 
         // Default to the current channel when choosing link to the existing channel, we are in a channel context and the playbook does not have a linked channel
@@ -213,7 +218,7 @@ export const RunPlaybookModal = ({
                         channelId={channelId}
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
-                        newChannelOnly={restPlaybook?.new_channel_only}
+                        newChannelOnly={isNewChannelOnly}
                         onSetCreatePublicRun={setCreatePublicRun}
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}

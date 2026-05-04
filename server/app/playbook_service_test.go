@@ -968,4 +968,24 @@ func TestPlaybookService_ValidateNewChannelOnlyMode(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "link an existing channel")
 	})
+
+	t.Run("Import allows NewChannelOnly=true with ChannelMode=CreateNewChannel", func(t *testing.T) {
+		newPlaybookID := model.NewId()
+		playbook := app.Playbook{
+			Title:          "Test Playbook",
+			TeamID:         teamID,
+			NewChannelOnly: true,
+			ChannelMode:    app.PlaybookRunCreateNewChannel,
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			Return(newPlaybookID, nil)
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+
+		id, err := service.Import(app.PlaybookImportData{Playbook: playbook}, userID)
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, id)
+	})
 }

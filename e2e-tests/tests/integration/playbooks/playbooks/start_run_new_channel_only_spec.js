@@ -90,7 +90,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
 
             // * Assert the enforcement hint is shown
             cy.get('#root-portal.modal-open [data-testid="new-channel-only-hint"]').
-                should('exist').
+                should('be.visible').
                 and('contain', 'This playbook requires a new channel for each run');
         });
 
