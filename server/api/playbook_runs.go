@@ -326,13 +326,12 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
-			OwnerUserID: request.UserId,
-			TeamID:      request.TeamId,
-			ChannelID:   channelID,
-			Name:        name,
-			PostID:      state.PostID,
-			PlaybookID:  playbookID,
-			Type:        runType,
+			TeamID:     request.TeamId,
+			ChannelID:  channelID,
+			Name:       name,
+			PostID:     state.PostID,
+			PlaybookID: playbookID,
+			Type:       runType,
 		},
 		request.UserId,
 		nil,

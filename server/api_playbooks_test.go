@@ -1618,6 +1618,7 @@ func TestPlaybooksDuplicate(t *testing.T) {
 	})
 
 	t.Run("AssigneeType and AssigneePropertyFieldID are preserved on duplicate", func(t *testing.T) {
+		const fakeFieldID = "field-123"
 		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "Assignee Placeholder Source",
 			TeamID: e.BasicTeam.Id,
@@ -1629,6 +1630,7 @@ func TestPlaybooksDuplicate(t *testing.T) {
 						{Title: "Specific user task", AssigneeType: ""},
 						{Title: "Owner task", AssigneeType: "owner"},
 						{Title: "Creator task", AssigneeType: "creator"},
+						{Title: "Property user task", AssigneeType: "property_user", AssigneePropertyFieldID: fakeFieldID},
 					},
 				},
 			},
@@ -1641,10 +1643,12 @@ func TestPlaybooksDuplicate(t *testing.T) {
 		duplicated, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
 		require.NoError(t, err)
 		require.Len(t, duplicated.Checklists, 1)
-		require.Len(t, duplicated.Checklists[0].Items, 3)
+		require.Len(t, duplicated.Checklists[0].Items, 4)
 		assert.Equal(t, "", duplicated.Checklists[0].Items[0].AssigneeType)
 		assert.Equal(t, "owner", duplicated.Checklists[0].Items[1].AssigneeType)
 		assert.Equal(t, "creator", duplicated.Checklists[0].Items[2].AssigneeType)
+		assert.Equal(t, "property_user", duplicated.Checklists[0].Items[3].AssigneeType)
+		assert.Equal(t, fakeFieldID, duplicated.Checklists[0].Items[3].AssigneePropertyFieldID)
 	})
 }
 

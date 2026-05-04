@@ -620,7 +620,7 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 		}
 		runFields, rfErr := s.GetRunPropertyFields(runID)
 		if rfErr != nil {
-			return nil, errors.Wrapf(getErr, "failed to get property field %s (run-field lookup also failed: %v)", propertyFieldID, rfErr)
+			return nil, errors.Wrapf(rfErr, "failed to get run property fields while resolving property field %s for run %s", propertyFieldID, runID)
 		}
 		for _, rf := range runFields {
 			if rf.ID == propertyFieldID {

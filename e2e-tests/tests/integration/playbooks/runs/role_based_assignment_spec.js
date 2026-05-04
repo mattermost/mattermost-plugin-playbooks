@@ -611,7 +611,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
             {
                 teamId: testTeam.id,
                 title: 'PropUser Owner Change PB ' + getRandomId(),
-                memberIDs: [testOwner.id, testNewOwner.id],
+                memberIDs: [testOwner.id, testCreator.id, testNewOwner.id],
                 makePublic: true,
                 createPublicPlaybookRun: true,
                 checklists: [{
@@ -648,10 +648,12 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                     playbookRunName: 'PropUser Owner Change Run ' + getRandomId(),
                     ownerUserId: testOwner.id,
                 }).then((run) => {
-                    cy.apiAddUsersToRun(run.id, [testNewOwner.id]);
+                    cy.apiAddUsersToRun(run.id, [testCreator.id, testNewOwner.id]);
 
-                    // # Set the Manager property to testNewOwner so the task resolves
-                    cy.apiSetRunPropertyValueByName(run.id, 'Manager', testNewOwner.id);
+                    // # Set the Manager property to testCreator (a distinct third user, not the new owner)
+                    // so the regression check is discriminating: after changing the owner to testNewOwner,
+                    // the property_user task must still show testCreator (not testNewOwner).
+                    cy.apiSetRunPropertyValueByName(run.id, 'Manager', testCreator.id);
 
                     // # Visit the run channel — the RHS opens automatically
                     cy.playbooksVisitRunChannel(testTeam.name, run);
@@ -660,7 +662,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                     cy.findByTestId('pb-checklists-inner-container').within(() => {
                         cy.contains('[data-testid="checkbox-item-container"]', 'Manager Task').within(() => {
                             cy.findByTestId('property-user-indicator-badge').should('exist').and('contain', 'Manager');
-                            cy.contains(testNewOwner.username).should('exist');
+                            cy.contains(testCreator.username).should('exist');
                         });
                     });
 
@@ -675,12 +677,12 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                         });
                     });
 
-                    // * The property_user task STILL shows the badge AND the resolved user
-                    //   (before the fix, the resolved user profile disappeared here)
+                    // * The property_user task STILL shows testCreator (not testNewOwner),
+                    //   proving its source is the Manager property field, not the run owner.
                     cy.findByTestId('pb-checklists-inner-container').within(() => {
                         cy.contains('[data-testid="checkbox-item-container"]', 'Manager Task').within(() => {
                             cy.findByTestId('property-user-indicator-badge').should('exist').and('contain', 'Manager');
-                            cy.contains(testNewOwner.username).should('exist');
+                            cy.contains(testCreator.username).should('exist');
                         });
                     });
 

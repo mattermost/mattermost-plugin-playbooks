@@ -99,13 +99,15 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                 const pv = propertyValues?.find((v) => v.field_id === checklistItem.assignee_property_field_id);
                 if (pv?.value && typeof pv.value === 'string') {
                     resolvedUserId = pv.value;
+                } else if (checklistItem.assignee_id) {
+                    resolvedUserId = checklistItem.assignee_id;
                 }
             }
         } else {
             badgeLabel = assigneeType === AssigneeTypeOwner ? formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) : formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'});
             badgeTestId = 'role-indicator-badge';
             if (mode === 'run') {
-                resolvedUserId = assigneeType === AssigneeTypeOwner ? runOwnerUserId : runCreatorUserId;
+                resolvedUserId = checklistItem.assignee_id || (assigneeType === AssigneeTypeOwner ? runOwnerUserId : runCreatorUserId);
             }
         }
 

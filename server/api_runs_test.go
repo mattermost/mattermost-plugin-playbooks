@@ -3232,9 +3232,11 @@ func TestRunCreationFromPlaybook_AssigneeTypePropagation(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	// Create the run as RegularUser (creator) with AdminUser as the explicit owner,
+	// so owner and creator resolve to distinct IDs and both paths are independently verified.
 	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 		Name:        "Role Assignee Run",
-		OwnerUserID: e.RegularUser.Id,
+		OwnerUserID: e.AdminUser.Id,
 		TeamID:      e.BasicTeam.Id,
 		PlaybookID:  playbookID,
 	})
@@ -3250,7 +3252,7 @@ func TestRunCreationFromPlaybook_AssigneeTypePropagation(t *testing.T) {
 	assert.Empty(t, explicit.AssigneeID)
 
 	assert.Equal(t, app.AssigneeTypeOwner, ownerItem.AssigneeType)
-	assert.Equal(t, e.RegularUser.Id, ownerItem.AssigneeID,
+	assert.Equal(t, e.AdminUser.Id, ownerItem.AssigneeID,
 		"owner-type item must be resolved to the run owner at creation time")
 
 	assert.Equal(t, app.AssigneeTypeCreator, creatorItem.AssigneeType)

@@ -5136,7 +5136,9 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
-	// Create AssigneeChanged timeline events for items whose resolved assignee changed.
+	// Create AssigneeChanged timeline events for items whose resolved assignee changed,
+	// and trigger the same participant/notification side-effects as SetAssignee.
+	var subjectUser *model.User
 	for _, snap := range affectedItemSnapshots {
 		item := &run.Checklists[snap.checklistIdx].Items[snap.itemIdx]
 		if item.AssigneeID == snap.oldAssigneeID {
@@ -5155,6 +5157,26 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 			logrus.WithError(teErr).WithField("run_id", playbookRunID).Warn("failed to create AssigneeChanged event for property_user")
 		} else {
 			run.TimelineEvents = append(run.TimelineEvents, *createdTE)
+		}
+
+		if addErr := s.addAssigneeAsParticipant(playbookRunID, item.AssigneeID, userID, run); addErr != nil {
+			logrus.WithError(addErr).WithField("run_id", playbookRunID).Warn("failed to add property_user assignee as participant")
+		}
+
+		if item.AssigneeID != "" && item.AssigneeID != userID {
+			if subjectUser == nil {
+				if u, uErr := s.pluginAPI.User.Get(userID); uErr != nil {
+					s.pluginAPI.Log.Warn("failed to get user for property-user assignee DM", "user_id", userID, "err", uErr.Error())
+				} else {
+					subjectUser = u
+				}
+			}
+			if subjectUser != nil {
+				runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(playbookRunID))
+				dmMsg := fmt.Sprintf("@%s has linked run field **%s** to the task **%s** for the run: %s   #taskassigned",
+					subjectUser.Username, propertyField.Name, stripmd.Strip(snap.title), runURL)
+				s.notifyAssignee(playbookRunID, item.AssigneeID, userID, dmMsg)
+			}
 		}
 	}
 
