@@ -56,6 +56,11 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
+	if err := ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return "", err
+	}
+
 	playbook.CreateAt = model.GetMillis()
 	playbook.UpdateAt = playbook.CreateAt
 
@@ -300,6 +305,11 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 
 	if playbook.DeleteAt != 0 {
 		err := errors.New("cannot update a playbook that is archived")
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
+	if err := ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
