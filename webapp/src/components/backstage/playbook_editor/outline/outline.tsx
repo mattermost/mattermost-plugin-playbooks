@@ -2,12 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {
-    Children,
-    ReactNode,
-    useRef,
-    useState,
-} from 'react';
+import React, {Children, ReactNode, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -44,7 +39,6 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     const archived = playbook.delete_at !== 0;
     const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
     const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
-    const pendingAdminOnlyEditRef = useRef(false);
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -79,18 +73,14 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     };
 
     const handleAdminOnlyEditChange = (value: boolean) => {
-        if (archived || !restPlaybook || pendingAdminOnlyEditRef.current) {
+        if (archived || !restPlaybook) {
             return;
         }
-        const prev = restPlaybook.admin_only_edit;
+        const prev = effectiveAdminOnlyEdit;
         setAdminOnlyEditOverride(value);
-        pendingAdminOnlyEditRef.current = true;
         savePlaybook({...restPlaybook, admin_only_edit: value})
             .then(() => refetch())
-            .catch(() => setAdminOnlyEditOverride(prev))
-            .finally(() => {
-                pendingAdminOnlyEditRef.current = false;
-            });
+            .catch(() => setAdminOnlyEditOverride(prev));
     };
 
     return (
