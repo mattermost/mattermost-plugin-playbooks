@@ -51,7 +51,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(playbook.id, 'outline');
+            cy.playbooksVisitEditor(playbook.id, 'outline');
 
             // * Assert the retrospective section exists in the outline
             cy.get('[id="retrospective"]').should('exist');
@@ -71,7 +71,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(playbook.id, 'outline');
+            cy.playbooksVisitEditor(playbook.id, 'outline');
 
             // # Scroll to the retrospective section and check the checkbox
             cy.get('[id="retrospective"]').scrollIntoView().should('be.visible');
@@ -98,7 +98,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(playbook.id, 'outline');
+            cy.playbooksVisitEditor(playbook.id, 'outline');
 
             // * Assert toggle is initially checked (enabled)
             cy.get('[id="retrospective"]').scrollIntoView().should('be.visible');

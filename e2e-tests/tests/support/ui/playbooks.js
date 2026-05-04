@@ -277,7 +277,7 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
     });
 });
 
-Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
+Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
     cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
 });
 
