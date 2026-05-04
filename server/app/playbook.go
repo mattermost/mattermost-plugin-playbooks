@@ -77,7 +77,7 @@ type Playbook struct {
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
 
-	AdminOnlyEdit bool `json:"admin_only_edit" export:"-"`
+	AdminOnlyEdit bool `json:"admin_only_edit" export:"admin_only_edit"`
 
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`

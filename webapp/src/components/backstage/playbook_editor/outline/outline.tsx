@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useRef,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -12,6 +17,8 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {savePlaybook} from 'src/client';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
@@ -37,8 +44,10 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
+    const toaster = useToaster();
     const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
     const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
+    const pendingSave = useRef(false);
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -73,14 +82,24 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     };
 
     const handleAdminOnlyEditChange = (value: boolean) => {
-        if (archived || !restPlaybook) {
+        if (archived || !restPlaybook || pendingSave.current) {
             return;
         }
         const prev = effectiveAdminOnlyEdit;
         setAdminOnlyEditOverride(value);
+        pendingSave.current = true;
         savePlaybook({...restPlaybook, admin_only_edit: value})
             .then(() => refetch())
-            .catch(() => setAdminOnlyEditOverride(prev));
+            .catch(() => {
+                setAdminOnlyEditOverride(prev);
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+            })
+            .finally(() => {
+                pendingSave.current = false;
+            });
     };
 
     return (
