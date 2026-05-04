@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -17,6 +17,8 @@ import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/con
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {ChecklistItemState} from 'src/types/playbook';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 interface ChecklistsSubset {
     items: {
@@ -58,15 +60,29 @@ export const useOnFinishRun = (playbookRun: PlaybookRun | null, location: string
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
     const confirmationMessage = useFinishRunConfirmationMessage(playbookRun);
+    const toaster = useToaster();
 
-    return () => {
-        if (!playbookRun) {
+    // Keep a ref to the latest playbookRun so the callback always uses the
+    // current run without needing the full object in the useCallback dep array.
+    const playbookRunRef = useRef(playbookRun);
+    useEffect(() => {
+        playbookRunRef.current = playbookRun;
+    }, [playbookRun]);
+
+    return useCallback(() => {
+        const run = playbookRunRef.current;
+        if (!run) {
             return;
         }
         const onConfirm = async () => {
-            await finishRun(playbookRun.id);
-
-            // Only refresh LHS when in Backstage, not in RHS
+            const result = await finishRun(run.id);
+            if (result?.error) {
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'It wasn\'t possible to finish the run.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+                return;
+            }
             if (location === 'backstage') {
                 refreshLHS();
             }
@@ -81,7 +97,7 @@ export const useOnFinishRun = (playbookRun: PlaybookRun | null, location: string
             // eslint-disable-next-line no-empty-function
             onCancel: () => {},
         })));
-    };
+    }, [dispatch, formatMessage, refreshLHS, confirmationMessage, toaster, location]);
 };
 
 interface Props {
@@ -157,4 +173,3 @@ const FinishRunButton = styled(TertiaryButton)`
     padding: 0 48px;
     font-size: 12px;
 `;
-
