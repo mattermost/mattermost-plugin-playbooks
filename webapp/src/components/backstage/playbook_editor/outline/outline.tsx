@@ -6,14 +6,10 @@ import React, {
     Children,
     ReactNode,
     useCallback,
-    useMemo,
-    useRef,
     useState,
 } from 'react';
 
 import {useIntl} from 'react-intl';
-
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
@@ -24,10 +20,7 @@ import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {useAppSelector} from 'src/hooks/redux';
-import {useIsSystemAdmin} from 'src/hooks/permissions';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {PlaybookRole} from 'src/types/permissions';
 import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
 
 import StatusUpdates from './section_status_updates';
@@ -40,25 +33,19 @@ interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
     restPlaybook?: PlaybookWithChecklist;
-    showAdminSettings: boolean;
+    showAdminSettings?: boolean;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) => {
+const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const toaster = useToaster();
     const archived = playbook.delete_at !== 0;
-    const currentUserId = useAppSelector(getCurrentUserId);
-    const isPlaybookAdmin = useMemo(() => (
-        playbook.members.find((m) => m.user_id === currentUserId)?.scheme_roles?.includes(PlaybookRole.Admin) ?? false
-    ), [playbook.members, currentUserId]);
-    const isSystemAdmin = useIsSystemAdmin();
     const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
     const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
-    const isSavingRef = useRef(false);
     const effectiveOwnerGroupOnlyActions = ownerGroupOnlyActionsOverride ?? restPlaybook?.owner_group_only_actions;
     const effectiveRestPlaybook = restPlaybook && effectiveOwnerGroupOnlyActions !== undefined ?
         {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} :
@@ -97,11 +84,10 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) =>
     };
 
     const handleOwnerGroupOnlyActionsChange = useCallback(async (updated: {owner_group_only_actions: boolean}) => {
-        if (archived || !restPlaybook || isSavingRef.current) {
+        if (archived || !restPlaybook) {
             return;
         }
         const prev = ownerGroupOnlyActionsOverride ?? restPlaybook.owner_group_only_actions;
-        isSavingRef.current = true;
         setIsSavingOwnerGroupOnlyActions(true);
         setOwnerGroupOnlyActionsOverride(updated.owner_group_only_actions);
         try {
@@ -114,7 +100,6 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) =>
                 toastStyle: ToastStyle.Failure,
             });
         } finally {
-            isSavingRef.current = false;
             setIsSavingOwnerGroupOnlyActions(false);
         }
     }, [archived, restPlaybook, ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride, toaster, formatMessage]);
@@ -222,7 +207,7 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings}: Props) =>
                     <div data-testid='owner-group-only-actions-toggle'>
                         <OwnerGroupOnlyActionsToggle
                             playbook={effectiveRestPlaybook}
-                            isPlaybookAdmin={isPlaybookAdmin || isSystemAdmin}
+                            isPlaybookAdmin={showAdminSettings}
                             disabled={archived || isSavingOwnerGroupOnlyActions}
                             onChange={handleOwnerGroupOnlyActionsChange}
                         />
