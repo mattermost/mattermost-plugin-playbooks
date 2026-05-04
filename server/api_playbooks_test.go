@@ -1954,6 +1954,33 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 		assert.Equal(t, "System Admin Edit", updated.Title)
 	})
 
+	t.Run("system admin can edit playbook where sysadmin is not a member", func(t *testing.T) {
+		// Create a playbook where the sysadmin is deliberately excluded from Members.
+		// This isolates the sysadmin-override path: the edit must succeed via the
+		// system-admin bypass, not via the playbook_admin role.
+		isolatedID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Sysadmin Override Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), isolatedID)
+		require.NoError(t, err)
+
+		pb.Title = "Sysadmin Override Edit"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), isolatedID)
+		require.NoError(t, err)
+		assert.Equal(t, "Sysadmin Override Edit", updated.Title)
+	})
+
 	t.Run("playbook admin (non-sysadmin) can disable AdminOnlyEdit", func(t *testing.T) {
 		// Ensure the flag is on before the test (self-contained).
 		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
@@ -2037,6 +2064,7 @@ func TestAdminOnlyEdit_Create(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, id)
 	})
+
 }
 
 // TestAdminOnlyEdit_Duplicate verifies the duplicate-time gate: when the source
