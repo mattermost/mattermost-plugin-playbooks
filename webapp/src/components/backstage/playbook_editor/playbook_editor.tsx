@@ -139,7 +139,7 @@ const PlaybookEditor = () => {
                         />
                     </StarButton>
                     <TextEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                         value={playbook.title}
                         onSave={(title) => updatePlaybook({title})}
@@ -196,6 +196,7 @@ const PlaybookEditor = () => {
             </TitleBar>
             <Header ref={headingRef}>
                 <TextEdit
+                    disabled={archived || !canEdit}
                     placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                     value={playbook.title}
                     onSave={(title) => updatePlaybook({title})}
@@ -238,7 +239,7 @@ const PlaybookEditor = () => {
                 </TextEdit>
                 <Description>
                     <MarkdownEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
                         value={playbook.description}
                         onSave={(description) => updatePlaybook({description})}

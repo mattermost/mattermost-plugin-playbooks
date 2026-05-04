@@ -352,7 +352,7 @@ func (p *PermissionsService) FilterInvitedGroupIDs(invitedGroupIDs []string) []s
 }
 
 func (p *PermissionsService) DeletePlaybook(userID string, playbook Playbook) error {
-	return p.PlaybookManageProperties(userID, playbook)
+	return p.PlaybookEdit(userID, playbook)
 }
 
 func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID string, broadcastChannelIDs, oldBroadcastChannelIDs []string) error {

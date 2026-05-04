@@ -1980,7 +1980,7 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
 		require.NoError(t, err)
 
-		// RegularUser2 is a non-sysadmin playbook admin — enabling the flag should be allowed (symmetric with disable).
+		// RegularUser2 is a non-sysadmin playbook admin — enabling the flag is symmetric with disable.
 		pb.AdminOnlyEdit = true
 		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
 		require.NoError(t, err)
