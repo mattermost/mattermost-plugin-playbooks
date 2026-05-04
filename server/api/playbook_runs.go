@@ -1084,8 +1084,10 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	}
 
 	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
-		// Dialog handlers must return HTTP 200 with SubmitDialogResponse so the dialog can show errors.
-		if errors.Is(internalErr, app.ErrNoPermissions) || errors.Is(internalErr, app.ErrNotFound) {
+		if errors.Is(internalErr, app.ErrNoPermissions) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
+		} else if errors.Is(internalErr, app.ErrNotFound) {
+			// Dialog handlers must return HTTP 200 with SubmitDialogResponse so the dialog can show errors.
 			ReturnJSON(w, &model.SubmitDialogResponse{
 				Error: publicMsg,
 			}, http.StatusOK)

@@ -3590,7 +3590,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		result, err := serverClient2.DoAPIRequestWithHeaders(context.Background(), "POST",
 			serverClient2.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/update-status-dialog",
 			string(dialogRequestBytes), nil)
-		require.NoError(t, err)
+		require.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
 		// Run must remain active
