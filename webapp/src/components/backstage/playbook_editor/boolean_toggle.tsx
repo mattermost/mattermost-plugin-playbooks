@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React, {useCallback, useRef} from 'react';
-import {useDispatch} from 'react-redux';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {modals} from 'src/webapp_globals';
@@ -29,7 +30,7 @@ interface Props {
 // For toggles that need a Tooltip wrapper, confirmation banner, or custom label children,
 // compose with <Toggle> directly instead.
 const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequired}: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const pendingRef = useRef(false);
 
     const handleChange = useCallback(() => {
@@ -45,8 +46,11 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
                 message: confirmationRequired.message,
                 confirmButtonText: confirmationRequired.confirmButtonText,
                 onConfirm: () => {
-                    onChange(true);
-                    pendingRef.current = false;
+                    try {
+                        onChange(true);
+                    } finally {
+                        pendingRef.current = false;
+                    }
                 },
                 onExited: () => {
                     pendingRef.current = false;
@@ -54,8 +58,11 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
             })));
             return;
         }
-        onChange(!value);
-        pendingRef.current = false;
+        try {
+            onChange(!value);
+        } finally {
+            pendingRef.current = false;
+        }
     }, [value, confirmationRequired, dispatch, onChange]);
 
     return (

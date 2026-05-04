@@ -678,32 +678,6 @@ func TestRunFinish(t *testing.T) {
 			"a missing-run error must propagate as-is, not be wrapped in ErrNoPermissions")
 	})
 
-	t.Run("OwnerUserID empty allows reporter when OwnerGroupOnlyActions true", func(t *testing.T) {
-		const reporterID = "reporter-user-id"
-		runWithEmptyOwner := &PlaybookRun{
-			ID:             runID,
-			PlaybookID:     pbID,
-			TeamID:         "team-1",
-			OwnerUserID:    "",
-			ReporterUserID: reporterID,
-			ParticipantIDs: []string{reporterID, memberID},
-			Type:           RunTypePlaybook,
-		}
-		pb := makePlaybook(true)
-		svc := newPermissionsServiceForTest(
-			&stubRunService{run: runWithEmptyOwner, err: nil},
-			&stubPlaybookService{playbook: pb, err: nil},
-			newPluginAPIAllowingAdmins(t),
-		)
-
-		// Reporter (run creator) can finish when OwnerUserID is empty
-		require.NoError(t, svc.RunFinish(reporterID, runID))
-
-		// Other participants are still blocked
-		err := svc.RunFinish(memberID, runID)
-		require.Error(t, err)
-		assert.True(t, errors.Is(err, ErrNoPermissions), "got: %v", err)
-	})
 }
 
 // ---------------------------------------------------------------------------
@@ -891,6 +865,23 @@ func TestRunChangeOwner(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("ownerOnly=true rejects non-participant playbook admin", func(t *testing.T) {
+		// pbAdminID is a playbook admin (in Members) but NOT a run participant.
+		// Enabling OwnerGroupOnlyActions must not grant them new access.
+		nonParticipantRun := &PlaybookRun{
+			ID: runID, PlaybookID: pbID, TeamID: "team-1", OwnerUserID: ownerID,
+			ParticipantIDs: []string{ownerID, memberID}, Type: RunTypePlaybook,
+		}
+		svc := newPermissionsServiceForTest(
+			&stubRunService{run: nonParticipantRun, err: nil},
+			&stubPlaybookService{playbook: makePlaybook(true), err: nil},
+			newPluginAPIAllowingAdmins(t),
+		)
+		err := svc.RunChangeOwner(pbAdminID, runID)
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, ErrNoPermissions), "got: %v", err)
+	})
 
 	t.Run("channel checklist run has no restriction", func(t *testing.T) {
 		channelChecklistRun := &PlaybookRun{

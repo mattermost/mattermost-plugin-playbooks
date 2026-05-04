@@ -32,7 +32,7 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
 import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
-import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
+import {useIsBlockedByOwnerOnlyForFinishRestore, useIsSystemAdmin} from 'src/hooks/permissions';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
@@ -182,6 +182,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, 
     const {formatMessage} = useIntl();
     const onFinishRun = useOnFinishRun(props.playbookRun, props.location || 'backstage');
     const currentUserId = useAppSelector(getCurrentUserId);
+    const isSystemAdmin = useIsSystemAdmin();
     const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
@@ -196,7 +197,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, 
 
     const canModify = useCanModifyRun(runForPermissions, currentUserId);
 
-    if (canModify) {
+    if (canModify || isSystemAdmin) {
         return (
             <>
                 <Separator/>
@@ -241,6 +242,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
     const onRestoreRun = useOnRestoreRun(props.playbookRun, props.location || 'backstage');
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
     const currentUserId = useAppSelector(getCurrentUserId);
+    const isSystemAdmin = useIsSystemAdmin();
     const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
@@ -255,7 +257,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
 
     const canRestore = useCanRestoreRun(runForPermissions, currentUserId);
 
-    if (!playbookRunIsActive(props.playbookRun) && canRestore) {
+    if (!playbookRunIsActive(props.playbookRun) && (canRestore || isSystemAdmin)) {
         return (
             <>
                 <Separator/>

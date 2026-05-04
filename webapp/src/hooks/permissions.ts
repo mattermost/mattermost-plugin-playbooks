@@ -100,6 +100,6 @@ export const useIsSystemAdmin = (): boolean => {
  * change-owner UI guards without adding a playbook-admin check.
  */
 export const useIsBlockedByOwnerOnlyForFinishRestore = (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined): boolean => {
-    const isSystemAdmin = useAppSelector(isCurrentUserAdmin);
+    const isSystemAdmin = useIsSystemAdmin();
     return Boolean(ownerGroupOnlyActions && !isOwner && !isSystemAdmin);
 };

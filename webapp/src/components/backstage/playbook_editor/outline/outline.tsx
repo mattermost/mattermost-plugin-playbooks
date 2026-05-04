@@ -35,18 +35,17 @@ interface Props {
     refetch: () => void;
     restPlaybook?: PlaybookWithChecklist;
     isPlaybookAdmin: boolean;
-    ownerGroupOnlyActionsOverride: boolean | undefined;
-    setOwnerGroupOnlyActionsOverride: (value: boolean | undefined) => void;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch, restPlaybook, isPlaybookAdmin, ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride}: Props) => {
+const Outline = ({playbook, refetch, restPlaybook, isPlaybookAdmin}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const toaster = useToaster();
     const archived = playbook.delete_at !== 0;
+    const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
     const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
     const isSavingRef = useRef(false);
     const effectiveOwnerGroupOnlyActions = ownerGroupOnlyActionsOverride ?? restPlaybook?.owner_group_only_actions;

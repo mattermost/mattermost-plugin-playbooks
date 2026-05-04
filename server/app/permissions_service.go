@@ -149,22 +149,14 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create playbook", userID)
 }
 
-// IsPlaybookAdmin returns true if the user has the admin role on the playbook AND
-// currently has team-view access (stale memberships return false).
+// IsPlaybookAdmin returns true if the user has the admin role on the playbook.
+// Team-view access is enforced transitively via getPlaybookRole.
 func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
-	if !p.canViewTeam(userID, playbook.TeamID) {
-		return false
-	}
 	adminRole := playbook.DefaultPlaybookAdminRole
 	if adminRole == "" {
 		adminRole = PlaybookRoleAdmin
 	}
-	for _, member := range playbook.Members {
-		if member.UserID == userID {
-			return slices.Contains(member.SchemeRoles, adminRole)
-		}
-	}
-	return false
+	return slices.Contains(p.getPlaybookRole(userID, playbook), adminRole)
 }
 
 func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Playbook) error {
@@ -722,28 +714,23 @@ func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName s
 		if run == nil {
 			return nil, nil, err
 		}
-		if errors.Is(err, ErrNotFound) {
-			// Playbook deleted — require team access plus owner or system admin.
-			if !p.canViewTeam(userID, run.TeamID) {
-				return run, nil, errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
-			}
-			if run.OwnerUserID == userID || IsSystemAdmin(userID, p.pluginAPI) {
-				return run, nil, nil
-			}
-			return run, nil, errors.Wrapf(ErrNoPermissions, "only the run owner or a system admin can %s run %s (playbook deleted)", actionName, runID)
+		if !errors.Is(err, ErrNotFound) {
+			return run, nil, err
 		}
-		return run, nil, err
+		// Playbook deleted — require team access plus owner or system admin.
+		if !p.canViewTeam(userID, run.TeamID) {
+			return run, nil, errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
+		}
+		if run.OwnerUserID == userID || IsSystemAdmin(userID, p.pluginAPI) {
+			return run, nil, nil
+		}
+		return run, nil, errors.Wrapf(ErrNoPermissions, "only the run owner or a system admin can %s run %s (playbook deleted)", actionName, runID)
 	}
 	// Base participant/membership check
 	if err := p.runManagePropertiesWithPlaybookRun(userID, run); err != nil {
-		return run, playbook, err
+		return run, playbook, errors.Wrapf(err, "cannot %s run %s", actionName, runID)
 	}
-	if playbook == nil || !playbook.OwnerGroupOnlyActions {
-		return run, playbook, nil
-	}
-	// When OwnerUserID is empty (data inconsistency), allow the run creator to act
-	// so the run is not permanently stuck for non-admins.
-	if run.OwnerUserID == "" && run.ReporterUserID == userID {
+	if playbook == nil || !playbook.OwnerGroupOnlyActions { // nil == channel checklist or standalone run
 		return run, playbook, nil
 	}
 	if run.OwnerUserID == userID {
@@ -794,9 +781,12 @@ func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
 	if run == nil {
 		return baseErr
 	}
-	// Playbook admins can also reassign ownership when OwnerGroupOnlyActions is set.
-	if playbook != nil && playbook.OwnerGroupOnlyActions {
-		if p.IsPlaybookAdmin(userID, *playbook) {
+	// Playbook admins can also reassign ownership when OwnerGroupOnlyActions is set,
+	// but only if they are already a run participant. The admin bypass relaxes the owner-only
+	// gate, not the membership gate — enabling the flag must not create new access for
+	// non-participants.
+	if playbook != nil && playbook.OwnerGroupOnlyActions && p.IsPlaybookAdmin(userID, *playbook) {
+		if participantErr := p.runManagePropertiesWithPlaybookRun(userID, run); participantErr == nil {
 			logrus.WithFields(logrus.Fields{
 				"event":       "playbook_admin_owner_only_bypass",
 				"user_id":     userID,

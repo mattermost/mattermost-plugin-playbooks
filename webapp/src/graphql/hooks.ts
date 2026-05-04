@@ -178,6 +178,8 @@ export const useManageRunMembership = (runID?: string) => {
         if (!runID || !ownerID) {
             return;
         }
+
+        // Errors from setOwner propagate as a rejected Promise; callers must handle them.
         await setOwner(runID, ownerID);
     }, [runID]);
 

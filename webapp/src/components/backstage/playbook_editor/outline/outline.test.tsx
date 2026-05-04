@@ -3,7 +3,7 @@
 
 /* eslint-disable formatjs/no-literal-string-in-jsx */
 
-import React, {act, useState} from 'react';
+import React, {act} from 'react';
 import renderer from 'react-test-renderer';
 
 import {savePlaybook} from 'src/client';
@@ -112,21 +112,16 @@ const makeRestPlaybook = (ownerGroupOnlyActions: boolean) => ({
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-type OutlineWrapperProps = Omit<React.ComponentProps<typeof Outline>, 'isPlaybookAdmin' | 'ownerGroupOnlyActionsOverride' | 'setOwnerGroupOnlyActionsOverride'> & {
+type OutlineWrapperProps = Omit<React.ComponentProps<typeof Outline>, 'isPlaybookAdmin'> & {
     isPlaybookAdmin?: boolean;
 };
 
-const OutlineWrapper = ({isPlaybookAdmin = true, ...rest}: OutlineWrapperProps) => {
-    const [override, setOverride] = useState<boolean | undefined>(undefined);
-    return (
-        <Outline
-            {...rest}
-            isPlaybookAdmin={isPlaybookAdmin}
-            ownerGroupOnlyActionsOverride={override}
-            setOwnerGroupOnlyActionsOverride={setOverride}
-        />
-    );
-};
+const OutlineWrapper = ({isPlaybookAdmin = true, ...rest}: OutlineWrapperProps) => (
+    <Outline
+        {...rest}
+        isPlaybookAdmin={isPlaybookAdmin}
+    />
+);
 
 beforeEach(() => {
     latestToggleProps.current = null;

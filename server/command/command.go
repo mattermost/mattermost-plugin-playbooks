@@ -604,11 +604,6 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 
 	targetOwnerUsername := strings.TrimLeft(args[index], "@")
 
-	if err := r.permissions.RunManageProperties(r.args.UserId, playbookRuns[run].ID); err != nil {
-		r.postCommandResponse("Become a participant to interact with this run.")
-		return
-	}
-
 	currentPlaybookRun := playbookRuns[run]
 
 	targetOwnerUser, err := r.pluginAPI.User.GetByUsername(targetOwnerUsername)
@@ -774,6 +769,9 @@ func (r *Runner) actionFinishByID(args []string) {
 		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
 		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You do not have permission to finish this run.")
+			if errors.Is(err, app.ErrNotFound) {
+				logrus.Errorf("Run not found during finish permission check: %v", err)
+			}
 		} else {
 			r.warnUserAndLogErrorf("Error checking finish permissions: %v", err)
 		}

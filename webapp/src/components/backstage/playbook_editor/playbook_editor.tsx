@@ -2,12 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import React, {useEffect, useMemo, useRef} from 'react';
 import {
     NavLink,
     Redirect,
@@ -85,8 +80,6 @@ const PlaybookEditor = () => {
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
     const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
-    const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
-
     if (error) {
         // not found
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
@@ -300,8 +293,6 @@ const PlaybookEditor = () => {
                         refetch={refetch}
                         restPlaybook={restPlaybook ?? undefined}
                         isPlaybookAdmin={isPlaybookAdmin}
-                        ownerGroupOnlyActionsOverride={ownerGroupOnlyActionsOverride}
-                        setOwnerGroupOnlyActionsOverride={setOwnerGroupOnlyActionsOverride}
                     />
                 </Route>
                 <Route
