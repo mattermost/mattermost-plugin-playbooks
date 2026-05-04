@@ -797,17 +797,26 @@ func (p *playbookStore) UpdateRunNumberPrefix(id, prefix string) error {
 		return errors.New("ID cannot be empty")
 	}
 
-	_, err := p.store.execBuilder(p.store.db, sq.
+	result, err := p.store.execBuilder(p.store.db, sq.
 		Update("IR_Playbook").
 		Set("RunNumberPrefix", prefix).
 		Set("UpdateAt", model.GetMillis()).
-		Where(sq.Eq{"ID": id}))
+		Where(sq.Eq{"ID": id}).
+		Where(sq.Eq{"DeleteAt": 0}))
 
 	if err != nil {
 		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
 			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
 		}
 		return errors.Wrapf(err, "failed to update run number prefix for playbook '%s'", id)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "failed to read rows affected for playbook '%s'", id)
+	}
+	if affected == 0 {
+		return errors.Wrapf(app.ErrNotFound, "playbook '%s' not found or archived", id)
 	}
 
 	return nil

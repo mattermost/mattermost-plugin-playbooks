@@ -5046,8 +5046,8 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 	if empty {
 		return "", true
 	}
-	if len(str) > propertyValueMaxDisplayLength {
-		return str[:propertyValueMaxDisplayLength-3] + "...", false
+	if len([]rune(str)) > propertyValueMaxDisplayLength {
+		return truncateRunes(str, propertyValueMaxDisplayLength-3) + "...", false
 	}
 	return str, false
 }

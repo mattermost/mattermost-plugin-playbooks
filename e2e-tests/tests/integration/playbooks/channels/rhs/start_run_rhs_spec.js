@@ -365,8 +365,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                 cy.findByText('Create new playbook').should('be.visible').click();
             });
 
-            // * Verify we navigated to the playbook creation flow
-            cy.findByTestId('modal-confirm-button').should('exist');
+            // * Verify the playbook creation modal opened (unique to this flow)
+            cy.get('#root-portal.modal-open').within(() => {
+                cy.findByText('Create Playbook').should('be.visible');
+            });
         });
     });
 });

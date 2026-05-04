@@ -161,8 +161,11 @@ export function resolveTemplatePreview(
             }
             return val; // unknown format — return raw value as-is
         }
-        if (field.type === PropertyFieldType.Date && typeof val === 'number' && val > 0) {
-            return new Date(val).toISOString().split('T')[0];
+        if (field.type === PropertyFieldType.Date && typeof val === 'number') {
+            if (val >= EPOCH_MS_MIN) {
+                return new Date(val).toISOString().split('T')[0];
+            }
+            return String(val);
         }
         return String(val);
     });

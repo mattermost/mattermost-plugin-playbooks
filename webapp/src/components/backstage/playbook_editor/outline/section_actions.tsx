@@ -75,7 +75,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
     );
 
     useEffect(() => {
-        return () => handleRunNumberPrefixSave.clear();
+        return () => handleRunNumberPrefixSave.flush();
     }, [handleRunNumberPrefixSave]);
 
     const preAssignees = useMemo(() => {
@@ -204,7 +204,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
-                        disabled={archived}
+                        disabled={disabled ?? archived}
                         enabled={playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
@@ -219,7 +219,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner
-                        disabled={archived}
+                        disabled={disabled ?? archived}
                         enabled={playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
@@ -230,7 +230,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
-                        disabled={archived}
+                        disabled={disabled ?? archived}
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
@@ -256,7 +256,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
+                            disabled={disabled ?? archived}
                             isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
@@ -278,7 +278,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
+                            disabled={disabled ?? archived}
                             isChecked={playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
                                 updatePlaybook({
