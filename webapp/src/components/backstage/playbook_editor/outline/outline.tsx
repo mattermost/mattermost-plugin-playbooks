@@ -16,7 +16,7 @@ import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
-import {savePlaybook} from 'src/client';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
@@ -82,13 +82,19 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     };
 
     const handleAdminOnlyEditChange = (value: boolean) => {
-        if (archived || !restPlaybook || pendingSave.current) {
+        if (archived || !playbook.id || pendingSave.current) {
             return;
         }
         const prev = effectiveAdminOnlyEdit;
         setAdminOnlyEditOverride(value);
         pendingSave.current = true;
-        savePlaybook({...restPlaybook, admin_only_edit: value})
+        clientFetchPlaybook(playbook.id)
+            .then((latest) => {
+                if (!latest) {
+                    throw new Error('Unable to fetch latest playbook before save');
+                }
+                return savePlaybook({...latest, admin_only_edit: value});
+            })
             .then(() => refetch())
             .catch(() => {
                 setAdminOnlyEditOverride(prev);
