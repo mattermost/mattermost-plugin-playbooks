@@ -77,6 +77,11 @@ jest.mock('src/selectors', () => ({
     isCurrentUserAdmin: () => false,
 }));
 
+jest.mock('src/hooks/permissions', () => ({
+    useIsBlockedByOwnerOnlyForFinishRestore: (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined) =>
+        Boolean(ownerGroupOnlyActions && !isOwner),
+}));
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------

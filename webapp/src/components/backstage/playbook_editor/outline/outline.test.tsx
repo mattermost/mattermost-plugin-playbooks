@@ -6,7 +6,7 @@
 import React, {act} from 'react';
 import renderer from 'react-test-renderer';
 
-import {savePlaybook} from 'src/client';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 
 import Outline from './outline';
 
@@ -121,6 +121,7 @@ const flush = () => new Promise((resolve) => setImmediate(resolve));
 beforeEach(() => {
     latestToggleProps.current = null;
     (savePlaybook as jest.Mock).mockReset();
+    (clientFetchPlaybook as jest.Mock).mockReset();
 });
 
 // ---------------------------------------------------------------------------
@@ -131,6 +132,7 @@ describe('Outline — handleOwnerGroupOnlyActionsChange', () => {
     it('saves playbook with the new value and no stale override spread', async () => {
         (savePlaybook as jest.Mock).mockResolvedValue({});
         const restPlaybook = makeRestPlaybook(false);
+        (clientFetchPlaybook as jest.Mock).mockResolvedValue(restPlaybook);
 
         renderer.create(
             <Outline
@@ -157,6 +159,7 @@ describe('Outline — handleOwnerGroupOnlyActionsChange', () => {
         (savePlaybook as jest.Mock).mockReturnValue(new Promise((resolve) => {
             resolveSave = resolve;
         }));
+        (clientFetchPlaybook as jest.Mock).mockResolvedValue(makeRestPlaybook(false));
 
         renderer.create(
             <Outline
