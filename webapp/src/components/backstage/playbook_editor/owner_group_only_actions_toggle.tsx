@@ -26,7 +26,7 @@ const OwnerGroupOnlyActionsToggle = ({playbook, isPlaybookAdmin, onChange, disab
 
     const confirmationRequired = useMemo(() => ({
         title: formatMessage({defaultMessage: 'Restrict run management to owner only'}),
-        message: formatMessage({defaultMessage: 'Enabling this will immediately restrict finishing, restoring, and reassigning ownership of runs to the run owner only. This applies to all active runs of this playbook. Playbook admins and system admins retain access. Continue?'}),
+        message: formatMessage({defaultMessage: 'Enabling this will immediately restrict finishing and restoring runs to the run owner. Reassigning ownership will also be restricted for non-admins. This applies to all active runs of this playbook. System admins keep access, and playbook admins can still reassign ownership. Continue?'}),
         confirmButtonText: formatMessage({defaultMessage: 'Confirm'}),
     }), [formatMessage]);
 
@@ -36,8 +36,8 @@ const OwnerGroupOnlyActionsToggle = ({playbook, isPlaybookAdmin, onChange, disab
 
     return (
         <BooleanToggle
-            label={formatMessage({defaultMessage: 'Only the run owner can finish, restore, or reassign runs'})}
-            hint={formatMessage({defaultMessage: 'Applies immediately to all active runs of this playbook. Playbook admins and system admins retain access.'})}
+            label={formatMessage({defaultMessage: 'Restrict run management actions for non-owners'})}
+            hint={formatMessage({defaultMessage: 'Applies immediately to all active runs of this playbook. System admins keep access, and playbook admins can still reassign ownership.'})}
             value={playbook.owner_group_only_actions ?? false}
             onChange={handleChange}
             disabled={disabled}

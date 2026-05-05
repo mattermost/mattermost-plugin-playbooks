@@ -620,15 +620,14 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 		return
 	}
 
-	if err := r.permissions.RunManageProperties(r.args.UserId, currentPlaybookRun.ID); err != nil {
-		r.postCommandResponse("Become a participant to interact with this run.")
-		return
-	}
-
 	if err := r.permissions.RunChangeOwner(r.args.UserId, currentPlaybookRun.ID); err != nil {
+		if errors.Is(err, app.ErrOwnerGroupOnlyAction) {
+			r.postCommandResponse("You do not have permission to change the owner of this run.")
+			return
+		}
 		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
 		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
-			r.postCommandResponse("You do not have permission to change the owner of this run.")
+			r.postCommandResponse("Become a participant to interact with this run.")
 			return
 		}
 		r.warnUserAndLogErrorf("Error checking change owner permission: %v", err)
@@ -771,8 +770,8 @@ func (r *Runner) actionFinishByID(args []string) {
 	}
 
 	if err := r.permissions.RunFinish(r.args.UserId, args[0]); err != nil {
-		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
-		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
+		// Fold ErrNotFound/ErrOwnerGroupOnlyAction into the same user-facing message to avoid leaking run existence.
+		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrOwnerGroupOnlyAction) {
 			r.postCommandResponse("You do not have permission to finish this run.")
 			if errors.Is(err, app.ErrNotFound) {
 				logrus.Errorf("Run not found during finish permission check: %v", err)

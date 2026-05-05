@@ -746,7 +746,7 @@ func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName s
 		}).Warn("system admin performing owner-only action on run they do not own")
 		return run, playbook, nil
 	}
-	return run, playbook, errors.Wrapf(ErrNoPermissions, "only the run owner or admin can %s run %s", actionName, runID)
+	return run, playbook, errors.Wrapf(ErrOwnerGroupOnlyAction, "only the run owner or admin can %s run %s", actionName, runID)
 }
 
 // RunFinish checks whether userID can finish runID.
@@ -776,9 +776,9 @@ func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
 	if run == nil {
 		return baseErr
 	}
-	// Playbook admins can reassign ownership when OwnerGroupOnlyActions is set even if they
-	// are not a run participant — enabling legitimate handoffs when the original owner is unavailable.
-	if playbook != nil && playbook.OwnerGroupOnlyActions && p.IsPlaybookAdmin(userID, *playbook) {
+	// Playbook admins can reassign ownership even if they are not a run participant —
+	// enabling legitimate handoffs when the original owner is unavailable.
+	if playbook != nil && p.IsPlaybookAdmin(userID, *playbook) {
 		logrus.WithFields(logrus.Fields{
 			"event":       "playbook_admin_owner_only_bypass",
 			"user_id":     userID,

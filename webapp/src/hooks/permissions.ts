@@ -9,10 +9,9 @@ import {
 } from 'mattermost-redux/selectors/entities/roles';
 import {loadRolesIfNeeded} from 'mattermost-redux/actions/roles';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+import Permissions from 'mattermost-redux/constants/permissions';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
-
-import {isCurrentUserAdmin} from 'src/selectors';
 
 import {PlaybookPermissionGeneral, makeGeneralPermissionSpecific} from 'src/types/permissions';
 
@@ -88,7 +87,7 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
 };
 
 export const useIsSystemAdmin = (): boolean => {
-    return useAppSelector(isCurrentUserAdmin);
+    return useHasSystemPermission(Permissions.MANAGE_SYSTEM);
 };
 
 /**

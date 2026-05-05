@@ -67,7 +67,7 @@ const RHSRunDetails = (props: Props) => {
     const currentUserId = useAppSelector(getCurrentUserId);
 
     const [playbookRun] = useRun(props.runID);
-    const [playbook] = usePlaybook(playbookRun?.playbook_id ?? '');
+    const [playbook] = usePlaybook(playbookRun?.playbook_id);
     const isPlaybookAdmin = playbook?.members?.some(
         (m) => m.user_id === currentUserId && m.scheme_roles?.includes(PlaybookRole.Admin),
     ) ?? false;
