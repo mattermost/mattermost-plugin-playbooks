@@ -5,6 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
+import {type ButtonProps, Button as NewButton} from '@mattermost/shared/components/button';
 
 export const Button = styled.button`
     position: relative;
@@ -122,15 +123,14 @@ export const PrimaryButtonDestructive = styled(Button)`
     }
 `;
 
-export const SubtlePrimaryButton = styled(Button)`
-    background: rgba(var(--button-bg-rgb), 0.08);
-    color: var(--button-bg);
-
-    &:hover,
-    &:active {
-        background: rgba(var(--button-bg-rgb), 0.12);
-    }
-`;
+export function SubtlePrimaryButton(props: Omit<ButtonProps, 'emphasis'>) {
+    return (
+        <NewButton
+            emphasis='tertiary'
+            {...props}
+        />
+    );
+}
 
 export const TertiaryButton = styled.button`
     display: inline-flex;
