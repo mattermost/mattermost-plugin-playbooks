@@ -168,31 +168,6 @@ export const TertiaryButton = styled.button`
     }
 `;
 
-export const InvertedTertiaryButton = styled(Button)`
-    transition: all 0.15s ease-out;
-
-    && {
-        background-color: rgba(var(--button-color-rgb), 0.08);
-        color: var(--button-bg-rgb);
-    }
-
-    &&:hover:not([disabled]) {
-        background: rgba(var(--button-bg-rgb), 0.12);
-        color: var(--button-bg-rgb);
-    }
-
-    &&:active:not([disabled]) {
-        background: rgba(var(--button-bg-rgb), 0.16);
-        color: var(--button-bg-rgb);
-    }
-
-    &&:focus:not([disabled]) {
-        background-color: rgba(var(--button-color-rgb), 0.08);
-        box-shadow: inset 0 0 0 2px var(--sidebar-text-active-border-rgb);
-        color: var(--button-bg-rgb);
-    }
-`;
-
 export const SecondaryButton = styled(TertiaryButton)`
     border: 1px solid var(--button-bg);
     background: var(--button-color-rgb);
