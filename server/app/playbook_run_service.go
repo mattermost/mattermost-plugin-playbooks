@@ -494,7 +494,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			// Remap AssigneePropertyFieldID from playbook-level to run-level field IDs.
 			remapAssigneePropertyFieldIDs(playbookRun.Checklists, propertyCopyResult.FieldMappings)
 
-			// Two-phase resolution: resolve property_user task assignees now that property values exist.
+			// Resolve property_user task assignees using any initial property values already on the run.
 			resolvePropertyUserAssignmentsFromRun(playbookRun)
 
 			// Copy conditions from playbook to run using the field mappings if license allows
@@ -2298,7 +2298,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 		resolvedAssigneeID = playbookRunToModify.ReporterUserID
 	}
 
-	if itemToCheck.AssigneeType == assigneeType && itemToCheck.AssigneeID == resolvedAssigneeID {
+	if itemToCheck.AssigneeType == assigneeType && itemToCheck.AssigneeID == resolvedAssigneeID && itemToCheck.AssigneePropertyFieldID == "" {
 		auditRec.Success()
 		return nil
 	}
@@ -5449,6 +5449,7 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 		if !sliceContains(participantIDs, resolvedUserID) {
 			if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
 				logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
+				return
 			}
 		}
 	}
