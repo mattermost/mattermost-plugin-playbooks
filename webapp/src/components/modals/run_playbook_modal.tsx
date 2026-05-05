@@ -8,6 +8,7 @@ import styled from 'styled-components';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
+import {Button} from '@mattermost/shared/components/button';
 import {ApolloProvider} from '@apollo/client';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
@@ -230,12 +231,13 @@ const RunPlaybookModal = ({
                         </HeaderTitle>
                         <HeaderButtonWrapper>
                             {canCreatePlaybooks &&
-                                <CreatePlaybookButton
+                                <Button
                                     onClick={onCreatePlaybook}
-                                    className='btn btn-sm btn-tertiary'
+                                    emphasis='tertiary'
+                                    size='sm'
                                 >
                                     <FormattedMessage defaultMessage='Create new playbook'/>
-                                </CreatePlaybookButton>
+                                </Button>
                             }
                         </HeaderButtonWrapper>
                     </ColContainer>
@@ -498,11 +500,9 @@ const HorizontalSplit = styled.div`
 `;
 
 const HeaderButtonWrapper = styled.div`
+    font-family: 'Open Sans';
     margin-right: 30px;
     margin-left: auto;
-`;
-const CreatePlaybookButton = styled.button`
-    font-family: 'Open Sans';
 `;
 
 const RunNameLabel = styled(InlineLabel)<{invalid?: boolean}>`
