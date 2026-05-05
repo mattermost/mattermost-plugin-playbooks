@@ -6,13 +6,14 @@
 import React from 'react';
 import renderer, {act} from 'react-test-renderer';
 
-import {savePlaybook} from 'src/client';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {makeBasePlaybook} from 'src/utils/test_helpers';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
-jest.mock('src/client', () => ({savePlaybook: jest.fn(), getSiteUrl: () => ''}));
+jest.mock('src/client', () => ({savePlaybook: jest.fn(), clientFetchPlaybook: jest.fn(), getSiteUrl: () => ''}));
 jest.mock('src/graphql/hooks', () => ({useUpdatePlaybook: () => jest.fn()}));
 jest.mock('src/hooks', () => ({useAllowRetrospectiveAccess: () => true}));
+jest.mock('src/components/backstage/toast_banner', () => ({useToaster: () => ({add: jest.fn()})}));
 jest.mock('react-intl', () => {
     const reactIntl = jest.requireActual('react-intl');
     return {...reactIntl, useIntl: () => reactIntl.createIntl({locale: 'en'})};
@@ -46,6 +47,7 @@ jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () 
 import Outline from './outline';
 
 const mockSavePlaybook = savePlaybook as jest.MockedFunction<typeof savePlaybook>;
+const mockClientFetchPlaybook = clientFetchPlaybook as jest.MockedFunction<typeof clientFetchPlaybook>;
 
 const makeFullPlaybook = (overrides: Record<string, unknown> = {}) => ({
     id: 'pb-id',
@@ -79,13 +81,14 @@ describe('Outline > handleAdminOnlyEditChange', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         toggleProps = null;
+        mockClientFetchPlaybook.mockResolvedValue(makeRestPlaybook(false) as any);
     });
 
-    it('calls savePlaybook with the toggled value', () => {
+    it('calls savePlaybook with the toggled value', async () => {
         mockSavePlaybook.mockResolvedValue(undefined as any);
         renderOutline(false);
 
-        act(() => {
+        await act(async () => {
             toggleProps!.onChange(true);
         });
 
@@ -164,11 +167,11 @@ describe('Outline > handleAdminOnlyEditChange', () => {
         expect(toggleProps!.isChecked).toBe(false);
     });
 
-    it('does nothing when the playbook is archived', () => {
+    it('does nothing when the playbook is archived', async () => {
         mockSavePlaybook.mockResolvedValue(undefined as any);
         renderOutline(false, true /* archived */);
 
-        act(() => {
+        await act(async () => {
             toggleProps!.onChange(true);
         });
 

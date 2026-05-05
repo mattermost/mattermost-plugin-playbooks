@@ -2,12 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {
-    Children,
-    ReactNode,
-    useRef,
-    useState,
-} from 'react';
+import React, {Children, ReactNode, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -47,7 +42,6 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     const toaster = useToaster();
     const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
     const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
-    const pendingSave = useRef(false);
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -82,12 +76,11 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     };
 
     const handleAdminOnlyEditChange = (value: boolean) => {
-        if (archived || !playbook.id || pendingSave.current) {
+        if (archived || !playbook.id) {
             return;
         }
         const prev = effectiveAdminOnlyEdit;
         setAdminOnlyEditOverride(value);
-        pendingSave.current = true;
         clientFetchPlaybook(playbook.id)
             .then((latest) => {
                 if (!latest) {
@@ -102,9 +95,6 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
                     content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
                     toastStyle: ToastStyle.Failure,
                 });
-            })
-            .finally(() => {
-                pendingSave.current = false;
             });
     };
 
