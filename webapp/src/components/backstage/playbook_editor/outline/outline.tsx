@@ -91,7 +91,10 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: P
         setIsSavingOwnerGroupOnlyActions(true);
         setOwnerGroupOnlyActionsOverride(updated.owner_group_only_actions);
         try {
-            const latest = await clientFetchPlaybook(restPlaybook.id) ?? restPlaybook;
+            const latest = await clientFetchPlaybook(restPlaybook.id);
+            if (!latest) {
+                throw new Error('Unable to fetch latest playbook before save');
+            }
             await savePlaybook({...latest, owner_group_only_actions: updated.owner_group_only_actions});
         } catch {
             setOwnerGroupOnlyActionsOverride(prev);

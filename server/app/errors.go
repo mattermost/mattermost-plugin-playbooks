@@ -13,7 +13,8 @@ var ErrNoPermissions = errors.New("does not have permissions")
 
 // ErrOwnerGroupOnlyAction is returned when an action is blocked because the playbook's
 // OwnerGroupOnlyActions flag is set and the requesting user is not the run owner or an admin.
-var ErrOwnerGroupOnlyAction = errors.New("action restricted to run owner or admin")
+// It wraps ErrNoPermissions so callers checking errors.Is(err, ErrNoPermissions) still match.
+var ErrOwnerGroupOnlyAction = errors.Wrap(ErrNoPermissions, "action restricted to run owner or admin")
 
 // ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
 var ErrLicensedFeature = errors.New("not covered by current server license")
