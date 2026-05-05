@@ -1154,8 +1154,37 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 	propertyField := convertRequestToPropertyField(request)
 	propertyField.ID = fieldID
 
+	// Update the channel name template before renaming the field. If the rename then fails,
+	// the template update can be reverted; the reverse order would leave ChannelNameTemplate
+	// referencing a field name that no longer exists.
+	var (
+		templateWasUpdated bool
+		oldTemplate        string
+		newTemplate        string
+	)
+	if existingField.Name != propertyField.Name && currentPlaybook.ChannelNameTemplate != "" {
+		newTemplate = app.ReplaceFieldInTemplate(currentPlaybook.ChannelNameTemplate, existingField.Name, propertyField.Name)
+		if newTemplate != currentPlaybook.ChannelNameTemplate {
+			oldTemplate = currentPlaybook.ChannelNameTemplate
+			updated, err := h.playbookService.UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate)
+			if err != nil {
+				h.HandleError(w, logger, err)
+				return
+			}
+			templateWasUpdated = updated
+		}
+	}
+
 	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
 	if err != nil {
+		// Best-effort revert: if the template was updated but the field rename failed, try to
+		// roll the template back so we don't leave ChannelNameTemplate referencing a field name
+		// that was never applied.
+		if templateWasUpdated {
+			if _, revertErr := h.playbookService.UpdateChannelNameTemplateIfUnchanged(playbookID, newTemplate, oldTemplate); revertErr != nil {
+				logger.WithError(revertErr).Warn("failed to revert channel name template after failed field rename")
+			}
+		}
 		if errors.Is(err, app.ErrPropertyOptionsInUse) {
 			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
 			return
@@ -1169,16 +1198,6 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 		}
 		h.HandleError(w, logger, err)
 		return
-	}
-
-	if existingField.Name != propertyField.Name && currentPlaybook.ChannelNameTemplate != "" {
-		newTemplate := app.ReplaceFieldInTemplate(currentPlaybook.ChannelNameTemplate, existingField.Name, propertyField.Name)
-		if newTemplate != currentPlaybook.ChannelNameTemplate {
-			if _, err := h.playbookService.UpdateChannelNameTemplateIfUnchanged(playbookID, currentPlaybook.ChannelNameTemplate, newTemplate); err != nil {
-				h.HandleError(w, logger, err)
-				return
-			}
-		}
 	}
 
 	ReturnJSON(w, updatedField, http.StatusOK)

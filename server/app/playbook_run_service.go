@@ -387,6 +387,12 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, errors.Wrap(ErrMalformedPlaybookRun, "invalid run type")
 	}
 
+	// Resolve owner before any allocation so {OWNER} resolves from fresh data even if the
+	// caller skipped ResolveRunCreationParams.
+	if pb != nil {
+		s.resolveOwner(playbookRun, logger)
+	}
+
 	// Allocate the sequential identifier server-side. This is the sole allocation point so no
 	// caller can inject a pre-set RunNumber / SequentialID.
 	var channelDisplayName string
@@ -493,6 +499,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			playbookRun.PropertyFields = propertyCopyResult.CopiedFields
 
 			// Copy conditions from playbook to run using the field mappings if license allows
+			conditionsWereCopied := false
 			if s.licenseChecker.ConditionalPlaybooksAllowed() {
 				conditionMapping, err := s.conditionService.CopyPlaybookConditionsToRun(pb.ID, playbookRun.ID, propertyCopyResult)
 				if err != nil {
@@ -501,8 +508,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 					// Update checklist item condition IDs to reference the new condition IDs
 					playbookRun.SwapConditionIDs(conditionMapping)
 
-					// Evaluate all conditions to set initial visibility state
 					if len(conditionMapping) > 0 {
+						conditionsWereCopied = true
+						// Evaluate conditions with default property values as a baseline.
 						_, err = s.conditionService.EvaluateAllConditionsForRun(playbookRun)
 						if err != nil {
 							logger.WithError(err).Warn("failed to evaluate conditions for run")
@@ -519,6 +527,19 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 			if len(initialPropertyValues) > 0 {
 				playbookRun = s.applyInitialPropertyValues(playbookRun, propertyCopyResult, initialPropertyValues, logger)
+
+				// Re-evaluate conditions with the actual initial property values so the run
+				// starts in the correct visibility state rather than the default-value state.
+				if conditionsWereCopied {
+					_, err = s.conditionService.EvaluateAllConditionsForRun(playbookRun)
+					if err != nil {
+						logger.WithError(err).Warn("failed to re-evaluate conditions after applying initial property values")
+					}
+					playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+					if err != nil {
+						logger.WithError(err).Warn("failed to update playbook run after re-evaluating conditions with initial property values")
+					}
+				}
 			}
 		}
 	}
@@ -5077,14 +5098,9 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 		playbookRun.PlaybookID = pb.ID
 	}
 
-	var fields []PropertyField
-	attributesLicensed := s.licenseChecker.PlaybookAttributesAllowed()
-	if attributesLicensed && strings.Contains(pb.ChannelNameTemplate, "{") {
-		var err error
-		fields, err = s.propertyService.GetPropertyFields(pb.ID)
-		if err != nil {
-			return errors.Wrap(err, "failed to load property fields for template resolution")
-		}
+	fields, attributesLicensed, err := s.loadTemplateFields(pb)
+	if err != nil {
+		return err
 	}
 
 	s.resolveOwner(playbookRun, logger)
@@ -5109,14 +5125,9 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 
 	userSuppliedName := strings.TrimSpace(playbookRun.Name)
 
-	var fields []PropertyField
-	attributesLicensed := s.licenseChecker.PlaybookAttributesAllowed()
-	if attributesLicensed && strings.Contains(pb.ChannelNameTemplate, "{") {
-		var err error
-		fields, err = s.propertyService.GetPropertyFields(pb.ID)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load property fields for template resolution")
-		}
+	fields, attributesLicensed, err := s.loadTemplateFields(pb)
+	if err != nil {
+		return "", err
 	}
 
 	template, err := s.prepareTemplate(pb, source, fields, attributesLicensed, logger)
@@ -5141,6 +5152,19 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 	}
 
 	return s.resolveRunName(playbookRun, pb, template, fields, initialValues, userSuppliedName, runNumber, logger)
+}
+
+// loadTemplateFields checks whether the attributes licence is active and, if the playbook's
+// channel name template contains placeholders, fetches the associated property fields.
+func (s *PlaybookRunServiceImpl) loadTemplateFields(pb *Playbook) (fields []PropertyField, attributesLicensed bool, err error) {
+	attributesLicensed = s.licenseChecker.PlaybookAttributesAllowed()
+	if attributesLicensed && strings.Contains(pb.ChannelNameTemplate, "{") {
+		fields, err = s.propertyService.GetPropertyFields(pb.ID)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "failed to load property fields for template resolution")
+		}
+	}
+	return fields, attributesLicensed, nil
 }
 
 // resolveOwner applies the DefaultOwnerID fallback and validates team membership,
