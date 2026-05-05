@@ -637,6 +637,10 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 		propertyField = mmPropertyField
 	}
 
+	if propertyField.TargetType != PropertyTargetTypeRun || propertyField.TargetID != runID {
+		return nil, ErrPropertyFieldNotOnRun
+	}
+
 	// Sanitize and validate the value based on field type
 	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(propertyField, value)
 	if err != nil {
