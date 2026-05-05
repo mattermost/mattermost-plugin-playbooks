@@ -1200,12 +1200,14 @@ type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
-	// CreatePlaybookRun persists a new playbook run. Callers MUST call ResolveRunCreationParams first when a Playbook is provided.
-	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool, source string, channelDisplayName string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error)
+	// CreatePlaybookRun persists a new playbook run. When a Playbook is provided, callers should
+	// call ResolveRunCreationParams first so template errors surface before a run number is consumed.
+	// CreatePlaybookRun always allocates the sequential identifier server-side.
+	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool, source string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error)
 
-	// ResolveRunCreationParams allocates a sequential run number, evaluates creation rules, and resolves template placeholders.
-	// MUST be called before CreatePlaybookRun when a Playbook is provided.
-	ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (resolvedChannelName string, err error)
+	// ResolveRunCreationParams validates template placeholders and resolves the run owner.
+	// Call before CreatePlaybookRun to surface template errors before a run number is consumed.
+	ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) error
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook) error

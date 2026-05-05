@@ -1232,12 +1232,11 @@ And... yes, of course, we have emojis
 		BroadcastChannelIDs: gotplaybook.BroadcastChannelIDs,
 		Type:                app.RunTypePlaybook,
 	}
-	channelDisplayName, err := r.playbookRunService.ResolveRunCreationParams(newRun, &gotplaybook, nil, app.RunSourceCommand)
-	if err != nil {
+	if err := r.playbookRunService.ResolveRunCreationParams(newRun, &gotplaybook, nil, app.RunSourceCommand); err != nil {
 		r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
 		return
 	}
-	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &gotplaybook, r.args.UserId, true, app.RunSourceCommand, channelDisplayName, nil)
+	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &gotplaybook, r.args.UserId, true, app.RunSourceCommand, nil)
 	if err != nil {
 		r.postCommandResponse("Unable to create test playbook run: " + err.Error())
 		return
@@ -1419,12 +1418,11 @@ func (r *Runner) actionTestCreate(params []string) {
 		Type:           app.RunTypePlaybook,
 		CreateAt:       creationTimestamp.UnixMilli(),
 	}
-	channelDisplayName, err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand)
-	if err != nil {
+	if err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand); err != nil {
 		r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
 		return
 	}
-	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, app.RunSourceCommand, channelDisplayName, nil)
+	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, app.RunSourceCommand, nil)
 
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create playbook run: %v", err)
@@ -1962,12 +1960,11 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			Type:                 app.RunTypePlaybook,
 			CreateAt:             createAt.UnixMilli(),
 		}
-		channelDisplayName, err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand)
-		if err != nil {
+		if err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand); err != nil {
 			r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
 			return
 		}
-		playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, app.RunSourceCommand, channelDisplayName, nil)
+		playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, app.RunSourceCommand, nil)
 
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating playbook run: %v", err)

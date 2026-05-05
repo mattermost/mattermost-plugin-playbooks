@@ -104,58 +104,6 @@ func (s *stubUpsertPropertyServiceCapture) UpsertRunPropertyValueWithField(_ str
 	return &PropertyValue{FieldID: f.ID}, nil
 }
 
-// stubPBServiceRunNumber implements PlaybookService with only IncrementRunNumber wired.
-type stubPBServiceRunNumber struct {
-	nextNum int64
-	err     error
-}
-
-func (s *stubPBServiceRunNumber) IncrementRunNumber(_ string) (int64, error) {
-	return s.nextNum, s.err
-}
-func (s *stubPBServiceRunNumber) Create(_ Playbook, _ string) (string, error) { panic("not called") }
-func (s *stubPBServiceRunNumber) Get(_ string) (Playbook, error)              { panic("not called") }
-func (s *stubPBServiceRunNumber) GetPlaybooks() ([]Playbook, error)           { panic("not called") }
-func (s *stubPBServiceRunNumber) GetActivePlaybooks() ([]Playbook, error)     { panic("not called") }
-func (s *stubPBServiceRunNumber) GetPlaybooksForTeam(_ RequesterInfo, _ string, _ PlaybookFilterOptions) (GetPlaybooksResults, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) Update(_ Playbook, _ string) error         { panic("not called") }
-func (s *stubPBServiceRunNumber) Archive(_ Playbook, _ string) error        { panic("not called") }
-func (s *stubPBServiceRunNumber) Restore(_ Playbook, _ string) error        { panic("not called") }
-func (s *stubPBServiceRunNumber) AutoFollow(_, _ string) error              { panic("not called") }
-func (s *stubPBServiceRunNumber) AutoUnfollow(_, _ string) error            { panic("not called") }
-func (s *stubPBServiceRunNumber) GetAutoFollows(_ string) ([]string, error) { panic("not called") }
-func (s *stubPBServiceRunNumber) Duplicate(_ Playbook, _ string) (string, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) GetTopPlaybooksForTeam(_, _ string, _ *InsightsOpts) (*PlaybooksInsightsList, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) GetTopPlaybooksForUser(_, _ string, _ *InsightsOpts) (*PlaybooksInsightsList, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) Import(_ PlaybookImportData, _ string) (string, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) GetPlaybookConditionsForExport(_ string) ([]Condition, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) CreatePropertyField(_ string, _ PropertyField) (*PropertyField, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) UpdatePropertyField(_ string, _ PropertyField) (*PropertyField, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) DeletePropertyField(_, _ string) error { panic("not called") }
-func (s *stubPBServiceRunNumber) ReorderPropertyFields(_, _ string, _ int) ([]PropertyField, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) UpdateChannelNameTemplateIfUnchanged(_, _, _ string) (bool, error) {
-	panic("not called")
-}
-func (s *stubPBServiceRunNumber) UpdateRunNumberPrefix(_, _, _ string) error { panic("not called") }
-
 // ---------------------------------------------------------------------------
 // Tests for applyInitialPropertyValues
 // ---------------------------------------------------------------------------
@@ -297,46 +245,12 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestCreatePlaybookRun_PreconditionGuards(t *testing.T) {
-	t.Run("non-nil pb and empty name returns ErrInternalPrecondition", func(t *testing.T) {
-		svc := &PlaybookRunServiceImpl{}
-		run := &PlaybookRun{Name: ""}
-		pb := &Playbook{ID: mm_model.NewId()}
-
-		_, err := svc.CreatePlaybookRun(run, pb, "user1", true, "", "", nil)
-
-		require.Error(t, err)
-		require.True(t, errors.Is(err, ErrInternalPrecondition))
-	})
-
-	t.Run("non-nil pb and whitespace-only name returns ErrInternalPrecondition", func(t *testing.T) {
-		svc := &PlaybookRunServiceImpl{}
-		run := &PlaybookRun{Name: "   "}
-		pb := &Playbook{ID: mm_model.NewId()}
-
-		_, err := svc.CreatePlaybookRun(run, pb, "user1", true, "", "", nil)
-
-		require.Error(t, err)
-		require.True(t, errors.Is(err, ErrInternalPrecondition))
-	})
-
 	t.Run("non-nil pb and empty PlaybookID returns ErrInternalPrecondition", func(t *testing.T) {
 		svc := &PlaybookRunServiceImpl{}
-		run := &PlaybookRun{Name: "my run", PlaybookID: "", RunNumber: 1}
+		run := &PlaybookRun{Name: "my run", PlaybookID: ""}
 		pb := &Playbook{ID: mm_model.NewId()}
 
-		_, err := svc.CreatePlaybookRun(run, pb, "user1", true, "", "", nil)
-
-		require.Error(t, err)
-		require.True(t, errors.Is(err, ErrInternalPrecondition))
-	})
-
-	t.Run("non-nil pb and RunNumber==0 with non-empty PlaybookID returns ErrInternalPrecondition", func(t *testing.T) {
-		svc := &PlaybookRunServiceImpl{}
-		pbID := mm_model.NewId()
-		run := &PlaybookRun{Name: "my run", PlaybookID: pbID, RunNumber: 0}
-		pb := &Playbook{ID: pbID}
-
-		_, err := svc.CreatePlaybookRun(run, pb, "user1", true, "", "", nil)
+		_, err := svc.CreatePlaybookRun(run, pb, "user1", true, "", nil)
 
 		require.Error(t, err)
 		require.True(t, errors.Is(err, ErrInternalPrecondition))
@@ -351,7 +265,7 @@ func TestCreatePlaybookRun_PreconditionGuards(t *testing.T) {
 		var precondErr error
 		func() {
 			defer func() { recover() }() //nolint:errcheck
-			_, precondErr = svc.CreatePlaybookRun(run, nil, "user1", true, "", "", nil)
+			_, precondErr = svc.CreatePlaybookRun(run, nil, "user1", true, "", nil)
 		}()
 
 		require.False(t, errors.Is(precondErr, ErrInternalPrecondition))
@@ -366,10 +280,9 @@ func TestResolveRunCreationParams_NilPlaybook(t *testing.T) {
 	svc := &PlaybookRunServiceImpl{}
 	run := &PlaybookRun{ID: mm_model.NewId()}
 
-	channelName, err := svc.ResolveRunCreationParams(run, nil, nil, RunSourcePost)
+	err := svc.ResolveRunCreationParams(run, nil, nil, RunSourcePost)
 
 	require.NoError(t, err)
-	assert.Equal(t, "", channelName)
 }
 
 func TestResolveRunCreationParams_PlaybookIDMismatch(t *testing.T) {
@@ -378,7 +291,7 @@ func TestResolveRunCreationParams_PlaybookIDMismatch(t *testing.T) {
 	run := &PlaybookRun{PlaybookID: "pb_a"}
 	pb := &Playbook{ID: "pb_b"}
 
-	_, err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
+	err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
 
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
@@ -388,50 +301,32 @@ func TestResolveRunCreationParams_SetsPlaybookIDFromPlaybook(t *testing.T) {
 	pbID := mm_model.NewId()
 
 	svc := &PlaybookRunServiceImpl{
-		licenseChecker:  &stubLicenseCheckerNoAttributes{},
-		playbookService: &stubPBServiceRunNumber{nextNum: 1},
+		licenseChecker: &stubLicenseCheckerNoAttributes{},
 	}
 
 	run := &PlaybookRun{PlaybookID: ""}
 	pb := &Playbook{ID: pbID, ChannelNameTemplate: "", RunNumberPrefix: ""}
 
-	_, err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
+	err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
 
 	require.NoError(t, err)
 	assert.Equal(t, pbID, run.PlaybookID)
 }
 
-func TestResolveRunCreationParams_AllocatesRunNumber(t *testing.T) {
+func TestResolveRunCreationParams_DoesNotAllocateRunNumber(t *testing.T) {
 	pbID := mm_model.NewId()
 
 	svc := &PlaybookRunServiceImpl{
-		licenseChecker:  &stubLicenseCheckerNoAttributes{},
-		playbookService: &stubPBServiceRunNumber{nextNum: 42},
+		licenseChecker: &stubLicenseCheckerNoAttributes{},
 	}
 
 	run := &PlaybookRun{PlaybookID: pbID}
 	pb := &Playbook{ID: pbID, ChannelNameTemplate: "", RunNumberPrefix: "INC"}
 
-	_, err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
+	err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
 
 	require.NoError(t, err)
-	assert.Equal(t, int64(42), run.RunNumber)
-	assert.Equal(t, "INC-00042", run.SequentialID)
-}
-
-func TestResolveRunCreationParams_IncrementRunNumberError(t *testing.T) {
-	pbID := mm_model.NewId()
-
-	svc := &PlaybookRunServiceImpl{
-		licenseChecker:  &stubLicenseCheckerNoAttributes{},
-		playbookService: &stubPBServiceRunNumber{err: errors.New("db unavailable")},
-	}
-
-	run := &PlaybookRun{PlaybookID: pbID}
-	pb := &Playbook{ID: pbID, ChannelNameTemplate: "", RunNumberPrefix: "INC"}
-
-	_, err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to allocate run number")
+	// Allocation now happens exclusively in CreatePlaybookRun via resolveAndAllocate.
+	assert.Equal(t, int64(0), run.RunNumber)
+	assert.Equal(t, "", run.SequentialID)
 }

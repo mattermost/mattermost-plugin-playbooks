@@ -370,7 +370,13 @@ func (h *PlaybookHandler) patchRunNumberPrefix(c *Context, w http.ResponseWriter
 		return
 	}
 
-	err = h.playbookService.UpdateRunNumberPrefix(playbookID, body.RunNumberPrefix, userID)
+	prefix := app.NormalizeRunNumberPrefix(body.RunNumberPrefix)
+	if err := app.ValidateRunNumberPrefix(prefix); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	err = h.playbookService.UpdateRunNumberPrefix(playbookID, prefix, userID)
 	if err != nil {
 		if h.handlePlaybookWriteError(w, c.logger, err) {
 			return

@@ -355,20 +355,14 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
-// CreatePlaybookRun creates a new playbook run. Callers MUST call ResolveRunCreationParams first when a Playbook is provided.
-func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool, source string, channelDisplayName string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error) {
+// CreatePlaybookRun creates a new playbook run. When a Playbook is provided, callers should
+// call ResolveRunCreationParams first so that template errors surface before a run number is
+// consumed. CreatePlaybookRun always allocates the sequential identifier itself, so callers
+// cannot inject a pre-set RunNumber or SequentialID.
+func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool, source string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error) {
 	if pb != nil {
-		if strings.TrimSpace(playbookRun.Name) == "" {
-			return nil, errors.Wrap(ErrInternalPrecondition, "run name is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
-		}
 		if playbookRun.PlaybookID == "" {
-			return nil, errors.Wrap(ErrInternalPrecondition, "playbook ID is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
-		}
-		if playbookRun.RunNumber == 0 {
-			return nil, errors.Wrap(ErrInternalPrecondition, "run number is 0: ResolveRunCreationParams must be called before CreatePlaybookRun to allocate a sequential run number")
-		}
-		if playbookRun.SequentialID == "" {
-			return nil, errors.Wrap(ErrInternalPrecondition, "sequential ID is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
+			return nil, errors.Wrap(ErrInternalPrecondition, "playbook ID is empty")
 		}
 	}
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
@@ -391,6 +385,17 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	if playbookRun.Type != RunTypePlaybook && playbookRun.Type != RunTypeChannelChecklist {
 		return nil, errors.Wrap(ErrMalformedPlaybookRun, "invalid run type")
+	}
+
+	// Allocate the sequential identifier server-side. This is the sole allocation point so no
+	// caller can inject a pre-set RunNumber / SequentialID.
+	var channelDisplayName string
+	if pb != nil {
+		var allocErr error
+		channelDisplayName, allocErr = s.resolveAndAllocate(playbookRun, pb, initialPropertyValues, source)
+		if allocErr != nil {
+			return nil, allocErr
+		}
 	}
 
 	var err error
@@ -5055,17 +5060,49 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 	return str, false
 }
 
-// ResolveRunCreationParams resolves template placeholders and allocates a sequential run number.
-func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (string, error) {
+// ResolveRunCreationParams validates template placeholders and resolves the run owner.
+// Call before CreatePlaybookRun to surface template errors before a run number is consumed.
+// It does not allocate a sequential run number; that happens exclusively in CreatePlaybookRun.
+func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) error {
 	if pb == nil {
-		return "", nil
+		return nil
 	}
 
 	logger := logrus.WithField("playbook_id", pb.ID)
 
 	if playbookRun.PlaybookID != "" && pb.ID != playbookRun.PlaybookID {
-		return "", errors.Wrap(ErrMalformedPlaybookRun, "playbook ID mismatch between run and supplied playbook")
+		return errors.Wrap(ErrMalformedPlaybookRun, "playbook ID mismatch between run and supplied playbook")
 	}
+	if playbookRun.PlaybookID == "" {
+		playbookRun.PlaybookID = pb.ID
+	}
+
+	var fields []PropertyField
+	attributesLicensed := s.licenseChecker.PlaybookAttributesAllowed()
+	if attributesLicensed && strings.Contains(pb.ChannelNameTemplate, "{") {
+		var err error
+		fields, err = s.propertyService.GetPropertyFields(pb.ID)
+		if err != nil {
+			return errors.Wrap(err, "failed to load property fields for template resolution")
+		}
+	}
+
+	s.resolveOwner(playbookRun, logger)
+
+	template, err := s.prepareTemplate(pb, source, fields, attributesLicensed, logger)
+	if err != nil {
+		return err
+	}
+
+	return s.dryRunValidateTemplate(pb, playbookRun, template, fields, initialValues, logger)
+}
+
+// resolveAndAllocate prepares the run name template, allocates the sequential run number, and
+// resolves all placeholders. It is the sole allocation point — no other path may set RunNumber
+// or SequentialID. Returns the channel display name.
+func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (string, error) {
+	logger := logrus.WithField("playbook_id", pb.ID)
+
 	if playbookRun.PlaybookID == "" {
 		playbookRun.PlaybookID = pb.ID
 	}
@@ -5082,14 +5119,28 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 		}
 	}
 
-	s.resolveOwner(playbookRun, logger)
-
 	template, err := s.prepareTemplate(pb, source, fields, attributesLicensed, logger)
 	if err != nil {
 		return "", err
 	}
 
-	return s.resolveRunName(playbookRun, pb, template, fields, initialValues, userSuppliedName, logger)
+	if err := s.dryRunValidateTemplate(pb, playbookRun, template, fields, initialValues, logger); err != nil {
+		return "", err
+	}
+
+	// Allocate sequential run number. Gaps are acceptable (Jira-style) if creation fails after this point.
+	var runNumber int64
+	if playbookRun.PlaybookID != "" {
+		runNumber, err = s.playbookService.IncrementRunNumber(playbookRun.PlaybookID)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				return "", errors.Wrap(ErrMalformedPlaybookRun, "playbook not found during run creation")
+			}
+			return "", errors.Wrap(err, "failed to allocate run number")
+		}
+	}
+
+	return s.resolveRunName(playbookRun, pb, template, fields, initialValues, userSuppliedName, runNumber, logger)
 }
 
 // resolveOwner applies the DefaultOwnerID fallback and validates team membership,
@@ -5191,55 +5242,49 @@ func (s *PlaybookRunServiceImpl) sanitizePropertyValues(fields []PropertyField, 
 	return sanitized
 }
 
-// resolveRunName allocates the sequential run number, resolves the channel name template,
-// and sets playbookRun.Name, RunNumber, and SequentialID. Returns the channel name.
-func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Playbook, template string, fields []PropertyField, initialValues map[string]json.RawMessage, userSuppliedName string, logger *logrus.Entry) (string, error) {
+// dryRunValidateTemplate validates that all fields referenced by the channel name template have
+// non-empty values. It uses a sentinel sequential ID to avoid consuming a real run number.
+func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRun *PlaybookRun, template string, fields []PropertyField, initialValues map[string]json.RawMessage, logger *logrus.Entry) error {
+	if template == "" {
+		return nil
+	}
 	formatFunc := s.makeRunNameFormatFunc()
-
-	// Resolve display names once — shared between dry-run and real resolve to avoid duplicate User.Get calls.
 	systemTokens := s.buildSystemTokens(playbookRun, "")
+	sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)
 
-	var sanitizedValues map[string]json.RawMessage
-	if template != "" {
-		sanitizedValues = s.sanitizePropertyValues(fields, initialValues, logger)
-
-		// Dry-run: validate field values resolve before consuming the sequential run number.
-		// Use a copy so the sentinel value does not leak into systemTokens.
-		const dryRunSeqSentinel int64 = 99999
-		dryRunTokens := make(map[string]string, len(systemTokens))
-		for k, v := range systemTokens {
-			dryRunTokens[k] = v
-		}
-		dryRunTokens["SEQ"] = FormatSequentialID(pb.RunNumberPrefix, dryRunSeqSentinel)
-		_, unresolvedPre := ResolveTemplate(template, ResolveOptions{
-			Fields:       fields,
-			Values:       sanitizedValues,
-			SystemTokens: dryRunTokens,
-			FormatFunc:   formatFunc,
-		})
-		if len(unresolvedPre) > 0 {
-			return "", errors.Wrapf(ErrMalformedPlaybookRun, "channel name template references fields with missing or empty values: %s", strings.Join(unresolvedPre, ", "))
-		}
+	const dryRunSeqSentinel int64 = 99999
+	dryRunTokens := make(map[string]string, len(systemTokens))
+	for k, v := range systemTokens {
+		dryRunTokens[k] = v
 	}
+	dryRunTokens["SEQ"] = FormatSequentialID(pb.RunNumberPrefix, dryRunSeqSentinel)
 
-	// Allocate sequential run number; gaps are acceptable (Jira-style) if creation fails after this point.
-	var runNumber int64
-	if playbookRun.PlaybookID != "" {
-		var err error
-		runNumber, err = s.playbookService.IncrementRunNumber(playbookRun.PlaybookID)
-		if err != nil {
-			if errors.Is(err, ErrNotFound) {
-				return "", errors.Wrap(ErrMalformedPlaybookRun, "playbook not found during run creation")
-			}
-			return "", errors.Wrap(err, "failed to allocate run number")
-		}
+	_, unresolved := ResolveTemplate(template, ResolveOptions{
+		Fields:       fields,
+		Values:       sanitizedValues,
+		SystemTokens: dryRunTokens,
+		FormatFunc:   formatFunc,
+	})
+	if len(unresolved) > 0 {
+		return errors.Wrapf(ErrMalformedPlaybookRun, "channel name template references fields with missing or empty values: %s", strings.Join(unresolved, ", "))
 	}
+	return nil
+}
+
+// resolveRunName resolves the channel name template using the given runNumber (already allocated
+// by the caller), sets playbookRun.Name, RunNumber, and SequentialID, and returns the channel
+// display name.
+func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Playbook, template string, fields []PropertyField, initialValues map[string]json.RawMessage, userSuppliedName string, runNumber int64, logger *logrus.Entry) (string, error) {
 	playbookRun.RunNumber = runNumber
 	seqID := FormatSequentialID(pb.RunNumberPrefix, runNumber)
 	playbookRun.SequentialID = seqID
 
+	formatFunc := s.makeRunNameFormatFunc()
+	systemTokens := s.buildSystemTokens(playbookRun, "")
+
 	var resolvedRunName, resolvedChannelName string
 	if template != "" {
+		sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)
 		systemTokens["SEQ"] = seqID
 		resolved, unresolved := ResolveTemplate(template, ResolveOptions{
 			Fields:       fields,
@@ -5268,6 +5313,7 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 		default:
 			resolvedRunName = "Untitled"
 		}
+		resolvedRunName = strings.TrimSpace(truncateRunes(resolvedRunName, MaxRunNameLength))
 	}
 
 	playbookRun.Name = resolvedRunName
