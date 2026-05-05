@@ -4,6 +4,7 @@
 package app
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -231,5 +232,133 @@ func TestResolveOwnerRoleAssignments(t *testing.T) {
 		assert.Equal(t, newOwnerID, checklists[0].Items[0].AssigneeID, "owner item updated")
 		assert.Equal(t, creatorID, checklists[0].Items[1].AssigneeID, "creator item unchanged")
 		assert.Equal(t, specificUserID, checklists[0].Items[2].AssigneeID, "specific user item unchanged")
+	})
+}
+
+// TestResolvePropertyUserAssignmentsFromRun tests resolvePropertyUserAssignmentsFromRun.
+// This function is called at run creation time (after CopyPlaybookPropertiesToRun) and
+// on every property value change. PropertyValues MUST be hydrated before the call —
+// the regression this tests is that CreatePlaybookRun previously called the function
+// with an empty PropertyValues slice, silently leaving all property_user items unresolved.
+func TestResolvePropertyUserAssignmentsFromRun(t *testing.T) {
+	fieldID := "field-user-abc"
+	resolvedUserID := "user-resolved-xyz"
+
+	t.Run("resolves AssigneeID when PropertyValues contains a matching entry", func(t *testing.T) {
+		run := &PlaybookRun{
+			PropertyValues: []PropertyValue{
+				{FieldID: fieldID, Value: json.RawMessage(`"` + resolvedUserID + `"`)},
+			},
+			Checklists: []Checklist{
+				{Items: []ChecklistItem{
+					{
+						ID:                      "item-1",
+						AssigneeType:            AssigneeTypePropertyUser,
+						AssigneePropertyFieldID: fieldID,
+					},
+				}},
+			},
+		}
+
+		changed := resolvePropertyUserAssignmentsFromRun(run)
+
+		require.True(t, changed)
+		assert.Equal(t, resolvedUserID, run.Checklists[0].Items[0].AssigneeID)
+		assert.Equal(t, AssigneeTypePropertyUser, run.Checklists[0].Items[0].AssigneeType,
+			"AssigneeType must be preserved after resolution")
+	})
+
+	t.Run("leaves AssigneeID empty when PropertyValues is empty (no value set yet)", func(t *testing.T) {
+		// This is the state at run creation time before any property value is written.
+		// The hydration fix ensures this is a deliberate no-op rather than a silent bug.
+		run := &PlaybookRun{
+			PropertyValues: []PropertyValue{},
+			Checklists: []Checklist{
+				{Items: []ChecklistItem{
+					{
+						ID:                      "item-1",
+						AssigneeType:            AssigneeTypePropertyUser,
+						AssigneePropertyFieldID: fieldID,
+					},
+				}},
+			},
+		}
+
+		changed := resolvePropertyUserAssignmentsFromRun(run)
+
+		assert.False(t, changed)
+		assert.Empty(t, run.Checklists[0].Items[0].AssigneeID)
+	})
+
+	t.Run("ignores items whose field ID is absent from PropertyValues", func(t *testing.T) {
+		run := &PlaybookRun{
+			PropertyValues: []PropertyValue{
+				{FieldID: "other-field", Value: json.RawMessage(`"` + resolvedUserID + `"`)},
+			},
+			Checklists: []Checklist{
+				{Items: []ChecklistItem{
+					{
+						ID:                      "item-1",
+						AssigneeType:            AssigneeTypePropertyUser,
+						AssigneePropertyFieldID: fieldID,
+					},
+				}},
+			},
+		}
+
+		changed := resolvePropertyUserAssignmentsFromRun(run)
+
+		assert.False(t, changed)
+		assert.Empty(t, run.Checklists[0].Items[0].AssigneeID)
+	})
+
+	t.Run("skips non-property_user items", func(t *testing.T) {
+		ownerID := "user-owner"
+		run := &PlaybookRun{
+			PropertyValues: []PropertyValue{
+				{FieldID: fieldID, Value: json.RawMessage(`"` + resolvedUserID + `"`)},
+			},
+			Checklists: []Checklist{
+				{Items: []ChecklistItem{
+					{ID: "item-1", AssigneeType: AssigneeTypeOwner, AssigneeID: ownerID},
+					{ID: "item-2", AssigneeType: AssigneeTypeSpecificUser, AssigneeID: "user-explicit"},
+				}},
+			},
+		}
+
+		changed := resolvePropertyUserAssignmentsFromRun(run)
+
+		assert.False(t, changed)
+		assert.Equal(t, ownerID, run.Checklists[0].Items[0].AssigneeID, "owner item unchanged")
+		assert.Equal(t, "user-explicit", run.Checklists[0].Items[1].AssigneeID, "specific user unchanged")
+	})
+
+	t.Run("resolves items across multiple checklists", func(t *testing.T) {
+		fieldID2 := "field-user-def"
+		userID2 := "user-resolved-second"
+		run := &PlaybookRun{
+			PropertyValues: []PropertyValue{
+				{FieldID: fieldID, Value: json.RawMessage(`"` + resolvedUserID + `"`)},
+				{FieldID: fieldID2, Value: json.RawMessage(`"` + userID2 + `"`)},
+			},
+			Checklists: []Checklist{
+				{Items: []ChecklistItem{
+					{ID: "item-1", AssigneeType: AssigneeTypePropertyUser, AssigneePropertyFieldID: fieldID},
+				}},
+				{Items: []ChecklistItem{
+					{ID: "item-2", AssigneeType: AssigneeTypePropertyUser, AssigneePropertyFieldID: fieldID2},
+				}},
+			},
+		}
+
+		changed := resolvePropertyUserAssignmentsFromRun(run)
+
+		require.True(t, changed)
+		assert.Equal(t, resolvedUserID, run.Checklists[0].Items[0].AssigneeID)
+		assert.Equal(t, userID2, run.Checklists[1].Items[0].AssigneeID)
+	})
+
+	t.Run("returns false for nil run", func(t *testing.T) {
+		assert.False(t, resolvePropertyUserAssignmentsFromRun(nil))
 	})
 }

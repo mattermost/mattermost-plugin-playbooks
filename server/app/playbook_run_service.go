@@ -494,6 +494,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			// Remap AssigneePropertyFieldID from playbook-level to run-level field IDs.
 			remapAssigneePropertyFieldIDs(playbookRun.Checklists, propertyCopyResult.FieldMappings)
 
+			// Hydrate PropertyValues so that resolvePropertyUserAssignmentsFromRun can look them up.
+			if propertyValues, pvErr := s.propertyService.GetRunPropertyValues(playbookRun.ID); pvErr != nil {
+				logger.WithError(pvErr).Warn("failed to get run property values before resolving assignees")
+			} else {
+				playbookRun.PropertyValues = propertyValues
+			}
+
 			// Resolve property_user task assignees using any initial property values already on the run.
 			resolvePropertyUserAssignmentsFromRun(playbookRun)
 

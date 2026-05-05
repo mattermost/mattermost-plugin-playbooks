@@ -3259,3 +3259,67 @@ func TestRunCreationFromPlaybook_AssigneeTypePropagation(t *testing.T) {
 	assert.Equal(t, e.RegularUser.Id, creatorItem.AssigneeID,
 		"creator-type item must be resolved to the run creator at creation time")
 }
+
+// TestRunCreationFromPlaybook_PropertyUserAssigneeType verifies that a checklist item
+// with AssigneeType "property_user" is carried over from the playbook template to the
+// run, with AssigneePropertyFieldID remapped to the run-level field copy.
+// At creation time no property value exists yet, so AssigneeID starts empty.
+// It is resolved later when someone sets the property value via SetRunPropertyValue.
+func TestRunCreationFromPlaybook_PropertyUserAssigneeType(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	// Create a playbook with a user-type property field and a property_user checklist item.
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Property User Assignee Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	pbField, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+		context.Background(),
+		pbID,
+		client.PropertyFieldRequest{Name: "Reviewer", Type: "user"},
+	)
+	require.NoError(t, err)
+
+	// Update the playbook to add a checklist item that references the new field.
+	pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pbID)
+	require.NoError(t, err)
+	pb.Checklists = []client.Checklist{
+		{
+			Title: "Tasks",
+			Items: []client.ChecklistItem{
+				{
+					Title:                   "Review task",
+					AssigneeType:            app.AssigneeTypePropertyUser,
+					AssigneePropertyFieldID: pbField.ID,
+				},
+			},
+		},
+	}
+	err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Property User Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 1)
+	require.Len(t, run.Checklists[0].Items, 1)
+
+	item := run.Checklists[0].Items[0]
+	assert.Equal(t, app.AssigneeTypePropertyUser, item.AssigneeType,
+		"AssigneeType must be preserved from playbook template")
+	assert.NotEmpty(t, item.AssigneePropertyFieldID,
+		"AssigneePropertyFieldID must be remapped to the run-level field copy")
+	assert.NotEqual(t, pbField.ID, item.AssigneePropertyFieldID,
+		"run-level field ID must differ from the playbook-level field ID")
+	assert.Empty(t, item.AssigneeID,
+		"AssigneeID starts empty at creation — resolved later when a property value is set")
+}
