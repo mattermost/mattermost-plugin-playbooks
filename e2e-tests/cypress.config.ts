@@ -28,7 +28,7 @@ export default defineConfig({
         cwsURL: 'http://localhost:8076',
         cwsAPIURL: 'http://localhost:8076',
         dbClient: 'postgres',
-        dbConnection: process.env.MM_DB_CONNECTION || 'postgres://mmuser:mostest@localhost/mattermost_worktree?sslmode=disable&connect_timeout=10',
+        dbConnection: 'postgres://mmuser:mostest@localhost/mattermost_test?sslmode=disable&connect_timeout=10',
         elasticsearchConnectionURL: 'http://localhost:9200',
         firstTest: false,
         keycloakAppName: 'mattermost',
@@ -57,7 +57,7 @@ export default defineConfig({
         setupNodeEvents(on, config) {
             return require('./tests/plugins/index.js')(on, config); // eslint-disable-line global-require
         },
-        baseUrl: process.env.MM_SERVICESETTINGS_SITEURL || 'http://localhost:9066',
+        baseUrl: process.env.MM_SERVICESETTINGS_SITEURL || 'http://localhost:8065',
         excludeSpecPattern: '**/node_modules/**/*',
         specPattern: 'tests/integration/**/*_spec.{js,ts}',
         supportFile: 'tests/support/index.js',

@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useRef, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useRef,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -12,7 +17,7 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {savePlaybook} from 'src/client';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -54,7 +59,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     };
 
     const handleNewChannelOnlyChange = ({new_channel_only}: {new_channel_only: boolean}) => {
-        if (archived || !restPlaybook || pendingSave.current) {
+        if (archived || !playbook.id || pendingSave.current) {
             return;
         }
         const prev = effectiveNewChannelOnly;
@@ -63,8 +68,14 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         }
         setNewChannelOnlyOverride(new_channel_only);
         pendingSave.current = true;
-        const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
-        savePlaybook(updated)
+        clientFetchPlaybook(playbook.id)
+            .then((latest) => {
+                if (!latest) {
+                    throw new Error('Unable to fetch latest playbook before save');
+                }
+                const updated = {...latest, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : latest.channel_mode};
+                return savePlaybook(updated);
+            })
             .catch(() => {
                 setNewChannelOnlyOverride(prev);
                 toaster.add({
