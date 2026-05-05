@@ -128,10 +128,6 @@ const RunButton = styled(SubtlePrimaryButton)`
     flex-direction: column;
     flex-shrink: 0;
     justify-content: center;
-
-    svg {
-        margin-bottom: 0.5rem;
-    }
 `;
 
 type RHSHomeTemplateProps = {
