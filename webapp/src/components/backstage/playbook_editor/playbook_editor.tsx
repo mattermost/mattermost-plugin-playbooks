@@ -58,7 +58,6 @@ const PlaybookEditor = () => {
     const stats = useStats(playbookId);
     const currentUserId = useAppSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
-
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const headingRef = useRef<HTMLDivElement>(null);

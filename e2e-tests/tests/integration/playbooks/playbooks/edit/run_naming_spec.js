@@ -326,6 +326,27 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         cy.findByTestId('channel-access-run-name-template-warning').should('exist');
     });
 
+    it('template editor shows property field names as valid (no unknown-field warning)', () => {
+        // This test guards against a regression where the editor fetched property fields
+        // from a separate endpoint but the code was reading restPlaybook?.propertyFields
+        // (always undefined) instead, causing every field reference to show as "unknown".
+
+        // # Create a property field on the playbook
+        cy.apiAddPropertyField(testPlaybook.id, {name: 'Zone', type: 'select', attrs: {options: [{name: 'Alpha'}, {name: 'Bravo'}]}});
+
+        // # Set a template that references the property field
+        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: '{Zone} - Incident'});
+
+        // # Visit the playbook editor Actions section
+        cy.playbooksVisitEditor(testPlaybook.id, 'outline');
+
+        // * Template input is loaded with the template value
+        cy.findByTestId('channel-access-run-name-template-input').should('have.value', '{Zone} - Incident');
+
+        // * No "Unknown field references" warning — Zone is a known property field
+        cy.findByTestId('channel-access-run-name-template-warning').should('not.exist');
+    });
+
     it('clearing both channel_name_template and run_number_prefix in a single update succeeds', () => {
         // # Create a playbook with both fields set
         cy.apiPatchPlaybook(testPlaybook.id, {

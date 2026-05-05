@@ -160,7 +160,6 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                 <Actions
                     playbook={playbook}
                     restPlaybook={restPlaybook}
-                    fieldNames={restPlaybook?.propertyFields?.map((f: {name: string}) => f.name) ?? []}
                 />
             </Section>
             <PlaybookActionsModal

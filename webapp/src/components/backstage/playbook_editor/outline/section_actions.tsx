@@ -7,6 +7,7 @@ import React, {
     useEffect,
     useMemo,
     useRef,
+    useState,
 } from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import debounce from 'debounce';
@@ -20,7 +21,7 @@ import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {updatePlaybookRunNumberPrefix} from 'src/client';
+import {fetchPlaybookPropertyFields, updatePlaybookRunNumberPrefix} from 'src/client';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -38,11 +39,16 @@ import {getDistinctAssignees} from 'src/utils';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     disabled?: boolean;
-    fieldNames?: string[];
     restPlaybook?: PlaybookWithChecklist;
 }
 
-const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: Props) => {
+const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
+    const [fieldNames, setFieldNames] = useState<string[]>([]);
+    useEffect(() => {
+        fetchPlaybookPropertyFields(playbook.id)
+            .then((fields) => setFieldNames(fields.map((f) => f.name)))
+            .catch(() => { /* ignore fetch errors — fieldNames stays empty */ });
+    }, [playbook.id]);
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
