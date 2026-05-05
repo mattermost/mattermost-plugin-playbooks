@@ -263,7 +263,6 @@ export default class ConfirmModal extends React.Component<Props, State> {
                                 <PrimaryButtonDestructive
                                     autoFocus={true}
                                     type='button'
-                                    className={this.props.confirmButtonClass}
                                     onClick={(e) => {
                                         if (this.props.stopPropagationOnClick) {
                                             e.stopPropagation();
