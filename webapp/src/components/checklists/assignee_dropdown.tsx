@@ -12,6 +12,7 @@ import {
     AssigneeTypeOwner,
     AssigneeTypePropertyUser,
     ChecklistItem,
+    isRoleBasedAssigneeType,
 } from 'src/types/playbook';
 
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
@@ -37,7 +38,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
     const assigneeType = checklistItem.assignee_type || '';
 
-    const selectedRole = (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator || assigneeType === AssigneeTypePropertyUser) ? assigneeType : ROLE_NONE;
+    const selectedRole = isRoleBasedAssigneeType(assigneeType) ? assigneeType : ROLE_NONE;
 
     // When the property_user radio is clicked but no field has been selected yet,
     // show it as selected in the UI without firing a mutation.
@@ -86,7 +87,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
     );
 
     // Read-only view: show a role badge and the resolved user avatar (if in run mode).
-    if (!editable && (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator || assigneeType === AssigneeTypePropertyUser)) {
+    if (!editable && isRoleBasedAssigneeType(assigneeType)) {
         let resolvedUserId: string | undefined;
         let badgeLabel: string;
         let badgeTestId: string;

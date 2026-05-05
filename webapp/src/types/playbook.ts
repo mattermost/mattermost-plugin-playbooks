@@ -119,6 +119,9 @@ export const AssigneeTypeOwner = 'owner';
 export const AssigneeTypeCreator = 'creator';
 export const AssigneeTypePropertyUser = 'property_user';
 
+export const isRoleBasedAssigneeType = (type: string): boolean =>
+    type === AssigneeTypeOwner || type === AssigneeTypeCreator || type === AssigneeTypePropertyUser;
+
 export interface ChecklistItem {
     id?: string;
     title: string;

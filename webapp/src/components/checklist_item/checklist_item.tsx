@@ -33,6 +33,7 @@ import {
     ChecklistItemState,
     ChecklistItem as ChecklistItemType,
     TaskAction as TaskActionType,
+    isRoleBasedAssigneeType,
 } from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
@@ -241,13 +242,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [props.checklistItem.task_actions]);
 
     const assigneeCallSeqRef = useRef(0);
+    const assigneeStateRef = useRef({id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID});
+    useEffect(() => {
+        assigneeStateRef.current = {id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID};
+    }, [assigneeID, assigneeType, assigneePropertyFieldID]);
 
     const onAssigneeChange = async (user?: UserProfile) => {
         const seq = ++assigneeCallSeqRef.current;
         const userId = user?.id || '';
-        const prevAssigneeID = assigneeID;
-        const prevAssigneeType = assigneeType;
-        const prevAssigneePropertyFieldID = assigneePropertyFieldID;
+        const {id: prevAssigneeID, type: prevAssigneeType, fieldID: prevAssigneePropertyFieldID} = assigneeStateRef.current;
         setAssigneeID(userId);
         setAssigneeType('');
         setAssigneePropertyFieldID('');
@@ -276,9 +279,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
-        const prevAssigneeID = assigneeID;
-        const prevAssigneeType = assigneeType;
-        const prevAssigneePropertyFieldID = assigneePropertyFieldID;
+        const {id: prevAssigneeID, type: prevAssigneeType, fieldID: prevAssigneePropertyFieldID} = assigneeStateRef.current;
         const rollback = () => {
             if (isMounted.current && assigneeCallSeqRef.current === seq) {
                 setAssigneeID(prevAssigneeID);
@@ -301,29 +302,22 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (props.newItem) {
             return;
         }
-        if (updatedItem.assignee_type === AssigneeTypeOwner || updatedItem.assignee_type === AssigneeTypeCreator) {
-            if (props.playbookRunId) {
-                const response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
-                handleError(Boolean(response.error));
+        if (props.playbookRunId) {
+            let response;
+            if (updatedItem.assignee_type === AssigneeTypeOwner || updatedItem.assignee_type === AssigneeTypeCreator) {
+                response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
+            } else if (updatedItem.assignee_type === AssigneeTypePropertyUser && updatedItem.assignee_property_field_id) {
+                response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
             } else {
-                props.onUpdateChecklistItem?.(updatedItem);
+                response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
             }
-        } else if (updatedItem.assignee_type === AssigneeTypePropertyUser && updatedItem.assignee_property_field_id) {
-            if (props.playbookRunId) {
-                const response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
-                handleError(Boolean(response.error));
-            } else {
-                props.onUpdateChecklistItem?.(updatedItem);
-            }
-        } else if (props.playbookRunId) {
-            const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
             handleError(Boolean(response.error));
         } else {
             props.onUpdateChecklistItem?.(updatedItem);
         }
-    }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster, assigneeID, assigneeType, assigneePropertyFieldID]);
+    }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster]);
 
-    const onExtraOptionSelected = async (value: string) => {
+    const onExtraOptionSelected = useCallback(async (value: string) => {
         const updatedItem = {...props.checklistItem};
         updatedItem.assignee_id = '';
 
@@ -336,7 +330,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
 
         await handleAssigneeDropdownChange(updatedItem);
-    };
+    }, [props.checklistItem, handleAssigneeDropdownChange]);
 
     const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
         let timestamp = 0;
@@ -387,8 +381,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
-    const isRoleAssignee = assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator;
-    const isPropertyUserAssignee = assigneeType === AssigneeTypePropertyUser;
+    const hasRoleAssignee = isRoleBasedAssigneeType(assigneeType);
 
     // Renders the assignee editor above the toolbar — only when actively editing.
     // Kept separate from renderAssignTo so the toolbar Row remains unaffected.
@@ -414,12 +407,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return null;
         }
 
-        if (!assigneeID && !isRoleAssignee && !isPropertyUserAssignee) {
+        if (!assigneeID && !hasRoleAssignee) {
             // hide when nothing is set
             return null;
         }
 
-        if (isRoleAssignee || isPropertyUserAssignee) {
+        if (hasRoleAssignee) {
             return (
                 <AssigneeDropdown
                     checklistItem={localChecklistItem}
@@ -557,8 +550,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (
             !isEditing &&
             !assigneeID &&
-            !isRoleAssignee &&
-            !isPropertyUserAssignee &&
+            !hasRoleAssignee &&
             !command &&
             !dueDate &&
             !haveTaskActions
