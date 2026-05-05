@@ -39,7 +39,10 @@ jest.mock('src/hooks', () => ({
 
 jest.mock('src/client', () => ({
     savePlaybook: jest.fn(),
+    clientFetchPlaybook: jest.fn(),
 }));
+
+jest.mock('src/components/backstage/toast_banner', () => ({useToaster: () => ({add: jest.fn()})}));
 
 jest.mock('react-intl', () => {
     const reactIntl = jest.requireActual('react-intl');
@@ -51,6 +54,7 @@ jest.mock('react-intl', () => {
 });
 
 const {savePlaybook} = jest.requireMock('src/client');
+const {clientFetchPlaybook} = jest.requireMock('src/client');
 
 import Outline from './outline';
 
@@ -78,6 +82,7 @@ beforeEach(() => {
     jest.clearAllMocks();
     capturedAutoArchiveChannel = false;
     capturedOnAutoArchiveChange = undefined;
+    clientFetchPlaybook.mockResolvedValue({id: 'pb-1', auto_archive_channel: false, channel_mode: 'create_new_channel', checklists: []});
 });
 
 // --- Tests ---
@@ -141,7 +146,6 @@ describe('Outline — auto-archive optimistic state', () => {
 
         await act(async () => {
             capturedOnAutoArchiveChange!({auto_archive_channel: true});
-            await Promise.resolve();
         });
 
         expect(refetch).toHaveBeenCalledTimes(1);
@@ -165,9 +169,7 @@ describe('Outline — auto-archive optimistic state', () => {
         expect(capturedAutoArchiveChannel).toBe(true);
 
         // After rejection, override resets to previous value (false)
-        await act(async () => {
-            await Promise.resolve();
-        });
+        await act(async () => {});
 
         expect(capturedAutoArchiveChannel).toBe(false);
     });
