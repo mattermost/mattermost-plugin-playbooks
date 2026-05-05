@@ -169,6 +169,7 @@ describe('Outline — auto-archive optimistic state', () => {
         expect(capturedAutoArchiveChannel).toBe(true);
 
         // After rejection, override resets to previous value (false)
+        // eslint-disable-next-line no-empty-function
         await act(async () => {});
 
         expect(capturedAutoArchiveChannel).toBe(false);
