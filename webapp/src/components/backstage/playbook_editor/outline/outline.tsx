@@ -2,12 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {
-    Children,
-    ReactNode,
-    useRef,
-    useState,
-} from 'react';
+import React, {Children, ReactNode, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -46,7 +41,6 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const [bulkEditMode, setBulkEditMode] = useState(false);
     const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
     const effectiveNewChannelOnly = newChannelOnlyOverride ?? restPlaybook?.new_channel_only ?? false;
-    const pendingSave = useRef(false);
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -59,7 +53,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     };
 
     const handleNewChannelOnlyChange = ({new_channel_only}: {new_channel_only: boolean}) => {
-        if (archived || !playbook.id || pendingSave.current) {
+        if (archived || !playbook.id) {
             return;
         }
         const prev = effectiveNewChannelOnly;
@@ -67,7 +61,6 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             return;
         }
         setNewChannelOnlyOverride(new_channel_only);
-        pendingSave.current = true;
         clientFetchPlaybook(playbook.id)
             .then((latest) => {
                 if (!latest) {
@@ -82,9 +75,6 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                     content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
                     toastStyle: ToastStyle.Failure,
                 });
-            })
-            .finally(() => {
-                pendingSave.current = false;
             });
     };
 
