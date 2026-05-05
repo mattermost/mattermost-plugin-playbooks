@@ -1879,7 +1879,8 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		EventAt:       eventTime,
 		EventType:     OwnerChanged,
 		Summary:       fmt.Sprintf("@%s to @%s", oldOwnerUsername, newOwner.Username),
-		SubjectUserID: userID,
+		SubjectUserID: ownerID,
+		CreatorUserID: userID,
 	}
 
 	createdEvent, err := s.store.CreateTimelineEvent(event)
@@ -5109,6 +5110,23 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 			return nil, errors.Wrap(err, "failed to evaluate property conditions")
 		}
 
+		// Re-capture snapshots to include any new items added by condition evaluation.
+		affectedItemSnapshots = affectedItemSnapshots[:0]
+		for ci := range run.Checklists {
+			for ii := range run.Checklists[ci].Items {
+				item := &run.Checklists[ci].Items[ii]
+				if item.AssigneeType == AssigneeTypePropertyUser &&
+					(item.AssigneePropertyFieldID == propertyFieldID || (parentFieldID != "" && item.AssigneePropertyFieldID == parentFieldID)) {
+					affectedItemSnapshots = append(affectedItemSnapshots, propertyUserItemSnapshot{
+						checklistIdx:  ci,
+						itemIdx:       ii,
+						title:         item.Title,
+						oldAssigneeID: item.AssigneeID,
+					})
+				}
+			}
+		}
+
 		fieldIDs := []string{propertyFieldID}
 		if parentFieldID != "" {
 			fieldIDs = append(fieldIDs, parentFieldID)
@@ -5186,8 +5204,15 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	}
 
 	// Send WS notification when the value changed or assignees were re-resolved.
+	// Re-read the run so the WS payload reflects any participant/timeline changes made by
+	// addAssigneeParticipantAndDM (which mutates the store) rather than the stale in-memory run.
 	if shouldSendWS {
-		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, run)
+		wsRun, wsErr := s.GetPlaybookRun(playbookRunID)
+		if wsErr != nil {
+			logrus.WithError(wsErr).WithField("run_id", playbookRunID).Warn("failed to refresh run before websocket update after property change")
+			wsRun = run
+		}
+		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, wsRun)
 	}
 
 	auditRec.Success()
