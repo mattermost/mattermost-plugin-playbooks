@@ -132,10 +132,11 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 		stub := &stubUpsertPropertyService{}
 		svc := &PlaybookRunServiceImpl{propertyService: stub}
 
-		result := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
+		result, err := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
 			playbookFieldID: json.RawMessage(`"high"`),
 		}, logger)
 
+		require.NoError(t, err)
 		require.Equal(t, 1, stub.upsertCalled)
 		require.Len(t, result.PropertyValues, 1)
 		assert.Equal(t, runFieldID, result.PropertyValues[0].FieldID)
@@ -145,10 +146,11 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 		stub := &stubUpsertPropertyService{}
 		svc := &PlaybookRunServiceImpl{propertyService: stub}
 
-		result := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
+		result, err := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
 			"unknown_field_id": json.RawMessage(`"high"`),
 		}, logger)
 
+		require.NoError(t, err)
 		assert.Equal(t, 0, stub.upsertCalled)
 		assert.Empty(t, result.PropertyValues)
 	})
@@ -157,32 +159,34 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 		stub := &stubUpsertPropertyService{}
 		svc := &PlaybookRunServiceImpl{propertyService: stub}
 
-		result := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
+		result, err := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
 			playbookFieldID: nil,
 		}, logger)
 
+		require.NoError(t, err)
 		assert.Equal(t, 0, stub.upsertCalled)
 		assert.Empty(t, result.PropertyValues)
 	})
 
-	t.Run("upsert failure is best-effort and not appended", func(t *testing.T) {
+	t.Run("upsert failure aborts and returns error", func(t *testing.T) {
 		stub := &stubUpsertPropertyService{upsertErr: errors.New("db error")}
 		svc := &PlaybookRunServiceImpl{propertyService: stub}
 
-		result := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
+		_, err := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
 			playbookFieldID: json.RawMessage(`"high"`),
 		}, logger)
 
 		assert.Equal(t, 1, stub.upsertCalled, "upsert was attempted")
-		assert.Empty(t, result.PropertyValues, "failed upsert is not appended")
+		assert.Error(t, err)
 	})
 
 	t.Run("empty initialValues leaves run unchanged", func(t *testing.T) {
 		stub := &stubUpsertPropertyService{}
 		svc := &PlaybookRunServiceImpl{propertyService: stub}
 
-		result := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{}, logger)
+		result, err := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{}, logger)
 
+		require.NoError(t, err)
 		assert.Equal(t, 0, stub.upsertCalled)
 		assert.Empty(t, result.PropertyValues)
 	})
@@ -194,10 +198,11 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 		copyResult := makeCopyResult()
 		copyResult.OptionMappings = map[string]string{"pb-opt-1": "run-opt-1"}
 
-		result := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
+		result, err := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
 			playbookFieldID: json.RawMessage(`"pb-opt-1"`),
 		}, logger)
 
+		require.NoError(t, err)
 		require.Equal(t, 1, stub.upsertCalled)
 		require.Len(t, result.PropertyValues, 1)
 		assert.Equal(t, json.RawMessage(`"run-opt-1"`), stub.lastValue)
@@ -213,10 +218,11 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 			FieldMappings: map[string]string{playbookFieldID: runFieldID},
 		}
 
-		result := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
+		result, err := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
 			playbookFieldID: json.RawMessage(`"high"`),
 		}, logger)
 
+		require.NoError(t, err)
 		assert.Equal(t, 0, stub.upsertCalled)
 		assert.Empty(t, result.PropertyValues)
 	})
@@ -228,10 +234,11 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 		copyResult := makeCopyResult()
 		copyResult.OptionMappings = map[string]string{"pb-opt-1": "run-opt-1"}
 
-		result := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
+		result, err := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
 			playbookFieldID: json.RawMessage(`["pb-opt-1","unknown-opt"]`),
 		}, logger)
 
+		require.NoError(t, err)
 		require.Equal(t, 1, stub.upsertCalled)
 		require.Len(t, result.PropertyValues, 1)
 		var translated []string

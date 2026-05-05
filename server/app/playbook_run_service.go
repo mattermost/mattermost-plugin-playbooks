@@ -526,7 +526,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			}
 
 			if len(initialPropertyValues) > 0 {
-				playbookRun = s.applyInitialPropertyValues(playbookRun, propertyCopyResult, initialPropertyValues, logger)
+				playbookRun, err = s.applyInitialPropertyValues(playbookRun, propertyCopyResult, initialPropertyValues, logger)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to apply initial property values")
+				}
 
 				// Re-evaluate conditions with the actual initial property values so the run
 				// starts in the correct visibility state rather than the default-value state.
@@ -4904,7 +4907,8 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 
 // applyInitialPropertyValues upserts caller-supplied initial property values onto a newly-created run.
 // propertyCopyResult must come from CopyPlaybookPropertiesToRun so field/option mappings are available.
-func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *PlaybookRun, propertyCopyResult *PropertyCopyResult, initialValues map[string]json.RawMessage, logger *logrus.Entry) *PlaybookRun {
+// Returns an error if any upsert fails so that run creation is aborted rather than silently incomplete.
+func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *PlaybookRun, propertyCopyResult *PropertyCopyResult, initialValues map[string]json.RawMessage, logger *logrus.Entry) (*PlaybookRun, error) {
 	runFieldByID := make(map[string]*PropertyField, len(propertyCopyResult.CopiedFields))
 	for i := range propertyCopyResult.CopiedFields {
 		runFieldByID[propertyCopyResult.CopiedFields[i].ID] = &propertyCopyResult.CopiedFields[i]
@@ -4930,13 +4934,12 @@ func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *Playboo
 			continue
 		}
 		if _, err := s.propertyService.UpsertRunPropertyValueWithField(playbookRun.ID, runField, translatedValue); err != nil {
-			logger.WithError(err).WithField("field_id", runFieldID).Warn("failed to upsert initial property value, skipping")
-			continue
+			return nil, errors.Wrapf(err, "failed to upsert initial property value for field %s", runFieldID)
 		}
 		upsertedValues = append(upsertedValues, PropertyValue{FieldID: runFieldID, Value: translatedValue})
 	}
 	playbookRun.PropertyValues = append(playbookRun.PropertyValues, upsertedValues...)
-	return playbookRun
+	return playbookRun, nil
 }
 
 // propertyValuesEqual compares two property values for equality based on the property field type
@@ -5124,6 +5127,16 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 	}
 
 	userSuppliedName := strings.TrimSpace(playbookRun.Name)
+
+	// Re-read the authoritative playbook row just before allocating the run number so that
+	// RunNumberPrefix and ChannelNameTemplate come from the same consistent snapshot as the
+	// allocated SequentialID. An admin editing the playbook between preflight and submit would
+	// otherwise produce a run whose stamped name disagrees with the stored sequential ID.
+	latestPb, err := s.playbookService.Get(pb.ID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to re-read playbook before allocation")
+	}
+	pb = &latestPb
 
 	fields, attributesLicensed, err := s.loadTemplateFields(pb)
 	if err != nil {
