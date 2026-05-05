@@ -2617,9 +2617,10 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", playbookRunToModify.Name, checklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", runName, checklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2699,9 +2700,10 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists[:checklistNumber], playbookRunToModify.Checklists[checklistNumber+1:]...)
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing checklist '%s'", playbookRunToModify.Name, checklistToRemove.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing checklist '%s'", runName, checklistToRemove.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2753,9 +2755,10 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 	playbookRunToModify.Checklists[checklistNumber].Title = newTitle
 	playbookRunToModify.Checklists[checklistNumber].UpdateAt = model.GetMillis()
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after renaming checklist from '%s' to '%s'", playbookRunToModify.Name, currentChecklist.Title, newTitle)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after renaming checklist from '%s' to '%s'", runName, currentChecklist.Title, newTitle)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2801,9 +2804,10 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &checklistItem, 0)
 	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding item '%s' to checklist '%s'", playbookRunToModify.Name, checklistItem.Title, currentChecklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding item '%s' to checklist '%s'", runName, checklistItem.Title, currentChecklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2853,9 +2857,10 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 
 	playbookRunToModify.Checklists[checklistNumber].UpdateAt = model.GetMillis()
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing item '%s' from checklist '%s'", playbookRunToModify.Name, itemToRemove.Title, currentChecklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing item '%s' from checklist '%s'", runName, itemToRemove.Title, currentChecklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
