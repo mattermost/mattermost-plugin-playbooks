@@ -74,10 +74,13 @@ const RHSFooter = ({
                             id='participate-tooltip'
                             title={formatMessage({defaultMessage: 'Join as a participant'})}
                         >
-                            <ParticipateButton onClick={showParticipateConfirm}>
+                            <PrimaryButton
+                                size='sm'
+                                onClick={showParticipateConfirm}
+                            >
                                 <AccountPlusOutlineIcon size={16}/>
                                 {formatMessage({defaultMessage: 'Join'})}
-                            </ParticipateButton>
+                            </PrimaryButton>
                         </WithTooltip>
                     </ParticipateRightWrapper>
                 </ParticipateContent>
@@ -166,7 +169,7 @@ const RHSFooter = ({
                     </FinishedRightWrapper>
                 </FinishedIndicator>
                 <DoneButtonContainer>
-                    <StyledPrimaryButton
+                    <PrimaryButton
                         onClick={() => {
                             if (onBackClick) {
                                 onBackClick();
@@ -174,7 +177,7 @@ const RHSFooter = ({
                         }}
                     >
                         {formatMessage({defaultMessage: 'Done'})}
-                    </StyledPrimaryButton>
+                    </PrimaryButton>
                 </DoneButtonContainer>
             </FinishedFooter>
         );
@@ -249,12 +252,6 @@ const FinishedRightWrapper = styled.div`
     align-items: center;
 `;
 
-const ResumeButton = styled(TertiaryButton)`
-    height: 32px;
-    padding: 0 20px;
-    font-size: 12px;
-`;
-
 const ResumeButtonWrapper = styled.div`
     display: inline-block;
 `;
@@ -266,10 +263,6 @@ const DoneButtonContainer = styled.div`
     button {
         width: 100%;
     }
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    padding: 10px 20px;
 `;
 
 const FinishPrompt = styled.div`
@@ -348,15 +341,6 @@ const ParticipateRightWrapper = styled.div`
     display: flex;
     flex: 1;
     justify-content: flex-end;
-`;
-
-const ParticipateButton = styled(PrimaryButton)`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    font-size: 12px;
-    padding: 0 16px;
 `;
 
 export default RHSFooter;

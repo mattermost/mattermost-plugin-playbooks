@@ -528,6 +528,7 @@ const buttonCommon = css`
     }
 `;
 
+// These are actually between a medium and small sized button
 const PrimaryButtonLarger = styled(PrimaryButton)`
     ${buttonCommon};
 `;

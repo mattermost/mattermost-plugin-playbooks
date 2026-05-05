@@ -23,7 +23,7 @@ import HeaderButton from 'src/components/backstage/playbook_runs/playbook_run//h
 import {ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 import {Badge, ExpandRight, Role} from 'src/components/backstage/playbook_runs/shared';
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton} from 'src/components/assets/buttons';
 import {BadgeType} from 'src/components/backstage/status_badge';
 import CopyLink from 'src/components/widgets/copy_link';
 import {useFavoriteRun, useParticipateInRun} from 'src/hooks';
@@ -82,7 +82,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                             ${CancelSaveContainer} {
                                 padding: 0;
                             }
-                            ${PrimaryButton}, ${TertiaryButton} {
+                            .btn-primary, .btn-tertiary {
                                 height: 36px;
                             }
                         `}

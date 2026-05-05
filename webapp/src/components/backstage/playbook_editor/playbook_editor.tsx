@@ -42,7 +42,6 @@ import CopyLink from 'src/components/widgets/copy_link';
 import {usePlaybook, useUpdatePlaybook, useUpdatePlaybookFavorite} from 'src/graphql/hooks';
 import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 
@@ -151,7 +150,7 @@ const PlaybookEditor = () => {
                             ${CancelSaveContainer} {
                                 padding: 0;
                             }
-                            ${PrimaryButton}, ${TertiaryButton} {
+                            .btn-primary, .btn-tertiary {
                                 height: 36px;
                             }
                         `}
@@ -215,7 +214,7 @@ const PlaybookEditor = () => {
                         ${CancelSaveContainer} {
                             padding: 0;
                         }
-                        ${PrimaryButton}, ${TertiaryButton} {
+                        .btn-primary, .btn-tertiary {
                             height: 48px;
                             font-size: 16px;
                         }

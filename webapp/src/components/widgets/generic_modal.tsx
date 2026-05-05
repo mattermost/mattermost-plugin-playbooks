@@ -200,7 +200,6 @@ export const Buttons = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: center;
-    gap: 10px;
 `;
 
 export const DefaultFooterContainer = styled.div`

@@ -429,17 +429,13 @@ const PlaybookModalButton = () => {
     const dispatch = useAppDispatch();
 
     return (
-        <CreatePlaybookButton
+        <PrimaryButton
             onClick={() => dispatch(displayPlaybookCreateModal({}))}
         >
-            <i className='icon-plus mr-2'/>
+            <i className='icon-plus'/>
             {formatMessage({defaultMessage: 'Create playbook'})}
-        </CreatePlaybookButton>
+        </PrimaryButton>
     );
 };
 
-const CreatePlaybookButton = styled(PrimaryButton)`
-    display: flex;
-    align-items: center;
-`;
 export default PlaybookList;

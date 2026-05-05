@@ -5,6 +5,8 @@ import React, {useCallback, useState} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
+import type {ButtonVariant} from '@mattermost/shared/components/button';
+
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {PrimaryButton, PrimaryButtonDestructive, TertiaryButton} from 'src/components/assets/buttons';
@@ -35,9 +37,9 @@ type Props = {
     message?: React.ReactNode;
 
     /*
-     * The CSS class to apply to the confirm button
+     * The variant to use for the confirm button
      */
-    confirmButtonClass?: string;
+    confirmButtonVariant?: ButtonVariant;
 
     /*
      * The CSS class to apply to the modal
@@ -125,7 +127,6 @@ export default class ConfirmModal extends React.Component<Props, State> {
     static defaultProps = {
         title: '',
         message: '',
-        confirmButtonClass: 'btn btn-primary',
         confirmButtonText: '',
         modalClass: '',
     };
@@ -277,7 +278,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
                                 <PrimaryButton
                                     autoFocus={true}
                                     type='button'
-                                    className={this.props.confirmButtonClass}
+                                    variant={this.props.confirmButtonVariant}
                                     onClick={(e) => {
                                         if (this.props.stopPropagationOnClick) {
                                             e.stopPropagation();
@@ -302,7 +303,7 @@ interface ConfirmModalOptions {
     message: React.ReactNode;
     confirmButtonText?: React.ReactNode;
     cancelButtonText?: React.ReactNode;
-    confirmButtonClass?: string;
+    confirmButtonVariant?: ButtonVariant;
     onConfirm: (checked: boolean) => void;
     onCancel?: (checked: boolean) => void;
     showCheckbox?: boolean;
@@ -339,7 +340,7 @@ export const useConfirmModal = () => {
             message: options.message,
             confirmButtonText: options.confirmButtonText,
             cancelButtonText: options.cancelButtonText,
-            confirmButtonClass: options.confirmButtonClass,
+            confirmButtonVariant: options.confirmButtonVariant,
             onConfirm: options.onConfirm,
             onCancel: options.onCancel,
             showCheckbox: options.showCheckbox,
