@@ -47,10 +47,6 @@ const ReminderText = styled.div`
     line-height: 20px;
 `;
 
-const StyledTertiaryButton = styled(TertiaryButton)`
-    margin-left: 10px;
-`;
-
 const IllustrationContainer = styled.div`
     padding: 12px;
 `;
@@ -106,12 +102,12 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                     >
                         {props.primary}
                     </PrimaryButton>
-                    <StyledTertiaryButton
+                    <TertiaryButton
                         onClick={() => playbookRun && noRetrospective(playbookRun.id)}
                         disabled={disableButtons}
                     >
                         {props.secondary}
-                    </StyledTertiaryButton>
+                    </TertiaryButton>
                 </CustomPostButtonRow>
                 <Divider/>
                 <ReminderText>

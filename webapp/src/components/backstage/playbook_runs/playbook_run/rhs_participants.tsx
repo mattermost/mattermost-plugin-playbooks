@@ -78,9 +78,12 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
     const manageParticipantsSection = () => {
         if (manageMode) {
             return (
-                <StyledPrimaryButton onClick={() => setManageMode(false)}>
+                <PrimaryButton
+                    size='sm'
+                    onClick={() => setManageMode(false)}
+                >
                     {formatMessage({defaultMessage: 'Done'})}
-                </StyledPrimaryButton>
+                </PrimaryButton>
             );
         }
 
@@ -93,10 +96,13 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                     {formatMessage({defaultMessage: 'Manage'})}
                 </StyledSecondaryButton>
 
-                <StyledPrimaryButton onClick={() => setShowAddParticipantsModal(true)}>
+                <PrimaryButton
+                    size='sm'
+                    onClick={() => setShowAddParticipantsModal(true)}
+                >
                     <AddParticipantIcon color={'var(--button-color)'}/>
                     {formatMessage({defaultMessage: 'Add'})}
-                </StyledPrimaryButton>
+                </PrimaryButton>
 
                 <AddParticipantsModal
                     playbookRun={playbookRun}
@@ -334,14 +340,6 @@ const StyledSecondaryButton = styled(TertiaryButton)`
     height: 32px;
     align-items: center;
     margin-right: 8px;
-    font-size: 12px;
-    line-height: 10px;
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    display: flex;
-    height: 32px;
-    align-items: center;
     font-size: 12px;
     line-height: 10px;
 `;
