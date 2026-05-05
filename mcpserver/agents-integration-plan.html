@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Playbooks MCP ↔ Agents Plugin Integration Plan</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f8fb;
+      --fg: #172033;
+      --muted: #5d6b82;
+      --card: #ffffff;
+      --border: #d9dee8;
+      --accent: #1c58d9;
+      --accent-soft: #e8efff;
+      --code-bg: #111827;
+      --code-fg: #e5e7eb;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --fg: #e5e7eb;
+        --muted: #a8b3c7;
+        --card: #111c31;
+        --border: #2b3851;
+        --accent: #83a7ff;
+        --accent-soft: #1b2a4a;
+        --code-bg: #020617;
+        --code-fg: #e5e7eb;
+      }
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.55;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 24px 72px;
+    }
+    header {
+      padding: 32px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--card), var(--accent-soft));
+      margin-bottom: 28px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 2.2rem;
+      line-height: 1.15;
+    }
+    h2 {
+      margin-top: 36px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      font-size: 1.45rem;
+    }
+    h3 {
+      margin-top: 26px;
+      font-size: 1.15rem;
+    }
+    p, li { color: var(--fg); }
+    .lede { color: var(--muted); font-size: 1.08rem; margin: 0; }
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin: 20px 0;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+      padding: 0.15em 0.35em;
+      border-radius: 5px;
+      background: var(--accent-soft);
+    }
+    pre {
+      overflow-x: auto;
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border: 1px solid var(--border);
+    }
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+    a { color: var(--accent); }
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px 20px;
+      padding-left: 20px;
+    }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 14px 18px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Playbooks MCP ↔ Agents Plugin Integration Plan</h1>
+    <p class="lede">Expose existing Playbooks MCP tools to the Mattermost Agents plugin using cross-plugin MCP registration, while preserving the standalone Playbooks MCP server.</p>
+  </header>
+
+  <section>
+    <h2>Contents</h2>
+    <ol class="toc">
+      <li><a href="#goal">Goal</a></li>
+      <li><a href="#references-reviewed">References Reviewed</a></li>
+      <li><a href="#decisions">Decisions</a></li>
+      <li><a href="#target-architecture">Target Architecture</a></li>
+      <li><a href="#agents-integration-behavior">Agents Integration Behavior</a></li>
+      <li><a href="#tool-execution-model">Tool Execution Model</a></li>
+      <li><a href="#dependency-plan">Dependency Plan</a></li>
+      <li><a href="#implementation-steps">Implementation Steps</a></li>
+      <li><a href="#open-risks">Open Risks</a></li>
+      <li><a href="#recommended-first-pr-shape">Recommended First PR Shape</a></li>
+    </ol>
+  </section>
+
+  <section id="goal">
+    <h2>Goal</h2>
+    <p>Expose the existing Playbooks MCP tools to the Mattermost Agents plugin using the cross-plugin MCP registration flow implemented in <code>mattermost-plugin-agents</code>, while preserving the standalone Playbooks MCP server for local development and other non-Agents use cases.</p>
+  </section>
+
+  <section id="references-reviewed">
+    <h2>References Reviewed</h2>
+    <ul>
+      <li>Agents plugin branch: <code>IDEA-006-cross-plugin-mcp</code></li>
+      <li>Agents public helper package: <code>github.com/mattermost/mattermost-plugin-agents/public/mcphelper</code></li>
+      <li>Demo implementation: <code>mattermost/mattermost-plugin-demo#210</code></li>
+    </ul>
+  </section>
+
+  <section id="decisions">
+    <h2>Decisions</h2>
+    <ol>
+      <li>Reuse the existing Playbooks MCP implementation.</li>
+      <li>Add a dependency on the Agents public MCP helper package.</li>
+      <li>Refactor to a cleaner shared package instead of wiring the root plugin to the nested <code>mcpserver</code> module with <code>require</code> + <code>replace</code>.</li>
+      <li>Tool execution must be user-scoped.</li>
+      <li>Use <code>/mcp/playbooks</code> as the plugin-local MCP endpoint.</li>
+      <li>Registration with Agents is best-effort; Playbooks must continue loading if Agents is unavailable.</li>
+      <li>Register all available Playbooks MCP tools.</li>
+      <li>Accept helper-generated tool-name prefixes, e.g. <code>playbooks__list_runs</code>.</li>
+      <li>Keep the standalone MCP server for local/dev and other uses.</li>
+      <li>Add tests for activation, deactivation, route protection, user propagation, tool discovery, and standalone build safety.</li>
+    </ol>
+  </section>
+
+  <section id="target-architecture">
+    <h2>Target Architecture</h2>
+
+    <h3>Shared MCP package</h3>
+    <p>Move reusable MCP logic into a normal root-module internal package:</p>
+    <pre><code>internal/playbooksmcp/
+  config.go
+  server.go
+  tools/
+    provider.go
+    runs.go
+    checklist.go</code></pre>
+    <p>This package owns the reusable Playbooks MCP server/tool implementation.</p>
+
+    <h3>Plugin-integrated MCP endpoint</h3>
+    <p>Add plugin runtime integration in the existing server package:</p>
+    <pre><code>server/mcp.go</code></pre>
+    <p>This layer should:</p>
+    <ul>
+      <li>create a <code>mcphelper.Server</code></li>
+      <li>register all Playbooks tools</li>
+      <li>register/unregister with Agents</li>
+      <li>serve <code>/mcp/playbooks</code></li>
+      <li>propagate the calling Mattermost user into tool execution</li>
+    </ul>
+
+    <h3>Standalone MCP server</h3>
+    <p>Keep the standalone server under:</p>
+    <pre><code>mcpserver/</code></pre>
+    <p>But update it to import shared logic from:</p>
+    <pre><code>github.com/mattermost/mattermost-plugin-playbooks/internal/playbooksmcp</code></pre>
+    <p>The standalone server should continue to support STDIO/local usage and should not interfere with the plugin-integrated MCP endpoint.</p>
+  </section>
+
+  <section id="agents-integration-behavior">
+    <h2>Agents Integration Behavior</h2>
+
+    <h3>Registration</h3>
+    <p>On Playbooks <code>OnActivate</code>, after normal activation succeeds:</p>
+    <pre><code>if err := p.ensureMCPServer(); err != nil {
+    return errors.Wrap(err, "failed to initialize MCP server")
+}
+p.registerMCPServerBestEffort()</code></pre>
+    <p>Registration payload:</p>
+    <pre><code>mcphelper.PluginMCPServer{
+    PluginID: manifest.Id,      // "playbooks"
+    Name:     "Playbooks MCP",
+    Path:     "/mcp/playbooks",
+    Version:  manifest.Version,
+}</code></pre>
+    <p class="callout">Registration must be best-effort. If Agents is missing, disabled, or not ready, Playbooks should log a warning and continue activation.</p>
+
+    <h3>Unregistration</h3>
+    <p>On Playbooks <code>OnDeactivate</code>, unregister best-effort:</p>
+    <pre><code>p.unregisterMCPServerBestEffort()</code></pre>
+    <p>Shutdown must not fail if unregister fails.</p>
+
+    <h3>Routing</h3>
+    <p>Update <code>Plugin.ServeHTTP</code> to intercept MCP requests before the normal Playbooks API handler:</p>
+    <pre><code>func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+    if p.serveMCPIfMatch(w, r) {
+        return
+    }
+
+    p.handler.ServeHTTP(w, r)
+}</code></pre>
+    <p>The MCP route matcher should handle:</p>
+    <pre><code>/mcp/playbooks
+/mcp/playbooks/...</code></pre>
+    <p>and should not interfere with existing <code>/api/v0</code> routes.</p>
+
+    <h3>Security</h3>
+    <p>The MCP endpoint should only accept inter-plugin requests from Agents. <code>mcphelper.Server.ServeHTTP</code> enforces:</p>
+    <pre><code>Mattermost-Plugin-ID: com.mattermost.ai</code></pre>
+    <p>User identity is supplied by Agents via:</p>
+    <pre><code>X-Mattermost-UserID: &lt;mattermost-user-id&gt;</code></pre>
+    <p>Tool handlers must use <code>mcphelper.GetUserID(ctx)</code> or an equivalent adapter to ensure the action runs as the invoking Mattermost user.</p>
+  </section>
+
+  <section id="tool-execution-model">
+    <h2>Tool Execution Model</h2>
+    <p>Tool execution must be user-scoped.</p>
+    <p>The shared MCP package should retain the existing <code>ClientFactory</code> abstraction or an equivalent interface, allowing different transports to create clients differently:</p>
+    <ul>
+      <li>plugin-integrated MCP: create a user-scoped Playbooks client from the Mattermost user ID propagated by Agents</li>
+      <li>standalone STDIO MCP: keep existing token/PAT-based behavior</li>
+    </ul>
+    <p>All existing Playbooks MCP tools should be registered:</p>
+    <ul>
+      <li>playbook run tools</li>
+      <li>checklist tools</li>
+      <li>any other existing MCP tools in the current implementation</li>
+    </ul>
+    <p>For the plugin-integrated MCP server, tools should be registered with <code>mcphelper.AddTool</code>, which automatically prefixes tool names with the sanitized plugin ID:</p>
+    <pre><code>playbooks__&lt;tool_name&gt;</code></pre>
+    <p>Standalone STDIO can keep its current tool names unless changed later.</p>
+  </section>
+
+  <section id="dependency-plan">
+    <h2>Dependency Plan</h2>
+    <p>Root plugin module should add:</p>
+    <pre><code>github.com/mattermost/mattermost-plugin-agents/public/mcphelper</code></pre>
+    <p>and the required MCP SDK dependency if not already present in the root module:</p>
+    <pre><code>github.com/modelcontextprotocol/go-sdk/mcp</code></pre>
+    <p>Avoid making the root plugin depend on the nested <code>mcpserver</code> module via <code>require</code> + <code>replace</code>. Instead, move shared MCP code into <code>internal/playbooksmcp</code> so both root plugin code and the standalone module can import the same implementation cleanly.</p>
+  </section>
+
+  <section id="implementation-steps">
+    <h2>Implementation Steps</h2>
+
+    <h3>1. Create shared package</h3>
+    <p>Create:</p>
+    <pre><code>internal/playbooksmcp/
+internal/playbooksmcp/tools/</code></pre>
+    <p>Move reusable files from <code>mcpserver/</code> into the shared package, adjusting package names and imports.</p>
+    <p>Likely candidates:</p>
+    <pre><code>mcpserver/config.go              -&gt; internal/playbooksmcp/config.go
+mcpserver/server.go              -&gt; internal/playbooksmcp/server.go
+mcpserver/playbooks_client.go    -&gt; internal/playbooksmcp/playbooks_client.go, if still shared
+mcpserver/tools/*                -&gt; internal/playbooksmcp/tools/*</code></pre>
+    <p>Transport-specific wrappers should remain in <code>mcpserver/</code> unless they are useful to plugin runtime.</p>
+
+    <h3>2. Update standalone MCP server</h3>
+    <p>Update files under <code>mcpserver/</code> to import and use <code>internal/playbooksmcp</code>.</p>
+    <p>Keep the standalone CLI behavior intact:</p>
+    <pre><code>cd mcpserver
+go build ./cmd/</code></pre>
+
+    <h3>3. Add plugin MCP runtime</h3>
+    <p>Add <code>server/mcp.go</code> with helpers similar to the demo plugin:</p>
+    <ul>
+      <li><code>ensureMCPServer() error</code></li>
+      <li><code>registerMCPServerBestEffort()</code></li>
+      <li><code>unregisterMCPServerBestEffort()</code></li>
+      <li><code>serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool</code></li>
+    </ul>
+    <p>Add a field to <code>Plugin</code>:</p>
+    <pre><code>mcpServer *mcphelper.Server</code></pre>
+
+    <h3>4. Wire activation/deactivation</h3>
+    <p>Update <code>OnActivate</code>:</p>
+    <ul>
+      <li>run existing activation first</li>
+      <li>initialize MCP server</li>
+      <li>register with Agents best-effort</li>
+    </ul>
+    <p>Update <code>OnDeactivate</code>:</p>
+    <ul>
+      <li>preserve existing shutdown behavior</li>
+      <li>unregister best-effort</li>
+      <li>do not mask existing shutdown errors</li>
+    </ul>
+
+    <h3>5. Register tools for plugin-integrated MCP</h3>
+    <p>Use the shared package/tool provider to register all available tools on <code>mcphelper.Server</code>.</p>
+    <p>Ensure the plugin-integrated tool path uses the Agents-provided user ID from context.</p>
+
+    <h3>6. Add tests</h3>
+    <p>Add or update tests for:</p>
+    <ol>
+      <li><code>OnActivate</code> continues when MCP registration fails.</li>
+      <li><code>OnDeactivate</code> continues when MCP unregister fails.</li>
+      <li><code>OnDeactivate</code> preserves existing core shutdown errors even if MCP unregister fails.</li>
+      <li><code>/mcp/playbooks</code> is intercepted before the normal Playbooks router.</li>
+      <li><code>/mcp/playbooks</code> without Agents inter-plugin header returns forbidden.</li>
+      <li><code>/mcp/playbooks/...</code> is also intercepted/protected.</li>
+      <li>Tool handlers receive the expected Mattermost user ID from context.</li>
+      <li>All expected tools are discoverable through the MCP endpoint.</li>
+      <li>Standalone <code>mcpserver</code> still builds.</li>
+    </ol>
+  </section>
+
+  <section id="open-risks">
+    <h2>Open Risks / Things to Watch</h2>
+    <ul>
+      <li>Dependency version conflicts between root Playbooks module, Agents helper, Mattermost server public packages, and the MCP Go SDK.</li>
+      <li>Ensuring user-scoped execution does not accidentally bypass Playbooks permission checks.</li>
+      <li>Keeping standalone STDIO behavior unchanged while moving shared code.</li>
+      <li>Ensuring <code>/mcp/playbooks</code> does not get caught by existing API middleware that requires <code>Mattermost-User-Id</code>; Agents calls use inter-plugin auth plus <code>X-Mattermost-UserID</code>, not the normal user auth header.</li>
+      <li>Tool-name prefixing may require prompt/UI updates if existing standalone tool names are referenced anywhere.</li>
+    </ul>
+  </section>
+
+  <section id="recommended-first-pr-shape">
+    <h2>Recommended First PR Shape</h2>
+    <p>A single implementation PR can be organized as:</p>
+    <ol>
+      <li>Shared package refactor.</li>
+      <li>Standalone MCP server import updates.</li>
+      <li>Plugin-integrated MCP server using <code>mcphelper</code>.</li>
+      <li>Activation/deactivation/routing wiring.</li>
+      <li>Tests.</li>
+      <li>Documentation updates in <code>mcpserver/README.md</code> describing both standalone and Agents-integrated usage.</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>
