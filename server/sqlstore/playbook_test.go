@@ -2111,3 +2111,44 @@ func TestBumpPlaybookUpdatedAt(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, updatedPlaybook.UpdateAt, int64(1))
 }
+
+func TestNewChannelOnlyRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+
+	pb := NewPBBuilder().
+		WithTitle("nco-persist").
+		WithTeamID(teamID).
+		ToPlaybook()
+	pb.NewChannelOnly = true
+
+	id, err := playbookStore.Create(pb)
+	require.NoError(t, err)
+
+	got, err := playbookStore.Get(id)
+	require.NoError(t, err)
+	require.True(t, got.NewChannelOnly)
+
+	got.NewChannelOnly = false
+	err = playbookStore.Update(got)
+	require.NoError(t, err)
+
+	updated, err := playbookStore.Get(id)
+	require.NoError(t, err)
+	require.False(t, updated.NewChannelOnly)
+
+	all, err := playbookStore.GetPlaybooks()
+	require.NoError(t, err)
+
+	found := false
+	for _, listed := range all {
+		if listed.ID == id {
+			require.False(t, listed.NewChannelOnly)
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
+}

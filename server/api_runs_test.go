@@ -520,6 +520,46 @@ func TestCreateInvalidRuns(t *testing.T) {
 	})
 }
 
+func TestCreateRunWithNewChannelOnlyPlaybook(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a playbook with NewChannelOnly=true
+	pbCreateOptions := client.PlaybookCreateOptions{
+		Public:         true,
+		Title:          "New Channel Only Playbook",
+		TeamID:         e.BasicTeam.Id,
+		ChannelMode:    client.PlaybookRunCreateNewChannel,
+		NewChannelOnly: true,
+	}
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), pbCreateOptions)
+	require.NoError(t, err)
+
+	t.Run("run creation without channel_id succeeds", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run without channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, run)
+		assert.NotEmpty(t, run.ChannelID)
+	})
+
+	t.Run("run creation with explicit channel_id fails", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run with channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   e.BasicPublicChannel.Id,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Nil(t, run)
+	})
+}
+
 func TestRunRetrieval(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()

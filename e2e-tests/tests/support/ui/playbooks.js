@@ -276,3 +276,43 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
         cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
     });
 });
+
+Cypress.Commands.add('playbooksConfirmModal', () => {
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+});
+
+Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId) => {
+    cy.findByTestId(toggleTestId).find('label').click();
+    cy.playbooksConfirmModal();
+});
+
+Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});
+
+Cypress.Commands.add('playbooksOpenRunModal', (playbookId) => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
+    cy.findByTestId('run-playbook').should('be.visible').and('not.be.disabled').click();
+});
+
+Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName) => {
+    cy.playbooksOpenRunModal(playbookId);
+    cy.findByTestId('run-name-input').then(($input) => {
+        if (!$input.attr('readonly')) {
+            cy.wrap($input).clear().type(runName);
+        }
+    });
+    cy.findByTestId('modal-confirm-button').click();
+    cy.url().should('include', '/playbooks/runs/');
+});
+
+Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
+    cy.url().should('include', '/playbooks/runs/');
+    return cy.url().then((url) => {
+        const urlObj = new URL(url);
+        const [, afterRuns = ''] = urlObj.pathname.split('/playbooks/runs/');
+        const runId = afterRuns.split('/')[0];
+        return cy.wrap(runId);
+    });
+});

@@ -860,3 +860,132 @@ func TestPlaybookService_Import(t *testing.T) {
 		assert.Equal(t, newPlaybookID, resultID)
 	})
 }
+
+func TestPlaybookService_ValidateNewChannelOnlyMode(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockPlaybookStore(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	mockAuditor.EXPECT().
+		MakeAuditRecord(gomock.Any(), gomock.Any()).
+		Return(&model.AuditRecord{}).
+		AnyTimes()
+
+	mockAuditor.EXPECT().
+		LogAuditRec(gomock.Any()).
+		AnyTimes()
+
+	service := app.NewPlaybookService(
+		mockStore,
+		mockPoster,
+		nil,
+		mockAuditor,
+		nil, // metrics
+		nil,
+		nil,
+	)
+
+	userID := model.NewId()
+	teamID := model.NewId()
+
+	t.Run("Create rejects NewChannelOnly=true with ChannelMode=LinkExistingChannel", func(t *testing.T) {
+		playbook := app.Playbook{
+			Title:          "Test Playbook",
+			TeamID:         teamID,
+			NewChannelOnly: true,
+			ChannelMode:    app.PlaybookRunLinkExistingChannel,
+		}
+
+		_, err := service.Create(playbook, userID)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "link an existing channel")
+	})
+
+	t.Run("Create allows NewChannelOnly=true with ChannelMode=CreateNewChannel", func(t *testing.T) {
+		newPlaybookID := model.NewId()
+		playbook := app.Playbook{
+			Title:          "Test Playbook",
+			TeamID:         teamID,
+			NewChannelOnly: true,
+			ChannelMode:    app.PlaybookRunCreateNewChannel,
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			Return(newPlaybookID, nil)
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+
+		id, err := service.Create(playbook, userID)
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, id)
+	})
+
+	t.Run("Update rejects NewChannelOnly=true with ChannelMode=LinkExistingChannel", func(t *testing.T) {
+		playbook := app.Playbook{
+			ID:             model.NewId(),
+			Title:          "Test Playbook",
+			TeamID:         teamID,
+			NewChannelOnly: true,
+			ChannelMode:    app.PlaybookRunLinkExistingChannel,
+		}
+
+		err := service.Update(playbook, userID)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "link an existing channel")
+	})
+
+	t.Run("Update allows NewChannelOnly=true with ChannelMode=CreateNewChannel", func(t *testing.T) {
+		playbookID := model.NewId()
+		playbook := app.Playbook{
+			ID:             playbookID,
+			Title:          "Test Playbook",
+			TeamID:         teamID,
+			NewChannelOnly: true,
+			ChannelMode:    app.PlaybookRunCreateNewChannel,
+		}
+
+		mockStore.EXPECT().
+			Update(gomock.Any()).
+			Return(nil)
+
+		err := service.Update(playbook, userID)
+		require.NoError(t, err)
+	})
+
+	t.Run("Import rejects NewChannelOnly=true with ChannelMode=LinkExistingChannel", func(t *testing.T) {
+		playbook := app.Playbook{
+			Title:          "Test Playbook",
+			TeamID:         teamID,
+			NewChannelOnly: true,
+			ChannelMode:    app.PlaybookRunLinkExistingChannel,
+		}
+
+		_, err := service.Import(app.PlaybookImportData{Playbook: playbook}, userID)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "link an existing channel")
+	})
+
+	t.Run("Import allows NewChannelOnly=true with ChannelMode=CreateNewChannel", func(t *testing.T) {
+		newPlaybookID := model.NewId()
+		playbook := app.Playbook{
+			Title:          "Test Playbook",
+			TeamID:         teamID,
+			NewChannelOnly: true,
+			ChannelMode:    app.PlaybookRunCreateNewChannel,
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			Return(newPlaybookID, nil)
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+
+		id, err := service.Import(app.PlaybookImportData{Playbook: playbook}, userID)
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, id)
+	})
+}

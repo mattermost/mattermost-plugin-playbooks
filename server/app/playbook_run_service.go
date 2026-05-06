@@ -354,6 +354,25 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
+func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
+	if playbookRun == nil {
+		return errors.New("playbookRun cannot be nil")
+	}
+	if pb == nil {
+		return nil
+	}
+	if playbookRun.PlaybookID != "" && pb.ID != playbookRun.PlaybookID {
+		return errors.Wrap(ErrMalformedPlaybookRun, "playbook ID mismatch between run and supplied playbook")
+	}
+	if playbookRun.PlaybookID == "" {
+		playbookRun.PlaybookID = pb.ID
+	}
+	if pb.NewChannelOnly && playbookRun.ChannelID != "" {
+		return errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires runs to create a new channel, but a channel_id was provided")
+	}
+	return nil
+}
+
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
@@ -366,6 +385,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 	if pb != nil {
 		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
+	}
+
+	if err := normalizeAndValidateRunCreationParams(playbookRun, pb); err != nil {
+		return nil, err
 	}
 
 	if playbookRun.DefaultOwnerID != "" {
