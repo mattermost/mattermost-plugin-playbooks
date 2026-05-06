@@ -211,6 +211,28 @@ type PlaybookRun struct {
 
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
+
+	// TaskTotal and TaskCompleted are computed from Checklists; not persisted. Hidden items are
+	// excluded; Skipped items count as completed. See ComputeTaskProgress.
+	TaskTotal     int `json:"task_total"`
+	TaskCompleted int `json:"task_completed"`
+}
+
+func (r *PlaybookRun) ComputeTaskProgress() {
+	total, completed := 0, 0
+	for _, cl := range r.Checklists {
+		for _, item := range cl.Items {
+			if item.ConditionAction == ConditionActionHidden {
+				continue
+			}
+			total++
+			if item.State == ChecklistItemStateClosed || item.State == ChecklistItemStateSkipped {
+				completed++
+			}
+		}
+	}
+	r.TaskTotal = total
+	r.TaskCompleted = completed
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
@@ -429,6 +451,12 @@ func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string
 	}
 	if !compareItemsOrder(previous.GetItemsOrder(), current.GetItemsOrder()) {
 		changes["items_order"] = current.GetItemsOrder()
+	}
+	if previous.TaskTotal != current.TaskTotal {
+		changes["task_total"] = current.TaskTotal
+	}
+	if previous.TaskCompleted != current.TaskCompleted {
+		changes["task_completed"] = current.TaskCompleted
 	}
 }
 

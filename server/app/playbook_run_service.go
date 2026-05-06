@@ -79,6 +79,8 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 			logger.WithError(err).Error("failed to get current state of playbook run")
 			return
 		}
+	} else {
+		currentRun.ComputeTaskProgress()
 	}
 
 	// Pre-calculate changed fields for incremental updates
@@ -263,6 +265,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 		if values, exists := valuesMap[runID]; exists {
 			results.Items[i].PropertyValues = values
 		}
+		results.Items[i].ComputeTaskProgress()
 	}
 
 	return results, nil
@@ -643,6 +646,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		s.sendWebhooksOnCreation(*playbookRun)
 	}
 
+	playbookRun.ComputeTaskProgress()
+
 	if playbookRun.PostID == "" {
 		auditRec.Success()
 		return playbookRun, nil
@@ -870,6 +875,8 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 		SubjectUserID: post.UserId,
 		CreatorUserID: userID,
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -1673,6 +1680,8 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*Playbook
 		}
 		playbookRun.PropertyValues = propertyValues
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	return playbookRun, nil
 }
