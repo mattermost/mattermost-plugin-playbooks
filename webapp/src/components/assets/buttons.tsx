@@ -7,44 +7,6 @@ import styled from 'styled-components';
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 import {type ButtonProps, Button as NewButton} from '@mattermost/shared/components/button';
 
-export const Button = styled.button`
-    position: relative;
-    display: inline-flex;
-    height: 40px;
-    align-items: center;
-    justify-content: center;
-    padding: 0 20px;
-    border: 0;
-    border-radius: 4px;
-    background: rgba(var(--center-channel-color-rgb), 0.08);
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.15s ease-out;
-
-    &:hover{
-        background: rgba(var(--center-channel-color-rgb), 0.12);
-    }
-
-    &&, &&:focus {
-        text-decoration: none;
-    }
-
-    &&:hover:not([disabled]) {
-        text-decoration: none;
-    }
-
-    &:disabled {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: rgba(var(--center-channel-color-rgb), 0.32);
-    }
-
-    i {
-        display: flex;
-        font-size: 18px;
-    }
-`;
-
 export const PrimaryButton = NewButton;
 
 export function PrimaryButtonDestructive(props: Omit<ButtonProps, 'variant'>) {
@@ -101,17 +63,14 @@ export const TertiaryButton = styled.button`
     }
 `;
 
-export const SecondaryButton = styled(TertiaryButton)`
-    border: 1px solid var(--button-bg);
-    background: var(--button-color-rgb);
-
-
-    &:disabled {
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.32);
-        background: transparent;
-        color: rgba(var(--center-channel-color-rgb), 0.32);
-    }
-`;
+export function SecondaryButton(props: Omit<ButtonProps, 'emphasis'>) {
+    return (
+        <NewButton
+            emphasis='secondary'
+            {...props}
+        />
+    );
+}
 
 export const DestructiveButton = PrimaryButtonDestructive;
 
