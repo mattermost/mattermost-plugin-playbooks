@@ -9,7 +9,7 @@ import type {ButtonVariant} from '@mattermost/shared/components/button';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
-import {PrimaryButton, PrimaryButtonDestructive, TertiaryButton} from 'src/components/assets/buttons';
+import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {modals} from 'src/webapp_globals';
 
 import {
@@ -261,7 +261,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
                         <Buttons>
                             {cancelButton}
                             {this.props.isDestructive ? (
-                                <PrimaryButtonDestructive
+                                <DestructiveButton
                                     autoFocus={true}
                                     type='button'
                                     onClick={(e) => {
@@ -273,7 +273,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
                                     id='confirmModalButton'
                                 >
                                     {this.props.confirmButtonText}
-                                </PrimaryButtonDestructive>
+                                </DestructiveButton>
                             ) : (
                                 <PrimaryButton
                                     autoFocus={true}
