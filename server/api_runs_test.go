@@ -1934,7 +1934,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		userField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+		_, err = e.PlaybooksClient.Playbooks.CreatePropertyField(
 			context.Background(),
 			pbID,
 			client.PropertyFieldRequest{Name: "Lead", Type: "user"},
@@ -1950,13 +1950,25 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		// Happy path: valid user field — dispatch must succeed and persist the field ID.
-		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, userField.ID)
+		// Resolve the run-level copy of the playbook field — its ID differs from userField.ID.
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runUserFieldID string
+		for _, f := range runFields {
+			if f.Name == "Lead" && f.Type == "user" {
+				runUserFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runUserFieldID, "run-level 'Lead' user field not found")
+
+		// Happy path: valid run-level user field — dispatch must succeed and persist the run field ID.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runUserFieldID)
 		require.NoError(t, err)
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
-		assert.Equal(t, userField.ID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+		assert.Equal(t, runUserFieldID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
 
 		// A non-existent property field must not silently succeed; if dispatch
 		// drops the field the handler would return 200 OK with no change.
@@ -1966,7 +1978,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		// Field ID from the successful call must still be set (error did not reset it).
-		assert.Equal(t, userField.ID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+		assert.Equal(t, runUserFieldID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
 	})
 
 	t.Run("invalid role assignee type rejected with 400", func(t *testing.T) {
@@ -2062,7 +2074,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		userField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+		_, err = e.PlaybooksClient.Playbooks.CreatePropertyField(
 			context.Background(),
 			freshPlaybookID,
 			client.PropertyFieldRequest{
@@ -2081,7 +2093,19 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, userField.ID)
+		// Resolve the run-level copy of the "Manager" field.
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runManagerFieldID string
+		for _, f := range runFields {
+			if f.Name == "Manager" && f.Type == "user" {
+				runManagerFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runManagerFieldID, "run-level 'Manager' user field not found")
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runManagerFieldID)
 		require.NoError(t, err)
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)

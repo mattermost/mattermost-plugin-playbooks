@@ -5388,6 +5388,7 @@ func resolveOwnerRoleAssignments(checklists []Checklist, ownerID string) {
 
 // addAssigneeAsParticipant adds assigneeID to the run if they are not already a member.
 // It is a no-op when assigneeID is empty or already the run owner (owners are always participants).
+// Failures are logged but not returned: the assignee change is already committed at this point.
 func (s *PlaybookRunServiceImpl) addAssigneeAsParticipant(playbookRunID, assigneeID, requesterID string, run *PlaybookRun) error {
 	if assigneeID == "" || assigneeID == run.OwnerUserID {
 		return nil
@@ -5395,7 +5396,10 @@ func (s *PlaybookRunServiceImpl) addAssigneeAsParticipant(playbookRunID, assigne
 	if sliceContains(run.ParticipantIDs, assigneeID) {
 		return nil
 	}
-	return errors.Wrap(s.AddParticipants(playbookRunID, []string{assigneeID}, requesterID, false, false), "failed to add assignee to run")
+	if err := s.AddParticipants(playbookRunID, []string{assigneeID}, requesterID, false, false); err != nil {
+		s.pluginAPI.Log.Warn("failed to add assignee as run participant", "playbook_run_id", playbookRunID, "assignee_id", assigneeID, "err", err.Error())
+	}
+	return nil
 }
 
 // notifyAssignee sends a best-effort DM to assigneeID with the provided message.
