@@ -83,6 +83,23 @@ interface Props {
     onExitBulkEdit?: () => void;
 }
 
+// Omitting a field silently drops it from the mutation and the server resets it to its zero value.
+export const mapChecklistItemToInput = (ci: ChecklistItem) => ({
+    title: ci.title,
+    description: ci.description,
+    state: ci.state,
+    stateModified: ci.state_modified || 0,
+    assigneeID: ci.assignee_id || '',
+    assigneeType: ci.assignee_type || '',
+    assigneePropertyFieldID: ci.assignee_property_field_id || '',
+    assigneeModified: ci.assignee_modified || 0,
+    command: ci.command,
+    commandLastRun: ci.command_last_run,
+    dueDate: ci.due_date,
+    taskActions: ci.task_actions,
+    conditionID: ci.condition_id,
+});
+
 const ChecklistList = ({
     playbookRun,
     playbook: inPlaybook,
@@ -106,23 +123,11 @@ const ChecklistList = ({
     const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
-    const propertyFields = usePlaybookAttributes(inPlaybook?.id || '');
+    const propertyFields = usePlaybookAttributes(inPlaybook?.id || '') ?? playbookRun?.property_fields;
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
-            items: cl.items.map((ci) => ({
-                title: ci.title,
-                description: ci.description,
-                state: ci.state,
-                stateModified: ci.state_modified || 0,
-                assigneeID: ci.assignee_id || '',
-                assigneeModified: ci.assignee_modified || 0,
-                command: ci.command,
-                commandLastRun: ci.command_last_run,
-                dueDate: ci.due_date,
-                taskActions: ci.task_actions,
-                conditionID: ci.condition_id,
-            })),
+            items: cl.items.map(mapChecklistItemToInput),
         }));
         const updates: PlaybookUpdates = {
             checklists: updatedChecklists,
@@ -163,6 +168,7 @@ const ChecklistList = ({
                         state_modified: ci.state_modified || 0,
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
+                        assignee_property_field_id: ci.assignee_property_field_id || '',
                     };
                 }),
             };
@@ -646,6 +652,7 @@ const ChecklistList = ({
                                                     onReadOnlyInteract={onReadOnlyInteract}
                                                     conditions={conditions}
                                                     propertyFields={propertyFields || []}
+                                                    propertyValues={playbookRun?.property_values}
                                                     onDeleteCondition={onDeleteCondition}
                                                     onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
                                                     onUpdateCondition={onUpdateCondition}

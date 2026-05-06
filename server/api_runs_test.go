@@ -1893,6 +1893,251 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
 	})
+
+	t.Run("set role assignee dispatches to SetRoleAssignee", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// Pre-seed a specific assignee so we can verify role assignment overwrites it
+		// with the resolved role-user (the owner), not leaves the prior explicit value.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, app.AssigneeTypeOwner)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType)
+		// SetRoleAssignee resolves AssigneeID to the role's concrete user immediately
+		// (see playbook_run_service.go SetRoleAssignee), so AssigneeID is the owner,
+		// not empty and not the previously explicit RegularUser2.
+		require.Equal(t, run.OwnerUserID, run.Checklists[0].Items[0].AssigneeID)
+		require.NotEqual(t, e.RegularUser2.Id, run.Checklists[0].Items[0].AssigneeID)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("set property_user assignee dispatches to SetPropertyUserAssignee", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		// Create a playbook with a user-type property field so we have a valid field ID.
+		pbID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Dispatch Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Lead", Type: "user"},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// Resolve the run-level copy of the playbook field — its ID differs from userField.ID.
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runUserFieldID string
+		for _, f := range runFields {
+			if f.Name == "Lead" && f.Type == "user" {
+				runUserFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runUserFieldID, "run-level 'Lead' user field not found")
+
+		// Happy path: valid run-level user field — dispatch must succeed and persist the run field ID.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runUserFieldID)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, runUserFieldID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+
+		// A non-existent property field must not silently succeed; if dispatch
+		// drops the field the handler would return 200 OK with no change.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, "nonexistent000000000000000")
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		// Field ID from the successful call must still be set (error did not reset it).
+		assert.Equal(t, runUserFieldID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("invalid role assignee type rejected with 400", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		body, err := json.Marshal(map[string]string{
+			"assignee_type": "member",
+		})
+		require.NoError(t, err)
+
+		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		require.Error(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("property field of non-user type rejected", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		freshPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PropType Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		selectField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			freshPlaybookID,
+			client.PropertyFieldRequest{
+				Name: "Status",
+				Type: "select",
+				Attrs: &client.PropertyFieldAttrsInput{
+					Options: &[]client.PropertyOptionInput{{Name: "Active"}},
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  freshPlaybookID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, selectField.ID)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("SetRoleAssignee creates AssigneeChanged timeline event", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, app.AssigneeTypeOwner)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, run.TimelineEvents)
+		lastEvent := run.TimelineEvents[len(run.TimelineEvents)-1]
+		assert.Equal(t, client.AssigneeChanged, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("SetPropertyUserAssignee creates AssigneeChanged timeline event", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		freshPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PropUser Timeline Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			freshPlaybookID,
+			client.PropertyFieldRequest{
+				Name: "Manager",
+				Type: "user",
+			},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  freshPlaybookID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// Resolve the run-level copy of the "Manager" field.
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runManagerFieldID string
+		for _, f := range runFields {
+			if f.Name == "Manager" && f.Type == "user" {
+				runManagerFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runManagerFieldID, "run-level 'Manager' user field not found")
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runManagerFieldID)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, run.TimelineEvents)
+		lastEvent := run.TimelineEvents[len(run.TimelineEvents)-1]
+		assert.Equal(t, client.AssigneeChanged, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("mutually exclusive fields rejected with 400", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		body, err := json.Marshal(map[string]string{
+			"assignee_id":   e.RegularUser.Id,
+			"assignee_type": app.AssigneeTypeOwner,
+		})
+		require.NoError(t, err)
+
+		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		require.Error(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
 }
 
 func TestChecklisItem_SetCommand(t *testing.T) {
@@ -2985,4 +3230,120 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 	require.NoError(t, err, "cross-team run creation should succeed when user has run_create in the target team")
 	require.NotNil(t, run)
 	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
+}
+
+// TestRunCreationFromPlaybook_AssigneeTypePropagation verifies that checklist items
+// with role-based AssigneeType (owner, creator) are copied from the playbook template
+// to the run, and that their AssigneeID is resolved to the concrete user at creation time.
+func TestRunCreationFromPlaybook_AssigneeTypePropagation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Role Assignee Template Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Checklists: []client.Checklist{
+			{
+				Title: "Tasks",
+				Items: []client.ChecklistItem{
+					{Title: "Explicit user task", AssigneeType: ""},
+					{Title: "Owner task", AssigneeType: app.AssigneeTypeOwner},
+					{Title: "Creator task", AssigneeType: app.AssigneeTypeCreator},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// Create the run as RegularUser (creator) with AdminUser as the explicit owner,
+	// so owner and creator resolve to distinct IDs and both paths are independently verified.
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Role Assignee Run",
+		OwnerUserID: e.AdminUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  playbookID,
+	})
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 1)
+	require.Len(t, run.Checklists[0].Items, 3)
+
+	explicit := run.Checklists[0].Items[0]
+	ownerItem := run.Checklists[0].Items[1]
+	creatorItem := run.Checklists[0].Items[2]
+
+	assert.Equal(t, "", explicit.AssigneeType)
+	assert.Empty(t, explicit.AssigneeID)
+
+	assert.Equal(t, app.AssigneeTypeOwner, ownerItem.AssigneeType)
+	assert.Equal(t, e.AdminUser.Id, ownerItem.AssigneeID,
+		"owner-type item must be resolved to the run owner at creation time")
+
+	assert.Equal(t, app.AssigneeTypeCreator, creatorItem.AssigneeType)
+	assert.Equal(t, e.RegularUser.Id, creatorItem.AssigneeID,
+		"creator-type item must be resolved to the run creator at creation time")
+}
+
+// TestRunCreationFromPlaybook_PropertyUserAssigneeType verifies that a checklist item
+// with AssigneeType "property_user" is carried over from the playbook template to the
+// run, with AssigneePropertyFieldID remapped to the run-level field copy.
+// At creation time no property value exists yet, so AssigneeID starts empty.
+// It is resolved later when someone sets the property value via SetRunPropertyValue.
+func TestRunCreationFromPlaybook_PropertyUserAssigneeType(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	// Create a playbook with a user-type property field and a property_user checklist item.
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Property User Assignee Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	pbField, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+		context.Background(),
+		pbID,
+		client.PropertyFieldRequest{Name: "Reviewer", Type: "user"},
+	)
+	require.NoError(t, err)
+
+	// Update the playbook to add a checklist item that references the new field.
+	pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pbID)
+	require.NoError(t, err)
+	pb.Checklists = []client.Checklist{
+		{
+			Title: "Tasks",
+			Items: []client.ChecklistItem{
+				{
+					Title:                   "Review task",
+					AssigneeType:            app.AssigneeTypePropertyUser,
+					AssigneePropertyFieldID: pbField.ID,
+				},
+			},
+		},
+	}
+	err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Property User Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 1)
+	require.Len(t, run.Checklists[0].Items, 1)
+
+	item := run.Checklists[0].Items[0]
+	assert.Equal(t, app.AssigneeTypePropertyUser, item.AssigneeType,
+		"AssigneeType must be preserved from playbook template")
+	assert.NotEmpty(t, item.AssigneePropertyFieldID,
+		"AssigneePropertyFieldID must be remapped to the run-level field copy")
+	assert.NotEqual(t, pbField.ID, item.AssigneePropertyFieldID,
+		"run-level field ID must differ from the playbook-level field ID")
+	assert.Empty(t, item.AssigneeID,
+		"AssigneeID starts empty at creation — resolved later when a property value is set")
 }

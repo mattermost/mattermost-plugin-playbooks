@@ -326,13 +326,12 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
-			OwnerUserID: request.UserId,
-			TeamID:      request.TeamId,
-			ChannelID:   channelID,
-			Name:        name,
-			PostID:      state.PostID,
-			PlaybookID:  playbookID,
-			Type:        runType,
+			TeamID:     request.TeamId,
+			ChannelID:  channelID,
+			Name:       name,
+			PostID:     state.PostID,
+			PlaybookID: playbookID,
+			Type:       runType,
 		},
 		request.UserId,
 		nil,
@@ -477,11 +476,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "must provide team or channel to create playbook run")
 	}
 
-	if playbookRun.OwnerUserID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
-	}
-
-	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
+	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && playbookRun.PlaybookID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
@@ -521,7 +516,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbook = &pb
 
 		if playbook.DeleteAt != 0 {
-			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook is archived, cannot create a new run using an archived playbook")
 		}
 
 		if err = h.permissions.RunCreate(userID, *playbook, playbookRun.TeamID); err != nil {
@@ -534,6 +529,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		if createPublicRun == nil {
 			public = pb.CreatePublicPlaybookRun
+		}
+
+		if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && pb.ChannelNameTemplate == "" {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 		}
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
@@ -592,6 +591,17 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
+	// Set ReporterUserID before CreatePlaybookRun so the creator is known from the start.
+	playbookRun.ReporterUserID = userID
+	// Pre-set OwnerUserID with priority: explicit caller value > DefaultOwnerID > creator (userID).
+	// CreatePlaybookRun validates team membership and may override this value.
+	if playbookRun.OwnerUserID == "" {
+		if playbookRun.DefaultOwnerID != "" {
+			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
+		} else {
+			playbookRun.OwnerUserID = userID
+		}
+	}
 	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
 	if err != nil {
 		return nil, err
@@ -1359,16 +1369,64 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		AssigneeID string `json:"assignee_id"`
+		AssigneeID              string `json:"assignee_id"`
+		AssigneeType            string `json:"assignee_type"`
+		AssigneePropertyFieldID string `json:"assignee_property_field_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
 		return
 	}
 
-	if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
-		h.HandleError(w, c.logger, err)
+	params.AssigneeID = strings.TrimSpace(params.AssigneeID)
+	params.AssigneeType = strings.TrimSpace(params.AssigneeType)
+	params.AssigneePropertyFieldID = strings.TrimSpace(params.AssigneePropertyFieldID)
+
+	// At most one of the three assignment modes may be set in a single request.
+	modes := 0
+	if params.AssigneeID != "" {
+		modes++
+	}
+	if params.AssigneeType != "" {
+		modes++
+	}
+	if params.AssigneePropertyFieldID != "" {
+		modes++
+	}
+	if modes > 1 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assignee_id, assignee_type, and assignee_property_field_id are mutually exclusive", errors.New("multiple assignee fields set"))
 		return
+	}
+
+	switch {
+	case params.AssigneePropertyFieldID != "":
+		if !model.IsValidId(params.AssigneePropertyFieldID) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_property_field_id", errors.New("invalid id format"))
+			return
+		}
+		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
+			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
+			return
+		}
+	case params.AssigneeType != "":
+		if err := h.playbookRunService.SetRoleAssignee(id, userID, params.AssigneeType, checklistNum, itemNum); err != nil {
+			if errors.Is(err, app.ErrMalformedPlaybookRun) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
+			return
+		}
+	default:
+		// Empty body / empty assignee_id keeps the existing "clear assignee" semantics.
+		if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
 	}
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)

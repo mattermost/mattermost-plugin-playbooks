@@ -26,7 +26,7 @@ import {formatConditionExpr} from 'src/utils/condition_format';
 import {clientDuplicateChecklistItem, clientRestoreChecklistItem, clientSkipChecklistItem} from 'src/client';
 import {Condition} from 'src/types/conditions';
 
-import AssignTo from './assign_to';
+import AssignTo, {RoleOption} from './assign_to';
 import {DueDateHoverMenuButton} from './duedate';
 
 export interface Props {
@@ -43,7 +43,10 @@ export interface Props {
     showDescription: boolean;
     toggleDescription: () => void;
     assignee_id: string;
+    assignee_type?: string;
     onAssigneeChange: (user?: UserProfile) => void;
+    onExtraOptionSelected?: (value: string) => void;
+    roleOptions?: RoleOption[];
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
@@ -78,9 +81,12 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 <AssignTo
                     participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}
+                    assignee_type={props.assignee_type}
                     editable={props.isEditing}
                     inHoverMenu={true}
                     onSelectedChange={props.onAssigneeChange}
+                    onExtraOptionSelected={props.onExtraOptionSelected}
+                    roleOptions={props.roleOptions}
                     placement={'bottom-end'}
                     onOpenChange={props.onItemOpenChange}
                 />

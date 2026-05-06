@@ -478,6 +478,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             // # Wait for duplication
             cy.wait(500);
 
+            // # Wait for the duplicate row to settle on "Original Copy" before editing.
+            // Without this guard, .clear().type() can race the post-duplicate state update
+            // and lose the first few keystrokes of the new name.
+            verifyAttribute(1, 'Original Copy');
+
             // # Edit the duplicate's name
             editAttributeName(1, 'Modified Copy');
 
@@ -639,7 +644,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function editAttributeName(index, newName) {
         cy.findAllByTestId('property-field-row').eq(index).within(() => {
-            cy.findByLabelText('Attribute name').clear().type(newName);
+            cy.findByLabelText('Attribute name').clear().should('have.value', '').type(newName);
         });
 
         // # Click outside to trigger save
