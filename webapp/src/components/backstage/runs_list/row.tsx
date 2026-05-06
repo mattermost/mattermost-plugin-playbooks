@@ -230,22 +230,19 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 
     if (isFollowing) {
         return (
-            <FollowingButton
+            <TertiaryButton
                 onClick={(e) => {
                     e.stopPropagation();
                     toggleFollow();
                 }}
                 data-testid='unfollow-playbook'
                 style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
                     height: '32px',
                     padding: '0 18px',
                 }}
             >
                 {formatMessage({defaultMessage: 'Following'})}
-            </FollowingButton>
+            </TertiaryButton>
         );
     }
 
@@ -273,8 +270,4 @@ const FollowButton = styled(SecondaryButton)`
         border: 1px solid var(--center-channel-color-08);
         color: var(--center-channel-color-64);
     }
-`;
-
-const FollowingButton = styled(TertiaryButton)`
-    color: var(--button-bg);
 `;

@@ -410,11 +410,10 @@ const FollowersWrapper = styled.div`
     align-items: center;
 `;
 
-const RequestJoinButton = styled(TertiaryButton)`
-    height: 24px;
-    padding: 0 10px;
+const RequestJoinButton = styled(TertiaryButton).attrs({
+    size: 'xs',
+})`
     margin-right: 10px;
-    font-size: 12px;
 `;
 
 const ParticipantsContainer = styled.div`
