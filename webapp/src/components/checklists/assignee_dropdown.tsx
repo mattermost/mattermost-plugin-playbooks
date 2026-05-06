@@ -94,7 +94,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
         if (assigneeType === AssigneeTypePropertyUser) {
             const field = propertyFields?.find((f) => f.id === checklistItem.assignee_property_field_id);
-            badgeLabel = field ? formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
+            badgeLabel = field ? formatMessage({defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({defaultMessage: 'Run User'});
             badgeTestId = 'property-user-indicator-badge';
             if (mode === 'run') {
                 const pv = propertyValues?.find((v) => v.field_id === checklistItem.assignee_property_field_id);
@@ -105,7 +105,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                 }
             }
         } else {
-            badgeLabel = assigneeType === AssigneeTypeOwner ? formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) : formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'});
+            badgeLabel = assigneeType === AssigneeTypeOwner ? formatMessage({defaultMessage: 'Run Owner'}) : formatMessage({defaultMessage: 'Run Creator'});
             badgeTestId = 'role-indicator-badge';
             if (mode === 'run') {
                 resolvedUserId = checklistItem.assignee_id || (assigneeType === AssigneeTypeOwner ? runOwnerUserId : runCreatorUserId);
@@ -117,7 +117,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                 {resolvedUserId && (
                     <CompactProfileSelector
                         selectedUserId={resolvedUserId}
-                        placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
+                        placeholder={formatMessage({defaultMessage: 'Assignee...'})}
                         enableEdit={false}
                         getAllUsers={getAllUsersInTeam}
                         selfIsFirstOption={false}
@@ -131,38 +131,38 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
     }
 
     const roleOptions = [
-        {value: ROLE_NONE, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.role_none', defaultMessage: 'None'})},
-        {value: AssigneeTypeOwner, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_owner_with_hint', defaultMessage: 'Run Owner \u2014 Resolves to run owner at creation'})},
-        {value: AssigneeTypeCreator, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_creator_with_hint', defaultMessage: 'Run Creator \u2014 Resolves to run creator at creation'})},
+        {value: ROLE_NONE, displayLabel: formatMessage({defaultMessage: 'None'})},
+        {value: AssigneeTypeOwner, displayLabel: formatMessage({defaultMessage: 'Run Owner \u2014 Resolves to run owner at creation'})},
+        {value: AssigneeTypeCreator, displayLabel: formatMessage({defaultMessage: 'Run Creator \u2014 Resolves to run creator at creation'})},
         ...(userPropertyFields.length > 0 ? [{
             value: AssigneeTypePropertyUser,
-            displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_user_with_hint', defaultMessage: 'Run User \u2014 Resolves to a user-type attribute at creation'}),
+            displayLabel: formatMessage({defaultMessage: 'Run User \u2014 Resolves to a user-type attribute at creation'}),
         }] : []),
     ];
 
     return (
         <Container>
-            <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.person_section', defaultMessage: 'ASSIGN TO A PERSON'})}</SectionLabel>
+            <SectionLabel>{formatMessage({defaultMessage: 'ASSIGN TO A PERSON'})}</SectionLabel>
             <ProfileSelector
                 testId={'assignee-profile-selector'}
                 selectedUserId={checklistItem.assignee_id}
-                placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
+                placeholder={formatMessage({defaultMessage: 'Assignee...'})}
                 enableEdit={editable}
                 getAllUsers={getAllUsersInTeam}
                 onSelectedChange={handleUserSelect}
                 selfIsFirstOption={true}
                 userGroups={{
                     subsetUserIds: participantUserIds,
-                    defaultLabel: formatMessage({id: 'playbooks.assignee_dropdown.not_participating', defaultMessage: 'NOT PARTICIPATING'}),
-                    subsetLabel: formatMessage({id: 'playbooks.assignee_dropdown.participants', defaultMessage: 'PARTICIPANTS'}),
+                    defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                    subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
                 }}
             />
             <Divider/>
-            <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.role_section', defaultMessage: 'ASSIGN TO A ROLE'})}</SectionLabel>
+            <SectionLabel>{formatMessage({defaultMessage: 'ASSIGN TO A ROLE'})}</SectionLabel>
             <SelectWrapper>
                 <AssigneeSelect
                     data-testid='role-options'
-                    aria-label={formatMessage({id: 'playbooks.assignee_dropdown.role_label', defaultMessage: 'Select role for assignee'})}
+                    aria-label={formatMessage({defaultMessage: 'Select role for assignee'})}
                     value={displayRole}
                     onChange={editable ? (e) => handleRoleRadioChange(e.target.value) : undefined}
                     disabled={!editable}
@@ -182,12 +182,12 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                 <SelectWrapper>
                     <AssigneeSelect
                         data-testid='property-user-field-options'
-                        aria-label={formatMessage({id: 'playbooks.assignee_dropdown.property_user_field_label', defaultMessage: 'Select property field for assignee'})}
+                        aria-label={formatMessage({defaultMessage: 'Select property field for assignee'})}
                         value={checklistItem.assignee_property_field_id ?? ''}
                         onChange={editable ? (e) => handlePropertyUserFieldChange(e.target.value) : undefined}
                         disabled={!editable}
                     >
-                        <option value=''>{formatMessage({id: 'playbooks.assignee_dropdown.select_attribute', defaultMessage: 'Select attribute...'})}</option>
+                        <option value=''>{formatMessage({defaultMessage: 'Select attribute...'})}</option>
                         {userPropertyFields.map((f) => (
                             <option
                                 key={f.id}

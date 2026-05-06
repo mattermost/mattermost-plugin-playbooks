@@ -177,13 +177,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const roleOptions = useMemo(() => {
         const opts = [
-            {value: `${EXTRA_OPTION_PREFIX_ROLE}owner`, label: formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'})},
-            {value: `${EXTRA_OPTION_PREFIX_ROLE}creator`, label: formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'})},
+            {value: `${EXTRA_OPTION_PREFIX_ROLE}owner`, label: formatMessage({defaultMessage: 'Run Owner'})},
+            {value: `${EXTRA_OPTION_PREFIX_ROLE}creator`, label: formatMessage({defaultMessage: 'Run Creator'})},
         ];
         for (const f of userPropertyFields) {
             opts.push({
                 value: `${EXTRA_OPTION_PREFIX_PROPERTY_USER}${f.id}`,
-                label: formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: f.name}),
+                label: formatMessage({defaultMessage: 'Run {name}'}, {name: f.name}),
             });
         }
         return opts;
@@ -264,7 +264,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 setAssigneeType(prevAssigneeType);
                 setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
                 toaster.add({
-                    content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
+                    content: formatMessage({defaultMessage: 'Failed to update assignee.'}),
                     toastStyle: ToastStyle.Failure,
                 });
             }
@@ -291,7 +291,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             if (hasError && isMounted.current && assigneeCallSeqRef.current === seq) {
                 rollback();
                 toaster.add({
-                    content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
+                    content: formatMessage({defaultMessage: 'Failed to update assignee.'}),
                     toastStyle: ToastStyle.Failure,
                 });
             }

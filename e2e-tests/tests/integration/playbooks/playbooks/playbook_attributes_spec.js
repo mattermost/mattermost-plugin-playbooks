@@ -644,7 +644,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function editAttributeName(index, newName) {
         cy.findAllByTestId('property-field-row').eq(index).within(() => {
-            cy.findByLabelText('Attribute name').clear().type(newName);
+            cy.findByLabelText('Attribute name').clear().should('have.value', '').type(newName);
         });
 
         // # Click outside to trigger save
