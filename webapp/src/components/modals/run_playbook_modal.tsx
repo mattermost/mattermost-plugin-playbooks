@@ -320,7 +320,7 @@ type channelProps = {
 
 const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, newChannelOnly = false, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
     const {formatMessage} = useIntl();
-    const createNewChannel = channelMode === 'create_new_channel';
+    const createNewChannel = channelMode === 'create_new_channel' || newChannelOnly;
     const linkExistingChannel = channelMode === 'link_existing_channel' && !newChannelOnly;
     return (
         <ChannelContainer>
