@@ -218,8 +218,8 @@ export const RunPlaybookModal = ({
                 ownerUserId: userId,
                 creatorUserId: currentUserId,
                 nextRunNumber: playbook?.next_run_number,
-                ownerFallback: formatMessage({id: 'playbooks.template_preview.owner_fallback', defaultMessage: "Owner's name"}),
-                creatorFallback: formatMessage({id: 'playbooks.template_preview.creator_fallback', defaultMessage: "Creator's name"}),
+                ownerFallback: formatMessage({defaultMessage: "Owner's name"}),
+                creatorFallback: formatMessage({defaultMessage: "Creator's name"}),
             },
         );
     }, [playbook?.channel_name_template, playbook?.run_number_prefix, playbookAttributes, playbook?.next_run_number, propertyValues, effectiveUserMap, userId, currentUserId, formatMessage]);
@@ -324,7 +324,7 @@ export const RunPlaybookModal = ({
             );
         } catch {
             resetSubmitting();
-            setSubmitError(formatMessage({id: 'playbooks.run_playbook_modal.submit_error', defaultMessage: 'An error occurred while creating the run.'}));
+            setSubmitError(formatMessage({defaultMessage: 'An error occurred while creating the run.'}));
             return;
         }
         runPromise
@@ -343,7 +343,7 @@ export const RunPlaybookModal = ({
                     return;
                 }
                 resetSubmitting();
-                setSubmitError(formatMessage({id: 'playbooks.run_playbook_modal.submit_error', defaultMessage: 'An error occurred while creating the run.'}));
+                setSubmitError(formatMessage({defaultMessage: 'An error occurred while creating the run.'}));
             });
     }, [playbook, selectedPlaybookId, isFormValid, propertyValues, userId, runName, runSummary, channelId, createPublicRun, channelMode, playbookId, onHide, onRunCreated, formatMessage, resetSubmitting, buildStatsData]);
 
@@ -359,7 +359,7 @@ export const RunPlaybookModal = ({
                 >
                     <LoadingContainer
                         role='status'
-                        aria-label={formatMessage({id: 'playbooks.run_playbook_modal.loading', defaultMessage: 'Loading playbook details…'})}
+                        aria-label={formatMessage({defaultMessage: 'Loading playbook details…'})}
                     >
                         <LoadingSpinner/>
                     </LoadingContainer>
@@ -375,7 +375,7 @@ export const RunPlaybookModal = ({
                     {...restModalProps}
                 >
                     <ErrorMessage role='alert'>
-                        {formatMessage({id: 'playbooks.run_playbook_modal.load_error', defaultMessage: 'Failed to load playbook details. Please close and try again.'})}
+                        {formatMessage({defaultMessage: 'Failed to load playbook details. Please close and try again.'})}
                     </ErrorMessage>
                 </StyledGenericModal>
             );
@@ -422,12 +422,12 @@ export const RunPlaybookModal = ({
                     />
                     {hasTemplate && namePreview && (
                         <NamePreview data-testid='run-name-preview'>
-                            {formatMessage({id: 'playbooks.run_playbook_modal.name_preview', defaultMessage: 'Preview: {preview}'}, {preview: namePreview})}
+                            {formatMessage({defaultMessage: 'Preview: {preview}'}, {preview: namePreview})}
                         </NamePreview>
                     )}
                     {namePreviewTooLong && (
                         <ErrorMessage data-testid='run-name-preview-error'>
-                            {formatMessage({id: 'playbooks.run_playbook_modal.name_preview_too_long', defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
+                            {formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
                         </ErrorMessage>
                     )}
                     {templateFields.length > 0 && (
@@ -516,7 +516,7 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
         if (error && value.length <= RUN_NAME_MAX_LENGTH) {
             setError('');
         } else if (!error && value.length > RUN_NAME_MAX_LENGTH) {
-            setError(formatMessage({id: 'playbooks.run_playbook_modal.run_name_too_long', defaultMessage: 'The run name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
+            setError(formatMessage({defaultMessage: 'The run name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
         }
 
         onSetRunName(value);
@@ -524,9 +524,9 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
 
     let suffix = '';
     if (error) {
-        suffix = ' ' + formatMessage({id: 'playbooks.run_playbook_modal.error_suffix', defaultMessage: '*'});
+        suffix = ' ' + formatMessage({defaultMessage: '*'});
     } else if (readOnly) {
-        suffix = ' ' + formatMessage({id: 'playbooks.run_playbook_modal.optional_suffix', defaultMessage: '(optional)'});
+        suffix = ' ' + formatMessage({defaultMessage: '(optional)'});
     }
 
     return (<>
@@ -812,7 +812,7 @@ const PropertyFieldsSection = ({fields, values, onSetValues, onUserKnown}: Prope
 
     return (
         <PropertyFieldsContainer>
-            <InlineLabel>{formatMessage({id: 'playbooks.run_playbook_modal.attributes_label', defaultMessage: 'Attributes'})}</InlineLabel>
+            <InlineLabel>{formatMessage({defaultMessage: 'Attributes'})}</InlineLabel>
             {fields.map((field) => {
                 return (
                     <PropertyFieldRow key={field.id}>
@@ -997,7 +997,7 @@ const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputI
                 }}
                 isClearable={true}
                 isMulti={isMulti}
-                placeholder={isMulti ? formatMessage({id: 'playbooks.run_playbook_modal.select_options', defaultMessage: 'Select options...'}) : formatMessage({id: 'playbooks.run_playbook_modal.select', defaultMessage: 'Select...'})
+                placeholder={isMulti ? formatMessage({defaultMessage: 'Select options...'}) : formatMessage({defaultMessage: 'Select...'})
                 }
             />
         );

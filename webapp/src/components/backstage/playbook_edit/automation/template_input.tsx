@@ -16,9 +16,9 @@ import {SYSTEM_TOKENS, buildTemplatePreview, extractTemplateFieldNames} from 'sr
 import {BaseInput} from 'src/components/assets/inputs';
 
 const TOKEN_DESCRIPTIONS: Record<string, {id: string; defaultMessage: string}> = {
-    SEQ: {id: 'playbooks.template_input.seq_desc', defaultMessage: 'Sequential ID'},
-    OWNER: {id: 'playbooks.template_input.owner_desc', defaultMessage: 'Run owner'},
-    CREATOR: {id: 'playbooks.template_input.creator_desc', defaultMessage: 'Run creator'},
+    SEQ: {id: 'template_token.seq', defaultMessage: 'Sequential ID'},
+    OWNER: {id: 'template_token.owner', defaultMessage: 'Run owner'},
+    CREATOR: {id: 'template_token.creator', defaultMessage: 'Run creator'},
 };
 
 type TokenOption = {
@@ -103,8 +103,8 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         if (!input) {
             return '';
         }
-        const ownerFallback = formatMessage({id: 'playbooks.template_preview.owner_fallback', defaultMessage: "Owner's name"});
-        const creatorFallback = formatMessage({id: 'playbooks.template_preview.creator_fallback', defaultMessage: "Creator's name"});
+        const ownerFallback = formatMessage({defaultMessage: "Owner's name"});
+        const creatorFallback = formatMessage({defaultMessage: "Creator's name"});
         return buildTemplatePreview(input, [], {}, {prefix, ownerFallback, creatorFallback})
             .replace(/\{([^}]+)\}/g, (match, inner: string) =>
                 (fieldNamesUpperSet.has(inner.trim().toUpperCase()) ? `[${inner.trim()}]` : match),
@@ -296,7 +296,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
             </InputContainer>
             {input && (
                 <Preview data-testid={testId ? `${testId}-preview` : undefined}>
-                    <PreviewLabel>{formatMessage({id: 'playbooks.template_input.preview_label', defaultMessage: 'Preview: '})}</PreviewLabel>
+                    <PreviewLabel>{formatMessage({defaultMessage: 'Preview: '})}</PreviewLabel>
                     <PreviewText aria-live='polite'>{previewText}</PreviewText>
                 </Preview>
             )}
@@ -306,8 +306,8 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                     data-testid={testId ? `${testId}-warning` : undefined}
                 >
                     {seqWithoutPrefix && unknownFields.length === 0 ?
-                        formatMessage({id: 'playbooks.template_input.seq_without_prefix_warning', defaultMessage: "Without a run number prefix, '{SEQ}' will display as a bare number (e.g. 00001)"}) :
-                        formatMessage({id: 'playbooks.template_input.unknown_fields_warning', defaultMessage: 'Unknown field references: {fields}'}, {fields: unknownFields.join(', ')})}
+                        formatMessage({defaultMessage: "Without a run number prefix, '{SEQ}' will display as a bare number (e.g. 00001)"}) :
+                        formatMessage({defaultMessage: 'Unknown field references: {fields}'}, {fields: unknownFields.join(', ')})}
                 </Warning>
             )}
         </SelectorWrapper>
