@@ -39,6 +39,7 @@ type Playbook struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant"`
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
+	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 }
 
 type PlaybookMember struct {
@@ -117,6 +118,7 @@ type PlaybookCreateOptions struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant"`
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
+	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 }
 
 type PlaybookMetricConfig struct {

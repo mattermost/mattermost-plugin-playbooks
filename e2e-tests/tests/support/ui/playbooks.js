@@ -264,6 +264,45 @@ Cypress.Commands.add('getFirstPostId', () => {
         invoke('replace', 'post_', '');
 });
 
+/**
+ * Navigate to the channel associated with a playbook run.
+ * @param {String} teamName - The team name (slug) for the URL
+ * @param {Object} run - The run object (must have channel_id)
+ */
+Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
+    cy.apiGetChannel(run.channel_id).then(({channel}) => {
+        cy.visit(`/${teamName}/channels/${channel.name}`);
+    });
+});
+
+/**
+ * Assert the run finish confirmation modal is visible and confirm it.
+ * The modal h1 must contain "Confirm finish".
+ */
+Cypress.Commands.add('playbooksConfirmFinishModal', () => {
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+    cy.get('#confirmModal').should('not.exist');
+});
+
+/**
+ * Intercept the REST PUT that saves a playbook (client.ts savePlaybook).
+ * Alias: SavePlaybook
+ */
+Cypress.Commands.add('playbooksInterceptPlaybookSave', () => {
+    cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*').as('SavePlaybook');
+});
+
+/**
+ * Navigate to a playbook editor page.
+ * @param {String} playbookId - The playbook ID
+ * @param {String} [tab='outline'] - The tab to navigate to (e.g. 'outline', 'attributes')
+ */
+Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});
+
 Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
     // LHS uses position:fixed — use 'exist' to avoid Cypress 15 strict visibility checks
     cy.findByTestId('lhs-navigation').should('exist').within(() => {
@@ -276,3 +315,4 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
         cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
     });
 });
+

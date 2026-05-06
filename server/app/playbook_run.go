@@ -211,6 +211,19 @@ type PlaybookRun struct {
 
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
+
+	// ChannelCreatedByRun indicates whether the channel was created by this run.
+	// Used by auto-archive to avoid archiving linked channels.
+	ChannelCreatedByRun bool `json:"-"`
+
+	// AutoArchivedChannel records whether this run actually auto-archived its channel on finish.
+	// Used by restore to decide whether to un-archive, independent of the current playbook flag.
+	AutoArchivedChannel bool `json:"-"`
+
+	// AutoArchiveChannel is snapshotted from the playbook at run creation.
+	// Using the snapshot avoids a playbook DB lookup on every finish and ensures
+	// the archive behaviour reflects the setting at the time the run was started.
+	AutoArchiveChannel bool `json:"-"`
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
@@ -1008,6 +1021,8 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	ChannelArchived        timelineEventType = "channel_archived"
+	ChannelUnarchived      timelineEventType = "channel_unarchived"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
