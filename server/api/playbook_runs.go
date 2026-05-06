@@ -496,10 +496,19 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.Wrapf(err, "failed to get channel")
 		}
 
-		if playbookRun.TeamID == "" {
+		// For DM/GM channels, TeamID is always empty - override any provided value
+		if channel.IsGroupOrDirect() {
+			playbookRun.TeamID = ""
+		} else if playbookRun.TeamID == "" {
 			playbookRun.TeamID = channel.TeamId
 		} else if channel.TeamId != playbookRun.TeamID {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel not in given team")
+		}
+
+		// Only checklists (no playbook) are allowed in DM/GM channels.
+		// Playbook runs in DM/GM will be supported in a future release.
+		if channel.IsGroupOrDirect() && playbookRun.PlaybookID != "" {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook runs are not supported in direct or group message channels")
 		}
 	}
 
@@ -543,6 +552,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if channel == nil {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel ID is required for checklists")
 		}
+
 	}
 
 	// Check the permissions on the channel: the user must be able to create it or,

@@ -2700,6 +2700,42 @@ func TestRunGetMetadata(t *testing.T) {
 		_, err = e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
 		require.Error(t, err)
 	})
+
+	t.Run("DM checklist - TeamName is empty", func(t *testing.T) {
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "DM Checklist",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   dmChannel.Id,
+		})
+		require.NoError(t, err)
+
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Empty(t, metadata.TeamName, "DM checklist should have no TeamName")
+		// DM channels store no display_name in the DB (it's computed client-side); the key assertion is TeamName == "".
+		assert.Empty(t, metadata.ChannelDisplayName)
+	})
+
+	t.Run("GM checklist - TeamName is empty", func(t *testing.T) {
+		gmChannel, _, err := e.ServerAdminClient.CreateGroupChannel(context.Background(), []string{e.RegularUser.Id, e.RegularUser2.Id, e.AdminUser.Id})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "GM Checklist",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   gmChannel.Id,
+		})
+		require.NoError(t, err)
+
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Empty(t, metadata.TeamName, "GM checklist should have no TeamName")
+	})
 }
 
 // TestGuestCannotAccessPrivateChannelTasks tests that guests cannot access
@@ -2985,4 +3021,154 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 	require.NoError(t, err, "cross-team run creation should succeed when user has run_create in the target team")
 	require.NotNil(t, run)
 	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
+}
+
+// TestDMGMChannelSupport verifies the gate that rejects playbook runs (PlaybookID != "")
+// in DM/GM channels while allowing plain checklists (PlaybookID == "") in the same channels.
+// MM-66962
+func TestDMGMChannelSupport(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("playbook run rejected in DM channel", func(t *testing.T) {
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "playbook run in DM",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			ChannelID:   dmChannel.Id,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Nil(t, run)
+	})
+
+	t.Run("checklist accepted in DM channel", func(t *testing.T) {
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "checklist in DM",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   dmChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		assert.Equal(t, dmChannel.Id, run.ChannelID)
+	})
+
+	t.Run("playbook run rejected in GM channel", func(t *testing.T) {
+		gmChannel, _, err := e.ServerAdminClient.CreateGroupChannel(context.Background(), []string{e.RegularUser.Id, e.RegularUser2.Id, e.AdminUser.Id})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "playbook run in GM",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			ChannelID:   gmChannel.Id,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Nil(t, run)
+	})
+
+	t.Run("checklist accepted in GM channel", func(t *testing.T) {
+		gmChannel, _, err := e.ServerAdminClient.CreateGroupChannel(context.Background(), []string{e.RegularUser.Id, e.RegularUser2.Id, e.AdminUser.Id})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "checklist in GM",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   gmChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		assert.Equal(t, gmChannel.Id, run.ChannelID)
+	})
+}
+
+func TestDMGMParticipants(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("DM channel member can be added as run participant", func(t *testing.T) {
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "DM Checklist",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   dmChannel.Id,
+		})
+		require.NoError(t, err)
+
+		resp, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		assert.Empty(t, resp.Errors)
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Contains(t, updated.ParticipantIDs, e.RegularUser2.Id)
+	})
+
+	t.Run("user not in DM channel is silently excluded from participants", func(t *testing.T) {
+		// DM between RegularUser and RegularUser2 only — AdminUser is not a member
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "DM Checklist",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   dmChannel.Id,
+		})
+		require.NoError(t, err)
+
+		resp, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.AdminUser.Id})
+		require.NoError(t, err)
+		assert.Empty(t, resp.Errors, "request itself should succeed")
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, updated.ParticipantIDs, e.AdminUser.Id, "non-DM-member should not be added as participant")
+	})
+
+	t.Run("removing participant from DM run does not remove DM channel membership", func(t *testing.T) {
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "DM Checklist",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   dmChannel.Id,
+		})
+		require.NoError(t, err)
+
+		resp, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		require.Empty(t, resp.Errors)
+
+		resp, err = removeParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		assert.Empty(t, resp.Errors)
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, updated.ParticipantIDs, e.RegularUser2.Id, "user should no longer be a run participant")
+
+		// DM membership is implicit — user should still be in the DM channel
+		members, _, err := e.ServerAdminClient.GetChannelMembers(context.Background(), dmChannel.Id, 0, 100, "")
+		require.NoError(t, err)
+		memberIDs := make([]string, len(members))
+		for i, m := range members {
+			memberIDs[i] = m.UserId
+		}
+		assert.Contains(t, memberIDs, e.RegularUser2.Id, "DM membership should not be removed when leaving the run")
+	})
 }

@@ -1527,6 +1527,199 @@ func updateRun(c *client.Client, playbookRunID string, updates map[string]interf
 	return response, err
 }
 
+// TestUpdateRunChannelDMGM verifies the full channel-link transition matrix for UpdateRun.
+//
+// Matrix rows: source run type (PlaybookRun vs ChannelChecklist) × source channel type (team vs DM/GM)
+// Matrix cols: destination channel type (team-same / team-diff / DM / GM)
+func TestUpdateRunChannelDMGM(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Helper: create a public channel in the given team and add RegularUser to it.
+	makePublicChannel := func(teamID string) *model.Channel {
+		t.Helper()
+		name := "test-ch-" + model.NewId()[:8]
+		ch, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      teamID,
+			Name:        name,
+			DisplayName: name,
+			Type:        model.ChannelTypeOpen,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), ch.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+		return ch
+	}
+
+	// ── PlaybookRun (team-based) transitions ──────────────────────────────────
+
+	t.Run("playbook run rejected when moved to DM channel", func(t *testing.T) {
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Playbook Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": dmChannel.Id})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resp.Errors, "expected error when moving playbook run to DM channel")
+	})
+
+	t.Run("playbook run rejected when moved to GM channel", func(t *testing.T) {
+		gmChannel, _, err := e.ServerAdminClient.CreateGroupChannel(context.Background(), []string{e.RegularUser.Id, e.RegularUser2.Id, e.AdminUser.Id})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Playbook Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": gmChannel.Id})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resp.Errors, "expected error when moving playbook run to GM channel")
+	})
+
+	t.Run("playbook run moves to same-team public channel", func(t *testing.T) {
+		target := makePublicChannel(e.BasicTeam.Id)
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Playbook Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": target.Id})
+		require.NoError(t, err)
+		assert.Empty(t, resp.Errors, "same-team public channel move should succeed")
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, target.Id, updated.ChannelID)
+		assert.Equal(t, e.BasicTeam.Id, updated.TeamID, "TeamID should not change")
+	})
+
+	t.Run("playbook run rejected when moved to different team channel", func(t *testing.T) {
+		target := makePublicChannel(e.BasicTeam2.Id)
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Playbook Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": target.Id})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resp.Errors, "cross-team channel move should fail")
+	})
+
+	// ── ChannelChecklist (team-based) transitions ─────────────────────────────
+
+	t.Run("team checklist moves to DM and clears TeamID", func(t *testing.T) {
+		src := makePublicChannel(e.BasicTeam.Id)
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Team Checklist",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  "",
+			ChannelID:   src.Id,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, e.BasicTeam.Id, run.TeamID)
+
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": dmChannel.Id})
+		require.NoError(t, err)
+		assert.Empty(t, resp.Errors, "checklist should be allowed to move to DM")
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Empty(t, updated.TeamID, "TeamID should be cleared after moving checklist to DM")
+		assert.Equal(t, dmChannel.Id, updated.ChannelID)
+	})
+
+	t.Run("team checklist rejected when moved to different team channel", func(t *testing.T) {
+		src := makePublicChannel(e.BasicTeam.Id)
+		target := makePublicChannel(e.BasicTeam2.Id)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Team Checklist",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  "",
+			ChannelID:   src.Id,
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": target.Id})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resp.Errors, "cross-team channel move should fail for checklists too")
+	})
+
+	// ── ChannelChecklist (DM/GM-based) transitions ───────────────────────────
+
+	t.Run("DM checklist migrates to team channel and gains TeamID", func(t *testing.T) {
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "DM Checklist",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   dmChannel.Id,
+		})
+		require.NoError(t, err)
+		assert.Empty(t, run.TeamID, "DM checklist should start with no team")
+
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicPublicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": e.BasicPublicChannel.Id})
+		require.NoError(t, err)
+		assert.Empty(t, resp.Errors, "expected no error when moving DM checklist to team channel")
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, e.BasicTeam.Id, updated.TeamID, "TeamID should be set to the channel's team after migration")
+		assert.Equal(t, e.BasicPublicChannel.Id, updated.ChannelID)
+	})
+
+	t.Run("DM checklist moves to another DM keeping empty TeamID", func(t *testing.T) {
+		srcDM, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+		dstDM, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.AdminUser.Id)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "DM Checklist Move",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  "",
+			ChannelID:   srcDM.Id,
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": dstDM.Id})
+		require.NoError(t, err)
+		assert.Empty(t, resp.Errors, "expected no error when moving DM checklist to another DM channel")
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Empty(t, updated.TeamID, "TeamID should remain empty after DM-to-DM move")
+		assert.Equal(t, dstDM.Id, updated.ChannelID)
+	})
+}
+
 func UpdateRunTaskActions(c *client.Client, playbookRunID string, checklistNum float64, itemNum float64, taskActions *[]app.TaskAction) (graphql.Response, error) {
 	mutation := `
 		mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {

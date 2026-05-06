@@ -316,19 +316,23 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 		return
 	}
 
-	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
-	if err != nil {
-		logrus.WithError(err).Error("cannot send webhook on creation, not able to get playbookRun.TeamID")
-		return
-	}
-
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		logrus.WithError(err).Error("cannot send webhook on creation, not able to get playbookRun.ChannelID")
 		return
 	}
 
-	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
+	var channelURL string
+	if playbookRun.TeamID != "" {
+		team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
+		if err != nil {
+			logrus.WithError(err).Error("cannot send webhook on creation, not able to get playbookRun.TeamID")
+			return
+		}
+		channelURL = getURLForChannel(*siteURL, team.Name, channel)
+	} else if teamName := s.ownerFirstTeamName(playbookRun.OwnerUserID); teamName != "" {
+		channelURL = getURLForChannel(*siteURL, teamName, channel)
+	}
 
 	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
 
@@ -1008,19 +1012,23 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 		return
 	}
 
-	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
-	if err != nil {
-		logger.WithField("team_id", playbookRun.TeamID).Error("cannot send webhook on update, not able to get playbookRun.TeamID")
-		return
-	}
-
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		logger.WithField("channel_id", playbookRun.ChannelID).Error("cannot send webhook on update, not able to get playbookRun.ChannelID")
 		return
 	}
 
-	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
+	var channelURL string
+	if playbookRun.TeamID != "" {
+		team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
+		if err != nil {
+			logger.WithField("team_id", playbookRun.TeamID).Error("cannot send webhook on update, not able to get playbookRun.TeamID")
+			return
+		}
+		channelURL = getURLForChannel(*siteURL, team.Name, channel)
+	} else if teamName := s.ownerFirstTeamName(playbookRun.OwnerUserID); teamName != "" {
+		channelURL = getURLForChannel(*siteURL, teamName, channel)
+	}
 
 	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
 
@@ -1684,9 +1692,14 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string, ha
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run '%s'", playbookRunID)
 	}
 
-	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", playbookRun.TeamID)
+	// For DM/GM runs, TeamID is empty - get team name only if TeamID is present
+	teamName := ""
+	if playbookRun.TeamID != "" {
+		team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", playbookRun.TeamID)
+		}
+		teamName = team.Name
 	}
 
 	numParticipants, err := s.store.GetHistoricalPlaybookRunParticipantsCount(playbookRun.ChannelID)
@@ -1700,7 +1713,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string, ha
 	}
 
 	metadata := &Metadata{
-		TeamName:        team.Name,
+		TeamName:        teamName,
 		Followers:       followers,
 		NumParticipants: numParticipants,
 	}
@@ -3195,36 +3208,44 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 
 // addPlaybookRunInitialMemberships creates the memberships in run and channels for the most core users: playbooksbot, reporter and owner
 func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *PlaybookRun, channel *model.Channel, createdChannel bool) error {
-	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
-		return errors.Wrapf(err, "failed to add bot to the team")
-	}
+	// For DM/GM channels, skip team/channel member operations since:
+	// 1. DM/GM channels have no team (TeamId is empty)
+	// 2. Members are implicit in the DM/GM - we can't add/remove them
+	// 3. Channel roles don't apply to DM/GM channels
+	isDMGM := channel.IsGroupOrDirect()
 
-	// channel related
-	if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
-		return errors.Wrapf(err, "failed to add bot to the channel")
-	}
+	if !isDMGM {
+		if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
+			return errors.Wrapf(err, "failed to add bot to the team")
+		}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-		return errors.Wrapf(err, "failed to add reporter to the channel")
-	}
+		// channel related
+		if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
+			return errors.Wrapf(err, "failed to add bot to the channel")
+		}
 
-	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
-		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-			return errors.Wrapf(err, "failed to add owner to channel")
+		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+			return errors.Wrapf(err, "failed to add reporter to the channel")
+		}
+
+		if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
+			if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+				return errors.Wrapf(err, "failed to add owner to channel")
+			}
+		}
+
+		if createdChannel {
+			_, userRoleID, adminRoleID := s.GetSchemeRolesForChannel(channel)
+			if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
+				logrus.WithError(err).WithFields(logrus.Fields{
+					"channel_id":    channel.Id,
+					"owner_user_id": playbookRun.OwnerUserID,
+				}).Warn("failed to promote owner to admin")
+			}
 		}
 	}
 
-	if createdChannel {
-		_, userRoleID, adminRoleID := s.GetSchemeRolesForChannel(channel)
-		if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
-			logrus.WithError(err).WithFields(logrus.Fields{
-				"channel_id":    channel.Id,
-				"owner_user_id": playbookRun.OwnerUserID,
-			}).Warn("failed to promote owner to admin")
-		}
-	}
-
-	// run related
+	// run related - still add participants for tracking purposes even in DM/GM
 	participants := []string{playbookRun.OwnerUserID}
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		participants = append(participants, playbookRun.ReporterUserID)
@@ -4004,12 +4025,22 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 // that RemoveChannelMemberOnRemovedParticipant is enabled and that the requester
 // has ChannelManageMembers permission before calling.
 func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string) {
+	// DM/GM channels can't have members removed — skip the action
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("leaveActions: failed to get channel")
+		return
+	}
+	if channel.IsGroupOrDirect() {
+		return
+	}
 	// Don't do anything if the user not a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 	if member == nil {
 		return
 	}
 
+	// Permission check is done by the caller (consolidated in PermissionsService)
 	// To be added to the UI as an optional action
 	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
 		logrus.WithError(err).WithField("user_id", userID).Error("failed to remove user from linked channel")
@@ -4048,13 +4079,22 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		originalRun = playbookRun.Clone()
 	}
 
-	// Ensure new participants are team members
+	// Ensure new participants are team members (for team-based runs) or channel members (for DM/GM runs)
 	for _, userID := range userIDs {
-		var member *model.TeamMember
-		member, err = s.pluginAPI.Team.GetMember(playbookRun.TeamID, userID)
-		if err != nil || member.DeleteAt != 0 {
-			usersFailedToInvite = append(usersFailedToInvite, userID)
-			continue
+		if playbookRun.TeamID == "" {
+			// For DM/GM runs, check channel membership instead of team membership
+			if _, err = s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID); err != nil {
+				usersFailedToInvite = append(usersFailedToInvite, userID)
+				continue
+			}
+		} else {
+			// For team-based runs, check team membership
+			var member *model.TeamMember
+			member, err = s.pluginAPI.Team.GetMember(playbookRun.TeamID, userID)
+			if err != nil || member.DeleteAt != 0 {
+				usersFailedToInvite = append(usersFailedToInvite, userID)
+				continue
+			}
 		}
 		usersToInvite = append(usersToInvite, userID)
 	}
@@ -4192,6 +4232,15 @@ func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string
 // that CreateChannelMemberOnNewParticipant (or forceAddToChannel) is enabled and
 // that the requester has ChannelManageMembers permission before calling.
 func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, user *model.User) {
+	// DM/GM channels can't have members added — skip the action
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("participateActions: failed to get channel")
+		return
+	}
+	if channel.IsGroupOrDirect() {
+		return
+	}
 	// Don't do anything if the user is a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, user.Id)
 	if member != nil {
@@ -4370,6 +4419,16 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// ownerFirstTeamName returns the name of the first active team the owner belongs to.
+// Used to construct URLs for DM/GM channels which have no TeamID on the run.
+func (s *PlaybookRunServiceImpl) ownerFirstTeamName(ownerUserID string) string {
+	teams, err := s.pluginAPI.Team.List(pluginapi.FilterTeamsByUser(ownerUserID))
+	if err != nil || len(teams) == 0 {
+		return ""
+	}
+	return teams[0].Name
 }
 
 // Helper function to Trigger webhooks

@@ -237,11 +237,11 @@ describe('useProfilesInTeam', () => {
         let calls = 0;
 
         useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
+            // useProfilesInTeam calls getCurrentTeamId first, then selectProfilesInTeam.
             if (calls++ % 2 === 0) {
-                return profilesInCurrentTeam;
+                return currentTeamId;
             }
-            return currentTeamId;
+            return profilesInCurrentTeam;
         });
 
         const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
@@ -268,11 +268,11 @@ describe('useProfilesInTeam', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
+            // useProfilesInTeam calls getCurrentTeamId first, then selectProfilesInTeam.
             if (calls++ % 2 === 0) {
-                return profilesInCurrentTeam;
+                return currentTeamId;
             }
-            return currentTeamId;
+            return profilesInCurrentTeam;
         });
 
         const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
@@ -304,11 +304,11 @@ describe('useProfilesInTeam', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
+            // useProfilesInTeam calls getCurrentTeamId first, then selectProfilesInTeam.
             if (calls++ % 2 === 0) {
-                return profilesInCurrentTeam;
+                return currentTeamId;
             }
-            return currentTeamId;
+            return profilesInCurrentTeam;
         });
 
         const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
@@ -336,11 +336,11 @@ describe('useProfilesInTeam', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
+            // useProfilesInTeam calls getCurrentTeamId first, then selectProfilesInTeam.
             if (calls++ % 2 === 0) {
-                return profilesInCurrentTeam;
+                return currentTeamId;
             }
-            return currentTeamId;
+            return profilesInCurrentTeam;
         });
 
         const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
@@ -366,11 +366,11 @@ describe('useProfilesInTeam', () => {
 
         let calls = 0;
         useSelectorSpy.mockImplementation(() => {
-            // since useSelector is called twice, we mock one return value, then the other.
+            // useProfilesInTeam calls getCurrentTeamId first, then selectProfilesInTeam.
             if (calls++ % 2 === 0) {
-                return profilesInCurrentTeam;
+                return currentTeamId;
             }
-            return currentTeamId;
+            return profilesInCurrentTeam;
         });
 
         const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');

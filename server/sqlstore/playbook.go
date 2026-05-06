@@ -91,7 +91,7 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 		return sq.SelectBuilder{}, errors.Errorf("unsupported direction parameter '%s'", options.Direction)
 	}
 
-	builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
+	builder = builder.OrderByClause(GetOrderByClause(sort, direction))
 
 	page := options.Page
 	perPage := options.PerPage
@@ -423,7 +423,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	if !opts.WithMembershipOnly { // return all public playbooks and private ones user is member of
 		permissionsAndFilter = sq.Or{sq.Expr(`p.Public = true`), permissionsAndFilter}
 	}
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo, teamID, "p")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, teamID, tableAliasPlaybook)
 
 	queryForResults := p.store.builder.
 		Select(
@@ -485,18 +485,10 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		Where(teamLimitExpr)
 
 	if opts.SearchTerm != "" {
-		column := "p.Title"
-		searchString := opts.SearchTerm
-
-		// Postgres performs a case-sensitive search, so we need to lowercase
-		// both the column contents and the search string
-		if p.store.db.DriverName() == model.DatabaseDriverPostgres {
-			column = "LOWER(p.Title)"
-			searchString = strings.ToLower(opts.SearchTerm)
-		}
-
-		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
-		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
+		searchString := strings.ToLower(opts.SearchTerm)
+		likeExpr := sq.Expr("LOWER(p.Title) LIKE '%' || ? || '%'", searchString)
+		queryForResults = queryForResults.Where(likeExpr)
+		queryForTotal = queryForTotal.Where(likeExpr)
 	}
 
 	if !opts.WithArchived {

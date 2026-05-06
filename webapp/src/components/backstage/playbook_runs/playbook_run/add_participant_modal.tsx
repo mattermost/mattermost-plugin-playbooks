@@ -1,12 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {Modal} from 'react-bootstrap';
 import styled from 'styled-components';
-
-import {searchProfiles} from 'mattermost-redux/actions/users';
+import {getProfilesInChannel, searchProfiles} from 'mattermost-redux/actions/users';
 import {UserProfile} from '@mattermost/types/users';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {OptionTypeBase, StylesConfig} from 'react-select';
@@ -24,7 +23,7 @@ import {isCurrentUserChannelMember} from 'src/selectors';
 
 import ProfileAutocomplete from 'src/components/backstage/profile_autocomplete';
 
-import {useChannel} from 'src/hooks';
+import {useChannel, useIsDMGM} from 'src/hooks';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -44,8 +43,44 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const isChannelMember = useAppSelector(isCurrentUserChannelMember(playbookRun.channel_id));
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
 
+    // Participants are limited to channel members in DM/GM runs.
+    const isDMGM = useIsDMGM(playbookRun);
+    const [channelMembers, setChannelMembers] = useState<UserProfile[]>([]);
+
+    // For DM/GM channels, fetch channel members once
+    useEffect(() => {
+        if (isDMGM && playbookRun.channel_id) {
+            dispatch(getProfilesInChannel(playbookRun.channel_id, 0, 100) as any)
+                .then((result: {data?: UserProfile[]}) => {
+                    setChannelMembers(result?.data ?? []);
+                })
+                .catch(() => setChannelMembers([]));
+        }
+    }, [isDMGM, playbookRun.channel_id, dispatch]);
+
+    // For DM/GM runs, filter channel members locally (can't add non-members to DM/GM)
+    // For team-based runs, filter by team membership via server search
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
+        if (isDMGM) {
+            const lowerTerm = term.toLowerCase();
+            const filtered = channelMembers.filter((user) =>
+                user.username.toLowerCase().includes(lowerTerm) ||
+                (user.first_name && user.first_name.toLowerCase().includes(lowerTerm)) ||
+                (user.last_name && user.last_name.toLowerCase().includes(lowerTerm)) ||
+                (user.nickname && user.nickname.toLowerCase().includes(lowerTerm))
+            );
+            return Promise.resolve({data: filtered});
+        }
+
+        if (playbookRun.team_id) {
+            return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
+        }
+        return dispatch(searchProfiles(term));
+    };
+
+    // Return all channel members for DM/GM (used when search term is empty)
+    const getChannelMembersProfiles = () => {
+        return Promise.resolve({data: channelMembers});
     };
 
     const header = (
@@ -55,6 +90,11 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     );
 
     const renderFooter = () => {
+        // For DM/GM channels, don't show "add to channel" options since
+        // you can't add members to DM/GM channels
+        if (isDMGM) {
+            return null;
+        }
         if (playbookRun.create_channel_member_on_new_participant) {
             return (
                 <FooterExtraInfoContainer>
@@ -115,12 +155,17 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
         >
             <ProfileAutocomplete
                 searchProfiles={searchUsers}
-                userIds={[]}
+                getProfiles={isDMGM ? getChannelMembersProfiles : undefined}
+                userIds={playbookRun.participant_ids}
                 isDisabled={false}
                 isMultiMode={true}
+                showDefaultOptions={isDMGM}
                 customSelectStyles={selectStyles}
                 setValues={setProfiles}
-                placeholder={formatMessage({defaultMessage: 'Search for people'})}
+                placeholder={isDMGM ?
+                    formatMessage({defaultMessage: 'Select channel members'}) :
+                    formatMessage({defaultMessage: 'Search for people'})
+                }
             />
         </GenericModal>
     );

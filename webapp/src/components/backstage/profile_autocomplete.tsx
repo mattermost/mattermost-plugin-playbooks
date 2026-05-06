@@ -84,6 +84,10 @@ interface Props {
     placeholder?: string;
     defaultValue?: UserProfile[]
     autoFocus?: boolean;
+
+    // Show default options when input is focused (before typing).
+    // Useful for DM/GM where channel members should appear immediately.
+    showDefaultOptions?: boolean;
 }
 
 const ProfileAutocomplete = (props: Props) => {
@@ -125,7 +129,7 @@ const ProfileAutocomplete = (props: Props) => {
     const debouncedSearchProfiles = useMemo(() => debounce((term: string, callback: (options: OptionsType<UserProfile>) => void) => {
         let profiles;
         if (term.trim().length === 0) {
-            profiles = props.getProfiles?.();
+            profiles = props.getProfiles ? props.getProfiles() : Promise.resolve({data: [] as UserProfile[]});
         } else {
             profiles = props.searchProfiles(term);
         }
@@ -158,7 +162,7 @@ const ProfileAutocomplete = (props: Props) => {
             isMulti={props.isMultiMode}
             controlShouldRenderValue={props.isMultiMode}
             cacheOptions={false}
-            defaultOptions={!props.isMultiMode}
+            defaultOptions={props.showDefaultOptions ?? !props.isMultiMode}
             loadOptions={usersLoader}
             defaultValue={props.defaultValue}
             filterOption={({data}: { data: UserProfile }) => !props.userIds.includes(data.id)}
