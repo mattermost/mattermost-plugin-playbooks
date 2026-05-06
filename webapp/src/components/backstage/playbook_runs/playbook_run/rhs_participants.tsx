@@ -89,12 +89,13 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
 
         return (
             <>
-                <StyledSecondaryButton
+                <TertiaryButton
+                    size='sm'
                     onClick={() => setManageMode(true)}
                     data-testid='participants-manage-btn'
                 >
                     {formatMessage({defaultMessage: 'Manage'})}
-                </StyledSecondaryButton>
+                </TertiaryButton>
 
                 <PrimaryButton
                     size='sm'
@@ -333,15 +334,6 @@ const HeaderSection = styled.div`
     align-items: center;
     padding: 20px 20px 0;
     color: var(--center-channel-color);
-`;
-
-const StyledSecondaryButton = styled(TertiaryButton)`
-    display: flex;
-    height: 32px;
-    align-items: center;
-    margin-right: 8px;
-    font-size: 12px;
-    line-height: 10px;
 `;
 
 const AddParticipantIcon = styled(AccountPlusOutlineIcon)`

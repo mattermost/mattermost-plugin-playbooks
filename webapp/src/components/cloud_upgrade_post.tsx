@@ -24,10 +24,6 @@ import {
 } from 'src/components/custom_post_styles';
 import {useOpenContactSales} from 'src/hooks';
 
-const StyledTertiaryButton = styled(TertiaryButton)`
-    margin-left: 10px;
-`;
-
 interface Props {
     post: Post;
 }
@@ -78,11 +74,11 @@ export const CloudUpgradePost = (props: Props) => {
                         <PrimaryButton onClick={openContactSales} >
                             <FormattedMessage defaultMessage='Contact Sales'/>
                         </PrimaryButton>
-                        <StyledTertiaryButton
+                        <TertiaryButton
                             onClick={() => window.open('https://mattermost.com/pricing-cloud')}
                         >
                             <FormattedMessage defaultMessage='Learn more'/>
-                        </StyledTertiaryButton>
+                        </TertiaryButton>
                     </CustomPostButtonRow>
                 </CustomPostContent>
                 <Image/>

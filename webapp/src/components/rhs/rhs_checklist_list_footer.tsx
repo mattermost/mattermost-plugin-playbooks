@@ -93,14 +93,15 @@ const RHSFooter = ({
                     </FinishIconWrapper>
                     <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
                     <FinishRightWrapper>
-                        <FinishButton
+                        <TertiaryButton
+                            size='sm'
                             onClick={() => {
                                 dispatch(finishRun(playbookRun.team_id, playbookRun.id));
                             }}
                         >
                             <CheckIcon size={16}/>
                             {formatMessage({defaultMessage: 'Finish'})}
-                        </FinishButton>
+                        </TertiaryButton>
                     </FinishRightWrapper>
                 </FinishContent>
             </FinishPrompt>
@@ -136,26 +137,28 @@ const RHSFooter = ({
                     </FinishedNotice>
                     <FinishedRightWrapper>
                         {canRestore ? (
-                            <ResumeButton
+                            <TertiaryButton
+                                size='sm'
                                 onClick={handleResume}
                                 disabled={false}
                             >
                                 {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
                                 }
-                            </ResumeButton>
+                            </TertiaryButton>
                         ) : (
                             <WithTooltip
                                 id='resume-disabled-tooltip'
                                 title={playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to restart'})}
                             >
                                 <ResumeButtonWrapper>
-                                    <ResumeButton
+                                    <TertiaryButton
+                                        size='sm'
                                         onClick={handleResume}
                                         disabled={true}
                                     >
                                         {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
                                         }
-                                    </ResumeButton>
+                                    </TertiaryButton>
                                 </ResumeButtonWrapper>
                             </WithTooltip>
                         )}
@@ -293,15 +296,6 @@ const FinishRightWrapper = styled.div`
     display: flex;
     flex: 1;
     justify-content: flex-end;
-`;
-
-const FinishButton = styled(TertiaryButton)`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 16px;
-    font-size: 12px;
 `;
 
 const ParticipatePrompt = styled.div`

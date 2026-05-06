@@ -27,41 +27,14 @@ export function SubtlePrimaryButton(props: Omit<ButtonProps, 'emphasis'>) {
     );
 }
 
-export const TertiaryButton = styled.button`
-    display: inline-flex;
-    height: 40px;
-    align-items: center;
-    justify-content: center;
-    padding: 0 20px;
-    border: 0;
-    border-radius: 4px;
-    background: rgba(var(--button-bg-rgb), 0.08);
-    color: var(--button-bg);
-    font-size: 14px;
-    font-weight: 600;
-
-    &:disabled {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: rgba(var(--center-channel-color-rgb), 0.32);
-    }
-
-    &:hover:enabled {
-        background: rgba(var(--button-bg-rgb), 0.12);
-    }
-
-    &:active:enabled  {
-        background: rgba(var(--button-bg-rgb), 0.16);
-    }
-
-    i {
-        display: flex;
-        font-size: 18px;
-
-        &::before {
-            margin: 0 7px 0 0;
-        }
-    }
-`;
+export function TertiaryButton(props: Omit<ButtonProps, 'emphasis'>) {
+    return (
+        <NewButton
+            emphasis='tertiary'
+            {...props}
+        />
+    );
+}
 
 export function SecondaryButton(props: Omit<ButtonProps, 'emphasis'>) {
     return (
