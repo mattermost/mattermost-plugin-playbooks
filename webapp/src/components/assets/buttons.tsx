@@ -5,31 +5,13 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
-import {type ButtonProps, Button as NewButton} from '@mattermost/shared/components/button';
+import {Button, type ButtonProps} from '@mattermost/shared/components/button';
 
-export const PrimaryButton = NewButton;
-
-export function PrimaryButtonDestructive(props: Omit<ButtonProps, 'variant'>) {
-    return (
-        <NewButton
-            variant='destructive'
-            {...props}
-        />
-    );
-}
-
-export function SubtlePrimaryButton(props: Omit<ButtonProps, 'emphasis'>) {
-    return (
-        <NewButton
-            emphasis='tertiary'
-            {...props}
-        />
-    );
-}
+export const PrimaryButton = Button;
 
 export function TertiaryButton(props: Omit<ButtonProps, 'emphasis'>) {
     return (
-        <NewButton
+        <Button
             emphasis='tertiary'
             {...props}
         />
@@ -38,14 +20,21 @@ export function TertiaryButton(props: Omit<ButtonProps, 'emphasis'>) {
 
 export function SecondaryButton(props: Omit<ButtonProps, 'emphasis'>) {
     return (
-        <NewButton
+        <Button
             emphasis='secondary'
             {...props}
         />
     );
 }
 
-export const DestructiveButton = PrimaryButtonDestructive;
+export function DestructiveButton(props: Omit<ButtonProps, 'variant'>) {
+    return (
+        <Button
+            variant='destructive'
+            {...props}
+        />
+    );
+}
 
 export type UpgradeButtonProps = React.ComponentProps<typeof PrimaryButton>;
 
