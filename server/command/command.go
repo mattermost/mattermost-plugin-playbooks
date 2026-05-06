@@ -1222,15 +1222,21 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	playbookRun, err := r.playbookRunService.CreatePlaybookRun(&app.PlaybookRun{
+	newRun := &app.PlaybookRun{
 		Name:                "Cloud Incident 4739",
 		TeamID:              r.args.TeamId,
 		OwnerUserID:         r.args.UserId,
+		ReporterUserID:      r.args.UserId,
 		PlaybookID:          gotplaybook.ID,
 		Checklists:          gotplaybook.Checklists,
 		BroadcastChannelIDs: gotplaybook.BroadcastChannelIDs,
 		Type:                app.RunTypePlaybook,
-	}, &gotplaybook, r.args.UserId, true)
+	}
+	if err := r.playbookRunService.ResolveRunCreationParams(newRun, &gotplaybook, nil, app.RunSourceCommand); err != nil {
+		r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
+		return
+	}
+	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &gotplaybook, r.args.UserId, true, app.RunSourceCommand, nil)
 	if err != nil {
 		r.postCommandResponse("Unable to create test playbook run: " + err.Error())
 		return
@@ -1402,19 +1408,21 @@ func (r *Runner) actionTestCreate(params []string) {
 
 	playbookRunName := strings.Join(params[2:], " ")
 
-	playbookRun, err := r.playbookRunService.CreatePlaybookRun(
-		&app.PlaybookRun{
-			Name:        playbookRunName,
-			OwnerUserID: r.args.UserId,
-			TeamID:      r.args.TeamId,
-			PlaybookID:  playbookID,
-			Checklists:  playbook.Checklists,
-			Type:        app.RunTypePlaybook,
-		},
-		&playbook,
-		r.args.UserId,
-		true,
-	)
+	newRun := &app.PlaybookRun{
+		Name:           playbookRunName,
+		OwnerUserID:    r.args.UserId,
+		ReporterUserID: r.args.UserId,
+		TeamID:         r.args.TeamId,
+		PlaybookID:     playbookID,
+		Checklists:     playbook.Checklists,
+		Type:           app.RunTypePlaybook,
+		CreateAt:       creationTimestamp.UnixMilli(),
+	}
+	if err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand); err != nil {
+		r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
+		return
+	}
+	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, app.RunSourceCommand, nil)
 
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create playbook run: %v", err)
@@ -1939,28 +1947,29 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			playbookRunName = fmt.Sprintf("[%s] %s", companyName, playbookRunName)
 		}
 
-		playbookRun, err := r.playbookRunService.CreatePlaybookRun(
-			&app.PlaybookRun{
-				Name:                 playbookRunName,
-				OwnerUserID:          r.args.UserId,
-				TeamID:               r.args.TeamId,
-				PlaybookID:           playbook.ID,
-				Checklists:           playbook.Checklists,
-				RetrospectiveEnabled: playbook.RetrospectiveEnabled,
-				StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
-				Type:                 app.RunTypePlaybook,
-			},
-			&playbook,
-			r.args.UserId,
-			true,
-		)
+		createAt := timeutils.GetTimeForMillis(timestamps[i])
+		newRun := &app.PlaybookRun{
+			Name:                 playbookRunName,
+			OwnerUserID:          r.args.UserId,
+			ReporterUserID:       r.args.UserId,
+			TeamID:               r.args.TeamId,
+			PlaybookID:           playbook.ID,
+			Checklists:           playbook.Checklists,
+			RetrospectiveEnabled: playbook.RetrospectiveEnabled,
+			StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
+			Type:                 app.RunTypePlaybook,
+			CreateAt:             createAt.UnixMilli(),
+		}
+		if err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand); err != nil {
+			r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
+			return
+		}
+		playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, app.RunSourceCommand, nil)
 
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating playbook run: %v", err)
 			return
 		}
-
-		createAt := timeutils.GetTimeForMillis(timestamps[i])
 		err = r.playbookRunService.ChangeCreationDate(playbookRun.ID, createAt)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error changing creation date: %v", err)

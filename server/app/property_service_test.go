@@ -269,11 +269,6 @@ func TestPropertyService_sanitizeTextValue(t *testing.T) {
 			input:          "   ",
 			expectedOutput: "",
 		},
-		{
-			name:           "empty string is allowed",
-			input:          "",
-			expectedOutput: "",
-		},
 	}
 
 	for _, tt := range tests {
@@ -439,7 +434,7 @@ func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := s.sanitizeAndValidatePropertyValue(tt.propertyField, tt.input)
+			result, err := s.sanitizeAndValidatePropertyValue(tt.propertyField, tt.input, true)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {

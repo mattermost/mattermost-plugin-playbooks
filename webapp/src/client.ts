@@ -94,7 +94,8 @@ export async function createPlaybookRun(
     name: string,
     summary: string,
     channel_id?: string,
-    create_public_run?: boolean
+    create_public_run?: boolean,
+    property_values?: Record<string, string | number | boolean | null | string[]>
 ) {
     const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
         owner_user_id,
@@ -104,6 +105,7 @@ export async function createPlaybookRun(
         playbook_id,
         channel_id,
         create_public_run,
+        property_values,
     }));
     return run as PlaybookRun;
 }
@@ -245,6 +247,13 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
         method: 'DELETE',
     });
     return data;
+}
+
+export async function updatePlaybookRunNumberPrefix(playbookId: Playbook['id'], runNumberPrefix: string) {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({run_number_prefix: runNumberPrefix}),
+    });
 }
 
 export async function restorePlaybook(playbookId: Playbook['id']) {

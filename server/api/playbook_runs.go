@@ -196,6 +196,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
 		app.RunSourcePost,
+		playbookRunCreateOptions.PropertyValues,
 	)
 	if errors.Is(err, app.ErrNoPermissions) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
@@ -337,6 +338,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		request.UserId,
 		nil,
 		app.RunSourceDialog,
+		nil,
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
@@ -463,7 +465,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string) (*app.PlaybookRun, error) {
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string, initialPropertyValues map[string]json.RawMessage) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -477,11 +479,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "must provide team or channel to create playbook run")
 	}
 
-	if playbookRun.OwnerUserID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
-	}
-
-	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
+	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && playbookRun.PlaybookID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
@@ -534,6 +532,12 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		if createPublicRun == nil {
 			public = pb.CreatePublicPlaybookRun
+		}
+
+		// Playbook is now loaded; reject an empty name only when no ChannelNameTemplate will generate one
+		// and no existing channel is being linked (ChannelID != "" means no new channel is created).
+		if strings.TrimSpace(playbookRun.Name) == "" && pb.ChannelNameTemplate == "" && playbookRun.ChannelID == "" {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 		}
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
@@ -592,7 +596,20 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+	if playbook != nil {
+		// Pre-set ReporterUserID so {CREATOR} resolves during template resolution.
+		// DefaultOwnerID fallback is applied inside ResolveRunCreationParams (only when playbook != nil).
+		playbookRun.ReporterUserID = userID
+		if err = h.playbookRunService.ResolveRunCreationParams(&playbookRun, playbook, initialPropertyValues, source); err != nil {
+			return nil, errors.Wrap(err, "failed to resolve run creation params")
+		}
+	}
+
+	if playbookRun.OwnerUserID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
+	}
+
+	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public, source, initialPropertyValues)
 	if err != nil {
 		return nil, err
 	}

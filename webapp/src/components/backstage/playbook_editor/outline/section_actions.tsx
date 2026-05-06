@@ -1,8 +1,16 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useCallback, useMemo} from 'react';
+import React, {
+    ComponentProps,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
+import debounce from 'debounce';
 
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
@@ -12,6 +20,8 @@ import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@matter
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import {fetchPlaybookPropertyFields, updatePlaybookRunNumberPrefix} from 'src/client';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -28,18 +38,33 @@ import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    disabled?: boolean;
+    restPlaybook?: PlaybookWithChecklist;
 }
 
-const LegacyActionsEdit = ({playbook}: Props) => {
+const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
+    const [fieldNames, setFieldNames] = useState<string[]>([]);
+    useEffect(() => {
+        fetchPlaybookPropertyFields(playbook.id)
+            .then((fields) => setFieldNames(fields.map((f) => f.name)))
+            .catch(() => { /* ignore fetch errors — fieldNames stays empty */ });
+    }, [playbook.id]);
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
 
+    // Merge GraphQL playbook with REST-only fields so CreateAChannel can display run_number_prefix.
+    const channelPlaybookSource = useMemo(() => ({
+        ...playbook,
+        run_number_prefix: restPlaybook?.run_number_prefix,
+        next_run_number: restPlaybook?.next_run_number,
+    }), [playbook, restPlaybook?.run_number_prefix, restPlaybook?.next_run_number]);
+
     const [
         playbookForCreateChannel,
         setPlaybookForCreateChannel,
-    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(playbook, useCallback((update) => {
+    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(channelPlaybookSource as ComponentProps<typeof CreateAChannel>['playbook'], useCallback((update) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
             channelNameTemplate: update.channel_name_template,
@@ -47,6 +72,28 @@ const LegacyActionsEdit = ({playbook}: Props) => {
             channelId: update.channel_id,
         });
     }, [updatePlaybook]));
+
+    // run_number_prefix is REST-only (not in GraphQL schema): save via PATCH when it changes.
+    const lastSavedPrefixRef = useRef(restPlaybook?.run_number_prefix ?? '');
+    useEffect(() => {
+        lastSavedPrefixRef.current = restPlaybook?.run_number_prefix ?? '';
+    }, [restPlaybook?.run_number_prefix]);
+    const handleRunNumberPrefixSave = useMemo(
+        () => debounce((prefix: string) => {
+            updatePlaybookRunNumberPrefix(playbook.id, prefix)
+                .then(() => {
+                    lastSavedPrefixRef.current = prefix;
+                })
+                .catch(() => {
+                    setPlaybookForCreateChannel((prev) => ({...prev, run_number_prefix: lastSavedPrefixRef.current}));
+                });
+        }, 500),
+        [playbook.id, setPlaybookForCreateChannel],
+    );
+
+    useEffect(() => {
+        return () => handleRunNumberPrefixSave.flush();
+    }, [handleRunNumberPrefixSave]);
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);
@@ -167,11 +214,14 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
+                        fieldNames={fieldNames}
+                        disabled={disabled || archived}
+                        onRunNumberPrefixChange={handleRunNumberPrefixSave}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
-                        disabled={archived}
+                        disabled={disabled || archived}
                         enabled={playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
@@ -186,7 +236,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner
-                        disabled={archived}
+                        disabled={disabled || archived}
                         enabled={playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
@@ -197,7 +247,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
-                        disabled={archived}
+                        disabled={disabled || archived}
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
@@ -223,7 +273,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
+                            disabled={disabled || archived}
                             isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
@@ -245,7 +295,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
+                            disabled={disabled || archived}
                             isChecked={playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
                                 updatePlaybook({

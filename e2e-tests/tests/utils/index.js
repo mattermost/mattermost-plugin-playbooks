@@ -14,6 +14,20 @@ export * from './file';
 export * from './plugins';
 
 /**
+ * Mirrors server/app.FormatSequentialID: zero-pads the run number to 5 digits.
+ * @param {String} prefix - the playbook's RunNumberPrefix (e.g. "INC")
+ * @param {Number} runNumber - the sequential run number (1-based)
+ * @return {String} formatted sequential ID (e.g. "INC-00001")
+ */
+export function formatSequentialID(prefix, runNumber) {
+    if (runNumber === 0) {
+        return '';
+    }
+    const padded = String(runNumber).padStart(5, '0');
+    return prefix ? `${prefix}-${padded}` : padded;
+}
+
+/**
  * @param {Number} length - length on random string to return, e.g. 7 (default)
  * @return {String} random string
  */
@@ -77,6 +91,20 @@ export function isMac() {
 
 // Stubs out the clipboard so that we can intercept copy events. Note that this only stubs out calls to
 // navigator.clipboard.writeText and not document.execCommand.
+/**
+ * Returns the expected display name for a MM user object following the same
+ * priority used by resolveUserDisplayName: nickname > full name > username.
+ * @param {{nickname?: string, first_name?: string, last_name?: string, username: string}} user
+ * @returns {string}
+ */
+export function resolvedDisplayName(user) {
+    if (user.nickname) {
+        return user.nickname;
+    }
+    const full = [user.first_name, user.last_name].filter(Boolean).join(' ');
+    return full || user.username;
+}
+
 export function stubClipboard() {
     const clipboard = {contents: '', wasCalled: false};
 

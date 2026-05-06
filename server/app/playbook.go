@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
@@ -76,6 +78,9 @@ type Playbook struct {
 
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
+
+	RunNumberPrefix string `json:"run_number_prefix" export:"run_number_prefix"`
+	NextRunNumber   int64  `json:"-" export:"-"`
 
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
@@ -448,6 +453,16 @@ type PlaybookService interface {
 
 	// ReorderPropertyFields reorders property fields for a playbook and bumps the playbook's updated_at
 	ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error)
+
+	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
+	IncrementRunNumber(playbookID string) (int64, error)
+
+	// UpdateChannelNameTemplateIfUnchanged updates the channel name template only if it still equals oldTemplate.
+	// Returns true if the row was updated, false if a concurrent edit changed the value first.
+	UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error)
+
+	// UpdateRunNumberPrefix updates only the run number prefix for a playbook.
+	UpdateRunNumberPrefix(playbookID, prefix, userID string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -528,6 +543,20 @@ type PlaybookStore interface {
 
 	// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
 	BumpPlaybookUpdatedAt(playbookID string) error
+
+	// IsRunNumberPrefixUsed returns true if another active playbook in teamID already uses prefix.
+	// Pass excludePlaybookID to skip the playbook being updated/restored.
+	IsRunNumberPrefixUsed(teamID, prefix, excludePlaybookID string) (bool, error)
+
+	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
+	IncrementRunNumber(playbookID string) (int64, error)
+
+	// UpdateChannelNameTemplateIfUnchanged updates the channel name template only if it still equals oldTemplate.
+	// Returns true if the row was updated, false if a concurrent edit changed the value first.
+	UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error)
+
+	// UpdateRunNumberPrefix updates only the RunNumberPrefix column for the given playbook.
+	UpdateRunNumberPrefix(id, prefix string) error
 }
 
 const (
@@ -536,6 +565,50 @@ const (
 	ChecklistItemStateClosed     = "closed"
 	ChecklistItemStateSkipped    = "skipped"
 )
+
+const (
+	// MaxRunNumberPrefixLength is the maximum length for a RunNumberPrefix.
+	MaxRunNumberPrefixLength = 32
+
+	// MaxChannelNameTemplateLength is the maximum length for a ChannelNameTemplate.
+	MaxChannelNameTemplateLength = 1024
+)
+
+var runNumberPrefixRegex = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$`)
+
+// NormalizeRunNumberPrefix trims whitespace and leading/trailing hyphens from a prefix.
+// Callers should normalize before storing or validating.
+func NormalizeRunNumberPrefix(prefix string) string {
+	return strings.Trim(strings.TrimSpace(prefix), "-")
+}
+
+// ValidateRunNumberPrefix checks that a RunNumberPrefix is alphanumeric + hyphens, max 32 chars.
+// Empty string is valid (means no prefix).
+func ValidateRunNumberPrefix(prefix string) error {
+	prefix = strings.TrimSpace(prefix)
+	if prefix == "" {
+		return nil
+	}
+	if utf8.RuneCountInString(prefix) > MaxRunNumberPrefixLength {
+		return errors.Errorf("run_number_prefix must be at most %d characters", MaxRunNumberPrefixLength)
+	}
+	if !runNumberPrefixRegex.MatchString(prefix) {
+		return errors.New("run_number_prefix must start and end with an alphanumeric character and contain only alphanumeric characters and hyphens")
+	}
+	return nil
+}
+
+// ValidateChannelNameTemplate checks that a ChannelNameTemplate does not exceed the max length
+// and is not whitespace-only.
+func ValidateChannelNameTemplate(tmpl string) error {
+	if strings.TrimSpace(tmpl) == "" && tmpl != "" {
+		return errors.New("channel_name_template must not be whitespace-only")
+	}
+	if utf8.RuneCountInString(tmpl) > MaxChannelNameTemplateLength {
+		return errors.Errorf("channel_name_template must be at most %d characters", MaxChannelNameTemplateLength)
+	}
+	return nil
+}
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||

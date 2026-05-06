@@ -59,6 +59,10 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	playbook.CreateAt = model.GetMillis()
 	playbook.UpdateAt = playbook.CreateAt
 
+	if err := s.checkRunNumberPrefixUnique(playbook.TeamID, playbook.RunNumberPrefix, ""); err != nil {
+		return "", err
+	}
+
 	// Perform the actual operation
 	newID, err := s.store.Create(playbook)
 	if err != nil {
@@ -306,6 +310,10 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 
 	playbook.UpdateAt = model.GetMillis()
 
+	if err := s.checkRunNumberPrefixUnique(playbook.TeamID, playbook.RunNumberPrefix, playbook.ID); err != nil {
+		return err
+	}
+
 	// Perform the actual operation
 	if err := s.store.Update(playbook); err != nil {
 		auditRec.AddErrorDesc(err.Error())
@@ -371,6 +379,10 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 		auditRec.Success()
 		auditRec.AddEventResultState(playbook)
 		return nil
+	}
+
+	if err := s.checkRunNumberPrefixUnique(playbook.TeamID, playbook.RunNumberPrefix, playbook.ID); err != nil {
+		return err
 	}
 
 	// Perform the actual operation
@@ -450,6 +462,11 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 		newPlaybook.Metrics[i].ID = ""
 	}
 	newPlaybook.Title = "Copy of " + playbook.Title
+
+	// Clear prefix (per-team unique constraint) and template (may reference {SEQ} or property fields with new IDs).
+	newPlaybook.RunNumberPrefix = ""
+	newPlaybook.NextRunNumber = 0
+	newPlaybook.ChannelNameTemplate = ""
 
 	// On duplicating, make the current user the administrator.
 	newPlaybook.Members = []PlaybookMember{{
@@ -620,4 +637,50 @@ func (s *playbookService) ReorderPropertyFields(playbookID, fieldID string, targ
 	}
 
 	return reorderedFields, nil
+}
+
+// checkRunNumberPrefixUnique returns ErrDuplicateEntry if prefix is already used by another
+// active playbook in teamID. Pass excludeID = "" when creating a new playbook.
+func (s *playbookService) checkRunNumberPrefixUnique(teamID, prefix, excludeID string) error {
+	if prefix == "" {
+		return nil
+	}
+	used, err := s.store.IsRunNumberPrefixUsed(teamID, prefix, excludeID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check run number prefix uniqueness for team %s, prefix %q", teamID, prefix)
+	}
+	if used {
+		return ErrDuplicateEntry
+	}
+	return nil
+}
+
+func (s *playbookService) IncrementRunNumber(playbookID string) (int64, error) {
+	n, err := s.store.IncrementRunNumber(playbookID)
+	if err != nil {
+		return 0, errors.Wrap(err, "playbook_service.IncrementRunNumber")
+	}
+	return n, nil
+}
+
+func (s *playbookService) UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error) {
+	return s.store.UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate)
+}
+
+func (s *playbookService) UpdateRunNumberPrefix(playbookID, prefix, userID string) error {
+	prefix = NormalizeRunNumberPrefix(prefix)
+	if err := ValidateRunNumberPrefix(prefix); err != nil {
+		return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+	}
+
+	playbook, err := s.store.Get(playbookID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.checkRunNumberPrefixUnique(playbook.TeamID, prefix, playbookID); err != nil {
+		return err
+	}
+
+	return s.store.UpdateRunNumberPrefix(playbookID, prefix)
 }
