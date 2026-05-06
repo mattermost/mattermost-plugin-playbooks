@@ -1315,8 +1315,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 			logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag; skipping channel archive")
 		} else {
 			playbookRunToModify = updatedRun
-			if err := s.pluginAPI.Channel.Delete(playbookRunToModify.ChannelID); err != nil {
-				logger.WithError(err).Warn("failed to auto-archive channel on run finish; resetting AutoArchivedChannel flag")
+			if archived := s.deleteChannelByID(playbookRunToModify.ChannelID, logger.WithField("context", "auto-archive on run finish")); !archived {
 				playbookRunToModify.AutoArchivedChannel = false
 				if resetRun, resetErr := s.store.UpdatePlaybookRun(playbookRunToModify); resetErr != nil {
 					// Flag is true but channel is not archived. The next restore will call
@@ -1595,6 +1594,15 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 // created by this run (not linked).
 func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun) bool {
 	return run.AutoArchiveChannel && run.ChannelCreatedByRun && run.ChannelID != ""
+}
+
+// deleteChannelByID archives (soft-deletes) the given channel. Returns true on success.
+func (s *PlaybookRunServiceImpl) deleteChannelByID(channelID string, logger *logrus.Entry) bool {
+	if err := s.pluginAPI.Channel.Delete(channelID); err != nil {
+		logger.WithError(err).Warn("failed to archive channel")
+		return false
+	}
+	return true
 }
 
 // restoreChannelByID clears DeleteAt on the given channel (un-archives it).
