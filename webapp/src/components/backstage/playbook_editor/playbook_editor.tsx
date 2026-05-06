@@ -350,6 +350,11 @@ const TitleBar = styled.div`
         gap: 8px;
     }
 
+    /* This element uses gap to space buttons out instead of the margin-left defined by the web app */
+    .btn + .btn {
+        margin-left: unset;
+    }
+
     ${Controls.TitleButton} {
         padding-left: 8px;
     }

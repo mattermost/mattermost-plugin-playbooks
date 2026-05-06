@@ -519,7 +519,6 @@ export const TitleMenu = styled(TitleMenuImpl)``;
 const buttonCommon = css`
     height: 36px;
     padding: 0 16px;
-    gap: 8px;
 
     i::before {
         margin-right: 0;
@@ -548,13 +547,17 @@ const CheckboxInputStyled = styled(CheckboxInput)`
 `;
 
 const SecondaryButtonLargerCheckbox = styled(SecondaryButtonLarger) <{checked: boolean}>`
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    padding: 0;
+    /* Increase the specificity to override the default btn-secondary colors */
+    && {
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
 
-    &:hover:enabled {
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
+        &:hover:enabled {
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+        }
     }
+
+    padding: 0;
 
     ${({checked}) => checked && css`
     border: 1px solid var(--button-bg);

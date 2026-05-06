@@ -230,10 +230,6 @@ const PlaybookListRow = (props: Props) => {
                         data-testid='run-playbook'
                         style={{
                             height: '32px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '2px',
-                            padding: '0 20px',
                         }}
                     >
                         <PlayOutlineIcon size={22}/>
@@ -249,10 +245,6 @@ const PlaybookListRow = (props: Props) => {
                         data-testid='join-playbook'
                         style={{
                             height: '32px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '7px',
-                            padding: '0 20px',
                         }}
                     >
                         <AccountPlusOutlineIcon size={16}/>

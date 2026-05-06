@@ -257,9 +257,6 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
             }}
             data-testid='follow-playbook'
             style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
                 height: '32px',
                 padding: '0 16px',
             }}
@@ -271,8 +268,11 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 };
 
 const FollowButton = styled(SecondaryButton)`
-    border: 1px solid var(--center-channel-color-08);
-    color: var(--center-channel-color-64);
+    /* Increase the specificity to override the default btn-secondary colors */
+    && {
+        border: 1px solid var(--center-channel-color-08);
+        color: var(--center-channel-color-64);
+    }
 `;
 
 const FollowingButton = styled(TertiaryButton)`
