@@ -69,6 +69,8 @@ export interface PlaybookWithChecklist extends Playbook {
 
     // Property fields from GraphQL
     propertyFields: PropertyField[];
+
+    admin_only_edit: boolean;
 }
 
 import {MetricType, PropertyField} from 'src/graphql/generated/graphql';
@@ -215,6 +217,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
+        admin_only_edit: false,
         propertyFields: [],
     };
 }
