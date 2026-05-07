@@ -2111,3 +2111,66 @@ func TestBumpPlaybookUpdatedAt(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, updatedPlaybook.UpdateAt, int64(1))
 }
+
+func TestOwnerGroupOnlyActionsRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+
+	t.Run("OwnerGroupOnlyActions=true persists through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("owner-group-only-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.OwnerGroupOnlyActions = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.True(t, got.OwnerGroupOnlyActions)
+	})
+
+	t.Run("OwnerGroupOnlyActions toggled false persists through Update", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("owner-group-only-update").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.OwnerGroupOnlyActions = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		got.OwnerGroupOnlyActions = false
+
+		err = playbookStore.Update(got)
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.False(t, updated.OwnerGroupOnlyActions)
+	})
+
+	t.Run("OwnerGroupOnlyActions defaults to false on Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("owner-group-only-default").
+			WithTeamID(teamID).
+			ToPlaybook()
+		// Do NOT set OwnerGroupOnlyActions — zero value should be false
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.False(t, got.OwnerGroupOnlyActions)
+	})
+}

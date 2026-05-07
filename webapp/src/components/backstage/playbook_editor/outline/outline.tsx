@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useCallback,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -11,7 +16,12 @@ import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -22,15 +32,24 @@ import Section from './section';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
+    restPlaybook?: PlaybookWithChecklist;
+    showAdminSettings?: boolean;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch}: Props) => {
+const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
+    const toaster = useToaster();
     const archived = playbook.delete_at !== 0;
+    const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
+    const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
+    const effectiveOwnerGroupOnlyActions = ownerGroupOnlyActionsOverride ?? restPlaybook?.owner_group_only_actions;
+    const effectiveRestPlaybook = restPlaybook && effectiveOwnerGroupOnlyActions !== undefined ?
+        {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} :
+        restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -63,6 +82,30 @@ const Outline = ({playbook, refetch}: Props) => {
             retrospectiveEnabled: !playbook.retrospective_enabled,
         });
     };
+
+    const handleOwnerGroupOnlyActionsChange = useCallback(async (updated: {owner_group_only_actions: boolean}) => {
+        if (archived || !restPlaybook) {
+            return;
+        }
+        const prev = ownerGroupOnlyActionsOverride ?? restPlaybook.owner_group_only_actions;
+        setIsSavingOwnerGroupOnlyActions(true);
+        setOwnerGroupOnlyActionsOverride(updated.owner_group_only_actions);
+        try {
+            const latest = await clientFetchPlaybook(restPlaybook.id);
+            if (!latest) {
+                throw new Error('Unable to fetch latest playbook before save');
+            }
+            await savePlaybook({...latest, owner_group_only_actions: updated.owner_group_only_actions});
+        } catch {
+            setOwnerGroupOnlyActionsOverride(prev);
+            toaster.add({
+                content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                toastStyle: ToastStyle.Failure,
+            });
+        } finally {
+            setIsSavingOwnerGroupOnlyActions(false);
+        }
+    }, [archived, restPlaybook, ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride, toaster, formatMessage]);
 
     return (
         <Sections
@@ -159,6 +202,21 @@ const Outline = ({playbook, refetch}: Props) => {
                     playbook={playbook}
                 />
             </Section>
+            {showAdminSettings && effectiveRestPlaybook && (
+                <Section
+                    id={'run-permissions-settings'}
+                    title={formatMessage({defaultMessage: 'Settings'})}
+                >
+                    <div data-testid='owner-group-only-actions-toggle'>
+                        <OwnerGroupOnlyActionsToggle
+                            playbook={effectiveRestPlaybook}
+                            isPlaybookAdmin={showAdminSettings}
+                            disabled={archived || isSavingOwnerGroupOnlyActions}
+                            onChange={handleOwnerGroupOnlyActionsChange}
+                        />
+                    </div>
+                </Section>
+            )}
             <PlaybookActionsModal
                 playbook={playbook}
                 readOnly={false}

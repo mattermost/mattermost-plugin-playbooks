@@ -82,19 +82,23 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
+	// These routes perform their own per-handler permission check (RunFinish / RunChangeOwner)
+	// which is stricter than the checkEditPermissions middleware (RunManageProperties).
+	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
+	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
+
+	playbookRunRouter.HandleFunc("/finish-dialog", withContext(handler.finishDialog)).Methods(http.MethodPost)
+
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
-	playbookRunRouterAuthorized.HandleFunc("", withContext(handler.updatePlaybookRun)).Methods(http.MethodPatch)
-	playbookRunRouterAuthorized.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
-	playbookRunRouterAuthorized.HandleFunc("/status", withContext(handler.status)).Methods(http.MethodPost)
-	playbookRunRouterAuthorized.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/finish-dialog", withContext(handler.finishDialog)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/update-status-dialog", withContext(handler.updateStatusDialog)).Methods(http.MethodPost)
+	playbookRunRouterAuthorized.HandleFunc("", withContext(handler.updatePlaybookRun)).Methods(http.MethodPatch)
+	playbookRunRouterAuthorized.HandleFunc("/status", withContext(handler.status)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", withContext(handler.reminderButtonUpdate)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder", withContext(handler.reminderReset)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", withContext(handler.noRetrospectiveButton)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
-	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel/{channel_id:[A-Za-z0-9]+}").Subrouter()
@@ -795,6 +799,10 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunChangeOwner(userID, vars["id"])) {
+		return
+	}
+
 	var params struct {
 		OwnerID string `json:"owner_id"`
 	}
@@ -838,8 +846,11 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 // updateStatus returns a publicMessage and an internal error
 func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
 
-	// user must be a participant to be able to post an update
-	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
+	if options.FinishRun {
+		if err := h.permissions.RunFinish(userID, playbookRunID); err != nil {
+			return "Not authorized to finish this run", err
+		}
+	} else if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
 		return "Not authorized", err
 	}
 
@@ -869,10 +880,14 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 	return "", nil
 }
 
-// updateStatusD handles the POST /runs/{id}/finish endpoint, user has edit permissions
+// finish handles the PUT /runs/{id}/finish endpoint
 func (h *PlaybookRunHandler) finish(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunFinish(userID, playbookRunID)) {
+		return
+	}
 
 	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
@@ -933,6 +948,10 @@ func (h *PlaybookRunHandler) restore(c *Context, w http.ResponseWriter, r *http.
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunRestore(userID, playbookRunID)) {
+		return
+	}
+
 	if err := h.playbookRunService.RestorePlaybookRun(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -975,19 +994,20 @@ func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWrite
 	}
 }
 
-// updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
+// finishDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
 // user submits the Finish Run dialog.
 func (h *PlaybookRunHandler) finishDialog(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRun, incErr := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if incErr != nil {
-		h.HandleError(w, c.logger, incErr)
-		return
-	}
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
+	if err := h.permissions.RunFinish(userID, playbookRunID); err != nil {
+		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
+			ReturnJSON(w, &model.SubmitDialogResponse{
+				Error: "You don't have permission to finish this run.",
+			}, http.StatusOK)
+		} else {
+			h.HandleError(w, c.logger, err)
+		}
 		return
 	}
 
@@ -1065,7 +1085,18 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	}
 
 	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
+		if options.FinishRun && (errors.Is(internalErr, app.ErrNoPermissions) || errors.Is(internalErr, app.ErrNotFound)) {
+			// FinishRun permission failures must return 403 so clients can enforce OwnerGroupOnlyActions.
+			// ErrNotFound also returns 403 to avoid disclosing run existence to unauthorized callers.
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
+		} else if errors.Is(internalErr, app.ErrNoPermissions) || errors.Is(internalErr, app.ErrNotFound) {
+			// Dialog handlers return HTTP 200 with SubmitDialogResponse so the dialog can show errors.
+			ReturnJSON(w, &model.SubmitDialogResponse{
+				Error: publicMsg,
+			}, http.StatusOK)
+		} else {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
+		}
 		return
 	}
 

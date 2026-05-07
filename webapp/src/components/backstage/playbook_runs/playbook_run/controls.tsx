@@ -32,6 +32,7 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
 import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
+import {useIsBlockedByOwnerOnlyForFinishRestore, useIsSystemAdmin} from 'src/hooks/permissions';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
@@ -177,9 +178,12 @@ export const ExportLogsMenuItem = (props: {exportAvailable: boolean, onExportCli
     );
 };
 
-export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string}) => {
+export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string, ownerGroupOnlyActions?: boolean, isOwner?: boolean}) => {
+    const {formatMessage} = useIntl();
     const onFinishRun = useOnFinishRun(props.playbookRun, props.location || 'backstage');
     const currentUserId = useAppSelector(getCurrentUserId);
+    const isSystemAdmin = useIsSystemAdmin();
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -193,12 +197,14 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, 
 
     const canModify = useCanModifyRun(runForPermissions, currentUserId);
 
-    if (canModify) {
+    if (canModify || isSystemAdmin) {
         return (
             <>
                 <Separator/>
                 <StyledDropdownMenuItem
                     onClick={onFinishRun}
+                    disabled={blockedByOwnerOnly}
+                    disabledAltText={blockedByOwnerOnly ? formatMessage({defaultMessage: 'Only the run owner can finish this run'}) : undefined}
                 >
                     <FlagOutlineIcon size={18}/>
                     <FormattedMessage defaultMessage='Finish'/>
@@ -231,10 +237,13 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
     );
 };
 
-export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string}) => {
+export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string, ownerGroupOnlyActions?: boolean, isOwner?: boolean}) => {
+    const {formatMessage} = useIntl();
     const onRestoreRun = useOnRestoreRun(props.playbookRun, props.location || 'backstage');
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
     const currentUserId = useAppSelector(getCurrentUserId);
+    const isSystemAdmin = useIsSystemAdmin();
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -248,13 +257,15 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
 
     const canRestore = useCanRestoreRun(runForPermissions, currentUserId);
 
-    if (!playbookRunIsActive(props.playbookRun) && canRestore) {
+    if (!playbookRunIsActive(props.playbookRun) && (canRestore || isSystemAdmin)) {
         return (
             <>
                 <Separator/>
                 <StyledDropdownMenuItem
                     onClick={onRestoreRun}
                     className='restartRun'
+                    disabled={blockedByOwnerOnly}
+                    disabledAltText={blockedByOwnerOnly ? formatMessage({defaultMessage: 'Only the run owner can restart this run'}) : undefined}
                 >
                     <FlagOutlineIcon size={18}/>
                     {isChannelChecklist ? <FormattedMessage defaultMessage='Resume'/> : <FormattedMessage defaultMessage='Restart'/>}

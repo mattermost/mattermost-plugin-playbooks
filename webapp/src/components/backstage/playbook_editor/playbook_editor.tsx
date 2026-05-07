@@ -27,6 +27,8 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
 import {useAllowPlaybookAttributes} from 'src/hooks/license';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
+import {PlaybookRole} from 'src/types/permissions';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
@@ -41,6 +43,7 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import Tooltip from 'src/components/widgets/tooltip';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+import {useIsSystemAdmin} from 'src/hooks/permissions';
 
 import Outline, {ScrollNav, Sections} from './outline/outline';
 import * as Controls from './controls';
@@ -51,6 +54,7 @@ const PlaybookEditor = () => {
     const {path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
+    const [restPlaybook] = useRestPlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
@@ -76,7 +80,9 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
-
+    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const isSystemAdmin = useIsSystemAdmin();
+    const showAdminSettings = isSystemAdmin || isPlaybookAdmin;
     if (error) {
         // not found
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
@@ -288,6 +294,8 @@ const PlaybookEditor = () => {
                     <Outline
                         playbook={playbook}
                         refetch={refetch}
+                        restPlaybook={restPlaybook ?? undefined}
+                        showAdminSettings={showAdminSettings}
                     />
                 </Route>
                 <Route

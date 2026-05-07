@@ -206,6 +206,17 @@ const PlaybookRunDetails = () => {
     const onInfoClick = RHS.isOpen && RHS.section === RHSContent.RunInfo ? RHS.close : onViewInfo;
     const onTimelineClick = RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline;
 
+    let participantContent: React.ReactNode = null;
+    if (role === Role.Participant) {
+        participantContent = (
+            <FinishRun
+                playbookRun={playbookRun}
+                ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
+                isOwner={myUser.id === playbookRun.owner_user_id}
+            />
+        );
+    }
+
     return (
         <Container>
             <MainWrapper>
@@ -219,6 +230,7 @@ const PlaybookRunDetails = () => {
                         hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}
+                        ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
                     />
                 </Header>
                 <Main>
@@ -254,7 +266,7 @@ const PlaybookRunDetails = () => {
                             role={role}
                             focusMetricId={retrospectiveMetricId}
                         />
-                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
+                        {participantContent}
                     </Body>
                 </Main>
             </MainWrapper>
