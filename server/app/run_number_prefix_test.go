@@ -18,6 +18,27 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 )
 
+func makePlaybookService(ctrl *gomock.Controller) (app.PlaybookService, *mock_app.MockPlaybookStore, *mock_app.MockPropertyService) {
+	mockStore := mock_app.NewMockPlaybookStore(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockConditionService := mock_app.NewMockConditionService(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+	mockAuditor.EXPECT().MakeAuditRecord(gomock.Any(), gomock.Any()).Return(&model.AuditRecord{}).AnyTimes()
+	mockAuditor.EXPECT().LogAuditRec(gomock.Any()).AnyTimes()
+
+	svc := app.NewPlaybookService(
+		mockStore,
+		mockPoster,
+		nil,
+		mockAuditor,
+		&metrics.Metrics{},
+		mockPropertyService,
+		mockConditionService,
+	)
+	return svc, mockStore, mockPropertyService
+}
+
 func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 	makeService := func(ctrl *gomock.Controller) (app.PlaybookService, *mock_app.MockPlaybookStore, *mock_bot.MockPoster) {
 		mockStore := mock_app.NewMockPlaybookStore(ctrl)
@@ -167,5 +188,97 @@ func TestPlaybookService_IncrementRunNumber(t *testing.T) {
 		require.Error(t, err)
 		assert.True(t, errors.Is(err, storeErr))
 		assert.Equal(t, int64(0), runNumber)
+	})
+}
+
+func TestPlaybookService_UpdateChannelNameTemplate(t *testing.T) {
+	t.Run("saves valid template with no field references", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, mockStore, mockPropertyService := makePlaybookService(ctrl)
+
+		mockPropertyService.EXPECT().GetPropertyFields("pb1").Return(nil, nil)
+		mockStore.EXPECT().UpdateChannelNameTemplate("pb1", "Incident - Run").Return(nil)
+
+		err := svc.UpdateChannelNameTemplate("pb1", "Incident - Run", "user1")
+		require.NoError(t, err)
+	})
+
+	t.Run("saves valid template referencing a known field", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, mockStore, mockPropertyService := makePlaybookService(ctrl)
+
+		fields := []app.PropertyField{{PropertyField: model.PropertyField{ID: "f1", Name: "Zone"}}}
+		mockPropertyService.EXPECT().GetPropertyFields("pb1").Return(fields, nil)
+		mockStore.EXPECT().UpdateChannelNameTemplate("pb1", "{Zone} - Incident").Return(nil)
+
+		err := svc.UpdateChannelNameTemplate("pb1", "{Zone} - Incident", "user1")
+		require.NoError(t, err)
+	})
+
+	t.Run("rejects template referencing an unknown field", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, _, mockPropertyService := makePlaybookService(ctrl)
+
+		mockPropertyService.EXPECT().GetPropertyFields("pb1").Return(nil, nil)
+
+		err := svc.UpdateChannelNameTemplate("pb1", "{NoSuchField} - Incident", "user1")
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, app.ErrMalformedPlaybookRun))
+	})
+
+	t.Run("rejects template exceeding max length", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, _, _ := makePlaybookService(ctrl)
+
+		longTemplate := string(make([]byte, app.MaxChannelNameTemplateLength+1))
+		err := svc.UpdateChannelNameTemplate("pb1", longTemplate, "user1")
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, app.ErrMalformedPlaybookRun))
+	})
+
+	t.Run("allows empty template (clears it)", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, mockStore, mockPropertyService := makePlaybookService(ctrl)
+
+		mockPropertyService.EXPECT().GetPropertyFields("pb1").Return(nil, nil)
+		mockStore.EXPECT().UpdateChannelNameTemplate("pb1", "").Return(nil)
+
+		err := svc.UpdateChannelNameTemplate("pb1", "", "user1")
+		require.NoError(t, err)
+	})
+
+	t.Run("propagates GetPropertyFields error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, _, mockPropertyService := makePlaybookService(ctrl)
+
+		mockPropertyService.EXPECT().GetPropertyFields("pb1").Return(nil, errors.New("db error"))
+
+		err := svc.UpdateChannelNameTemplate("pb1", "Incident", "user1")
+		require.Error(t, err)
+	})
+
+	t.Run("propagates store error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, mockStore, mockPropertyService := makePlaybookService(ctrl)
+
+		mockPropertyService.EXPECT().GetPropertyFields("pb1").Return(nil, nil)
+		mockStore.EXPECT().UpdateChannelNameTemplate("pb1", "Incident").Return(errors.New("update failed"))
+
+		err := svc.UpdateChannelNameTemplate("pb1", "Incident", "user1")
+		require.Error(t, err)
 	})
 }

@@ -4,6 +4,8 @@
 package app
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -667,7 +669,40 @@ func (s *playbookService) UpdateChannelNameTemplateIfUnchanged(playbookID, oldTe
 	return s.store.UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate)
 }
 
+func (s *playbookService) UpdateChannelNameTemplate(playbookID, template, userID string) error {
+	auditRec := s.auditor.MakeAuditRecord("updateChannelNameTemplate", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbookID)
+
+	if err := ValidateChannelNameTemplate(template); err != nil {
+		return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+	}
+
+	fields, err := s.propertyService.GetPropertyFields(playbookID)
+	if err != nil {
+		return err
+	}
+
+	if unknown := ValidateTemplate(template, ResolveOptions{Fields: fields}); len(unknown) > 0 {
+		return errors.Wrapf(ErrMalformedPlaybookRun, "channel name template references unknown field(s): %s", strings.Join(unknown, ", "))
+	}
+
+	if err := s.store.UpdateChannelNameTemplate(playbookID, template); err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
+	auditRec.Success()
+	return nil
+}
+
 func (s *playbookService) UpdateRunNumberPrefix(playbookID, prefix, userID string) error {
+	auditRec := s.auditor.MakeAuditRecord("updateRunNumberPrefix", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbookID)
+
 	prefix = NormalizeRunNumberPrefix(prefix)
 	if err := ValidateRunNumberPrefix(prefix); err != nil {
 		return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
@@ -678,9 +713,19 @@ func (s *playbookService) UpdateRunNumberPrefix(playbookID, prefix, userID strin
 		return err
 	}
 
+	if playbook.RunNumberPrefix == prefix {
+		auditRec.Success()
+		return nil
+	}
+
 	if err := s.checkRunNumberPrefixUnique(playbook.TeamID, prefix, playbookID); err != nil {
 		return err
 	}
 
-	return s.store.UpdateRunNumberPrefix(playbookID, prefix)
+	if err := s.store.UpdateRunNumberPrefix(playbookID, prefix); err != nil {
+		return err
+	}
+
+	auditRec.Success()
+	return nil
 }

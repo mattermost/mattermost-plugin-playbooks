@@ -80,7 +80,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", withContext(handler.getPlaybook)).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", withContext(handler.updatePlaybook)).Methods(http.MethodPut)
-	playbookRouter.HandleFunc("", withContext(handler.patchRunNumberPrefix)).Methods(http.MethodPatch)
+	playbookRouter.HandleFunc("", withContext(handler.patchPlaybook)).Methods(http.MethodPatch)
 	playbookRouter.HandleFunc("", withContext(handler.archivePlaybook)).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
@@ -183,7 +183,6 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	// NextRunNumber is a server-managed counter; callers must not set it.
 	playbook.NextRunNumber = 0
 
 	if playbook.ReminderTimerDefaultSeconds <= 0 {
@@ -228,10 +227,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
-		if h.handlePlaybookWriteError(w, c.logger, err) {
-			return
-		}
-		h.HandleError(w, c.logger, err)
+		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}
 
@@ -330,30 +326,17 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	err = h.playbookService.Update(playbook, userID)
 	if err != nil {
-		if h.handlePlaybookWriteError(w, c.logger, err) {
-			return
-		}
-		h.HandleError(w, c.logger, err)
+		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookHandler) patchRunNumberPrefix(c *Context, w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
-
-	var body struct {
-		RunNumberPrefix string `json:"run_number_prefix"`
-	}
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&body); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
-		return
-	}
 
 	playbook, err := h.playbookService.Get(playbookID)
 	if err != nil {
@@ -370,19 +353,29 @@ func (h *PlaybookHandler) patchRunNumberPrefix(c *Context, w http.ResponseWriter
 		return
 	}
 
-	prefix := app.NormalizeRunNumberPrefix(body.RunNumberPrefix)
-	if err := app.ValidateRunNumberPrefix(prefix); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+	var body struct {
+		RunNumberPrefix     *string `json:"run_number_prefix"`
+		ChannelNameTemplate *string `json:"channel_name_template"`
+	}
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
 		return
 	}
 
-	err = h.playbookService.UpdateRunNumberPrefix(playbookID, prefix, userID)
-	if err != nil {
-		if h.handlePlaybookWriteError(w, c.logger, err) {
+	if body.RunNumberPrefix != nil {
+		if err = h.playbookService.UpdateRunNumberPrefix(playbookID, *body.RunNumberPrefix, userID); err != nil {
+			h.handlePlaybookWriteError(w, c.logger, err)
 			return
 		}
-		h.HandleError(w, c.logger, err)
-		return
+	}
+
+	if body.ChannelNameTemplate != nil {
+		if err = h.playbookService.UpdateChannelNameTemplate(playbookID, *body.ChannelNameTemplate, userID); err != nil {
+			h.handlePlaybookWriteError(w, c.logger, err)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -455,10 +448,7 @@ func (h *PlaybookHandler) restorePlaybook(c *Context, w http.ResponseWriter, r *
 
 	err = h.playbookService.Restore(playbookToRestore, userID)
 	if err != nil {
-		if h.handlePlaybookWriteError(w, c.logger, err) {
-			return
-		}
-		h.HandleError(w, c.logger, err)
+		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}
 
@@ -776,7 +766,6 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 	playbook := importBlock.Playbook
 
-	// NextRunNumber is a server-managed counter; import files must not set it.
 	playbook.NextRunNumber = 0
 
 	if playbook.ID != "" {
@@ -829,10 +818,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		Conditions: importBlock.Conditions,
 	}, userID)
 	if err != nil {
-		if h.handlePlaybookWriteError(w, c.logger, err) {
-			return
-		}
-		h.HandleError(w, c.logger, err)
+		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}
 
@@ -862,21 +848,17 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 	return nil
 }
 
-// handlePlaybookWriteError maps known playbook write errors to HTTP status codes and returns true when handled.
-func (h *PlaybookHandler) handlePlaybookWriteError(w http.ResponseWriter, logger logrus.FieldLogger, err error) bool {
+// handlePlaybookWriteError maps known playbook write errors to HTTP status codes.
+func (h *PlaybookHandler) handlePlaybookWriteError(w http.ResponseWriter, logger logrus.FieldLogger, err error) {
 	if errors.Is(err, app.ErrDuplicateEntry) {
 		h.HandleErrorWithCode(w, logger, http.StatusConflict, app.ErrDuplicateEntry.Error(), err)
-		return true
-	}
-	if errors.Is(err, app.ErrRunNumberPrefixImmutable) {
-		h.HandleErrorWithCode(w, logger, http.StatusConflict, app.ErrRunNumberPrefixImmutable.Error(), err)
-		return true
-	}
-	if errors.Is(err, app.ErrReservedPropertyFieldName) {
+	} else if errors.Is(err, app.ErrReservedPropertyFieldName) {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, app.ErrReservedPropertyFieldName.Error(), err)
-		return true
+	} else if errors.Is(err, app.ErrMalformedPlaybookRun) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+	} else {
+		h.HandleError(w, logger, err)
 	}
-	return false
 }
 
 // validateTemplateWithFields validates a channel name template against a known field list and prefix.
@@ -1095,10 +1077,7 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 
 	createdField, err := h.playbookService.CreatePropertyField(playbookID, *propertyField)
 	if err != nil {
-		if h.handlePlaybookWriteError(w, logger, err) {
-			return
-		}
-		h.HandleError(w, logger, err)
+		h.handlePlaybookWriteError(w, logger, err)
 		return
 	}
 
@@ -1193,10 +1172,7 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
 			return
 		}
-		if h.handlePlaybookWriteError(w, logger, err) {
-			return
-		}
-		h.HandleError(w, logger, err)
+		h.handlePlaybookWriteError(w, logger, err)
 		return
 	}
 

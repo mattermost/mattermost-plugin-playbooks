@@ -21,7 +21,7 @@ import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {fetchPlaybookPropertyFields, updatePlaybookRunNumberPrefix} from 'src/client';
+import {fetchPlaybookPropertyFields, updatePlaybookChannelNameTemplate, updatePlaybookRunNumberPrefix} from 'src/client';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -67,7 +67,6 @@ const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
     ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(channelPlaybookSource as ComponentProps<typeof CreateAChannel>['playbook'], useCallback((update) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
-            channelNameTemplate: update.channel_name_template,
             channelMode: update.channel_mode,
             channelId: update.channel_id,
         });
@@ -94,6 +93,28 @@ const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
     useEffect(() => {
         return () => handleRunNumberPrefixSave.flush();
     }, [handleRunNumberPrefixSave]);
+
+    // channel_name_template: save via REST PATCH (with server-side validation) instead of GraphQL.
+    const lastSavedTemplateRef = useRef(playbook.channel_name_template ?? '');
+    useEffect(() => {
+        lastSavedTemplateRef.current = playbook.channel_name_template ?? '';
+    }, [playbook.channel_name_template]);
+    const handleChannelNameTemplateSave = useMemo(
+        () => debounce((template: string) => {
+            updatePlaybookChannelNameTemplate(playbook.id, template)
+                .then(() => {
+                    lastSavedTemplateRef.current = template;
+                })
+                .catch(() => {
+                    setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template: lastSavedTemplateRef.current}));
+                });
+        }, 500),
+        [playbook.id, setPlaybookForCreateChannel],
+    );
+
+    useEffect(() => {
+        return () => handleChannelNameTemplateSave.flush();
+    }, [handleChannelNameTemplateSave]);
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);
@@ -217,6 +238,7 @@ const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
                         fieldNames={fieldNames}
                         disabled={disabled || archived}
                         onRunNumberPrefixChange={handleRunNumberPrefixSave}
+                        onChannelNameTemplateChange={handleChannelNameTemplateSave}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>

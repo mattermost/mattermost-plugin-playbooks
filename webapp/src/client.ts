@@ -256,6 +256,13 @@ export async function updatePlaybookRunNumberPrefix(playbookId: Playbook['id'], 
     });
 }
 
+export async function updatePlaybookChannelNameTemplate(playbookId: Playbook['id'], channelNameTemplate: string) {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({channel_name_template: channelNameTemplate}),
+    });
+}
+
 export async function restorePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
         method: 'PUT',

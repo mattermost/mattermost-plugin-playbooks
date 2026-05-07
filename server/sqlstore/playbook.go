@@ -822,6 +822,33 @@ func (p *playbookStore) UpdateRunNumberPrefix(id, prefix string) error {
 	return nil
 }
 
+func (p *playbookStore) UpdateChannelNameTemplate(id, template string) error {
+	if id == "" {
+		return errors.New("ID cannot be empty")
+	}
+
+	result, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("ChannelNameTemplate", template).
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": id}).
+		Where(sq.Eq{"DeleteAt": 0}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update channel name template for playbook '%s'", id)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "failed to read rows affected for playbook '%s'", id)
+	}
+	if affected == 0 {
+		return errors.Wrapf(app.ErrNotFound, "playbook '%s' not found or archived", id)
+	}
+
+	return nil
+}
+
 func (p *playbookStore) IsRunNumberPrefixUsed(teamID, prefix, excludePlaybookID string) (bool, error) {
 	if prefix == "" {
 		return false, nil

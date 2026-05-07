@@ -80,7 +80,8 @@ type Playbook struct {
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
 
 	RunNumberPrefix string `json:"run_number_prefix" export:"run_number_prefix"`
-	NextRunNumber   int64  `json:"-" export:"-"`
+	// NextRunNumber is a server-managed counter. It is write-ignored on API input and must never be set by callers.
+	NextRunNumber int64 `json:"-" export:"-"`
 
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
@@ -463,6 +464,9 @@ type PlaybookService interface {
 
 	// UpdateRunNumberPrefix updates only the run number prefix for a playbook.
 	UpdateRunNumberPrefix(playbookID, prefix, userID string) error
+
+	// UpdateChannelNameTemplate updates only the channel name template for a playbook.
+	UpdateChannelNameTemplate(playbookID, template, userID string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -557,6 +561,9 @@ type PlaybookStore interface {
 
 	// UpdateRunNumberPrefix updates only the RunNumberPrefix column for the given playbook.
 	UpdateRunNumberPrefix(id, prefix string) error
+
+	// UpdateChannelNameTemplate updates only the ChannelNameTemplate column for the given playbook.
+	UpdateChannelNameTemplate(id, template string) error
 }
 
 const (

@@ -129,7 +129,7 @@ const Row = (props: Props) => {
         >
             <div className='col-sm-4'>
                 <NameRow>
-                    {(props.playbookRun.run_number ?? 0) > 0 && props.playbookRun.sequential_id && (
+                    {props.playbookRun.sequential_id && (
                         <SequentialIdDisplay
                             sequentialId={props.playbookRun.sequential_id}
                         />

@@ -71,8 +71,8 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * Prefix is loaded from server
             cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
 
-            // # Intercept the GraphQL UpdatePlaybook mutation for the template save
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            // # Intercept the REST PATCH for the template save
+            cy.playbooksInterceptPatchPlaybook();
 
             // # Type the template and dismiss the autocomplete dropdown
             cy.findByTestId('channel-access-run-name-template-input').type(`${TOKEN_SEQ} - Incident-Report`, {parseSpecialCharSequences: false});
@@ -84,7 +84,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             cy.findByTestId('channel-access-run-name-template-preview').should('contain', 'Incident-Report');
 
             // # Wait for the debounced template save before reloading
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@PatchPlaybook');
             cy.reload();
 
             // * Both values survive reload — confirms both were persisted server-side
@@ -204,8 +204,8 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * Verify initial content is loaded from API
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
 
-            // # Intercept UpdatePlaybook GraphQL mutation so we can wait for the debounced save
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            // # Intercept the REST PATCH so we can wait for the debounced template save
+            cy.playbooksInterceptPatchPlaybook();
 
             // # Click the insert variable button
             cy.findByTestId('channel-access-run-name-template-insert-variable').click();
@@ -222,7 +222,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');
 
             // # Wait for the debounced save to reach the server
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@PatchPlaybook');
 
             // * Assert via API that the {OWNER} token was persisted
             cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
@@ -238,8 +238,8 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
 
-            // # Intercept UpdatePlaybook GraphQL mutation so we can wait for the debounced save
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            // # Intercept the REST PATCH so we can wait for the debounced template save
+            cy.playbooksInterceptPatchPlaybook();
 
             // # Click the insert variable button
             cy.findByTestId('channel-access-run-name-template-insert-variable').click();
@@ -256,7 +256,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');
 
             // * Assert via API that the {OWNER} token was persisted
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@PatchPlaybook');
             cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
                 expect(pb.channel_name_template).to.include('{OWNER}');
             });

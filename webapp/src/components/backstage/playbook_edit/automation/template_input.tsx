@@ -177,8 +177,10 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         }
         const pos = findTrigger(val, cursor);
         if (pos === null) {
-            setTrigger(null);
-            setSelectedIndex(0);
+            if (trigger !== null) {
+                setTrigger(null);
+                setSelectedIndex(0);
+            }
         } else {
             setTrigger({pos, isInsert: false, filterStart: pos + 1});
         }

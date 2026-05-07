@@ -34,9 +34,10 @@ interface Props {
     fieldNames?: string[];
     disabled?: boolean;
     onRunNumberPrefixChange?: (prefix: string) => void;
+    onChannelNameTemplateChange?: (template: string) => void;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
@@ -58,6 +59,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
             channel_name_template: channelNameTemplate,
         });
         setChangesMade?.(true);
+        onChannelNameTemplateChange?.(channelNameTemplate);
     };
 
     const handleRunNumberPrefixChange = (runNumberPrefix: string) => {

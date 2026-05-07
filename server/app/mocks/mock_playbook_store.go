@@ -427,6 +427,20 @@ func (mr *MockPlaybookStoreMockRecorder) UpdateRunNumberPrefix(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRunNumberPrefix", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateRunNumberPrefix), arg0, arg1)
 }
 
+// UpdateChannelNameTemplate mocks base method.
+func (m *MockPlaybookStore) UpdateChannelNameTemplate(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChannelNameTemplate", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateChannelNameTemplate indicates an expected call of UpdateChannelNameTemplate.
+func (mr *MockPlaybookStoreMockRecorder) UpdateChannelNameTemplate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChannelNameTemplate", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateChannelNameTemplate), arg0, arg1)
+}
+
 // UpdateChannelNameTemplateIfUnchanged mocks base method.
 func (m *MockPlaybookStore) UpdateChannelNameTemplateIfUnchanged(arg0, arg1, arg2 string) (bool, error) {
 	m.ctrl.T.Helper()
