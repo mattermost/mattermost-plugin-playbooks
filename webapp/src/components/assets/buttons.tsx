@@ -5,38 +5,17 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
-import {Button, type ButtonProps} from '@mattermost/shared/components/button';
+import {Button} from '@mattermost/shared/components/button';
 
-export const PrimaryButton = Button;
+export const PrimaryButton = styled(Button).attrs({emphasis: 'primary'})``;
 
-export function TertiaryButton(props: Omit<ButtonProps, 'emphasis'>) {
-    return (
-        <Button
-            emphasis='tertiary'
-            {...props}
-        />
-    );
-}
+export const TertiaryButton = styled(Button).attrs({emphasis: 'tertiary'})``;
 
-export function SecondaryButton(props: Omit<ButtonProps, 'emphasis'>) {
-    return (
-        <Button
-            emphasis='secondary'
-            {...props}
-        />
-    );
-}
+export const SecondaryButton = styled(Button).attrs({emphasis: 'secondary'})``;
 
-export function DestructiveButton(props: Omit<ButtonProps, 'variant'>) {
-    return (
-        <Button
-            variant='destructive'
-            {...props}
-        />
-    );
-}
+export const DestructiveButton = styled(Button).attrs({emphasis: 'primary', variant: 'destructive'})``;
 
-export type UpgradeButtonProps = React.ComponentProps<typeof PrimaryButton>;
+export type UpgradeButtonProps = React.ComponentProps<typeof TertiaryButton>;
 
 export const UpgradeTertiaryButton = (props: UpgradeButtonProps & {className?: string}) => {
     const {children, ...rest} = props;

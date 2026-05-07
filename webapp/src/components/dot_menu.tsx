@@ -8,10 +8,11 @@ import {useUpdateEffect} from 'react-use';
 
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
+import type {Button} from '@mattermost/shared/components/button';
+
 import {useUniqueId} from 'src/utils';
 
 import Dropdown from './dropdown';
-import {PrimaryButton} from './assets/buttons';
 
 export const DotMenuButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
@@ -55,7 +56,7 @@ export const DropdownMenu = styled.div`
 type DotMenuProps = {
     children: React.ReactNode;
     icon: JSX.Element;
-    dotMenuButton?: typeof DotMenuButton | typeof PrimaryButton;
+    dotMenuButton?: typeof DotMenuButton | typeof Button;
     dropdownMenu?: typeof DropdownMenu;
     title?: string;
     disabled?: boolean;
