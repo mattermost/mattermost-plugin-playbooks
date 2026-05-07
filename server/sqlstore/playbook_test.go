@@ -1778,6 +1778,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			DefaultPlaybookMemberRole: app.PlaybookRoleMember,
 			DefaultRunAdminRole:       app.RunRoleAdmin,
 			DefaultRunMemberRole:      app.RunRoleMember,
+			RetrospectiveEnabled:      true,
 		},
 	}
 }
@@ -2110,4 +2111,80 @@ func TestBumpPlaybookUpdatedAt(t *testing.T) {
 	updatedPlaybook, err := playbookStore.Get(id)
 	require.NoError(t, err)
 	require.Greater(t, updatedPlaybook.UpdateAt, int64(1))
+}
+
+func TestRetrospectiveEnabledRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+
+	t.Run("RetrospectiveEnabled defaults to true when omitted", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("retro-default-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.True(t, got.RetrospectiveEnabled)
+	})
+
+	t.Run("RetrospectiveEnabled true persists through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("retro-enabled-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.RetrospectiveEnabled = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.True(t, got.RetrospectiveEnabled)
+	})
+
+	t.Run("RetrospectiveEnabled false persists through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("retro-disabled-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.RetrospectiveEnabled = false
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.False(t, got.RetrospectiveEnabled)
+	})
+
+	t.Run("RetrospectiveEnabled persists through Update", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("retro-update").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.RetrospectiveEnabled = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		got.RetrospectiveEnabled = false
+		err = playbookStore.Update(got)
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.False(t, updated.RetrospectiveEnabled)
+	})
 }

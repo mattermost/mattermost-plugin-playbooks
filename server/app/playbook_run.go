@@ -1011,6 +1011,8 @@ const (
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
+	RetrospectiveEnabled   timelineEventType = "retrospective_enabled"
+	RetrospectiveDisabled  timelineEventType = "retrospective_disabled"
 	PropertyChanged        timelineEventType = "property_changed"
 )
 
@@ -1382,6 +1384,9 @@ type PlaybookRunService interface {
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
+	// ToggleRetrospectiveEnabled enables or disables the retrospective for the run.
+	ToggleRetrospectiveEnabled(playbookRunID, userID string, enabled bool) error
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
 	MessageHasBeenPosted(post *model.Post)

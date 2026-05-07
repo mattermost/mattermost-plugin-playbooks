@@ -276,3 +276,21 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
         cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
     });
 });
+
+Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});
+
+Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
+    cy.apiGetChannel(run.channel_id).then(({channel}) => {
+        cy.visit(`/${teamName}/channels/${channel.name}`);
+    });
+});
+
+Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
+        if (req.body && req.body.operationName === operationName) {
+            req.alias = operationName;
+        }
+    });
+});
