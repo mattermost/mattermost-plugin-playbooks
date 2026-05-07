@@ -12,6 +12,7 @@ import {BookOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {useAppSelector} from 'src/hooks/redux';
 
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CONTEXT_MENU_LOCATION, ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
@@ -112,7 +113,7 @@ const RHSAboutTitle = (props: Props) => {
                             margin-top: 8px;
                             align-self: flex-end;
                         }
-                        .btn-primary, .btn-tertiary {
+                        ${PrimaryButton}, ${TertiaryButton} {
                             height: 28px;
                         }
                     `}
