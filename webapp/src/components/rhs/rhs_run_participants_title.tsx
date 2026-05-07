@@ -2,11 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import LeftChevron from 'src/components/assets/icons/left_chevron';
-import {OVERLAY_DELAY} from 'src/constants';
 import {HeaderSubtitle, HeaderVerticalDivider} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
 
 import {RHSTitleButton, RHSTitleContainer, RHSTitleText} from './rhs_title_common';
@@ -19,12 +18,6 @@ interface Props {
 const RHSRunParticipantsTitle = (props: Props) => {
     const {formatMessage} = useIntl();
 
-    const tooltip = (
-        <Tooltip id={'view-run-overview'}>
-            {formatMessage({defaultMessage: 'Manage participants list'})}
-        </Tooltip>
-    );
-
     return (
         <RHSTitleContainer>
             <RHSTitleButton
@@ -34,15 +27,14 @@ const RHSRunParticipantsTitle = (props: Props) => {
                 <LeftChevron/>
             </RHSTitleButton>
 
-            <OverlayTrigger
-                placement={'top'}
-                delay={OVERLAY_DELAY}
-                overlay={tooltip}
+            <WithTooltip
+                id='view-run-overview'
+                title={formatMessage({defaultMessage: 'Manage participants list'})}
             >
                 <RHSTitleText>
                     {formatMessage({defaultMessage: 'Participants'})}
                 </RHSTitleText>
-            </OverlayTrigger>
+            </WithTooltip>
             <HeaderVerticalDivider/>
             {<HeaderSubtitle data-testid='rhs-subtitle'>{props.runName}</HeaderSubtitle>}
         </RHSTitleContainer>

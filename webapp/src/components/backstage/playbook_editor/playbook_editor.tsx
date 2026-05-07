@@ -22,6 +22,8 @@ import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {pluginErrorUrl} from 'src/browser_routing';
@@ -39,7 +41,6 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
-import Tooltip from 'src/components/widgets/tooltip';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 
 import Outline, {ScrollNav, Sections} from './outline/outline';
@@ -90,23 +91,21 @@ const PlaybookEditor = () => {
     const archived = playbook.delete_at !== 0;
 
     const archivedTooltip = archived && (
-        <Tooltip
-            delay={{show: 0, hide: 1000}}
+        <WithTooltip
             id={`archive-${playbook.id}`}
-            content={formatMessage({defaultMessage: 'This playbook is archived.'})}
+            title={formatMessage({defaultMessage: 'This playbook is archived.'})}
         >
             <i className='indicator icon-archive-outline'/>
-        </Tooltip>
+        </WithTooltip>
     );
 
     const privateTooltip = !playbook.public && (
-        <Tooltip
-            delay={{show: 0, hide: 1000}}
+        <WithTooltip
             id={`private-${playbook.id}`}
-            content={formatMessage({defaultMessage: 'This playbook is private.'})}
+            title={formatMessage({defaultMessage: 'This playbook is private.'})}
         >
             <i className='indicator icon-lock-outline'/>
-        </Tooltip>
+        </WithTooltip>
     );
 
     // Favorite Button State

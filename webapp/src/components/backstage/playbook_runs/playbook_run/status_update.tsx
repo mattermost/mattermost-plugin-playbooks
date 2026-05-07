@@ -8,6 +8,8 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {AdminNotificationType} from 'src/constants';
@@ -25,7 +27,6 @@ import {requestUpdate} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-import Tooltip from 'src/components/widgets/tooltip';
 
 import {useToaster} from 'src/components/backstage/toast_banner';
 
@@ -420,10 +421,9 @@ const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: bo
     );
 
     const RequestUpdateButton = (
-        <Tooltip
+        <WithTooltip
             id={'request-update-button-tooltip'}
-            placement={'bottom'}
-            content={formatMessage(
+            title={formatMessage(
                 {defaultMessage: '<title>Professional feature</title>\n<body>This is a paid feature, available with a free 30-day trial</body>'},
                 {
                     title: (el) => <div>{el}</div>,
@@ -454,7 +454,7 @@ const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: bo
                     {...commonProps}
                 />
             )}
-        </Tooltip>
+        </WithTooltip>
     );
 
     return {RequestUpdateButton, UpgradeLicenseModal};

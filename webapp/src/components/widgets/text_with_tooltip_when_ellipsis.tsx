@@ -8,17 +8,14 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {debounce} from 'debounce';
-
-import {OVERLAY_DELAY} from 'src/constants';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 interface Props {
     id: string;
     text: string;
     parentRef: MutableRefObject<HTMLElement|null>;
     className?: string;
-    placement?: 'top' | 'bottom' | 'right' | 'left';
 }
 
 const TextWithTooltipWhenEllipsis = (props: Props) => {
@@ -61,13 +58,12 @@ const TextWithTooltipWhenEllipsis = (props: Props) => {
 
     if (showTooltip) {
         return (
-            <OverlayTrigger
-                placement={props.placement || 'top'}
-                delay={OVERLAY_DELAY}
-                overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
+            <WithTooltip
+                id={`${props.id}_name`}
+                title={props.text}
             >
                 {text}
-            </OverlayTrigger>
+            </WithTooltip>
         );
     }
 

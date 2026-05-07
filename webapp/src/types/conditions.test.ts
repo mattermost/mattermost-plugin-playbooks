@@ -12,9 +12,12 @@ const createTextField = (id: string): PropertyField => ({
     type: 'text',
     target_id: 'target1',
     target_type: 'playbook',
+    object_type: 'playbook',
     create_at: 123456789,
     update_at: 123456789,
     delete_at: 0,
+    created_by: 'user1',
+    updated_by: 'user1',
     attrs: {
         visibility: 'when_set',
         sort_order: 0,
@@ -30,9 +33,12 @@ const createSelectField = (id: string): PropertyField => ({
     type: 'select',
     target_id: 'target1',
     target_type: 'playbook',
+    object_type: 'playbook',
     create_at: 123456789,
     update_at: 123456789,
     delete_at: 0,
+    created_by: 'user1',
+    updated_by: 'user1',
     attrs: {
         visibility: 'when_set',
         sort_order: 0,
@@ -53,9 +59,12 @@ const createMultiselectField = (id: string): PropertyField => ({
     type: 'multiselect',
     target_id: 'target1',
     target_type: 'playbook',
+    object_type: 'playbook',
     create_at: 123456789,
     update_at: 123456789,
     delete_at: 0,
+    created_by: 'user1',
+    updated_by: 'user1',
     attrs: {
         visibility: 'when_set',
         sort_order: 0,
@@ -78,6 +87,8 @@ const createTextValue = (fieldId: string, value: string): PropertyValue => ({
     create_at: 123456789,
     update_at: 123456789,
     delete_at: 0,
+    created_by: 'user1',
+    updated_by: 'user1',
 });
 
 const createSelectValue = (fieldId: string, value: string): PropertyValue => ({
@@ -90,6 +101,8 @@ const createSelectValue = (fieldId: string, value: string): PropertyValue => ({
     create_at: 123456789,
     update_at: 123456789,
     delete_at: 0,
+    created_by: 'user1',
+    updated_by: 'user1',
 });
 
 const createMultiselectValue = (fieldId: string, value: string[]): PropertyValue => ({
@@ -102,6 +115,8 @@ const createMultiselectValue = (fieldId: string, value: string[]): PropertyValue
     create_at: 123456789,
     update_at: 123456789,
     delete_at: 0,
+    created_by: 'user1',
+    updated_by: 'user1',
 });
 
 describe('conditions', () => {

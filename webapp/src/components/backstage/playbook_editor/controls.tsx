@@ -22,8 +22,7 @@ import {
     StarOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
-
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
@@ -49,7 +48,6 @@ import {
     playbookExportProps,
     restorePlaybook,
 } from 'src/client';
-import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
@@ -209,21 +207,14 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
         toolTipText = formatMessage({defaultMessage: 'You automatically receive updates when this playbook is run.'});
     }
 
-    const tooltip = (
-        <Tooltip id={`auto-follow-tooltip-${isFollowing}`}>
-            {toolTipText}
-        </Tooltip>
-    );
-
     return (
         <SecondaryButtonLargerCheckbox
             checked={isFollowing}
             disabled={archived}
         >
-            <OverlayTrigger
-                placement={'bottom'}
-                delay={OVERLAY_DELAY}
-                overlay={tooltip}
+            <WithTooltip
+                id={`auto-follow-tooltip-${isFollowing}`}
+                title={toolTipText}
             >
                 <div>
                     <CheckboxInputStyled
@@ -234,7 +225,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
                         onChange={setFollowing}
                     />
                 </div>
-            </OverlayTrigger>
+            </WithTooltip>
         </SecondaryButtonLargerCheckbox>
     );
 };

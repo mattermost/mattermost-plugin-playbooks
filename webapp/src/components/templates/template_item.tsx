@@ -6,9 +6,9 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {KeyCodes, isKeyPressed} from 'src/utils';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {KeyCodes, isKeyPressed} from 'src/utils';
 
 interface Props {
     label?: string;
@@ -151,12 +151,12 @@ const TemplateItem = ({
                 <Title>{title}</Title>
                 <Description>{description}</Description>
                 {author && (
-                    <Tooltip
+                    <WithTooltip
                         id={`${title}_author_usedby`}
-                        content={formatMessage({defaultMessage: 'Used by'})}
+                        title={formatMessage({defaultMessage: 'Used by'})}
                     >
                         <Author>{author}</Author>
-                    </Tooltip>
+                    </WithTooltip>
                 )}
             </Detail>
         </Item>

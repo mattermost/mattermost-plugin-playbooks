@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 interface Props {
     testId: string;
@@ -39,10 +39,9 @@ export default function SearchInput(props: Props) {
                 value={term}
             />
             {shouldShowClearIcon && (
-                <Tooltip
+                <WithTooltip
                     id={'clear'}
-                    placement={'bottom'}
-                    content={formatMessage({defaultMessage: 'Clear'})}
+                    title={formatMessage({defaultMessage: 'Clear'})}
                 >
                     <ClearButtonContainer>
                         <ClearButton
@@ -53,7 +52,7 @@ export default function SearchInput(props: Props) {
                             }}
                         />
                     </ClearButtonContainer>
-                </Tooltip>
+                </WithTooltip>
 
             )}
         </Search>

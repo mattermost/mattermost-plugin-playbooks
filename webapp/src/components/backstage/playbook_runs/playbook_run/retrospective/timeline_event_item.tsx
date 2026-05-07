@@ -11,6 +11,8 @@ import {DateTime} from 'luxon';
 
 import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {
@@ -28,7 +30,6 @@ import {browserHistory, formatText, messageHtmlToComponent} from 'src/webapp_glo
 import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import Tooltip from 'src/components/widgets/tooltip';
 
 const Circle = styled.div`
     position: absolute;
@@ -387,9 +388,9 @@ const TimelineEventItem = (props: Props) => {
             <SummaryContainer>
                 <TimeStamp dateTime={eventTime.setZone('Etc/UTC').toISO() ?? undefined}>
                     {eventTime.setZone('Etc/UTC').toLocaleString(DATETIME_FORMAT)}
-                    <Tooltip
+                    <WithTooltip
                         id={`timeline-${props.event.id}`}
-                        content={(
+                        title={(
                             <>
                                 {eventTime.toLocaleString(DATETIME_FORMAT)}
                                 <br/>
@@ -398,7 +399,7 @@ const TimelineEventItem = (props: Props) => {
                         )}
                     >
                         <ClockOutlineIcon size={12}/>
-                    </Tooltip>
+                    </WithTooltip>
                 </TimeStamp>
                 <SummaryTitle
                     onClick={(e) => props.editable && !statusPostDeleted && goToPost(e, props.event.post_id)}
