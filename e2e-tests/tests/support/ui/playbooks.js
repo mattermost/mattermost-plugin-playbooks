@@ -216,7 +216,8 @@ Cypress.Commands.add('editPost', (postId, newMessage) => {
 });
 
 Cypress.Commands.add('getStatusUpdateDialog', () => {
-    return cy.findByRole('dialog', {name: /post update/i});
+    // Match both legacy "Post update" and the current "Status update" dialog titles.
+    return cy.findByRole('dialog', {name: /(?:post|status) update/i});
 });
 
 Cypress.Commands.add('getStyledComponent', (className) => {
