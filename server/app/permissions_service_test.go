@@ -866,6 +866,24 @@ func TestRunChangeOwner(t *testing.T) {
 		})
 	}
 
+	t.Run("ownerOnly=false blocks non-participant playbook admin", func(t *testing.T) {
+		// pbAdminID is a playbook admin (in Members) but NOT a run participant.
+		// When OwnerGroupOnlyActions is false, the bypass must NOT fire — the
+		// standard participant gate should still deny them.
+		nonParticipantRun := &PlaybookRun{
+			ID: runID, PlaybookID: pbID, TeamID: "team-1", OwnerUserID: ownerID,
+			ParticipantIDs: []string{ownerID, memberID}, Type: RunTypePlaybook,
+		}
+		svc := newPermissionsServiceForTest(
+			&stubRunService{run: nonParticipantRun, err: nil},
+			&stubPlaybookService{playbook: makePlaybook(false), err: nil},
+			newPluginAPIAllowingAdmins(t),
+		)
+		err := svc.RunChangeOwner(pbAdminID, runID)
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, ErrNoPermissions), "got: %v", err)
+	})
+
 	t.Run("ownerOnly=true allows non-participant playbook admin", func(t *testing.T) {
 		// pbAdminID is a playbook admin (in Members) but NOT a run participant.
 		// OwnerGroupOnlyActions still permits playbook-admin ownership handoff so
