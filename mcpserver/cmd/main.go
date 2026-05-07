@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/mcpserver"
+	mcpserver "github.com/mattermost/mattermost-plugin-playbooks/mcpserver"
 	"github.com/spf13/cobra"
 )
 

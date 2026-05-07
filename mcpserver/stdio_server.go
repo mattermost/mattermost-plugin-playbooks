@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/mcpserver/tools"
+	"github.com/mattermost/mattermost-plugin-playbooks/internal/playbooksmcp/tools"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 

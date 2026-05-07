@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/MicahParks/keyfunc/v3"
+	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -57,6 +58,7 @@ type Plugin struct {
 	userInfoStore        app.UserInfoStore
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
+	mcpServer            *mcphelper.Server
 
 	cancelRunning     context.CancelFunc
 	cancelRunningLock sync.Mutex
@@ -75,6 +77,9 @@ func (r *StatusRecorder) WriteHeader(status int) {
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	if p.serveMCPIfMatch(w, r) {
+		return
+	}
 	p.handler.ServeHTTP(w, r)
 }
 
@@ -284,6 +289,11 @@ func (p *Plugin) OnActivate() error {
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-management")
 	}()
 
+	if err := p.ensureMCPServer(); err != nil {
+		return errors.Wrap(err, "failed to initialize MCP server")
+	}
+	p.registerMCPServerBestEffort()
+
 	return nil
 }
 
@@ -388,6 +398,8 @@ func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
 }
 
 func (p *Plugin) OnDeactivate() error {
+	p.unregisterMCPServerBestEffort()
+
 	p.cancelRunningLock.Lock()
 	if p.cancelRunning != nil {
 		p.cancelRunning()

@@ -1,4 +1,4 @@
-package mcpserver
+package playbooksmcp
 
 import (
 	"github.com/mattermost/mattermost-plugin-playbooks/internal/playbooksmcp/tools"
