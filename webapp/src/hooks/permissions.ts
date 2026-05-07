@@ -12,6 +12,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
+import {isCurrentUserAdmin} from 'src/selectors';
+
 import {PlaybookPermissionGeneral, makeGeneralPermissionSpecific} from 'src/types/permissions';
 
 import {usePlaybook} from './crud';
@@ -83,4 +85,8 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
     }
 
     return false;
+};
+
+export const useIsSystemAdmin = (): boolean => {
+    return useAppSelector(isCurrentUserAdmin);
 };

@@ -203,7 +203,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
@@ -413,7 +413,7 @@ func (r *PlaybookRootResolver) AddMetric(ctx context.Context, args struct {
 		return "", errors.New("archived playbooks can not be modified")
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
@@ -462,7 +462,7 @@ func (r *PlaybookRootResolver) UpdateMetric(ctx context.Context, args struct {
 		return "", errors.New("archived playbooks can not be modified")
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
@@ -500,7 +500,7 @@ func (r *PlaybookRootResolver) DeleteMetric(ctx context.Context, args struct {
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
