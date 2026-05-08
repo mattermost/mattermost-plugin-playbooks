@@ -98,6 +98,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         shouldRenderValue={true}
                         teamId={teamId}
                         isMulti={false}
+                        excludeDMGM={true}
                     />
                 </SelectorWrapper>
             </AutomationHeader>
