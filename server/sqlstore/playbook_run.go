@@ -6,7 +6,6 @@ package sqlstore
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -24,6 +23,50 @@ import (
 const (
 	legacyEventTypeCommanderChanged = "commander_changed"
 )
+
+// Pre-defined ORDER BY clauses to avoid string concatenation in SQL queries.
+// Keys are "column:direction" format.
+var orderByClauses = map[string]string{
+	// PlaybookRun columns
+	"CreateAt:ASC":            "CreateAt ASC",
+	"CreateAt:DESC":           "CreateAt DESC",
+	"ID:ASC":                  "ID ASC",
+	"ID:DESC":                 "ID DESC",
+	"Name:ASC":                "Name ASC",
+	"Name:DESC":               "Name DESC",
+	"OwnerUserID:ASC":         "OwnerUserID ASC",
+	"OwnerUserID:DESC":        "OwnerUserID DESC",
+	"TeamID:ASC":              "TeamID ASC",
+	"TeamID:DESC":             "TeamID DESC",
+	"EndAt:ASC":               "EndAt ASC",
+	"EndAt:DESC":              "EndAt DESC",
+	"CurrentStatus:ASC":       "CurrentStatus ASC",
+	"CurrentStatus:DESC":      "CurrentStatus DESC",
+	"LastStatusUpdateAt:ASC":  "LastStatusUpdateAt ASC",
+	"LastStatusUpdateAt:DESC": "LastStatusUpdateAt DESC",
+	"Metric:ASC":              "Metric ASC",
+	"Metric:DESC":             "Metric DESC",
+	// Playbook columns
+	"Title:ASC":       "Title ASC",
+	"Title:DESC":      "Title DESC",
+	"NumStages:ASC":   "NumStages ASC",
+	"NumStages:DESC":  "NumStages DESC",
+	"NumSteps:ASC":    "NumSteps ASC",
+	"NumSteps:DESC":   "NumSteps DESC",
+	"NumRuns:ASC":     "NumRuns ASC",
+	"NumRuns:DESC":    "NumRuns DESC",
+	"LastRunAt:ASC":   "LastRunAt ASC",
+	"LastRunAt:DESC":  "LastRunAt DESC",
+	"ActiveRuns:ASC":  "ActiveRuns ASC",
+	"ActiveRuns:DESC": "ActiveRuns DESC",
+}
+
+// GetOrderByClause returns a pre-defined ORDER BY clause for the given column and direction.
+// Returns empty string if the combination is not found.
+func GetOrderByClause(column, direction string) string {
+	key := column + ":" + direction
+	return orderByClauses[key]
+}
 
 type sqlPlaybookRun struct {
 	app.PlaybookRun
@@ -152,9 +195,9 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 
 		// Since we're sorting by metric, we need to create the correct metric column to sort by
 		builder = builder.Column(sq.Alias(metricQuery, "Metric")).
-			OrderByClause("Metric " + direction)
+			OrderByClause(GetOrderByClause("Metric", direction))
 	default:
-		builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
+		builder = builder.OrderByClause(GetOrderByClause(sort, direction))
 	}
 
 	return builder, nil
@@ -251,7 +294,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) (*app.GetPlaybookRunsResults, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, tableAliasIncident)
 
 	queryForResults := s.playbookRunSelect.
 		Where(permissionsExpr).
@@ -331,15 +374,16 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.EndAt": 0})
 	}
 
-	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
 		// PostgreSQL performs a case-sensitive search, so we need to lowercase
-		// both the column contents and the search string
-		column := "LOWER(i.Name)"
+		// both the column contents and the search string.
+		// Use sq.Expr with parameterized query to avoid Go-level string concatenation.
+		// The LIKE pattern is built in SQL using || operator with the parameter.
 		searchString := strings.ToLower(options.SearchTerm)
+		likeExpr := sq.Expr("LOWER(i.Name) LIKE '%' || ? || '%'", searchString)
 
-		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
-		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
+		queryForResults = queryForResults.Where(likeExpr)
+		queryForTotal = queryForTotal.Where(likeExpr)
 	}
 
 	if options.ChannelID != "" {
@@ -917,7 +961,7 @@ func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID s
 // GetOwners returns the owners of the playbook runs selected by options
 func (s *playbookRunStore) GetOwners(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, tableAliasIncident)
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
@@ -1077,15 +1121,54 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		))`, info.UserID, info.UserID, app.RunTypeChannelChecklist, info.UserID)
 }
 
-func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableName string) sq.Sqlizer {
-	filterToSelectedTeam := sq.Eq{fmt.Sprintf("%s.TeamID", tableName): teamID}
-	onlyTeamsUserIsAMember := sq.Expr(fmt.Sprintf(`
-		EXISTS(SELECT 1
-					FROM TeamMembers as tm
-					WHERE tm.TeamId = %s.TeamID
-					  AND tm.DeleteAt = 0
-		  	  		  AND tm.UserId = ?)
-		`, tableName), info.UserID)
+// Table alias constants - these are the only allowed values for buildTeamLimitExpr
+const (
+	tableAliasIncident = "i"
+	tableAliasPlaybook = "p"
+)
+
+func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableAlias string) sq.Sqlizer {
+	// Use completely static SQL strings to prevent any possibility of SQL injection.
+	// Each case returns pre-defined SQL with no string concatenation.
+	var filterToSelectedTeam sq.Sqlizer
+	var onlyTeamsUserIsAMember sq.Sqlizer
+	var isDMGMRun sq.Sqlizer
+	var dmgmChannelMembership sq.Sqlizer
+
+	switch tableAlias {
+	case tableAliasIncident:
+		filterToSelectedTeam = sq.Eq{"i.TeamID": teamID}
+		onlyTeamsUserIsAMember = sq.Expr(`
+			EXISTS(SELECT 1
+						FROM TeamMembers as tm
+						WHERE tm.TeamId = i.TeamID
+						  AND tm.DeleteAt = 0
+						  AND tm.UserId = ?)
+			`, info.UserID)
+		isDMGMRun = sq.Expr(`(i.TeamID IS NULL OR i.TeamID = '')`)
+		dmgmChannelMembership = sq.Expr(`
+			EXISTS(SELECT 1
+						FROM ChannelMembers as cm
+						WHERE cm.ChannelId = i.ChannelID
+						  AND cm.UserId = ?)
+			`, info.UserID)
+
+	case tableAliasPlaybook:
+		filterToSelectedTeam = sq.Eq{"p.TeamID": teamID}
+		onlyTeamsUserIsAMember = sq.Expr(`
+			EXISTS(SELECT 1
+						FROM TeamMembers as tm
+						WHERE tm.TeamId = p.TeamID
+						  AND tm.DeleteAt = 0
+						  AND tm.UserId = ?)
+			`, info.UserID)
+		// Playbooks don't support DM/GM, so these are not needed
+		isDMGMRun = nil
+		dmgmChannelMembership = nil
+
+	default:
+		panic("invalid table alias for buildTeamLimitExpr")
+	}
 
 	if info.IsAdmin {
 		if teamID != "" {
@@ -1101,8 +1184,17 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableName string) sq.Sql
 		}
 	}
 
+	// When no specific team is requested, include runs where:
+	// 1. User is a member of the run's team (for team-based runs), OR
+	// 2. User is a member of the channel (for DM/GM runs with no team)
+	if dmgmChannelMembership != nil {
+		return sq.Or{
+			onlyTeamsUserIsAMember,
+			sq.And{isDMGMRun, dmgmChannelMembership},
+		}
+	}
+	// For playbooks (no channel), just check team membership
 	return onlyTeamsUserIsAMember
-
 }
 
 func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.PlaybookRun, error) {
@@ -1170,7 +1262,9 @@ func (s *playbookRunStore) GetRunsWithAssignedTasks(userID string) ([]app.Assign
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		OrderBy("i.Name")
 
-	query = query.Where(sq.Like{"i.ChecklistsJSON::text": fmt.Sprintf("%%\"%s\"%%", userID)})
+	// Use sq.Expr with parameterized query to search for userID in JSON text.
+	// Pattern matches "userId" (with quotes) within the JSON to avoid false matches.
+	query = query.Where(sq.Expr(`i.ChecklistsJSON::text LIKE '%"' || ? || '"%'`, userID))
 
 	if err := s.store.selectBuilder(s.store.db, &raw, query); err != nil {
 		return nil, errors.Wrap(err, "failed to query for assigned tasks")
@@ -1525,7 +1619,7 @@ func (s *playbookRunStore) touchPlaybookRun(playbookRunID string) error {
 func (s *playbookRunStore) GetPlaybookRunIDsForUser(userID string) ([]string, error) {
 	requesterInfo := app.RequesterInfo{UserID: userID}
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
-	teamLimitExpr := buildTeamLimitExpr(requesterInfo, "", "i")
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, "", tableAliasIncident)
 
 	query := s.store.builder.
 		Select("i.ID").
