@@ -1,7 +1,13 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {HTMLAttributes, useState} from 'react';
+import {debounce} from 'debounce';
+import React, {
+    HTMLAttributes,
+    useCallback,
+    useMemo,
+    useState,
+} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -22,6 +28,9 @@ type Props = {
 
 type Attrs = HTMLAttributes<HTMLElement>;
 
+// This value matches the CopyButton in the web app
+const copyLinkResetTimer = 2000;
+
 const CopyLink = ({
     id,
     to,
@@ -32,11 +41,19 @@ const CopyLink = ({
     const {formatMessage} = useIntl();
     const [wasCopied, setWasCopied] = useState(false);
 
-    const copyLink = (e: React.MouseEvent) => {
+    const startResetCopiedTimer = useMemo(() => {
+        return debounce(() => {
+            setWasCopied(false);
+        }, copyLinkResetTimer);
+    }, []);
+
+    const copyLink = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         copyToClipboard(to);
         setWasCopied(true);
-    };
+
+        startResetCopiedTimer();
+    }, [startResetCopiedTimer, to]);
 
     return (
         <WithTooltip
