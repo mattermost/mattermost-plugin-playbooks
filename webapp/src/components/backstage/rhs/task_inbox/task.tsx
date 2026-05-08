@@ -63,6 +63,8 @@ const Task = (props: Props) => {
                 <ItemComponent
                     playbookRunId={props.item.playbook_run_id}
                     participantUserIds={props.item.playbook_run_participant_user_ids}
+                    teamId={props.item.playbook_run_team_id}
+                    channelId={props.item.playbook_run_channel_id}
                     checklistItem={props.item}
                     checklistNum={props.item.checklist_num}
                     dragging={false}

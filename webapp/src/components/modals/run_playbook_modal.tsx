@@ -18,7 +18,8 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {ArrowLeftIcon, CloseIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import General from 'mattermost-redux/constants/general';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
@@ -96,6 +97,8 @@ export const RunPlaybookModal = ({
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
     const currentChannelId = useAppSelector(getCurrentChannelId);
+    const currentChannel = useAppSelector(getCurrentChannel);
+    const currentChannelIsDMOrGM = currentChannel?.type === General.DM_CHANNEL || currentChannel?.type === General.GM_CHANNEL;
     const currentUserId = useAppSelector(getCurrentUserId);
     const userId = (playbook?.default_owner_enabled && playbook.default_owner_id) ? playbook.default_owner_id : currentUserId;
 
@@ -251,8 +254,11 @@ export const RunPlaybookModal = ({
     const handleSetChannelMode = useCallback((mode: 'link_existing_channel' | 'create_new_channel') => {
         setChannelMode(mode);
 
-        // Default to the current channel when choosing link to the existing channel, we are in a channel context and the playbook does not have a linked channel
-        if (mode === 'link_existing_channel' && playbook?.channel_mode === 'create_new_channel' && channelId === '' && currentChannelId) {
+        // Default to the current channel when choosing link to the existing channel, we are in a channel context and the playbook does not have a linked channel.
+        // Skip the fallback when we're sitting in a DM/GM — the selector
+        // excludes DMs/GMs as link targets, so pre-selecting one would be
+        // invalid and renders as "Unknown Channel".
+        if (mode === 'link_existing_channel' && playbook?.channel_mode === 'create_new_channel' && channelId === '' && currentChannelId && !currentChannelIsDMOrGM) {
             setChannelId(currentChannelId);
         }
     }, [playbook?.channel_mode, channelId, currentChannelId]);
@@ -591,6 +597,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                         shouldRenderValue={true}
                         teamId={teamId}
                         isMulti={false}
+                        excludeDMGM={true}
                     />
                 </SelectorWrapper>
             )}

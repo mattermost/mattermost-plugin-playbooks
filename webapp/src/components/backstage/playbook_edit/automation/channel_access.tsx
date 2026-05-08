@@ -114,6 +114,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                         shouldRenderValue={true}
                         teamId={teamId}
                         isMulti={false}
+                        excludeDMGM={true}
                     />
                 </SelectorWrapper>
             </AutomationHeader>
