@@ -1910,9 +1910,9 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	// Mark success and add result state for audit
 	auditRec.Success()
 	if oldOwner != nil {
-		model.AddEventParameterToAuditRec(auditRec, "oldOwnerID", oldOwner.Id)
+		model.AddEventParameterToAuditRec(auditRec, "oldOwnerId", oldOwner.Id)
 	}
-	model.AddEventParameterToAuditRec(auditRec, "newOwnerID", newOwner.Id)
+	model.AddEventParameterToAuditRec(auditRec, "newOwnerId", newOwner.Id)
 	model.AddEventParameterToAuditRec(auditRec, "changeTimestamp", eventTime)
 	auditRec.AddEventResultState(*updatedRun)
 
@@ -2224,7 +2224,7 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 		originalRun = playbookRun.Clone()
 	}
 
-	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, propertyFieldID, resolvedUserID)
+	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, runFieldID, resolvedUserID)
 	if noChangeNeeded {
 		auditRec.Success()
 		return nil

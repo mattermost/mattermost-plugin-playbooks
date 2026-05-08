@@ -1934,7 +1934,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = e.PlaybooksClient.Playbooks.CreatePropertyField(
+		playbookField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
 			context.Background(),
 			pbID,
 			client.PropertyFieldRequest{Name: "Lead", Type: "user"},
@@ -1950,7 +1950,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		// Resolve the run-level copy of the playbook field — its ID differs from userField.ID.
+		// Resolve the run-level copy of the playbook field — its ID differs from playbookField.ID.
 		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
 		require.NoError(t, err)
 		var runUserFieldID string
@@ -1961,9 +1961,19 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			}
 		}
 		require.NotEmpty(t, runUserFieldID, "run-level 'Lead' user field not found")
+		require.NotEqual(t, playbookField.ID, runUserFieldID, "run-level field ID must differ from playbook-level field ID")
 
 		// Happy path: valid run-level user field — dispatch must succeed and persist the run field ID.
 		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runUserFieldID)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, runUserFieldID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+
+		// Passing the playbook-level field ID must also succeed and must store the
+		// run-level field ID (not the playbook-level one) on the item.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, playbookField.ID)
 		require.NoError(t, err)
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
