@@ -17,11 +17,12 @@ import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
+
 import {
     useEnsureProfiles,
     useFavoriteRun,
     useParticipateInRun,
-    useProfilesInTeam,
+    useProfilesForRun,
     useRunFollowers,
     useRunMetadata,
 } from 'src/hooks';
@@ -49,7 +50,7 @@ const RHSAbout = (props: Props) => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const collapsedFromStore = useAppSelector(currentRHSAboutCollapsedState(props.playbookRun.id));
-    const profilesInTeam = useProfilesInTeam();
+    const profiles = useProfilesForRun(props.playbookRun.team_id, props.playbookRun.channel_id);
     const updateRun = useUpdateRun(props.playbookRun.id);
     const toaster = useToaster();
 
@@ -82,7 +83,7 @@ const RHSAbout = (props: Props) => {
         dispatch(setRHSAboutCollapsedState(props.playbookRun.id, !collapsed));
     };
     const fetchUsersInTeam = async () => {
-        return profilesInTeam;
+        return profiles;
     };
 
     const setOwnerUtil = async (userId?: string) => {

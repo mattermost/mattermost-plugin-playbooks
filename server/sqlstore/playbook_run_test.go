@@ -2043,3 +2043,55 @@ func TestBumpRunUpdatedAt(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, updatedRun.UpdateAt, int64(1))
 }
+
+func TestGetOrderByClause(t *testing.T) {
+	tests := []struct {
+		column    string
+		direction string
+		expected  string
+	}{
+		// All supported run columns — both directions
+		{"CreateAt", "ASC", "CreateAt ASC"},
+		{"CreateAt", "DESC", "CreateAt DESC"},
+		{"ID", "ASC", "ID ASC"},
+		{"ID", "DESC", "ID DESC"},
+		{"Name", "ASC", "Name ASC"},
+		{"Name", "DESC", "Name DESC"},
+		{"OwnerUserID", "ASC", "OwnerUserID ASC"},
+		{"OwnerUserID", "DESC", "OwnerUserID DESC"},
+		{"TeamID", "ASC", "TeamID ASC"},
+		{"TeamID", "DESC", "TeamID DESC"},
+		{"EndAt", "ASC", "EndAt ASC"},
+		{"EndAt", "DESC", "EndAt DESC"},
+		{"CurrentStatus", "ASC", "CurrentStatus ASC"},
+		{"CurrentStatus", "DESC", "CurrentStatus DESC"},
+		{"LastStatusUpdateAt", "ASC", "LastStatusUpdateAt ASC"},
+		{"LastStatusUpdateAt", "DESC", "LastStatusUpdateAt DESC"},
+		{"Metric", "ASC", "Metric ASC"},
+		{"Metric", "DESC", "Metric DESC"},
+		// All supported playbook columns — both directions
+		{"Title", "ASC", "Title ASC"},
+		{"Title", "DESC", "Title DESC"},
+		{"NumStages", "ASC", "NumStages ASC"},
+		{"NumStages", "DESC", "NumStages DESC"},
+		{"NumSteps", "ASC", "NumSteps ASC"},
+		{"NumSteps", "DESC", "NumSteps DESC"},
+		{"NumRuns", "ASC", "NumRuns ASC"},
+		{"NumRuns", "DESC", "NumRuns DESC"},
+		{"LastRunAt", "ASC", "LastRunAt ASC"},
+		{"LastRunAt", "DESC", "LastRunAt DESC"},
+		{"ActiveRuns", "ASC", "ActiveRuns ASC"},
+		{"ActiveRuns", "DESC", "ActiveRuns DESC"},
+		// Invalid / injection attempts — must all return empty string
+		{"", "", ""},
+		{"invalid_column", "ASC", ""},
+		{"ID", "invalid", ""},
+		{"'; DROP TABLE IR_Incident; --", "ASC", ""},
+		{"ID", "1 OR 1=1", ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.column+":"+tc.direction, func(t *testing.T) {
+			require.Equal(t, tc.expected, GetOrderByClause(tc.column, tc.direction))
+		})
+	}
+}
