@@ -28,6 +28,8 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {TertiaryButton} from 'src/components/assets/buttons';
 import FollowButton from 'src/components/backstage/follow_button';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
@@ -46,7 +48,6 @@ import {CompassIcon} from 'src/types/compass';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {useEnsureProfiles, useTextOverflow} from 'src/hooks';
-import Tooltip from 'src/components/widgets/tooltip';
 
 import {FollowState} from './rhs_info';
 
@@ -315,9 +316,7 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
         // so the link actually navigates.
         let channelPath: string;
         if (channel.type === General.DM_CHANNEL) {
-            channelPath = teammate ?
-                `/${teamName}/messages/@${teammate.username}` :
-                `/${teamName}/messages/${channel.name}`;
+            channelPath = teammate ? `/${teamName}/messages/@${teammate.username}` : `/${teamName}/messages/${channel.name}`;
         } else if (channel.type === General.GM_CHANNEL) {
             channelPath = `/${teamName}/messages/${channel.name}`;
         } else {
@@ -341,12 +340,12 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
 
         if (isChannelNameOverflowing) {
             return (
-                <Tooltip
+                <WithTooltip
                     id={`channel-name-tooltip-${channel.id}`}
-                    content={displayName}
+                    title={displayName}
                 >
                     {linkContent}
-                </Tooltip>
+                </WithTooltip>
             );
         }
 
