@@ -13,7 +13,7 @@ import {Placement} from '@floating-ui/react';
 import {OVERLAY_DELAY} from 'src/constants';
 
 import ProfileSelector, {ExtraSection, Option} from 'src/components/profile/profile_selector';
-import {useProfilesInTeam} from 'src/hooks';
+import {useProfilesForRun} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 export const EXTRA_OPTION_PREFIX_ROLE = 'role:';
@@ -36,12 +36,20 @@ interface AssignedToProps {
     onOpenChange?: (isOpen: boolean) => void;
     isEditing?: boolean;
     roleOptions?: RoleOption[];
+    teamId?: string;
+    channelId?: string;
 }
 
 const AssignTo = (props: AssignedToProps) => {
     const {formatMessage} = useIntl();
-    const profilesInTeam = useProfilesInTeam();
+    const profiles = useProfilesForRun(props.teamId, props.channelId);
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
+
+    // For DM/GM runs (empty teamId), profiles are loaded async from channel membership.
+    // Use a key to force ProfileSelector to re-fetch when profiles become available.
+    // TODO: Consider adding a refreshTrigger prop to ProfileSelector for cleaner cache invalidation.
+    const isDMGM = !props.teamId && props.channelId;
+    const profilesKey = isDMGM ? `dmgm-${profiles.length}` : 'team';
 
     const resetAssignee = () => {
         props.onSelectedChange?.();
@@ -68,6 +76,7 @@ const AssignTo = (props: AssignedToProps) => {
     if (props.inHoverMenu) {
         return (
             <ProfileSelector
+                key={profilesKey}
                 selectedUserId={props.assignee_id}
                 onlyPlaceholder={true}
                 placeholder={
@@ -83,7 +92,7 @@ const AssignTo = (props: AssignedToProps) => {
                     subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
                 }}
                 getAllUsers={async () => {
-                    return profilesInTeam;
+                    return profiles;
                 }}
                 onSelectedChange={props.onSelectedChange}
                 onExtraOptionSelected={props.onExtraOptionSelected}
@@ -108,6 +117,7 @@ const AssignTo = (props: AssignedToProps) => {
     let assignToButton = (
         <AssignToContainer>
             <StyledProfileSelector
+                key={profilesKey}
                 testId={'assignee-profile-selector'}
                 selectedUserId={props.assignee_id}
                 userGroups={{
@@ -134,7 +144,7 @@ const AssignTo = (props: AssignedToProps) => {
                 profileButtonClass={'Assigned-button'}
                 enableEdit={props.editable}
                 getAllUsers={async () => {
-                    return profilesInTeam;
+                    return profiles;
                 }}
                 onSelectedChange={props.onSelectedChange}
                 onExtraOptionSelected={props.onExtraOptionSelected}

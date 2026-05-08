@@ -32,6 +32,7 @@ import {DueDateHoverMenuButton} from './duedate';
 export interface Props {
     playbookRunId?: string;
     participantUserIds: string[];
+    teamId?: string;
     channelId?: string;
     checklistNum: number;
     itemNum: number;
@@ -89,6 +90,8 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     roleOptions={props.roleOptions}
                     placement={'bottom-end'}
                     onOpenChange={props.onItemOpenChange}
+                    teamId={props.teamId}
+                    channelId={props.channelId}
                 />
             }
             {!props.isSkipped &&

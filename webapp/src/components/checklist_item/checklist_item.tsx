@@ -81,6 +81,7 @@ interface ChecklistItemProps {
     itemNum: number;
     playbookRunId?: string;
     playbookId?: string;
+    teamId?: string;
     channelId?: string;
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
@@ -436,6 +437,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
                 isEditing={false}
+                teamId={props.teamId}
+                channelId={props.channelId}
             />
         );
     };
@@ -593,6 +596,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
                         participantUserIds={props.participantUserIds}
+                        teamId={props.teamId}
+                        channelId={props.channelId}
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={isSkipped()}

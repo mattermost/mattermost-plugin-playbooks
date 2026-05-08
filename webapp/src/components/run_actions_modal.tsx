@@ -7,6 +7,7 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {useIsDMGM} from 'src/hooks';
 import {useUpdateRun} from 'src/graphql/hooks';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
@@ -24,6 +25,10 @@ interface Props {
 const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
     const {formatMessage} = useIntl();
     const teamId = playbookRun.team_id || '';
+
+    // DM/GM channels can't have members added/removed, so participant
+    // channel actions are disabled.
+    const isDMGM = useIsDMGM(playbookRun);
 
     const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled);
     const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled);
@@ -66,8 +71,8 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
             broadcastChannelIDs: channelIds,
             statusUpdateBroadcastWebhooksEnabled: sendOutgoingWebhookEnabled,
             webhookOnStatusUpdateURLs: webhooks,
-            createChannelMemberOnNewParticipant: createChannelMemberEnabled,
-            removeChannelMemberOnRemovedParticipant: removeChannelMemberEnabled,
+            createChannelMemberOnNewParticipant: !isDMGM && createChannelMemberEnabled,
+            removeChannelMemberOnRemovedParticipant: !isDMGM && removeChannelMemberEnabled,
         });
     };
 
@@ -89,6 +94,7 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
+                            id='action-broadcast-channels'
                             enabled={broadcastToChannelsEnabled}
                             title={formatMessage({defaultMessage: 'Broadcast update to selected channels'})}
                             editable={!readOnly}
@@ -103,6 +109,7 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                             />
                         </Action>
                         <Action
+                            id='action-outgoing-webhook'
                             enabled={sendOutgoingWebhookEnabled}
                             title={formatMessage({defaultMessage: 'Send outgoing webhook'})}
                             editable={!readOnly}
@@ -134,10 +141,12 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
-                            enabled={createChannelMemberEnabled}
+                            id='action-add-to-channel'
+                            enabled={isDMGM ? false : createChannelMemberEnabled}
                             title={formatMessage({defaultMessage: 'Add them to the run channel'})}
-                            editable={!readOnly}
+                            editable={!readOnly && !isDMGM}
                             onToggle={() => setCreateChannelMemberEnabled(!createChannelMemberEnabled)}
+                            hint={isDMGM ? formatMessage({defaultMessage: 'Not available for direct and group message channels'}) : undefined}
                         />
                     </ActionsContainer>
                 </Trigger>
@@ -147,10 +156,12 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
-                            enabled={removeChannelMemberEnabled}
+                            id='action-remove-from-channel'
+                            enabled={isDMGM ? false : removeChannelMemberEnabled}
                             title={formatMessage({defaultMessage: 'Remove them from the run channel'})}
-                            editable={!readOnly}
+                            editable={!readOnly && !isDMGM}
                             onToggle={() => setRemoveChannelMemberEnabled(!removeChannelMemberEnabled)}
+                            hint={isDMGM ? formatMessage({defaultMessage: 'Not available for direct and group message channels'}) : undefined}
                         />
                     </ActionsContainer>
                 </Trigger>
