@@ -4,6 +4,7 @@
 import styled, {createGlobalStyle, css} from 'styled-components';
 import Select from 'react-select';
 import Creatable from 'react-select/creatable';
+import {Button} from '@mattermost/shared/components/button';
 
 export const Banner = styled.div`
     position: fixed;
@@ -209,42 +210,26 @@ export const InfoLine = styled.div`
     font-weight: normal;
     line-height: 16px;
 `;
-export const FilterButton = styled.button<{$active?: boolean;}>`
-    display: flex;
-    align-items: center;
-    border: none;
-    border-radius: 4px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    background: transparent;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 12px;
-    transition: all 0.15s ease;
-    padding: 0 16px;
-    height: 4rem;
+export const FilterButton = styled(Button).attrs({emphasis: 'quaternary'})<{$active?: boolean;}>`
+    && {
+        background: transparent;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
 
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: rgba(var(--center-channel-color-rgb), 0.72);
-    }
-
-    &:active {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
-
-    .icon-chevron-down {
-        &::before {
-            margin: 0;
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            color: rgba(var(--center-channel-color-rgb), 0.72);
         }
-    }
 
-    ${(props) => props.$active && css`
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-        cursor: pointer;
-    `}
+        &:active {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            color: var(--button-bg);
+        }
+
+        ${(props) => props.$active && css`
+            background: rgba(var(--button-bg-rgb), 0.08);
+            color: var(--button-bg);
+        `}
+    }
 `;
 export const HorizontalSpacer = styled.div<{$size: number}>`
     margin-left: ${(props) => props.$size}px;
