@@ -13,6 +13,11 @@ interface Props {
     editable: boolean;
     children?: React.ReactNode;
     id?: string;
+
+    // Optional hint rendered inside the action's data-testid wrapper.
+    // Use for "why is this disabled" messaging so it stays in the same
+    // accessibility/test scope as the toggle it explains.
+    hint?: React.ReactNode;
 }
 
 const Action = (props: Props) => {
@@ -34,6 +39,7 @@ const Action = (props: Props) => {
                     onChange={() => {/* do nothing, clicking logic lives in Container's onClick */}}
                 />
             </Container>
+            {props.hint && <Hint>{props.hint}</Hint>}
             {props.enabled && props.children &&
                 <ChildrenContainer>{props.children}</ChildrenContainer>
             }
@@ -65,6 +71,13 @@ const Toggle = styled(BasicToggle)`
 
 const ChildrenContainer = styled.div`
     margin-top: 8px;
+`;
+
+const Hint = styled.div`
+    margin-top: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.48);
+    font-size: 12px;
+    font-style: italic;
 `;
 
 export default Action;
