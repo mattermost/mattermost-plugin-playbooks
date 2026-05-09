@@ -79,6 +79,7 @@ jest.mock('mattermost-redux/selectors/entities/users', () => ({
 
 jest.mock('mattermost-redux/selectors/entities/channels', () => ({
     getCurrentChannelId: () => 'channel-1',
+    getCurrentChannel: () => ({id: 'channel-1', type: 'O'}),
 }));
 
 jest.mock('mattermost-redux/selectors/entities/preferences', () => ({
