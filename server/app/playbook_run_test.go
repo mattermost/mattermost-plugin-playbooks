@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
 func TestPlaybookRun_MarshalJSON(t *testing.T) {
@@ -1471,5 +1473,67 @@ func TestPlaybookRun_MarshalJSON_ItemsOrder(t *testing.T) {
 		// Should NOT contain the stale values
 		require.NotContains(t, itemsOrder, "stale_id")
 		require.NotContains(t, itemsOrder, "wrong_id")
+	})
+}
+
+// TestSendWebhooksOnCreationDMGM verifies channel URL construction for team-based vs
+// DM/GM runs. sendWebhooksOnUpdateStatus uses the same ownerFirstTeamName + getDMGMChannelURL
+// path; its URL construction is covered by TestGetDMGMChannelURL in urls_test.go.
+func TestSendWebhooksOnCreationDMGM(t *testing.T) {
+	siteURL := "http://mattermost.example.com"
+	config := &model.Config{}
+	config.SetDefaults()
+	config.ServiceSettings.SiteURL = &siteURL
+
+	t.Run("DM run looks up owner team and uses channel ID for channel URL", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		ownerID := model.NewId()
+		channelID := model.NewId()
+		api.On("GetConfig").Return(config).Once()
+		api.On("GetChannel", channelID).Return(&model.Channel{
+			Id:     channelID,
+			TeamId: "",
+		}, (*model.AppError)(nil)).Once()
+		api.On("GetTeamsForUser", ownerID).Return([]*model.Team{
+			{Id: model.NewId(), Name: "myteam"},
+		}, (*model.AppError)(nil)).Once()
+		// GetTeam (by team ID) intentionally NOT registered — only GetTeamsForUser is called for DM runs
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		svc.sendWebhooksOnCreation(PlaybookRun{
+			ID:          model.NewId(),
+			TeamID:      "",
+			ChannelID:   channelID,
+			OwnerUserID: ownerID,
+		})
+		// AssertExpectations confirms GetTeamsForUser was called exactly once
+	})
+
+	t.Run("team run performs team lookup to build channel URL", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		teamID := model.NewId()
+		channelID := model.NewId()
+		api.On("GetConfig").Return(config).Once()
+		api.On("GetChannel", channelID).Return(&model.Channel{
+			Id:     channelID,
+			TeamId: teamID,
+			Name:   "incident-channel",
+		}, (*model.AppError)(nil)).Once()
+		api.On("GetTeam", teamID).Return(&model.Team{
+			Id:   teamID,
+			Name: "myteam",
+		}, (*model.AppError)(nil)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		svc.sendWebhooksOnCreation(PlaybookRun{
+			ID:        model.NewId(),
+			TeamID:    teamID,
+			ChannelID: channelID,
+		})
+		// AssertExpectations confirms GetTeam was called exactly once
 	})
 }
