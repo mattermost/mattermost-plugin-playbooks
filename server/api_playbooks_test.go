@@ -1631,7 +1631,7 @@ func TestPlaybooksDuplicate(t *testing.T) {
 		sourceField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
 			context.Background(),
 			playbookID,
-			client.PropertyFieldRequest{Name: "Owner", Type: "user"},
+			client.PropertyFieldRequest{Name: "Reviewer", Type: "user"},
 		)
 		require.NoError(t, err)
 
