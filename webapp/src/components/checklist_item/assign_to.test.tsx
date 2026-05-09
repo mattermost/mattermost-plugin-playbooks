@@ -16,7 +16,7 @@ jest.mock('src/components/profile/profile_selector', () => ({
 }));
 
 jest.mock('src/hooks', () => ({
-    useProfilesInTeam: jest.fn(() => []),
+    useProfilesForRun: jest.fn(() => []),
 }));
 
 jest.mock('react-intl', () => {
