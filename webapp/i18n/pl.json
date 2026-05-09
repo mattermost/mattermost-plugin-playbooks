@@ -966,5 +966,19 @@
     "yN4+6d": "Wybierz wartości",
     "yN63it": "Wybierz wartość",
     "55HPp9": "Zapisz zmiany warunków",
-    "U7Ai5E": "Usuń warunek"
+    "U7Ai5E": "Usuń warunek",
+    "+8UeKB": "Czy na pewno chcesz usunąć {count} wybrane {count, plural, one {zadanie} other {zadania}}? Tej akcji nie można cofnąć.",
+    "8T9fet": "Usunąć {count} {count, plural, one {zadanie} other {zadania}}?",
+    "9Wq55e": "Nie udało się przypisać {count} zadań z {total}",
+    "CywktV": "Przenieś do warunku",
+    "Da8Mnx": "Edycja zbiorcza",
+    "EYIw2M": "Wyczyść wybór",
+    "GD+JsI": "{count} {count, plural, one {zadanie} other {zadania}} wybrane",
+    "OG34OC": "Wyjdź z edycji zbiorczej",
+    "XMpO69": "Stan",
+    "Y46Vea": "Usuń wybrane zadania",
+    "gQMKIn": "Nie udało się zaktualizować terminu dla {count} zadań z {total}",
+    "hK7XOC": "Kliknij dowolne zadanie, aby je zaznaczyć. Użyj paska akcji poniżej, aby zastosować zmiany do wszystkich wybranych zadań.",
+    "ifNqB6": "Dodaj do stanu",
+    "qnLI4Z": "Nie udało się usunąć {count} z {total} zadań"
 }
