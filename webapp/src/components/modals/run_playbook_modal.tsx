@@ -13,12 +13,15 @@ import React, {
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
+import {getProfilesByIds} from 'mattermost-redux/actions/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {ArrowLeftIcon, CloseIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
+import {useStore} from 'react-redux';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {GlobalState} from '@mattermost/types/store';
 import General from 'mattermost-redux/constants/general';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
@@ -37,7 +40,7 @@ import PlaybooksSelector from 'src/components/playbooks_selector';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
 import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import {useEnsureProfiles, useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
+import {useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
 import {PropertyField, PropertyFieldType} from 'src/types/properties';
@@ -131,7 +134,21 @@ export const RunPlaybookModal = ({
         }
         return ids;
     }, [playbookAttributes, propertyValues]);
-    useEnsureProfiles(userIdsInPropertyValues);
+
+    // Inline: load missing user profiles for user-type property values.
+    // Avoids src/hooks/general.ts useEnsureProfiles whose inline useSelector closure
+    // breaks useSyncExternalStoreWithSelector memoization and triggers re-render loops.
+    const ensureProfilesStore = useStore<GlobalState>();
+    useEffect(() => {
+        if (userIdsInPropertyValues.length === 0) {
+            return;
+        }
+        const state = ensureProfilesStore.getState();
+        const unknownIds = userIdsInPropertyValues.filter((id) => !getUser(state, id));
+        if (unknownIds.length > 0) {
+            dispatch(getProfilesByIds(unknownIds));
+        }
+    }, [userIdsInPropertyValues, ensureProfilesStore, dispatch]);
 
     // Single effect for atomic init: prevents race conditions from independent effects exposing stale state.
     useEffect(() => {
