@@ -41,9 +41,10 @@ jest.mock('react-intl', () => {
 jest.mock('react-redux', () => {
     const mockDispatch = jest.fn(() => jest.fn());
     const mockSelector = jest.fn(() => 'mock-user-id');
+    const mockStore = jest.fn(() => ({getState: () => ({}), subscribe: () => jest.fn(), dispatch: jest.fn()}));
     (mockDispatch as any).withTypes = () => mockDispatch;
     (mockSelector as any).withTypes = () => mockSelector;
-    return {useDispatch: mockDispatch, useSelector: mockSelector};
+    return {useDispatch: mockDispatch, useSelector: mockSelector, useStore: mockStore};
 });
 
 jest.mock('src/graphql/hooks', () => ({}));
@@ -66,6 +67,11 @@ jest.mock('src/hooks/general', () => ({
 
 jest.mock('mattermost-redux/selectors/entities/users', () => ({
     getCurrentUserId: jest.fn(),
+    getUser: jest.fn(() => undefined),
+}));
+
+jest.mock('mattermost-redux/actions/users', () => ({
+    getProfilesByIds: jest.fn(() => ({type: 'MOCK_GET_PROFILES_BY_IDS'})),
 }));
 
 jest.mock('mattermost-redux/selectors/entities/channels', () => ({
