@@ -213,6 +213,200 @@ func addTaskRow(m core.Maroto, styles styleSet, state, title string) {
 	)
 }
 
+// statCard is one element in a dashboard-style stat row. Label is a small
+// muted caption; Value is a large primary-colored number or short phrase;
+// Hint is an optional secondary metric (e.g. percent) shown small below.
+type statCard struct {
+	Label string
+	Value string
+	Hint  string
+}
+
+// addStatCards emits a single row of up to four stat cards. Cards are
+// equally-sized cells with a soft card-background and a thin border-only
+// top accent. Reads like a modern KPI dashboard.
+func addStatCards(m core.Maroto, styles styleSet, cards []statCard) {
+	if len(cards) == 0 {
+		return
+	}
+	width := 12 / len(cards)
+	if width < 1 {
+		width = 1
+	}
+	cols := make([]core.Col, 0, len(cards))
+	for _, c := range cards {
+		body := c.Value
+		if body == "" {
+			body = "—"
+		}
+		colStyle := &props.Cell{
+			BackgroundColor: surfaceCard(),
+			BorderType:      border.Top,
+			BorderColor:     brand(),
+			BorderThickness: 0.8,
+		}
+		col := col.New(width).WithStyle(colStyle)
+		col.Add(
+			text.New(strings.ToUpper(c.Label), props.Text{
+				Family: styles.sans, Style: fontstyle.Bold,
+				Size: fontSizeFooter, Color: muted(), Top: 2.0, Left: 3.0,
+			}),
+			text.New(body, props.Text{
+				Family: styles.sans, Style: fontstyle.Bold,
+				Size: fontSizeHeading1, Color: primary(), Top: 6.0, Left: 3.0,
+			}),
+		)
+		if c.Hint != "" {
+			col.Add(text.New(c.Hint, props.Text{
+				Family: styles.sans, Style: fontstyle.Normal,
+				Size: fontSizeSmall, Color: muted(), Top: 14.0, Left: 3.0,
+			}))
+		}
+		cols = append(cols, col)
+	}
+	for i := len(cards) * width; i < 12; i++ {
+		cols = append(cols, col.New(1))
+	}
+	m.AddRow(18, cols...)
+}
+
+// pillStyle returns a cell style for a colored chip / status pill.
+func pillStyle(bg *props.Color) *props.Cell {
+	return &props.Cell{
+		BackgroundColor: bg,
+		BorderType:      border.Full,
+		BorderColor:     bg,
+		BorderThickness: 0.1,
+	}
+}
+
+// addStatusPill emits a single colored chip on its own row. The color
+// follows the run/playbook status semantics: in-progress = brand,
+// finished = green, anything else = muted.
+func addStatusPill(m core.Maroto, styles styleSet, statusLabel string, color *props.Color) {
+	if statusLabel == "" {
+		return
+	}
+	pillTxt := props.Text{
+		Family: styles.sans, Style: fontstyle.Bold,
+		Size: fontSizeSmall, Color: inverse(),
+		Top: 1.5, Left: 4.0,
+	}
+	m.AddRow(rowHeightLine+1,
+		col.New(3).WithStyle(pillStyle(color)).Add(text.New(strings.ToUpper(statusLabel), pillTxt)),
+		col.New(9),
+	)
+}
+
+// statusPillColor maps a status string to its pill background.
+func statusPillColor(status string) *props.Color {
+	switch status {
+	case "InProgress":
+		return statusInProgress()
+	case "Finished":
+		return statusFinished()
+	default:
+		return statusNeutral()
+	}
+}
+
+// metaItem is one entry in a dashboard inline-meta strip — typically a
+// "Label: value" facts row rendered with bullet separators instead of a
+// vertical stack of label/value rows.
+type metaItem struct {
+	Label string
+	Value string
+}
+
+// addMetaStrip emits a one-line densely-packed strip of facts: each
+// label rendered small + muted, each value next to it in the body
+// style, with bullet separators between entries.
+//
+// Compact alternative to a stack of addLabelValue rows when the data is
+// short and read top-to-bottom on a dashboard.
+func addMetaStrip(m core.Maroto, styles styleSet, items []metaItem) {
+	pairs := make([]string, 0, len(items))
+	for _, it := range items {
+		if it.Value == "" {
+			continue
+		}
+		pairs = append(pairs, it.Label+": "+it.Value)
+	}
+	if len(pairs) == 0 {
+		return
+	}
+	m.AddAutoRow(col.New(12).Add(text.New(strings.Join(pairs, "   ·   "), styles.meta())))
+}
+
+// addMemberGrid lays out members in a 3-column grid (name + role chip),
+// replacing the previous 2-col-per-row stack so the roster fits in
+// fewer pages.
+func addMemberGrid(m core.Maroto, styles styleSet, members []RenderPlaybookMember) {
+	if len(members) == 0 {
+		return
+	}
+	const cardsPerRow = 3
+	for i := 0; i < len(members); i += cardsPerRow {
+		cols := make([]core.Col, 0, 12)
+		for j := 0; j < cardsPerRow; j++ {
+			if i+j >= len(members) {
+				cols = append(cols, col.New(4))
+				continue
+			}
+			mem := members[i+j]
+			name := mem.DisplayName
+			if name == "" {
+				name = "—"
+			}
+			role := primaryRoleLabel(mem.Roles)
+
+			cellCard := &props.Cell{
+				BackgroundColor: surfaceCard(),
+				BorderType:      border.Left,
+				BorderColor:     brand(),
+				BorderThickness: 0.8,
+			}
+			c := col.New(4).WithStyle(cellCard)
+			c.Add(
+				text.New(name, props.Text{
+					Family: styles.sans, Style: fontstyle.Bold,
+					Size: fontSizeBody, Color: primary(),
+					Top: 2.0, Left: 3.0,
+				}),
+				text.New(role, props.Text{
+					Family: styles.sans, Style: fontstyle.Normal,
+					Size: fontSizeFooter, Color: muted(),
+					Top: 7.0, Left: 3.0,
+				}),
+			)
+			cols = append(cols, c)
+		}
+		m.AddRow(11, cols...)
+		addBlankRow(m, rowHeightBlockGap)
+	}
+}
+
+// primaryRoleLabel picks the most descriptive role from a member's
+// role list, mapping internal role keys to a human label.
+func primaryRoleLabel(roles []string) string {
+	for _, r := range roles {
+		switch r {
+		case "playbook_admin":
+			return "Admin"
+		case "playbook_member":
+			return "Member"
+		case "run_admin":
+			return "Admin"
+		case "run_member":
+			return "Participant"
+		}
+	}
+	if len(roles) > 0 {
+		return roles[0]
+	}
+	return "Member"
+}
+
 // taskCheckboxCol returns a col styled to look like a UI checkbox for the
 // given run-state. The cell carries border + optional background fill;
 // inner content is a single non-breaking space so the cell measures the
@@ -355,18 +549,96 @@ func dispatchInstructionBoxed(m core.Maroto, styles styleSet, ins markdown.Instr
 }
 
 // renderIndentedMarkdownInto routes markdown through the same vertical-rule
-// indent as task meta lines.
+// indent as task meta lines, parsing the body through the markdown
+// extension so emphasis, lists, code, links, and mentions all render as
+// designed instead of leaking through as raw markdown text.
 func renderIndentedMarkdownInto(m core.Maroto, styles styleSet, body string, rt ResolverTable) {
 	body = strings.TrimSpace(body)
 	if body == "" {
 		return
 	}
-	for _, ln := range strings.Split(body, "\n") {
-		if ln == "" {
-			addBlankRow(m, rowHeightBlockGap)
-			continue
+	instructions := markdown.Render([]byte(body), rt)
+	if len(instructions) == 0 {
+		for _, ln := range strings.Split(body, "\n") {
+			if ln == "" {
+				addBlankRow(m, rowHeightBlockGap)
+				continue
+			}
+			addTaskIndentedLine(m, styles, ln, styles.body())
 		}
-		addTaskIndentedLine(m, styles, ln, styles.body())
+		return
+	}
+	for _, ins := range instructions {
+		dispatchInstructionIndented(m, styles, rt, ins)
+	}
+}
+
+func dispatchInstructionIndented(m core.Maroto, styles styleSet, rt ResolverTable, ins markdown.Instruction) {
+	switch v := ins.(type) {
+	case markdown.HeadingI:
+		if text := flattenInline(v.Children); text != "" {
+			addTaskIndentedLine(m, styles, text, styles.bodyBold())
+		}
+	case markdown.ParagraphI:
+		if text := flattenInline(v.Children); text != "" {
+			addTaskIndentedLine(m, styles, text, styles.body())
+		}
+		addClickableLinks(m, styles, collectExternalLinks(v.Children))
+	case markdown.ListI:
+		for i, item := range v.Items {
+			text := flattenInline(item)
+			if text == "" {
+				continue
+			}
+			prefix := "• "
+			if v.Ordered {
+				prefix = strconv.Itoa(i+1) + ". "
+			}
+			addTaskIndentedLine(m, styles, prefix+text, styles.body())
+			addClickableLinks(m, styles, collectExternalLinks(item))
+		}
+	case markdown.BlockquoteI:
+		if text := flattenInline(v.Children); text != "" {
+			addTaskIndentedLine(m, styles, "> "+text, styles.body())
+		}
+	case markdown.CodeBlockI:
+		body := strings.TrimRight(v.Body, "\n")
+		if body != "" {
+			addTaskIndentedLine(m, styles, body, styles.code())
+		}
+	case markdown.TableI:
+		if header := flattenInline(v.Header); header != "" {
+			addTaskIndentedLine(m, styles, header, styles.bodyBold())
+		}
+		for _, row := range v.Rows {
+			parts := make([]string, 0, len(row))
+			for _, cell := range row {
+				if c := flattenInline(cell); c != "" {
+					parts = append(parts, c)
+				}
+			}
+			if len(parts) > 0 {
+				addTaskIndentedLine(m, styles, strings.Join(parts, " | "), styles.body())
+			}
+		}
+	case markdown.HRI:
+		addTaskIndentedLine(m, styles, "———", styles.meta())
+	case markdown.ImageI:
+		alt := v.Alt
+		if alt == "" {
+			alt = v.URL
+		}
+		addTaskIndentedLine(m, styles, "[image: "+alt+"]", styles.meta())
+	case markdown.FileEmbedI:
+		name := v.File.Name
+		if name == "" {
+			name = v.File.FileID
+		}
+		addTaskIndentedLine(m, styles, "[file: "+name+"]", styles.meta())
+	default:
+		if text := flattenInline([]markdown.Instruction{ins}); text != "" {
+			addTaskIndentedLine(m, styles, text, styles.body())
+		}
 	}
 }
 
@@ -497,23 +769,19 @@ func collectExternalLinks(items []markdown.Instruction) []externalLink {
 	return out
 }
 
-// addClickableLinks emits one "Link: label → url" row per discovered
-// external link, with the URL portion carrying a PDF Hyperlink action so
-// readers can click straight from the document.
+// addClickableLinks emits one row per discovered external link. The row
+// renders just the URL in brand color, prefixed with a small arrow, and
+// carries the PDF Hyperlink action so readers can click straight from
+// the document. The matching label text already lives in the prose, so
+// repeating it here would clutter the output.
 func addClickableLinks(m core.Maroto, styles styleSet, links []externalLink) {
 	for _, ln := range links {
 		hyperlink := ln.url
-		linkProps := styles.body()
+		linkProps := styles.meta()
 		linkProps.Color = brand()
 		linkProps.Hyperlink = &hyperlink
-
-		labelText := ln.label
-		if labelText == "" {
-			labelText = ln.url
-		}
 		m.AddAutoRow(
-			col.New(2).Add(text.New("Link:", styles.label())),
-			col.New(10).Add(text.New(labelText+" → "+ln.url, linkProps)),
+			col.New(12).Add(text.New("↗ "+ln.url, linkProps)),
 		)
 	}
 }
@@ -530,11 +798,6 @@ func flattenInline(items []markdown.Instruction) string {
 				label = v.Href
 			}
 			b.WriteString(label)
-			if v.Allowed && v.Href != "" && v.Href != label {
-				b.WriteString(" (")
-				b.WriteString(v.Href)
-				b.WriteString(")")
-			}
 		case markdown.MentionI:
 			if v.Resolved.DisplayName != "" {
 				b.WriteString("@")

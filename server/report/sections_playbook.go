@@ -12,21 +12,30 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/core"
 )
 
-// addPlaybookOverview emits the playbook identity + member roster.
+// addPlaybookOverview emits the playbook identity, a visibility/scale
+// stats strip, the description body, and a member roster grid.
 func addPlaybookOverview(m core.Maroto, styles styleSet, pc PlaybookRenderContext, labels *Labels, opts RenderOptions) {
 	title := pc.Playbook.Title
 	if title == "" {
 		title = "(untitled)"
 	}
 	m.AddRow(rowHeightSection+2, col.New(12).Add(text.New(title, styles.title())))
-	addBlankRow(m, rowHeightBlockGap)
 
 	visibility := "Private"
+	visibilityColor := statusNeutral()
 	if pc.Playbook.Public {
 		visibility = "Public"
+		visibilityColor = statusFinished()
 	}
-	addLabelValue(m, styles, "Visibility", visibility)
-	addLabelValue(m, styles, labels.GeneratedAt(), labels.FormatDate(pc.GeneratedAtMillis))
+	addStatusPill(m, styles, visibility, visibilityColor)
+	addBlankRow(m, rowHeightBlockGap)
+
+	addStatCards(m, styles, playbookHeadlineCards(pc, labels))
+	addBlankRow(m, rowHeightBlockGap)
+
+	addMetaStrip(m, styles, []metaItem{
+		{Label: labels.GeneratedAt(), Value: labels.FormatDate(pc.GeneratedAtMillis)},
+	})
 	addBlankRow(m, rowHeightBlockGap)
 
 	if strings.TrimSpace(pc.Playbook.Description) != "" {
@@ -40,19 +49,21 @@ func addPlaybookOverview(m core.Maroto, styles styleSet, pc PlaybookRenderContex
 		addMutedText(m, styles, "No members.")
 		return
 	}
-	for _, mem := range pc.Members {
-		name := mem.DisplayName
-		if name == "" {
-			name = resolveUserDisplay(pc.Resolvers, mem.UserID, labels)
-		}
-		roles := strings.Join(mem.Roles, ", ")
-		if roles == "" {
-			roles = "—"
-		}
-		m.AddRow(rowHeightLine,
-			col.New(6).Add(text.New(name, styles.body())),
-			col.New(6).Add(text.New(roles, styles.meta())),
-		)
+	addMemberGrid(m, styles, pc.Members)
+}
+
+// playbookHeadlineCards builds the KPI strip for the playbook overview:
+// checklist template count, total tasks, members, broadcast targets.
+func playbookHeadlineCards(pc PlaybookRenderContext, labels *Labels) []statCard {
+	totalTasks := 0
+	for _, cl := range pc.ChecklistTemplates {
+		totalTasks += len(cl.Items)
+	}
+	return []statCard{
+		{Label: "Checklists", Value: fmt.Sprintf("%d", len(pc.ChecklistTemplates))},
+		{Label: "Tasks", Value: fmt.Sprintf("%d", totalTasks)},
+		{Label: "Members", Value: fmt.Sprintf("%d", len(pc.Members))},
+		{Label: "Broadcasts", Value: fmt.Sprintf("%d", len(pc.BroadcastChannels))},
 	}
 }
 

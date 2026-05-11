@@ -12,56 +12,90 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/core"
 )
 
-// addCover emits the run's identity + headline status as the leading page.
+// addCover emits the run's identity, status, and a four-card KPI strip
+// as the leading page — modern dashboard layout instead of a stack of
+// label/value rows.
 func addCover(m core.Maroto, styles styleSet, rc RenderContext, labels *Labels, opts RenderOptions) {
 	name := rc.Run.Name
 	if name == "" {
 		name = labels.UnknownUser()
 	}
 	m.AddRow(rowHeightSection+2, col.New(12).Add(text.New(name, styles.title())))
+
+	addStatusPill(m, styles, labels.StatusDisplay(rc.Run.Status), statusPillColor(rc.Run.Status))
 	addBlankRow(m, rowHeightBlockGap)
 
-	addLabelValue(m, styles, labels.Status(), labels.StatusDisplay(rc.Run.Status))
+	addStatCards(m, styles, runHeadlineCards(rc, labels))
+	addBlankRow(m, rowHeightBlockGap)
 
 	ownerName := rc.Owner.DisplayName
 	if ownerName == "" {
 		ownerName = resolveUserDisplay(rc.Resolvers, rc.Owner.UserID, labels)
 	}
-	addLabelValue(m, styles, labels.Owner(), ownerName)
-
-	addLabelValue(m, styles, labels.Started(), labels.FormatDate(rc.Run.StartTimeMs))
+	strip := []metaItem{
+		{Label: labels.Owner(), Value: ownerName},
+		{Label: labels.Started(), Value: labels.FormatDate(rc.Run.StartTimeMs)},
+	}
 	if rc.Run.EndTimeMs > 0 {
-		addLabelValue(m, styles, labels.Ended(), labels.FormatDate(rc.Run.EndTimeMs))
-		addLabelValue(m, styles, labels.Duration(), labels.FormatDuration(rc.Run.EndTimeMs-rc.Run.StartTimeMs))
+		strip = append(strip, metaItem{Label: labels.Ended(), Value: labels.FormatDate(rc.Run.EndTimeMs)})
 	}
 	if rc.Run.PlaybookTitle != "" {
-		addLabelValue(m, styles, "Playbook", rc.Run.PlaybookTitle)
+		strip = append(strip, metaItem{Label: "Playbook", Value: rc.Run.PlaybookTitle})
 	}
-	addLabelValue(m, styles, labels.GeneratedAt(), labels.FormatDate(rc.GeneratedAtMillis))
+	strip = append(strip, metaItem{Label: labels.GeneratedAt(), Value: labels.FormatDate(rc.GeneratedAtMillis)})
+	addMetaStrip(m, styles, strip)
 
 	addBlankRow(m, rowHeightBlockGap)
 }
 
-// addExecutiveSummary emits the markdown Summary plus a key-fields table.
+// runHeadlineCards builds the four-card KPI strip for a run cover:
+// tasks done/total, status updates count, participants count, duration.
+func runHeadlineCards(rc RenderContext, labels *Labels) []statCard {
+	done, total := 0, 0
+	for _, cl := range rc.Checklists {
+		d, t := countClosed(cl.Items)
+		done += d
+		total += t
+	}
+	tasksValue := fmt.Sprintf("%d/%d", done, total)
+	if total == 0 {
+		tasksValue = "—"
+	}
+	tasksHint := ""
+	if total > 0 {
+		tasksHint = fmt.Sprintf("%d%% complete", (done*100)/total)
+	}
+
+	duration := "—"
+	end := rc.Run.EndTimeMs
+	if end == 0 {
+		end = rc.GeneratedAtMillis
+	}
+	if rc.Run.StartTimeMs > 0 && end > rc.Run.StartTimeMs {
+		duration = labels.FormatDuration(end - rc.Run.StartTimeMs)
+	}
+
+	participants := len(rc.Participants)
+
+	return []statCard{
+		{Label: "Tasks", Value: tasksValue, Hint: tasksHint},
+		{Label: "Updates", Value: fmt.Sprintf("%d", len(rc.StatusUpdates))},
+		{Label: "Participants", Value: fmt.Sprintf("%d", participants)},
+		{Label: "Duration", Value: duration},
+	}
+}
+
+// addExecutiveSummary emits the markdown Summary in a boxed surface.
+// Headline facts already appear on the cover via stat cards + meta
+// strip; repeating them here would be visual noise.
 func addExecutiveSummary(m core.Maroto, styles styleSet, rc RenderContext, labels *Labels, opts RenderOptions) {
 	addSectionHeading(m, styles, labels.SectionExecutiveSummary())
 
-	if strings.TrimSpace(rc.Run.Summary) != "" {
-		renderMarkdownBoxedInto(m, styles, rc.Run.Summary, rc.Resolvers)
-		addBlankRow(m, rowHeightBlockGap)
+	if strings.TrimSpace(rc.Run.Summary) == "" {
+		addMutedText(m, styles, "No summary.")
+		return
 	}
-
-	addLabelValue(m, styles, labels.Status(), labels.StatusDisplay(rc.Run.Status))
-	ownerName := rc.Owner.DisplayName
-	if ownerName == "" {
-		ownerName = resolveUserDisplay(rc.Resolvers, rc.Owner.UserID, labels)
-	}
-	addLabelValue(m, styles, labels.Owner(), ownerName)
-	addLabelValue(m, styles, labels.Started(), labels.FormatDate(rc.Run.StartTimeMs))
-	if rc.Run.EndTimeMs > 0 {
-		addLabelValue(m, styles, labels.Ended(), labels.FormatDate(rc.Run.EndTimeMs))
-		addLabelValue(m, styles, labels.Duration(), labels.FormatDuration(rc.Run.EndTimeMs-rc.Run.StartTimeMs))
-	}
+	renderMarkdownBoxedInto(m, styles, rc.Run.Summary, rc.Resolvers)
 }
 
 // addTimeline emits the audit timeline as one row per event.
