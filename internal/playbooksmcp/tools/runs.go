@@ -14,31 +14,31 @@ import (
 // --- Argument structs ---
 
 type ListRunsArgs struct {
-	TeamID      string `json:"team_id,omitempty" jsonschema:"description=Filter by team ID (26-char Mattermost ID)"`
-	Status      string `json:"status,omitempty" jsonschema:"description=Filter by status: InProgress or Finished,enum=InProgress,enum=Finished"`
-	OwnerUserID string `json:"owner_user_id,omitempty" jsonschema:"description=Filter by owner user ID. Use 'me' for the current user."`
-	Page        int    `json:"page,omitempty" jsonschema:"description=Page number (0-indexed),default=0"`
-	PerPage     int    `json:"per_page,omitempty" jsonschema:"description=Number of results per page (max 100),default=10"`
+	TeamID      string `json:"team_id,omitempty" jsonschema:"Filter by team ID (26-char Mattermost ID)"`
+	Status      string `json:"status,omitempty" jsonschema:"Filter by status: InProgress or Finished"`
+	OwnerUserID string `json:"owner_user_id,omitempty" jsonschema:"Filter by owner user ID. Use 'me' for the current user."`
+	Page        int    `json:"page,omitempty" jsonschema:"Page number (0-indexed)"`
+	PerPage     int    `json:"per_page,omitempty" jsonschema:"Number of results per page (max 100)"`
 }
 
 type GetRunArgs struct {
-	RunID string `json:"run_id" jsonschema:"description=The ID of the playbook run to retrieve,minLength=26,maxLength=26"`
+	RunID string `json:"run_id" jsonschema:"The ID of the playbook run to retrieve"`
 }
 
 type UpdateRunStatusArgs struct {
-	RunID           string `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	Message         string `json:"message" jsonschema:"description=Status update message (supports Markdown),minLength=1"`
-	ReminderSeconds int64  `json:"reminder_seconds,omitempty" jsonschema:"description=Seconds until the next reminder (default: 3600)"`
-	FinishRun       bool   `json:"finish_run,omitempty" jsonschema:"description=If true the run is finished after posting the update"`
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	Message         string `json:"message" jsonschema:"Status update message (supports Markdown)"`
+	ReminderSeconds int64  `json:"reminder_seconds,omitempty" jsonschema:"Seconds until the next reminder (default: 3600)"`
+	FinishRun       bool   `json:"finish_run,omitempty" jsonschema:"If true the run is finished after posting the update"`
 }
 
 type FinishRunArgs struct {
-	RunID string `json:"run_id" jsonschema:"description=The ID of the playbook run to finish,minLength=26,maxLength=26"`
+	RunID string `json:"run_id" jsonschema:"The ID of the playbook run to finish"`
 }
 
 type ChangeRunOwnerArgs struct {
-	RunID   string `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	OwnerID string `json:"owner_id" jsonschema:"description=The user ID of the new owner,minLength=26,maxLength=26"`
+	RunID   string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	OwnerID string `json:"owner_id" jsonschema:"The user ID of the new owner"`
 }
 
 // --- API response types (subset of fields for formatting) ---
@@ -73,6 +73,7 @@ type checklistItem struct {
 	Title       string `json:"title"`
 	State       string `json:"state"`
 	AssigneeID  string `json:"assignee_id"`
+	Command     string `json:"command"`
 	Description string `json:"description"`
 	DueDate     int64  `json:"due_date"`
 }
