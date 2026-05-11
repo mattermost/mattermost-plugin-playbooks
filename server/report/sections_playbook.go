@@ -56,16 +56,23 @@ func addPlaybookOverview(m core.Maroto, styles styleSet, pc PlaybookRenderContex
 	}
 }
 
-// addPlaybookChecklistTemplates emits each template checklist with its items.
+// addPlaybookChecklistTemplates emits each template checklist as a
+// visually separated block with indented, bullet-prefixed tasks. Template
+// items have no run-time state, so the bullet is the open-task glyph.
 func addPlaybookChecklistTemplates(m core.Maroto, styles styleSet, pc PlaybookRenderContext, labels *Labels, opts RenderOptions) {
 	addSectionHeading(m, styles, labels.SectionPlaybookTemplates())
 
 	if len(pc.ChecklistTemplates) == 0 {
-		addMutedText(m, styles, "No checklist templates.")
+		addMutedText(m, styles, "No tasks.")
 		return
 	}
 
 	for ci, cl := range pc.ChecklistTemplates {
+		if ci > 0 {
+			addBlankRow(m, rowHeightBlockGap)
+			addDivider(m)
+			addBlankRow(m, rowHeightBlockGap)
+		}
 		title := cl.Title
 		if title == "" {
 			title = fmt.Sprintf("Checklist %d", ci+1)
@@ -73,24 +80,25 @@ func addPlaybookChecklistTemplates(m core.Maroto, styles styleSet, pc PlaybookRe
 		addSubHeading(m, styles, title)
 
 		if len(cl.Items) == 0 {
-			addMutedText(m, styles, "No tasks.")
+			addTaskIndentedLine(m, styles, "No tasks.", styles.meta())
 			continue
 		}
 
-		for _, it := range cl.Items {
-			m.AddAutoRow(col.New(12).Add(text.New(it.Title, styles.bodyBold())))
+		for ti, it := range cl.Items {
+			if ti > 0 {
+				addBlankRow(m, rowHeightBlockGap)
+			}
+			addTaskRow(m, styles, taskGlyph(""), it.Title)
 
-			meta := buildTemplateItemMeta(it, pc.Resolvers, labels)
-			if meta != "" {
-				addMutedText(m, styles, meta)
+			if meta := buildTemplateItemMeta(it, pc.Resolvers, labels); meta != "" {
+				addTaskIndentedLine(m, styles, meta, styles.meta())
 			}
 			if strings.TrimSpace(it.Description) != "" {
-				renderMarkdownInto(m, styles, it.Description, pc.Resolvers)
+				renderIndentedMarkdownInto(m, styles, it.Description, pc.Resolvers)
 			}
 			if it.Command != "" {
-				m.AddAutoRow(col.New(12).Add(text.New(it.Command, styles.code())))
+				addTaskIndentedLine(m, styles, it.Command, styles.code())
 			}
-			addBlankRow(m, rowHeightBlockGap)
 		}
 	}
 }
