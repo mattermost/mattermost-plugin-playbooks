@@ -7,10 +7,53 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
   <div
     className="Body-jPQbxz gCtmSH"
   >
+    <div
+      className="FormatSelector-fRuKVN frSyxO"
+    >
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-md"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-file-text-outline"
+        />
+        Markdown
+      </button>
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-html"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-code-tags"
+        />
+        HTML
+      </button>
+      <button
+        className="FormatButton-jpoeiq kywyMA"
+        data-testid="format-button-pdf"
+        onClick={[Function]}
+        selected={true}
+      >
+        <i
+          className="icon icon-file-pdf-outline"
+        />
+        PDF
+      </button>
+    </div>
+    <p
+      className="FormatHint-lnvEeT kBHaCo"
+      data-testid="format-hint"
+    >
+      Rendered in your browser — Save as PDF in the print dialog
+    </p>
     <p
       className="Description-dTdaMR caPvRr"
     >
-      Select the sections to include in the PDF.
+      Select the sections to include in the export.
     </p>
     <div
       className="Toggles-hAkmHW UekAt"
@@ -66,10 +109,53 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
   <div
     className="Body-jPQbxz gCtmSH"
   >
+    <div
+      className="FormatSelector-fRuKVN frSyxO"
+    >
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-md"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-file-text-outline"
+        />
+        Markdown
+      </button>
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-html"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-code-tags"
+        />
+        HTML
+      </button>
+      <button
+        className="FormatButton-jpoeiq kywyMA"
+        data-testid="format-button-pdf"
+        onClick={[Function]}
+        selected={true}
+      >
+        <i
+          className="icon icon-file-pdf-outline"
+        />
+        PDF
+      </button>
+    </div>
+    <p
+      className="FormatHint-lnvEeT kBHaCo"
+      data-testid="format-hint"
+    >
+      Rendered in your browser — Save as PDF in the print dialog
+    </p>
     <p
       className="Description-dTdaMR caPvRr"
     >
-      Select the sections to include in the PDF.
+      Select the sections to include in the export.
     </p>
     <div
       className="Toggles-hAkmHW UekAt"
