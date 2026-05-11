@@ -622,9 +622,9 @@ var (
 		"transcript": func(s *report.SectionFlags) { s.Transcript = true },
 	}
 	sectionFlagsForPlaybook = map[string]func(*report.SectionFlags){
-		"overview":   func(s *report.SectionFlags) { s.PlaybookOverview = true },
-		"checklists": func(s *report.SectionFlags) { s.PlaybookChecklistTemplates = true },
-		"settings":   func(s *report.SectionFlags) { s.PlaybookSettings = true },
+		"overview":            func(s *report.SectionFlags) { s.PlaybookOverview = true },
+		"checklist_templates": func(s *report.SectionFlags) { s.PlaybookChecklistTemplates = true },
+		"settings":            func(s *report.SectionFlags) { s.PlaybookSettings = true },
 	}
 )
 
@@ -672,7 +672,7 @@ func sectionsToList(s report.SectionFlags) []string {
 	add("retro", s.Retrospective)
 	add("transcript", s.Transcript)
 	add("playbook_overview", s.PlaybookOverview)
-	add("playbook_checklists", s.PlaybookChecklistTemplates)
+	add("playbook_checklist_templates", s.PlaybookChecklistTemplates)
 	add("playbook_settings", s.PlaybookSettings)
 	sort.Strings(out)
 	return out
