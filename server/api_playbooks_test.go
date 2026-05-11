@@ -1835,7 +1835,7 @@ func TestAddPostToTimeline(t *testing.T) {
 	require.NoError(t, err)
 
 	// Post the request with the dialog payload and verify it is allowed
-	_, err = e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
+	_, err = e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
 	require.NoError(t, err)
 }
 
