@@ -11,49 +11,49 @@ import (
 // --- Argument structs ---
 
 type CheckItemArgs struct {
-	RunID           string `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	ChecklistNumber int    `json:"checklist_number" jsonschema:"description=The zero-based index of the checklist"`
-	ItemNumber      int    `json:"item_number" jsonschema:"description=The zero-based index of the item within the checklist"`
-	NewState        string `json:"new_state,omitempty" jsonschema:"description=The new state for the item: open or closed (default: closed),enum=open,enum=closed,enum=skipped,default=closed"`
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist"`
+	ItemNumber      int    `json:"item_number" jsonschema:"The zero-based index of the item within the checklist"`
+	NewState        string `json:"new_state,omitempty" jsonschema:"The new state for the item: open, closed, or skipped (default: closed)"`
 }
 
 type AddChecklistItemArgs struct {
-	RunID           string `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	ChecklistNumber int    `json:"checklist_number" jsonschema:"description=The zero-based index of the checklist to add the item to"`
-	Title           string `json:"title" jsonschema:"description=Title of the new checklist item,minLength=1"`
-	Description     string `json:"description,omitempty" jsonschema:"description=Optional description for the item (supports Markdown)"`
-	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"description=Optional user ID to assign the item to"`
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist to add the item to"`
+	Title           string `json:"title" jsonschema:"Title of the new checklist item"`
+	Description     string `json:"description,omitempty" jsonschema:"Optional description for the item (supports Markdown)"`
+	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"Optional user ID to assign the item to"`
 }
 
 type EditChecklistItemArgs struct {
-	RunID           string  `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	ChecklistNumber int     `json:"checklist_number" jsonschema:"description=The zero-based index of the checklist"`
-	ItemNumber      int     `json:"item_number" jsonschema:"description=The zero-based index of the item within the checklist"`
-	Title           *string `json:"title,omitempty" jsonschema:"description=New title for the item"`
-	Description     *string `json:"description,omitempty" jsonschema:"description=New description for the item (supports Markdown)"`
-	Command         *string `json:"command,omitempty" jsonschema:"description=Slash command to associate with the item"`
+	RunID           string  `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int     `json:"checklist_number" jsonschema:"The zero-based index of the checklist"`
+	ItemNumber      int     `json:"item_number" jsonschema:"The zero-based index of the item within the checklist"`
+	Title           *string `json:"title,omitempty" jsonschema:"New title for the item"`
+	Description     *string `json:"description,omitempty" jsonschema:"New description for the item (supports Markdown)"`
+	Command         *string `json:"command,omitempty" jsonschema:"Slash command to associate with the item"`
 }
 
 type RemoveChecklistItemArgs struct {
-	RunID           string `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	ChecklistNumber int    `json:"checklist_number" jsonschema:"description=The zero-based index of the checklist"`
-	ItemNumber      int    `json:"item_number" jsonschema:"description=The zero-based index of the item to remove"`
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist"`
+	ItemNumber      int    `json:"item_number" jsonschema:"The zero-based index of the item to remove"`
 }
 
 type AddSectionArgs struct {
-	RunID string `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	Title string `json:"title" jsonschema:"description=Title of the new section,minLength=1"`
+	RunID string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	Title string `json:"title" jsonschema:"Title of the new section"`
 }
 
 type RenameSectionArgs struct {
-	RunID           string `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	ChecklistNumber int    `json:"checklist_number" jsonschema:"description=The zero-based index of the section to rename"`
-	Title           string `json:"title" jsonschema:"description=New title for the section,minLength=1"`
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the section to rename"`
+	Title           string `json:"title" jsonschema:"New title for the section"`
 }
 
 type RemoveSectionArgs struct {
-	RunID           string `json:"run_id" jsonschema:"description=The ID of the playbook run,minLength=26,maxLength=26"`
-	ChecklistNumber int    `json:"checklist_number" jsonschema:"description=The zero-based index of the section to remove"`
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the section to remove"`
 }
 
 // --- Tool registration ---
@@ -136,8 +136,19 @@ func toolCheckItem(ctx context.Context, client APIClient, args CheckItemArgs) (s
 		state = "closed"
 	}
 
+	apiState := state
+	switch state {
+	case "open":
+		apiState = ""
+	case "closed", "skipped":
+	case "in_progress":
+		return "", fmt.Errorf("new_state %q is not supported by this tool; use open, closed, or skipped", state)
+	default:
+		return "", fmt.Errorf("new_state must be one of open, closed, or skipped")
+	}
+
 	body := map[string]string{
-		"new_state": state,
+		"new_state": apiState,
 	}
 
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d/state", args.RunID, args.ChecklistNumber, args.ItemNumber)
@@ -188,7 +199,27 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 		return "", err
 	}
 
-	body := map[string]string{}
+	if args.Title == nil && args.Description == nil && args.Command == nil {
+		return "", fmt.Errorf("at least one field (title, description, or command) must be provided")
+	}
+
+	var run playbookRunDetail
+	if err := client.Get(ctx, fmt.Sprintf("runs/%s", args.RunID), nil, &run); err != nil {
+		return "", fmt.Errorf("failed to get current checklist item: %w", err)
+	}
+	if args.ChecklistNumber >= len(run.Checklists) {
+		return "", fmt.Errorf("checklist_number %d is out of range", args.ChecklistNumber)
+	}
+	if args.ItemNumber >= len(run.Checklists[args.ChecklistNumber].Items) {
+		return "", fmt.Errorf("item_number %d is out of range", args.ItemNumber)
+	}
+
+	currentItem := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber]
+	body := map[string]string{
+		"title":       currentItem.Title,
+		"description": currentItem.Description,
+		"command":     currentItem.Command,
+	}
 	if args.Title != nil {
 		body["title"] = *args.Title
 	}
@@ -197,9 +228,6 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 	}
 	if args.Command != nil {
 		body["command"] = *args.Command
-	}
-	if len(body) == 0 {
-		return "", fmt.Errorf("at least one field (title, description, or command) must be provided")
 	}
 
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d", args.RunID, args.ChecklistNumber, args.ItemNumber)

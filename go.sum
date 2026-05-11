@@ -306,8 +306,6 @@ github.com/mattermost/mattermost-plugin-agents v1.14.1-0.20260501175157-27e12955
 github.com/mattermost/mattermost-plugin-agents v1.14.1-0.20260501175157-27e12955f081/go.mod h1:3GvyTadvBgl0dlZbnchvB2FyS7xDzp3ycbDMgwsMRGE=
 github.com/mattermost/mattermost-plugin-ai v1.14.0 h1:Fba2ORHaMe0Dl0TfVtdC1eAQOkvgRzVz3v/B9V21d9w=
 github.com/mattermost/mattermost-plugin-ai v1.14.0/go.mod h1:L/I/IpdWNGbxRfUduCstCYbhyX59OEftxcpDHtCT4EI=
-github.com/mattermost/mattermost/server/public v0.3.1 h1:yKHRtDpyRQvHDhsWijASgEZxAWDsJYhn0SGygsE/RRs=
-github.com/mattermost/mattermost/server/public v0.3.1/go.mod h1:QnF/1Evlh7e3G8ifwut7Q5Joy/t4oHYNcDoyBTYuXho=
 github.com/mattermost/mattermost/server/public v0.3.2-0.20260505132525-ebc066e7fdbc h1:oIwcSJI9DjqeIsiKEfyd0eV0XmVctkvo7eyfdAL2vN8=
 github.com/mattermost/mattermost/server/public v0.3.2-0.20260505132525-ebc066e7fdbc/go.mod h1:VWtRZ9s/69vsoDCJ+4AHqB5VuaLk6gjS08NIuQgCAsk=
 github.com/mattermost/mattermost/server/v8 v8.0.0-20260505132525-ebc066e7fdbc h1:C7NsFrX2xYdWJJxXLo+4AuckJaLWP0yJdOTFncSFJ0Q=
