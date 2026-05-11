@@ -85,17 +85,35 @@ func runHeadlineCards(rc RenderContext, labels *Labels) []statCard {
 	}
 }
 
-// addExecutiveSummary emits the markdown Summary in a boxed surface.
-// Headline facts already appear on the cover via stat cards + meta
-// strip; repeating them here would be visual noise.
+// addExecutiveSummary emits the markdown Summary plus a dense facts
+// strip that restates the run's status, owner, and time window for
+// readers who jump straight to this section.
 func addExecutiveSummary(m core.Maroto, styles styleSet, rc RenderContext, labels *Labels, opts RenderOptions) {
 	addSectionHeading(m, styles, labels.SectionExecutiveSummary())
 
-	if strings.TrimSpace(rc.Run.Summary) == "" {
+	if strings.TrimSpace(rc.Run.Summary) != "" {
+		renderMarkdownBoxedInto(m, styles, rc.Run.Summary, rc.Resolvers)
+	} else {
 		addMutedText(m, styles, "No summary.")
-		return
 	}
-	renderMarkdownBoxedInto(m, styles, rc.Run.Summary, rc.Resolvers)
+	addBlankRow(m, rowHeightBlockGap)
+
+	ownerName := rc.Owner.DisplayName
+	if ownerName == "" {
+		ownerName = resolveUserDisplay(rc.Resolvers, rc.Owner.UserID, labels)
+	}
+	strip := []metaItem{
+		{Label: labels.Status(), Value: labels.StatusDisplay(rc.Run.Status)},
+		{Label: labels.Owner(), Value: ownerName},
+		{Label: labels.Started(), Value: labels.FormatDate(rc.Run.StartTimeMs)},
+	}
+	if rc.Run.EndTimeMs > 0 {
+		strip = append(strip,
+			metaItem{Label: labels.Ended(), Value: labels.FormatDate(rc.Run.EndTimeMs)},
+			metaItem{Label: labels.Duration(), Value: labels.FormatDuration(rc.Run.EndTimeMs - rc.Run.StartTimeMs)},
+		)
+	}
+	addMetaStrip(m, styles, strip)
 }
 
 // addTimeline emits the audit timeline as one row per event.
