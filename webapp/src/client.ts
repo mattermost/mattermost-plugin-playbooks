@@ -776,6 +776,136 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
     return [href, filename];
 };
 
+export type PDFExportSections = {
+    cover?: boolean;
+    executiveSummary?: boolean;
+    timeline?: boolean;
+    statusUpdates?: boolean;
+    checklists?: boolean;
+    retrospective?: boolean;
+    transcript?: boolean;
+    playbookOverview?: boolean;
+    playbookChecklistTemplates?: boolean;
+    playbookSettings?: boolean;
+};
+
+export class PDFExportError extends Error {
+    status: number;
+    requestId: string | null;
+
+    constructor(status: number, message: string, requestId: string | null) {
+        super(message);
+        this.name = 'PDFExportError';
+        this.status = status;
+        this.requestId = requestId;
+    }
+}
+
+export type PDFExportResult = {
+    blob: Blob;
+    filename: string;
+    truncated: boolean;
+};
+
+const SECTION_KEY_TO_PARAM: Record<keyof PDFExportSections, string> = {
+    cover: 'cover',
+    executiveSummary: 'summary',
+    timeline: 'timeline',
+    statusUpdates: 'status_updates',
+    checklists: 'checklists',
+    retrospective: 'retrospective',
+    transcript: 'transcript',
+    playbookOverview: 'overview',
+    playbookChecklistTemplates: 'checklist_templates',
+    playbookSettings: 'settings',
+};
+
+const sectionsToQueryString = (sections: PDFExportSections): string => {
+    const keys = Object.keys(sections) as (keyof PDFExportSections)[];
+    return keys
+        .filter((k) => sections[k])
+        .map((k) => SECTION_KEY_TO_PARAM[k])
+        .filter(Boolean)
+        .join(',');
+};
+
+const parseFilenameFromDisposition = (disposition: string | null, fallback: string): string => {
+    if (!disposition) {
+        return fallback;
+    }
+    const match = (/filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/i).exec(disposition);
+    return match?.[1] ? decodeURIComponent(match[1]) : fallback;
+};
+
+const fetchPDFExport = async (url: string, fallbackFilename: string): Promise<PDFExportResult> => {
+    const options = Client4.getOptions({
+        method: 'GET',
+        headers: {Accept: 'application/pdf'},
+    });
+    const resp = await fetch(url, options);
+    if (!resp.ok) {
+        let message = resp.statusText;
+        try {
+            const body = await resp.json();
+            message = body?.error || message;
+        } catch {
+            // body wasn't JSON; keep statusText
+        }
+        throw new PDFExportError(resp.status, message, resp.headers.get('X-Request-ID'));
+    }
+    const blob = await resp.blob();
+    return {
+        blob,
+        filename: parseFilenameFromDisposition(resp.headers.get('Content-Disposition'), fallbackFilename),
+        truncated: resp.headers.get('X-Playbooks-Report-Truncated') === 'true',
+    };
+};
+
+export async function exportRunReportPDF(runID: string, sections: PDFExportSections): Promise<PDFExportResult> {
+    const params = new URLSearchParams();
+    const list = sectionsToQueryString(sections);
+    if (list) {
+        params.set('sections', list);
+    }
+    const query = params.toString();
+    const url = `${apiUrl}/runs/${runID}/report.pdf${query ? `?${query}` : ''}`;
+    return fetchPDFExport(url, `run_${runID}.pdf`);
+}
+
+export async function exportPlaybookPDF(playbookID: string, sections: PDFExportSections): Promise<PDFExportResult> {
+    const params = new URLSearchParams();
+    const list = sectionsToQueryString(sections);
+    if (list) {
+        params.set('sections', list);
+    }
+    const query = params.toString();
+    const url = `${apiUrl}/playbooks/${playbookID}/report.pdf${query ? `?${query}` : ''}`;
+    return fetchPDFExport(url, `playbook_${playbookID}.pdf`);
+}
+
+export async function fetchChannelExportAvailable(): Promise<boolean> {
+    try {
+        const data = await doGet<{available: boolean}>(`${apiUrl}/integrations/channel-export-available`);
+        return Boolean(data?.available);
+    } catch {
+        return false;
+    }
+}
+
+export const triggerPDFDownload = (result: PDFExportResult) => {
+    const url = URL.createObjectURL(result.blob);
+    try {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+};
+
 export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
     const queryParams = qs.stringify({
         time_range: timeRange,

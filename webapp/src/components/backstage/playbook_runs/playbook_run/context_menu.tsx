@@ -33,8 +33,11 @@ import RunActionsModal from 'src/components/run_actions_modal';
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible} from 'src/selectors';
 
+import ExportOptionsModal, {SectionFlags} from 'src/components/export_options_modal';
+
 import {
     CopyRunLinkMenuItem,
+    DownloadRunPDFMenuItem,
     ExportChannelLogsMenuItem,
     FavoriteRunMenuItem,
     FinishRunMenuItem,
@@ -69,9 +72,11 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const currentUserId = useAppSelector(getCurrentUserId);
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [showPDFExportModal, setShowPDFExportModal] = useState(false);
     const showRunActionsFromRedux = useAppSelector(isRunActionsModalVisible);
     const [showRunActionsFromMenu, setShowRunActionsFromMenu] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const {runPDFExport} = useRunPDFExport(playbookRun.id);
     const titleTextRef = useRef<HTMLSpanElement>(null);
     const isTitleOverflowing = useTextOverflow(titleTextRef);
 
@@ -158,6 +163,9 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                         channelId={playbookRun.channel_id}
                         setShowModal={setShowExportModal}
                     />
+                    <DownloadRunPDFMenuItem
+                        onClick={() => setShowPDFExportModal(true)}
+                    />
                     <SaveAsPlaybookMenuItem
                         playbookRun={playbookRun}
                     />
@@ -197,8 +205,47 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 }}
             />
             {leaveRunConfirmModal}
+            {showPDFExportModal && (
+                <ExportOptionsModal
+                    surface='run'
+                    defaults={{}}
+                    onConfirm={(sections: SectionFlags) => {
+                        setShowPDFExportModal(false);
+                        runPDFExport(sections);
+                    }}
+                    onCancel={() => setShowPDFExportModal(false)}
+                />
+            )}
         </>
     );
+};
+
+const useRunPDFExport = (playbookRunId: string) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+
+    const runPDFExport = async (sections: SectionFlags) => {
+        try {
+            const {exportRunReportPDF, triggerPDFDownload} = await import('src/client');
+            const result = await exportRunReportPDF(playbookRunId, sections);
+            triggerPDFDownload(result);
+            if (result.truncated) {
+                addToast({
+                    content: formatMessage({defaultMessage: 'PDF generated, but the transcript was truncated due to size limits.'}),
+                    toastStyle: ToastStyle.Success,
+                });
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export PDF.'});
+            const requestId = (err as {requestId?: string | null})?.requestId;
+            addToast({
+                content: requestId ? `${message} (ref: ${requestId})` : message,
+                toastStyle: ToastStyle.Failure,
+            });
+        }
+    };
+
+    return {runPDFExport};
 };
 
 export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean) => {
