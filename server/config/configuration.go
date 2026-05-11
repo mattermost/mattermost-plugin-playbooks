@@ -31,6 +31,15 @@ type Configuration struct {
 	// EnableExperimentalFeatures controls whether experimental features are enabled in the plugin.
 	// These features may have in-progress UI, bugs, and other issues.
 	EnableExperimentalFeatures bool `json:"enableexperimentalfeatures"`
+
+	// PDF Report export (MM-68715 epic).
+	EnablePDFReports            bool `json:"enablepdfreports"`
+	MaxRunReportPosts           int  `json:"maxrunreportposts"`
+	MaxRunReportBytes           int  `json:"maxrunreportbytes"`
+	MaxConcurrentReports        int  `json:"maxconcurrentreports"`
+	MaxResolverLookupsPerExport int  `json:"maxresolverlookupsperexport"`
+	ExportTranscriptDefault     bool `json:"exporttranscriptdefault"`
+	ShowChannelExportCSVTip     bool `json:"showchannelexportcsvtip"`
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -48,5 +57,12 @@ func (c *Configuration) serialize() map[string]interface{} {
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	ret["EnableIncrementalUpdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
+	ret["EnablePDFReports"] = c.EnablePDFReports
+	ret["MaxRunReportPosts"] = c.MaxRunReportPosts
+	ret["MaxRunReportBytes"] = c.MaxRunReportBytes
+	ret["MaxConcurrentReports"] = c.MaxConcurrentReports
+	ret["MaxResolverLookupsPerExport"] = c.MaxResolverLookupsPerExport
+	ret["ExportTranscriptDefault"] = c.ExportTranscriptDefault
+	ret["ShowChannelExportCSVTip"] = c.ShowChannelExportCSVTip
 	return ret
 }

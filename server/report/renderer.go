@@ -7,6 +7,9 @@ import (
 	"bytes"
 	"context"
 	"time"
+
+	"github.com/johnfercher/maroto/v2"
+	"github.com/pkg/errors"
 )
 
 // PageSize selects the PDF page geometry.
@@ -96,10 +99,7 @@ func DefaultPlaybookSections() SectionFlags {
 // No interface is exposed — see plan §4.3 (MF-9). A future second
 // implementation will define an interface shaped by its real needs.
 type MarotoRenderer struct {
-	// fonts is the embedded font pack (Noto Sans + Noto Sans Mono).
-	// Loaded once at NewMarotoRenderer time.
 	fonts FontPack
-	// TODO(MM-68716, MM-68717): styles, markdown bridge, label catalog.
 }
 
 // NewMarotoRenderer constructs a MarotoRenderer with embedded assets.
@@ -130,8 +130,72 @@ func NewMarotoRenderer() (*MarotoRenderer, error) {
 // footer page AND in rc.TranscriptTruncation, which the caller surfaces via
 // the X-Playbooks-Report-Truncated[-Reason] response header.
 func (r *MarotoRenderer) RenderRun(ctx context.Context, rc RenderContext, opts RenderOptions) (*bytes.Buffer, error) {
-	// TODO(MM-68716): full implementation lands with the run section renderers.
-	return nil, ErrNotImplemented
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	labels := NewLabels(opts.Locale)
+	cfg, styles := buildMarotoConfig(r.fonts, opts.PageSize, labels, labels.ReportTitleRun())
+	m := maroto.New(cfg)
+
+	if err := registerHeaderFooter(m, styles, labels.ReportTitleRun()); err != nil {
+		return nil, errors.Wrap(err, "register run header/footer")
+	}
+
+	sections := opts.Sections
+
+	if sections.Cover {
+		addCover(m, styles, rc, labels, opts)
+	}
+	if sections.ExecutiveSummary {
+		addExecutiveSummary(m, styles, rc, labels, opts)
+	}
+	if sections.Timeline {
+		addTimeline(m, styles, rc, labels, opts)
+	}
+	if sections.StatusUpdates {
+		addStatusUpdates(m, styles, rc, labels, opts)
+	}
+	if sections.Checklists {
+		addChecklists(m, styles, rc, labels, opts)
+	}
+	if sections.Retrospective {
+		addRetrospective(m, styles, rc, labels, opts)
+	}
+	if sections.Transcript {
+		t := addTranscript(m, styles, rc, labels, opts)
+		rc.TranscriptTruncation = t
+	}
+
+	doc, err := m.Generate()
+	if err != nil {
+		return nil, errors.Wrap(err, "generate run PDF")
+	}
+
+	raw := doc.GetBytes()
+	if opts.MaxBytes > 0 && int64(len(raw)) > opts.MaxBytes {
+		raw, rc.TranscriptTruncation = runByteCappedFallback(r, labels, opts, "bytes")
+	}
+
+	return bytes.NewBuffer(raw), nil
+}
+
+// runByteCappedFallback emits a minimal one-page truncation notice when the
+// assembled run PDF exceeds opts.MaxBytes. The caller surfaces the truncation
+// state via the response header; the body remains a valid PDF.
+func runByteCappedFallback(r *MarotoRenderer, labels *Labels, opts RenderOptions, reason string) ([]byte, Truncation) {
+	cfg, styles := buildMarotoConfig(r.fonts, opts.PageSize, labels, labels.ReportTitleRun())
+	m := maroto.New(cfg)
+	_ = registerHeaderFooter(m, styles, labels.ReportTitleRun())
+
+	addSectionHeading(m, styles, labels.ReportTitleRun())
+	addBodyText(m, styles, labels.TranscriptTruncated(reason, 0))
+
+	doc, err := m.Generate()
+	if err != nil {
+		return []byte{}, Truncation{Hit: true, Reason: reason}
+	}
+	return doc.GetBytes(), Truncation{Hit: true, Reason: reason}
 }
 
 // RenderPlaybook renders a Playbook (template) as a PDF.
@@ -142,6 +206,55 @@ func (r *MarotoRenderer) RenderRun(ctx context.Context, rc RenderContext, opts R
 //
 // On success returns a complete buffer; on error returns nil and an error.
 func (r *MarotoRenderer) RenderPlaybook(ctx context.Context, pc PlaybookRenderContext, opts RenderOptions) (*bytes.Buffer, error) {
-	// TODO(MM-68717): full implementation lands with the playbook section renderers.
-	return nil, ErrNotImplemented
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	labels := NewLabels(opts.Locale)
+	cfg, styles := buildMarotoConfig(r.fonts, opts.PageSize, labels, labels.ReportTitlePlaybook())
+	m := maroto.New(cfg)
+
+	if err := registerHeaderFooter(m, styles, labels.ReportTitlePlaybook()); err != nil {
+		return nil, errors.Wrap(err, "register playbook header/footer")
+	}
+
+	sections := opts.Sections
+	if sections.PlaybookOverview {
+		addPlaybookOverview(m, styles, pc, labels, opts)
+	}
+	if sections.PlaybookChecklistTemplates {
+		addPlaybookChecklistTemplates(m, styles, pc, labels, opts)
+	}
+	if sections.PlaybookSettings {
+		addPlaybookSettings(m, styles, pc, labels, opts)
+	}
+
+	doc, err := m.Generate()
+	if err != nil {
+		return nil, errors.Wrap(err, "generate playbook PDF")
+	}
+
+	raw := doc.GetBytes()
+	if opts.MaxBytes > 0 && int64(len(raw)) > opts.MaxBytes {
+		raw = playbookByteCappedFallback(r, labels, opts)
+	}
+
+	return bytes.NewBuffer(raw), nil
+}
+
+// playbookByteCappedFallback emits a one-page truncation notice when the
+// assembled playbook PDF exceeds opts.MaxBytes.
+func playbookByteCappedFallback(r *MarotoRenderer, labels *Labels, opts RenderOptions) []byte {
+	cfg, styles := buildMarotoConfig(r.fonts, opts.PageSize, labels, labels.ReportTitlePlaybook())
+	m := maroto.New(cfg)
+	_ = registerHeaderFooter(m, styles, labels.ReportTitlePlaybook())
+
+	addSectionHeading(m, styles, labels.ReportTitlePlaybook())
+	addBodyText(m, styles, labels.TranscriptTruncated("bytes", 0))
+
+	doc, err := m.Generate()
+	if err != nil {
+		return []byte{}
+	}
+	return doc.GetBytes()
 }

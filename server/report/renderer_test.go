@@ -4,6 +4,7 @@
 package report
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -19,11 +20,10 @@ func TestNewMarotoRenderer(t *testing.T) {
 	require.NotNil(t, r)
 }
 
-// TestRenderRun_NotImplemented documents the staged build. Full rendering
-// lands with MM-68716; today, the entry point returns ErrNotImplemented.
-// When MM-68716 wires up the section pipeline, this test will be replaced
-// with golden-byte tests for each section combination.
-func TestRenderRun_NotImplemented(t *testing.T) {
+// TestRenderRun_EmptyContext exercises the full section pipeline with an
+// empty RenderContext. The renderer must return a valid PDF buffer — every
+// section function handles zero-value input gracefully.
+func TestRenderRun_EmptyContext(t *testing.T) {
 	r, err := NewMarotoRenderer()
 	require.NoError(t, err)
 
@@ -31,13 +31,14 @@ func TestRenderRun_NotImplemented(t *testing.T) {
 		Sections: DefaultRunSections(),
 		Locale:   "en",
 	})
-	require.Nil(t, buf)
-	require.ErrorIs(t, err, ErrNotImplemented)
+	require.NoError(t, err)
+	require.NotNil(t, buf)
+	require.Greater(t, buf.Len(), 0)
+	require.True(t, bytes.HasPrefix(buf.Bytes(), []byte("%PDF-")), "output must start with PDF magic")
 }
 
-// TestRenderPlaybook_NotImplemented is the playbook-surface counterpart of
-// TestRenderRun_NotImplemented and will be replaced when MM-68717 lands.
-func TestRenderPlaybook_NotImplemented(t *testing.T) {
+// TestRenderPlaybook_EmptyContext is the playbook-surface counterpart.
+func TestRenderPlaybook_EmptyContext(t *testing.T) {
 	r, err := NewMarotoRenderer()
 	require.NoError(t, err)
 
@@ -45,9 +46,12 @@ func TestRenderPlaybook_NotImplemented(t *testing.T) {
 		Sections: DefaultPlaybookSections(),
 		Locale:   "en",
 	})
-	require.Nil(t, buf)
-	require.ErrorIs(t, err, ErrNotImplemented)
+	require.NoError(t, err)
+	require.NotNil(t, buf)
+	require.Greater(t, buf.Len(), 0)
+	require.True(t, bytes.HasPrefix(buf.Bytes(), []byte("%PDF-")), "output must start with PDF magic")
 }
+
 
 // TestDefaultRunSections_TranscriptOffByDefault locks in the "transcript
 // off by default" decision (spec.md AC implication; plan §10 round-1 #3).
