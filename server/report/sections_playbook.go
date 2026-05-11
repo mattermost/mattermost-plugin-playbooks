@@ -88,7 +88,7 @@ func addPlaybookChecklistTemplates(m core.Maroto, styles styleSet, pc PlaybookRe
 			if ti > 0 {
 				addBlankRow(m, rowHeightBlockGap)
 			}
-			addTaskRow(m, styles, taskGlyph(""), it.Title)
+			addTaskRow(m, styles, "", it.Title)
 
 			if meta := buildTemplateItemMeta(it, pc.Resolvers, labels); meta != "" {
 				addTaskIndentedLine(m, styles, meta, styles.meta())
