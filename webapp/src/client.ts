@@ -811,12 +811,12 @@ const SECTION_KEY_TO_PARAM: Record<keyof PDFExportSections, string> = {
     cover: 'cover',
     executiveSummary: 'summary',
     timeline: 'timeline',
-    statusUpdates: 'status_updates',
-    checklists: 'checklists',
-    retrospective: 'retrospective',
+    statusUpdates: 'updates',
+    checklists: 'tasks',
+    retrospective: 'retro',
     transcript: 'transcript',
     playbookOverview: 'overview',
-    playbookChecklistTemplates: 'checklist_templates',
+    playbookChecklistTemplates: 'tasks',
     playbookSettings: 'settings',
 };
 
