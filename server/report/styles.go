@@ -40,6 +40,7 @@ var mattermostBrand = props.Color{Red: 28, Green: 88, Blue: 217}
 var inkPrimary = props.Color{Red: 32, Green: 32, Blue: 38}
 var inkMuted = props.Color{Red: 110, Green: 110, Blue: 120}
 var inkSubtle = props.Color{Red: 180, Green: 180, Blue: 190}
+var inkInverse = props.Color{Red: 255, Green: 255, Blue: 255}
 
 // surfaceMutedBackground is the soft fill applied to markdown content
 // boxes (descriptions, summaries, retro body, template bodies). Light
@@ -47,11 +48,28 @@ var inkSubtle = props.Color{Red: 180, Green: 180, Blue: 190}
 // separate field value from its label.
 var surfaceMutedBackground = props.Color{Red: 244, Green: 244, Blue: 248}
 
-func brand() *props.Color      { c := mattermostBrand; return &c }
-func primary() *props.Color    { c := inkPrimary; return &c }
-func muted() *props.Color      { c := inkMuted; return &c }
-func subtle() *props.Color     { c := inkSubtle; return &c }
-func surfaceMuted() *props.Color { c := surfaceMutedBackground; return &c }
+// surfaceCardBackground is the soft fill used for stat cards and chips
+// on the dashboard surfaces — slightly cooler than surfaceMutedBackground
+// so cards sit visually distinct from boxed markdown content.
+var surfaceCardBackground = props.Color{Red: 238, Green: 241, Blue: 248}
+
+// statusInProgress / statusFinished / statusNeutral encode the status
+// pill colors. In-progress runs glow brand-blue; finished runs read
+// success-green; unknown / neutral stays muted.
+var statusInProgressBackground = props.Color{Red: 28, Green: 88, Blue: 217}
+var statusFinishedBackground = props.Color{Red: 31, Green: 138, Blue: 87}
+var statusNeutralBackground = props.Color{Red: 110, Green: 110, Blue: 120}
+
+func brand() *props.Color            { c := mattermostBrand; return &c }
+func primary() *props.Color          { c := inkPrimary; return &c }
+func muted() *props.Color            { c := inkMuted; return &c }
+func subtle() *props.Color           { c := inkSubtle; return &c }
+func inverse() *props.Color          { c := inkInverse; return &c }
+func surfaceMuted() *props.Color     { c := surfaceMutedBackground; return &c }
+func surfaceCard() *props.Color      { c := surfaceCardBackground; return &c }
+func statusInProgress() *props.Color { c := statusInProgressBackground; return &c }
+func statusFinished() *props.Color   { c := statusFinishedBackground; return &c }
+func statusNeutral() *props.Color    { c := statusNeutralBackground; return &c }
 
 // styleSet carries the resolved font families for one render. Built per
 // request from the FontPack — falls back to maroto's bundled families when
