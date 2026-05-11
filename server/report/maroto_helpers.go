@@ -13,6 +13,7 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
+	"github.com/johnfercher/maroto/v2/pkg/consts/orientation"
 	"github.com/johnfercher/maroto/v2/pkg/consts/pagesize"
 	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/core/entity"
@@ -182,6 +183,76 @@ func addMutedText(m core.Maroto, styles styleSet, s string) {
 		return
 	}
 	m.AddAutoRow(col.New(12).Add(text.New(s, styles.meta())))
+}
+
+// indentRule renders a left-edge vertical rule for the narrow indent column
+// used by task-list rendering, matching the in-app Playbooks task UI which
+// nests items under a checklist header behind a vertical guide line.
+func indentRule() core.Col {
+	return col.New(1).Add(line.New(props.Line{
+		Color:         subtle(),
+		Thickness:     0.6,
+		Orientation:   orientation.Vertical,
+		OffsetPercent: 30,
+		SizePercent:   100,
+	}))
+}
+
+// addTaskRow emits a top-level task line: vertical rule + bullet glyph + title.
+// glyph is a state marker drawn from taskGlyph(state).
+func addTaskRow(m core.Maroto, styles styleSet, glyph, title string) {
+	bullet := glyph
+	if bullet == "" {
+		bullet = "•"
+	}
+	m.AddAutoRow(
+		indentRule(),
+		col.New(1).Add(text.New(bullet, styles.bodyBold())),
+		col.New(10).Add(text.New(title, styles.bodyBold())),
+	)
+}
+
+// addTaskIndentedLine emits an indented secondary line under a task (meta /
+// description). Sits behind the same vertical rule as its parent row.
+func addTaskIndentedLine(m core.Maroto, styles styleSet, s string, t props.Text) {
+	if s == "" {
+		return
+	}
+	m.AddAutoRow(
+		indentRule(),
+		col.New(1),
+		col.New(10).Add(text.New(s, t)),
+	)
+}
+
+// renderIndentedMarkdownInto routes markdown through the same vertical-rule
+// indent as task meta lines.
+func renderIndentedMarkdownInto(m core.Maroto, styles styleSet, body string, rt ResolverTable) {
+	body = strings.TrimSpace(body)
+	if body == "" {
+		return
+	}
+	for _, ln := range strings.Split(body, "\n") {
+		if ln == "" {
+			addBlankRow(m, rowHeightBlockGap)
+			continue
+		}
+		addTaskIndentedLine(m, styles, ln, styles.body())
+	}
+}
+
+// taskGlyph maps a checklist-item state to its bracketed text glyph. Uses
+// ASCII so it renders reliably under any font (the embedded Noto Sans pack
+// is gated behind Phase A2; until then Helvetica/Courier fallback applies).
+func taskGlyph(state string) string {
+	switch state {
+	case "Closed":
+		return "[x]"
+	case "Skipped":
+		return "[~]"
+	default:
+		return "[ ]"
+	}
 }
 
 // renderMarkdownInto is the bridge to the markdown extension. The body is
