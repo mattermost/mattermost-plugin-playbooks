@@ -12,6 +12,7 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
+	"github.com/johnfercher/maroto/v2/pkg/consts/border"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/consts/orientation"
 	"github.com/johnfercher/maroto/v2/pkg/consts/pagesize"
@@ -198,18 +199,40 @@ func indentRule() core.Col {
 	}))
 }
 
-// addTaskRow emits a top-level task line: vertical rule + bullet glyph + title.
-// glyph is a state marker drawn from taskGlyph(state).
-func addTaskRow(m core.Maroto, styles styleSet, glyph, title string) {
-	bullet := glyph
-	if bullet == "" {
-		bullet = "•"
-	}
+// addTaskRow emits a top-level task line: vertical rule + checkbox cell +
+// title. The checkbox is a real bordered cell whose fill encodes state —
+// closed = brand-filled, skipped = subtle-filled, open = empty bordered
+// box. No glyph is required, so the visual reads correctly under the
+// Helvetica/Courier fallback that ships before the Noto Sans pack lands
+// in Phase A2.
+func addTaskRow(m core.Maroto, styles styleSet, state, title string) {
 	m.AddAutoRow(
 		indentRule(),
-		col.New(1).Add(text.New(bullet, styles.bodyBold())),
+		taskCheckboxCol(state),
 		col.New(10).Add(text.New(title, styles.bodyBold())),
 	)
+}
+
+// taskCheckboxCol returns a col styled to look like a UI checkbox for the
+// given run-state. The cell carries border + optional background fill;
+// inner content is a single non-breaking space so the cell measures the
+// row's body height (otherwise an empty col degenerates to zero height
+// and the border disappears).
+func taskCheckboxCol(state string) core.Col {
+	style := &props.Cell{
+		BorderType:      border.Full,
+		BorderColor:     muted(),
+		BorderThickness: 0.4,
+	}
+	switch state {
+	case "Closed":
+		style.BorderColor = brand()
+		style.BackgroundColor = brand()
+	case "Skipped":
+		style.BorderColor = muted()
+		style.BackgroundColor = muted()
+	}
+	return col.New(1).WithStyle(style).Add(text.New(" ", props.Text{Size: fontSizeBody}))
 }
 
 // addTaskIndentedLine emits an indented secondary line under a task (meta /
@@ -347,19 +370,6 @@ func renderIndentedMarkdownInto(m core.Maroto, styles styleSet, body string, rt 
 	}
 }
 
-// taskGlyph maps a checklist-item state to its bracketed text glyph. Uses
-// ASCII so it renders reliably under any font (the embedded Noto Sans pack
-// is gated behind Phase A2; until then Helvetica/Courier fallback applies).
-func taskGlyph(state string) string {
-	switch state {
-	case "Closed":
-		return "[x]"
-	case "Skipped":
-		return "[~]"
-	default:
-		return "[ ]"
-	}
-}
 
 // renderMarkdownInto is the bridge to the markdown extension. The body is
 // parsed once via markdown.Render and the resulting instruction stream is

@@ -153,7 +153,7 @@ func addChecklists(m core.Maroto, styles styleSet, rc RenderContext, labels *Lab
 			if ti > 0 {
 				addBlankRow(m, rowHeightBlockGap)
 			}
-			addTaskRow(m, styles, taskGlyph(it.State), it.Title)
+			addTaskRow(m, styles, it.State, it.Title)
 
 			if meta := buildChecklistItemMeta(it, rc.Resolvers, labels); meta != "" {
 				addTaskIndentedLine(m, styles, meta, styles.meta())
