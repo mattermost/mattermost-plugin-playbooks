@@ -3,6 +3,19 @@
 
 package report
 
+import "github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
+
+// Render* DTOs live in the coretypes sub-package so the markdown extension
+// can reference them without forming an import cycle with this package.
+// Callers continue to use report.RenderUser / report.ResolverTable / etc.
+type (
+	RenderUser        = coretypes.RenderUser
+	RenderChannel     = coretypes.RenderChannel
+	RenderFile        = coretypes.RenderFile
+	RenderPostPreview = coretypes.RenderPostPreview
+	ResolverTable     = coretypes.ResolverTable
+)
+
 // RenderContext is the sanitized input to RenderRun. All fields are
 // internal DTOs — never raw model.User / model.Post / model.Channel.
 //
@@ -94,40 +107,11 @@ type RenderPlaybook struct {
 	TeamID      string
 }
 
-// RenderUser carries only the display fields needed for the PDF — never
-// emails, never auth fields, never anything raw from model.User.
-type RenderUser struct {
-	UserID      string // included so the markdown extension can match mentions
-	DisplayName string
-	Username    string // fallback when no display name is configured
-}
-
-// RenderChannel carries only display information for a channel.
-type RenderChannel struct {
-	ChannelID   string
-	Name        string // url-safe slug, e.g., "ops-room"
-	DisplayName string
-	Type        string // "O" | "P" | "D" | "G"
-}
-
 // RenderTeam carries only display information for a team.
 type RenderTeam struct {
 	TeamID      string
 	Name        string
 	DisplayName string
-}
-
-// RenderFile is a sanitized reference to a file attachment.
-//
-// Renderer note: file names can carry sensitive context ("Q3-confidential.pdf").
-// The caller has already authorized the requester to see the file via the
-// containing post's permissions — the renderer trusts that and emits Name as
-// shown in the UI.
-type RenderFile struct {
-	FileID string
-	Name   string
-	Size   int64
-	Kind   string // "image" | "doc" | "audio" | "video" | "other"
 }
 
 // RenderWebhook is the credentials-aware representation of a webhook URL.
@@ -227,27 +211,6 @@ type RenderPost struct {
 	RootID   string // empty if not a reply
 	Type     string // post type — used to filter system noise
 	Files    []RenderFile
-}
-
-// RenderPostPreview is a permalink-to-post preview card. Populated by the
-// pre-resolution table when permalinks are enabled (MM-68723 / v1.1);
-// zero-value in v1.
-type RenderPostPreview struct {
-	PostID      string
-	Author      RenderUser
-	Channel     RenderChannel
-	CreateAt    int64
-	Excerpt     string // first N chars of message, no markdown re-render
-}
-
-// ResolverTable is the pre-built lookup the markdown extension consumes.
-// All map values are zero-initialized when the requester cannot see the
-// target (deny path byte-identical to "not found") — see plan §3.6.6.
-type ResolverTable struct {
-	Users      map[string]RenderUser
-	Channels   map[string]RenderChannel
-	Files      map[string]RenderFile
-	Permalinks map[string]RenderPostPreview // populated only in MM-68723
 }
 
 // Truncation records whether a section was truncated by a cap.
