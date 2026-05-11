@@ -418,40 +418,61 @@ func (h *ExportHandler) checkAcceptPDF(r *http.Request) error {
 	return errors.New("Accept header does not include application/pdf")
 }
 
-// verifyCSRF compares the X-CSRF-Token header to the session's stored CSRF
-// token in constant time. Origin is checked as a belt-and-suspenders defense
-// when SiteURL is configured.
+// verifyCSRF defends a GET-with-side-effects endpoint against cross-origin
+// abuse (a hostile page triggering the export against a logged-in victim
+// via <img src> or <a href>, draining the render-slot semaphore). The
+// check passes when ANY of:
+//
+//  1. A valid X-CSRF-Token header matches the session's stored token
+//     (constant-time compared).
+//  2. X-Requested-With: XMLHttpRequest is set — denies <img>/<a>/<link>
+//     since the browser will not let those tags set custom headers.
+//  3. Origin / Referer is present and matches the configured SiteURL.
+//
+// All three are paths the Mattermost webapp's fetch wrapper uses. The
+// vector we close (cross-origin browser-triggered GET) cannot satisfy
+// any of them.
 func (h *ExportHandler) verifyCSRF(r *http.Request) error {
+	if h.csrfTokenMatchesSession(r) {
+		return nil
+	}
+	if strings.EqualFold(r.Header.Get("X-Requested-With"), "XMLHttpRequest") {
+		return nil
+	}
+	if h.originIsSameSite(r) {
+		return nil
+	}
+	return errors.New("CSRF: no matching defense (X-CSRF-Token / X-Requested-With / same-Origin)")
+}
+
+func (h *ExportHandler) csrfTokenMatchesSession(r *http.Request) bool {
 	headerToken := r.Header.Get("X-CSRF-Token")
 	if headerToken == "" {
-		return errors.New("missing CSRF token")
+		return false
 	}
 	sessionID := readSessionToken(r)
 	if sessionID == "" {
-		return errors.New("missing session token")
+		return false
 	}
 	session, err := h.pluginAPI.Session.Get(sessionID)
-	if err != nil {
-		return errors.Wrap(err, "session lookup failed")
+	if err != nil || session == nil {
+		return false
 	}
-	if session == nil {
-		return errors.New("session not found")
-	}
-	if subtle.ConstantTimeCompare([]byte(headerToken), []byte(session.GetCSRF())) != 1 {
-		return errors.New("CSRF token mismatch")
-	}
-	origin := r.Header.Get("Origin")
-	if origin == "" {
-		return nil
-	}
+	return subtle.ConstantTimeCompare([]byte(headerToken), []byte(session.GetCSRF())) == 1
+}
+
+func (h *ExportHandler) originIsSameSite(r *http.Request) bool {
 	siteURL := h.siteURL()
 	if siteURL == "" {
-		return nil
+		return false
 	}
-	if !strings.HasPrefix(origin, siteURL) {
-		return errors.New("origin mismatch")
+	if origin := r.Header.Get("Origin"); origin != "" {
+		return strings.HasPrefix(origin, siteURL)
 	}
-	return nil
+	if referer := r.Header.Get("Referer"); referer != "" {
+		return strings.HasPrefix(referer, siteURL)
+	}
+	return false
 }
 
 func (h *ExportHandler) siteURL() string {
