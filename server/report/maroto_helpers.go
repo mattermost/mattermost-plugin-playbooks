@@ -199,17 +199,15 @@ func indentRule() core.Col {
 	}))
 }
 
-// addTaskRow emits a top-level task line: vertical rule + checkbox cell +
-// title. The checkbox is a real bordered cell whose fill encodes state —
-// closed = brand-filled, skipped = subtle-filled, open = empty bordered
-// box. No glyph is required, so the visual reads correctly under the
-// Helvetica/Courier fallback that ships before the Noto Sans pack lands
-// in Phase A2.
+// addTaskRow emits a top-level task line: checkbox cell + title. The
+// checkbox is a real bordered cell whose fill encodes state — closed =
+// brand-filled, skipped = subtle-filled, open = empty bordered box.
+// The checkbox itself anchors the row visually; no extra indent rule
+// is needed in front of it.
 func addTaskRow(m core.Maroto, styles styleSet, state, title string) {
 	m.AddAutoRow(
-		indentRule(),
 		taskCheckboxCol(state),
-		col.New(10).Add(text.New(title, styles.bodyBold())),
+		col.New(11).Add(text.New(title, styles.bodyBold())),
 	)
 }
 
@@ -429,16 +427,17 @@ func taskCheckboxCol(state string) core.Col {
 	return col.New(1).WithStyle(style).Add(text.New(" ", props.Text{Size: fontSizeBody}))
 }
 
-// addTaskIndentedLine emits an indented secondary line under a task (meta /
-// description). Sits behind the same vertical rule as its parent row.
+// addTaskIndentedLine emits an indented secondary line under a task
+// (meta / description). A vertical rule leads the row so the reader
+// sees the content as a continuation of the parent task; the row
+// content starts at the same column as the task title above.
 func addTaskIndentedLine(m core.Maroto, styles styleSet, s string, t props.Text) {
 	if s == "" {
 		return
 	}
 	m.AddAutoRow(
 		indentRule(),
-		col.New(1),
-		col.New(10).Add(text.New(s, t)),
+		col.New(11).Add(text.New(s, t)),
 	)
 }
 
@@ -485,10 +484,7 @@ func dispatchInstructionBoxed(m core.Maroto, styles styleSet, ins markdown.Instr
 			addBoxedMarkdownLine(m, styles, text, styles.bodyBold())
 		}
 	case markdown.ParagraphI:
-		if text := flattenInline(v.Children); text != "" {
-			addBoxedMarkdownLine(m, styles, text, styles.body())
-		}
-		addClickableLinks(m, styles, collectExternalLinks(v.Children))
+		emitLinkedBoxed(m, styles, flattenInline(v.Children), collectExternalLinks(v.Children), styles.body())
 	case markdown.ListI:
 		for i, item := range v.Items {
 			text := flattenInline(item)
@@ -499,14 +495,10 @@ func dispatchInstructionBoxed(m core.Maroto, styles styleSet, ins markdown.Instr
 			if v.Ordered {
 				prefix = strconv.Itoa(i+1) + ". "
 			}
-			addBoxedMarkdownLine(m, styles, prefix+text, styles.body())
-			addClickableLinks(m, styles, collectExternalLinks(item))
+			emitLinkedBoxed(m, styles, prefix+text, collectExternalLinks(item), styles.body())
 		}
 	case markdown.BlockquoteI:
-		if text := flattenInline(v.Children); text != "" {
-			addBoxedMarkdownLine(m, styles, "> "+text, styles.body())
-		}
-		addClickableLinks(m, styles, collectExternalLinks(v.Children))
+		emitLinkedBoxed(m, styles, "> "+flattenInline(v.Children), collectExternalLinks(v.Children), styles.body())
 	case markdown.CodeBlockI:
 		body := strings.TrimRight(v.Body, "\n")
 		if body != "" {
@@ -580,10 +572,7 @@ func dispatchInstructionIndented(m core.Maroto, styles styleSet, rt ResolverTabl
 			addTaskIndentedLine(m, styles, text, styles.bodyBold())
 		}
 	case markdown.ParagraphI:
-		if text := flattenInline(v.Children); text != "" {
-			addTaskIndentedLine(m, styles, text, styles.body())
-		}
-		addClickableLinks(m, styles, collectExternalLinks(v.Children))
+		emitLinkedIndented(m, styles, flattenInline(v.Children), collectExternalLinks(v.Children), styles.body())
 	case markdown.ListI:
 		for i, item := range v.Items {
 			text := flattenInline(item)
@@ -594,13 +583,10 @@ func dispatchInstructionIndented(m core.Maroto, styles styleSet, rt ResolverTabl
 			if v.Ordered {
 				prefix = strconv.Itoa(i+1) + ". "
 			}
-			addTaskIndentedLine(m, styles, prefix+text, styles.body())
-			addClickableLinks(m, styles, collectExternalLinks(item))
+			emitLinkedIndented(m, styles, prefix+text, collectExternalLinks(item), styles.body())
 		}
 	case markdown.BlockquoteI:
-		if text := flattenInline(v.Children); text != "" {
-			addTaskIndentedLine(m, styles, "> "+text, styles.body())
-		}
+		emitLinkedIndented(m, styles, "> "+flattenInline(v.Children), collectExternalLinks(v.Children), styles.body())
 	case markdown.CodeBlockI:
 		body := strings.TrimRight(v.Body, "\n")
 		if body != "" {
@@ -670,11 +656,7 @@ func dispatchInstruction(m core.Maroto, styles styleSet, ins markdown.Instructio
 			addSubHeading(m, styles, text)
 		}
 	case markdown.ParagraphI:
-		text := flattenInline(v.Children)
-		if text != "" {
-			addBodyText(m, styles, text)
-		}
-		addClickableLinks(m, styles, collectExternalLinks(v.Children))
+		emitLinkedParagraph(m, styles, flattenInline(v.Children), collectExternalLinks(v.Children), styles.body())
 	case markdown.ListI:
 		for i, item := range v.Items {
 			text := flattenInline(item)
@@ -685,15 +667,10 @@ func dispatchInstruction(m core.Maroto, styles styleSet, ins markdown.Instructio
 			if v.Ordered {
 				prefix = strconv.Itoa(i+1) + ". "
 			}
-			addBodyText(m, styles, prefix+text)
-			addClickableLinks(m, styles, collectExternalLinks(item))
+			emitLinkedParagraph(m, styles, prefix+text, collectExternalLinks(item), styles.body())
 		}
 	case markdown.BlockquoteI:
-		text := flattenInline(v.Children)
-		if text != "" {
-			addBodyText(m, styles, "> "+text)
-		}
-		addClickableLinks(m, styles, collectExternalLinks(v.Children))
+		emitLinkedParagraph(m, styles, "> "+flattenInline(v.Children), collectExternalLinks(v.Children), styles.body())
 	case markdown.CodeBlockI:
 		body := strings.TrimRight(v.Body, "\n")
 		if body != "" {
@@ -769,20 +746,83 @@ func collectExternalLinks(items []markdown.Instruction) []externalLink {
 	return out
 }
 
+// emitLinkedBoxed is the boxed-surface analog of emitLinkedParagraph.
+// Single-link rows render the whole boxed line as a clickable hyperlink
+// in brand color; multi-link rows fall back to plain prose + clickable
+// URL rows beneath.
+func emitLinkedBoxed(m core.Maroto, styles styleSet, body string, links []externalLink, baseStyle props.Text) {
+	body = strings.TrimSpace(body)
+	if body == "" {
+		return
+	}
+	if len(links) == 1 {
+		hyperlink := links[0].url
+		linkedStyle := baseStyle
+		linkedStyle.Color = brand()
+		linkedStyle.Hyperlink = &hyperlink
+		addBoxedMarkdownLine(m, styles, body, linkedStyle)
+		return
+	}
+	addBoxedMarkdownLine(m, styles, body, baseStyle)
+	addClickableLinks(m, styles, links)
+}
+
+// emitLinkedIndented is the task-indented analog of emitLinkedParagraph.
+func emitLinkedIndented(m core.Maroto, styles styleSet, body string, links []externalLink, baseStyle props.Text) {
+	body = strings.TrimSpace(body)
+	if body == "" {
+		return
+	}
+	if len(links) == 1 {
+		hyperlink := links[0].url
+		linkedStyle := baseStyle
+		linkedStyle.Color = brand()
+		linkedStyle.Hyperlink = &hyperlink
+		addTaskIndentedLine(m, styles, body, linkedStyle)
+		return
+	}
+	addTaskIndentedLine(m, styles, body, baseStyle)
+	addClickableLinks(m, styles, links)
+}
+
+// emitLinkedParagraph renders a body line that may contain markdown
+// hyperlinks. When the line carries exactly one allowed link the whole
+// row becomes a clickable hyperlink in brand color — readers can click
+// any part of the prose to open the URL, which is the closest the
+// pure-Go PDF grid model can get to "inline clickable text". When the
+// line carries multiple links the prose stays plain and the URLs land
+// in a small references row below.
+//
+// When body is empty (e.g. a stripped-out marker), nothing is emitted.
+func emitLinkedParagraph(m core.Maroto, styles styleSet, body string, links []externalLink, baseStyle props.Text) {
+	body = strings.TrimSpace(body)
+	if body == "" {
+		return
+	}
+	if len(links) == 1 {
+		hyperlink := links[0].url
+		linkedStyle := baseStyle
+		linkedStyle.Color = brand()
+		linkedStyle.Hyperlink = &hyperlink
+		m.AddAutoRow(col.New(12).Add(text.New(body, linkedStyle)))
+		return
+	}
+	m.AddAutoRow(col.New(12).Add(text.New(body, baseStyle)))
+	addClickableLinks(m, styles, links)
+}
+
 // addClickableLinks emits one row per discovered external link. The row
-// renders just the URL in brand color, prefixed with a small arrow, and
-// carries the PDF Hyperlink action so readers can click straight from
-// the document. The matching label text already lives in the prose, so
-// repeating it here would clutter the output.
+// renders just the URL in brand color and carries the PDF Hyperlink
+// action so readers can click straight from the document. Used as the
+// multi-link fallback under emitLinkedParagraph and at indent sites
+// where the row-level Hyperlink trick doesn't fit.
 func addClickableLinks(m core.Maroto, styles styleSet, links []externalLink) {
 	for _, ln := range links {
 		hyperlink := ln.url
 		linkProps := styles.meta()
 		linkProps.Color = brand()
 		linkProps.Hyperlink = &hyperlink
-		m.AddAutoRow(
-			col.New(12).Add(text.New("↗ "+ln.url, linkProps)),
-		)
+		m.AddAutoRow(col.New(12).Add(text.New(ln.url, linkProps)))
 	}
 }
 
