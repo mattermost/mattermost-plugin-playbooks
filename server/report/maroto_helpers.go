@@ -225,6 +225,112 @@ func addTaskIndentedLine(m core.Maroto, styles styleSet, s string, t props.Text)
 	)
 }
 
+// addBoxedMarkdownLine renders one line of markdown content inside a
+// soft-filled rounded surface that visually separates field values from
+// their labels. Used by descriptions, summaries, retro bodies, and
+// template bodies.
+func addBoxedMarkdownLine(m core.Maroto, styles styleSet, s string, t props.Text) {
+	if s == "" {
+		return
+	}
+	boxStyle := &props.Cell{BackgroundColor: surfaceMuted()}
+	m.AddAutoRow(
+		col.New(12).WithStyle(boxStyle).Add(text.New("  "+s, t)),
+	)
+}
+
+// renderMarkdownBoxedInto routes markdown through a boxed surface — soft
+// background, gentle left padding — so the reader can distinguish a body
+// value from its surrounding labels. Used at every body site that emits
+// authored prose: run summary, status updates, retrospective, playbook
+// description, status / retro templates.
+func renderMarkdownBoxedInto(m core.Maroto, styles styleSet, body string, rt ResolverTable) {
+	body = strings.TrimSpace(body)
+	if body == "" {
+		return
+	}
+	instructions := markdown.Render([]byte(body), rt)
+	if len(instructions) == 0 {
+		for _, ln := range strings.Split(body, "\n") {
+			addBoxedMarkdownLine(m, styles, ln, styles.body())
+		}
+		return
+	}
+	for _, ins := range instructions {
+		dispatchInstructionBoxed(m, styles, ins)
+	}
+}
+
+func dispatchInstructionBoxed(m core.Maroto, styles styleSet, ins markdown.Instruction) {
+	switch v := ins.(type) {
+	case markdown.HeadingI:
+		if text := flattenInline(v.Children); text != "" {
+			addBoxedMarkdownLine(m, styles, text, styles.bodyBold())
+		}
+	case markdown.ParagraphI:
+		if text := flattenInline(v.Children); text != "" {
+			addBoxedMarkdownLine(m, styles, text, styles.body())
+		}
+		addClickableLinks(m, styles, collectExternalLinks(v.Children))
+	case markdown.ListI:
+		for i, item := range v.Items {
+			text := flattenInline(item)
+			if text == "" {
+				continue
+			}
+			prefix := "• "
+			if v.Ordered {
+				prefix = strconv.Itoa(i+1) + ". "
+			}
+			addBoxedMarkdownLine(m, styles, prefix+text, styles.body())
+			addClickableLinks(m, styles, collectExternalLinks(item))
+		}
+	case markdown.BlockquoteI:
+		if text := flattenInline(v.Children); text != "" {
+			addBoxedMarkdownLine(m, styles, "> "+text, styles.body())
+		}
+		addClickableLinks(m, styles, collectExternalLinks(v.Children))
+	case markdown.CodeBlockI:
+		body := strings.TrimRight(v.Body, "\n")
+		if body != "" {
+			addBoxedMarkdownLine(m, styles, body, styles.code())
+		}
+	case markdown.TableI:
+		if header := flattenInline(v.Header); header != "" {
+			addBoxedMarkdownLine(m, styles, header, styles.bodyBold())
+		}
+		for _, row := range v.Rows {
+			parts := make([]string, 0, len(row))
+			for _, cell := range row {
+				if c := flattenInline(cell); c != "" {
+					parts = append(parts, c)
+				}
+			}
+			if len(parts) > 0 {
+				addBoxedMarkdownLine(m, styles, strings.Join(parts, " | "), styles.body())
+			}
+		}
+	case markdown.HRI:
+		addBoxedMarkdownLine(m, styles, "———", styles.meta())
+	case markdown.ImageI:
+		alt := v.Alt
+		if alt == "" {
+			alt = v.URL
+		}
+		addBoxedMarkdownLine(m, styles, "[image: "+alt+"]", styles.meta())
+	case markdown.FileEmbedI:
+		name := v.File.Name
+		if name == "" {
+			name = v.File.FileID
+		}
+		addBoxedMarkdownLine(m, styles, "[file: "+name+"]", styles.meta())
+	default:
+		if text := flattenInline([]markdown.Instruction{ins}); text != "" {
+			addBoxedMarkdownLine(m, styles, text, styles.body())
+		}
+	}
+}
+
 // renderIndentedMarkdownInto routes markdown through the same vertical-rule
 // indent as task meta lines.
 func renderIndentedMarkdownInto(m core.Maroto, styles styleSet, body string, rt ResolverTable) {
@@ -286,6 +392,7 @@ func dispatchInstruction(m core.Maroto, styles styleSet, ins markdown.Instructio
 		if text != "" {
 			addBodyText(m, styles, text)
 		}
+		addClickableLinks(m, styles, collectExternalLinks(v.Children))
 	case markdown.ListI:
 		for i, item := range v.Items {
 			text := flattenInline(item)
@@ -297,12 +404,14 @@ func dispatchInstruction(m core.Maroto, styles styleSet, ins markdown.Instructio
 				prefix = strconv.Itoa(i+1) + ". "
 			}
 			addBodyText(m, styles, prefix+text)
+			addClickableLinks(m, styles, collectExternalLinks(item))
 		}
 	case markdown.BlockquoteI:
 		text := flattenInline(v.Children)
 		if text != "" {
 			addBodyText(m, styles, "> "+text)
 		}
+		addClickableLinks(m, styles, collectExternalLinks(v.Children))
 	case markdown.CodeBlockI:
 		body := strings.TrimRight(v.Body, "\n")
 		if body != "" {
@@ -341,6 +450,61 @@ func dispatchInstruction(m core.Maroto, styles styleSet, ins markdown.Instructio
 		if text := flattenInline([]markdown.Instruction{ins}); text != "" {
 			addBodyText(m, styles, text)
 		}
+	}
+}
+
+// externalLink carries one allowed-scheme URL discovered inside an inline
+// stream, to be emitted as a clickable PDF link below the prose. label is
+// the text that appeared inside the markdown link; url is the destination.
+type externalLink struct {
+	label string
+	url   string
+}
+
+// collectExternalLinks walks an inline instruction tree and returns every
+// allowed-scheme LinkI with a non-empty URL. Disallowed schemes are not
+// included — they render as inert text inline only (no clickable surface
+// in the PDF). Plan §3.2 / MF-2.
+func collectExternalLinks(items []markdown.Instruction) []externalLink {
+	var out []externalLink
+	for _, ins := range items {
+		switch v := ins.(type) {
+		case markdown.LinkI:
+			if !v.Allowed || strings.TrimSpace(v.Href) == "" {
+				continue
+			}
+			label := strings.TrimSpace(flattenInline(v.Children))
+			if label == "" {
+				label = v.Href
+			}
+			out = append(out, externalLink{label: label, url: v.Href})
+		case markdown.ParagraphI:
+			out = append(out, collectExternalLinks(v.Children)...)
+		case markdown.BlockquoteI:
+			out = append(out, collectExternalLinks(v.Children)...)
+		}
+	}
+	return out
+}
+
+// addClickableLinks emits one "Link: label → url" row per discovered
+// external link, with the URL portion carrying a PDF Hyperlink action so
+// readers can click straight from the document.
+func addClickableLinks(m core.Maroto, styles styleSet, links []externalLink) {
+	for _, ln := range links {
+		hyperlink := ln.url
+		linkProps := styles.body()
+		linkProps.Color = brand()
+		linkProps.Hyperlink = &hyperlink
+
+		labelText := ln.label
+		if labelText == "" {
+			labelText = ln.url
+		}
+		m.AddAutoRow(
+			col.New(2).Add(text.New("Link:", styles.label())),
+			col.New(10).Add(text.New(labelText+" → "+ln.url, linkProps)),
+		)
 	}
 }
 

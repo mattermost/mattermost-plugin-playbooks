@@ -47,7 +47,7 @@ func addExecutiveSummary(m core.Maroto, styles styleSet, rc RenderContext, label
 	addSectionHeading(m, styles, labels.SectionExecutiveSummary())
 
 	if strings.TrimSpace(rc.Run.Summary) != "" {
-		renderMarkdownInto(m, styles, rc.Run.Summary, rc.Resolvers)
+		renderMarkdownBoxedInto(m, styles, rc.Run.Summary, rc.Resolvers)
 		addBlankRow(m, rowHeightBlockGap)
 	}
 
@@ -108,7 +108,7 @@ func addStatusUpdates(m core.Maroto, styles styleSet, rc RenderContext, labels *
 		author := resolveUserDisplay(rc.Resolvers, su.AuthorID, labels)
 		head := fmt.Sprintf("%s — %s", author, labels.FormatDate(su.CreateAt))
 		addCardHeading(m, styles, head)
-		renderMarkdownInto(m, styles, su.Message, rc.Resolvers)
+		renderMarkdownBoxedInto(m, styles, su.Message, rc.Resolvers)
 		if i < len(rc.StatusUpdates)-1 {
 			addBlankRow(m, rowHeightBlockGap)
 			addDivider(m)
@@ -199,7 +199,7 @@ func addRetrospective(m core.Maroto, styles styleSet, rc RenderContext, labels *
 	addSectionHeading(m, styles, labels.SectionRetrospective())
 
 	if strings.TrimSpace(rc.Retrospective.Body) != "" {
-		renderMarkdownInto(m, styles, rc.Retrospective.Body, rc.Resolvers)
+		renderMarkdownBoxedInto(m, styles, rc.Retrospective.Body, rc.Resolvers)
 		addBlankRow(m, rowHeightBlockGap)
 	} else {
 		addMutedText(m, styles, "No retrospective body.")
