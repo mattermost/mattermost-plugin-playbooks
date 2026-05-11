@@ -78,6 +78,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", withContext(handler.getPlaybookRun)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", withContext(handler.getPlaybookRunMetadata)).Methods(http.MethodGet)
+	registerRunExportRoute(playbookRunRouter)
 	playbookRunRouter.HandleFunc("/status-updates", withContext(handler.getStatusUpdates)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
