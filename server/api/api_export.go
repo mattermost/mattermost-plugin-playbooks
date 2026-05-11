@@ -617,14 +617,14 @@ var (
 		"summary":    func(s *report.SectionFlags) { s.ExecutiveSummary = true },
 		"timeline":   func(s *report.SectionFlags) { s.Timeline = true },
 		"updates":    func(s *report.SectionFlags) { s.StatusUpdates = true },
-		"checklists": func(s *report.SectionFlags) { s.Checklists = true },
+		"tasks":      func(s *report.SectionFlags) { s.Checklists = true },
 		"retro":      func(s *report.SectionFlags) { s.Retrospective = true },
 		"transcript": func(s *report.SectionFlags) { s.Transcript = true },
 	}
 	sectionFlagsForPlaybook = map[string]func(*report.SectionFlags){
-		"overview":            func(s *report.SectionFlags) { s.PlaybookOverview = true },
-		"checklist_templates": func(s *report.SectionFlags) { s.PlaybookChecklistTemplates = true },
-		"settings":            func(s *report.SectionFlags) { s.PlaybookSettings = true },
+		"overview": func(s *report.SectionFlags) { s.PlaybookOverview = true },
+		"tasks":    func(s *report.SectionFlags) { s.PlaybookChecklistTemplates = true },
+		"settings": func(s *report.SectionFlags) { s.PlaybookSettings = true },
 	}
 )
 
@@ -668,11 +668,11 @@ func sectionsToList(s report.SectionFlags) []string {
 	add("summary", s.ExecutiveSummary)
 	add("timeline", s.Timeline)
 	add("updates", s.StatusUpdates)
-	add("checklists", s.Checklists)
+	add("tasks", s.Checklists)
 	add("retro", s.Retrospective)
 	add("transcript", s.Transcript)
 	add("playbook_overview", s.PlaybookOverview)
-	add("playbook_checklist_templates", s.PlaybookChecklistTemplates)
+	add("playbook_tasks", s.PlaybookChecklistTemplates)
 	add("playbook_settings", s.PlaybookSettings)
 	sort.Strings(out)
 	return out

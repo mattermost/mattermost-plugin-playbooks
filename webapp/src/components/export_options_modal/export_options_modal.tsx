@@ -66,12 +66,12 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
         {key: 'executiveSummary', label: formatMessage({defaultMessage: 'Executive summary'})},
         {key: 'timeline', label: formatMessage({defaultMessage: 'Timeline'})},
         {key: 'statusUpdates', label: formatMessage({defaultMessage: 'Status updates'})},
-        {key: 'checklists', label: formatMessage({defaultMessage: 'Checklists'})},
+        {key: 'checklists', label: formatMessage({defaultMessage: 'Tasks'})},
         {key: 'retrospective', label: formatMessage({defaultMessage: 'Retrospective'})},
         {key: 'transcript', label: formatMessage({defaultMessage: 'Channel transcript'})},
     ] : [
         {key: 'playbookOverview', label: formatMessage({defaultMessage: 'Overview'})},
-        {key: 'playbookChecklistTemplates', label: formatMessage({defaultMessage: 'Checklist templates'})},
+        {key: 'playbookChecklistTemplates', label: formatMessage({defaultMessage: 'Tasks'})},
         {key: 'playbookSettings', label: formatMessage({defaultMessage: 'Settings & automations'})},
     ];
 

@@ -38,7 +38,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
           type="checkbox"
         />
         <span>
-          Checklist templates
+          Tasks
         </span>
       </label>
       <label
@@ -136,7 +136,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
           type="checkbox"
         />
         <span>
-          Checklists
+          Tasks
         </span>
       </label>
       <label
