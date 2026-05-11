@@ -9,6 +9,8 @@ import GenericModal from 'src/components/widgets/generic_modal';
 
 export type Surface = 'run' | 'playbook';
 
+export type ExportFormat = 'md' | 'html' | 'pdf';
+
 export type SectionFlags = {
     cover?: boolean;
     executiveSummary?: boolean;
@@ -25,9 +27,10 @@ export type SectionFlags = {
 export type ExportOptionsModalProps = {
     surface: Surface;
     defaults: SectionFlags;
-    onConfirm: (sections: SectionFlags) => void;
+    onConfirm: (sections: SectionFlags, format: ExportFormat) => void;
     onCancel: () => void;
     channelExportAvailable?: boolean;
+    pdfAvailableServerSide?: boolean; // true when PdfRendererBackend is configured
 };
 
 type ToggleRow = {
@@ -56,10 +59,11 @@ export const DEFAULT_SECTIONS = {
     playbook: PLAYBOOK_DEFAULTS,
 };
 
-const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExportAvailable = false}: ExportOptionsModalProps) => {
+const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExportAvailable = false, pdfAvailableServerSide = false}: ExportOptionsModalProps) => {
     const {formatMessage} = useIntl();
     const baseDefaults = surface === 'run' ? RUN_DEFAULTS : PLAYBOOK_DEFAULTS;
     const [sections, setSections] = useState<SectionFlags>({...baseDefaults, ...defaults});
+    const [format, setFormat] = useState<ExportFormat>('pdf');
 
     const rows: ToggleRow[] = surface === 'run' ? [
         {key: 'cover', label: formatMessage({defaultMessage: 'Cover page'})},
@@ -82,8 +86,8 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
     const anySelected = rows.some((r) => sections[r.key]);
 
     const headerText = surface === 'run' ?
-        formatMessage({defaultMessage: 'Download run as PDF'}) :
-        formatMessage({defaultMessage: 'Download playbook as PDF'});
+        formatMessage({defaultMessage: 'Export run report'}) :
+        formatMessage({defaultMessage: 'Export playbook'});
 
     return (
         <GenericModal
@@ -92,15 +96,51 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
             show={true}
             onHide={onCancel}
             handleCancel={onCancel}
-            handleConfirm={() => onConfirm(sections)}
+            handleConfirm={() => onConfirm(sections, format)}
             confirmButtonText={<FormattedMessage defaultMessage='Download'/>}
             cancelButtonText={<FormattedMessage defaultMessage='Cancel'/>}
             isConfirmDisabled={!anySelected}
             showCancel={true}
         >
             <Body>
+                <FormatSelector>
+                    <FormatButton
+                        data-testid='format-button-md'
+                        selected={format === 'md'}
+                        onClick={() => setFormat('md')}
+                    >
+                        <i className='icon icon-file-text-outline'/>
+                        <FormattedMessage defaultMessage='Markdown'/>
+                    </FormatButton>
+                    <FormatButton
+                        data-testid='format-button-html'
+                        selected={format === 'html'}
+                        onClick={() => setFormat('html')}
+                    >
+                        <i className='icon icon-code-tags'/>
+                        <FormattedMessage defaultMessage='HTML'/>
+                    </FormatButton>
+                    <FormatButton
+                        data-testid='format-button-pdf'
+                        selected={format === 'pdf'}
+                        onClick={() => setFormat('pdf')}
+                    >
+                        <i className='icon icon-file-pdf-outline'/>
+                        <FormattedMessage defaultMessage='PDF'/>
+                    </FormatButton>
+                </FormatSelector>
+                {format === 'pdf' && !pdfAvailableServerSide && (
+                    <FormatHint data-testid='format-hint'>
+                        <FormattedMessage defaultMessage='Rendered in your browser — Save as PDF in the print dialog'/>
+                    </FormatHint>
+                )}
+                {format === 'pdf' && pdfAvailableServerSide && (
+                    <FormatHint data-testid='format-hint'>
+                        <FormattedMessage defaultMessage='Server-rendered via Gotenberg'/>
+                    </FormatHint>
+                )}
                 <Description>
-                    <FormattedMessage defaultMessage='Select the sections to include in the PDF.'/>
+                    <FormattedMessage defaultMessage='Select the sections to include in the export.'/>
                 </Description>
                 <Toggles>
                     {rows.map((row) => (
@@ -119,7 +159,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                 </Toggles>
                 {surface === 'run' && channelExportAvailable && (
                     <ChannelExportHint data-testid='channel-export-hint'>
-                        <FormattedMessage defaultMessage='Need a CSV transcript? Use channel-export’s /export slash command in this run’s channel.'/>
+                        <FormattedMessage defaultMessage="Need a CSV transcript? Use channel-export's /export slash command in this run's channel."/>
                     </ChannelExportHint>
                 )}
             </Body>
@@ -173,4 +213,35 @@ const ChannelExportHint = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 12px;
     line-height: 16px;
+`;
+
+const FormatSelector = styled.div`
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+`;
+
+const FormatButton = styled.button<{selected: boolean}>`
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1.5px solid ${({selected}) => selected ? 'var(--button-bg, #1c58d9)' : 'rgba(var(--center-channel-color-rgb, 63, 67, 80), 0.16)'};
+    background: ${({selected}) => selected ? 'rgba(var(--button-bg-rgb, 28, 88, 217), 0.08)' : 'transparent'};
+    color: ${({selected}) => selected ? 'var(--button-bg, #1c58d9)' : 'var(--center-channel-color, #3f4350)'};
+    font-size: 14px;
+    font-weight: ${({selected}) => selected ? 600 : 400};
+    cursor: pointer;
+    transition: all 0.1s;
+    &:hover { background: rgba(var(--button-bg-rgb, 28, 88, 217), 0.08); }
+`;
+
+const FormatHint = styled.p`
+    font-size: 12px;
+    color: rgba(var(--center-channel-color-rgb, 63, 67, 80), 0.64);
+    margin: -8px 0 12px;
+    text-align: center;
 `;
