@@ -107,14 +107,14 @@ func (s *ReportService) AssembleRunReportContext(
 	userID string,
 	sections report.SectionFlags,
 	locale string,
-) (report.RenderContext, error) {
+) (report.RenderContext, ResolverStats, error) {
 	if err := s.permissionsService.RunView(userID, runID); err != nil {
-		return report.RenderContext{}, err
+		return report.RenderContext{}, ResolverStats{}, err
 	}
 
 	run, err := s.runService.GetPlaybookRun(runID)
 	if err != nil {
-		return report.RenderContext{}, errors.Wrap(err, "failed to load run")
+		return report.RenderContext{}, ResolverStats{}, errors.Wrap(err, "failed to load run")
 	}
 
 	rc := report.RenderContext{
@@ -189,7 +189,7 @@ func (s *ReportService) AssembleRunReportContext(
 			})
 			transcript, tErr := drainTranscript(ctx, iter, s.config.MaxRunReportPosts, s.config.MaxRunReportBytes)
 			if tErr != nil && !errors.Is(tErr, context.Canceled) {
-				return report.RenderContext{}, errors.Wrap(tErr, "failed to assemble transcript")
+				return report.RenderContext{}, ResolverStats{}, errors.Wrap(tErr, "failed to assemble transcript")
 			}
 			rc.Transcript = transcript.posts
 			rc.TranscriptTruncation = transcript.truncation
@@ -203,14 +203,14 @@ func (s *ReportService) AssembleRunReportContext(
 	}
 
 	users, channelNames, fileIDs := extractResolverTargets(&rc)
-	table, _, rerr := s.buildResolverTable(ctx, userID, users, channelNames, fileIDs, s.config)
+	table, stats, rerr := s.buildResolverTable(ctx, userID, users, channelNames, fileIDs, s.config)
 	if rerr != nil {
-		return report.RenderContext{}, rerr
+		return report.RenderContext{}, ResolverStats{}, rerr
 	}
 	rc.Resolvers = table
 
 	rc.GeneratedAtMillis = time.Now().UnixMilli()
-	return rc, nil
+	return rc, stats, nil
 }
 
 // AssemblePlaybookReportContext builds the sanitized PlaybookRenderContext.
@@ -221,14 +221,14 @@ func (s *ReportService) AssemblePlaybookReportContext(
 	sections report.SectionFlags,
 	locale string,
 	hasPlaybookManage bool,
-) (report.PlaybookRenderContext, error) {
+) (report.PlaybookRenderContext, ResolverStats, error) {
 	if err := s.permissionsService.PlaybookView(userID, playbookID); err != nil {
-		return report.PlaybookRenderContext{}, err
+		return report.PlaybookRenderContext{}, ResolverStats{}, err
 	}
 
 	pb, err := s.playbookService.Get(playbookID)
 	if err != nil {
-		return report.PlaybookRenderContext{}, errors.Wrap(err, "failed to load playbook")
+		return report.PlaybookRenderContext{}, ResolverStats{}, errors.Wrap(err, "failed to load playbook")
 	}
 
 	pc := report.PlaybookRenderContext{
@@ -299,7 +299,7 @@ func (s *ReportService) AssemblePlaybookReportContext(
 	}
 
 	pc.GeneratedAtMillis = time.Now().UnixMilli()
-	return pc, nil
+	return pc, ResolverStats{}, nil
 }
 
 // channelPostsIterator returns a paging iterator over a channel's posts,

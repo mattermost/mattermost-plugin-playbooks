@@ -61,16 +61,9 @@ const (
 	filenameMaxLen = 80
 )
 
-// ResolverStats mirrors the shape ReportService returns so the handler can
-// fold it into audit records without taking a hard dep on the parallel T3
-// build. The struct shape is reconciled at integration.
-type ResolverStats struct {
-	UsersLookedUp    int
-	ChannelsLookedUp int
-	FilesLookedUp    int
-	CacheHits        int
-	CacheMisses      int
-}
+// ResolverStats is aliased to the app-layer type the ReportService
+// produces. The handler folds the values into audit records.
+type ResolverStats = app.ResolverStats
 
 // ReportService is the contract T3 (parallel) implements. It is declared
 // here as an interface so this handler can be exercised in isolation.
@@ -582,11 +575,9 @@ func (h *ExportHandler) auditSuccess(logger logrus.FieldLogger, event, userID, r
 		"resource_id":       resourceID,
 		"correlation_id":    correlationID,
 		"sections":          sectionsToList(sections),
-		"resolver_users":    stats.UsersLookedUp,
-		"resolver_channels": stats.ChannelsLookedUp,
-		"resolver_files":    stats.FilesLookedUp,
-		"resolver_hits":     stats.CacheHits,
-		"resolver_misses":   stats.CacheMisses,
+		"resolver_lookups":     stats.Lookups,
+		"resolver_cached":      stats.Cached,
+		"resolver_cap_hit":     stats.CapHit,
 		"truncated":         trunc.Hit,
 		"truncated_reason":  trunc.Reason,
 		"truncated_posts":   trunc.Posts,

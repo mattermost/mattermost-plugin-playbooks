@@ -28,6 +28,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 
@@ -264,6 +265,29 @@ func (p *Plugin) OnActivate() error {
 			return p.tabAppJWTKeyFunc
 		},
 	)
+
+	pdfRenderer, rendererErr := report.NewMarotoRenderer()
+	if rendererErr != nil {
+		logrus.WithError(rendererErr).Warn("playbooks pdf renderer init failed; report.pdf endpoints will return 404")
+	} else {
+		reportSvc := app.NewReportService(
+			p.playbookRunService,
+			p.playbookService,
+			p.permissions,
+			pluginAPIClient,
+			auditorService,
+			app.DefaultReportConfig(),
+		)
+		api.RegisterExportHandler(api.NewExportHandler(
+			pluginAPIClient,
+			p.config,
+			p.permissions,
+			p.playbookRunService,
+			p.playbookService,
+			reportSvc,
+			pdfRenderer,
+		))
+	}
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
