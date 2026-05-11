@@ -33,6 +33,7 @@ require (
 	github.com/mattermost/mattermost/server/public v0.1.22-0.20260113165922-8e4cadbc88ee
 	github.com/mattermost/mattermost/server/v8 v8.0.0-20260113162330-9e1d4c2072c0
 	github.com/mattermost/morph v1.1.0
+	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
@@ -146,7 +147,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.21 // indirect
 	github.com/mholt/archives v0.1.5 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
