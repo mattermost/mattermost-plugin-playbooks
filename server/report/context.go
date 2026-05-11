@@ -129,20 +129,20 @@ type RenderWebhook struct {
 
 // RenderStatusUpdate is one status post in a run's update stream.
 type RenderStatusUpdate struct {
-	PostID    string
-	AuthorID  string
-	CreateAt  int64
-	Message   string // markdown body
+	PostID   string
+	AuthorID string
+	CreateAt int64
+	Message  string // markdown body
 }
 
 // RenderTimelineEvent is one entry in the run's audit timeline.
 type RenderTimelineEvent struct {
-	EventType    string // "incident_created" | "task_state_modified" | ...
-	CreateAt     int64
-	Summary      string
-	Details      string
-	SubjectID    string // user / channel / etc. — depends on EventType
-	CreatorID    string
+	EventType string // "incident_created" | "task_state_modified" | ...
+	CreateAt  int64
+	Summary   string
+	Details   string
+	SubjectID string // user / channel / etc. — depends on EventType
+	CreatorID string
 }
 
 // RenderChecklist is one checklist (run instance or playbook template).
@@ -219,4 +219,49 @@ type Truncation struct {
 	Reason string // "posts" | "bytes" | ""
 	Posts  int    // posts actually included
 	Bytes  int64  // bytes written before truncation (if Reason == "bytes")
+}
+
+// SectionFlags selects which sections are included in a render.
+//
+// Run sections: Cover, ExecutiveSummary, Timeline, StatusUpdates, Checklists,
+// Retrospective, Transcript.
+//
+// Playbook sections: PlaybookOverview, PlaybookChecklistTemplates,
+// PlaybookSettings.
+type SectionFlags struct {
+	Cover            bool
+	ExecutiveSummary bool
+	Timeline         bool
+	StatusUpdates    bool
+	Checklists       bool
+	Retrospective    bool
+	Transcript       bool
+
+	PlaybookOverview           bool
+	PlaybookChecklistTemplates bool
+	PlaybookSettings           bool
+}
+
+// DefaultRunSections returns the default section set for a run export:
+// everything except the transcript.
+func DefaultRunSections() SectionFlags {
+	return SectionFlags{
+		Cover:            true,
+		ExecutiveSummary: true,
+		Timeline:         true,
+		StatusUpdates:    true,
+		Checklists:       true,
+		Retrospective:    true,
+		Transcript:       false,
+	}
+}
+
+// DefaultPlaybookSections returns the default section set for a playbook
+// export: all playbook-specific sections enabled.
+func DefaultPlaybookSections() SectionFlags {
+	return SectionFlags{
+		PlaybookOverview:           true,
+		PlaybookChecklistTemplates: true,
+		PlaybookSettings:           true,
+	}
 }

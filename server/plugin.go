@@ -29,7 +29,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/renderer/html2pdf"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/renderer/html2pdf/gotenberg"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
@@ -276,32 +275,34 @@ func (p *Plugin) OnActivate() error {
 		},
 	)
 
-	pdfRenderer, rendererErr := report.NewMarotoRenderer()
-	if rendererErr != nil {
-		logrus.WithError(rendererErr).Warn("playbooks pdf renderer init failed; report.pdf endpoints will return 404")
-	} else {
-		reportSvc := app.NewReportService(
-			p.playbookRunService,
-			p.playbookService,
-			p.permissions,
-			pluginAPIClient,
-			auditorService,
-			app.DefaultReportConfig(),
-		)
-		api.RegisterExportHandler(api.NewExportHandler(
-			pluginAPIClient,
-			p.config,
-			p.permissions,
-			p.playbookRunService,
-			p.playbookService,
-			reportSvc,
-			pdfRenderer,
-		))
-	}
-
 	// Build the HTML→PDF renderer (Gotenberg or none) and start the background
 	// health-check ticker. Rebuilds happen on OnConfigurationChange.
 	p.rebuildRenderer()
+
+	reportSvc := app.NewReportService(
+		p.playbookRunService,
+		p.playbookService,
+		p.permissions,
+		pluginAPIClient,
+		auditorService,
+		app.DefaultReportConfig(),
+	)
+	api.RegisterExportHandler(api.NewExportHandler(
+		pluginAPIClient,
+		p.config,
+		p.permissions,
+		p.playbookRunService,
+		p.playbookService,
+		reportSvc,
+		func() html2pdf.HTMLPdfRenderer {
+			ptr := p.htmlPdfRenderer.Load()
+			if ptr == nil {
+				return nil
+			}
+			return *ptr
+		},
+	))
+
 	healthCtx, healthCancel := context.WithCancel(context.Background())
 	p.rendererHealthCancel = healthCancel
 	go p.runRendererHealthCheck(healthCtx)
