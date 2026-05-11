@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -110,6 +111,33 @@ type TestEnvironment struct {
 	RegularUser2             *model.User
 	RegularUserNotInTeam     *model.User
 	GuestUser                *model.User
+}
+
+func (e *TestEnvironment) DoPluginAPIRequestWithHeaders(ctx context.Context, client *model.Client4, method, path, data string, headers map[string]string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, client.URL+"/plugins/"+manifest.Id+path, strings.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+	if client.AuthToken != "" {
+		req.Header.Set(model.HeaderAuth, client.AuthType+" "+client.AuthToken)
+	}
+	for key, value := range client.HTTPHeader {
+		req.Header.Set(key, value)
+	}
+
+	resp, err := client.HTTPClient.Do(req)
+	if err != nil {
+		return resp, err
+	}
+	if resp.StatusCode >= 300 {
+		defer resp.Body.Close()
+		return resp, model.AppErrorFromJSON(resp.Body)
+	}
+	return resp, nil
 }
 
 // Global bundle cache to avoid recreating for every test
