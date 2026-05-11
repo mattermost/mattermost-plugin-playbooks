@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>{{.Title}}</title>
+  <style>{{.FontCSS}}</style>
+  {{template "_styles" .}}
+</head>
+<body>
+  <h1>{{.Run.Name}}</h1>
+  {{if eq .Run.Status "InProgress"}}
+  <span class="status-pill status-pill--inprogress">In Progress</span>
+  {{else if eq .Run.Status "Finished"}}
+  <span class="status-pill status-pill--finished">Finished</span>
+  {{else if .Run.Status}}
+  <span class="status-pill status-pill--neutral">{{.Run.Status}}</span>
+  {{end}}
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-card__label">Tasks</div>
+      <div class="stat-card__value">{{.TasksDone}}/{{.TasksTotal}}</div>
+      {{if gt .TasksTotal 0}}<div class="stat-card__hint">{{.TasksPct}}% complete</div>{{end}}
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Updates</div>
+      <div class="stat-card__value">{{len .StatusUpdates}}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Participants</div>
+      <div class="stat-card__value">{{len .Participants}}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Duration</div>
+      <div class="stat-card__value">{{if .Duration}}{{.Duration}}{{else}}—{{end}}</div>
+    </div>
+  </div>
+
+  <p class="meta-strip">
+    <strong>Owner:</strong> {{.OwnerDisplay}}
+    {{if .StartedAt}} · <strong>Started:</strong> {{.StartedAt}}{{end}}
+    {{if .EndedAt}} · <strong>Ended:</strong> {{.EndedAt}}{{end}}
+    {{if .Run.PlaybookTitle}} · <strong>Playbook:</strong> {{.Run.PlaybookTitle}}{{end}}
+  </p>
+
+  {{if .Participants}}
+  <div class="member-grid">
+    {{range .Participants}}<span class="member-chip">@{{if .Username}}{{.Username}}{{else}}_redacted_{{end}}</span>{{end}}
+  </div>
+  {{end}}
+
+  <h2>Executive Summary</h2>
+  {{if .SummaryHTML}}<div class="boxed-md">{{.SummaryHTML}}</div>
+  {{else}}<p class="muted">No summary.</p>{{end}}
+
+  <h2>Timeline</h2>
+  {{if .TimelineEvents}}
+  {{range .TimelineEvents}}
+  <div class="timeline-event">
+    <span class="timeline-event__date">{{.FormattedDate}}</span>
+    <span>{{.Summary}}{{if .Details}} — <em>{{.Details}}</em>{{end}}</span>
+  </div>
+  {{end}}
+  {{else}}<p class="muted">No timeline events.</p>{{end}}
+
+  <h2>Status Updates</h2>
+  {{if .StatusUpdates}}
+  {{range .StatusUpdates}}
+  <div class="card">
+    <div class="card__header">{{.AuthorDisplay}} — {{.FormattedDate}}</div>
+    {{if .Body}}<div class="boxed-md">{{.Body}}</div>{{else}}<p class="muted">No message.</p>{{end}}
+  </div>
+  {{end}}
+  {{else}}<p class="muted">No status updates.</p>{{end}}
+
+  <h2>Tasks</h2>
+  {{if .Checklists}}
+  {{range .Checklists}}
+  <h3>{{.Title}} ({{.Done}}/{{.Total}} · {{.Pct}}%)</h3>
+  <div class="checklist">
+    {{range .Items}}
+    <div class="task{{if eq .State "Skipped"}} task--skipped{{end}}">
+      <input type="checkbox" {{if eq .State "Closed"}}checked{{end}} disabled>
+      <div>
+        <div class="task__title">{{.TitleHTML}}</div>
+        {{if or .AssigneeDisplay .DueDateStr}}<div class="task__meta">{{if .AssigneeDisplay}}{{.AssigneeDisplay}}{{else}}Unassigned{{end}}{{if .DueDateStr}} · Due: {{.DueDateStr}}{{end}}</div>{{end}}
+        {{if .DescHTML}}<div class="task__desc">{{.DescHTML}}</div>{{end}}
+        {{if .Command}}<code class="task__cmd">{{.Command}}</code>{{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+  {{else}}<p class="muted">No tasks.</p>{{end}}
+
+  <h2>Retrospective</h2>
+  {{if .Retrospective.BodyHTML}}<div class="boxed-md">{{.Retrospective.BodyHTML}}</div>
+  {{else if not .Retrospective.Metrics}}<p class="muted">No retrospective.</p>{{end}}
+  {{if .Retrospective.Metrics}}
+  <h3>Metrics</h3>
+  {{range .Retrospective.Metrics}}
+  <p><strong>{{.Title}}:</strong> {{.ValueStr}}{{if .Description}} — <span class="muted">{{.Description}}</span>{{end}}</p>
+  {{end}}
+  {{end}}
+
+  <h2>Transcript</h2>
+  {{if .TranscriptOmitted}}
+  <p class="muted">Transcript omitted — you are not a member of the run's channel.</p>
+  {{else if .Transcript}}
+  {{range .Transcript}}
+  <div class="transcript-thread">
+    <div class="msg-header">{{.AuthorDisplay}}<span>{{.FormattedDate}}</span></div>
+    {{if .BodyHTML}}<div class="msg-body">{{.BodyHTML}}</div>{{end}}
+    {{range .Replies}}
+    <div class="transcript-reply">
+      <div class="msg-header">↳ {{.AuthorDisplay}}<span>{{.FormattedDate}}</span></div>
+      {{if .BodyHTML}}<div class="msg-body">{{.BodyHTML}}</div>{{end}}
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+  {{if .TranscriptTruncation.Hit}}
+  <p class="muted">Transcript truncated (post-cap, {{.TranscriptTruncation.Posts}} posts shown).</p>
+  {{end}}
+  {{else}}<p class="muted">No transcript.</p>{{end}}
+
+  <hr class="divider">
+  <p class="muted">Generated {{.GeneratedAt}} UTC.</p>
+</body>
+</html>
