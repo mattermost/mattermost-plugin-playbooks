@@ -208,9 +208,30 @@ func (s *ReportService) AssembleRunReportContext(
 		return report.RenderContext{}, ResolverStats{}, rerr
 	}
 	rc.Resolvers = table
+	seedResolverUsers(&rc.Resolvers, userCache)
 
 	rc.GeneratedAtMillis = time.Now().UnixMilli()
 	return rc, stats, nil
+}
+
+// seedResolverUsers folds the per-run user cache (owner, participants,
+// timeline actors, assignees, post authors) into the resolver table so the
+// renderer can look up display names for any user already loaded by the run
+// assembly — without paying for another batch fetch. Targets the requester
+// could not see remain zero-value in the table per §3.6.6.
+func seedResolverUsers(rt *report.ResolverTable, userCache map[string]report.RenderUser) {
+	if rt.Users == nil {
+		rt.Users = make(map[string]report.RenderUser, len(userCache))
+	}
+	for id, u := range userCache {
+		if _, ok := rt.Users[id]; ok {
+			continue
+		}
+		if u.DisplayName == "" && u.Username == "" {
+			continue
+		}
+		rt.Users[id] = u
+	}
 }
 
 // AssemblePlaybookReportContext builds the sanitized PlaybookRenderContext.
@@ -241,9 +262,26 @@ func (s *ReportService) AssemblePlaybookReportContext(
 		},
 	}
 
+	seenUsers := make(map[string]struct{}, len(pb.Members))
 	memberIDs := make([]string, 0, len(pb.Members))
 	for _, m := range pb.Members {
+		if _, ok := seenUsers[m.UserID]; ok || m.UserID == "" {
+			continue
+		}
+		seenUsers[m.UserID] = struct{}{}
 		memberIDs = append(memberIDs, m.UserID)
+	}
+	for _, cl := range pb.Checklists {
+		for _, item := range cl.Items {
+			if item.AssigneeID == "" {
+				continue
+			}
+			if _, ok := seenUsers[item.AssigneeID]; ok {
+				continue
+			}
+			seenUsers[item.AssigneeID] = struct{}{}
+			memberIDs = append(memberIDs, item.AssigneeID)
+		}
 	}
 	memberCache := s.batchResolveUsers(memberIDs)
 
@@ -292,11 +330,12 @@ func (s *ReportService) AssemblePlaybookReportContext(
 	pc.SignalKeywords = append([]string(nil), pb.SignalAnyKeywords...)
 
 	pc.Resolvers = report.ResolverTable{
-		Users:      map[string]report.RenderUser{},
+		Users:      make(map[string]report.RenderUser, len(memberCache)),
 		Channels:   map[string]report.RenderChannel{},
 		Files:      map[string]report.RenderFile{},
 		Permalinks: map[string]report.RenderPostPreview{},
 	}
+	seedResolverUsers(&pc.Resolvers, memberCache)
 
 	pc.GeneratedAtMillis = time.Now().UnixMilli()
 	return pc, ResolverStats{}, nil

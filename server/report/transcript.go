@@ -117,7 +117,7 @@ func renderPost(m core.Maroto, styles styleSet, p RenderPost, rt ResolverTable, 
 
 	m.AddRow(rowHeightLine, col.New(12).Add(text.New(head, styles.label())))
 	if bodyText != "" {
-		renderMarkdownInto(m, styles, bodyText, rt)
+		renderMarkdownBoxedInto(m, styles, bodyText, rt)
 	}
 }
 

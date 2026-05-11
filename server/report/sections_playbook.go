@@ -31,7 +31,7 @@ func addPlaybookOverview(m core.Maroto, styles styleSet, pc PlaybookRenderContex
 
 	if strings.TrimSpace(pc.Playbook.Description) != "" {
 		addSubHeading(m, styles, labels.Description())
-		renderMarkdownInto(m, styles, pc.Playbook.Description, pc.Resolvers)
+		renderMarkdownBoxedInto(m, styles, pc.Playbook.Description, pc.Resolvers)
 		addBlankRow(m, rowHeightBlockGap)
 	}
 
@@ -128,7 +128,7 @@ func addPlaybookSettings(m core.Maroto, styles styleSet, pc PlaybookRenderContex
 	}
 	if strings.TrimSpace(pc.StatusUpdateConfig.Template) != "" {
 		addLabelValue(m, styles, labels.Template(), "")
-		renderMarkdownInto(m, styles, pc.StatusUpdateConfig.Template, pc.Resolvers)
+		renderMarkdownBoxedInto(m, styles, pc.StatusUpdateConfig.Template, pc.Resolvers)
 	}
 	addBlankRow(m, rowHeightBlockGap)
 
@@ -139,7 +139,7 @@ func addPlaybookSettings(m core.Maroto, styles styleSet, pc PlaybookRenderContex
 	}
 	if strings.TrimSpace(pc.RetrospectiveConfig.Template) != "" {
 		addLabelValue(m, styles, labels.Template(), "")
-		renderMarkdownInto(m, styles, pc.RetrospectiveConfig.Template, pc.Resolvers)
+		renderMarkdownBoxedInto(m, styles, pc.RetrospectiveConfig.Template, pc.Resolvers)
 	}
 	if len(pc.RetrospectiveConfig.Metrics) > 0 {
 		addLabelValue(m, styles, labels.Metrics(), "")

@@ -41,10 +41,17 @@ var inkPrimary = props.Color{Red: 32, Green: 32, Blue: 38}
 var inkMuted = props.Color{Red: 110, Green: 110, Blue: 120}
 var inkSubtle = props.Color{Red: 180, Green: 180, Blue: 190}
 
-func brand() *props.Color   { c := mattermostBrand; return &c }
-func primary() *props.Color { c := inkPrimary; return &c }
-func muted() *props.Color   { c := inkMuted; return &c }
-func subtle() *props.Color  { c := inkSubtle; return &c }
+// surfaceMutedBackground is the soft fill applied to markdown content
+// boxes (descriptions, summaries, retro body, template bodies). Light
+// enough not to overpower the text, distinct enough to read as a
+// separate field value from its label.
+var surfaceMutedBackground = props.Color{Red: 244, Green: 244, Blue: 248}
+
+func brand() *props.Color      { c := mattermostBrand; return &c }
+func primary() *props.Color    { c := inkPrimary; return &c }
+func muted() *props.Color      { c := inkMuted; return &c }
+func subtle() *props.Color     { c := inkSubtle; return &c }
+func surfaceMuted() *props.Color { c := surfaceMutedBackground; return &c }
 
 // styleSet carries the resolved font families for one render. Built per
 // request from the FontPack — falls back to maroto's bundled families when
