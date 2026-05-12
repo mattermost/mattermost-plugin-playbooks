@@ -3,4 +3,4 @@
 
 export {default} from './export_options_modal';
 export {DEFAULT_SECTIONS} from './export_options_modal';
-export type {ExportOptionsModalProps, SectionFlags, Surface} from './export_options_modal';
+export type {ExportFormat, ExportOptionsModalProps, SectionFlags, Surface} from './export_options_modal';
