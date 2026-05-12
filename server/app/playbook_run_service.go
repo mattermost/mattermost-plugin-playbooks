@@ -62,6 +62,9 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 	// Determine if incremental updates are enabled
 	if !s.configService.IsIncrementalUpdatesEnabled() {
+		if currentRun != nil {
+			currentRun.ComputeTaskProgress()
+		}
 		// If incremental updates are disabled, fall back to the standard WS update
 		sendWSOptions := RunWSOptions{
 			AdditionalUserIDs: additionalUserIDs,
