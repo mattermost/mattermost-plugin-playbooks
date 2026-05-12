@@ -33,7 +33,7 @@ import RunActionsModal from 'src/components/run_actions_modal';
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible} from 'src/selectors';
 
-import ExportOptionsModal, {SectionFlags} from 'src/components/export_options_modal';
+import ExportOptionsModal, {ExportFormat, SectionFlags} from 'src/components/export_options_modal';
 
 import {
     CopyRunLinkMenuItem,
@@ -209,9 +209,9 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 <ExportOptionsModal
                     surface='run'
                     defaults={{}}
-                    onConfirm={(sections: SectionFlags) => {
+                    onConfirm={(sections: SectionFlags, format: ExportFormat) => {
                         setShowPDFExportModal(false);
-                        runPDFExport(sections);
+                        runPDFExport(sections, format);
                     }}
                     onCancel={() => setShowPDFExportModal(false)}
                 />
@@ -224,19 +224,49 @@ const useRunPDFExport = (playbookRunId: string) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
 
-    const runPDFExport = async (sections: SectionFlags) => {
+    const runPDFExport = async (sections: SectionFlags, format: ExportFormat = 'pdf') => {
         try {
-            const {exportRunReportPDF, triggerPDFDownload} = await import('src/client');
-            const result = await exportRunReportPDF(playbookRunId, sections);
-            triggerPDFDownload(result);
-            if (result.truncated) {
-                addToast({
-                    content: formatMessage({defaultMessage: 'PDF generated, but the transcript was truncated due to size limits.'}),
-                    toastStyle: ToastStyle.Success,
-                });
+            const {
+                PDFExportError,
+                exportRunReportHTML,
+                exportRunReportMarkdown,
+                exportRunReportPDF,
+                triggerBrowserPrint,
+                triggerPDFDownload,
+            } = await import('src/client');
+
+            if (format === 'md') {
+                const result = await exportRunReportMarkdown(playbookRunId, sections);
+                triggerPDFDownload(result);
+                return;
+            }
+            if (format === 'html') {
+                const result = await exportRunReportHTML(playbookRunId, sections, false);
+                triggerPDFDownload(result);
+                return;
+            }
+
+            // format === 'pdf'
+            try {
+                const result = await exportRunReportPDF(playbookRunId, sections);
+                triggerPDFDownload(result);
+                if (result.truncated) {
+                    addToast({
+                        content: formatMessage({defaultMessage: 'PDF generated, but the transcript was truncated due to size limits.'}),
+                        toastStyle: ToastStyle.Success,
+                    });
+                }
+            } catch (err) {
+                // Server-rendered PDF not configured — fall back to browser print of HTML.
+                if (err instanceof PDFExportError && err.status === 501) {
+                    const html = await exportRunReportHTML(playbookRunId, sections, true);
+                    triggerBrowserPrint(html.blob);
+                    return;
+                }
+                throw err;
             }
         } catch (err) {
-            const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export PDF.'});
+            const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export.'});
             const requestId = (err as {requestId?: string | null})?.requestId;
             addToast({
                 content: requestId ? `${message} (ref: ${requestId})` : message,
