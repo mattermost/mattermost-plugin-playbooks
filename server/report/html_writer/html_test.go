@@ -39,8 +39,8 @@ func fixtureRun() report.RenderContext {
 			{
 				Title: "Initial response",
 				Items: []report.RenderChecklistItem{
-					{Title: "Page on-call", State: "Closed", AssigneeID: "u1"},
-					{Title: "Open war room", State: "Skipped"},
+					{Title: "Page on-call", State: "closed", AssigneeID: "u1"},
+					{Title: "Open war room", State: "skipped"},
 					{Title: "Postmortem doc", State: "", DueAtMs: 1_700_001_000_000, Description: "Write it up.", Command: "/postmortem create"},
 				},
 			},
@@ -140,7 +140,7 @@ func TestRenderRunHTML_Smoke(t *testing.T) {
 		"In Progress",           // status pill
 		"@alice",                // owner and participants
 		"@bob",                  // participants
-		"Executive Summary",     // section heading
+		"Summary",               // section heading
 		"Brief outage",          // summary body
 		"<strong>Resolved.</strong>", // markdown rendered
 		"Timeline",              // section
