@@ -261,44 +261,71 @@ func buildTaskMeta(it report.RenderChecklistItem, rt report.ResolverTable) strin
 	return strings.Join(parts, ", ")
 }
 
-// groupByThread groups a chronological post slice into [root, replies...]
-// runs. Posts with a RootID land under that root; orphaned replies (root
-// not in the slice) are promoted to their own single-element groups.
-//
-// Mirrors server/report.groupByThread without importing it.
-func groupByThread(posts []report.RenderPost) [][]report.RenderPost {
-	type group struct {
-		posts []report.RenderPost
-	}
-	groups := make(map[string]*group, len(posts))
-	order := make([]string, 0, len(posts))
-
-	for _, p := range posts {
-		rootID := p.RootID
-		if rootID == "" {
-			rootID = p.PostID
+// writeTranscriptThreaded renders posts as root + collated replies (per
+// report.CollateThreads — grouping is by RootID, with CreateAt used only
+// for display order). Orphan replies whose parent isn't in the slice
+// render under a dedicated subsection so the reader knows the parent
+// existed and is missing.
+func writeTranscriptThreaded(b *bytes.Buffer, posts []report.RenderPost, rt report.ResolverTable) {
+	threads, orphans := report.CollateThreads(posts)
+	for ti, thread := range threads {
+		for i, p := range thread {
+			writeTranscriptPost(b, p, rt, i > 0)
 		}
-		g, ok := groups[rootID]
-		if !ok {
-			g = &group{}
-			groups[rootID] = g
-			order = append(order, rootID)
+		if ti < len(threads)-1 || len(orphans) > 0 {
+			b.WriteString(">\n")
 		}
-		g.posts = append(g.posts, p)
 	}
+	if len(orphans) > 0 {
+		b.WriteString("\n_Orphan replies (parent message is outside this transcript)_\n\n")
+		for i, p := range orphans {
+			writeTranscriptPost(b, p, rt, true)
+			if i < len(orphans)-1 {
+				b.WriteString(">\n")
+			}
+		}
+	}
+	b.WriteString("\n")
+}
 
-	for _, id := range order {
-		g := groups[id]
-		sort.SliceStable(g.posts, func(i, j int) bool {
-			return g.posts[i].CreateAt < g.posts[j].CreateAt
-		})
+// writeTranscriptChronological renders posts in strict CreateAt order.
+// Replies carry a ↳ indicator and reference their parent. Orphans render
+// with a "(parent not in transcript)" suffix.
+func writeTranscriptChronological(b *bytes.Buffer, posts []report.RenderPost, rt report.ResolverTable) {
+	ordered := make([]report.RenderPost, len(posts))
+	copy(ordered, posts)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		return ordered[i].CreateAt < ordered[j].CreateAt
+	})
+	// Build PostID → author lookup for reply parent labels.
+	authorOf := make(map[string]string, len(ordered))
+	for _, p := range ordered {
+		authorOf[p.PostID] = resolveUser(rt, p.AuthorID)
 	}
-
-	out := make([][]report.RenderPost, 0, len(order))
-	for _, id := range order {
-		out = append(out, groups[id].posts)
+	for i, p := range ordered {
+		author := resolveUser(rt, p.AuthorID)
+		when := formatDate(p.CreateAt)
+		switch {
+		case p.RootID == "":
+			fmt.Fprintf(b, "> **%s** — %s\n", author, when)
+		case authorOf[p.RootID] != "":
+			fmt.Fprintf(b, "> ↳ **%s** — %s  *(reply to %s)*\n", author, when, authorOf[p.RootID])
+		default:
+			fmt.Fprintf(b, "> ↳ **%s** — %s  *(reply to message not in transcript)*\n", author, when)
+		}
+		body := strings.TrimSpace(p.Message)
+		if body != "" {
+			for _, ln := range strings.Split(body, "\n") {
+				b.WriteString("> ")
+				b.WriteString(ln)
+				b.WriteString("\n")
+			}
+		}
+		if i < len(ordered)-1 {
+			b.WriteString(">\n")
+		}
 	}
-	return out
+	b.WriteString("\n")
 }
 
 // writeTranscriptPost writes a single post in the transcript. isReply

@@ -33,7 +33,7 @@ import RunActionsModal from 'src/components/run_actions_modal';
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible} from 'src/selectors';
 
-import ExportOptionsModal, {ExportFormat, SectionFlags} from 'src/components/export_options_modal';
+import ExportOptionsModal, {ExportFormat, SectionFlags, TranscriptMode} from 'src/components/export_options_modal';
 
 import {
     CopyRunLinkMenuItem,
@@ -209,9 +209,9 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 <ExportOptionsModal
                     surface='run'
                     defaults={{}}
-                    onConfirm={(sections: SectionFlags, format: ExportFormat) => {
+                    onConfirm={(sections: SectionFlags, format: ExportFormat, transcriptMode: TranscriptMode) => {
                         setShowPDFExportModal(false);
-                        runPDFExport(sections, format);
+                        runPDFExport(sections, format, transcriptMode);
                     }}
                     onCancel={() => setShowPDFExportModal(false)}
                 />
@@ -224,7 +224,7 @@ const useRunPDFExport = (playbookRunId: string) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
 
-    const runPDFExport = async (sections: SectionFlags, format: ExportFormat = 'pdf') => {
+    const runPDFExport = async (sections: SectionFlags, format: ExportFormat = 'pdf', transcriptMode: TranscriptMode = 'threaded') => {
         try {
             const {
                 PDFExportError,
@@ -236,19 +236,19 @@ const useRunPDFExport = (playbookRunId: string) => {
             } = await import('src/client');
 
             if (format === 'md') {
-                const result = await exportRunReportMarkdown(playbookRunId, sections);
+                const result = await exportRunReportMarkdown(playbookRunId, sections, transcriptMode);
                 triggerPDFDownload(result);
                 return;
             }
             if (format === 'html') {
-                const result = await exportRunReportHTML(playbookRunId, sections, false);
+                const result = await exportRunReportHTML(playbookRunId, sections, false, transcriptMode);
                 triggerPDFDownload(result);
                 return;
             }
 
             // format === 'pdf'
             try {
-                const result = await exportRunReportPDF(playbookRunId, sections);
+                const result = await exportRunReportPDF(playbookRunId, sections, transcriptMode);
                 triggerPDFDownload(result);
                 if (result.truncated) {
                     addToast({
@@ -259,7 +259,7 @@ const useRunPDFExport = (playbookRunId: string) => {
             } catch (err) {
                 // Server-rendered PDF not configured — fall back to browser print of HTML.
                 if (err instanceof PDFExportError && err.status === 501) {
-                    const html = await exportRunReportHTML(playbookRunId, sections, true);
+                    const html = await exportRunReportHTML(playbookRunId, sections, true, transcriptMode);
                     triggerBrowserPrint(html.blob);
                     return;
                 }

@@ -142,6 +142,8 @@ const PlaybookListRow = (props: Props) => {
     const [showPDFModal, setShowPDFModal] = useState(false);
     const addToast = useToaster().add;
 
+    // Third positional arg (transcriptMode) is accepted but unused — playbook
+    // templates don't have a transcript section.
     const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat = 'pdf') => {
         setShowPDFModal(false);
         try {

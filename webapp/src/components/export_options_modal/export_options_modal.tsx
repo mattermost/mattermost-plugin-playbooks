@@ -11,6 +11,8 @@ export type Surface = 'run' | 'playbook';
 
 export type ExportFormat = 'md' | 'html' | 'pdf';
 
+export type TranscriptMode = 'threaded' | 'chronological';
+
 export type SectionFlags = {
     cover?: boolean;
     executiveSummary?: boolean;
@@ -27,7 +29,7 @@ export type SectionFlags = {
 export type ExportOptionsModalProps = {
     surface: Surface;
     defaults: SectionFlags;
-    onConfirm: (sections: SectionFlags, format: ExportFormat) => void;
+    onConfirm: (sections: SectionFlags, format: ExportFormat, transcriptMode: TranscriptMode) => void;
     onCancel: () => void;
     channelExportAvailable?: boolean;
     pdfAvailableServerSide?: boolean; // true when PdfRendererBackend is configured
@@ -64,6 +66,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
     const baseDefaults = surface === 'run' ? RUN_DEFAULTS : PLAYBOOK_DEFAULTS;
     const [sections, setSections] = useState<SectionFlags>({...baseDefaults, ...defaults});
     const [format, setFormat] = useState<ExportFormat>('pdf');
+    const [transcriptMode, setTranscriptMode] = useState<TranscriptMode>('threaded');
 
     const rows: ToggleRow[] = surface === 'run' ? [
         {key: 'cover', label: formatMessage({defaultMessage: 'Cover page'})},
@@ -96,7 +99,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
             show={true}
             onHide={onCancel}
             handleCancel={onCancel}
-            handleConfirm={() => onConfirm(sections, format)}
+            handleConfirm={() => onConfirm(sections, format, transcriptMode)}
             confirmButtonText={<FormattedMessage defaultMessage='Download'/>}
             cancelButtonText={<FormattedMessage defaultMessage='Cancel'/>}
             isConfirmDisabled={!anySelected}
@@ -157,6 +160,43 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                         </ToggleLabel>
                     ))}
                 </Toggles>
+                {surface === 'run' && sections.transcript && (
+                    <TranscriptModeBox data-testid='transcript-mode-box'>
+                        <TranscriptModeLabel>
+                            <FormattedMessage defaultMessage='Transcript layout'/>
+                        </TranscriptModeLabel>
+                        <TranscriptModeRadio data-testid='transcript-mode-threaded'>
+                            <input
+                                type='radio'
+                                name='transcript-mode'
+                                value='threaded'
+                                checked={transcriptMode === 'threaded'}
+                                onChange={() => setTranscriptMode('threaded')}
+                            />
+                            <div>
+                                <strong><FormattedMessage defaultMessage='Grouped by thread'/></strong>
+                                <small>
+                                    <FormattedMessage defaultMessage='Roots are top-level; replies appear directly under their root (Mattermost UI default).'/>
+                                </small>
+                            </div>
+                        </TranscriptModeRadio>
+                        <TranscriptModeRadio data-testid='transcript-mode-chronological'>
+                            <input
+                                type='radio'
+                                name='transcript-mode'
+                                value='chronological'
+                                checked={transcriptMode === 'chronological'}
+                                onChange={() => setTranscriptMode('chronological')}
+                            />
+                            <div>
+                                <strong><FormattedMessage defaultMessage='Fully chronological'/></strong>
+                                <small>
+                                    <FormattedMessage defaultMessage='Posts emit in strict timestamp order; replies carry a ↳ indicator.'/>
+                                </small>
+                            </div>
+                        </TranscriptModeRadio>
+                    </TranscriptModeBox>
+                )}
                 {surface === 'run' && channelExportAvailable && (
                     <ChannelExportHint data-testid='channel-export-hint'>
                         <FormattedMessage defaultMessage="Need a CSV transcript? Use channel-export's /export slash command in this run's channel."/>
@@ -244,4 +284,55 @@ const FormatHint = styled.p`
     color: rgba(var(--center-channel-color-rgb, 63, 67, 80), 0.64);
     margin: -8px 0 12px;
     text-align: center;
+`;
+
+const TranscriptModeBox = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+    background: rgba(var(--center-channel-color-rgb), 0.03);
+`;
+
+const TranscriptModeLabel = styled.div`
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    margin-bottom: 2px;
+`;
+
+const TranscriptModeRadio = styled.label`
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    cursor: pointer;
+
+    input[type='radio'] {
+        margin: 3px 0 0;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    div {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    strong {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--center-channel-color);
+    }
+
+    small {
+        font-size: 12px;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        line-height: 1.3;
+    }
 `;

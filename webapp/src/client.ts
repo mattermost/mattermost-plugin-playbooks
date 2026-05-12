@@ -861,11 +861,14 @@ const fetchPDFExport = async (url: string, fallbackFilename: string): Promise<PD
     };
 };
 
-export async function exportRunReportPDF(runID: string, sections: PDFExportSections): Promise<PDFExportResult> {
+export async function exportRunReportPDF(runID: string, sections: PDFExportSections, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
     const params = new URLSearchParams();
     const list = sectionsToQueryString(sections);
     if (list) {
         params.set('sections', list);
+    }
+    if (transcriptMode && transcriptMode !== 'threaded') {
+        params.set('transcript_mode', transcriptMode);
     }
     const query = params.toString();
     const url = `${apiUrl}/runs/${runID}/report.pdf${query ? `?${query}` : ''}`;
@@ -924,14 +927,28 @@ const fetchExportBlob = async (
 };
 
 // Fetch a run report in the given format. Returns the response blob and filename.
-export async function exportRunReportMarkdown(runID: string, sections: PDFExportSections): Promise<PDFExportResult> {
-    const query = buildSectionsQuery(sections);
+export type TranscriptMode = 'threaded' | 'chronological';
+
+const buildExportQuery = (sections: PDFExportSections, transcriptMode?: TranscriptMode): string => {
+    const parts: string[] = [];
+    const sectionsQ = buildSectionsQuery(sections);
+    if (sectionsQ) {
+        parts.push(sectionsQ);
+    }
+    if (transcriptMode && transcriptMode !== 'threaded') {
+        parts.push(`transcript_mode=${encodeURIComponent(transcriptMode)}`);
+    }
+    return parts.join('&');
+};
+
+export async function exportRunReportMarkdown(runID: string, sections: PDFExportSections, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
+    const query = buildExportQuery(sections, transcriptMode);
     const url = `${apiUrl}/runs/${runID}/report.md${query ? `?${query}` : ''}`;
     return fetchExportBlob(url, 'text/markdown');
 }
 
-export async function exportRunReportHTML(runID: string, sections: PDFExportSections, forPrint = false): Promise<PDFExportResult> {
-    const query = buildSectionsQuery(sections);
+export async function exportRunReportHTML(runID: string, sections: PDFExportSections, forPrint = false, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
+    const query = buildExportQuery(sections, transcriptMode);
     const intentHeader = forPrint ? 'pdf-fallback' : 'html-direct';
     const url = `${apiUrl}/runs/${runID}/report.html${query ? `?${query}` : ''}`;
     return fetchExportBlob(url, 'text/html', {'X-Playbooks-Export-Intent': intentHeader});

@@ -60,6 +60,10 @@ type RenderContext struct {
 	// the post cap or the byte cap (set during rendering).
 	TranscriptTruncation Truncation
 
+	// TranscriptMode controls how transcript posts are collated when the
+	// section is rendered. Empty defaults to threaded.
+	TranscriptMode coretypes.TranscriptMode
+
 	// Resolvers is the pre-built lookup table populated by ReportService
 	// for the markdown extension. Targets the requester cannot see are
 	// represented as zero-value entries (deny path byte-identical to

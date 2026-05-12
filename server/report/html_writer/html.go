@@ -52,7 +52,10 @@ type runReportData struct {
 	TimelineEvents []timelineEventData
 	Checklists     []checklistData
 	Retrospective  retroData
-	Transcript     []threadData
+	Transcript               []threadData
+	TranscriptOrphans        []replyData // populated in threaded mode when parent posts are missing
+	TranscriptChronological  bool        // true → render TranscriptChronoPosts instead of Transcript
+	TranscriptChronoPosts    []chronoPost
 
 	TranscriptTruncation report.Truncation
 	TranscriptOmitted    bool
@@ -128,6 +131,21 @@ type replyData struct {
 	AuthorDisplay string
 	FormattedDate string
 	BodyHTML      template.HTML
+	// ParentLabel is populated only in chronological mode (e.g.,
+	// "reply to @alice" or "reply to message not in transcript"). Empty
+	// in threaded mode because the visual nesting already conveys parent.
+	ParentLabel string
+}
+
+// chronoPost is a flat-stream representation of a transcript post used by
+// the chronological transcript mode. IsReply switches the template to the
+// ↳-prefixed reply chrome with a ParentLabel sentinel.
+type chronoPost struct {
+	AuthorDisplay string
+	FormattedDate string
+	BodyHTML      template.HTML
+	IsReply       bool
+	ParentLabel   string
 }
 
 // playbookReportData is the template data struct for the playbook report.
@@ -320,29 +338,82 @@ func buildRunData(rc report.RenderContext, opts Options) runReportData {
 		data.TranscriptOmitted = true
 	} else {
 		filtered := filterSystemPosts(rc.Transcript)
-		threads := groupByThread(filtered)
-		for _, thread := range threads {
-			if len(thread) == 0 {
-				continue
-			}
-			root := thread[0]
-			td := threadData{
-				AuthorDisplay: resolveUserDisplay(rc.Resolvers, root.AuthorID),
-				FormattedDate: formatDate(root.CreateAt),
-				BodyHTML:      markdownToHTML(root.Message, rc.Resolvers),
-			}
-			for _, reply := range thread[1:] {
-				td.Replies = append(td.Replies, replyData{
-					AuthorDisplay: resolveUserDisplay(rc.Resolvers, reply.AuthorID),
-					FormattedDate: formatDate(reply.CreateAt),
-					BodyHTML:      markdownToHTML(reply.Message, rc.Resolvers),
-				})
-			}
-			data.Transcript = append(data.Transcript, td)
+		if rc.TranscriptMode == coretypes.TranscriptModeChronological {
+			data.TranscriptChronological = true
+			data.TranscriptChronoPosts = buildChronologicalPosts(filtered, rc.Resolvers)
+		} else {
+			data.Transcript, data.TranscriptOrphans = buildThreadedTranscript(filtered, rc.Resolvers)
 		}
 	}
 
 	return data
+}
+
+// buildThreadedTranscript turns a flat post slice into threadData/replyData
+// shapes for the template. Threading semantics live in report.CollateThreads
+// (single source of truth, shared with markdown_writer): grouping is by
+// RootID; CreateAt is used only for display order; orphans return in a
+// separate slice rendered under their own subsection.
+func buildThreadedTranscript(posts []report.RenderPost, rt report.ResolverTable) ([]threadData, []replyData) {
+	threads, orphans := report.CollateThreads(posts)
+	out := make([]threadData, 0, len(threads))
+	for _, t := range threads {
+		root := t[0]
+		td := threadData{
+			AuthorDisplay: resolveUserDisplay(rt, root.AuthorID),
+			FormattedDate: formatDate(root.CreateAt),
+			BodyHTML:      markdownToHTML(root.Message, rt),
+		}
+		for _, reply := range t[1:] {
+			td.Replies = append(td.Replies, replyData{
+				AuthorDisplay: resolveUserDisplay(rt, reply.AuthorID),
+				FormattedDate: formatDate(reply.CreateAt),
+				BodyHTML:      markdownToHTML(reply.Message, rt),
+			})
+		}
+		out = append(out, td)
+	}
+	orphanRD := make([]replyData, 0, len(orphans))
+	for _, p := range orphans {
+		orphanRD = append(orphanRD, replyData{
+			AuthorDisplay: resolveUserDisplay(rt, p.AuthorID),
+			FormattedDate: formatDate(p.CreateAt),
+			BodyHTML:      markdownToHTML(p.Message, rt),
+		})
+	}
+	return out, orphanRD
+}
+
+// buildChronologicalPosts emits posts in strict CreateAt order. Reply posts
+// carry a ParentLabel; orphans get the "not in transcript" sentinel.
+func buildChronologicalPosts(posts []report.RenderPost, rt report.ResolverTable) []chronoPost {
+	ordered := make([]report.RenderPost, len(posts))
+	copy(ordered, posts)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		return ordered[i].CreateAt < ordered[j].CreateAt
+	})
+	authorOf := make(map[string]string, len(ordered))
+	for _, p := range ordered {
+		authorOf[p.PostID] = resolveUserDisplay(rt, p.AuthorID)
+	}
+	out := make([]chronoPost, 0, len(ordered))
+	for _, p := range ordered {
+		cp := chronoPost{
+			AuthorDisplay: resolveUserDisplay(rt, p.AuthorID),
+			FormattedDate: formatDate(p.CreateAt),
+			BodyHTML:      markdownToHTML(p.Message, rt),
+			IsReply:       p.RootID != "",
+		}
+		if cp.IsReply {
+			if name := authorOf[p.RootID]; name != "" {
+				cp.ParentLabel = "reply to " + name
+			} else {
+				cp.ParentLabel = "reply to message not in transcript"
+			}
+		}
+		out = append(out, cp)
+	}
+	return out
 }
 
 // ---------- playbook report data builder ----------
@@ -643,39 +714,3 @@ func filterSystemPosts(posts []report.RenderPost) []report.RenderPost {
 	return out
 }
 
-// groupByThread groups a chronological post slice into [root, replies...]
-// runs. Mirrors server/report.groupByThread without importing it.
-func groupByThread(posts []report.RenderPost) [][]report.RenderPost {
-	type group struct {
-		posts []report.RenderPost
-	}
-	groups := make(map[string]*group, len(posts))
-	order := make([]string, 0, len(posts))
-
-	for _, p := range posts {
-		rootID := p.RootID
-		if rootID == "" {
-			rootID = p.PostID
-		}
-		g, ok := groups[rootID]
-		if !ok {
-			g = &group{}
-			groups[rootID] = g
-			order = append(order, rootID)
-		}
-		g.posts = append(g.posts, p)
-	}
-
-	for _, id := range order {
-		g := groups[id]
-		sort.SliceStable(g.posts, func(i, j int) bool {
-			return g.posts[i].CreateAt < g.posts[j].CreateAt
-		})
-	}
-
-	out := make([][]report.RenderPost, 0, len(order))
-	for _, id := range order {
-		out = append(out, groups[id].posts)
-	}
-	return out
-}
