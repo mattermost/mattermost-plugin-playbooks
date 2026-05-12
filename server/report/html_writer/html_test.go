@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 // fixtureRun returns a small but section-complete RenderContext.
@@ -165,15 +166,32 @@ func TestRenderRunHTML_Smoke(t *testing.T) {
 	mustNotContain(t, s, []string{"<script", "javascript:", "onerror"})
 }
 
-func TestRenderRunHTML_TranscriptOmitted(t *testing.T) {
+func TestRenderRunHTML_TranscriptOmitted_NotMember(t *testing.T) {
 	rc := fixtureRun()
 	rc.Transcript = nil
+	rc.TranscriptOmittedReason = coretypes.TranscriptOmittedNotMember
 	out, err := RenderRunHTML(rc, Options{})
 	if err != nil {
 		t.Fatalf("RenderRunHTML failed: %v", err)
 	}
-	if !strings.Contains(string(out), "Transcript omitted") {
-		t.Fatalf("expected transcript-omitted sentinel, got:\n%s", out)
+	if !strings.Contains(string(out), "you are not a member of the run") {
+		t.Fatalf("expected not-member sentinel, got:\n%s", out)
+	}
+}
+
+func TestRenderRunHTML_TranscriptEmpty_NoReason(t *testing.T) {
+	rc := fixtureRun()
+	rc.Transcript = nil
+	rc.TranscriptOmittedReason = ""
+	out, err := RenderRunHTML(rc, Options{})
+	if err != nil {
+		t.Fatalf("RenderRunHTML failed: %v", err)
+	}
+	if !strings.Contains(string(out), "No transcript") {
+		t.Fatalf("expected 'No transcript' fallback, got:\n%s", out)
+	}
+	if strings.Contains(string(out), "not a member") {
+		t.Fatalf("must not blame channel membership when reason is empty, got:\n%s", out)
 	}
 }
 

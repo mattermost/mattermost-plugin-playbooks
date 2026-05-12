@@ -84,6 +84,21 @@ const (
 	TranscriptModeChronological TranscriptMode = "chronological"
 )
 
+// TranscriptOmittedReason explains why a transcript section ended up empty.
+// Empty string means the section either wasn't requested or was rendered
+// normally. Specific values let the renderer pick honest, accurate copy
+// instead of always blaming channel membership.
+const (
+	// TranscriptOmittedNotMember — section was requested but the requester
+	// is not a member of the run's channel, so the data layer refused to
+	// fetch any posts. This is the only case where the "you are not a
+	// member of the run's channel" message is appropriate.
+	TranscriptOmittedNotMember = "not-member"
+	// TranscriptOmittedNoChannel — run has no associated channel (rare,
+	// historical data). Nothing to fetch.
+	TranscriptOmittedNoChannel = "no-channel"
+)
+
 // ResolverTable is the pre-built lookup the markdown extension consumes.
 // All map values are zero-initialized when the requester cannot see the
 // target (deny path byte-identical to "not found").

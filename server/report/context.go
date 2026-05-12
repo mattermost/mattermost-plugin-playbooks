@@ -64,6 +64,14 @@ type RenderContext struct {
 	// section is rendered. Empty defaults to threaded.
 	TranscriptMode coretypes.TranscriptMode
 
+	// TranscriptOmittedReason carries the data-layer's explanation when
+	// rc.Transcript is empty AND the caller requested the transcript
+	// section. See coretypes for the constants. Empty string means either
+	// the section was not requested OR posts were fetched normally (the
+	// renderer distinguishes those by looking at len(Transcript) and the
+	// caller's section flags as appropriate).
+	TranscriptOmittedReason string
+
 	// Resolvers is the pre-built lookup table populated by ReportService
 	// for the markdown extension. Targets the requester cannot see are
 	// represented as zero-value entries (deny path byte-identical to
