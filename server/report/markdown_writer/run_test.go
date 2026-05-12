@@ -165,8 +165,8 @@ func TestRenderRunMarkdown_EmptySectionsEmitItalicPlaceholders(t *testing.T) {
 	require.Contains(t, got, "_No status updates._")
 	require.Contains(t, got, "_No tasks._")
 	require.Contains(t, got, "_No retrospective._")
-	// Empty transcript path is the non-member sentinel per spec.
-	require.Contains(t, got, "_Transcript omitted — you are not a member of the run's channel._")
+	// Empty transcript without a not-member reason set: honest "No transcript."
+	require.Contains(t, got, "_No transcript._")
 }
 
 func TestRenderRunMarkdown_TruncationFooterWhenHit(t *testing.T) {

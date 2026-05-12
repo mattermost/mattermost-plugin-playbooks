@@ -56,9 +56,13 @@ type runReportData struct {
 	TranscriptOrphans        []replyData // populated in threaded mode when parent posts are missing
 	TranscriptChronological  bool        // true → render TranscriptChronoPosts instead of Transcript
 	TranscriptChronoPosts    []chronoPost
+	// TranscriptEmptyMessage is shown when the transcript section produces
+	// no rendered posts. Set per the data-layer's TranscriptOmittedReason
+	// so we don't blame channel membership when the real cause is "no
+	// posts" or "section not requested".
+	TranscriptEmptyMessage string
 
 	TranscriptTruncation report.Truncation
-	TranscriptOmitted    bool
 
 	// Computed
 	OwnerDisplay   string
@@ -343,7 +347,7 @@ func buildRunData(rc report.RenderContext, opts Options) runReportData {
 
 	// Transcript.
 	if len(rc.Transcript) == 0 {
-		data.TranscriptOmitted = true
+		data.TranscriptEmptyMessage = transcriptEmptyMessage(rc.TranscriptOmittedReason)
 	} else {
 		filtered := filterSystemPosts(rc.Transcript)
 		if rc.TranscriptMode == coretypes.TranscriptModeChronological {
@@ -707,6 +711,22 @@ func enabledLabel(b bool) string {
 		return "Enabled"
 	}
 	return "Disabled"
+}
+
+// transcriptEmptyMessage picks the right copy when the rendered transcript
+// is empty. Only blame channel membership when the data layer actually
+// said so via TranscriptOmittedReason; otherwise emit a neutral "No
+// transcript." that's honest whether the section was unrequested or the
+// channel simply had no posts in window.
+func transcriptEmptyMessage(reason string) string {
+	switch reason {
+	case coretypes.TranscriptOmittedNotMember:
+		return "Transcript omitted — you are not a member of the run's channel."
+	case coretypes.TranscriptOmittedNoChannel:
+		return "Transcript unavailable — this run has no associated channel."
+	default:
+		return "No transcript."
+	}
 }
 
 // filterSystemPosts drops posts with a non-empty Type (system messages) —

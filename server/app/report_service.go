@@ -16,6 +16,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 // ReportConfig is the caps + flags used during report assembly.
@@ -180,23 +181,30 @@ func (s *ReportService) AssembleRunReportContext(
 		rc.Retrospective = buildRetrospective(run)
 	}
 
-	if sections.Transcript && run.ChannelID != "" {
-		if _, mErr := s.pluginAPI.Channel.GetMember(run.ChannelID, userID); mErr == nil {
-			iter := s.channelPostsIterator(run.ChannelID, run.CreateAt, run.EndAt, channelPostsIterOpts{
-				includeSystem: false,
-				pageSize:      200,
-				throttle:      20 * time.Millisecond,
-			})
-			transcript, tErr := drainTranscript(ctx, iter, s.config.MaxRunReportPosts, s.config.MaxRunReportBytes)
-			if tErr != nil && !errors.Is(tErr, context.Canceled) {
-				return report.RenderContext{}, ResolverStats{}, errors.Wrap(tErr, "failed to assemble transcript")
-			}
-			rc.Transcript = transcript.posts
-			rc.TranscriptTruncation = transcript.truncation
+	if sections.Transcript {
+		switch {
+		case run.ChannelID == "":
+			rc.TranscriptOmittedReason = coretypes.TranscriptOmittedNoChannel
+		default:
+			if _, mErr := s.pluginAPI.Channel.GetMember(run.ChannelID, userID); mErr != nil {
+				rc.TranscriptOmittedReason = coretypes.TranscriptOmittedNotMember
+			} else {
+				iter := s.channelPostsIterator(run.ChannelID, run.CreateAt, run.EndAt, channelPostsIterOpts{
+					includeSystem: false,
+					pageSize:      200,
+					throttle:      20 * time.Millisecond,
+				})
+				transcript, tErr := drainTranscript(ctx, iter, s.config.MaxRunReportPosts, s.config.MaxRunReportBytes)
+				if tErr != nil && !errors.Is(tErr, context.Canceled) {
+					return report.RenderContext{}, ResolverStats{}, errors.Wrap(tErr, "failed to assemble transcript")
+				}
+				rc.Transcript = transcript.posts
+				rc.TranscriptTruncation = transcript.truncation
 
-			for _, p := range rc.Transcript {
-				if _, ok := userCache[p.AuthorID]; !ok && p.AuthorID != "" {
-					userCache[p.AuthorID] = s.resolveUser(p.AuthorID)
+				for _, p := range rc.Transcript {
+					if _, ok := userCache[p.AuthorID]; !ok && p.AuthorID != "" {
+						userCache[p.AuthorID] = s.resolveUser(p.AuthorID)
+					}
 				}
 			}
 		}

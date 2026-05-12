@@ -110,8 +110,8 @@
   {{end}}
 
   <h2>Transcript</h2>
-  {{if .TranscriptOmitted}}
-  <p class="muted">Transcript omitted — you are not a member of the run's channel.</p>
+  {{if .TranscriptEmptyMessage}}
+  <p class="muted">{{.TranscriptEmptyMessage}}</p>
   {{else if .TranscriptChronological}}
     {{if .TranscriptChronoPosts}}
       {{range .TranscriptChronoPosts}}

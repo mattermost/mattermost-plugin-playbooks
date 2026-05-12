@@ -168,10 +168,19 @@ func writeRunTranscript(b *bytes.Buffer, rc report.RenderContext) {
 	writeHeading(b, 2, "Transcript")
 
 	if len(rc.Transcript) == 0 {
-		// No posts at all — could be a non-member (no access) or an empty
-		// channel. The orchestrator decides; we emit the canonical
-		// non-member sentinel and, if truncated, append the footer.
-		b.WriteString("_Transcript omitted — you are not a member of the run's channel._\n\n")
+		switch rc.TranscriptOmittedReason {
+		case coretypes.TranscriptOmittedNotMember:
+			b.WriteString("_Transcript omitted — you are not a member of the run's channel._\n\n")
+		case coretypes.TranscriptOmittedNoChannel:
+			b.WriteString("_Transcript unavailable — this run has no associated channel._\n\n")
+		default:
+			// Either the section was not requested, or it was requested and
+			// the channel simply had no posts in the run's time window. We
+			// don't have enough signal at the renderer to distinguish, but
+			// "No transcript." is honest in both cases (rather than
+			// fabricating a membership error).
+			b.WriteString("_No transcript._\n\n")
+		}
 		if rc.TranscriptTruncation.Hit {
 			fmt.Fprintf(b, "> _Transcript truncated (post-cap, %d posts shown)._\n\n", rc.TranscriptTruncation.Posts)
 		}
