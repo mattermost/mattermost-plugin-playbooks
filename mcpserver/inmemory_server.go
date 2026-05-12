@@ -124,12 +124,12 @@ func (s *InMemoryServer) CreateConnectionForUser(userID, sessionID string, token
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("MCP server panicked for user %s: %v\n%s", userID, r, debug.Stack())
+				log.Printf("MCP server panicked: %v\n%s", r, debug.Stack())
 			}
 		}()
 
 		if err := s.mcpServer.Run(ctx, serverTransport); err != nil {
-			log.Printf("In-memory MCP server stopped for user %s: %v", userID, err)
+			log.Printf("In-memory MCP server stopped: %v", err)
 		}
 	}()
 
