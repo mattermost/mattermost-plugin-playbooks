@@ -83,6 +83,10 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		currentRun.ComputeTaskProgress()
 	}
 
+	if previousRun != nil {
+		previousRun.ComputeTaskProgress()
+	}
+
 	// Pre-calculate changed fields for incremental updates
 	changedFields := DetectChangedFields(previousRun, currentRun)
 	if len(changedFields) == 0 {
