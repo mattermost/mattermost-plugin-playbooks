@@ -16,13 +16,46 @@ import (
 )
 
 const (
-	playbooksMCPEndpoint       = "/mcp/playbooks"
-	playbooksPluginHTTPAPIBase = "/playbooks/api/v0/"
+	playbooksMCPEndpoint  = "/mcp/playbooks"
+	playbooksLocalAPIBase = "/api/v0/"
 )
 
 type pluginMCPClient struct {
-	api    mcphelper.PluginAPI
-	userID string
+	handler http.Handler
+	userID  string
+}
+
+type pluginMCPResponseRecorder struct {
+	header     http.Header
+	body       bytes.Buffer
+	statusCode int
+}
+
+func newPluginMCPResponseRecorder() *pluginMCPResponseRecorder {
+	return &pluginMCPResponseRecorder{
+		header:     make(http.Header),
+		statusCode: http.StatusOK,
+	}
+}
+
+func (r *pluginMCPResponseRecorder) Header() http.Header {
+	return r.header
+}
+
+func (r *pluginMCPResponseRecorder) Write(data []byte) (int, error) {
+	return r.body.Write(data)
+}
+
+func (r *pluginMCPResponseRecorder) WriteHeader(statusCode int) {
+	r.statusCode = statusCode
+}
+
+func (r *pluginMCPResponseRecorder) Result() *http.Response {
+	return &http.Response{
+		StatusCode: r.statusCode,
+		Header:     r.header.Clone(),
+		Body:       io.NopCloser(bytes.NewReader(r.body.Bytes())),
+	}
 }
 
 func (c *pluginMCPClient) Get(ctx context.Context, endpoint string, params url.Values, result any) error {
@@ -53,7 +86,7 @@ func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body 
 		}
 		r = bytes.NewReader(data)
 	}
-	req, err := http.NewRequestWithContext(ctx, method, playbooksPluginHTTPAPIBase+strings.TrimLeft(endpoint, "/"), r)
+	req, err := http.NewRequestWithContext(ctx, method, playbooksLocalAPIBase+strings.TrimLeft(endpoint, "/"), r)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -61,10 +94,12 @@ func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	resp := c.api.PluginHTTP(req)
-	if resp == nil {
-		return fmt.Errorf("PluginHTTP returned nil response")
+	if c.handler == nil {
+		return fmt.Errorf("Playbooks HTTP handler is nil")
 	}
+	recorder := newPluginMCPResponseRecorder()
+	c.handler.ServeHTTP(recorder, req)
+	resp := recorder.Result()
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		data, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
@@ -101,7 +136,7 @@ func (p *Plugin) ensureMCPServer() error {
 		if userID == "" {
 			return nil, fmt.Errorf("missing Mattermost user ID")
 		}
-		return &pluginMCPClient{api: p.API, userID: userID}, nil
+		return &pluginMCPClient{handler: p.handler, userID: userID}, nil
 	}
 	tools.NewPlaybooksToolProvider(factory).ProvideMCPHelperTools(server)
 	p.mcpServer = server
