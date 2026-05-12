@@ -5172,7 +5172,8 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 		return err
 	}
 
-	return s.dryRunValidateTemplate(pb, playbookRun, template, fields, initialValues, logger)
+	sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)
+	return s.dryRunValidateTemplate(pb, playbookRun, template, fields, sanitizedValues, logger)
 }
 
 // resolveAndAllocate prepares the run name template, allocates the sequential run number, and
@@ -5207,7 +5208,9 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 		return "", err
 	}
 
-	if err := s.dryRunValidateTemplate(pb, playbookRun, template, fields, initialValues, logger); err != nil {
+	sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)
+
+	if err := s.dryRunValidateTemplate(pb, playbookRun, template, fields, sanitizedValues, logger); err != nil {
 		return "", err
 	}
 
@@ -5223,7 +5226,7 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 		}
 	}
 
-	return s.resolveRunName(playbookRun, pb, template, fields, initialValues, userSuppliedName, runNumber, logger)
+	return s.resolveRunName(playbookRun, pb, template, fields, sanitizedValues, userSuppliedName, runNumber, logger)
 }
 
 // loadTemplateFields checks whether the attributes licence is active and, if the playbook's
@@ -5340,13 +5343,13 @@ func (s *PlaybookRunServiceImpl) sanitizePropertyValues(fields []PropertyField, 
 
 // dryRunValidateTemplate validates that all fields referenced by the channel name template have
 // non-empty values. It uses a sentinel sequential ID to avoid consuming a real run number.
-func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRun *PlaybookRun, template string, fields []PropertyField, initialValues map[string]json.RawMessage, logger *logrus.Entry) error {
+// sanitizedValues must come from sanitizePropertyValues — callers are responsible for sanitizing once.
+func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRun *PlaybookRun, template string, fields []PropertyField, sanitizedValues map[string]json.RawMessage, logger *logrus.Entry) error {
 	if template == "" {
 		return nil
 	}
 	formatFunc := s.makeRunNameFormatFunc()
 	systemTokens := s.buildSystemTokens(playbookRun, "")
-	sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)
 
 	const dryRunSeqSentinel int64 = 99999
 	dryRunTokens := make(map[string]string, len(systemTokens))
@@ -5369,8 +5372,9 @@ func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRu
 
 // resolveRunName resolves the channel name template using the given runNumber (already allocated
 // by the caller), sets playbookRun.Name, RunNumber, and SequentialID, and returns the channel
-// display name.
-func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Playbook, template string, fields []PropertyField, initialValues map[string]json.RawMessage, userSuppliedName string, runNumber int64, logger *logrus.Entry) (string, error) {
+// display name. sanitizedValues must come from sanitizePropertyValues — callers are responsible
+// for sanitizing once.
+func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Playbook, template string, fields []PropertyField, sanitizedValues map[string]json.RawMessage, userSuppliedName string, runNumber int64, logger *logrus.Entry) (string, error) {
 	playbookRun.RunNumber = runNumber
 	seqID := FormatSequentialID(pb.RunNumberPrefix, runNumber)
 	playbookRun.SequentialID = seqID
@@ -5380,7 +5384,6 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 
 	var resolvedRunName, resolvedChannelName string
 	if template != "" {
-		sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)
 		systemTokens["SEQ"] = seqID
 		resolved, unresolved := ResolveTemplate(template, ResolveOptions{
 			Fields:       fields,

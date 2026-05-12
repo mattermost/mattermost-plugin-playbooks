@@ -404,7 +404,7 @@ Cypress.Commands.add('playbooksFinishRunViaRHS', (teamName, run) => {
  * @param {String} propertyName - The display name of the property (e.g. 'Priority')
  * @param {String} value        - The option name to select
  */
-Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
+Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value, {type = 'select'} = {}) => {
     const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
 
     cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
@@ -413,7 +413,12 @@ Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
         cy.findByTestId('property-value').click();
     });
 
-    cy.contains('.property-select__option', value).click();
+    if (type === 'text') {
+        cy.focused().clear().type(value);
+        cy.get('body').click(0, 0);
+    } else {
+        cy.contains('.property-select__option', value).click();
+    }
 
     cy.wait('@SetRunPropertyValue');
 });
@@ -446,4 +451,18 @@ Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
  */
 Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
     cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});
+
+// typeEscape escapes opening curly braces so cy.type() treats them as literal characters.
+const typeEscape = (str) => str.replace(/{/g, '{{}');
+
+Cypress.Commands.add('playbooksPostStatusUpdateViaUI', (teamName, run, message) => {
+    cy.playbooksVisitRunChannel(teamName, run);
+    cy.uiPostMessageQuickly('/playbook update');
+    cy.getStatusUpdateDialog().within(() => {
+        cy.findByTestId('update_run_status_textbox').clear().type(typeEscape(message));
+        cy.findByTestId('modal-confirm-button').click();
+    });
+    cy.getStatusUpdateDialog().should('not.exist');
+    return cy.getLastPostId().then((postId) => cy.apiGetPostMessage(postId));
 });

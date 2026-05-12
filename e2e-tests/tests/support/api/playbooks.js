@@ -686,3 +686,33 @@ Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode 
         });
     });
 });
+
+Cypress.Commands.add('assertRunPropertyValueStored', (playbookRunId, fieldName, expectedValue = null) => {
+    cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/property_fields`,
+        method: 'GET',
+    }).then(({body: runFields}) => {
+        const field = runFields.find((f) => f.name === fieldName);
+        expect(field, `run-level field "${fieldName}" should exist`).to.exist;
+
+        cy.apiGetPlaybookRun(playbookRunId).then(({body: run}) => {
+            const pv = (run.property_values || []).find((v) => v.field_id === field.id);
+            expect(pv, `property value for field "${fieldName}" should be stored`).to.exist;
+            if (expectedValue !== null) {
+                expect(pv.value, `property value for "${fieldName}" should equal expected`).to.equal(expectedValue);
+            }
+        });
+    });
+});
+
+Cypress.Commands.add('apiGetPostMessage', (postId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/api/v4/posts/${postId}`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body.message);
+    });
+});
