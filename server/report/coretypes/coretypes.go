@@ -65,6 +65,25 @@ const (
 	RunStatusFinished   = "Finished"
 )
 
+// TranscriptMode controls how transcript posts are collated when rendered.
+//
+// Threaded (default): roots are emitted in root-CreateAt order; every reply
+// is rendered directly under its root regardless of the original wall-clock
+// gap between them. This is the Mattermost UI's "threaded replies" model.
+// Orphan replies (whose root is outside this transcript window) collect
+// under a dedicated "Orphan replies" subsection so existence of the missing
+// root is signaled honestly.
+//
+// Chronological: posts emit in strict CreateAt order with no grouping. Each
+// reply post carries a "↳ @user" indicator naming the parent author and
+// time, or "↳ (parent not in transcript)" for orphans.
+type TranscriptMode string
+
+const (
+	TranscriptModeThreaded      TranscriptMode = "threaded"
+	TranscriptModeChronological TranscriptMode = "chronological"
+)
+
 // ResolverTable is the pre-built lookup the markdown extension consumes.
 // All map values are zero-initialized when the requester cannot see the
 // target (deny path byte-identical to "not found").

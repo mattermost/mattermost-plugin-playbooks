@@ -31,6 +31,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/html_writer"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/markdown_writer"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/renderer/html2pdf"
@@ -244,6 +245,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
 		return
 	}
+	rc.TranscriptMode = parseTranscriptMode(r.URL.Query().Get("transcript_mode"))
 
 	asciiName := safeFilename(rc.Run.Name, "run-"+run.ID)
 
@@ -908,6 +910,18 @@ func eventForPlaybook(format string) string {
 // (?download=1). Defaults to inline display.
 func isDownload(r *http.Request) bool {
 	return r.URL.Query().Get("download") == "1"
+}
+
+// parseTranscriptMode normalizes the ?transcript_mode= query param. Unknown
+// or empty values resolve to threaded — the safer default since orphan
+// replies are signaled explicitly rather than silently promoted.
+func parseTranscriptMode(raw string) coretypes.TranscriptMode {
+	switch coretypes.TranscriptMode(raw) {
+	case coretypes.TranscriptModeChronological:
+		return coretypes.TranscriptModeChronological
+	default:
+		return coretypes.TranscriptModeThreaded
+	}
 }
 
 // buildDispositionFor returns an RFC 6266 Content-Disposition header for the

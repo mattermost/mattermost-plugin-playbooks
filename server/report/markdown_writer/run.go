@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 // RenderRunMarkdown walks rc and returns canonical Mattermost-flavored
@@ -194,17 +195,11 @@ func writeRunTranscript(b *bytes.Buffer, rc report.RenderContext) {
 		return
 	}
 
-	threads := groupByThread(filtered)
-	for ti, thread := range threads {
-		for i, p := range thread {
-			isReply := i > 0 || p.RootID != ""
-			writeTranscriptPost(b, p, rc.Resolvers, isReply)
-		}
-		if ti < len(threads)-1 {
-			b.WriteString(">\n")
-		}
+	if rc.TranscriptMode == coretypes.TranscriptModeChronological {
+		writeTranscriptChronological(b, filtered, rc.Resolvers)
+	} else {
+		writeTranscriptThreaded(b, filtered, rc.Resolvers)
 	}
-	b.WriteString("\n")
 
 	if rc.TranscriptTruncation.Hit {
 		count := rc.TranscriptTruncation.Posts

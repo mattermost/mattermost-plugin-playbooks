@@ -153,7 +153,7 @@ describe('ExportOptionsModal', () => {
             capturedHandleConfirm?.();
         });
 
-        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'md');
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'md', 'threaded');
     });
 
     it('shows browser-print hint when pdfAvailableServerSide is false and format is pdf', () => {

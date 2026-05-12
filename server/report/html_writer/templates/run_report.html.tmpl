@@ -108,23 +108,42 @@
   <h2>Transcript</h2>
   {{if .TranscriptOmitted}}
   <p class="muted">Transcript omitted — you are not a member of the run's channel.</p>
-  {{else if .Transcript}}
-  {{range .Transcript}}
-  <div class="transcript-thread">
-    <div class="msg-header">{{.AuthorDisplay}}<span>{{.FormattedDate}}</span></div>
-    {{if .BodyHTML}}<div class="msg-body">{{.BodyHTML}}</div>{{end}}
-    {{range .Replies}}
-    <div class="transcript-reply">
+  {{else if .TranscriptChronological}}
+    {{if .TranscriptChronoPosts}}
+      {{range .TranscriptChronoPosts}}
+      <div class="{{if .IsReply}}transcript-reply{{else}}transcript-thread{{end}}">
+        <div class="msg-header">{{if .IsReply}}↳ {{end}}{{.AuthorDisplay}}<span>{{.FormattedDate}}{{if .ParentLabel}} · {{.ParentLabel}}{{end}}</span></div>
+        {{if .BodyHTML}}<div class="msg-body">{{.BodyHTML}}</div>{{end}}
+      </div>
+      {{end}}
+    {{else}}<p class="muted">No transcript.</p>{{end}}
+  {{else if or .Transcript .TranscriptOrphans}}
+    {{range .Transcript}}
+    <div class="transcript-thread">
+      <div class="msg-header">{{.AuthorDisplay}}<span>{{.FormattedDate}}</span></div>
+      {{if .BodyHTML}}<div class="msg-body">{{.BodyHTML}}</div>{{end}}
+      {{range .Replies}}
+      <div class="transcript-reply">
+        <div class="msg-header">↳ {{.AuthorDisplay}}<span>{{.FormattedDate}}</span></div>
+        {{if .BodyHTML}}<div class="msg-body">{{.BodyHTML}}</div>{{end}}
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+    {{if .TranscriptOrphans}}
+    <h3 class="transcript-orphans-heading">Orphan replies</h3>
+    <p class="muted transcript-orphans-note">Parent message is outside this transcript.</p>
+    {{range .TranscriptOrphans}}
+    <div class="transcript-reply transcript-reply--orphan">
       <div class="msg-header">↳ {{.AuthorDisplay}}<span>{{.FormattedDate}}</span></div>
       {{if .BodyHTML}}<div class="msg-body">{{.BodyHTML}}</div>{{end}}
     </div>
     {{end}}
-  </div>
-  {{end}}
+    {{end}}
+  {{else}}<p class="muted">No transcript.</p>{{end}}
   {{if .TranscriptTruncation.Hit}}
   <p class="muted">Transcript truncated (post-cap, {{.TranscriptTruncation.Posts}} posts shown).</p>
   {{end}}
-  {{else}}<p class="muted">No transcript.</p>{{end}}
 
   <hr class="divider">
   <p class="muted">Generated {{.GeneratedAt}} UTC.</p>
