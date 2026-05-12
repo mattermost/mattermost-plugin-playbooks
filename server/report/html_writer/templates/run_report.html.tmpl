@@ -59,9 +59,13 @@
   <h2>Timeline</h2>
   {{if .TimelineEvents}}
   {{range .TimelineEvents}}
-  <div class="timeline-event">
+  <div class="timeline-event timeline-event--{{.Category}}">
     <span class="timeline-event__date">{{.FormattedDate}}</span>
-    <span class="timeline-event__body">{{.SummaryHTML}}{{if .DetailsHTML}} — <span class="timeline-event__details">{{.DetailsHTML}}</span>{{end}}</span>
+    <span class="timeline-event__label">{{.TypeLabel}}</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">{{.HeadlineHTML}}</div>
+      {{if .DetailHTML}}<div class="timeline-event__detail">{{.DetailHTML}}</div>{{end}}
+    </div>
   </div>
   {{end}}
   {{else}}<p class="muted">No timeline events.</p>{{end}}

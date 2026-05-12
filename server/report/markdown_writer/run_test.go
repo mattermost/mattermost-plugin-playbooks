@@ -75,7 +75,7 @@ const expectedRunMarkdown = "# Run Alpha\n" +
 	"\n" +
 	"## Timeline\n" +
 	"\n" +
-	"- **2023-11-14 22:16** — Run created\n" +
+	"- **2023-11-14 22:16** · _Run created_ — Run created\n" +
 	"  by alice\n" +
 	"\n" +
 	"## Status Updates\n" +

@@ -145,6 +145,7 @@ func TestRenderRunHTML_Smoke(t *testing.T) {
 		"<strong>Resolved.</strong>", // markdown rendered
 		"Timeline",              // section
 		"Run created",           // timeline summary
+		"timeline-event__label", // per-event type label chip
 		"Status Updates",        // section
 		"Investigating.",        // status body
 		"Tasks",                 // section
