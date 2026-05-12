@@ -183,15 +183,22 @@ func TestReportServiceMetricsFromConfigs(t *testing.T) {
 		require.False(t, out[1].HasValue)
 	})
 
-	t.Run("run metric data preserves null vs zero", func(t *testing.T) {
-		data := []RunMetricData{
-			{MetricConfigID: "m1", Value: null.IntFrom(0)},
-			{MetricConfigID: "m2"},
+	t.Run("run metric values join to playbook configs by id and preserve null vs zero", func(t *testing.T) {
+		// Mirrors the production path: playbook metric configs supply
+		// labels/types/targets; run-side values come in via the lookup
+		// map. A nil-valued run-side metric stays HasValue=false; a
+		// zero-valued one stays HasValue=true.
+		cfg := []PlaybookMetricConfig{
+			{ID: "m1", Title: "Time to detect", Type: MetricTypeDuration},
+			{ID: "m2", Title: "Customer impact", Type: MetricTypeInteger},
 		}
-		out := metricsFromConfigs(data, nil)
+		values := map[string]int64{"m1": 0} // m2 missing → no value
+		out := metricsFromConfigs(cfg, values)
 		require.Len(t, out, 2)
+		require.Equal(t, "Time to detect", out[0].Title)
 		require.True(t, out[0].HasValue)
 		require.Equal(t, int64(0), out[0].Value)
+		require.Equal(t, "Customer impact", out[1].Title)
 		require.False(t, out[1].HasValue)
 	})
 }

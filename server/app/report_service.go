@@ -130,8 +130,12 @@ func (s *ReportService) AssembleRunReportContext(
 		},
 	}
 
+	// playbook holds the parent template if we can fetch it — used for
+	// PlaybookTitle and the retrospective metric config join.
+	var playbook *Playbook
 	if run.PlaybookID != "" {
 		if pb, perr := s.playbookService.Get(run.PlaybookID); perr == nil {
+			playbook = &pb
 			rc.Run.PlaybookTitle = pb.Title
 		}
 	}
@@ -178,7 +182,11 @@ func (s *ReportService) AssembleRunReportContext(
 		rc.Checklists = buildChecklists(run.Checklists)
 	}
 	if sections.Retrospective {
-		rc.Retrospective = buildRetrospective(run)
+		var metricConfigs []PlaybookMetricConfig
+		if playbook != nil {
+			metricConfigs = playbook.Metrics
+		}
+		rc.Retrospective = buildRetrospective(run, metricConfigs)
 	}
 
 	if sections.Transcript {
@@ -827,19 +835,23 @@ func buildChecklists(in []Checklist) []report.RenderChecklist {
 	return out
 }
 
-func buildRetrospective(run *PlaybookRun) report.RenderRetrospective {
+// buildRetrospective composes the retrospective DTO for the run renderer.
+// metricConfigs is the parent playbook's metric configuration (Title,
+// Description, Type, Target); the run-side instance values come from
+// run.MetricsData. When metricConfigs is nil/empty (orphaned run with a
+// deleted playbook, or the caller couldn't fetch), the function still emits
+// value-only entries so the renderer can show numbers — labels stay blank.
+func buildRetrospective(run *PlaybookRun, metricConfigs []PlaybookMetricConfig) report.RenderRetrospective {
 	return report.RenderRetrospective{
 		Body:        run.Retrospective,
 		PublishedMs: run.RetrospectivePublishedAt,
-		Metrics:     metricsFromConfigs(run.MetricsData, runMetricLookupsFromRun(run)),
+		Metrics:     metricsFromConfigs(metricConfigs, runMetricValueLookup(run)),
 	}
 }
 
-// runMetricLookupsFromRun returns a metricID -> value map for the run-instance
-// branch of metricsFromConfigs. Run instances persist values but not
-// configuration; configuration lives on the playbook and is unavailable from
-// PlaybookRun alone. The renderer can still display the raw value.
-func runMetricLookupsFromRun(run *PlaybookRun) map[string]int64 {
+// runMetricValueLookup builds the metric-ID → value map for joining a run
+// instance's persisted values against the parent playbook's metric configs.
+func runMetricValueLookup(run *PlaybookRun) map[string]int64 {
 	out := make(map[string]int64, len(run.MetricsData))
 	for _, md := range run.MetricsData {
 		if md.Value.Valid {
@@ -849,47 +861,31 @@ func runMetricLookupsFromRun(run *PlaybookRun) map[string]int64 {
 	return out
 }
 
-// metricsFromConfigs accepts either a []PlaybookMetricConfig (playbook side,
-// values nil) or a []RunMetricData (run side, looking up titles is impossible
-// without playbook context — caller supplies the value map). When the input
-// is RunMetricData we emit value-only entries; the run renderer joins to the
-// playbook title list separately if needed.
-func metricsFromConfigs(in interface{}, valueOverrides map[string]int64) []report.RenderMetric {
-	switch v := in.(type) {
-	case []PlaybookMetricConfig:
-		out := make([]report.RenderMetric, 0, len(v))
-		for _, m := range v {
-			var target int64
-			if m.Target.Valid {
-				target = m.Target.Int64
-			}
-			rm := report.RenderMetric{
-				ID:          m.ID,
-				Title:       m.Title,
-				Description: m.Description,
-				Type:        metricTypeFromConfig(m.Type),
-				Target:      target,
-			}
-			if val, ok := valueOverrides[m.ID]; ok {
-				rm.Value = val
-				rm.HasValue = true
-			}
-			out = append(out, rm)
+// metricsFromConfigs maps the canonical PlaybookMetricConfig list into
+// the renderer DTO, optionally joining run-instance values via
+// valueOverrides (metricID → value). Used for both the playbook surface
+// (values nil) and the run surface (values map from runMetricValueLookup).
+func metricsFromConfigs(configs []PlaybookMetricConfig, valueOverrides map[string]int64) []report.RenderMetric {
+	out := make([]report.RenderMetric, 0, len(configs))
+	for _, m := range configs {
+		var target int64
+		if m.Target.Valid {
+			target = m.Target.Int64
 		}
-		return out
-	case []RunMetricData:
-		out := make([]report.RenderMetric, 0, len(v))
-		for _, md := range v {
-			rm := report.RenderMetric{ID: md.MetricConfigID}
-			if md.Value.Valid {
-				rm.Value = md.Value.Int64
-				rm.HasValue = true
-			}
-			out = append(out, rm)
+		rm := report.RenderMetric{
+			ID:          m.ID,
+			Title:       m.Title,
+			Description: m.Description,
+			Type:        metricTypeFromConfig(m.Type),
+			Target:      target,
 		}
-		return out
+		if val, ok := valueOverrides[m.ID]; ok {
+			rm.Value = val
+			rm.HasValue = true
+		}
+		out = append(out, rm)
 	}
-	return nil
+	return out
 }
 
 func metricTypeFromConfig(t string) string {
