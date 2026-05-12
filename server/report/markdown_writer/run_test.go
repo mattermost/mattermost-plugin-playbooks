@@ -93,10 +93,9 @@ const expectedRunMarkdown = "# Run Alpha\n" +
 	"- [-] Open war room\n" +
 	"  *(Unassigned)*\n" +
 	"- [ ] Postmortem doc\n" +
-	"  *(Unassigned, Due: 2023-11-14 22:30)*\n" +
+	"  *(Unassigned, Due: 2023-11-14 22:30, Command: `/postmortem create`)*\n" +
 	"\n" +
 	"    Write it up.\n" +
-	"    `/postmortem create`\n" +
 	"\n" +
 	"## Retrospective\n" +
 	"\n" +

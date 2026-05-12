@@ -90,9 +90,9 @@ const expectedPlaybookMarkdown = "# Playbook Alpha\n" +
 	"- [ ] Page on-call\n" +
 	"- [ ] Open war room\n" +
 	"- [ ] Postmortem doc\n" +
+	"  *(Command: `/postmortem create`)*\n" +
 	"\n" +
 	"    Write it up.\n" +
-	"    `/postmortem create`\n" +
 	"\n" +
 	"## Status Updates\n" +
 	"\n" +

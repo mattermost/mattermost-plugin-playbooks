@@ -221,13 +221,11 @@ func writeChecklist(b *bytes.Buffer, cl report.RenderChecklist, rt report.Resolv
 		b.WriteString(it.Title)
 		b.WriteString("\n")
 
-		if !omitAssigneeMeta {
-			meta := buildTaskMeta(it, rt)
-			if meta != "" {
-				b.WriteString("  *(")
-				b.WriteString(meta)
-				b.WriteString(")*\n")
-			}
+		meta := buildTaskMeta(it, rt, omitAssigneeMeta)
+		if meta != "" {
+			b.WriteString("  *(")
+			b.WriteString(meta)
+			b.WriteString(")*\n")
 		}
 		if desc := strings.TrimSpace(it.Description); desc != "" {
 			b.WriteString("\n")
@@ -237,26 +235,29 @@ func writeChecklist(b *bytes.Buffer, cl report.RenderChecklist, rt report.Resolv
 				b.WriteString("\n")
 			}
 		}
-		if it.Command != "" {
-			b.WriteString("    `")
-			b.WriteString(it.Command)
-			b.WriteString("`\n")
-		}
 	}
 	b.WriteString("\n")
 }
 
-// buildTaskMeta composes the `Assignee: @x, Due: YYYY-MM-DD` meta string
-// for a run-instance checklist item.
-func buildTaskMeta(it report.RenderChecklistItem, rt report.ResolverTable) string {
-	parts := make([]string, 0, 2)
-	if it.AssigneeID != "" {
-		parts = append(parts, "Assignee: "+resolveUser(rt, it.AssigneeID))
-	} else {
-		parts = append(parts, "Unassigned")
+// buildTaskMeta composes the parenthesized meta string that sits under a
+// task bullet. For run instances: "Assignee: @x, Due: YYYY-MM-DD,
+// Command: `/foo bar`". For playbook templates (omitAssignee=true):
+// "Command: `/foo bar`" only — playbook templates have no assignee or
+// due-date instance. Returns empty when no meta is applicable.
+func buildTaskMeta(it report.RenderChecklistItem, rt report.ResolverTable, omitAssignee bool) string {
+	parts := make([]string, 0, 3)
+	if !omitAssignee {
+		if it.AssigneeID != "" {
+			parts = append(parts, "Assignee: "+resolveUser(rt, it.AssigneeID))
+		} else {
+			parts = append(parts, "Unassigned")
+		}
+		if it.DueAtMs > 0 {
+			parts = append(parts, "Due: "+formatDate(it.DueAtMs))
+		}
 	}
-	if it.DueAtMs > 0 {
-		parts = append(parts, "Due: "+formatDate(it.DueAtMs))
+	if it.Command != "" {
+		parts = append(parts, "Command: `"+it.Command+"`")
 	}
 	return strings.Join(parts, ", ")
 }
