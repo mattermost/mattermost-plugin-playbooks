@@ -75,10 +75,11 @@ func writeRunTimeline(b *bytes.Buffer, rc report.RenderContext) {
 		return
 	}
 	for _, ev := range rc.TimelineEvents {
+		f := report.FormatTimelineEvent(ev, rc.Resolvers)
 		when := formatDate(ev.CreateAt)
-		fmt.Fprintf(b, "- **%s** — %s\n", when, ev.Summary)
-		if d := strings.TrimSpace(ev.Details); d != "" {
-			for _, ln := range strings.Split(d, "\n") {
+		fmt.Fprintf(b, "- **%s** · _%s_ — %s\n", when, f.TypeLabel, f.Headline)
+		if f.Detail != "" {
+			for _, ln := range strings.Split(f.Detail, "\n") {
 				b.WriteString("  ")
 				b.WriteString(ln)
 				b.WriteString("\n")

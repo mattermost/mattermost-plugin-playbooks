@@ -84,8 +84,10 @@ type statusUpdateData struct {
 
 type timelineEventData struct {
 	FormattedDate string
-	SummaryHTML   template.HTML
-	DetailsHTML   template.HTML
+	TypeLabel     string
+	Category      string        // CSS class hook
+	HeadlineHTML  template.HTML // through markdownInlineToHTML
+	DetailHTML    template.HTML // through markdownInlineToHTML, empty if no detail
 }
 
 type checklistData struct {
@@ -309,11 +311,17 @@ func buildRunData(rc report.RenderContext, opts Options) runReportData {
 
 	// Timeline.
 	for _, ev := range rc.TimelineEvents {
-		data.TimelineEvents = append(data.TimelineEvents, timelineEventData{
+		f := report.FormatTimelineEvent(ev, rc.Resolvers)
+		td := timelineEventData{
 			FormattedDate: formatDate(ev.CreateAt),
-			SummaryHTML:   markdownInlineToHTML(ev.Summary, rc.Resolvers),
-			DetailsHTML:   markdownInlineToHTML(ev.Details, rc.Resolvers),
-		})
+			TypeLabel:     f.TypeLabel,
+			Category:      string(f.Category),
+			HeadlineHTML:  markdownInlineToHTML(f.Headline, rc.Resolvers),
+		}
+		if f.Detail != "" {
+			td.DetailHTML = markdownInlineToHTML(f.Detail, rc.Resolvers)
+		}
+		data.TimelineEvents = append(data.TimelineEvents, td)
 	}
 
 	// Checklists.

@@ -69,10 +69,20 @@ th { background: #f8f9fb; font-weight: 600; }
 .member-chip { background: #f0f0f0; border-radius: 12px; padding: 3px 10px; font-size: 13px; }
 
 /* Timeline */
-.timeline-event { display: flex; gap: 12px; margin: 8px 0; font-size: 13px; }
-.timeline-event__date { color: #72767d; white-space: nowrap; flex-shrink: 0; width: 140px; }
-.timeline-event__body { color: #1e1f22; }
-.timeline-event__details { color: #72767d; }
+.timeline-event { display: grid; grid-template-columns: 140px 140px 1fr; gap: 12px; margin: 8px 0; font-size: 13px; align-items: start; padding: 6px 0; border-top: 1px solid #f0f0f0; }
+.timeline-event:first-of-type { border-top: none; }
+.timeline-event__date { color: #72767d; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.timeline-event__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #72767d; padding: 2px 8px; background: rgba(63, 67, 80, 0.06); border-radius: 12px; text-align: center; align-self: start; }
+.timeline-event__headline { color: #1e1f22; }
+.timeline-event__detail { color: #72767d; margin-top: 4px; font-size: 12px; }
+
+/* Category accent colors on the label chip */
+.timeline-event--lifecycle .timeline-event__label { background: rgba(28, 88, 217, 0.10); color: #1c58d9; }
+.timeline-event--tasks     .timeline-event__label { background: rgba(31, 107, 53, 0.10); color: #1f6b35; }
+.timeline-event--status    .timeline-event__label { background: rgba(22, 106, 171, 0.10); color: #166aab; }
+.timeline-event--people    .timeline-event__label { background: rgba(120, 67, 152, 0.10); color: #784398; }
+.timeline-event--retrospective .timeline-event__label { background: rgba(204, 142, 53, 0.10); color: #cc8e35; }
+.timeline-event--command   .timeline-event__label { background: rgba(63, 67, 80, 0.10); color: #3f4350; }
 
 /* Transcript */
 .transcript-thread { border-left: 3px solid #e0e0e0; padding-left: 12px; margin: 12px 0; }
