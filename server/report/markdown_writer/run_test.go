@@ -37,8 +37,8 @@ func fixtureRun() report.RenderContext {
 			{
 				Title: "Initial response",
 				Items: []report.RenderChecklistItem{
-					{Title: "Page on-call", State: "Closed", AssigneeID: "u1"},
-					{Title: "Open war room", State: "Skipped"},
+					{Title: "Page on-call", State: "closed", AssigneeID: "u1"},
+					{Title: "Open war room", State: "skipped"},
 					{Title: "Postmortem doc", State: "", DueAtMs: 1_700_001_000_000, Description: "Write it up.", Command: "/postmortem create"},
 				},
 			},
@@ -67,7 +67,7 @@ const expectedRunMarkdown = "# Run Alpha\n" +
 	"\n" +
 	"**Status**: In Progress  ·  **Owner**: @alice  ·  **Started**: 2023-11-14 22:13  ·  **Playbook**: PB Alpha\n" +
 	"\n" +
-	"## Executive Summary\n" +
+	"## Summary\n" +
 	"\n" +
 	"Brief outage in primary DB cluster.\n" +
 	"\n" +

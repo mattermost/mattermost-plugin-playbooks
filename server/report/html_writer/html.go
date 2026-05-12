@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 //go:embed templates/run_report.html.tmpl
@@ -57,14 +58,16 @@ type runReportData struct {
 	TranscriptOmitted    bool
 
 	// Computed
-	OwnerDisplay string
-	StartedAt    string
-	EndedAt      string
-	Duration     string
-	SummaryHTML  template.HTML
-	TasksDone    int
-	TasksTotal   int
-	TasksPct     int
+	OwnerDisplay   string
+	StartedAt      string
+	EndedAt        string
+	Duration       string
+	SummaryHTML    template.HTML
+	TasksDone      int
+	TasksTotal     int
+	TasksPct       int
+	IsInProgress   bool
+	IsFinished     bool
 
 	GeneratedAt string
 	Resolvers   report.ResolverTable
@@ -78,8 +81,8 @@ type statusUpdateData struct {
 
 type timelineEventData struct {
 	FormattedDate string
-	Summary       string
-	Details       string
+	SummaryHTML   template.HTML
+	DetailsHTML   template.HTML
 }
 
 type checklistData struct {
@@ -91,7 +94,9 @@ type checklistData struct {
 }
 
 type checklistItemData struct {
-	State           string
+	State           string // raw value; templates should prefer IsClosed/IsSkipped
+	IsClosed        bool
+	IsSkipped       bool
 	TitleHTML       template.HTML
 	AssigneeDisplay string
 	DueDateStr      string
@@ -270,6 +275,8 @@ func buildRunData(rc report.RenderContext, opts Options) runReportData {
 		TasksDone:            tasksDone,
 		TasksTotal:           tasksTotal,
 		TasksPct:             tasksPct,
+		IsInProgress:         rc.Run.Status == coretypes.RunStatusInProgress,
+		IsFinished:           rc.Run.Status == coretypes.RunStatusFinished,
 		GeneratedAt:          formatDate(rc.GeneratedAtMillis),
 	}
 
@@ -286,8 +293,8 @@ func buildRunData(rc report.RenderContext, opts Options) runReportData {
 	for _, ev := range rc.TimelineEvents {
 		data.TimelineEvents = append(data.TimelineEvents, timelineEventData{
 			FormattedDate: formatDate(ev.CreateAt),
-			Summary:       ev.Summary,
-			Details:       ev.Details,
+			SummaryHTML:   markdownInlineToHTML(ev.Summary, rc.Resolvers),
+			DetailsHTML:   markdownInlineToHTML(ev.Details, rc.Resolvers),
 		})
 	}
 
@@ -457,6 +464,8 @@ func buildChecklistData(cl report.RenderChecklist, rt report.ResolverTable, inde
 	for _, it := range cl.Items {
 		item := checklistItemData{
 			State:     it.State,
+			IsClosed:  it.State == coretypes.ChecklistItemStateClosed,
+			IsSkipped: it.State == coretypes.ChecklistItemStateSkipped,
 			TitleHTML: markdownInlineToHTML(it.Title, rt),
 			DescHTML:  markdownToHTML(it.Description, rt),
 			Command:   it.Command,
@@ -489,7 +498,7 @@ func markdownInlineToHTML(md string, rt report.ResolverTable) template.HTML {
 func countClosed(items []report.RenderChecklistItem) (int, int) {
 	done := 0
 	for _, it := range items {
-		if it.State == "Closed" || it.State == "Skipped" {
+		if it.State == coretypes.ChecklistItemStateClosed || it.State == coretypes.ChecklistItemStateSkipped {
 			done++
 		}
 	}

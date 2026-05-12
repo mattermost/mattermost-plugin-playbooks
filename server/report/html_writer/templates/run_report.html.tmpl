@@ -11,9 +11,9 @@
 </head>
 <body>
   <h1>{{.Run.Name}}</h1>
-  {{if eq .Run.Status "InProgress"}}
+  {{if .IsInProgress}}
   <span class="status-pill status-pill--inprogress">In Progress</span>
-  {{else if eq .Run.Status "Finished"}}
+  {{else if .IsFinished}}
   <span class="status-pill status-pill--finished">Finished</span>
   {{else if .Run.Status}}
   <span class="status-pill status-pill--neutral">{{.Run.Status}}</span>
@@ -52,7 +52,7 @@
   </div>
   {{end}}
 
-  <h2>Executive Summary</h2>
+  <h2>Summary</h2>
   {{if .SummaryHTML}}<div class="boxed-md">{{.SummaryHTML}}</div>
   {{else}}<p class="muted">No summary.</p>{{end}}
 
@@ -61,7 +61,7 @@
   {{range .TimelineEvents}}
   <div class="timeline-event">
     <span class="timeline-event__date">{{.FormattedDate}}</span>
-    <span>{{.Summary}}{{if .Details}} — <em>{{.Details}}</em>{{end}}</span>
+    <span class="timeline-event__body">{{.SummaryHTML}}{{if .DetailsHTML}} — <span class="timeline-event__details">{{.DetailsHTML}}</span>{{end}}</span>
   </div>
   {{end}}
   {{else}}<p class="muted">No timeline events.</p>{{end}}
@@ -82,13 +82,12 @@
   <h3>{{.Title}} ({{.Done}}/{{.Total}} · {{.Pct}}%)</h3>
   <div class="checklist">
     {{range .Items}}
-    <div class="task{{if eq .State "Skipped"}} task--skipped{{end}}">
-      <input type="checkbox" {{if eq .State "Closed"}}checked{{end}} disabled>
-      <div>
+    <div class="task{{if .IsSkipped}} task--skipped{{end}}">
+      <input type="checkbox" {{if .IsClosed}}checked{{end}} disabled>
+      <div class="task__body">
         <div class="task__title">{{.TitleHTML}}</div>
-        {{if or .AssigneeDisplay .DueDateStr}}<div class="task__meta">{{if .AssigneeDisplay}}{{.AssigneeDisplay}}{{else}}Unassigned{{end}}{{if .DueDateStr}} · Due: {{.DueDateStr}}{{end}}</div>{{end}}
+        {{if or .AssigneeDisplay .DueDateStr .Command}}<div class="task__meta">{{if .AssigneeDisplay}}{{.AssigneeDisplay}}{{else}}Unassigned{{end}}{{if .DueDateStr}} · Due: {{.DueDateStr}}{{end}}{{if .Command}} · <code class="task__meta-cmd">{{.Command}}</code>{{end}}</div>{{end}}
         {{if .DescHTML}}<div class="task__desc">{{.DescHTML}}</div>{{end}}
-        {{if .Command}}<code class="task__cmd">{{.Command}}</code>{{end}}
       </div>
     </div>
     {{end}}

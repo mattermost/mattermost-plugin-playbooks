@@ -44,6 +44,27 @@ type RenderPostPreview struct {
 	Excerpt  string
 }
 
+// Checklist item state values. Mirror the canonical constants in
+// server/app/playbook.go (ChecklistItemStateOpen / InProgress / Closed /
+// Skipped). Re-declared here so the report packages — which cannot import
+// server/app without creating an import cycle — have a single source of
+// truth to reference from templates and writer code. A test in this
+// package asserts byte-equality against the app-layer values.
+const (
+	ChecklistItemStateOpen       = ""
+	ChecklistItemStateInProgress = "in_progress"
+	ChecklistItemStateClosed     = "closed"
+	ChecklistItemStateSkipped    = "skipped"
+)
+
+// Run status values. Mirror server/app/playbook_run.go's
+// StatusInProgress / StatusFinished for the same reason as the
+// checklist-item-state block above.
+const (
+	RunStatusInProgress = "InProgress"
+	RunStatusFinished   = "Finished"
+)
+
 // ResolverTable is the pre-built lookup the markdown extension consumes.
 // All map values are zero-initialized when the requester cannot see the
 // target (deny path byte-identical to "not found").

@@ -56,10 +56,10 @@
     {{range .Items}}
     <div class="task">
       <input type="checkbox" disabled>
-      <div>
+      <div class="task__body">
         <div class="task__title">{{.TitleHTML}}</div>
+        {{if .Command}}<div class="task__meta"><code class="task__meta-cmd">{{.Command}}</code></div>{{end}}
         {{if .DescHTML}}<div class="task__desc">{{.DescHTML}}</div>{{end}}
-        {{if .Command}}<code class="task__cmd">{{.Command}}</code>{{end}}
       </div>
     </div>
     {{end}}

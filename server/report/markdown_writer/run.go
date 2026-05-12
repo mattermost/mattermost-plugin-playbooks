@@ -59,7 +59,7 @@ func writeRunHeader(b *bytes.Buffer, rc report.RenderContext) {
 }
 
 func writeRunSummary(b *bytes.Buffer, rc report.RenderContext) {
-	writeHeading(b, 2, "Executive Summary")
+	writeHeading(b, 2, "Summary")
 	if strings.TrimSpace(rc.Run.Summary) == "" {
 		writeEmpty(b, "summary")
 		return

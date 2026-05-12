@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 // metaSep is the separator used between key/value items in a metadata strip:
@@ -99,9 +100,9 @@ func formatDuration(ms int64) string {
 // statusDisplay renders the canonical display string for a run status code.
 func statusDisplay(code string) string {
 	switch code {
-	case "InProgress":
+	case coretypes.RunStatusInProgress:
 		return "In Progress"
-	case "Finished":
+	case coretypes.RunStatusFinished:
 		return "Finished"
 	default:
 		return code
@@ -176,7 +177,7 @@ func writeFooter(b *bytes.Buffer, generatedAtMs int64) {
 func countClosed(items []report.RenderChecklistItem) (int, int) {
 	done := 0
 	for _, it := range items {
-		if it.State == "Closed" || it.State == "Skipped" {
+		if it.State == coretypes.ChecklistItemStateClosed || it.State == coretypes.ChecklistItemStateSkipped {
 			done++
 		}
 	}
@@ -186,9 +187,9 @@ func countClosed(items []report.RenderChecklistItem) (int, int) {
 // taskBullet returns the markdown task-list bullet for a checklist state.
 func taskBullet(state string) string {
 	switch state {
-	case "Closed":
+	case coretypes.ChecklistItemStateClosed:
 		return "- [x] "
-	case "Skipped":
+	case coretypes.ChecklistItemStateSkipped:
 		return "- [-] "
 	default:
 		return "- [ ] "
