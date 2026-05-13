@@ -2,6 +2,8 @@
 
 ## Cursor Cloud specific instructions
 
+> **IMPORTANT**: Do NOT commit or push `AGENTS.md` to the repository. The update script generates `AGENTS.md` at runtime by copying `cursor.md`. If you see `AGENTS.md` as an untracked or modified file, add it to `.gitignore` or simply leave it unstaged — never `git add` it.
+
 ### Overview
 
 This is the **Mattermost Playbooks** plugin (`mattermost-plugin-playbooks`). It is a Mattermost server plugin with a Go backend (`server/`) and React/TypeScript frontend (`webapp/`), bundled as a `.tar.gz` and deployed into a running Mattermost server instance.
