@@ -2129,18 +2129,17 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	s.addAssigneeAsParticipant(playbookRunID, assigneeID, userID, playbookRunToModify)
-
-	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
+	var dmMsg string
+	if assigneeID != "" && assigneeID != userID {
 		if subjectUser, userErr := s.pluginAPI.User.Get(userID); userErr != nil {
 			s.pluginAPI.Log.Warn("failed to get user for assignee DM", "user_id", userID, "err", userErr.Error())
 		} else {
 			runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
-			dmMsg := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
+			dmMsg = fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 				subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
-			s.notifyAssignee(playbookRunID, itemToCheck.AssigneeID, userID, dmMsg)
 		}
 	}
+	s.addAssigneeParticipantAndDM(playbookRunID, userID, assigneeID, playbookRunToModify.ParticipantIDs, playbookRunToModify.OwnerUserID, dmMsg)
 
 	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
 		stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, newAssigneeUserAtMention)
@@ -2328,18 +2327,17 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	s.addAssigneeAsParticipant(playbookRunID, resolvedAssigneeID, userID, playbookRunToModify)
-
+	var dmMsg string
 	if resolvedAssigneeID != "" && resolvedAssigneeID != userID {
 		if subjectUser, userErr := s.pluginAPI.User.Get(userID); userErr != nil {
 			s.pluginAPI.Log.Warn("failed to get user for role assignee DM", "user_id", userID, "err", userErr.Error())
 		} else {
 			runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
-			dmMsg := fmt.Sprintf("@%s assigned you the task **%s** (as %s) for the run: %s   #taskassigned",
+			dmMsg = fmt.Sprintf("@%s assigned you the task **%s** (as %s) for the run: %s   #taskassigned",
 				subjectUser.Username, stripmd.Strip(itemToCheck.Title), assigneeType, runURL)
-			s.notifyAssignee(playbookRunID, resolvedAssigneeID, userID, dmMsg)
 		}
 	}
+	s.addAssigneeParticipantAndDM(playbookRunID, userID, resolvedAssigneeID, playbookRunToModify.ParticipantIDs, playbookRunToModify.OwnerUserID, dmMsg)
 
 	modifyMessage := fmt.Sprintf("set assignee of checklist item **%s** to %s", stripmd.Strip(itemToCheck.Title), assigneeType)
 	event := &TimelineEvent{
@@ -5431,33 +5429,6 @@ func resolveOwnerRoleAssignments(checklists []Checklist, ownerID string) {
 	}
 }
 
-// addAssigneeAsParticipant adds assigneeID to the run if they are not already a member.
-// It is a no-op when assigneeID is empty or already the run owner (owners are always participants).
-// Failures are logged but not returned: the assignee change is already committed at this point.
-func (s *PlaybookRunServiceImpl) addAssigneeAsParticipant(playbookRunID, assigneeID, requesterID string, run *PlaybookRun) {
-	if assigneeID == "" || assigneeID == run.OwnerUserID {
-		return
-	}
-	if sliceContains(run.ParticipantIDs, assigneeID) {
-		return
-	}
-	if err := s.AddParticipants(playbookRunID, []string{assigneeID}, requesterID, false, false); err != nil {
-		s.pluginAPI.Log.Warn("failed to add assignee as run participant", "playbook_run_id", playbookRunID, "assignee_id", assigneeID, "err", err.Error())
-	}
-}
-
-// notifyAssignee sends a best-effort DM to assigneeID with the provided message.
-// It is a no-op when assigneeID is empty or equals requesterID.
-// Delivery failures are logged but not returned to the caller.
-func (s *PlaybookRunServiceImpl) notifyAssignee(playbookRunID, assigneeID, requesterID, message string) {
-	if assigneeID == "" || assigneeID == requesterID {
-		return
-	}
-	if err := s.poster.DM(assigneeID, &model.Post{Message: message}); err != nil {
-		s.pluginAPI.Log.Warn("failed to send DM to assignee", "playbook_run_id", playbookRunID, "assignee_id", assigneeID, "err", err.Error())
-	}
-}
-
 // applyAssigneeUpdate normalizes the item to a specific-user assignment.
 // Returns true when the item was already in that state (caller may skip the store write);
 // returns false when role/property-field state must still be persisted, even if AssigneeID is unchanged.
@@ -5504,7 +5475,6 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 		if !sliceContains(participantIDs, resolvedUserID) {
 			if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
 				logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
-				return
 			}
 		}
 	}
@@ -5544,21 +5514,6 @@ func resolvePropertyUserAssignmentsForField(checklists []Checklist, fieldIDs []s
 // Returns true if any item's AssigneeID changed.
 func resolvePropertyUserAssignmentsFromRun(run *PlaybookRun) bool {
 	if run == nil {
-		return false
-	}
-	hasPropertyUser := false
-	for ci := range run.Checklists {
-		for ii := range run.Checklists[ci].Items {
-			if run.Checklists[ci].Items[ii].AssigneeType == AssigneeTypePropertyUser {
-				hasPropertyUser = true
-				break
-			}
-		}
-		if hasPropertyUser {
-			break
-		}
-	}
-	if !hasPropertyUser {
 		return false
 	}
 	pvMap := make(map[string]json.RawMessage, len(run.PropertyValues))

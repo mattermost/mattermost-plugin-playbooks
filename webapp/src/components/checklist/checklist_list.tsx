@@ -123,7 +123,13 @@ const ChecklistList = ({
     const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
-    const propertyFields = usePlaybookAttributes(inPlaybook?.id || '') ?? playbookRun?.property_fields;
+    const playbookPropertyFields = usePlaybookAttributes(inPlaybook?.id || '');
+
+    // In run context, use run-level property fields: assignee_property_field_id and
+    // condition field IDs were remapped from playbook-level to run-level IDs at run
+    // creation, so the badge label lookup and condition display need matching IDs.
+    // In the playbook editor, use playbook-level fields directly.
+    const propertyFields = playbookRun?.property_fields || playbookPropertyFields;
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,

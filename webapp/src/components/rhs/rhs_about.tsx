@@ -14,7 +14,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
-import {setOwner} from 'src/client';
+import {fetchPlaybookRun, setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 
@@ -31,7 +31,7 @@ import RHSAboutTitle from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import PropertiesList from 'src/components/rhs/properties_list';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
-import {setRHSAboutCollapsedState} from 'src/actions';
+import {playbookRunUpdated, setRHSAboutCollapsedState} from 'src/actions';
 import {useUpdateRun} from 'src/graphql/hooks';
 
 interface Props {
@@ -78,6 +78,17 @@ const RHSAbout = (props: Props) => {
             // eslint-disable-next-line no-warning-comments
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
+            return;
+        }
+
+        // Fetch the updated run and push it to Redux so the UI reflects the
+        // new owner (and re-resolved checklist assignees) immediately, without
+        // waiting for the WebSocket event to arrive.
+        try {
+            const updatedRun = await fetchPlaybookRun(props.playbookRun.id);
+            dispatch(playbookRunUpdated(updatedRun));
+        } catch {
+            // Non-fatal: the WebSocket event will update the UI shortly.
         }
     };
 

@@ -298,6 +298,7 @@ Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
     // wait up to HALF_MIN for the option to become available.
     cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
     cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
+
     cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
 });
 

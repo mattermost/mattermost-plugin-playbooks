@@ -45,6 +45,14 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
 
     beforeEach(() => {
         cy.viewport('macbook-13');
+
+        // Capture app-level console errors/warnings so CI output shows the real
+        // cause without needing video/screenshots.
+        cy.on('window:console', (msg) => {
+            if (msg.type === 'error' || msg.type === 'warn') {
+                cy.log('[CONSOLE ' + msg.type.toUpperCase() + '] ' + (msg.args || []).join(' '));
+            }
+        });
     });
 
     it('task with assignee_type=owner is resolved to the run owner at creation', () => {
@@ -449,7 +457,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                     // # Visit the run channel to open the RHS
                     cy.playbooksVisitRunChannel(testTeam.name, run);
 
-                    // # Manually reassign the task to a specific user via the API
+                    // # Reassign the task to a specific user via the API.
                     cy.apiChangeChecklistItemAssignee(run.id, 0, 0, testOwner.id);
 
                     // * After reassignment, assignee_type must be cleared and assignee_id set
@@ -459,7 +467,10 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                         expect(task.assignee_type).to.equal('');
                     });
 
-                    // * The task in the RHS must show the user profile, not the role badge
+                    // # Reload to reflect the updated server state in the RHS
+                    cy.playbooksVisitRunChannel(testTeam.name, run);
+
+                    // * The task in the RHS must show the user profile, not the role badge.
                     cy.findByTestId('pb-checklists-inner-container').within(() => {
                         cy.contains('[data-testid="checkbox-item-container"]', 'Switchable Task').within(() => {
                             cy.contains(testOwner.username).should('exist');
@@ -691,6 +702,115 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                         expect(propUserRun.checklists[0].items[1].assignee_type).to.equal(ROLE_PROPERTY_USER);
                     });
                 });
+            });
+        });
+    });
+
+    // --- "Run User" option visibility in the assignment dropdown ---
+    // These tests cover the data-flow gap: propertyFields must reach AssigneeDropdown
+    // in both template-editor and run-RHS contexts.
+
+    it('playbook editor shows "Run User" role option when playbook has a user-type property field', () => {
+        cy.apiLogin(testOwner);
+
+        cy.apiCreatePlaybookWithProperties(
+            {
+                teamId: testTeam.id,
+                title: 'RunUser Visibility PB ' + getRandomId(),
+                memberIDs: [testOwner.id],
+                makePublic: true,
+                createPublicPlaybookRun: true,
+                checklists: [{title: 'Stage 1', items: [{title: 'Assignee Task'}]}],
+            },
+            [{name: 'Manager', type: 'user'}],
+        ).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.intercept('GET', '**/api/v0/playbooks/*/property_fields*').as('propertyFieldsFetch');
+            cy.visit('/playbooks/playbooks/' + playbook.id + '/outline');
+            cy.wait('@propertyFieldsFetch');
+            cy.get('#checklists').within(() => {
+                cy.findByText('Assignee Task').trigger('mouseover');
+                cy.findByTestId('hover-menu-edit-button').click();
+            });
+
+            // * The role dropdown must contain the "Run User" option
+            cy.get('#checklists').within(() => {
+                cy.findByTestId('role-options').should('contain', 'Run User');
+                cy.findByTestId('role-options').find('option[value="property_user"]').should('exist');
+            });
+        });
+    });
+
+    it('playbook editor "Add a task" form shows "Run User" role option when playbook has a user-type property field', () => {
+        cy.apiLogin(testOwner);
+
+        cy.apiCreatePlaybookWithProperties(
+            {
+                teamId: testTeam.id,
+                title: 'RunUser AddTask PB ' + getRandomId(),
+                memberIDs: [testOwner.id],
+                makePublic: true,
+                createPublicPlaybookRun: true,
+                checklists: [{title: 'Stage 1', items: [{title: 'Existing Task'}]}],
+            },
+            [{name: 'Manager', type: 'user'}],
+        ).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.intercept('GET', '**/api/v0/playbooks/*/property_fields*').as('propertyFieldsFetch');
+            cy.visit('/playbooks/playbooks/' + playbook.id + '/outline');
+            cy.wait('@propertyFieldsFetch');
+            cy.get('#checklists').within(() => {
+                cy.findByTestId('add-new-task-0').click();
+            });
+
+            // * The role dropdown in the new-task form must contain the "Run User" option.
+            cy.get('#checklists').within(() => {
+                cy.findByTestId('role-options').should('contain', 'Run User');
+                cy.findByTestId('role-options').find('option[value="property_user"]').should('exist');
+            });
+        });
+    });
+
+    it('RHS task editor shows "Run User" role option when run has a user-type property field', () => {
+        cy.apiLogin(testOwner);
+
+        cy.apiCreatePlaybookWithProperties(
+            {
+                teamId: testTeam.id,
+                title: 'RunUser RHS Visibility PB ' + getRandomId(),
+                memberIDs: [testOwner.id],
+                makePublic: true,
+                createPublicPlaybookRun: true,
+                checklists: [{title: 'Stage 1', items: [{title: 'Assignee Task'}]}],
+            },
+            [{name: 'Manager', type: 'user'}],
+        ).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'RunUser RHS Visibility Run ' + getRandomId(),
+                ownerUserId: testOwner.id,
+            }).then((run) => {
+                // # Visit the run channel — RHS opens automatically
+                cy.playbooksVisitRunChannel(testTeam.name, run);
+
+                // # Open the task editor by hovering and clicking the edit button.
+                // cy.trigger is a child command — chain it directly on the located
+                // element rather than calling it as a standalone cy.trigger() inside
+                // .within(), which throws "child command before parent" in Cypress.
+                cy.findByTestId('pb-checklists-inner-container').within(() => {
+                    cy.contains('[data-testid="checkbox-item-container"]', 'Assignee Task').
+                        trigger('mouseover').
+                        findByTestId('hover-menu-edit-button').click();
+                });
+
+                // * The role dropdown must contain the "Run User" option.
+                cy.findByTestId('role-options').should('contain', 'Run User');
+                cy.findByTestId('role-options').find('option[value="property_user"]').should('exist');
             });
         });
     });

@@ -380,6 +380,8 @@ const GenericChecklist = (props: Props) => {
                                 item={emptyChecklistItem()}
                                 itemIndex={-1}
                                 newItem={true}
+                                propertyFields={props.propertyFields}
+                                propertyValues={props.propertyValues}
                                 cancelAddingItem={() => {
                                     setAddingItem(false);
                                 }}

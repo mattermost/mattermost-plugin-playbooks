@@ -15,7 +15,7 @@ import {UserProfile} from '@mattermost/types/users';
 import {CloseIcon} from '@mattermost/compass-icons/components';
 
 import {PropertyComponentProps} from 'src/types/properties';
-import {useProfilesInTeam} from 'src/hooks/general';
+import {useProfilesInTeam} from 'src/hooks';
 import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
 

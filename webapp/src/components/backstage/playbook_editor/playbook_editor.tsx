@@ -25,7 +25,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {pluginErrorUrl} from 'src/browser_routing';
-import {useForceDocumentTitle, useStats} from 'src/hooks';
+import {useForceDocumentTitle, usePlaybookAttributes, useStats} from 'src/hooks';
 import {useAllowPlaybookAttributes} from 'src/hooks/license';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
@@ -56,6 +56,7 @@ const PlaybookEditor = () => {
     const stats = useStats(playbookId);
     const currentUserId = useAppSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
+    usePlaybookAttributes(playbookId);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
