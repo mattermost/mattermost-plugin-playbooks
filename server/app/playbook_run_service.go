@@ -498,16 +498,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			// Remap AssigneePropertyFieldID from playbook-level to run-level field IDs.
 			remapAssigneePropertyFieldIDs(playbookRun.Checklists, propertyCopyResult.FieldMappings)
 
-			// Hydrate PropertyValues so that resolvePropertyUserAssignmentsFromRun can look them up.
-			if propertyValues, pvErr := s.propertyService.GetRunPropertyValues(playbookRun.ID); pvErr != nil {
-				logger.WithError(pvErr).Warn("failed to get run property values before resolving assignees")
-			} else {
-				playbookRun.PropertyValues = propertyValues
-			}
-
-			// Resolve property_user task assignees using any initial property values already on the run.
-			resolvePropertyUserAssignmentsFromRun(playbookRun)
-
 			// Copy conditions from playbook to run using the field mappings if license allows
 			if s.licenseChecker.ConditionalPlaybooksAllowed() {
 				conditionMapping, err := s.conditionService.CopyPlaybookConditionsToRun(pb.ID, playbookRun.ID, propertyCopyResult)
@@ -2139,9 +2129,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	if err = s.addAssigneeAsParticipant(playbookRunID, assigneeID, userID, playbookRunToModify); err != nil {
-		return err
-	}
+	s.addAssigneeAsParticipant(playbookRunID, assigneeID, userID, playbookRunToModify)
 
 	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
 		if subjectUser, userErr := s.pluginAPI.User.Get(userID); userErr != nil {
@@ -2340,9 +2328,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	if err = s.addAssigneeAsParticipant(playbookRunID, resolvedAssigneeID, userID, playbookRunToModify); err != nil {
-		return err
-	}
+	s.addAssigneeAsParticipant(playbookRunID, resolvedAssigneeID, userID, playbookRunToModify)
 
 	if resolvedAssigneeID != "" && resolvedAssigneeID != userID {
 		if subjectUser, userErr := s.pluginAPI.User.Get(userID); userErr != nil {
@@ -5448,17 +5434,16 @@ func resolveOwnerRoleAssignments(checklists []Checklist, ownerID string) {
 // addAssigneeAsParticipant adds assigneeID to the run if they are not already a member.
 // It is a no-op when assigneeID is empty or already the run owner (owners are always participants).
 // Failures are logged but not returned: the assignee change is already committed at this point.
-func (s *PlaybookRunServiceImpl) addAssigneeAsParticipant(playbookRunID, assigneeID, requesterID string, run *PlaybookRun) error {
+func (s *PlaybookRunServiceImpl) addAssigneeAsParticipant(playbookRunID, assigneeID, requesterID string, run *PlaybookRun) {
 	if assigneeID == "" || assigneeID == run.OwnerUserID {
-		return nil
+		return
 	}
 	if sliceContains(run.ParticipantIDs, assigneeID) {
-		return nil
+		return
 	}
 	if err := s.AddParticipants(playbookRunID, []string{assigneeID}, requesterID, false, false); err != nil {
 		s.pluginAPI.Log.Warn("failed to add assignee as run participant", "playbook_run_id", playbookRunID, "assignee_id", assigneeID, "err", err.Error())
 	}
-	return nil
 }
 
 // notifyAssignee sends a best-effort DM to assigneeID with the provided message.
@@ -5561,11 +5546,27 @@ func resolvePropertyUserAssignmentsFromRun(run *PlaybookRun) bool {
 	if run == nil {
 		return false
 	}
+	hasPropertyUser := false
+	for ci := range run.Checklists {
+		for ii := range run.Checklists[ci].Items {
+			if run.Checklists[ci].Items[ii].AssigneeType == AssigneeTypePropertyUser {
+				hasPropertyUser = true
+				break
+			}
+		}
+		if hasPropertyUser {
+			break
+		}
+	}
+	if !hasPropertyUser {
+		return false
+	}
 	pvMap := make(map[string]json.RawMessage, len(run.PropertyValues))
 	for _, pv := range run.PropertyValues {
 		pvMap[pv.FieldID] = pv.Value
 	}
 
+	now := model.GetMillis()
 	anyChanged := false
 	for ci := range run.Checklists {
 		for ii := range run.Checklists[ci].Items {
@@ -5576,7 +5577,7 @@ func resolvePropertyUserAssignmentsFromRun(run *PlaybookRun) bool {
 			resolvedUserID := extractUserIDFromPropertyValue(pvMap[item.AssigneePropertyFieldID])
 			noChangeNeeded := applyPropertyUserAssigneeUpdate(item, item.AssigneePropertyFieldID, resolvedUserID)
 			if !noChangeNeeded {
-				item.AssigneeModified = model.GetMillis()
+				item.AssigneeModified = now
 				anyChanged = true
 			}
 		}

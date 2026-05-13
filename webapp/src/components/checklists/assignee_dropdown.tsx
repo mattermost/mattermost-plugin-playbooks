@@ -46,7 +46,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
     const handleRoleRadioChange = useCallback((value: string) => {
         if (value === AssigneeTypePropertyUser) {
-            // Defer the mutation until a field is actually selected in the sub-dropdown.
             setPendingPropertyUser(true);
             return;
         }
@@ -86,7 +85,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         [propertyFields],
     );
 
-    // Read-only view: show a role badge and the resolved user avatar (if in run mode).
     if (!editable && isRoleBasedAssigneeType(assigneeType)) {
         let resolvedUserId: string | undefined;
         let badgeLabel: string;

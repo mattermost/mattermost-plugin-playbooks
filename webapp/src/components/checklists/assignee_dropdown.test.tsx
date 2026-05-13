@@ -5,25 +5,11 @@
 
 import React from 'react';
 import renderer, {ReactTestRendererJSON} from 'react-test-renderer';
-import {useSelector} from 'react-redux';
 
 import {emptyChecklistItem} from 'src/types/playbook';
 import {PropertyFieldType} from 'src/types/properties';
 
 import AssigneeDropdown from './assignee_dropdown';
-
-jest.mock('react-redux', () => ({
-    useSelector: jest.fn(() => ({})),
-    useDispatch: jest.fn(() => jest.fn()),
-}));
-
-jest.mock('mattermost-redux/selectors/entities/groups', () => ({
-    getAllGroups: jest.fn(),
-}));
-
-jest.mock('mattermost-redux/actions/groups', () => ({
-    getGroups: jest.fn(() => ({type: 'MOCK_GET_GROUPS'})),
-}));
 
 jest.mock('react-intl', () => {
     const reactIntl = jest.requireActual('react-intl');
@@ -64,10 +50,6 @@ const makeChecklistItem = (overrides = {}) => ({
 });
 
 describe('AssigneeDropdown', () => {
-    beforeEach(() => {
-        (useSelector as unknown as jest.Mock).mockReturnValue({});
-    });
-
     it('shows Run Owner as a role option', () => {
         const onChanged = jest.fn();
         const item = makeChecklistItem({assignee_id: '', assignee_type: ''});
