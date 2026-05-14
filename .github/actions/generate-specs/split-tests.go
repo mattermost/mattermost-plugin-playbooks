@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -67,28 +66,19 @@ func (s *Specs) findFiles() {
 }
 
 func (s *Specs) generateSplits() {
-	// Split to chunks based on the parallelism provided
-	chunkSize := int(math.Ceil(float64(len(s.rawFiles)) / float64(s.parallelism)))
-	runNo := 1
-	// We can figure out a more sophisticated way to split the tests
-	// We can use metadata in order to group them manually
-	for i := 0; i <= len(s.rawFiles); i += chunkSize {
-		end := i + chunkSize
-		if end > len(s.rawFiles) {
-			end = len(s.rawFiles)
-		}
-
-		fileGroup := strings.Join(s.rawFiles[i:end], ",")
-
-		specGroup := newSpecGroup(fmt.Sprintf("%d", runNo), fileGroup)
-		s.groupedFiles = append(s.groupedFiles, *specGroup)
-
-		// Break when we reach the end to avoid duplicate groups
-		if end == len(s.rawFiles) {
-			break
-		}
-
-		runNo++
+	// Round-robin: spec i goes to shard (i % parallelism). Spreads
+	// alphabetically-clustered heavy specs (e.g. runs/rdp_*) across shards
+	// so no single shard inherits the entire slow cluster.
+	buckets := make([][]string, s.parallelism)
+	for i, f := range s.rawFiles {
+		shard := i % s.parallelism
+		buckets[shard] = append(buckets[shard], f)
+	}
+	for i, b := range buckets {
+		s.groupedFiles = append(s.groupedFiles, *newSpecGroup(
+			fmt.Sprintf("%d", i+1),
+			strings.Join(b, ","),
+		))
 	}
 }
 
