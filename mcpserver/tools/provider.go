@@ -13,6 +13,7 @@ type APIClient interface {
 	Post(ctx context.Context, endpoint string, body any, result any) error
 	Put(ctx context.Context, endpoint string, body any, result any) error
 	Delete(ctx context.Context, endpoint string) error
+	GetCurrentUserID(ctx context.Context) (string, error)
 }
 
 // ClientFactory creates an APIClient for the current request context.
