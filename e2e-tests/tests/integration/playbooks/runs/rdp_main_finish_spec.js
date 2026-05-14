@@ -139,6 +139,7 @@ describe('runs > run details page > finish with conditional hidden tasks', {test
     let testPlaybook;
 
     before(() => {
+        cy.apiAdminLogin();
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
@@ -219,11 +220,13 @@ describe('runs > run details page > finish with conditional hidden tasks', {test
     it('does not count conditionally hidden tasks as outstanding when finishing', () => {
         cy.findByText('Conditional hidden 1').should('not.exist');
 
+        cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/checklists/*/item/*/state').as('setItemState');
+
         cy.findByText('Always visible task').closest('[data-testid="checkbox-item-container"]').within(() => {
             cy.get('input[type="checkbox"]').check();
         });
 
-        cy.wait(500);
+        cy.wait('@setItemState').its('response.statusCode').should('eq', 200);
 
         cy.findByTestId('run-finish-section').find('button').click();
 
