@@ -74,7 +74,8 @@ Add to your Claude Code settings or `.mcp.json`:
 
 | Tool | Description |
 |------|-------------|
-| `list_runs` | List playbook runs with filters (team, status, owner). Paginated. |
+| `list_runs` | List playbook runs and channel checklists with filters (team, status, owner, type). Paginated. Use `type: "channelChecklist"` for checklists. |
+| `create_checklist` | Create a channel checklist: a playbook run without an associated playbook. Uses the authenticated user as owner and can optionally create initial sections/items. |
 | `get_run` | Get full details of a run including checklists, participants, and status. |
 | `update_run_status` | Post a status update (Markdown). Optionally set a reminder or finish the run. |
 | `finish_run` | Mark a run as finished. |

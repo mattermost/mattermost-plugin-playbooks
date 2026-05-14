@@ -77,6 +77,13 @@ func (c *pluginMCPClient) Delete(ctx context.Context, endpoint string) error {
 	return c.do(ctx, http.MethodDelete, endpoint, nil, nil)
 }
 
+func (c *pluginMCPClient) GetCurrentUserID(context.Context) (string, error) {
+	if c.userID == "" {
+		return "", fmt.Errorf("missing Mattermost user ID")
+	}
+	return c.userID, nil
+}
+
 func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body any, result any) error {
 	var r io.Reader
 	if body != nil {

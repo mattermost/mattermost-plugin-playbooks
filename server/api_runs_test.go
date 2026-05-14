@@ -239,6 +239,9 @@ func TestRunCreation(t *testing.T) {
 				}
 
 				result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+				if err == nil && result != nil {
+					defer result.Body.Close()
+				}
 				tc.expected(t, result, err)
 			})
 		}
@@ -482,6 +485,9 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 
 		assert.NoError(t, err)
+		if err == nil && result != nil {
+			defer result.Body.Close()
+		}
 		assert.Equal(t, http.StatusCreated, result.StatusCode)
 
 		url, err := result.Location()
@@ -708,6 +714,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 
 		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.NoError(t, err)
+		defer result.Body.Close()
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -1554,6 +1561,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		// Make the request
 		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.NoError(t, err)
+		defer result.Body.Close()
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})
 }

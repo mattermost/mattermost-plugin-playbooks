@@ -13,11 +13,34 @@ import (
 // --- Argument structs ---
 
 type ListRunsArgs struct {
-	TeamID      string `json:"team_id,omitempty" jsonschema:"Filter by team ID (26-char Mattermost ID)"`
-	Status      string `json:"status,omitempty" jsonschema:"Filter by status: InProgress or Finished"`
-	OwnerUserID string `json:"owner_user_id,omitempty" jsonschema:"Filter by owner user ID. Use 'me' for the current user."`
-	Page        int    `json:"page,omitempty" jsonschema:"Page number (0-indexed)"`
-	PerPage     int    `json:"per_page,omitempty" jsonschema:"Number of results per page (max 100)"`
+	TeamID      string   `json:"team_id,omitempty" jsonschema:"Filter by team ID (26-char Mattermost ID)"`
+	Status      string   `json:"status,omitempty" jsonschema:"Filter by status: InProgress or Finished"`
+	OwnerUserID string   `json:"owner_user_id,omitempty" jsonschema:"Filter by owner user ID. Use 'me' for the current user."`
+	Type        string   `json:"type,omitempty" jsonschema:"Filter by run type: playbook or channelChecklist"`
+	Types       []string `json:"types,omitempty" jsonschema:"Filter by run types. Valid values: playbook, channelChecklist"`
+	Page        int      `json:"page,omitempty" jsonschema:"Page number (0-indexed)"`
+	PerPage     int      `json:"per_page,omitempty" jsonschema:"Number of results per page (max 100)"`
+}
+
+type CreateChecklistArgs struct {
+	Name      string                   `json:"name" jsonschema:"Name/title of the checklist run"`
+	ChannelID string                   `json:"channel_id" jsonschema:"The Mattermost channel ID to create the checklist in"`
+	TeamID    string                   `json:"team_id,omitempty" jsonschema:"Optional team ID. If omitted, the channel's team is used."`
+	Summary   string                   `json:"summary,omitempty" jsonschema:"Optional summary/description for the checklist run"`
+	Sections  []CreateChecklistSection `json:"sections,omitempty" jsonschema:"Optional initial sections to add after creating the checklist"`
+}
+
+type CreateChecklistSection struct {
+	Title string                `json:"title" jsonschema:"Section title"`
+	Items []CreateChecklistItem `json:"items,omitempty" jsonschema:"Optional initial items in this section"`
+}
+
+type CreateChecklistItem struct {
+	Title       string `json:"title" jsonschema:"Item title"`
+	Description string `json:"description,omitempty" jsonschema:"Optional item description (supports Markdown)"`
+	AssigneeID  string `json:"assignee_id,omitempty" jsonschema:"Optional user ID to assign the item to"`
+	Command     string `json:"command,omitempty" jsonschema:"Optional slash command to associate with the item"`
+	DueDate     int64  `json:"due_date,omitempty" jsonschema:"Optional due date as Unix timestamp in milliseconds"`
 }
 
 type GetRunArgs struct {
@@ -50,6 +73,7 @@ type playbookRunSummary struct {
 	TeamID        string `json:"team_id"`
 	ChannelID     string `json:"channel_id"`
 	PlaybookID    string `json:"playbook_id"`
+	Type          string `json:"type"`
 	CreateAt      int64  `json:"create_at"`
 	EndAt         int64  `json:"end_at"`
 }
@@ -86,6 +110,7 @@ type playbookRunDetail struct {
 	TeamID             string      `json:"team_id"`
 	ChannelID          string      `json:"channel_id"`
 	PlaybookID         string      `json:"playbook_id"`
+	Type               string      `json:"type"`
 	CreateAt           int64       `json:"create_at"`
 	EndAt              int64       `json:"end_at"`
 	LastStatusUpdateAt int64       `json:"last_status_update_at"`
@@ -97,8 +122,12 @@ type playbookRunDetail struct {
 
 func (p *PlaybooksToolProvider) addRunTools(server *mcp.Server) {
 	addTool(server, p.clientFactory, "list_runs",
-		"List playbook runs with optional filters. Returns a paginated list of runs showing ID, name, status, owner, and timestamps. Use status='InProgress' to see active runs. Example: {\"status\": \"InProgress\", \"per_page\": 5}",
+		"List playbook runs and channel checklists with optional filters. Returns a paginated list showing ID, name, type, status, owner, and timestamps. Use status='InProgress' to see active runs and type='channelChecklist' to list checklists. Example: {\"status\": \"InProgress\", \"type\": \"channelChecklist\", \"per_page\": 5}",
 		toolListRuns)
+
+	addTool(server, p.clientFactory, "create_checklist",
+		"Create a channel checklist (a playbook run without an associated playbook) in an existing Mattermost channel. The authenticated user is used as owner. Optionally include initial sections and items. Example: {\"name\": \"Release checklist\", \"channel_id\": \"abc123...\", \"sections\": [{\"title\": \"Pre-release\", \"items\": [{\"title\": \"Confirm changelog\"}]}]}",
+		toolCreateChecklist)
 
 	addTool(server, p.clientFactory, "get_run",
 		"Get full details of a specific playbook run, including checklists with item states, participants, and status. Use this to understand the current state of a run before taking action. Example: {\"run_id\": \"abc123...\"}",
@@ -130,6 +159,18 @@ func toolListRuns(ctx context.Context, client APIClient, args ListRunsArgs) (str
 	if args.OwnerUserID != "" {
 		params.Set("owner_user_id", args.OwnerUserID)
 	}
+	if args.Type != "" {
+		if err := validateRunType(args.Type); err != nil {
+			return "", err
+		}
+		params.Add("types", args.Type)
+	}
+	for _, runType := range args.Types {
+		if err := validateRunType(runType); err != nil {
+			return "", err
+		}
+		params.Add("types", runType)
+	}
 
 	perPage := args.PerPage
 	if perPage <= 0 {
@@ -147,6 +188,69 @@ func toolListRuns(ctx context.Context, client APIClient, args ListRunsArgs) (str
 	}
 
 	return formatListRuns(resp), nil
+}
+
+func toolCreateChecklist(ctx context.Context, client APIClient, args CreateChecklistArgs) (string, error) {
+	name := strings.TrimSpace(args.Name)
+	if name == "" {
+		return "", fmt.Errorf("name is required")
+	}
+	if err := validateID(args.ChannelID, "channel_id"); err != nil {
+		return "", err
+	}
+	if args.TeamID != "" {
+		if err := validateID(args.TeamID, "team_id"); err != nil {
+			return "", err
+		}
+	}
+	if err := validateInitialSections(args.Sections); err != nil {
+		return "", err
+	}
+
+	ownerUserID, err := client.GetCurrentUserID(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get current user ID: %w", err)
+	}
+
+	body := map[string]any{
+		"name":          name,
+		"owner_user_id": ownerUserID,
+		"channel_id":    args.ChannelID,
+		"playbook_id":   "",
+	}
+	if args.TeamID != "" {
+		body["team_id"] = args.TeamID
+	}
+	if args.Summary != "" {
+		body["summary"] = args.Summary
+	}
+
+	var run playbookRunDetail
+	if err := client.Post(ctx, "runs", body, &run); err != nil {
+		return "", fmt.Errorf("failed to create checklist: %w", err)
+	}
+
+	for i, section := range args.Sections {
+		items := append([]CreateChecklistItem(nil), section.Items...)
+		for j := range items {
+			items[j].Title = strings.TrimSpace(items[j].Title)
+		}
+		sectionBody := map[string]any{
+			"title": strings.TrimSpace(section.Title),
+			"items": items,
+		}
+		if err := client.Post(ctx, fmt.Sprintf("runs/%s/checklists", run.ID), sectionBody, nil); err != nil {
+			return "", fmt.Errorf("created checklist run %s, but failed to add section %d: %w", run.ID, i, err)
+		}
+	}
+
+	if len(args.Sections) > 0 {
+		if err := client.Get(ctx, fmt.Sprintf("runs/%s", run.ID), nil, &run); err != nil {
+			return "", fmt.Errorf("created checklist run %s, but failed to fetch updated details: %w", run.ID, err)
+		}
+	}
+
+	return formatRunDetail(run), nil
 }
 
 func toolGetRun(ctx context.Context, client APIClient, args GetRunArgs) (string, error) {
@@ -223,6 +327,34 @@ func toolChangeRunOwner(ctx context.Context, client APIClient, args ChangeRunOwn
 	return fmt.Sprintf("Owner of run %s changed to %s.", args.RunID, args.OwnerID), nil
 }
 
+func validateRunType(runType string) error {
+	switch runType {
+	case "playbook", "channelChecklist":
+		return nil
+	default:
+		return fmt.Errorf("type must be one of playbook or channelChecklist")
+	}
+}
+
+func validateInitialSections(sections []CreateChecklistSection) error {
+	for i, section := range sections {
+		if strings.TrimSpace(section.Title) == "" {
+			return fmt.Errorf("sections[%d].title is required", i)
+		}
+		for j, item := range section.Items {
+			if strings.TrimSpace(item.Title) == "" {
+				return fmt.Errorf("sections[%d].items[%d].title is required", i, j)
+			}
+			if item.AssigneeID != "" {
+				if err := validateID(item.AssigneeID, fmt.Sprintf("sections[%d].items[%d].assignee_id", i, j)); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // --- Formatting helpers ---
 
 func formatListRuns(resp listRunsResponse) string {
@@ -235,7 +367,7 @@ func formatListRuns(resp listRunsResponse) string {
 
 	for _, r := range resp.Items {
 		sb.WriteString(fmt.Sprintf("- **%s** (ID: %s)\n", r.Name, r.ID))
-		sb.WriteString(fmt.Sprintf("  Status: %s | Owner: %s | Playbook: %s\n", r.CurrentStatus, r.OwnerUserID, r.PlaybookID))
+		sb.WriteString(fmt.Sprintf("  Type: %s | Status: %s | Owner: %s | Playbook: %s\n", r.Type, r.CurrentStatus, r.OwnerUserID, r.PlaybookID))
 	}
 
 	if resp.HasMore {
