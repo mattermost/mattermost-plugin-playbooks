@@ -231,4 +231,15 @@ describe('runs > run details page > finish with conditional hidden tasks', {test
         cy.get('#confirmModal').should('not.contain.text', 'outstanding task');
         cy.get('#confirmModal').should('contain.text', 'Are you sure');
     });
+
+    it('still warns about outstanding tasks when a visible task is not complete', () => {
+        cy.findByText('Conditional hidden 1').should('not.exist');
+
+        cy.findByText('Always visible task').should('be.visible');
+
+        cy.findByTestId('run-finish-section').find('button').click();
+
+        cy.get('#confirmModal').should('be.visible');
+        cy.get('#confirmModal').should('contain.text', 'outstanding task');
+    });
 });
