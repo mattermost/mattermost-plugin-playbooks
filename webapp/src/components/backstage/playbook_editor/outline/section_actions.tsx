@@ -284,7 +284,8 @@ const LegacyActionsEdit = ({playbook, restPlaybook, autoArchiveChannel, onAutoAr
                         <AutomationTitle>
                             <div data-testid='auto-archive-channel-toggle'>
                                 <AutoArchiveToggle
-                                    playbook={{...restPlaybook, auto_archive_channel: autoArchiveChannel}}
+                                    autoArchive={autoArchiveChannel}
+                                    isLinkedChannel={playbookForCreateChannel.channel_mode === 'link_existing_channel'}
                                     disabled={archived}
                                     onChange={onAutoArchiveChange}
                                 />

@@ -1313,40 +1313,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	s.metricsService.IncrementRunsFinishedCount(1)
 
 	if s.shouldAutoArchiveChannel(playbookRunToModify) {
-		// Persist the flag first so that if the archive call fails and we reset the flag,
-		// the worst-case double-failure leaves AutoArchivedChannel=true in the DB (safe: the
-		// next restore will call restoreChannelByID which no-ops on an already-active channel
-		// and clears the flag). The old "archive first, persist second" order could leave the
-		// channel permanently archived with AutoArchivedChannel=false.
-		playbookRunToModify.AutoArchivedChannel = true
-		if updatedRun, err := s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-			logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag; skipping channel archive")
-		} else {
-			playbookRunToModify = updatedRun
-			if archived := s.deleteChannelByID(playbookRunToModify.ChannelID, logger.WithField("context", "auto-archive on run finish")); !archived {
-				playbookRunToModify.AutoArchivedChannel = false
-				if resetRun, resetErr := s.store.UpdatePlaybookRun(playbookRunToModify); resetErr != nil {
-					// Flag is true but channel is not archived. The next restore will call
-					// restoreChannelByID, which returns alreadyActive=true for an active
-					// channel and clears the flag as a no-op — safe recovery path.
-					logger.WithField("channel_id", playbookRunToModify.ChannelID).
-						WithError(resetErr).Error("failed to reset AutoArchivedChannel after archive failure — flag is true but channel not archived; next restore will clear it")
-				} else {
-					playbookRunToModify = resetRun
-				}
-			} else {
-				archiveEvent := &TimelineEvent{
-					PlaybookRunID: playbookRunID,
-					CreateAt:      endAt + 1,
-					EventAt:       endAt + 1,
-					EventType:     ChannelArchived,
-					SubjectUserID: userID,
-				}
-				if _, err := s.store.CreateTimelineEvent(archiveEvent); err != nil {
-					logger.WithError(err).Warn("failed to create channel_archived timeline event")
-				}
-			}
-		}
+		playbookRunToModify = s.autoArchiveChannelOnFinish(playbookRunToModify, playbookRunID, userID, endAt, logger)
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
@@ -1529,8 +1496,9 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	// before the restore, the marker must be cleared so future finishes start fresh.
 	if playbookRunToRestore.AutoArchivedChannel && playbookRunToRestore.ChannelID != "" {
 		unarchived := s.restoreChannelByID(playbookRunToRestore.ChannelID, logger)
-		playbookRunToRestore.AutoArchivedChannel = false
-		if updatedRun, err := s.store.UpdatePlaybookRun(playbookRunToRestore); err != nil {
+		candidate := *playbookRunToRestore
+		candidate.AutoArchivedChannel = false
+		if updatedRun, err := s.store.UpdatePlaybookRun(&candidate); err != nil {
 			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
 		} else {
 			playbookRunToRestore = updatedRun
@@ -1633,6 +1601,49 @@ func (s *PlaybookRunServiceImpl) restoreChannelByID(channelID string, logger *lo
 		return false
 	}
 	return true
+}
+
+// autoArchiveChannelOnFinish persists AutoArchivedChannel, archives the channel, and records the
+// timeline event. Returns the (possibly updated) run. See shouldAutoArchiveChannel for the guard.
+func (s *PlaybookRunServiceImpl) autoArchiveChannelOnFinish(run *PlaybookRun, playbookRunID, userID string, endAt int64, logger *logrus.Entry) *PlaybookRun {
+	// Persist the flag first so that if the archive call fails and we reset the flag,
+	// the worst-case double-failure leaves AutoArchivedChannel=true in the DB (safe: the
+	// next restore will call restoreChannelByID which no-ops on an already-active channel
+	// and clears the flag). The old "archive first, persist second" order could leave the
+	// channel permanently archived with AutoArchivedChannel=false.
+	run.AutoArchivedChannel = true
+	updatedRun, err := s.store.UpdatePlaybookRun(run)
+	if err != nil {
+		logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag; skipping channel archive")
+		return run
+	}
+	run = updatedRun
+
+	if !s.deleteChannelByID(run.ChannelID, logger.WithField("context", "auto-archive on run finish")) {
+		run.AutoArchivedChannel = false
+		if resetRun, resetErr := s.store.UpdatePlaybookRun(run); resetErr != nil {
+			// Flag is true but channel is not archived. The next restore will call
+			// restoreChannelByID, which returns alreadyActive=true for an active
+			// channel and clears the flag as a no-op — safe recovery path.
+			logger.WithField("channel_id", run.ChannelID).
+				WithError(resetErr).Error("failed to reset AutoArchivedChannel after archive failure — flag is true but channel not archived; next restore will clear it")
+		} else {
+			run = resetRun
+		}
+		return run
+	}
+
+	archiveEvent := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      endAt + 1,
+		EventAt:       endAt + 1,
+		EventType:     ChannelArchived,
+		SubjectUserID: userID,
+	}
+	if _, err := s.store.CreateTimelineEvent(archiveEvent); err != nil {
+		logger.WithError(err).Warn("failed to create channel_archived timeline event")
+	}
+	return run
 }
 
 // updateAllChecklistsAndItemsTimestamps sets the UpdateAt field for all checklist items in the given checklists
@@ -2522,10 +2533,9 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
 
-	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", runName, checklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", playbookRunToModify.Name, checklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2605,10 +2615,9 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists[:checklistNumber], playbookRunToModify.Checklists[checklistNumber+1:]...)
 
-	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing checklist '%s'", runName, checklistToRemove.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing checklist '%s'", playbookRunToModify.Name, checklistToRemove.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2660,10 +2669,9 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 	playbookRunToModify.Checklists[checklistNumber].Title = newTitle
 	playbookRunToModify.Checklists[checklistNumber].UpdateAt = model.GetMillis()
 
-	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after renaming checklist from '%s' to '%s'", runName, currentChecklist.Title, newTitle)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after renaming checklist from '%s' to '%s'", playbookRunToModify.Name, currentChecklist.Title, newTitle)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2709,10 +2717,9 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &checklistItem, 0)
 	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
 
-	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding item '%s' to checklist '%s'", runName, checklistItem.Title, currentChecklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding item '%s' to checklist '%s'", playbookRunToModify.Name, checklistItem.Title, currentChecklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2762,10 +2769,9 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 
 	playbookRunToModify.Checklists[checklistNumber].UpdateAt = model.GetMillis()
 
-	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing item '%s' from checklist '%s'", runName, itemToRemove.Title, currentChecklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing item '%s' from checklist '%s'", playbookRunToModify.Name, itemToRemove.Title, currentChecklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -3707,10 +3713,9 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 	playbookRunToModify.Retrospective = newRetrospective.Text
 	playbookRunToModify.MetricsData = newRetrospective.Metrics
 
-	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' with new retrospective content", runName)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' with new retrospective content", playbookRunToModify.Name)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}

@@ -183,6 +183,90 @@ describe('playbooks > edit > auto archive', () => {
         });
     });
 
+    it('disables and unchecks the auto-archive toggle immediately when switching to link_existing_channel', () => {
+        // # Create a playbook with the default create_new_channel mode
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Switch Channel Mode Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            // # Visit the playbook outline editor
+            cy.playbooksVisitEditor(playbook.id, 'outline');
+
+            // # Enable the auto-archive toggle first
+            cy.playbooksInterceptPlaybookSave();
+            cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
+            cy.findByTestId('auto-archive-confirmation-banner').scrollIntoView().should('be.visible');
+            cy.wait('@SavePlaybook');
+
+            // * Toggle is enabled (not disabled) while in create_new_channel mode
+            cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('not.be.disabled');
+
+            // # Switch channel mode to "Link to an existing channel"
+            cy.contains('label', 'Link to an existing channel').click();
+
+            // * Toggle must be disabled immediately — no page reload required
+            cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('be.disabled');
+
+            // * Toggle must also be visually unchecked
+            cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('not.be.checked');
+        });
+    });
+
+    it('resets auto_archive_channel to false in the DB when switching to link_existing_channel', () => {
+        // # Create a playbook with auto-archive already enabled
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Reset On Mode Switch Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            autoArchiveChannel: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            // # Visit the playbook outline editor
+            cy.playbooksVisitEditor(playbook.id, 'outline');
+
+            // * Confirm the toggle is ON before switching modes
+            cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('be.checked');
+
+            // # Switch channel mode to "Link to an existing channel" and wait for the auto-reset save
+            cy.playbooksInterceptPlaybookSave();
+            cy.contains('label', 'Link to an existing channel').click();
+            cy.wait('@SavePlaybook');
+
+            // * Verify auto_archive_channel was reset to false in the DB
+            cy.apiGetPlaybook(playbook.id).then((pb) => {
+                expect(pb.auto_archive_channel, 'auto_archive_channel must be false after switching to link mode').to.equal(false);
+            });
+        });
+    });
+
+    it('re-enables the auto-archive toggle when switching back to create_new_channel', () => {
+        // # Create a playbook configured to link an existing channel
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Re-enable Toggle Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            channelMode: 'link_existing_channel',
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            // # Visit the playbook outline editor
+            cy.playbooksVisitEditor(playbook.id, 'outline');
+
+            // * Toggle is disabled in link_existing_channel mode
+            cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('be.disabled');
+
+            // # Switch back to "Create a run channel" mode
+            cy.contains('label', 'Create a run channel').click();
+
+            // * Toggle must be re-enabled immediately — no page reload required
+            cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('not.be.disabled');
+        });
+    });
+
     it('enables the auto-archive toggle when channel_mode is create_new_channel', () => {
         // # Create a playbook with create_new_channel mode
         cy.apiCreatePlaybook({
@@ -239,6 +323,98 @@ describe('playbooks > edit > auto archive', () => {
                     () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at === 0),
                     {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not unarchived after run restore'},
                 );
+            });
+        });
+    });
+
+    it('does not archive a linked (pre-existing) channel on finish even when auto_archive_channel is true', () => {
+        let testRun;
+
+        // # Create a channel to link to — this channel must survive the run
+        cy.apiGetChannelByName(testTeam.name, 'town-square').then(({channel: existingChannel}) => {
+            // # Create a playbook with auto-archive=true but linking to the existing channel
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Auto Archive Linked Channel Playbook (' + getRandomId() + ')',
+                memberIDs: [testUser.id],
+                autoArchiveChannel: true,
+                channelMode: 'link_existing_channel',
+                channelId: existingChannel.id,
+            }).then((playbook) => {
+                createdPlaybookIds.push(playbook.id);
+
+                // # Start a run (it will link to the existing channel, not create one)
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: 'Auto Archive Linked Channel Run (' + getRandomId() + ')',
+                    ownerUserId: testUser.id,
+                    channelId: existingChannel.id,
+                }).then((run) => {
+                    testRun = run;
+
+                    // # Finish the run via API
+                    cy.apiFinishRun(testRun.id);
+
+                    // * Wait for the run to reach Finished status
+                    cy.waitUntil(
+                        () => cy.apiGetPlaybookRun(testRun.id).then(({body: fetchedRun}) => fetchedRun.current_status === 'Finished'),
+                        {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Run did not reach Finished status'},
+                    );
+
+                    // * The linked channel must NOT be archived even though auto_archive_channel=true
+                    cy.apiGetChannel(existingChannel.id).then(({channel}) => {
+                        expect(channel.delete_at, 'linked channel must not be archived').to.equal(0);
+                    });
+                });
+            });
+        });
+    });
+
+    it('does not unarchive the channel on restore when the run did not auto-archive it', () => {
+        let testRun;
+
+        // # Create a playbook with auto-archive disabled
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'No Auto Archive Restore Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            autoArchiveChannel: false,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            // # Start a run
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'No Auto Archive Restore Run (' + getRandomId() + ')',
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                testRun = run;
+
+                // # Finish the run — channel should NOT be archived
+                cy.apiFinishRun(testRun.id);
+
+                cy.waitUntil(
+                    () => cy.apiGetPlaybookRun(testRun.id).then(({body: fetchedRun}) => fetchedRun.current_status === 'Finished'),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Run did not reach Finished status'},
+                );
+
+                cy.apiGetChannel(testRun.channel_id).then(({channel}) => {
+                    expect(channel.delete_at, 'channel must not be archived (auto-archive was off)').to.equal(0);
+                });
+
+                // # Restore the run — channel must remain unarchived
+                cy.apiRestoreRun(testRun.id);
+
+                cy.waitUntil(
+                    () => cy.apiGetPlaybookRun(testRun.id).then(({body: fetchedRun}) => fetchedRun.current_status === 'InProgress'),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Run did not reach InProgress status after restore'},
+                );
+
+                cy.apiGetChannel(testRun.channel_id).then(({channel}) => {
+                    expect(channel.delete_at, 'channel must remain unarchived after restore when auto-archive was off').to.equal(0);
+                });
             });
         });
     });

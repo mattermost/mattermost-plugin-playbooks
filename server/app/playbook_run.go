@@ -212,17 +212,14 @@ type PlaybookRun struct {
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
 
-	// ChannelCreatedByRun indicates whether the channel was created by this run.
-	// Used by auto-archive to avoid archiving linked channels.
 	ChannelCreatedByRun bool `json:"-"`
 
-	// AutoArchivedChannel records whether this run actually auto-archived its channel on finish.
-	// Used by restore to decide whether to un-archive, independent of the current playbook flag.
+	// AutoArchivedChannel tracks whether this run auto-archived its channel; checked independently
+	// of the current playbook flag so restore behaves correctly even if the flag was toggled.
 	AutoArchivedChannel bool `json:"-"`
 
-	// AutoArchiveChannel is snapshotted from the playbook at run creation.
-	// Using the snapshot avoids a playbook DB lookup on every finish and ensures
-	// the archive behaviour reflects the setting at the time the run was started.
+	// AutoArchiveChannel is snapshotted from the playbook at run creation so the archive
+	// behaviour reflects the setting at start time and avoids a DB lookup on every finish.
 	AutoArchiveChannel bool `json:"-"`
 }
 
