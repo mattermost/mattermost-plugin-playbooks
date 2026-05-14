@@ -35,7 +35,7 @@ jobs:
     needs:
       - go
     container:
-      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -104,7 +104,7 @@ jobs:
       - go
       - lint
     container:
-      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -135,7 +135,7 @@ jobs:
       - go
       - lint
     container:
-      image: mattermostdevelopment/mattermost-build-server-fips:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server-fips:${{ needs.go.outputs.version }}
       credentials:
         username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
         password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
@@ -225,7 +225,7 @@ jobs:
       - lint
       - go
     container:
-      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
     services:
       postgres:
         image: postgres:14
@@ -260,7 +260,7 @@ jobs:
       - lint
       - go
     container:
-      image: mattermostdevelopment/mattermost-build-server-fips:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server-fips:${{ needs.go.outputs.version }}
       credentials:
         username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
         password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
