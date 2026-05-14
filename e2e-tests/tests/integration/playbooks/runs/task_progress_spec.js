@@ -151,6 +151,37 @@ describe('runs > task progress', {testIsolation: true}, () => {
         });
     });
 
+    it('shows 4/4 progress when some tasks are closed and some are skipped', () => {
+        cy.then(() => {
+            // # Complete tasks 0 and 1 via UI
+            cy.playbooksVisitRun(testRun.id);
+            cy.playbooksCompleteTaskAtIndex(0);
+            cy.playbooksCompleteTaskAtIndex(1);
+
+            // # Skip tasks 2 and 3 via API
+            cy.apiSetChecklistItemState(testRun.id, 0, 2, 'skipped');
+            cy.apiSetChecklistItemState(testRun.id, 0, 3, 'skipped');
+
+            // # Visit the runs list
+            cy.visit('/playbooks/runs');
+
+            // # Find the run in the list and assert task progress
+            cy.playbooksGetRunListRow(testRun.name).within(() => {
+                // * Assert task progress shows 4/4 (closed + skipped both count)
+                cy.findByTestId('task-progress-indicator').should('contain', `${TOTAL_TASKS}/${TOTAL_TASKS}`);
+            });
+
+            // * Assert backend state: items 0 and 1 are closed, items 2 and 3 are skipped
+            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                const items = run.checklists[0].items;
+                expect(items[0].state).to.equal('closed');
+                expect(items[1].state).to.equal('closed');
+                expect(items[2].state).to.equal('skipped');
+                expect(items[3].state).to.equal('skipped');
+            });
+        });
+    });
+
     it('shows 4/4 progress after all tasks are completed', () => {
         cy.then(() => {
             // # Complete all 4 tasks via UI
