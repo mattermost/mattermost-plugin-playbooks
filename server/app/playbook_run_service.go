@@ -1159,6 +1159,9 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 	numOutstanding := 0
 	for _, c := range currentPlaybookRun.Checklists {
 		for _, item := range c.Items {
+			if item.ConditionAction == ConditionActionHidden {
+				continue
+			}
 			if item.State == ChecklistItemStateOpen || item.State == ChecklistItemStateInProgress {
 				numOutstanding++
 			}
