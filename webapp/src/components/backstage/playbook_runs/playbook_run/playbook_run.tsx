@@ -229,7 +229,7 @@ const PlaybookRunDetails = () => {
         participantContent = (
             <FinishRun
                 playbookRun={playbookRun}
-                ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
+                ownerGroupOnlyActions={playbook === undefined ? undefined : (playbook?.owner_group_only_actions ?? false)}
                 isOwner={myUser.id === playbookRun.owner_user_id}
             />
         );
@@ -248,7 +248,7 @@ const PlaybookRunDetails = () => {
                         hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}
-                        ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
+                        ownerGroupOnlyActions={playbook === undefined ? undefined : (playbook?.owner_group_only_actions ?? false)}
                     />
                 </Header>
                 <Main>
