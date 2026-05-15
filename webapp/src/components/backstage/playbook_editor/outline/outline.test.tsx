@@ -38,7 +38,6 @@ jest.mock('src/hooks', () => ({
 
 jest.mock('src/client', () => ({
     savePlaybook: jest.fn(),
-    clientFetchPlaybook: jest.fn(),
 }));
 
 jest.mock('src/components/backstage/toast_banner', () => ({
@@ -50,7 +49,7 @@ jest.mock('react-intl', () => {
     return {...reactIntl, useIntl: () => reactIntl.createIntl({locale: 'en'})};
 });
 
-const {savePlaybook, clientFetchPlaybook} = jest.requireMock('src/client');
+const {savePlaybook} = jest.requireMock('src/client');
 
 import Outline from './outline';
 
@@ -78,7 +77,6 @@ beforeEach(() => {
     jest.clearAllMocks();
     capturedNewChannelOnly = false;
     capturedOnNewChannelOnlyChange = undefined;
-    clientFetchPlaybook.mockResolvedValue(makeRestPlaybook(false));
 });
 
 // --- Tests ---
@@ -129,7 +127,6 @@ describe('Outline — handleNewChannelOnlyChange', () => {
 
     it('calls savePlaybook with new_channel_only and channel_mode set to create_new_channel when toggling on', async () => {
         savePlaybook.mockResolvedValue({});
-        clientFetchPlaybook.mockResolvedValue(makeRestPlaybook(false, 'link_existing_channel'));
 
         renderer.create(
             <Outline
@@ -151,7 +148,6 @@ describe('Outline — handleNewChannelOnlyChange', () => {
 
     it('preserves existing channel_mode when toggling off', async () => {
         savePlaybook.mockResolvedValue({});
-        clientFetchPlaybook.mockResolvedValue(makeRestPlaybook(true, 'create_new_channel'));
 
         renderer.create(
             <Outline
@@ -224,6 +220,25 @@ describe('Outline — handleNewChannelOnlyChange', () => {
         });
 
         expect(savePlaybook).not.toHaveBeenCalled();
+        expect(capturedNewChannelOnly).toBe(false);
+    });
+
+    it('clears the optimistic override after savePlaybook resolves', async () => {
+        savePlaybook.mockResolvedValue({});
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        await act(async () => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: true});
+        });
+
+        // After save resolves, the override is cleared — effectiveNewChannelOnly now comes from restPlaybook
         expect(capturedNewChannelOnly).toBe(false);
     });
 });

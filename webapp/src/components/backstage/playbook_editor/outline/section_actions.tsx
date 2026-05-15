@@ -171,6 +171,7 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
+                        newChannelOnly={newChannelOnly}
                     />
                 </Setting>
                 <Setting id={'new-channel-only'}>

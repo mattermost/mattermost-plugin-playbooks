@@ -68,6 +68,35 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
     // NOTE: The API rejection test (new_channel_only=true + existing channel_id → 400)
     // lives in runs/new_channel_enforcement_spec.js to keep API contract tests co-located.
 
+    it('disables the "Link to existing channel" radio and selector in the editor when new_channel_only is true', () => {
+        // # Enable new_channel_only via API
+        cy.apiUpdatePlaybook({...testPlaybook, new_channel_only: true}).then(() => {
+            // # Visit the playbook outline editor
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+
+            // * Assert the "Link to existing channel" radio is disabled
+            cy.findByTestId('link-existing-channel-radio').should('be.disabled');
+
+            // * Assert the channel selector is also disabled
+            cy.get('#link_existing_channel_selector').
+                closest('[id="link-existing-channel"]').
+                find('.playbooks-rselect__control').
+                should('have.class', 'playbooks-rselect__control--is-disabled');
+        });
+    });
+
+    it('re-enables "Link to existing channel" radio when new_channel_only is turned off', () => {
+        // # Enable then disable new_channel_only via API
+        cy.apiUpdatePlaybook({...testPlaybook, new_channel_only: true}).
+            then(() => cy.apiUpdatePlaybook({...testPlaybook, new_channel_only: false})).
+            then(() => {
+                cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+
+                // * Assert the radio is no longer disabled
+                cy.findByTestId('link-existing-channel-radio').should('not.be.disabled');
+            });
+    });
+
     it('API allows run creation without channel_id when new_channel_only is true', () => {
         const runName = 'New Channel Run ' + getRandomId();
 

@@ -5,8 +5,7 @@ import React, {useCallback, useRef} from 'react';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {useConfirmModal} from 'src/components/widgets/confirmation_modal';
-
-import ToggleHint from './toggle_hint';
+import {HelpText} from 'src/components/backstage/playbook_runs/shared';
 
 export interface ConfirmationConfig {
     title: string;
@@ -71,7 +70,7 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
             >
                 {label}
             </Toggle>
-            {hint && <ToggleHint>{hint}</ToggleHint>}
+            {hint && <HelpText>{hint}</HelpText>}
         </div>
     );
 };

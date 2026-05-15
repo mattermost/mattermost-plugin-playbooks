@@ -31,9 +31,10 @@ interface Props {
     playbook: PlaybookSubset;
     setPlaybook: React.Dispatch<React.SetStateAction<PlaybookSubset>>;
     setChangesMade?: (b: boolean) => void;
+    newChannelOnly?: boolean;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, newChannelOnly = false}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
@@ -76,10 +77,11 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                 <AutomationTitle
                     style={{alignSelf: 'flex-start'}}
                 >
-                    <AutomationLabel disabled={archived}>
+                    <AutomationLabel disabled={archived || newChannelOnly}>
                         <ChannelModeRadio
                             type='radio'
-                            disabled={archived}
+                            data-testid='link-existing-channel-radio'
+                            disabled={archived || newChannelOnly}
                             checked={playbook.channel_mode === 'link_existing_channel'}
                             onChange={() => handleChannelModeChange('link_existing_channel')}
                         />
@@ -93,7 +95,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         channelIds={playbook.channel_id === '' ? [] : [playbook.channel_id]}
                         isClearable={true}
                         selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                        isDisabled={archived || playbook.channel_mode === 'create_new_channel'}
+                        isDisabled={archived || newChannelOnly || playbook.channel_mode === 'create_new_channel'}
                         captureMenuScroll={false}
                         shouldRenderValue={true}
                         teamId={teamId}

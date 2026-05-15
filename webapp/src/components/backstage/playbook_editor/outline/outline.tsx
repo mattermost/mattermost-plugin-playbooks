@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useRef,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -12,7 +17,7 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {clientFetchPlaybook, savePlaybook} from 'src/client';
+import {savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -40,6 +45,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
     const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
+    const savingNewChannelOnly = useRef(false);
     const effectiveNewChannelOnly = newChannelOnlyOverride ?? restPlaybook?.new_channel_only ?? false;
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
@@ -53,7 +59,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     };
 
     const handleNewChannelOnlyChange = ({new_channel_only}: {new_channel_only: boolean}) => {
-        if (archived || !playbook.id) {
+        if (archived || !playbook.id || savingNewChannelOnly.current || !restPlaybook) {
             return;
         }
         const prev = effectiveNewChannelOnly;
@@ -61,13 +67,11 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             return;
         }
         setNewChannelOnlyOverride(new_channel_only);
-        clientFetchPlaybook(playbook.id)
-            .then((latest) => {
-                if (!latest) {
-                    throw new Error('Unable to fetch latest playbook before save');
-                }
-                const updated = {...latest, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : latest.channel_mode};
-                return savePlaybook(updated);
+        savingNewChannelOnly.current = true;
+        const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
+        savePlaybook(updated)
+            .then(() => {
+                setNewChannelOnlyOverride(undefined);
             })
             .catch(() => {
                 setNewChannelOnlyOverride(prev);
@@ -75,6 +79,9 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                     content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
                     toastStyle: ToastStyle.Failure,
                 });
+            })
+            .finally(() => {
+                savingNewChannelOnly.current = false;
             });
     };
 

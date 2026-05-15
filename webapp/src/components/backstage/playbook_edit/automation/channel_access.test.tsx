@@ -55,6 +55,32 @@ describe('CreateAChannel — link-existing channel selector', () => {
         capturedProps.length = 0;
     });
 
+    it('disables the channel selector and radio when newChannelOnly=true', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '',
+            delete_at: 0,
+            channel_mode: 'link_existing_channel' as const,
+            channel_id: '',
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+                newChannelOnly={true}
+            />,
+        );
+
+        const linkSelectorProps = capturedProps.find((p) => p.id === 'link_existing_channel_selector');
+        expect(linkSelectorProps?.isDisabled).toBe(true);
+
+        const [linkRadio] = component.root.findAll(
+            (node) => node.props['data-testid'] === 'link-existing-channel-radio',
+        );
+        expect(linkRadio?.props.disabled).toBe(true);
+    });
+
     it('passes excludeDMGM=true so DMs/GMs cannot be configured as the auto-link target for a playbook run', () => {
         const playbook = {
             create_public_playbook_run: true,
