@@ -223,13 +223,14 @@ describe('Outline — handleNewChannelOnlyChange', () => {
         expect(capturedNewChannelOnly).toBe(false);
     });
 
-    it('clears the optimistic override after savePlaybook resolves', async () => {
+    it('calls refetch and keeps the optimistic override after savePlaybook resolves', async () => {
         savePlaybook.mockResolvedValue({});
+        const refetch = jest.fn();
 
         renderer.create(
             <Outline
                 playbook={makePlaybook()}
-                refetch={jest.fn()}
+                refetch={refetch}
                 restPlaybook={makeRestPlaybook(false)}
             />,
         );
@@ -238,7 +239,9 @@ describe('Outline — handleNewChannelOnlyChange', () => {
             capturedOnNewChannelOnlyChange!({new_channel_only: true});
         });
 
-        // After save resolves, the override is cleared — effectiveNewChannelOnly now comes from restPlaybook
-        expect(capturedNewChannelOnly).toBe(false);
+        expect(refetch).toHaveBeenCalledTimes(1);
+
+        // Override stays at the toggled value until refetch updates restPlaybook
+        expect(capturedNewChannelOnly).toBe(true);
     });
 });
