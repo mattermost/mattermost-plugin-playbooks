@@ -24,6 +24,8 @@ import {PlaybookWithChecklist} from 'src/types/playbook';
 import {fetchPlaybookPropertyFields, updatePlaybookChannelNameTemplate, updatePlaybookRunNumberPrefix} from 'src/client';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
@@ -50,6 +52,7 @@ const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
             .catch(() => { /* ignore fetch errors — fieldNames stays empty */ });
     }, [playbook.id]);
     const {formatMessage} = useIntl();
+    const {add: addToast} = useToaster();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
@@ -85,9 +88,10 @@ const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
                 })
                 .catch(() => {
                     setPlaybookForCreateChannel((prev) => ({...prev, run_number_prefix: lastSavedPrefixRef.current}));
+                    addToast({content: formatMessage({defaultMessage: 'Another active playbook in this team already uses that prefix.'}), toastStyle: ToastStyle.Failure});
                 });
         }, 500),
-        [playbook.id, setPlaybookForCreateChannel],
+        [playbook.id, setPlaybookForCreateChannel, addToast, formatMessage],
     );
 
     useEffect(() => {

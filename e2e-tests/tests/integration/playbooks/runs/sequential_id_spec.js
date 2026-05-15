@@ -420,6 +420,54 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         });
     });
 
+    it('shows an error toast when a duplicate prefix is entered in the editor', () => {
+        const sharedPrefix = 'TOS' + getRandomId().slice(0, 3).toUpperCase();
+        let playbookA;
+        let playbookB;
+
+        // # Create playbook A and set the prefix via API
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Toast Test A ' + getRandomId(),
+            memberIDs: [testUser.id],
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            playbookA = playbook;
+            createdPlaybookIds.push(playbook.id);
+        });
+
+        cy.then(() => cy.apiPatchPlaybook(playbookA.id, {run_number_prefix: sharedPrefix}));
+
+        // # Create playbook B with no prefix
+        cy.then(() => {
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Toast Test B ' + getRandomId(),
+                memberIDs: [testUser.id],
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                playbookB = playbook;
+                createdPlaybookIds.push(playbook.id);
+            });
+        });
+
+        // # Visit playbook B's editor and intercept the debounced PATCH before typing
+        cy.then(() => cy.playbooksVisitEditor(playbookB.id, 'outline'));
+        cy.playbooksInterceptPatchPlaybook();
+
+        // # Type the duplicate prefix — triggers the debounced save after 500 ms
+        cy.findByTestId('channel-access-run-number-prefix').type(sharedPrefix);
+
+        // # Wait for the PATCH to complete (server returns 409)
+        cy.wait('@PatchPlaybook');
+
+        // * Error toast is shown explaining the conflict
+        cy.findByText('Another active playbook in this team already uses that prefix.').should('be.visible');
+
+        // * Input reverts to empty (playbook B had no prior prefix)
+        cy.findByTestId('channel-access-run-number-prefix').should('have.value', '');
+    });
+
     it('shows sequential ID next to playbook name in channel RHS', () => {
         const rhsPrefix = 'R' + getRandomId().slice(0, 2).toUpperCase();
 
