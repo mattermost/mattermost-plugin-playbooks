@@ -150,6 +150,17 @@ jobs:
       - name: ci/check-diff-on-gomod
         run: git --no-pager diff --exit-code go.mod go.sum || (echo "Please run \"go mod tidy\" and commit the changes in go.mod and go.sum." && exit 1)
 
+  # Aggregator job so branch protection rules requiring a check named "lint"
+  # keep working after the split into lint-go / lint-web.
+  lint:
+    runs-on: ubuntu-22.04
+    needs:
+      - lint-go
+      - lint-web
+    steps:
+      - name: ci/lint-aggregator
+        run: echo "lint-go and lint-web both succeeded"
+
   dist:
     runs-on: ubuntu-22.04
     needs:
