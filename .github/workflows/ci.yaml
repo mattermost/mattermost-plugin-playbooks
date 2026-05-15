@@ -518,6 +518,52 @@ jobs:
           SPECS: ${{ matrix.specs }}
           ARTIFACT_SUFFIX: -fips
 
+  # Refresh the per-spec duration cache after a green default-branch run so
+  # subsequent runs (including PRs) can LPT-pack the shards. Runs only on
+  # push to the default branch; PRs read the cache but never write to it.
+  update-durations:
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    needs:
+      - e2e-cypress-tests
+    runs-on: ubuntu-22.04
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: ci/setup-go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: ci/download-shard-artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: cypress-test-results-*
+          path: artifacts
+          merge-multiple: false
+
+      - name: ci/restore-prior-durations
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: durations.json
+          key: e2e-durations-v1-${{ github.run_id }}
+          restore-keys: |
+            e2e-durations-v1-
+
+      - name: ci/aggregate-durations
+        run: |
+          go run ./.github/actions/aggregate-durations/aggregate.go \
+            -artifacts=artifacts \
+            -prior=durations.json \
+            -out=durations.json
+
+      - name: ci/save-durations
+        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: durations.json
+          key: e2e-durations-v1-${{ github.run_id }}
+
   report-test-results:
     if: always() && github.event.pull_request.head.repo.full_name == github.repository
     needs:

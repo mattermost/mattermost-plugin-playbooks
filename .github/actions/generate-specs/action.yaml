@@ -19,12 +19,25 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # Best-effort restore of per-spec runtimes recorded by prior runs on the
+    # default branch. A miss is fine — split-tests.go falls back to
+    # round-robin assignment when DURATIONS_FILE is missing/empty/invalid.
+    - name: ci/restore-durations
+      id: restore-durations
+      uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      with:
+        path: ${{ github.action_path }}/durations.json
+        key: e2e-durations-v1-${{ github.run_id }}
+        restore-keys: |
+          e2e-durations-v1-
+
     - name: ci/generate-specs
       id: generate-specs
       env:
         PARALLELISM: ${{ inputs.parallelism }}
         SEARCH_PATH: ${{ inputs.search_path }}
         DIRECTORY: ${{ inputs.directory }}
+        DURATIONS_FILE: ${{ github.action_path }}/durations.json
       run: |
         go run ${{ github.action_path }}/split-tests.go > output.json
         echo "specs=$(cat output.json)" >> $GITHUB_OUTPUT

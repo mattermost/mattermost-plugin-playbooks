@@ -3,6 +3,9 @@
 
 /* eslint-disable no-console */
 
+const fs = require('fs');
+const path = require('path');
+
 const clientRequest = require('./client_request');
 const {
     dbGetActiveUserSessions,
@@ -70,6 +73,23 @@ module.exports = (on, config) => {
         }
 
         return launchOptions;
+    });
+
+    // Record per-spec runtime to results/durations.jsonl. The CI aggregator
+    // merges these across shards on default-branch runs to feed LPT-based
+    // sharding on subsequent runs (see .github/actions/generate-specs/).
+    on('after:spec', (spec, results) => {
+        try {
+            const outDir = path.resolve(__dirname, '..', '..', 'results');
+            fs.mkdirSync(outDir, {recursive: true});
+            const line = JSON.stringify({
+                spec: spec.relative,
+                durationMs: results && results.stats ? results.stats.duration : 0,
+            });
+            fs.appendFileSync(path.join(outDir, 'durations.jsonl'), line + '\n');
+        } catch (e) {
+            console.warn('after:spec duration record failed:', e);
+        }
     });
 
     return config;
