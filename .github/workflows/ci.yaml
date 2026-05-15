@@ -151,15 +151,26 @@ jobs:
         run: git --no-pager diff --exit-code go.mod go.sum || (echo "Please run \"go mod tidy\" and commit the changes in go.mod and go.sum." && exit 1)
 
   # Aggregator job so branch protection rules requiring a check named "lint"
-  # keep working after the split into lint-go / lint-web.
+  # keep working after the split into lint-go / lint-web. Runs even when an
+  # upstream lint job fails so the required check reports failure instead of
+  # being skipped.
   lint:
+    if: always()
     runs-on: ubuntu-22.04
     needs:
       - lint-go
       - lint-web
     steps:
       - name: ci/lint-aggregator
-        run: echo "lint-go and lint-web both succeeded"
+        env:
+          LINT_GO_RESULT: ${{ needs.lint-go.result }}
+          LINT_WEB_RESULT: ${{ needs.lint-web.result }}
+        run: |
+          echo "lint-go=$LINT_GO_RESULT lint-web=$LINT_WEB_RESULT"
+          if [ "$LINT_GO_RESULT" != "success" ] || [ "$LINT_WEB_RESULT" != "success" ]; then
+            echo "One or more upstream lint jobs did not succeed."
+            exit 1
+          fi
 
   dist:
     runs-on: ubuntu-22.04
