@@ -518,11 +518,15 @@ jobs:
           SPECS: ${{ matrix.specs }}
           ARTIFACT_SUFFIX: -fips
 
-  # Refresh the per-spec duration cache after a green default-branch run so
-  # subsequent runs (including PRs) can LPT-pack the shards. Runs only on
-  # push to the default branch; PRs read the cache but never write to it.
+  # Refresh the per-spec duration cache after a green e2e run so subsequent
+  # runs can LPT-pack the shards. Runs on default-branch pushes (populating
+  # the cache all PRs inherit on first run) and on same-repo PR pushes
+  # (populating that PR's branch-scoped cache so reruns benefit). Fork PRs
+  # are excluded — they can't write to the upstream cache anyway.
   update-durations:
-    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    if: |
+      (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     needs:
       - e2e-cypress-tests
     runs-on: ubuntu-22.04
