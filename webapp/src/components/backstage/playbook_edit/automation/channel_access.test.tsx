@@ -76,7 +76,7 @@ describe('CreateAChannel — link-existing channel selector', () => {
         expect(linkSelectorProps?.isDisabled).toBe(true);
 
         const [linkRadio] = component.root.findAll(
-            (node) => node.props['data-testid'] === 'link-existing-channel-radio',
+            (node) => node.props['data-testid'] === 'playbook-link-existing-channel-radio',
         );
         expect(linkRadio?.props.disabled).toBe(true);
     });

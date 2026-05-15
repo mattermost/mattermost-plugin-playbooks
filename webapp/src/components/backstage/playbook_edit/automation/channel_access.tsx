@@ -80,7 +80,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, newChanne
                     <AutomationLabel disabled={archived || newChannelOnly}>
                         <ChannelModeRadio
                             type='radio'
-                            data-testid='link-existing-channel-radio'
+                            data-testid='playbook-link-existing-channel-radio'
                             disabled={archived || newChannelOnly}
                             checked={playbook.channel_mode === 'link_existing_channel'}
                             onChange={() => handleChannelModeChange('link_existing_channel')}
