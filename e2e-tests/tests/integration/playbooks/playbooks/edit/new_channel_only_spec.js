@@ -75,7 +75,7 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
             cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
             // * Assert the "Link to existing channel" radio is disabled
-            cy.findByTestId('link-existing-channel-radio').should('be.disabled');
+            cy.findByTestId('playbook-link-existing-channel-radio').should('be.disabled');
 
             // * Assert the channel selector is also disabled
             cy.get('#link_existing_channel_selector').
@@ -93,7 +93,7 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
                 cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
                 // * Assert the radio is no longer disabled
-                cy.findByTestId('link-existing-channel-radio').should('not.be.disabled');
+                cy.findByTestId('playbook-link-existing-channel-radio').should('not.be.disabled');
             });
     });
 
