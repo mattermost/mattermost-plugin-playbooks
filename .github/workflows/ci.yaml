@@ -31,7 +31,6 @@ jobs:
         run: echo GO_VERSION=$(grep -E '^go [0-9]+\.[0-9]+' go.mod | cut -d' ' -f2) >> "${GITHUB_OUTPUT}"
 
   lint:
-    if: false # TEMP: skipping while iterating on e2e LPT sharding
     runs-on: ubuntu-22.04
     needs:
       - go
@@ -102,7 +101,8 @@ jobs:
   dist:
     runs-on: ubuntu-22.04
     needs:
-      - go # TEMP: dropped `lint` while iterating on e2e LPT sharding
+      - go
+      - lint
     container:
       image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
     steps:
@@ -128,7 +128,8 @@ jobs:
         run: make dist
 
   dist-fips:
-    if: false # TEMP: skipping FIPS pipeline while iterating on e2e LPT sharding
+    # Skip FIPS testing for forks, which won't have docker login credentials.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - go
@@ -163,7 +164,7 @@ jobs:
         run: make dist
 
   upload:
-    if: false # TEMP: skipping while iterating on e2e LPT sharding
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - dist
@@ -191,7 +192,7 @@ jobs:
           aws s3 cp dist/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-${{ steps.short-sha.outputs.sha }}.tar.gz
 
   upload-fips:
-    if: false # TEMP: skipping while iterating on e2e LPT sharding
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - dist-fips
@@ -219,7 +220,6 @@ jobs:
           aws s3 cp dist-fips/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-fips-${{ steps.short-sha.outputs.sha }}.tar.gz
 
   test:
-    if: false # TEMP: skipping while iterating on e2e LPT sharding
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -253,7 +253,8 @@ jobs:
         uses: ./.github/actions/test-with-db
 
   test-fips:
-    if: false # TEMP: skipping while iterating on e2e LPT sharding
+    # Skip FIPS testing for forks, which won't have docker login credentials.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -308,8 +309,8 @@ jobs:
   e2e-cypress-tests:
     runs-on: ubuntu-22.04
     needs:
-      # TEMP: dropped `lint` while iterating on e2e LPT sharding
       - go
+      - lint
       - generate-specs
       - dist
     name: e2e-cypress-tests-run-${{ matrix.runId }}
@@ -411,7 +412,7 @@ jobs:
           SPECS: ${{ matrix.specs }}
 
   e2e-cypress-tests-fips:
-    if: false # TEMP: skipping FIPS pipeline while iterating on e2e LPT sharding
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - go
@@ -517,15 +518,11 @@ jobs:
           SPECS: ${{ matrix.specs }}
           ARTIFACT_SUFFIX: -fips
 
-  # Refresh the per-spec duration cache after a green e2e run so subsequent
-  # runs can LPT-pack the shards. Runs on default-branch pushes (populating
-  # the cache all PRs inherit on first run) and on same-repo PR pushes
-  # (populating that PR's branch-scoped cache so reruns benefit). Fork PRs
-  # are excluded — they can't write to the upstream cache anyway.
+  # Refresh the per-spec duration cache after a green default-branch run so
+  # subsequent runs (including PRs) can LPT-pack the shards. Runs only on
+  # push to the default branch; PRs read the cache but never write to it.
   update-durations:
-    if: |
-      (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     needs:
       - e2e-cypress-tests
     runs-on: ubuntu-22.04
@@ -568,7 +565,7 @@ jobs:
           key: e2e-durations-v1-${{ github.run_id }}
 
   report-test-results:
-    if: false # TEMP: skipping while iterating on e2e LPT sharding
+    if: always() && github.event.pull_request.head.repo.full_name == github.repository
     needs:
       - e2e-cypress-tests
       - e2e-cypress-tests-fips
