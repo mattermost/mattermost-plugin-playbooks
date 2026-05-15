@@ -158,13 +158,13 @@ describe('ChecklistList propertyFields resolution', () => {
         jest.clearAllMocks();
     });
 
-    it('run mode with no run property_fields: uses playbookRun.playbook_id to fetch and passes result to GenericChecklist', () => {
+    it('run mode with no run property_fields: passes empty array to GenericChecklist (never substitutes playbook fields)', () => {
         mockUsePlaybookAttributes.mockReturnValue([userField]);
 
         renderList({playbookRun: makeRun()});
 
-        expect(mockUsePlaybookAttributes).toHaveBeenCalledWith('pb-1');
-        expect(capturedProps?.propertyFields).toEqual([userField]);
+        expect(mockUsePlaybookAttributes).toHaveBeenCalledWith('');
+        expect(capturedProps?.propertyFields).toEqual([]);
     });
 
     it('run mode with run property_fields present: run-level fields take precedence over fetched playbook fields', () => {
