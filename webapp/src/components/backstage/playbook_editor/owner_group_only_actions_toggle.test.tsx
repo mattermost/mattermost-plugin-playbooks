@@ -15,6 +15,11 @@ jest.mock('react-redux', () => ({
     useDispatch: () => mockDispatch,
 }));
 
+jest.mock('src/hooks/redux', () => ({
+    useAppDispatch: () => mockDispatch,
+    useAppSelector: jest.fn(),
+}));
+
 jest.mock('src/webapp_globals', () => ({
     modals: {openModal: jest.fn()},
 }));
