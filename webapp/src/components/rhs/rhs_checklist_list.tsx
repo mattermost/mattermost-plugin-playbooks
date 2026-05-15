@@ -278,7 +278,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 showParticipateConfirm={showParticipateConfirm}
                 handleResume={handleResume}
                 onBackClick={onBackClick}
-                ownerGroupOnlyActions={ownerGroupOnlyActions ?? false}
+                ownerGroupOnlyActions={ownerGroupOnlyActions}
                 isOwner={playbookRun.owner_user_id === myUser.id}
             />
             {showRunDetailsChecklistsStep && (

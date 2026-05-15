@@ -90,15 +90,12 @@ export const useIsSystemAdmin = (): boolean => {
     return useHasSystemPermission(Permissions.MANAGE_SYSTEM);
 };
 
-/**
- * Returns true when the current user is blocked from finishing/restoring a run
- * because OwnerGroupOnlyActions is enabled and they are not the run owner or a system admin.
- *
- * Note: this hook is scoped to finish/restore actions only. The backend RunChangeOwner
- * permission additionally allows playbook admins through — do not reuse this hook for
- * change-owner UI guards without adding a playbook-admin check.
- */
+// Returns true when the user is blocked from finishing/restoring due to OwnerGroupOnlyActions.
+// Returns true while ownerGroupOnlyActions is undefined (playbook loading) to prevent a flash.
 export const useIsBlockedByOwnerOnlyForFinishRestore = (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined): boolean => {
     const isSystemAdmin = useIsSystemAdmin();
+    if (ownerGroupOnlyActions === undefined) {
+        return true;
+    }
     return Boolean(ownerGroupOnlyActions && !isOwner && !isSystemAdmin);
 };

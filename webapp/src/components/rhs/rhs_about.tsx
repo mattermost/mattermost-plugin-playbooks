@@ -14,7 +14,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
-import {setOwner} from 'src/client';
+import {fetchPlaybookRun, setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 
@@ -32,7 +32,7 @@ import RHSAboutTitle from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import PropertiesList from 'src/components/rhs/properties_list';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
-import {setRHSAboutCollapsedState} from 'src/actions';
+import {playbookRunUpdated, setRHSAboutCollapsedState} from 'src/actions';
 import {useUpdateRun} from 'src/graphql/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -61,10 +61,10 @@ const RHSAbout = (props: Props) => {
     const isPlaybookAdmin = props.isPlaybookAdmin ?? false;
     const canChangeOwner = !props.ownerGroupOnlyActions || isOwner || isSystemAdmin || isPlaybookAdmin;
 
-    // readOnly reflects the generic run-modify gate (non-participant, non-owner users).
     // System admins and playbook admins may need to hand off ownership even when they
     // are not participants, so the readOnly gate is bypassed for them here.
-    const canEditOwner = !isFinished && canChangeOwner && (!props.readOnly || isSystemAdmin || isPlaybookAdmin);
+    const isReadOnlyOverridden = isSystemAdmin || isPlaybookAdmin;
+    const canEditOwner = !isFinished && canChangeOwner && (!props.readOnly || isReadOnlyOverridden);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
 
     // Hooks for favorite and follow state
@@ -92,9 +92,11 @@ const RHSAbout = (props: Props) => {
         }
         const response = await setOwner(props.playbookRun.id, userId);
         if (response.error) {
-            // eslint-disable-next-line no-warning-comments
-            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
-            console.log(response.error); // eslint-disable-line no-console
+            // Re-fetch to correct stale ownership in Redux — this causes the Finish button
+            // to disappear for users who no longer have permission to finish the run.
+            fetchPlaybookRun(props.playbookRun.id)
+                .then((run) => dispatch(playbookRunUpdated(run)))
+                .catch(() => undefined);
         }
     };
 

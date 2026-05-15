@@ -39,7 +39,8 @@ import {
     SKIPPED,
     TutorialTourCategories,
 } from 'src/components/tutorial/tours';
-import {displayRhsRunDetailsTourDialog} from 'src/actions';
+import {displayRhsRunDetailsTourDialog, playbookRunUpdated} from 'src/actions';
+import {fetchPlaybookRun} from 'src/client';
 import {useTutorialStepper} from 'src/components/tutorial/tutorial_tour_tip/manager';
 import {browserHistory} from 'src/webapp_globals';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -67,10 +68,25 @@ const RHSRunDetails = (props: Props) => {
     const currentUserId = useAppSelector(getCurrentUserId);
 
     const [playbookRun] = useRun(props.runID);
+
+    // Refresh run on mount so owner_user_id is current after a WS reconnect gap.
+    // useThing skips the REST fetch when store data exists, so stale ownership can
+    // linger and incorrectly show the Finish button to non-owners.
+    useEffect(() => {
+        fetchPlaybookRun(props.runID)
+            .then((run) => {
+                if (run.owner_user_id !== playbookRun?.owner_user_id || run.current_status !== playbookRun?.current_status) {
+                    dispatch(playbookRunUpdated(run));
+                }
+            })
+            .catch(() => undefined);
+    }, [props.runID]);
+
     const [playbook] = usePlaybook(playbookRun?.playbook_id);
     const isPlaybookAdmin = playbook?.members?.some(
         (m) => m.user_id === currentUserId && m.scheme_roles?.includes(PlaybookRole.Admin),
     ) ?? false;
+    const ownerGroupOnlyActions = playbook === undefined ? undefined : (playbook?.owner_group_only_actions ?? false);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields | null = playbookRun ? {
@@ -194,7 +210,7 @@ const RHSRunDetails = (props: Props) => {
                             readOnly={readOnly}
                             onReadOnlyInteract={onReadOnlyInteract}
                             setShowParticipants={setShowParticipants}
-                            ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
+                            ownerGroupOnlyActions={ownerGroupOnlyActions}
                             isPlaybookAdmin={isPlaybookAdmin}
                         />
                         <RHSChecklistList
@@ -205,7 +221,7 @@ const RHSRunDetails = (props: Props) => {
                             autoAddTask={props.autoAddTask}
                             onTaskAdded={props.onTaskAdded}
                             onBackClick={props.onBackClick}
-                            ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
+                            ownerGroupOnlyActions={ownerGroupOnlyActions}
                         />
                     </Scrollbars>
                 </RHSContent>

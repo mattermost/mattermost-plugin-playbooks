@@ -158,4 +158,18 @@ describe('RHSFooter - ownerGroupOnlyActions finish restriction', () => {
         const finishSection = instance.findAll((node) => node.props['data-testid'] === 'rhs-finish-section');
         expect(finishSection.length).toBeGreaterThan(0);
     });
+
+    it.each([false, true])('hides finish section while playbook is loading (ownerGroupOnlyActions=undefined, isOwner=%s)', (isOwner) => {
+        const component = renderer.create(
+            <RHSFooter
+                {...baseProps}
+                ownerGroupOnlyActions={undefined}
+                isOwner={isOwner}
+            />,
+        );
+
+        const instance = component.root;
+        const finishSection = instance.findAll((node) => node.props['data-testid'] === 'rhs-finish-section');
+        expect(finishSection.length).toBe(0);
+    });
 });
