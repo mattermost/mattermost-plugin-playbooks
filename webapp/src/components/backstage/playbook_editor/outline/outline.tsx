@@ -71,7 +71,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
         savePlaybook(updated)
             .then(() => {
-                setNewChannelOnlyOverride(undefined);
+                refetch();
             })
             .catch(() => {
                 setNewChannelOnlyOverride(prev);
