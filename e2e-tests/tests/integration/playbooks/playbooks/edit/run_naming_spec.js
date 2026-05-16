@@ -9,6 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
+import * as TIMEOUTS from '../../../../fixtures/timeouts';
 import {getRandomId} from '../../../../utils';
 
 describe('playbooks > edit > run naming', {testIsolation: true}, () => {
@@ -91,6 +92,53 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', `${TOKEN_SEQ} - Incident-Report`);
         });
+    });
+
+    it('preserves UI-typed prefix after a later template edit triggers a GraphQL refetch', () => {
+        // Regression: run_number_prefix is REST-only (not in the GraphQL Playbook schema),
+        // and the REST playbook hook does not refetch after a successful PATCH. A later edit
+        // that triggers updatePlaybook (e.g. typing in the channel name template) refetches
+        // PlaybookDocument and recomputes the merged playbook source; if the stale
+        // REST-fetched prefix were used, useProxyState would sync the prefix field back to
+        // the old value and silently wipe what the user typed.
+
+        // # Visit the editor with a playbook that has no saved prefix yet
+        cy.playbooksVisitEditor(testPlaybook.id, 'outline');
+
+        // * Prefix field is empty initially
+        cy.findByTestId('channel-access-run-number-prefix').should('have.value', '');
+
+        // # Intercept REST PATCH so we can wait for the debounced prefix save
+        cy.playbooksInterceptPatchPlaybook();
+
+        // # Type the prefix in the UI (not via API — the bug requires UI-initiated save
+        // # so that restPlaybook becomes stale relative to the just-saved value)
+        cy.findByTestId('channel-access-run-number-prefix').type('INC');
+
+        // # Wait for the debounced PATCH to land server-side
+        cy.wait('@PatchPlaybook').its('response.statusCode').should('be.oneOf', [200, 204]);
+
+        // * Prefix is still visible after save
+        cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
+
+        // # Now type in the template field. This triggers updatePlaybook (GraphQL) which
+        // # refetches PlaybookDocument and recomputes the merged playbook source.
+        cy.findByTestId('channel-access-run-name-template-input').type(`${TOKEN_SEQ} - Incident`, {parseSpecialCharSequences: false});
+        cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
+
+        // # Wait for the REST template save. The proxy state's GraphQL updatePlaybook fires
+        // # from the same 500ms debounce, so by the time PATCH responds the mutation has
+        // # been sent. We then wait for the Apollo refetch + re-render cycle to complete —
+        // # the bug (if present) wipes the prefix during this window, so the assertion
+        // # below would catch it on retry.
+        cy.wait('@PatchPlaybook').its('response.statusCode').should('be.oneOf', [200, 204]);
+        cy.wait(TIMEOUTS.ONE_SEC);
+
+        // * The prefix MUST NOT disappear from the input after the GraphQL refetch
+        cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
+
+        // * Preview reflects the still-present prefix (would show bare '00001' style if prefix were wiped)
+        cy.findByTestId('channel-access-run-name-template-preview').should('contain', 'INC-');
     });
 
     it('shows a warning when template references an unknown field', () => {

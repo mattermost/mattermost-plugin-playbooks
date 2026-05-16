@@ -57,12 +57,26 @@ const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
 
+    // run_number_prefix is REST-only (not in GraphQL schema). restPlaybook is fetched
+    // once and never refreshed, so we track the most recently saved prefix locally and
+    // use it as the source of truth — otherwise the prefix field is overwritten with the
+    // stale restPlaybook value the next time channelPlaybookSource is recomputed (e.g.
+    // after a GraphQL refetch triggered by editing the channel name template).
+    const [savedPrefix, setSavedPrefix] = useState(restPlaybook?.run_number_prefix ?? '');
+    const savedPrefixRef = useRef(savedPrefix);
+    useEffect(() => {
+        savedPrefixRef.current = savedPrefix;
+    }, [savedPrefix]);
+    useEffect(() => {
+        setSavedPrefix(restPlaybook?.run_number_prefix ?? '');
+    }, [restPlaybook?.run_number_prefix]);
+
     // Merge GraphQL playbook with REST-only fields so CreateAChannel can display run_number_prefix.
     const channelPlaybookSource = useMemo(() => ({
         ...playbook,
-        run_number_prefix: restPlaybook?.run_number_prefix,
+        run_number_prefix: savedPrefix,
         next_run_number: restPlaybook?.next_run_number,
-    }), [playbook, restPlaybook?.run_number_prefix, restPlaybook?.next_run_number]);
+    }), [playbook, savedPrefix, restPlaybook?.next_run_number]);
 
     const [
         playbookForCreateChannel,
@@ -75,20 +89,19 @@ const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
         });
     }, [updatePlaybook]));
 
-    // run_number_prefix is REST-only (not in GraphQL schema): save via PATCH when it changes.
-    const lastSavedPrefixRef = useRef(restPlaybook?.run_number_prefix ?? '');
-    useEffect(() => {
-        lastSavedPrefixRef.current = restPlaybook?.run_number_prefix ?? '';
-    }, [restPlaybook?.run_number_prefix]);
     const handleRunNumberPrefixSave = useMemo(
         () => debounce((prefix: string) => {
             updatePlaybookRunNumberPrefix(playbook.id, prefix)
                 .then(() => {
-                    lastSavedPrefixRef.current = prefix;
+                    setSavedPrefix(prefix);
                 })
-                .catch(() => {
-                    setPlaybookForCreateChannel((prev) => ({...prev, run_number_prefix: lastSavedPrefixRef.current}));
-                    addToast({content: formatMessage({defaultMessage: 'Another active playbook in this team already uses that prefix.'}), toastStyle: ToastStyle.Failure});
+                .catch((err) => {
+                    setPlaybookForCreateChannel((prev) => ({...prev, run_number_prefix: savedPrefixRef.current}));
+                    const isDuplicate = err?.status_code === 409;
+                    const message = isDuplicate ?
+                        formatMessage({defaultMessage: 'Another active playbook in this team already uses that prefix.'}) :
+                        formatMessage({defaultMessage: 'Invalid prefix: must start and end with a letter or number and contain only letters, numbers, and hyphens.'});
+                    addToast({content: message, toastStyle: ToastStyle.Failure});
                 });
         }, 500),
         [playbook.id, setPlaybookForCreateChannel, addToast, formatMessage],
