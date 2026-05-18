@@ -3147,6 +3147,60 @@ func TestAutoArchiveChannel_RunFinish(t *testing.T) {
 
 		assertNoTimelineEvent(t, e.PlaybooksAdminClient, run.ID, client.ChannelArchived)
 	})
+
+	t.Run("channel swapped via UpdateRun is not archived after run finish", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Swap Channel Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun: true,
+			AutoArchiveChannel:      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Swap Channel Run",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		originalChannelID := run.ChannelID
+
+		victimChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      e.BasicTeam.Id,
+			Type:        model.ChannelTypeOpen,
+			Name:        "victim-channel-" + model.NewId(),
+			DisplayName: "Victim Channel",
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksAdminClient, run.ID, map[string]interface{}{
+			"channelID": victimChannel.Id,
+		})
+		require.NoError(t, err)
+		require.Empty(t, resp.Errors)
+
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// ChannelCreatedByRun was cleared when ChannelID was swapped, so auto-archive must not fire.
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), victimChannel.Id, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"victim channel must not be archived after ChannelID was swapped via UpdateRun")
+
+		origChannel, _, err := e.ServerAdminClient.GetChannel(context.Background(), originalChannelID, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), origChannel.DeleteAt,
+			"original channel must not be archived after ChannelID was swapped away")
+
+		assertNoTimelineEvent(t, e.PlaybooksAdminClient, run.ID, client.ChannelArchived)
+	})
 }
 
 // TestAutoArchiveChannel_RunRestore verifies that when a run with AutoArchiveChannel=true is
