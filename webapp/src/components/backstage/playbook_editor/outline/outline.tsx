@@ -66,6 +66,9 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const handleAutoArchiveChange = (updated: {auto_archive_channel: boolean}) => {
         if (!archived && playbook.id) {
             const prev = effectiveAutoArchive;
+            const isForcedLinkedReset =
+                updated.auto_archive_channel === false &&
+                restPlaybook?.channel_mode === 'link_existing_channel';
             setAutoArchiveOverride(updated.auto_archive_channel);
             clientFetchPlaybook(playbook.id)
                 .then((latest) => {
@@ -76,7 +79,9 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                 })
                 .then(() => refetch())
                 .catch(() => {
-                    setAutoArchiveOverride(prev);
+                    if (!isForcedLinkedReset) {
+                        setAutoArchiveOverride(prev);
+                    }
                     toaster.add({
                         content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
                         toastStyle: ToastStyle.Failure,
