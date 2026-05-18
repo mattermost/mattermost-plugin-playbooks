@@ -114,7 +114,7 @@ const DateProperty = (props: Props) => {
         previousMillisRef.current = newMillis;
         setDisplayMillis(newMillis);
         setIsEditing(false);
-        props.onValueChange(new Date(newMillis).toISOString())?.catch(() => {
+        props.onValueChange(option.value.toISODate())?.catch(() => {
             if (isMounted.current && callSeqRef.current === seq) {
                 previousMillisRef.current = previousMillis;
                 setDisplayMillis((current) => (current === newMillis ? previousMillis : current));

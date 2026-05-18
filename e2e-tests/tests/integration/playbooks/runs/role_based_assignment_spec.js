@@ -45,14 +45,6 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
 
     beforeEach(() => {
         cy.viewport('macbook-13');
-
-        // Capture app-level console errors/warnings so CI output shows the real
-        // cause without needing video/screenshots.
-        cy.on('window:console', (msg) => {
-            if (msg.type === 'error' || msg.type === 'warn') {
-                cy.log('[CONSOLE ' + msg.type.toUpperCase() + '] ' + (msg.args || []).join(' '));
-            }
-        });
     });
 
     it('task with assignee_type=owner is resolved to the run owner at creation', () => {
