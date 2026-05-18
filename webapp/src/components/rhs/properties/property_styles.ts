@@ -1,11 +1,18 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import React from 'react';
 import styled from 'styled-components';
 
 export const PropertyDisplayContainer = styled.div.attrs(() => ({
     role: 'button',
     tabIndex: 0,
+    onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            (e.currentTarget as HTMLElement).click();
+        }
+    },
 }))`
     flex: 1;
     color: var(--center-channel-color);
