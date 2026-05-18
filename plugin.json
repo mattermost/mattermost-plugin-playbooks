@@ -49,6 +49,13 @@
         "display_name": "Enable Incremental Updates",
         "help_text": "When enabled, sends incremental WebSocket updates instead of full playbook run objects for better performance.",
         "default": false
+      },
+      {
+        "key": "ExposeMCPExternal",
+        "type": "bool",
+        "display_name": "Expose Playbooks MCP tools externally",
+        "help_text": "When enabled, allows the Agents plugin to expose Playbooks MCP tools through its external MCP endpoint. The Agents plugin admin settings must also allow and enable the server/tools.",
+        "default": false
       }
     ]
   }

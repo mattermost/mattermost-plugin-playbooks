@@ -2,15 +2,19 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-agents/public/bridgeclient"
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -81,6 +85,59 @@ type testEchoIn struct {
 
 type testEchoOut struct {
 	Echoed string `json:"echoed"`
+}
+
+type capturePluginAPI struct {
+	requestCh chan *http.Request
+	bodyCh    chan []byte
+}
+
+func (a *capturePluginAPI) PluginHTTP(req *http.Request) *http.Response {
+	data, _ := io.ReadAll(req.Body)
+	a.requestCh <- req
+	a.bodyCh <- data
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader("{}")),
+	}
+}
+
+func TestNewPlaybooksMCPServerRegistersExposeExternal(t *testing.T) {
+	api := &capturePluginAPI{
+		requestCh: make(chan *http.Request, 1),
+		bodyCh:    make(chan []byte, 1),
+	}
+	server := newPlaybooksMCPServer(api, http.NotFoundHandler(), true)
+
+	require.NoError(t, server.Register())
+
+	var req *http.Request
+	var body []byte
+	select {
+	case req = <-api.requestCh:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for MCP registration request")
+	}
+	select {
+	case body = <-api.bodyCh:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for MCP registration body")
+	}
+
+	assert.Equal(t, http.MethodPost, req.Method)
+	assert.Equal(t, "/"+bridgeclient.AiPluginID+"/bridge/v1/mcp/register", req.URL.Path)
+
+	var payload map[string]any
+	require.NoError(t, json.Unmarshal(body, &payload))
+	assert.Equal(t, manifest.Id, payload["plugin_id"])
+	assert.Equal(t, playbooksMCPEndpoint, payload["path"])
+	assert.Equal(t, true, payload["expose_external"])
+}
+
+func TestConfigurationClonesExposeMCPExternal(t *testing.T) {
+	cfg := &config.Configuration{ExposeMCPExternal: true}
+	cloned := cfg.Clone()
+	assert.True(t, cloned.ExposeMCPExternal)
 }
 
 func TestServeMCPIfMatchServesToolCall(t *testing.T) {

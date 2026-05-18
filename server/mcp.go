@@ -127,26 +127,36 @@ func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body 
 	return nil
 }
 
-func (p *Plugin) ensureMCPServer() error {
-	if p.mcpServer != nil {
-		return nil
-	}
-
-	server := mcphelper.NewServer(p.API, mcphelper.PluginMCPServer{
-		PluginID: manifest.Id,
-		Name:     "Playbooks MCP",
-		Path:     playbooksMCPEndpoint,
-		Version:  manifest.Version,
+func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, exposeExternal bool) *mcphelper.Server {
+	server := mcphelper.NewServer(api, mcphelper.PluginMCPServer{
+		PluginID:       manifest.Id,
+		Name:           "Playbooks MCP",
+		Path:           playbooksMCPEndpoint,
+		ExposeExternal: exposeExternal,
+		Version:        manifest.Version,
 	})
 	factory := func(ctx context.Context) (tools.APIClient, error) {
 		userID := mcphelper.GetUserID(ctx)
 		if userID == "" {
 			return nil, fmt.Errorf("missing Mattermost user ID")
 		}
-		return &pluginMCPClient{handler: p.handler, userID: userID}, nil
+		return &pluginMCPClient{handler: handler, userID: userID}, nil
 	}
 	tools.NewPlaybooksToolProvider(factory).ProvideMCPHelperTools(server)
-	p.mcpServer = server
+	return server
+}
+
+func (p *Plugin) ensureMCPServer() error {
+	if p.mcpServer != nil {
+		return nil
+	}
+
+	exposeExternal := false
+	if p.config != nil {
+		exposeExternal = p.config.GetConfiguration().ExposeMCPExternal
+	}
+
+	p.mcpServer = newPlaybooksMCPServer(p.API, p.handler, exposeExternal)
 	return nil
 }
 
