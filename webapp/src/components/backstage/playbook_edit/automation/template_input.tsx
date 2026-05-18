@@ -338,32 +338,36 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                     <PreviewText aria-live='polite'>{previewText}</PreviewText>
                 </Preview>
             )}
-            {feedback === 'unclosed' && (
-                <Warning
-                    role='alert'
-                    data-testid={tid('unclosed-warning')}
-                >
-                    {formatMessage({defaultMessage: "Template has an unclosed variable — every variable must be wrapped in matching curly braces, e.g. '{Field Name}'."})}
-                </Warning>
-            )}
-            {feedback === 'seq' && (
-                <Warning
-                    role='alert'
-                    data-testid={tid('seq-warning')}
-                >
-                    {formatMessage({defaultMessage: "Without a run number prefix, '{SEQ}' will display as a bare number (e.g. 00001)"})}
-                </Warning>
-            )}
-            {feedback === 'unknown' && (
-                <Hint
-                    role='status'
-                    data-testid={tid('unknown-fields-hint')}
-                >
-                    {formatMessage(
-                        {defaultMessage: '{fields} will appear as literal text — if this is unintentional, check the field name against available options.'},
-                        {fields: unknownFields.join(', ')},
+            {feedback !== null && (
+                <div data-testid={tid('warning')}>
+                    {feedback === 'unclosed' && (
+                        <Warning
+                            role='alert'
+                            data-testid={tid('unclosed-warning')}
+                        >
+                            {formatMessage({defaultMessage: "Template has an unclosed variable — every variable must be wrapped in matching curly braces, e.g. '{Field Name}'."})}
+                        </Warning>
                     )}
-                </Hint>
+                    {feedback === 'seq' && (
+                        <Warning
+                            role='alert'
+                            data-testid={tid('seq-warning')}
+                        >
+                            {formatMessage({defaultMessage: "Without a run number prefix, '{SEQ}' will display as a bare number (e.g. 00001)"})}
+                        </Warning>
+                    )}
+                    {feedback === 'unknown' && (
+                        <Hint
+                            role='status'
+                            data-testid={tid('unknown-fields-hint')}
+                        >
+                            {formatMessage(
+                                {defaultMessage: '{fields} will appear as literal text — if this is unintentional, check the field name against available options.'},
+                                {fields: unknownFields.join(', ')},
+                            )}
+                        </Hint>
+                    )}
+                </div>
             )}
         </SelectorWrapper>
     );
