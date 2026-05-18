@@ -97,6 +97,32 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
             });
     });
 
+    it('disables "Link to existing channel" controls after toggling new-channel-only on in the editor', () => {
+        // # Visit the playbook outline editor with default state (new_channel_only=false)
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+
+        // # Click the toggle to enable new-channel-only
+        cy.findByTestId('new-channel-only-toggle').click();
+
+        // # Confirm the confirmation modal
+        cy.get('#confirmModalButton').click();
+
+        // * Assert the "Link to existing channel" radio is now disabled
+        cy.findByTestId('playbook-link-existing-channel-radio').should('be.disabled');
+
+        // * Assert the channel selector is also disabled
+        cy.get('#link_existing_channel_selector').
+            closest('[id="link-existing-channel"]').
+            find('.playbooks-rselect__control').
+            should('have.class', 'playbooks-rselect__control--is-disabled');
+
+        // # Click the toggle again to disable new-channel-only (no confirmation needed)
+        cy.findByTestId('new-channel-only-toggle').click();
+
+        // * Assert the radio is no longer disabled
+        cy.findByTestId('playbook-link-existing-channel-radio').should('not.be.disabled');
+    });
+
     it('API allows run creation without channel_id when new_channel_only is true', () => {
         const runName = 'New Channel Run ' + getRandomId();
 

@@ -199,7 +199,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                 <Actions
                     playbook={playbook}
                     newChannelOnly={effectiveNewChannelOnly}
-                    onNewChannelOnlyChange={handleNewChannelOnlyChange}
+                    onNewChannelOnlyChange={restPlaybook ? handleNewChannelOnlyChange : undefined}
                 />
             </Section>
             <PlaybookActionsModal
