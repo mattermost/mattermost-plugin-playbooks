@@ -237,7 +237,7 @@ describe('TemplateInput', () => {
         );
 
         const tree = component.toJSON();
-        const warningNode = findNodeByTestId(tree, 'tpl-warning');
+        const warningNode = findNodeByTestId(tree, 'tpl-unknown-fields-hint');
 
         expect(warningNode).not.toBeNull();
         const json = JSON.stringify(warningNode);
@@ -260,9 +260,9 @@ describe('TemplateInput', () => {
         );
 
         const tree = component.toJSON();
-        const warningNode = findNodeByTestId(tree, 'tpl-warning');
-
-        expect(warningNode).toBeNull();
+        expect(findNodeByTestId(tree, 'tpl-seq-warning')).toBeNull();
+        expect(findNodeByTestId(tree, 'tpl-unknown-fields-hint')).toBeNull();
+        expect(findNodeByTestId(tree, 'tpl-unclosed-warning')).toBeNull();
     });
 
     it('navigates suggestions with ArrowDown/ArrowUp and selects with Enter', () => {
@@ -384,6 +384,72 @@ describe('TemplateInput', () => {
 
         tree = component.toJSON();
         expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(false);
+    });
+
+    describe('unclosed known-token brace detection', () => {
+        it('shows unclosed-warning when a known field name is missing its closing brace', () => {
+            const component = renderer.create(
+                <TemplateInput
+                    enabled={true}
+                    placeholderText='Enter template'
+                    input='{MyField'
+                    onChange={jest.fn()}
+                    fieldNames={['MyField']}
+                    testId='tpl'
+                />,
+            );
+
+            const tree = component.toJSON();
+            expect(findNodeByTestId(tree, 'tpl-unclosed-warning')).not.toBeNull();
+            expect(findNodeByTestId(tree, 'tpl-seq-warning')).toBeNull();
+            expect(findNodeByTestId(tree, 'tpl-unknown-fields-hint')).toBeNull();
+        });
+
+        it('shows unclosed-warning when a system token is missing its closing brace', () => {
+            const component = renderer.create(
+                <TemplateInput
+                    enabled={true}
+                    placeholderText='Enter template'
+                    input='Incident {SEQ'
+                    onChange={jest.fn()}
+                    fieldNames={[]}
+                    testId='tpl'
+                />,
+            );
+
+            expect(findNodeByTestId(component.toJSON(), 'tpl-unclosed-warning')).not.toBeNull();
+        });
+
+        it('does not show unclosed-warning for an unrelated literal {', () => {
+            // { followed by text that is NOT a known token — intentional literal brace
+            const component = renderer.create(
+                <TemplateInput
+                    enabled={true}
+                    placeholderText='Enter template'
+                    input='Price {v2'
+                    onChange={jest.fn()}
+                    fieldNames={[]}
+                    testId='tpl'
+                />,
+            );
+
+            expect(findNodeByTestId(component.toJSON(), 'tpl-unclosed-warning')).toBeNull();
+        });
+
+        it('does not show unclosed-warning when the token is properly closed', () => {
+            const component = renderer.create(
+                <TemplateInput
+                    enabled={true}
+                    placeholderText='Enter template'
+                    input='{MyField} incident'
+                    onChange={jest.fn()}
+                    fieldNames={['MyField']}
+                    testId='tpl'
+                />,
+            );
+
+            expect(findNodeByTestId(component.toJSON(), 'tpl-unclosed-warning')).toBeNull();
+        });
     });
 
     it('closes suggestions when focus leaves the container', () => {

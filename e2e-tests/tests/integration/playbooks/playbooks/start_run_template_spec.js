@@ -75,6 +75,61 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         });
     });
 
+    describe('many property fields — Cancel button remains reachable', () => {
+        let manyFieldsPlaybook;
+
+        beforeEach(() => {
+            const fieldNames = ['Priority', 'Region', 'Team', 'Environment'];
+
+            // # Create playbook, then add 4 fields and set template — all chained to keep async ordering correct
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'ManyFields PB ' + getRandomId(),
+                makePublic: true,
+                memberIDs: [testUser.id],
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                manyFieldsPlaybook = playbook;
+
+                fieldNames.forEach((name, i) => {
+                    cy.apiAddPropertyField(playbook.id, {
+                        name,
+                        type: 'text',
+                        attrs: {visibility: 'always', sortOrder: i},
+                    });
+                });
+
+                const template = fieldNames.map((n) => `{${n}}`).join(' - ');
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: template});
+            });
+        });
+
+        afterEach(() => {
+            if (manyFieldsPlaybook) {
+                cy.apiArchivePlaybook(manyFieldsPlaybook.id);
+            }
+        });
+
+        it('Cancel button is visible and clickable when modal shows many attribute inputs', () => {
+            // # Open the Start Run modal
+            cy.playbooksOpenRunModal(manyFieldsPlaybook.id);
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // * All 4 attribute inputs are rendered
+                cy.findByText('Attributes').should('be.visible');
+
+                // * The Cancel button is visible within the viewport — not pushed off-screen
+                cy.findByTestId('modal-cancel-button').should('be.visible');
+
+                // # Click Cancel — modal should close without starting a run
+                cy.findByTestId('modal-cancel-button').click();
+            });
+
+            // * Modal is gone after Cancel
+            cy.get('#root-portal.modal-open').should('not.exist');
+        });
+    });
+
     describe('no-template free-text mode', () => {
         let plainPlaybook;
 

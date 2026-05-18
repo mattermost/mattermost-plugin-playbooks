@@ -450,7 +450,7 @@ export const RunPlaybookModal = ({
                     )}
                     {namePreviewTooLong && (
                         <ErrorMessage data-testid='run-name-preview-error'>
-                            {formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
+                            {formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Edit the playbook template to use fewer or shorter fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
                         </ErrorMessage>
                     )}
                     {templateFields.length > 0 && (
@@ -669,7 +669,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
 };
 
 const StyledGenericModal = styled(GenericModal)`
-    &&& {
+    &&&& {
         h1 {
             width:100%;
         }
@@ -682,15 +682,22 @@ const StyledGenericModal = styled(GenericModal)`
 
         .modal-content {
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 16px);
         }
 
         .modal-body {
             padding: 24px 31px;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
         }
 
         .modal-footer {
-           padding: 0 31px 28px;
-           box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
+            padding: 0 31px 28px;
+            box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
+            flex-shrink: 0;
         }
     }
 `;
@@ -1046,6 +1053,8 @@ const PropertyFieldsContainer = styled.div`
     position: relative;
     z-index: 2;
     margin-bottom: 12px;
+    max-height: 40vh;
+    overflow-y: auto;
 `;
 
 const PropertyFieldRow = styled.div`

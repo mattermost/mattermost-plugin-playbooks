@@ -97,6 +97,33 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         return extractTemplateFieldNames(input).filter((name) => !fieldNamesUpperSet.has(name.toUpperCase()));
     }, [input, fieldNamesUpperSet]);
 
+    // Only warn for intentional-looking tokens — avoids false positives on bare `{` chars.
+    const hasUnclosedKnownToken = useMemo(() => {
+        if (!input.includes('{')) {
+            return false;
+        }
+        const stripped = input.replace(/\{[^}]*\}/g, '');
+        const re = /\{([^{]*)/g;
+        let match;
+        while ((match = re.exec(stripped)) !== null) {
+            const partial = match[1].trim().toUpperCase();
+            if (!partial) {
+                continue;
+            }
+            for (const name of SYSTEM_TOKENS) {
+                if (name.startsWith(partial) || partial.startsWith(name)) {
+                    return true;
+                }
+            }
+            for (const name of fieldNamesUpperSet) {
+                if (name.startsWith(partial) || partial.startsWith(name)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }, [input, fieldNamesUpperSet]);
+
     const seqWithoutPrefix = useMemo(() => (/\{\s*SEQ\s*\}/i).test(input) && !prefix?.trim(), [input, prefix]);
 
     const previewText = useMemo(() => {
@@ -244,6 +271,15 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
 
     const showSuggestions = trigger !== null && enabled && filteredOptions.length > 0;
     const suggestionsId = testId ? `${testId}-suggestions-listbox` : 'template-suggestions';
+    const tid = (suffix: string) => (testId ? `${testId}-${suffix}` : undefined);
+    let feedback: 'unclosed' | 'seq' | 'unknown' | null = null;
+    if (hasUnclosedKnownToken) {
+        feedback = 'unclosed';
+    } else if (seqWithoutPrefix) {
+        feedback = 'seq';
+    } else if (unknownFields.length > 0) {
+        feedback = 'unknown';
+    }
 
     return (
         <SelectorWrapper>
@@ -260,7 +296,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                     onKeyDown={handleKeyDown}
                     placeholder={placeholderText}
                     maxLength={maxLength}
-                    data-testid={testId ? `${testId}-input` : undefined}
+                    data-testid={tid('input')}
                     role='combobox'
                     aria-haspopup='listbox'
                     aria-label={placeholderText}
@@ -273,7 +309,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                     role='listbox'
                     id={suggestionsId}
                     hidden={!showSuggestions}
-                    data-testid={testId ? `${testId}-suggestions` : undefined}
+                    data-testid={tid('suggestions')}
                 >
                     {filteredOptions.map((opt, i) => (
                         <SuggestionItem
@@ -287,7 +323,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                                 acceptOption(opt);
                             }}
                             onMouseEnter={() => setSelectedIndex(i)}
-                            data-testid={testId ? `${testId}-suggestion-${opt.value}` : undefined}
+                            data-testid={tid(`suggestion-${opt.value}`)}
                         >
                             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx -- displaying template token syntax, not translatable text */}
                             <TokenName>{`{${opt.value}}`}</TokenName>
@@ -297,20 +333,37 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                 </SuggestionList>
             </InputContainer>
             {input && (
-                <Preview data-testid={testId ? `${testId}-preview` : undefined}>
+                <Preview data-testid={tid('preview')}>
                     <PreviewLabel>{formatMessage({defaultMessage: 'Preview: '})}</PreviewLabel>
                     <PreviewText aria-live='polite'>{previewText}</PreviewText>
                 </Preview>
             )}
-            {(unknownFields.length > 0 || seqWithoutPrefix) && (
+            {feedback === 'unclosed' && (
                 <Warning
                     role='alert'
-                    data-testid={testId ? `${testId}-warning` : undefined}
+                    data-testid={tid('unclosed-warning')}
                 >
-                    {seqWithoutPrefix && unknownFields.length === 0 ?
-                        formatMessage({defaultMessage: "Without a run number prefix, '{SEQ}' will display as a bare number (e.g. 00001)"}) :
-                        formatMessage({defaultMessage: 'Unknown field references: {fields}'}, {fields: unknownFields.join(', ')})}
+                    {formatMessage({defaultMessage: "Template has an unclosed variable — every variable must be wrapped in matching curly braces, e.g. '{Field Name}'."})}
                 </Warning>
+            )}
+            {feedback === 'seq' && (
+                <Warning
+                    role='alert'
+                    data-testid={tid('seq-warning')}
+                >
+                    {formatMessage({defaultMessage: "Without a run number prefix, '{SEQ}' will display as a bare number (e.g. 00001)"})}
+                </Warning>
+            )}
+            {feedback === 'unknown' && (
+                <Hint
+                    role='status'
+                    data-testid={tid('unknown-fields-hint')}
+                >
+                    {formatMessage(
+                        {defaultMessage: '{fields} will appear as literal text — if this is unintentional, check the field name against available options.'},
+                        {fields: unknownFields.join(', ')},
+                    )}
+                </Hint>
             )}
         </SelectorWrapper>
     );
@@ -398,5 +451,12 @@ const Warning = styled.div`
     background: rgba(var(--error-text-rgb), 0.08);
     color: var(--error-text);
     font-size: 12px;
+`;
+
+const Hint = styled.div`
+    margin-top: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.48);
+    font-size: 12px;
+    font-style: italic;
 `;
 
