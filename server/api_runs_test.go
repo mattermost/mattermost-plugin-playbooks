@@ -3530,6 +3530,40 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
+	t.Run("ChangeOwner rejects new owner who is not a team member", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "NonTeamMember ChangeOwner Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "NonTeamMember ChangeOwner Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// RegularUserNotInTeam is a valid Mattermost account but has no team membership.
+		// Attempting to assign them as owner must be rejected — if it weren't, with
+		// OwnerGroupOnlyActions=true they could hold owner status without channel access,
+		// locking the run for all other participants.
+		err = e.PlaybooksAdminClient.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUserNotInTeam.Id)
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+
+		// Owner must be unchanged.
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, e.RegularUser.Id, updated.OwnerUserID)
+	})
+
 	t.Run("non-admin member cannot toggle OwnerGroupOnlyActions via playbook update", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "ToggleGate Non-Admin Playbook",
