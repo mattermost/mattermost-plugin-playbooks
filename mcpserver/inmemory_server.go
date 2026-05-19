@@ -83,6 +83,9 @@ func NewInMemoryServer(config InMemoryConfig) (*InMemoryServer, error) {
 // CreateConnectionForUser creates a new in-memory transport connection for a user.
 // Returns the client-side transport that the caller uses to send MCP requests.
 //
+// The caller MUST close the ClientSession created with the returned transport
+// to shut down the MCP server goroutine and underlying in-memory connection.
+//
 // The sessionID and tokenResolver are used to authenticate API calls made by
 // the tools — each tool invocation resolves a fresh token from the session.
 func (s *InMemoryServer) CreateConnectionForUser(userID, sessionID string, tokenResolver TokenResolver) (*mcp.InMemoryTransport, error) {
