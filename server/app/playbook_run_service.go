@@ -1571,9 +1571,9 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userI
 
 	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s)", playbookRunID)
-		auditRec.AddErrorDesc(err.Error())
-		return err
+		wrappedErr := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s)", playbookRunID)
+		auditRec.AddErrorDesc(wrappedErr.Error())
+		return wrappedErr
 	}
 
 	model.AddEventParameterToAuditRec(auditRec, "currentlyEnabled", playbookRunToModify.RetrospectiveEnabled)
@@ -1594,15 +1594,17 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userI
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update RetrospectiveEnabled for playbook run (runID: %s)", playbookRunID)
-		auditRec.AddErrorDesc(err.Error())
-		return err
+		wrappedErr := errors.Wrapf(err, "failed to update RetrospectiveEnabled for playbook run (runID: %s)", playbookRunID)
+		auditRec.AddErrorDesc(wrappedErr.Error())
+		return wrappedErr
 	}
+
+	reminderKey := RetrospectivePrefix + playbookRunID
 
 	// Scheduler side-effects: disabling cancels any pending reminder; re-enabling on a finished,
 	// unpublished run restarts it so the owner still gets prompted.
 	if !enabled {
-		s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
+		s.scheduler.Cancel(reminderKey)
 	} else if s.licenseChecker.RetrospectiveAllowed() &&
 		playbookRunToModify.CurrentStatus == StatusFinished &&
 		playbookRunToModify.RetrospectivePublishedAt == 0 {
@@ -1613,7 +1615,7 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userI
 			s.pluginAPI.Log.Error("failed to post retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
 		}
 		if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
-			if remErr := s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); remErr != nil {
+			if remErr := s.SetReminder(reminderKey, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); remErr != nil {
 				s.pluginAPI.Log.Error("failed to restart retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
 			}
 		}

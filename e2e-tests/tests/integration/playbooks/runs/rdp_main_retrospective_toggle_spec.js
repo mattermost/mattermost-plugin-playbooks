@@ -335,6 +335,34 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
         });
     });
 
+    it('toggle option is not shown in the RHS context menu', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Toggle Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: true,
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'RHS No Retro Toggle Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
+            cy.playbooksVisitRunChannel(testTeam.name, run);
+
+            // # Open the RHS context menu (run name dropdown in the channel sidebar)
+            cy.get('#rhsContainer').findByTestId('menuButton').click();
+            cy.findByTestId('dropdownmenu').should('be.visible');
+
+            // * Neither toggle option should appear in the RHS menu
+            cy.findByTestId('disable-retrospective-menu-item').should('not.exist');
+            cy.findByTestId('enable-retrospective-menu-item').should('not.exist');
+        });
+    });
+
     it('cancelling the disable modal leaves the label unchanged', () => {
         cy.apiCreatePlaybook({
             teamId: testTeam.id,

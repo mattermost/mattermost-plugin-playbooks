@@ -176,9 +176,11 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                         playbookRun={playbookRun}
                         role={role}
                     />
-                    <ToggleRunRetrospectiveMenuItem
-                        playbookRun={playbookRun}
-                    />
+                    {location !== CONTEXT_MENU_LOCATION.RHS && (
+                        <ToggleRunRetrospectiveMenuItem
+                            playbookRun={playbookRun}
+                        />
+                    )}
                     <LeaveRunMenuItem
                         isFollowing={isFollowing}
                         role={role}
