@@ -123,6 +123,28 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
         cy.findByTestId('playbook-link-existing-channel-radio').should('not.be.disabled');
     });
 
+    it('toggle persists new_channel_only=true after page reload', () => {
+        // # Visit the playbook outline editor with default state (new_channel_only=false)
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+
+        // # Click the toggle to enable new-channel-only
+        cy.findByTestId('new-channel-only-toggle').click();
+
+        // # Confirm the confirmation modal
+        cy.get('#confirmModalButton').click();
+
+        // # Reload the editor to verify the value was persisted to the server
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+
+        // * Assert the toggle is still checked after reload
+        cy.findByTestId('new-channel-only-toggle').find('input').first().should('be.checked');
+
+        // * Assert via API that new_channel_only was persisted
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            expect(pb.new_channel_only).to.equal(true);
+        });
+    });
+
     it('API allows run creation without channel_id when new_channel_only is true', () => {
         const runName = 'New Channel Run ' + getRandomId();
 
