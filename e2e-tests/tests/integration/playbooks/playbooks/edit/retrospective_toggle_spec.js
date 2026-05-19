@@ -202,6 +202,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             title: 'Retrospective Disabled Finish Playbook (' + getRandomId() + ')',
             memberIDs: [testUser.id],
             retrospectiveEnabled: false,
+            createPublicPlaybookRun: true,
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
@@ -234,6 +235,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             title: 'Retrospective Enabled Finish Playbook (' + getRandomId() + ')',
             memberIDs: [testUser.id],
             retrospectiveEnabled: true,
+            createPublicPlaybookRun: true,
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
