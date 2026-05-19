@@ -137,8 +137,8 @@ jobs:
     container:
       image: mattermost/mattermost-build-server-fips:${{ needs.go.outputs.version }}
       credentials:
-        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
     env:
       FIPS_ENABLED: true
     steps:
@@ -262,8 +262,8 @@ jobs:
     container:
       image: mattermost/mattermost-build-server-fips:${{ needs.go.outputs.version }}
       credentials:
-        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
     services:
       postgres:
         image: postgres:14
