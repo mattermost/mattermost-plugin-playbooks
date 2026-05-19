@@ -132,7 +132,12 @@ type TestEnvironment struct {
 }
 
 func (e *TestEnvironment) DoPluginAPIRequestWithHeaders(ctx context.Context, client *model.Client4, method, path, data string, headers map[string]string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, client.URL+"/plugins/"+manifest.Id+path, strings.NewReader(data))
+	normalizedPath := path
+	if !strings.HasPrefix(normalizedPath, "/") {
+		normalizedPath = "/" + normalizedPath
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, client.URL+"/plugins/"+manifest.Id+normalizedPath, strings.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
