@@ -178,9 +178,20 @@ func (p *Plugin) unregisterMCPServerBestEffort() {
 	}
 }
 
+func (p *Plugin) isMCPEnabled() bool {
+	if p.config == nil {
+		return p.mcpServer != nil
+	}
+	return p.config.IsExperimentalFeaturesEnabled()
+}
+
 func (p *Plugin) serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool {
 	if r.URL.Path != playbooksMCPEndpoint && !strings.HasPrefix(r.URL.Path, playbooksMCPEndpoint+"/") {
 		return false
+	}
+	if !p.isMCPEnabled() {
+		http.NotFound(w, r)
+		return true
 	}
 	if p.mcpServer == nil {
 		http.Error(w, "MCP server unavailable", http.StatusServiceUnavailable)

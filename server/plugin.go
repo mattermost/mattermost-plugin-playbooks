@@ -289,10 +289,12 @@ func (p *Plugin) OnActivate() error {
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-management")
 	}()
 
-	if err := p.ensureMCPServer(); err != nil {
-		return errors.Wrap(err, "failed to initialize MCP server")
+	if p.isMCPEnabled() {
+		if err := p.ensureMCPServer(); err != nil {
+			return errors.Wrap(err, "failed to initialize MCP server")
+		}
+		p.registerMCPServerBestEffort()
 	}
-	p.registerMCPServerBestEffort()
 
 	return nil
 }
@@ -303,7 +305,22 @@ func (p *Plugin) OnConfigurationChange() error {
 		return nil
 	}
 
-	return p.config.OnConfigurationChange()
+	if err := p.config.OnConfigurationChange(); err != nil {
+		return err
+	}
+
+	if !p.isMCPEnabled() {
+		p.unregisterMCPServerBestEffort()
+		p.mcpServer = nil
+		return nil
+	}
+
+	if err := p.ensureMCPServer(); err != nil {
+		return errors.Wrap(err, "failed to initialize MCP server")
+	}
+	p.registerMCPServerBestEffort()
+
+	return nil
 }
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
