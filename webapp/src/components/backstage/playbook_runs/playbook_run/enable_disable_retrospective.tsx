@@ -8,9 +8,11 @@ import {useAppDispatch} from 'src/hooks/redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {toggleRunRetrospective} from 'src/client';
+import {playbookRunUpdated} from 'src/actions';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 export const useToggleRunRetrospective = (playbookRun: PlaybookRun) => {
     const dispatch = useAppDispatch();
@@ -18,27 +20,36 @@ export const useToggleRunRetrospective = (playbookRun: PlaybookRun) => {
     const {add: addToast} = useToaster();
 
     return useCallback((enabled: boolean) => {
-        const confirmTitle = enabled ? formatMessage({defaultMessage: 'Confirm enable retrospective'}) : formatMessage({defaultMessage: 'Confirm disable retrospective'});
-        const confirmationMessage = enabled ? formatMessage({defaultMessage: 'Are you sure you want to enable the retrospective for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable the retrospective for this run? No retrospective reminder will be sent.'});
+        const labels = enabled ? {
+            title: formatMessage({defaultMessage: 'Confirm enable retrospective'}),
+            message: formatMessage({defaultMessage: 'Are you sure you want to enable the retrospective for this run?'}),
+            button: formatMessage({defaultMessage: 'Enable retrospective'}),
+        } : {
+            title: formatMessage({defaultMessage: 'Confirm disable retrospective'}),
+            message: formatMessage({defaultMessage: 'Are you sure you want to disable the retrospective for this run? No retrospective reminder will be sent.'}),
+            button: formatMessage({defaultMessage: 'Disable retrospective'}),
+        };
 
         const onConfirm = async () => {
             try {
                 const result = await toggleRunRetrospective(playbookRun.id, enabled);
                 if (result && 'error' in result) {
-                    addToast({content: formatMessage({defaultMessage: 'Failed to update retrospective setting'})});
+                    addToast({content: formatMessage({defaultMessage: 'Failed to update retrospective setting'}), toastStyle: ToastStyle.Failure});
+                    return;
                 }
+                dispatch(playbookRunUpdated({...playbookRun, retrospective_enabled: enabled}));
             } catch {
-                addToast({content: formatMessage({defaultMessage: 'Failed to update retrospective setting'})});
+                addToast({content: formatMessage({defaultMessage: 'Failed to update retrospective setting'}), toastStyle: ToastStyle.Failure});
             }
         };
 
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
             show: true,
-            title: confirmTitle,
-            message: confirmationMessage,
-            confirmButtonText: enabled ? formatMessage({defaultMessage: 'Enable retrospective'}) : formatMessage({defaultMessage: 'Disable retrospective'}),
+            title: labels.title,
+            message: labels.message,
+            confirmButtonText: labels.button,
             onConfirm,
             onCancel: () => null,
         })));
-    }, [playbookRun.id, dispatch, formatMessage, addToast]);
+    }, [playbookRun, dispatch, formatMessage, addToast]);
 };

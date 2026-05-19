@@ -14,6 +14,8 @@ import {getRandomId} from '../../../utils';
 describe('runs > run details page > retrospective toggle (context menu)', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
+    let participantUser;
+    let adminUser;
     let createdPlaybookIds = [];
 
     before(() => {
@@ -21,6 +23,18 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            // # Create a non-owner participant
+            cy.apiCreateUser().then(({user: created}) => {
+                participantUser = created;
+                cy.apiAddUserToTeam(testTeam.id, created.id);
+            });
+
+            // # Create a sysadmin who is not the run owner
+            cy.apiCreateCustomAdmin().then(({sysadmin: created}) => {
+                adminUser = created;
+                cy.apiAddUserToTeam(testTeam.id, created.id);
+            });
         });
     });
 
@@ -187,6 +201,137 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
                 expect(updatedRun.retrospective_enabled).to.equal(true);
             });
+        });
+    });
+
+    it('disabling retrospective via context menu hides the retrospective section immediately', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Toggle Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Section Hide Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
+            cy.visit(`/playbooks/runs/${run.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            // * Section is visible before toggle
+            cy.findByTestId('run-retrospective-section').should('exist').and('be.visible');
+
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective-enabled`).as('ToggleRetrospective');
+
+            openContextMenu();
+            cy.findByTestId('disable-retrospective-menu-item').click();
+            confirmModal();
+            cy.wait('@ToggleRetrospective');
+
+            // * Section disappears without a page reload
+            cy.findByTestId('run-retrospective-section').should('not.exist');
+        });
+    });
+
+    it('enabling retrospective via context menu shows the retrospective section immediately', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Toggle Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: false,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Section Show Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
+            cy.visit(`/playbooks/runs/${run.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            // * Section is hidden before toggle
+            cy.findByTestId('run-retrospective-section').should('not.exist');
+
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective-enabled`).as('ToggleRetrospective');
+
+            openContextMenu();
+            cy.findByTestId('enable-retrospective-menu-item').click();
+            confirmModal();
+            cy.wait('@ToggleRetrospective');
+
+            // * Section appears without a page reload
+            cy.findByTestId('run-retrospective-section').should('exist').and('be.visible');
+        });
+    });
+
+    it('toggle option is not shown to a non-owner participant', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Toggle Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: true,
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Participant Perm Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
+            // # Log in as the participant (non-owner, non-admin); public channel so no explicit add needed
+            cy.apiLogin(participantUser);
+            cy.visit(`/playbooks/runs/${run.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            openContextMenu();
+
+            // * Neither toggle option is present
+            cy.findByTestId('disable-retrospective-menu-item').should('not.exist');
+            cy.findByTestId('enable-retrospective-menu-item').should('not.exist');
+        });
+    });
+
+    it('system admin who is not the run owner can toggle retrospective', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Toggle Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: true,
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Admin Perm Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
+            // # Log in as the sysadmin (not the run owner)
+            cy.apiLogin(adminUser);
+            cy.visit(`/playbooks/runs/${run.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective-enabled`).as('ToggleRetrospective');
+
+            // * Toggle option is visible to admin
+            openContextMenu();
+            cy.findByTestId('disable-retrospective-menu-item').should('be.visible').click();
+            confirmModal();
+            cy.wait('@ToggleRetrospective');
+
+            // * Section hides and label switches — admin toggle worked
+            cy.findByTestId('run-retrospective-section').should('not.exist');
+            openContextMenu();
+            cy.findByTestId('enable-retrospective-menu-item').should('be.visible');
         });
     });
 

@@ -255,4 +255,45 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             cy.findByTestId('retrospective-reminder').should('be.visible');
         });
     });
+
+    it('re-enabling retrospective on a finished run posts an immediate reminder', () => {
+        // # Create a playbook with retrospective disabled, finish the run, then re-enable
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retrospective Re-enable Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: false,
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Retro Re-enable Run (' + getRandomId() + ')',
+                ownerUserId: testUser.id,
+            });
+        }).then((playbookRun) => {
+            // # Finish the run — no reminder should be posted (retro is disabled)
+            cy.apiFinishRun(playbookRun.id);
+            cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
+            cy.contains('as finished', {timeout: TIMEOUTS.TEN_SEC}).should('exist');
+            cy.contains(RETRO_REMINDER_TEXT).should('not.exist');
+
+            // # Re-enable retrospective on the now-finished run via the RDP context menu
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${playbookRun.id}/retrospective-enabled`).as('ToggleRetrospective');
+            cy.findByTestId('run-header-section').findByTestId('menuButton').click();
+            cy.findByTestId('dropdownmenu').should('be.visible');
+            cy.findByTestId('enable-retrospective-menu-item').click();
+            cy.get('#confirmModalButton').click();
+            cy.wait('@ToggleRetrospective');
+
+            // # Visit the run channel and verify the reminder was posted
+            cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
+            cy.findByTestId('retrospective-reminder').should('be.visible');
+        });
+    });
 });

@@ -13,6 +13,7 @@ const mockToggleRunRetrospective = jest.fn().mockResolvedValue({});
 const mockOpenModal: jest.Mock = jest.fn(() => ({type: 'OPEN_MODAL'}));
 const mockMakeConfirmModal = jest.fn((args) => args);
 const mockAddToast = jest.fn();
+const mockPlaybookRunUpdated = jest.fn((run) => ({type: 'PLAYBOOK_RUN_UPDATED', playbookRun: run}));
 
 jest.mock('react-redux', () => ({
     useDispatch: Object.assign(() => mockDispatch, {withTypes: () => () => mockDispatch}),
@@ -41,6 +42,10 @@ jest.mock('src/components/widgets/confirmation_modal', () => ({
 
 jest.mock('src/components/backstage/toast_banner', () => ({
     useToaster: () => ({add: mockAddToast}),
+}));
+
+jest.mock('src/actions', () => ({
+    playbookRunUpdated: (run: any) => mockPlaybookRunUpdated(run),
 }));
 
 const makeRun = (overrides: Partial<PlaybookRun> = {}): PlaybookRun => ({
@@ -191,6 +196,59 @@ describe('useToggleRunRetrospective', () => {
         });
 
         expect(mockAddToast).not.toHaveBeenCalled();
+    });
+
+    it('dispatches playbookRunUpdated with the toggled value on success', async () => {
+        const run = makeRun({retrospective_enabled: true});
+        const {result} = renderHook(() => useToggleRunRetrospective(run));
+
+        act(() => {
+            result.current(false);
+        });
+
+        const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
+        await act(async () => {
+            await modalArgs.onConfirm();
+        });
+
+        expect(mockPlaybookRunUpdated).toHaveBeenCalledWith({...run, retrospective_enabled: false});
+        expect(mockDispatch).toHaveBeenCalledWith(expect.objectContaining({type: 'PLAYBOOK_RUN_UPDATED'}));
+    });
+
+    it('does not dispatch playbookRunUpdated when toggleRunRetrospective returns an error', async () => {
+        mockToggleRunRetrospective.mockResolvedValueOnce({error: new Error('server error')});
+
+        const run = makeRun({retrospective_enabled: true});
+        const {result} = renderHook(() => useToggleRunRetrospective(run));
+
+        act(() => {
+            result.current(false);
+        });
+
+        const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
+        await act(async () => {
+            await modalArgs.onConfirm();
+        });
+
+        expect(mockPlaybookRunUpdated).not.toHaveBeenCalled();
+    });
+
+    it('does not dispatch playbookRunUpdated when toggleRunRetrospective rejects', async () => {
+        mockToggleRunRetrospective.mockRejectedValueOnce(new Error('network error'));
+
+        const run = makeRun({retrospective_enabled: true});
+        const {result} = renderHook(() => useToggleRunRetrospective(run));
+
+        act(() => {
+            result.current(false);
+        });
+
+        const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
+        await act(async () => {
+            await modalArgs.onConfirm();
+        });
+
+        expect(mockPlaybookRunUpdated).not.toHaveBeenCalled();
     });
 
     it('shows a toast when toggleRunRetrospective rejects (catch branch)', async () => {
