@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>{{.Title}}</title>
+  <style>{{.FontCSS}}</style>
+  {{template "_styles" .}}
+</head>
+<body>
+  <h1>{{.Playbook.Title}}</h1>
+  <span class="status-pill status-pill--neutral">{{if .Playbook.Public}}Public{{else}}Private{{end}}</span>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-card__label">Checklists</div>
+      <div class="stat-card__value">{{len .Checklists}}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Members</div>
+      <div class="stat-card__value">{{len .Members}}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Broadcasts</div>
+      <div class="stat-card__value">{{len .BroadcastChannels}}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Webhooks</div>
+      <div class="stat-card__value">{{.WebhookCount}}</div>
+    </div>
+  </div>
+
+  <p class="meta-strip">
+    <strong>Visibility:</strong> {{if .Playbook.Public}}Public{{else}}Private{{end}}
+    {{if .GeneratedAt}} · <strong>Generated:</strong> {{.GeneratedAt}}{{end}}
+  </p>
+
+  <h2>Description</h2>
+  {{if .DescriptionHTML}}<div class="boxed-md">{{.DescriptionHTML}}</div>
+  {{else}}<p class="muted">No description.</p>{{end}}
+
+  <h2>Members</h2>
+  {{if .Members}}
+  <div class="member-grid">
+    {{range .Members}}<span class="member-chip">{{.Display}}{{if .RolesStr}} ({{.RolesStr}}){{end}}</span>{{end}}
+  </div>
+  {{else}}<p class="muted">No members.</p>{{end}}
+
+  <h2>Checklist Templates</h2>
+  {{if .Checklists}}
+  {{range .Checklists}}
+  <h3>{{.Title}} ({{.Total}} tasks)</h3>
+  <div class="checklist">
+    {{range .Items}}
+    <div class="task">
+      <input type="checkbox" disabled>
+      <div class="task__body">
+        <div class="task__title">{{.TitleHTML}}</div>
+        {{if .Command}}<div class="task__meta"><code class="task__meta-cmd">{{.Command}}</code></div>{{end}}
+        {{if .DescHTML}}<div class="task__desc">{{.DescHTML}}</div>{{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+  {{else}}<p class="muted">No checklist templates.</p>{{end}}
+
+  <h2>Status Updates</h2>
+  {{if .StatusUpdateConfig.Configured}}
+  <p class="meta-strip">
+    <strong>Enabled:</strong> {{.StatusUpdateConfig.EnabledLabel}}
+    {{if .StatusUpdateConfig.Cadence}} · <strong>Cadence:</strong> {{.StatusUpdateConfig.Cadence}}{{end}}
+  </p>
+  {{if .StatusUpdateConfig.TemplateHTML}}<div class="boxed-md">{{.StatusUpdateConfig.TemplateHTML}}</div>{{end}}
+  {{else}}<p class="muted">No status update configuration.</p>{{end}}
+
+  <h2>Retrospective</h2>
+  {{if .RetrospectiveConfig.Configured}}
+  <p class="meta-strip">
+    <strong>Enabled:</strong> {{.RetrospectiveConfig.EnabledLabel}}
+    {{if .RetrospectiveConfig.Cadence}} · <strong>Cadence:</strong> {{.RetrospectiveConfig.Cadence}}{{end}}
+  </p>
+  {{if .RetrospectiveConfig.TemplateHTML}}<div class="boxed-md">{{.RetrospectiveConfig.TemplateHTML}}</div>{{end}}
+  {{if .RetrospectiveConfig.Metrics}}
+  <h3>Metrics</h3>
+  {{range .RetrospectiveConfig.Metrics}}
+  <p><strong>{{.Title}}</strong> ({{.TypeStr}}, target {{.TargetStr}}){{if .Description}} — <span class="muted">{{.Description}}</span>{{end}}</p>
+  {{end}}
+  {{end}}
+  {{else}}<p class="muted">No retrospective configuration.</p>{{end}}
+
+  <h2>Automations</h2>
+  {{if .HasAutomations}}
+
+  <h3>Broadcast Channels</h3>
+  {{if .BroadcastChannels}}
+  <div class="member-grid">
+    {{range .BroadcastChannels}}<span class="member-chip">~{{if .Name}}{{.Name}}{{else}}_redacted_channel_{{end}}</span>{{end}}
+  </div>
+  {{else}}<p class="muted">No broadcast channels.</p>{{end}}
+
+  <h3>Webhooks on Run Creation</h3>
+  {{if .WebhooksOnCreation}}
+  <ul>
+    {{range .WebhooksOnCreation}}<li><code>{{.}}</code></li>{{end}}
+  </ul>
+  {{else}}<p class="muted">No webhooks on run creation.</p>{{end}}
+
+  <h3>Webhooks on Status Update</h3>
+  {{if .WebhooksOnStatus}}
+  <ul>
+    {{range .WebhooksOnStatus}}<li><code>{{.}}</code></li>{{end}}
+  </ul>
+  {{else}}<p class="muted">No webhooks on status update.</p>{{end}}
+
+  <h3>Signal Keywords</h3>
+  {{if .SignalKeywords}}
+  <ul>
+    {{range .SignalKeywords}}<li><code>{{.}}</code></li>{{end}}
+  </ul>
+  {{else}}<p class="muted">No signal keywords.</p>{{end}}
+
+  {{else}}<p class="muted">No automations.</p>{{end}}
+
+  <hr class="divider">
+  <p class="muted">Generated {{.GeneratedAt}} UTC.</p>
+</body>
+</html>

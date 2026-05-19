@@ -48,6 +48,55 @@
         "display_name": "Enable Incremental Updates",
         "help_text": "When enabled, sends incremental WebSocket updates instead of full playbook run objects for better performance.",
         "default": false
+      },
+      {
+        "key": "EnablePDFReports",
+        "type": "bool",
+        "display_name": "Enable PDF Reports",
+        "help_text": "When true, exposes the PDF report export endpoints for playbook runs and playbooks.",
+        "default": true
+      },
+      {
+        "key": "MaxRunReportPosts",
+        "type": "number",
+        "display_name": "Max Run Report Posts",
+        "help_text": "Maximum number of channel posts included in a run report transcript before truncation.",
+        "default": 5000
+      },
+      {
+        "key": "MaxRunReportBytes",
+        "type": "number",
+        "display_name": "Max Run Report Bytes",
+        "help_text": "Maximum byte cap for a run report. 0 cascades to the server FileSettings.MaxFileSize, falling back to 5 MB.",
+        "default": 0
+      },
+      {
+        "key": "MaxConcurrentReports",
+        "type": "number",
+        "display_name": "Max Concurrent Reports",
+        "help_text": "Maximum number of report renders in flight at once. Additional callers receive 429 with Retry-After.",
+        "default": 4
+      },
+      {
+        "key": "MaxResolverLookupsPerExport",
+        "type": "number",
+        "display_name": "Max Resolver Lookups Per Export",
+        "help_text": "Maximum user / channel / file lookups performed while resolving markdown references in a single report.",
+        "default": 500
+      },
+      {
+        "key": "ExportTranscriptDefault",
+        "type": "bool",
+        "display_name": "Include Transcript By Default",
+        "help_text": "When true, run report exports include the channel transcript section by default (when the requester is a channel member).",
+        "default": false
+      },
+      {
+        "key": "ShowChannelExportCSVTip",
+        "type": "bool",
+        "display_name": "Show Channel Export CSV Tip",
+        "help_text": "When true, the report download UI surfaces a tip pointing to the Channel Export plugin for full-fidelity CSV exports.",
+        "default": true
       }
     ]
   }
