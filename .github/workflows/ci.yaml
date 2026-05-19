@@ -30,7 +30,7 @@ jobs:
         id: calculate
         run: echo GO_VERSION=$(grep -E '^go [0-9]+\.[0-9]+' go.mod | cut -d' ' -f2) >> "${GITHUB_OUTPUT}"
 
-  lint:
+  lint-web:
     runs-on: ubuntu-22.04
     needs:
       - go
@@ -55,6 +55,19 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
           restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
 
+      - name: ci/cache-web-lint
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: |
+            webapp/.eslintcache
+            webapp/.stylelintcache
+            webapp/.tsbuildinfo
+            e2e-tests/.eslintcache
+          key: ${{ runner.os }}-web-lint-${{ hashFiles('webapp/package-lock.json', 'webapp/.eslintrc.json', 'webapp/.stylelintrc.json', 'webapp/tsconfig.json', 'e2e-tests/package-lock.json', 'e2e-tests/.eslintrc.json') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-web-lint-${{ hashFiles('webapp/package-lock.json', 'webapp/.eslintrc.json', 'webapp/.stylelintrc.json', 'webapp/tsconfig.json', 'e2e-tests/package-lock.json', 'e2e-tests/.eslintrc.json') }}-
+            ${{ runner.os }}-web-lint-
+
       - name: ci/setup-webapp-npm-deps
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         env:
@@ -71,14 +84,8 @@ jobs:
           cd e2e-tests
           npm install --ignore-scripts --no-save --legacy-peer-deps
 
-      - name: ci/checking-code-style
-        run: make check-style
-
-      - name: ci/go-tidy
-        run: go mod tidy -v
-
-      - name: ci/check-diff-on-gomod
-        run: git --no-pager diff --exit-code go.mod go.sum || (echo "Please run \"go mod tidy\" and commit the changes in go.mod and go.sum." && exit 1)
+      - name: ci/checking-code-style-web
+        run: make check-style-web
 
       - name: ci/run-make-apply
         run: make apply
@@ -97,6 +104,73 @@ jobs:
 
       - name: ci/check-diff-on-webapp-graphql-generated-files
         run: git --no-pager diff --exit-code webapp/src/graphql/generated/ || (echo "Please run \"make graphql\" and commit the changes." && exit 1)
+
+  lint-go:
+    runs-on: ubuntu-22.04
+    needs:
+      - go
+    container:
+      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: "0"
+
+      - name: ci/configure-git-safe-directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: ci/cache-go-tools
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: |
+            bin
+          key: ${{ runner.os }}-go-tools-${{ needs.go.outputs.version }}-${{ hashFiles('Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-go-tools-${{ needs.go.outputs.version }}-
+
+      - name: ci/cache-go-build
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/.cache/golangci-lint
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-lint-${{ needs.go.outputs.version }}-${{ hashFiles('go.sum', '.golangci.yml') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-go-lint-${{ needs.go.outputs.version }}-${{ hashFiles('go.sum', '.golangci.yml') }}-
+            ${{ runner.os }}-go-lint-${{ needs.go.outputs.version }}-
+
+      - name: ci/checking-code-style-server
+        run: make check-style-server
+
+      - name: ci/go-tidy
+        run: go mod tidy -v
+
+      - name: ci/check-diff-on-gomod
+        run: git --no-pager diff --exit-code go.mod go.sum || (echo "Please run \"go mod tidy\" and commit the changes in go.mod and go.sum." && exit 1)
+
+  # Aggregator job so branch protection rules requiring a check named "lint"
+  # keep working after the split into lint-go / lint-web. Runs even when an
+  # upstream lint job fails so the required check reports failure instead of
+  # being skipped.
+  lint:
+    if: always()
+    runs-on: ubuntu-22.04
+    needs:
+      - lint-go
+      - lint-web
+    steps:
+      - name: ci/lint-aggregator
+        env:
+          LINT_GO_RESULT: ${{ needs.lint-go.result }}
+          LINT_WEB_RESULT: ${{ needs.lint-web.result }}
+        run: |
+          echo "lint-go=$LINT_GO_RESULT lint-web=$LINT_WEB_RESULT"
+          if [ "$LINT_GO_RESULT" != "success" ] || [ "$LINT_WEB_RESULT" != "success" ]; then
+            echo "One or more upstream lint jobs did not succeed."
+            exit 1
+          fi
 
   dist:
     runs-on: ubuntu-22.04
