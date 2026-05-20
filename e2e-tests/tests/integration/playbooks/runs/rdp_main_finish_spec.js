@@ -132,3 +132,117 @@ describe('runs > run details page > finish', {testIsolation: true}, () => {
         });
     });
 });
+
+describe('runs > run details page > finish with conditional hidden tasks', {testIsolation: true}, () => {
+    let testTeam;
+    let testUser;
+    let testPlaybook;
+
+    before(() => {
+        cy.apiAdminLogin();
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
+        });
+    });
+
+    beforeEach(() => {
+        cy.viewport('macbook-13');
+        cy.apiLogin(testUser);
+
+        cy.apiCreateTestPlaybook({
+            teamId: testTeam.id,
+            title: 'Finish hidden conditional tasks ' + Date.now(),
+            userId: testUser.id,
+            checklists: [{
+                title: 'Stage 1',
+                items: [
+                    {title: 'Always visible task'},
+                    {title: 'Conditional hidden 1'},
+                    {title: 'Conditional hidden 2'},
+                    {title: 'Conditional hidden 3'},
+                    {title: 'Conditional hidden 4'},
+                    {title: 'Conditional hidden 5'},
+                ],
+            }],
+        }).then((playbook) => {
+            testPlaybook = playbook;
+        });
+
+        cy.then(() => {
+            cy.apiAddPropertyField(testPlaybook.id, {
+                name: 'Priority',
+                type: 'select',
+                attrs: {
+                    visibility: 'always',
+                    sortOrder: 1,
+                    options: [
+                        {name: 'High'},
+                        {name: 'Low'},
+                    ],
+                },
+            });
+        });
+
+        cy.then(() => {
+            cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
+                const priorityField = fields.find((f) => f.name === 'Priority');
+                const highOptionId = priorityField.attrs.options.find((o) => o.name === 'High').id;
+
+                cy.apiCreatePlaybookCondition(testPlaybook.id, {
+                    is: {
+                        field_id: priorityField.id,
+                        value: [highOptionId],
+                    },
+                }).then((condition) => {
+                    cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+                        for (let i = 1; i <= 5; i++) {
+                            playbook.checklists[0].items[i].condition_id = condition.id;
+                        }
+                        return cy.apiUpdatePlaybook(playbook);
+                    });
+                });
+            });
+        });
+
+        cy.then(() => {
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: 'conditional hidden run ' + Date.now(),
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                cy.visit(`/playbooks/runs/${run.id}`);
+            });
+        });
+    });
+
+    it('does not count conditionally hidden tasks as outstanding when finishing', () => {
+        cy.findByText('Conditional hidden 1').should('not.exist');
+
+        cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/checklists/*/item/*/state').as('setItemState');
+
+        cy.findByText('Always visible task').closest('[data-testid="checkbox-item-container"]').within(() => {
+            cy.get('input[type="checkbox"]').check();
+        });
+
+        cy.wait('@setItemState').its('response.statusCode').should('eq', 200);
+
+        cy.findByTestId('run-finish-section').find('button').click();
+
+        cy.get('#confirmModal').should('be.visible');
+        cy.get('#confirmModal').should('not.contain.text', 'outstanding task');
+        cy.get('#confirmModal').should('contain.text', 'Are you sure');
+    });
+
+    it('still warns about outstanding tasks when a visible task is not complete', () => {
+        cy.findByText('Conditional hidden 1').should('not.exist');
+
+        cy.findByText('Always visible task').should('be.visible');
+
+        cy.findByTestId('run-finish-section').find('button').click();
+
+        cy.get('#confirmModal').should('be.visible');
+        cy.get('#confirmModal').should('contain.text', 'outstanding task');
+    });
+});

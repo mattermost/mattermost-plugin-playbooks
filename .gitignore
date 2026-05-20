@@ -1,5 +1,6 @@
 .eslintcache
 .stylelintcache
+.tsbuildinfo
 report.xml
 bin/
 dist/
