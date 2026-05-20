@@ -5,10 +5,42 @@
 
 import React from 'react';
 import renderer from 'react-test-renderer';
+import {IntlProvider} from 'react-intl';
 
 import {modals} from 'src/webapp_globals';
 
 import OwnerGroupOnlyActionsToggle from './owner_group_only_actions_toggle';
+
+const renderToggle = (element: React.ReactElement) => renderer.create(
+    <IntlProvider
+        locale='en'
+        messages={{}}
+    >
+        {element}
+    </IntlProvider>,
+);
+
+const findToggleLabel = (node: renderer.ReactTestRendererJSON | renderer.ReactTestRendererJSON[] | null): renderer.ReactTestRendererJSON | null => {
+    if (!node || Array.isArray(node)) {
+        return null;
+    }
+    if (node.props?.['data-testid'] === 'owner-group-only-actions-toggle') {
+        return node;
+    }
+    if (!node.children) {
+        return null;
+    }
+    for (const child of node.children) {
+        if (typeof child === 'string') {
+            continue;
+        }
+        const found = findToggleLabel(child);
+        if (found) {
+            return found;
+        }
+    }
+    return null;
+};
 
 const mockDispatch = jest.fn();
 jest.mock('react-redux', () => ({
@@ -87,7 +119,7 @@ describe('OwnerGroupOnlyActionsToggle', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(false);
 
-        const component = renderer.create(
+        const component = renderToggle(
             <OwnerGroupOnlyActionsToggle
                 playbook={playbook}
                 isPlaybookAdmin={true}
@@ -103,63 +135,48 @@ describe('OwnerGroupOnlyActionsToggle', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(true);
 
-        const component = renderer.create(
+        const component = renderToggle(
             <OwnerGroupOnlyActionsToggle
                 playbook={playbook}
                 isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
-        const tree = component.toJSON();
+        const label = findToggleLabel(component.toJSON());
 
-        // Component wraps Toggle in a <div>, so tree.children[0] is the label (Toggle mock)
-        expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            expect(label.props['data-checked']).toBe(true);
-        }
+        expect(label?.props['data-checked']).toBe(true);
     });
 
     it('toggle is unchecked when owner_group_only_actions is false', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(false);
 
-        const component = renderer.create(
+        const component = renderToggle(
             <OwnerGroupOnlyActionsToggle
                 playbook={playbook}
                 isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
-        const tree = component.toJSON();
+        const label = findToggleLabel(component.toJSON());
 
-        expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            expect(label.props['data-checked']).toBe(false);
-        }
+        expect(label?.props['data-checked']).toBe(false);
     });
 
     it('toggle calls onChange with owner_group_only_actions: true when enabling', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(false);
 
-        const component = renderer.create(
+        const component = renderToggle(
             <OwnerGroupOnlyActionsToggle
                 playbook={playbook}
                 isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
-        const tree = component.toJSON();
-
-        // tree -> div -> children[0] = label (Toggle mock) -> children[0] = input
-        expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            const input = label.children[0] as any;
-            input.props.onChange();
-        }
+        const label = findToggleLabel(component.toJSON());
+        const input = label?.children?.[0] as renderer.ReactTestRendererJSON | undefined;
+        input?.props.onChange();
 
         // Enabling (false→true) triggers a confirmation modal via BooleanToggle's confirmationRequired.
         // onChange is only called after the user confirms; simulate that here.
@@ -174,21 +191,16 @@ describe('OwnerGroupOnlyActionsToggle', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(true);
 
-        const component = renderer.create(
+        const component = renderToggle(
             <OwnerGroupOnlyActionsToggle
                 playbook={playbook}
                 isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
-        const tree = component.toJSON();
-
-        expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            const input = label.children[0] as any;
-            input.props.onChange();
-        }
+        const label = findToggleLabel(component.toJSON());
+        const input = label?.children?.[0] as renderer.ReactTestRendererJSON | undefined;
+        input?.props.onChange();
 
         expect(onChange).toHaveBeenCalledTimes(1);
         expect(onChange).toHaveBeenCalledWith({owner_group_only_actions: false});
@@ -198,7 +210,7 @@ describe('OwnerGroupOnlyActionsToggle', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(false);
 
-        const component = renderer.create(
+        const component = renderToggle(
             <OwnerGroupOnlyActionsToggle
                 playbook={playbook}
                 isPlaybookAdmin={false}

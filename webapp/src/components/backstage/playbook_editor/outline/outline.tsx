@@ -203,19 +203,14 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: P
                 />
             </Section>
             {showAdminSettings && effectiveRestPlaybook && (
-                <Section
-                    id={'run-permissions-settings'}
-                    title={formatMessage({defaultMessage: 'Settings'})}
-                >
-                    <div data-testid='owner-group-only-actions-toggle'>
-                        <OwnerGroupOnlyActionsToggle
-                            playbook={effectiveRestPlaybook}
-                            isPlaybookAdmin={showAdminSettings}
-                            disabled={archived || isSavingOwnerGroupOnlyActions}
-                            onChange={handleOwnerGroupOnlyActionsChange}
-                        />
-                    </div>
-                </Section>
+                <AdminSettingsSection>
+                    <OwnerGroupOnlyActionsToggle
+                        playbook={effectiveRestPlaybook}
+                        isPlaybookAdmin={showAdminSettings}
+                        disabled={archived || isSavingOwnerGroupOnlyActions}
+                        onChange={handleOwnerGroupOnlyActionsChange}
+                    />
+                </AdminSettingsSection>
             )}
             <PlaybookActionsModal
                 playbook={playbook}
@@ -272,6 +267,10 @@ export const Sections = styled(SectionsImpl)`
     margin-bottom: 40px;
     background: var(--center-channel-bg);
     box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
+`;
+
+const AdminSettingsSection = styled.div`
+    padding: 0.5rem 3rem 2rem;
 `;
 
 const HoverMenuContainer = styled.div`
