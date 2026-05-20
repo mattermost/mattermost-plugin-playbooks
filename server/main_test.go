@@ -39,6 +39,10 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
+func testPtr[T any](v T) *T {
+	return &v
+}
+
 func TestMain(m *testing.M) {
 	// Run the plugin under test if the server is trying to run us as a plugin.
 	value := os.Getenv("MATTERMOST_PLUGIN")
@@ -219,17 +223,17 @@ func Setup(t *testing.T) *TestEnvironment {
 	config := configStore.Get()
 	config.PluginSettings.Directory = &dir
 	config.PluginSettings.ClientDirectory = &clientDir
-	config.PluginSettings.Enable = model.NewPointer(true)
-	config.PluginSettings.RequirePluginSignature = model.NewPointer(false)
-	config.PluginSettings.EnableUploads = model.NewPointer(true)
-	config.ServiceSettings.ListenAddress = model.NewPointer("localhost:0")
-	config.TeamSettings.MaxUsersPerTeam = model.NewPointer(10000)
+	config.PluginSettings.Enable = testPtr(true)
+	config.PluginSettings.RequirePluginSignature = testPtr(false)
+	config.PluginSettings.EnableUploads = testPtr(true)
+	config.ServiceSettings.ListenAddress = testPtr("localhost:0")
+	config.TeamSettings.MaxUsersPerTeam = testPtr(10000)
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
-	config.ServiceSettings.SiteURL = model.NewPointer("http://testsiteurlplaybooks.mattermost.com/")
-	config.LogSettings.EnableConsole = model.NewPointer(true)
-	config.LogSettings.EnableFile = model.NewPointer(false)
-	config.LogSettings.ConsoleLevel = model.NewPointer("DEBUG")
+	config.ServiceSettings.SiteURL = testPtr("http://testsiteurlplaybooks.mattermost.com/")
+	config.LogSettings.EnableConsole = testPtr(true)
+	config.LogSettings.EnableFile = testPtr(false)
+	config.LogSettings.ConsoleLevel = testPtr("DEBUG")
 
 	// override config with e2etest.config.json if it exists
 	textConfig, err := os.ReadFile("./e2etest.config.json")
@@ -642,7 +646,7 @@ func (e *TestEnvironment) CreateAdditionalPlaybooks() {
 
 func (e *TestEnvironment) CreateGuest() {
 	cfg := e.Srv.Config()
-	cfg.GuestAccountsSettings.Enable = model.NewPointer(true)
+	cfg.GuestAccountsSettings.Enable = testPtr(true)
 	_, _, err := e.ServerAdminClient.UpdateConfig(context.Background(), cfg)
 	require.NoError(e.T, err)
 

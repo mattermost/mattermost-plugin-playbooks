@@ -25,7 +25,7 @@ func TestTrialLicences(t *testing.T) {
 		dialogRequest := model.PostActionIntegrationRequest{
 			UserId: e.RegularUser.Id,
 			PostId: e.BasicPublicChannelPost.Id,
-			Context: map[string]interface{}{
+			Context: map[string]any{
 				"users":                 10,
 				"termsAccepted":         true,
 				"receiveEmailsAccepted": true,
@@ -41,7 +41,7 @@ func TestTrialLicences(t *testing.T) {
 		dialogRequest := model.PostActionIntegrationRequest{
 			UserId: e.AdminUser.Id,
 			PostId: e.BasicPublicChannelPost.Id,
-			Context: map[string]interface{}{
+			Context: map[string]any{
 				"users":                 10,
 				"termsAccepted":         true,
 				"receiveEmailsAccepted": true,
