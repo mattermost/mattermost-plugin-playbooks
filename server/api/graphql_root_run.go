@@ -235,6 +235,10 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 			return "", errors.Wrap(app.ErrNoPermissions, permissionMessage)
 		}
 		addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
+		// The new channel was not created by this run, so clear the flag to prevent
+		// auto-archive from archiving a channel that was not created for this run.
+		falseVal := false
+		addToSetmap(setmap, "ChannelCreatedByRun", &falseVal)
 	}
 
 	if args.Updates.Summary != nil {
