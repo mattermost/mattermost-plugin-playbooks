@@ -1,8 +1,6 @@
 module github.com/mattermost/mattermost-plugin-playbooks/client
 
-go 1.23.0
-
-toolchain go1.23.9
+go 1.26.2
 
 require (
 	github.com/google/go-querystring v1.1.0
