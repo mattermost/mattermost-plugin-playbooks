@@ -31,6 +31,10 @@ type Configuration struct {
 	// EnableExperimentalFeatures controls whether experimental features are enabled in the plugin.
 	// These features may have in-progress UI, bugs, and other issues.
 	EnableExperimentalFeatures bool `json:"enableexperimentalfeatures"`
+
+	// ExposeMCPExternal controls whether the Playbooks MCP tools may be exposed
+	// through the Agents plugin's external MCP endpoint.
+	ExposeMCPExternal bool `json:"exposemcpexternal"`
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -48,5 +52,6 @@ func (c *Configuration) serialize() map[string]interface{} {
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	ret["EnableIncrementalUpdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
+	ret["ExposeMCPExternal"] = c.ExposeMCPExternal
 	return ret
 }

@@ -32,18 +32,18 @@ func TestPlaybookConditionsCRUD(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get the playbooks property group
-	playbooksGroup, err := e.A.PropertyService().GetPropertyGroup("playbooks")
+	playbooksGroup, err := e.A.Srv().PropertyService().GetPropertyGroup("playbooks")
 	require.NoError(t, err)
 	require.NotNil(t, playbooksGroup)
 
 	// Create property fields
 	selectPropertyField := createSelectPropertyField("Priority", playbooksGroup.ID, playbookID, []string{"High", "Medium", "Low"})
-	selectField, err := e.A.PropertyService().CreatePropertyField(selectPropertyField)
+	selectField, err := e.A.Srv().PropertyService().CreatePropertyField(nil, selectPropertyField)
 	require.NoError(t, err)
 	require.NotEmpty(t, selectField)
 
 	textPropertyField := createTextPropertyField("Description", playbooksGroup.ID, playbookID)
-	textField, err := e.A.PropertyService().CreatePropertyField(textPropertyField)
+	textField, err := e.A.Srv().PropertyService().CreatePropertyField(nil, textPropertyField)
 	require.NoError(t, err)
 	require.NotEmpty(t, textField)
 
