@@ -18,7 +18,7 @@ func runPermutations[T any](t *testing.T, params T, f func(t *testing.T, params 
 
 	paramsV := reflect.ValueOf(params)
 	paramsT := reflect.TypeOf(params)
-	if paramsV.Kind() == reflect.Ptr {
+	if paramsV.Kind() == reflect.Pointer {
 		if paramsV.Elem().Kind() != reflect.Struct {
 			t.Fatal("params should be a struct or a pointer to a struct")
 		}

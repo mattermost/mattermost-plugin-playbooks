@@ -128,16 +128,6 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 	require.Len(t, fields5, 0, "Property field should be deleted and not appear in the list")
 }
 
-//go:fix inline
-func stringPtr(s string) *string {
-	return new(s)
-}
-
-//go:fix inline
-func float64Ptr(f float64) *float64 {
-	return new(f)
-}
-
 func TestRunPropertyOperations(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()

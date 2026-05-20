@@ -6,6 +6,7 @@ MM_DEBUG ?=
 GOPATH ?= $(shell go env GOPATH)
 GO_TEST_FLAGS ?= -race
 GO_BUILD_FLAGS ?=
+GO_TOOLCHAIN ?= go1.26.2
 MM_UTILITIES_DIR ?= ../mattermost-utilities
 DLV_DEBUG_PORT := 2346
 DEFAULT_GOOS ?= $(shell go env GOOS)
@@ -93,11 +94,11 @@ apply:
 ## Install go tools
 install-go-tools:
 	@echo Installing go tools
-	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
+	GOTOOLCHAIN=$(GO_TOOLCHAIN) $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 	$(GO) install github.com/golang/mock/mockgen@v1.6.0
-	$(GO) install gotest.tools/gotestsum@v1.7.0
+	$(GO) install gotest.tools/gotestsum@v1.13.0
 	$(GO) install github.com/cortesi/modd/cmd/modd@v0.8
-	$(GO) install github.com/mattermost/mattermost-govet/v2@3f08281c344327ac09364f196b15f9a81c7eff08
+	GOTOOLCHAIN=$(GO_TOOLCHAIN) $(GO) install github.com/mattermost/mattermost/tools/mattermost-govet@02023f0328e5bb9e04ca06f25c2284efbc1f1759
 
 ## Runs webapp eslint, stylelint, tsc, and e2e-tests eslint
 .PHONY: check-style-web
