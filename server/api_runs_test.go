@@ -48,7 +48,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
@@ -63,7 +63,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  `{"post_id": "` + e.BasicPublicChannelPost.Id + `"}`,
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
@@ -78,7 +78,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.AdminUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "somerun",
 					},
@@ -92,7 +92,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: "noesnotexist",
 						app.DialogFieldNameKey:       "somerun",
 					},
@@ -106,7 +106,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  `{"post_id": "` + e.BasicPrivateChannelPost.Id + `"}`,
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "no permissions",
 					},
@@ -120,7 +120,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.PrivatePlaybookNoMembers.ID,
 						app.DialogFieldNameKey:       "not happening",
 					},
@@ -134,7 +134,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
@@ -152,7 +152,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.AdminUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "bad userid",
 					},
@@ -167,7 +167,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: incompletePlaybookID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
@@ -183,7 +183,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: "", // Empty playbook ID
 						app.DialogFieldNameKey:       "Standalone Run",
 					},
@@ -200,7 +200,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID, // Valid playbook ID
 						app.DialogFieldNameKey:       "Playbook Run",
 					},
@@ -468,7 +468,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 			TeamId: e.BasicTeam.Id,
 			UserId: e.RegularUser.Id,
 			State:  "{}",
-			Submission: map[string]interface{}{
+			Submission: map[string]any{
 				app.DialogFieldPlaybookIDKey: playbookID,
 				app.DialogFieldNameKey:       "run number 1",
 			},
@@ -654,7 +654,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 			TeamId: e.BasicTeam.Id,
 			UserId: e.RegularUser.Id,
 			State:  "{}",
-			Submission: map[string]interface{}{
+			Submission: map[string]any{
 				app.DialogFieldMessageKey:           "someupdate",
 				app.DialogFieldReminderInSecondsKey: "100000",
 				app.DialogFieldFinishRun:            false,
@@ -676,7 +676,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 			TeamId: e.BasicTeam.Id,
 			UserId: e.RegularUser.Id,
 			State:  "{}",
-			Submission: map[string]interface{}{
+			Submission: map[string]any{
 				app.DialogFieldMessageKey:           "someupdate",
 				app.DialogFieldReminderInSecondsKey: "100000",
 				app.DialogFieldFinishRun:            false,
@@ -1454,7 +1454,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		// Create post action request
 		req := &model.PostActionIntegrationRequest{
 			UserId: e.RegularUser.Id,
-			Context: map[string]interface{}{
+			Context: map[string]any{
 				"post_id": botPost.Id,
 			},
 			PostId: botPost.Id,
@@ -1498,7 +1498,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		// Create post action request
 		req := &model.PostActionIntegrationRequest{
 			UserId: e.RegularUser.Id,
-			Context: map[string]interface{}{
+			Context: map[string]any{
 				"post_id": botPost.Id,
 			},
 			PostId: botPost.Id,
@@ -2247,7 +2247,7 @@ func TestGetOwners(t *testing.T) {
 	} {
 		t.Run(tc.Name, func(t *testing.T) {
 			cfg := e.Srv.Config()
-			cfg.PrivacySettings.ShowFullName = model.NewPointer(tc.ShowFullName)
+			cfg.PrivacySettings.ShowFullName = new(tc.ShowFullName)
 			_, _, err = e.ServerAdminClient.UpdateConfig(context.Background(), cfg)
 			require.NoError(t, err)
 

@@ -25,8 +25,8 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 		Name: "Initial Field",
 		Type: "text",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: stringPtr("when_set"),
-			SortOrder:  float64Ptr(1.0),
+			Visibility: new("when_set"),
+			SortOrder:  new(1.0),
 		},
 	}
 
@@ -48,8 +48,8 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 		Name: "Updated Field Name",
 		Type: "text",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: stringPtr("when_set"),
-			SortOrder:  float64Ptr(1.0),
+			Visibility: new("when_set"),
+			SortOrder:  new(1.0),
 		},
 	}
 
@@ -69,12 +69,12 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 		Name: "Updated Field Name",
 		Type: "select",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: stringPtr("when_set"),
-			SortOrder:  float64Ptr(1.0),
+			Visibility: new("when_set"),
+			SortOrder:  new(1.0),
 			Options: &[]client.PropertyOptionInput{
 				{
 					Name:  "Basic Option",
-					Color: stringPtr("#0000ff"),
+					Color: new("#0000ff"),
 				},
 			},
 		},
@@ -95,16 +95,16 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 		Name: "Updated Field Name",
 		Type: "select",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: stringPtr("always"),
-			SortOrder:  float64Ptr(2.0),
+			Visibility: new("always"),
+			SortOrder:  new(2.0),
 			Options: &[]client.PropertyOptionInput{
 				{
 					Name:  "Option 1",
-					Color: stringPtr("#ff0000"),
+					Color: new("#ff0000"),
 				},
 				{
 					Name:  "Option 2",
-					Color: stringPtr("#00ff00"),
+					Color: new("#00ff00"),
 				},
 			},
 		},
@@ -128,12 +128,14 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 	require.Len(t, fields5, 0, "Property field should be deleted and not appear in the list")
 }
 
+//go:fix inline
 func stringPtr(s string) *string {
-	return &s
+	return new(s)
 }
 
+//go:fix inline
 func float64Ptr(f float64) *float64 {
-	return &f
+	return new(f)
 }
 
 func TestRunPropertyOperations(t *testing.T) {
@@ -148,8 +150,8 @@ func TestRunPropertyOperations(t *testing.T) {
 		Name: "Jira Ticket",
 		Type: "text",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: stringPtr("when_set"),
-			SortOrder:  float64Ptr(1.0),
+			Visibility: new("when_set"),
+			SortOrder:  new(1.0),
 		},
 	}
 
@@ -161,20 +163,20 @@ func TestRunPropertyOperations(t *testing.T) {
 		Name: "Priority",
 		Type: "select",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: stringPtr("always"),
-			SortOrder:  float64Ptr(2.0),
+			Visibility: new("always"),
+			SortOrder:  new(2.0),
 			Options: &[]client.PropertyOptionInput{
 				{
 					Name:  "Low",
-					Color: stringPtr("#00ff00"),
+					Color: new("#00ff00"),
 				},
 				{
 					Name:  "Med",
-					Color: stringPtr("#ffff00"),
+					Color: new("#ffff00"),
 				},
 				{
 					Name:  "High",
-					Color: stringPtr("#ff0000"),
+					Color: new("#ff0000"),
 				},
 			},
 		},
@@ -188,20 +190,20 @@ func TestRunPropertyOperations(t *testing.T) {
 		Name: "Tags",
 		Type: "multiselect",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: stringPtr("when_set"),
-			SortOrder:  float64Ptr(3.0),
+			Visibility: new("when_set"),
+			SortOrder:  new(3.0),
 			Options: &[]client.PropertyOptionInput{
 				{
 					Name:  "Frontend",
-					Color: stringPtr("#0066cc"),
+					Color: new("#0066cc"),
 				},
 				{
 					Name:  "Backend",
-					Color: stringPtr("#cc6600"),
+					Color: new("#cc6600"),
 				},
 				{
 					Name:  "CI",
-					Color: stringPtr("#660066"),
+					Color: new("#660066"),
 				},
 			},
 		},
@@ -259,9 +261,9 @@ func TestRunPropertyOperations(t *testing.T) {
 
 	// Extract option IDs from the Priority field for select field
 	var highOptionID string
-	if options, ok := priorityRunField.Attrs["options"].([]interface{}); ok {
+	if options, ok := priorityRunField.Attrs["options"].([]any); ok {
 		for _, option := range options {
-			if optMap, ok := option.(map[string]interface{}); ok {
+			if optMap, ok := option.(map[string]any); ok {
 				if name, ok := optMap["name"].(string); ok && name == "High" {
 					if id, ok := optMap["id"].(string); ok {
 						highOptionID = id
@@ -283,9 +285,9 @@ func TestRunPropertyOperations(t *testing.T) {
 
 	// Extract option IDs from the Tags field for multiselect field
 	var frontendOptionID, ciOptionID string
-	if options, ok := tagsRunField.Attrs["options"].([]interface{}); ok {
+	if options, ok := tagsRunField.Attrs["options"].([]any); ok {
 		for _, option := range options {
-			if optMap, ok := option.(map[string]interface{}); ok {
+			if optMap, ok := option.(map[string]any); ok {
 				if name, ok := optMap["name"].(string); ok {
 					if id, ok := optMap["id"].(string); ok {
 						switch name {

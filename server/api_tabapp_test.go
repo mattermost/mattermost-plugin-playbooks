@@ -35,7 +35,7 @@ func TestTabAppGetRuns(t *testing.T) {
 
 		// Patching only the plugin config mysteriously doesn't trigger an OnConfigurationChange
 		// back to the plugin. So mess with an unrelated setting to force this to happen.
-		patchedConfig.ServiceSettings.GiphySdkKey = model.NewPointer(model.NewRandomString(6))
+		patchedConfig.ServiceSettings.GiphySdkKey = new(model.NewRandomString(6))
 		patchedConfig.PluginSettings.Plugins = map[string]map[string]any{
 			"playbooks": cfg.PluginSettings.Plugins["playbooks"],
 		}
@@ -45,15 +45,15 @@ func TestTabAppGetRuns(t *testing.T) {
 
 	setDeveloperAndTestingMode := func(t *testing.T, enable bool) {
 		var patchedConfig model.Config
-		patchedConfig.ServiceSettings.EnableDeveloper = model.NewPointer(enable)
-		patchedConfig.ServiceSettings.EnableTesting = model.NewPointer(enable)
+		patchedConfig.ServiceSettings.EnableDeveloper = new(enable)
+		patchedConfig.ServiceSettings.EnableTesting = new(enable)
 		_, _, err := e.ServerAdminClient.PatchConfig(context.Background(), &patchedConfig)
 		require.NoError(t, err)
 	}
 
 	setShowFullName := func(t *testing.T, enable bool) {
 		var patchedConfig model.Config
-		patchedConfig.PrivacySettings.ShowFullName = model.NewPointer(enable)
+		patchedConfig.PrivacySettings.ShowFullName = new(enable)
 		_, _, err := e.ServerAdminClient.PatchConfig(context.Background(), &patchedConfig)
 		require.NoError(t, err)
 	}
