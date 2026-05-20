@@ -24,6 +24,7 @@ import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
 interface ChecklistsSubset {
     items: {
         state: string
+        condition_action?: string
     }[]
 }
 
@@ -31,6 +32,9 @@ const outstandingTasks = (checklists: ChecklistsSubset[]) => {
     let count = 0;
     for (const list of checklists) {
         for (const item of list.items) {
+            if (item.condition_action === 'hidden') {
+                continue;
+            }
             if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
                 count++;
             }
