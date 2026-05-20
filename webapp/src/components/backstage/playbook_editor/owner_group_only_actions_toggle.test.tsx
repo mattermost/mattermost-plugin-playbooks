@@ -12,7 +12,10 @@ import {modals} from 'src/webapp_globals';
 import OwnerGroupOnlyActionsToggle from './owner_group_only_actions_toggle';
 
 const renderToggle = (element: React.ReactElement) => renderer.create(
-    <IntlProvider locale='en' messages={{}}>
+    <IntlProvider
+        locale='en'
+        messages={{}}
+    >
         {element}
     </IntlProvider>,
 );
