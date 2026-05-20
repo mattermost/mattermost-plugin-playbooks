@@ -32,6 +32,19 @@ export interface Option {
     user: UserProfile;
 }
 
+export interface ExtraOption {
+    value: string;
+    label: JSX.Element | string;
+    isExtraOption: true;
+}
+
+export interface ExtraSection {
+    label: string;
+    options: ExtraOption[];
+}
+
+type AnyOption = Option | ExtraOption;
+
 interface ActionObj {
     action: ActionTypes;
 }
@@ -75,6 +88,8 @@ interface Props {
      * - one with defaultLabel and the rest of the users
      */
     userGroups?: UserGroup;
+    extraSections?: ExtraSection[];
+    onExtraOptionSelected?: (value: string) => void;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -173,16 +188,21 @@ export default function ProfileSelector(props: Props) {
         }
     }, [userInSubsetOptions, props.selectedUserId]);
 
-    const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
+    const onSelectedChange = async (value: AnyOption | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
             return;
         }
         toggleOpen();
-        if (value?.user.id === selected?.user.id) {
+        if (value && 'isExtraOption' in value && value.isExtraOption) {
+            props.onExtraOptionSelected?.(value.value);
+            return;
+        }
+        const userOption = value as Option | undefined;
+        if (userOption?.user.id === selected?.user.id) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.user);
+            props.onSelectedChange(userOption?.user);
         }
     };
 
@@ -257,16 +277,28 @@ export default function ProfileSelector(props: Props) {
     } : noDropdown;
 
     const getSelectOptions = () => {
-        if (!props.userGroups) {
-            return userNotInSubsetOptions;
+        const getUserOptions = () => {
+            if (!props.userGroups) {
+                return userNotInSubsetOptions;
+            }
+            if (userNotInSubsetOptions.length === 0) {
+                return userInSubsetOptions;
+            }
+            return [
+                {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
+                {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
+            ];
+        };
+
+        if (!props.extraSections || props.extraSections.length === 0) {
+            return getUserOptions();
         }
-        if (userNotInSubsetOptions.length === 0) {
-            return userInSubsetOptions;
-        }
-        return [
-            {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
-            {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
-        ];
+
+        const userOptions = getUserOptions();
+        const userSections = (Array.isArray(userOptions) && userOptions.length > 0 && 'options' in userOptions[0]) ?
+            userOptions :
+            [{label: '', options: userOptions as Option[]}];
+        return [...props.extraSections, ...userSections];
     };
 
     return (
@@ -289,7 +321,7 @@ export default function ProfileSelector(props: Props) {
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
-                onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
+                onChange={(option, action) => onSelectedChange(option as AnyOption, action as ActionObj)}
                 classNamePrefix='playbook-react-select'
                 className='playbook-react-select'
                 {...props.customControlProps}

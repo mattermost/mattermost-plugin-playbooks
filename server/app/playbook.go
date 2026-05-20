@@ -301,6 +301,10 @@ type ChecklistItem struct {
 	// AssigneeModified is the timestamp, in milliseconds since epoch, of the last time the item's
 	// assignee was modified. 0 if it was never modified.
 	AssigneeModified int64 `json:"assignee_modified" export:"-"`
+	// AssigneeType determines how the assignee is resolved. Empty string means a specific user (AssigneeID).
+	AssigneeType string `json:"assignee_type" export:"assignee_type"`
+	// AssigneePropertyFieldID is the property field whose value is used when AssigneeType == AssigneeTypePropertyUser.
+	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"assignee_property_field_id"`
 
 	// Command, if not empty, is the slash command that can be run as part of this item.
 	Command string `json:"command" export:"command"`
@@ -536,6 +540,22 @@ const (
 	ChecklistItemStateClosed     = "closed"
 	ChecklistItemStateSkipped    = "skipped"
 )
+
+const (
+	AssigneeTypeSpecificUser = ""              // assigned to a specific user identified by AssigneeID
+	AssigneeTypeOwner        = "owner"         // resolved to the run owner at assignment time
+	AssigneeTypeCreator      = "creator"       // resolved to the run creator at assignment time
+	AssigneeTypePropertyUser = "property_user" // resolved via a User-type property field
+)
+
+// IsValidAssigneeType returns true for all recognised AssigneeType values:
+// AssigneeTypeSpecificUser, AssigneeTypeOwner, AssigneeTypeCreator, and AssigneeTypePropertyUser.
+func IsValidAssigneeType(assigneeType string) bool {
+	return assigneeType == AssigneeTypeSpecificUser ||
+		assigneeType == AssigneeTypeOwner ||
+		assigneeType == AssigneeTypeCreator ||
+		assigneeType == AssigneeTypePropertyUser
+}
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
