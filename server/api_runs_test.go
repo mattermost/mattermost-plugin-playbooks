@@ -2247,7 +2247,7 @@ func TestGetOwners(t *testing.T) {
 	} {
 		t.Run(tc.Name, func(t *testing.T) {
 			cfg := e.Srv.Config()
-			cfg.PrivacySettings.ShowFullName = new(tc.ShowFullName)
+			cfg.PrivacySettings.ShowFullName = testPtr(tc.ShowFullName)
 			_, _, err = e.ServerAdminClient.UpdateConfig(context.Background(), cfg)
 			require.NoError(t, err)
 

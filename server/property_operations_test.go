@@ -25,8 +25,8 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 		Name: "Initial Field",
 		Type: "text",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: new("when_set"),
-			SortOrder:  new(1.0),
+			Visibility: testPtr("when_set"),
+			SortOrder:  testPtr(1.0),
 		},
 	}
 
@@ -48,8 +48,8 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 		Name: "Updated Field Name",
 		Type: "text",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: new("when_set"),
-			SortOrder:  new(1.0),
+			Visibility: testPtr("when_set"),
+			SortOrder:  testPtr(1.0),
 		},
 	}
 
@@ -69,12 +69,12 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 		Name: "Updated Field Name",
 		Type: "select",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: new("when_set"),
-			SortOrder:  new(1.0),
+			Visibility: testPtr("when_set"),
+			SortOrder:  testPtr(1.0),
 			Options: &[]client.PropertyOptionInput{
 				{
 					Name:  "Basic Option",
-					Color: new("#0000ff"),
+					Color: testPtr("#0000ff"),
 				},
 			},
 		},
@@ -95,16 +95,16 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 		Name: "Updated Field Name",
 		Type: "select",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: new("always"),
-			SortOrder:  new(2.0),
+			Visibility: testPtr("always"),
+			SortOrder:  testPtr(2.0),
 			Options: &[]client.PropertyOptionInput{
 				{
 					Name:  "Option 1",
-					Color: new("#ff0000"),
+					Color: testPtr("#ff0000"),
 				},
 				{
 					Name:  "Option 2",
-					Color: new("#00ff00"),
+					Color: testPtr("#00ff00"),
 				},
 			},
 		},
@@ -140,8 +140,8 @@ func TestRunPropertyOperations(t *testing.T) {
 		Name: "Jira Ticket",
 		Type: "text",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: new("when_set"),
-			SortOrder:  new(1.0),
+			Visibility: testPtr("when_set"),
+			SortOrder:  testPtr(1.0),
 		},
 	}
 
@@ -153,20 +153,20 @@ func TestRunPropertyOperations(t *testing.T) {
 		Name: "Priority",
 		Type: "select",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: new("always"),
-			SortOrder:  new(2.0),
+			Visibility: testPtr("always"),
+			SortOrder:  testPtr(2.0),
 			Options: &[]client.PropertyOptionInput{
 				{
 					Name:  "Low",
-					Color: new("#00ff00"),
+					Color: testPtr("#00ff00"),
 				},
 				{
 					Name:  "Med",
-					Color: new("#ffff00"),
+					Color: testPtr("#ffff00"),
 				},
 				{
 					Name:  "High",
-					Color: new("#ff0000"),
+					Color: testPtr("#ff0000"),
 				},
 			},
 		},
@@ -180,20 +180,20 @@ func TestRunPropertyOperations(t *testing.T) {
 		Name: "Tags",
 		Type: "multiselect",
 		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: new("when_set"),
-			SortOrder:  new(3.0),
+			Visibility: testPtr("when_set"),
+			SortOrder:  testPtr(3.0),
 			Options: &[]client.PropertyOptionInput{
 				{
 					Name:  "Frontend",
-					Color: new("#0066cc"),
+					Color: testPtr("#0066cc"),
 				},
 				{
 					Name:  "Backend",
-					Color: new("#cc6600"),
+					Color: testPtr("#cc6600"),
 				},
 				{
 					Name:  "CI",
-					Color: new("#660066"),
+					Color: testPtr("#660066"),
 				},
 			},
 		},
