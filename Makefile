@@ -95,7 +95,7 @@ install-go-tools:
 	@echo Installing go tools
 	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 	$(GO) install github.com/golang/mock/mockgen@v1.6.0
-	$(GO) install gotest.tools/gotestsum@v1.7.0
+	$(GO) install gotest.tools/gotestsum@v1.13.0
 	$(GO) install github.com/cortesi/modd/cmd/modd@v0.8
 	$(GO) install github.com/mattermost/mattermost/tools/mattermost-govet@02023f0328e5bb9e04ca06f25c2284efbc1f1759
 
