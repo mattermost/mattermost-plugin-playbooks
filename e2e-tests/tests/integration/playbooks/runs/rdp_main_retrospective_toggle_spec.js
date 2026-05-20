@@ -399,4 +399,64 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             });
         });
     });
+
+    it('disabling retrospective creates a timeline entry with the correct description', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Toggle Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Disable Timeline Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
+            cy.visit(`/playbooks/runs/${run.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective-enabled`).as('ToggleRetrospective');
+            openContextMenu();
+            cy.findByTestId('disable-retrospective-menu-item').click();
+            confirmModal();
+            cy.wait('@ToggleRetrospective');
+
+            // * Timeline entry appears with the correct description
+            cy.get('[data-testid="timeline-item retrospective_disabled"]').should('exist');
+            cy.contains(`Retrospective disabled by ${testUser.username}`).should('exist');
+        });
+    });
+
+    it('enabling retrospective creates a timeline entry with the correct description', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Toggle Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: false,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Enable Timeline Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
+            cy.visit(`/playbooks/runs/${run.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective-enabled`).as('ToggleRetrospective');
+            openContextMenu();
+            cy.findByTestId('enable-retrospective-menu-item').click();
+            confirmModal();
+            cy.wait('@ToggleRetrospective');
+
+            // * Timeline entry appears with the correct description
+            cy.get('[data-testid="timeline-item retrospective_enabled"]').should('exist');
+            cy.contains(`Retrospective enabled by ${testUser.username}`).should('exist');
+        });
+    });
 });

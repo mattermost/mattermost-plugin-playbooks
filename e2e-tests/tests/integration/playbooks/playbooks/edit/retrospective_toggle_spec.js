@@ -298,4 +298,79 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             cy.findByTestId('retrospective-reminder').should('be.visible');
         });
     });
+
+    it('"Yes, start retrospective" navigates to the retro section, and publish posts to channel', () => {
+        // # Create a playbook with retrospective DISABLED
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Disabled Then Enabled Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: false,
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Retro Re-enable Then Finish Run (' + getRandomId() + ')',
+                ownerUserId: testUser.id,
+            });
+        }).then((playbookRun) => {
+            // # Enable retrospective on the active run via the RDP context menu
+            cy.visit(`/playbooks/runs/${playbookRun.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${playbookRun.id}/retrospective-enabled`).as('EnableRetrospective');
+            cy.findByTestId('run-header-section').findByTestId('menuButton').click();
+            cy.findByTestId('dropdownmenu').should('be.visible');
+            cy.findByTestId('enable-retrospective-menu-item').click();
+            cy.get('#confirmModalButton').click();
+            cy.wait('@EnableRetrospective');
+
+            // # Finish the run — should post the retrospective reminder
+            cy.apiFinishRun(playbookRun.id);
+
+            // # Navigate to the run channel via the RDP sidebar link (SPA navigation preserves
+            // Redux state so currentPlaybookRun remains populated, keeping buttons enabled)
+            cy.get('#playbooks-sidebar-right').findByTestId('runinfo-channel-link').click();
+            cy.contains('as finished', {timeout: TIMEOUTS.TEN_SEC}).should('exist');
+
+            // * Verify the retrospective reminder post is visible
+            cy.findByTestId('retrospective-reminder').should('be.visible');
+
+            // # Click "Yes, start retrospective"
+            cy.findByTestId('retrospective-reminder').
+                findByRole('button', {name: 'Yes, start retrospective'}).
+                click();
+
+            // * Should be on the run details page with the retrospective section in view
+            cy.url().should('include', `/playbooks/runs/${playbookRun.id}`);
+            cy.findByTestId('run-retrospective-section').should('be.visible');
+
+            // # Click the report text area to enter edit mode, type, then click outside to save
+            cy.findByTestId('run-retrospective-section').within(() => {
+                cy.findByTestId('retro-report-text').click();
+                cy.focused().type('Retrospective report content');
+
+                // # Click outside the textarea to end editing mode and flush changes before publishing
+                cy.findByText('Report').click();
+
+                // # Publish the retrospective
+                cy.findByRole('button', {name: 'Publish'}).click();
+            });
+            cy.get('#confirm-modal-light').within(() => {
+                cy.findByText('Are you sure you want to publish?').should('be.visible');
+                cy.findByRole('button', {name: 'Publish'}).click();
+            });
+
+            // # Go back to the run channel
+            cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
+
+            // * Verify the retrospective was published to the channel
+            cy.findAllByTestId('postView').last().
+                contains(`Retrospective for ${playbookRun.name} has been published by`).
+                should('exist');
+        });
+    });
 });
