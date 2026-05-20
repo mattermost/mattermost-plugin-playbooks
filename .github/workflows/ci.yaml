@@ -28,14 +28,14 @@ jobs:
           fetch-depth: "0"
       - name: Calculate version
         id: calculate
-        run: echo GO_VERSION=$(grep -E '^go [0-9]+\.[0-9]+' go.mod | cut -d' ' -f2) >> "${GITHUB_OUTPUT}"
+        run: echo "GO_VERSION=$(tr -d '[:space:]' < .go-version)" >> "${GITHUB_OUTPUT}"
 
   lint-web:
     runs-on: ubuntu-22.04
     needs:
       - go
     container:
-      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -178,7 +178,7 @@ jobs:
       - go
       - lint
     container:
-      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -209,10 +209,10 @@ jobs:
       - go
       - lint
     container:
-      image: mattermostdevelopment/mattermost-build-server-fips:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server-fips:${{ needs.go.outputs.version }}
       credentials:
-        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
     env:
       FIPS_ENABLED: true
     steps:
@@ -299,7 +299,7 @@ jobs:
       - lint
       - go
     container:
-      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
     services:
       postgres:
         image: postgres:14
@@ -334,10 +334,10 @@ jobs:
       - lint
       - go
     container:
-      image: mattermostdevelopment/mattermost-build-server-fips:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server-fips:${{ needs.go.outputs.version }}
       credentials:
-        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
     services:
       postgres:
         image: postgres:14
@@ -387,6 +387,8 @@ jobs:
       - lint
       - generate-specs
       - dist
+    env:
+      GO_VERSION: ${{ needs.go.outputs.version }}
     name: e2e-cypress-tests-run-${{ matrix.runId }}
     strategy:
       fail-fast: false
@@ -493,6 +495,8 @@ jobs:
       - lint
       - generate-specs
       - dist-fips
+    env:
+      GO_VERSION: ${{ needs.go.outputs.version }}
     name: e2e-cypress-tests-fips-run-${{ matrix.runId }}
     strategy:
       fail-fast: false
