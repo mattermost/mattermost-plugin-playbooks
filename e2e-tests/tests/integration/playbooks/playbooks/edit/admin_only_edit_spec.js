@@ -15,9 +15,14 @@ describe('playbooks > edit > admin only edit', () => {
     let testTeam;
     let testAdminUser;
     let testMemberUser;
+    let testSysadminUser;
     let testPlaybook;
 
     before(() => {
+        cy.apiCreateCustomAdmin().then(({sysadmin}) => {
+            testSysadminUser = sysadmin;
+        });
+
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testAdminUser = user;
@@ -146,6 +151,53 @@ describe('playbooks > edit > admin only edit', () => {
         // * Add-checklist button is not rendered (checklist is read-only)
         cy.get('#checklists').should('be.visible');
         cy.findByTestId('add-a-checklist-button').should('not.exist');
+
+        // * Summary section has no edit pencil (description is read-only)
+        cy.get('#summary').find('[data-testid="hover-menu-edit-button"]').should('not.exist');
+    });
+
+    it('UI: playbook admin retains edit access when admin_only_edit is enabled', () => {
+        // # Enable admin_only_edit via API
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
+        });
+
+        // # Visit as playbook admin (testAdminUser is already logged in via beforeEach)
+        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.findByTestId('preview-content').should('be.visible');
+
+        // * Status update toggle is not disabled
+        cy.findByTestId('status-update-toggle').find('input[type="checkbox"]').should('not.be.disabled');
+
+        // * Add-checklist button is rendered
+        cy.findByTestId('add-a-checklist-button').should('exist');
+
+        // * Summary section shows the edit pencil (editable)
+        cy.get('#summary').find('[data-testid="hover-menu-edit-button"]').should('exist');
+    });
+
+    it('UI: system admin always has edit access and sees the Settings section when admin_only_edit is enabled', () => {
+        // # Enable admin_only_edit
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
+        });
+
+        // # Log in as system admin (not a playbook member) and open the outline
+        cy.apiLogin(testSysadminUser);
+        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.findByTestId('preview-content').should('be.visible');
+
+        // * Settings section with the toggle is visible to sysadmin
+        cy.findByTestId('admin-only-edit-toggle').should('exist');
+
+        // * Status update toggle is not disabled
+        cy.findByTestId('status-update-toggle').find('input[type="checkbox"]').should('not.be.disabled');
+
+        // * Add-checklist button is rendered
+        cy.findByTestId('add-a-checklist-button').should('exist');
+
+        // * Summary section shows the edit pencil (editable)
+        cy.get('#summary').find('[data-testid="hover-menu-edit-button"]').should('exist');
     });
 
     it('non-admin member cannot duplicate an admin-locked playbook', () => {
