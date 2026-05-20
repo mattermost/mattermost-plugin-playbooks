@@ -96,21 +96,23 @@ install-go-tools:
 	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
 	$(GO) install github.com/golang/mock/mockgen@v1.6.0
 	$(GO) install gotest.tools/gotestsum@v1.7.0
-	$(GO) install github.com/cortesi/modd/cmd/modd@latest
+	$(GO) install github.com/cortesi/modd/cmd/modd@v0.8
 	$(GO) install github.com/mattermost/mattermost-govet/v2@3f08281c344327ac09364f196b15f9a81c7eff08
 
-## Runs eslint and golangci-lint
-.PHONY: check-style
-check-style: manifest-check apply webapp/node_modules e2e-tests/node_modules install-go-tools
-	@echo Checking for style guide compliance
-
+## Runs webapp eslint, stylelint, tsc, and e2e-tests eslint
+.PHONY: check-style-web
+check-style-web: manifest-check apply webapp/node_modules e2e-tests/node_modules
+	@echo Checking webapp style
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run lint
 	cd webapp && npm run check-types
 endif
-
 	cd e2e-tests && npm run check
 
+## Runs go vet, golangci-lint, and the mattermost-govet license check
+.PHONY: check-style-server
+check-style-server: manifest-check apply install-go-tools
+	@echo Checking server style
 # It's highly recommended to run go-vet first
 # to find potential compile errors that could introduce
 # weird reports at golangci-lint step
@@ -120,6 +122,10 @@ ifneq ($(HAS_SERVER),)
 	$(GOBIN)/golangci-lint run ./...
 	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 -license.ignore=server/graphql/models.go ./...
 endif
+
+## Runs eslint and golangci-lint
+.PHONY: check-style
+check-style: check-style-web check-style-server
 
 ## Fix JS file ESLint issues
 .PHONY: fix-style
