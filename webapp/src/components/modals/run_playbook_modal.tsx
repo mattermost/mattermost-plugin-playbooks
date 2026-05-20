@@ -330,16 +330,6 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
     const linkExistingChannel = channelMode === 'link_existing_channel' && !newChannelOnly;
     return (
         <ChannelContainer>
-            <ChannelBlock aria-disabled={newChannelOnly}>
-                <StyledRadioInput
-                    data-testid={'link-existing-channel-radio'}
-                    type='radio'
-                    checked={linkExistingChannel}
-                    disabled={newChannelOnly}
-                    onChange={() => onSetChannelMode('link_existing_channel')}
-                />
-                <FormattedMessage defaultMessage='Link to an existing channel'/>
-            </ChannelBlock>
             {newChannelOnly && (
                 <HelpText
                     id='new-channel-only-hint'
@@ -347,6 +337,17 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                 >
                     {formatMessage({defaultMessage: 'This playbook requires a new channel for each run'})}
                 </HelpText>
+            )}
+            {!newChannelOnly && (
+                <ChannelBlock>
+                    <StyledRadioInput
+                        data-testid={'link-existing-channel-radio'}
+                        type='radio'
+                        checked={linkExistingChannel}
+                        onChange={() => onSetChannelMode('link_existing_channel')}
+                    />
+                    <FormattedMessage defaultMessage='Link to an existing channel'/>
+                </ChannelBlock>
             )}
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -417,7 +418,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
 };
 
 const StyledGenericModal = styled(GenericModal)`
-    &&& {
+    &&&& {
         h1 {
             width:100%;
         }
@@ -425,7 +426,6 @@ const StyledGenericModal = styled(GenericModal)`
         .modal-header {
             padding: 24px 31px;
             margin-bottom: 0;
-            box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
         }
 
         .modal-content {
@@ -433,12 +433,12 @@ const StyledGenericModal = styled(GenericModal)`
         }
 
         .modal-body {
-            padding: 24px 31px;
+            padding: 8px 32px;
         }
 
         .modal-footer {
-           padding: 0 31px 28px;
-           box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
+            padding: 24px 32px;
+            box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
         }
     }
 `;

@@ -260,7 +260,7 @@ describe('RunPlaybookModal - new_channel_only behavior', () => {
         expect(createChannelRadio[0].props.checked).toBe(true);
     });
 
-    it('when new_channel_only is true: "Link to existing channel" radio is disabled', () => {
+    it('when new_channel_only is true: "Link to existing channel" option is hidden', () => {
         const playbook = makePlaybookWithNewChannelOnly(true);
         mockUsePlaybook.mockReturnValue([playbook, {error: null, isFetching: false}]);
         mockUseRestPlaybook.mockReturnValue([playbook]);
@@ -279,8 +279,7 @@ describe('RunPlaybookModal - new_channel_only behavior', () => {
             (node) => node.props['data-testid'] === 'link-existing-channel-radio',
         );
 
-        expect(linkExistingRadio.length).toBeGreaterThan(0);
-        expect(linkExistingRadio[0].props.disabled).toBe(true);
+        expect(linkExistingRadio.length).toBe(0);
     });
 
     it('when new_channel_only is true: tooltip shows enforcement message', () => {
