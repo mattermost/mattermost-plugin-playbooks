@@ -651,6 +651,10 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookEdit(userID, playbook)) {
+		return
+	}
+
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -934,8 +938,7 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
 		return
 	}
 
@@ -980,8 +983,7 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
 		return
 	}
 
@@ -1046,8 +1048,7 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
 		return
 	}
 
@@ -1102,8 +1103,7 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 		return
 	}
 
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
 		return
 	}
 

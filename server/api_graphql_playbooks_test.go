@@ -691,3 +691,57 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 		assert.Len(t, pbResultTest.Data.Playbooks, 0)
 	})
 }
+
+func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string]interface{}) error {
+	const mutation = `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
+		updatePlaybook(id: $id, updates: $updates)
+	}`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "UpdatePlaybook",
+		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
+	}, &response)
+	if err != nil {
+		return errors.Wrapf(err, "gqlDoPlaybookUpdate graphql failure")
+	}
+	if len(response.Errors) != 0 {
+		return errors.Errorf("gqlDoPlaybookUpdate graphql errors: %+v", response.Errors)
+	}
+	return nil
+}
+
+func TestAdminOnlyEdit_GraphQLUpdatePlaybook(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit GraphQL Test Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit:                           true,
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("non-admin member GraphQL update is rejected", func(t *testing.T) {
+		err := gqlDoPlaybookUpdate(e.PlaybooksClient, playbookID, map[string]interface{}{"title": "Non-Admin GraphQL Edit"})
+		require.Error(t, err)
+	})
+
+	t.Run("playbook admin (non-sysadmin) GraphQL update succeeds", func(t *testing.T) {
+		err := gqlDoPlaybookUpdate(e.PlaybooksClient2, playbookID, map[string]interface{}{"title": "Admin GraphQL Edit"})
+		require.NoError(t, err)
+	})
+
+	t.Run("system admin GraphQL update succeeds", func(t *testing.T) {
+		err := gqlDoPlaybookUpdate(e.PlaybooksAdminClient, playbookID, map[string]interface{}{"title": "SysAdmin GraphQL Edit"})
+		require.NoError(t, err)
+	})
+}
