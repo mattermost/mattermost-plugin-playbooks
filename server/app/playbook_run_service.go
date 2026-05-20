@@ -1170,14 +1170,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	numOutstanding := 0
-	for _, c := range currentPlaybookRun.Checklists {
-		for _, item := range c.Items {
-			if item.State == ChecklistItemStateOpen || item.State == ChecklistItemStateInProgress {
-				numOutstanding++
-			}
-		}
-	}
+	numOutstanding := CountOutstandingChecklistItemsForFinishRun(currentPlaybookRun.Checklists)
 
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/finish-dialog",
