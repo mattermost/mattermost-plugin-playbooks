@@ -24,7 +24,7 @@ const findToggleLabel = (node: renderer.ReactTestRendererJSON | renderer.ReactTe
     if (!node || Array.isArray(node)) {
         return null;
     }
-    if (node.props?.['data-testid'] === 'owner-group-only-actions-toggle') {
+    if ('data-checked' in (node.props ?? {})) {
         return node;
     }
     if (!node.children) {
@@ -68,7 +68,6 @@ jest.mock('src/components/widgets/confirmation_modal', () => ({
 jest.mock('src/components/backstage/playbook_edit/automation/toggle', () => ({
     Toggle: ({isChecked, onChange, disabled, children}: {isChecked: boolean; onChange: () => void; disabled?: boolean; children?: React.ReactNode}) => (
         <label
-            data-testid='owner-group-only-actions-toggle'
             data-checked={isChecked}
             data-disabled={disabled}
         >

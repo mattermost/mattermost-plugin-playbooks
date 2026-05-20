@@ -84,7 +84,7 @@ const OwnerGroupOnlyActionsToggle = ({playbook, isPlaybookAdmin, onChange, disab
                 <FormattedMessage defaultMessage='Settings'/>
             </AutomationCardTitle>
             <AutomationCardSetting>
-                <FullWidthAutomationTitle>
+                <FullWidthAutomationTitle data-testid='owner-group-only-actions-toggle'>
                     <Toggle
                         disabled={disabled}
                         isChecked={playbook.owner_group_only_actions ?? false}
