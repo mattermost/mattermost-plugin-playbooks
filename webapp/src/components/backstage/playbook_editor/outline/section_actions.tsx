@@ -20,8 +20,8 @@ import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@matter
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {fetchPlaybookPropertyFields, updatePlaybookChannelNameTemplate, updatePlaybookRunNumberPrefix} from 'src/client';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -41,10 +41,10 @@ import {getDistinctAssignees} from 'src/utils';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     disabled?: boolean;
-    restPlaybook?: PlaybookWithChecklist;
 }
 
-const LegacyActionsEdit = ({playbook, disabled, restPlaybook}: Props) => {
+const LegacyActionsEdit = ({playbook, disabled}: Props) => {
+    const [restPlaybook] = useRestPlaybook(playbook.id);
     const [fieldNames, setFieldNames] = useState<string[]>([]);
     useEffect(() => {
         fetchPlaybookPropertyFields(playbook.id)

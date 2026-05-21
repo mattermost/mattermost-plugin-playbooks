@@ -12,7 +12,6 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -23,12 +22,11 @@ import Section from './section';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
-    restPlaybook?: PlaybookWithChecklist;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch, restPlaybook}: Props) => {
+const Outline = ({playbook, refetch}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
@@ -159,7 +157,6 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             >
                 <Actions
                     playbook={playbook}
-                    restPlaybook={restPlaybook}
                 />
             </Section>
             <PlaybookActionsModal
