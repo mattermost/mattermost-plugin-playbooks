@@ -714,7 +714,7 @@ func (h *PlaybookHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *h
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(export)
+	_, _ = w.Write(export) // #nosec G705 -- export is JSON generated with json.MarshalIndent and served as application/json.
 }
 
 func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
