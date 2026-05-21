@@ -6,14 +6,12 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
-import styled from 'styled-components';
 import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
-import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
@@ -21,7 +19,12 @@ import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
+import {
+    AutomationCard,
+    AutomationCardSetting,
+    AutomationCardTitle,
+    AutomationTitle,
+} from 'src/components/backstage/playbook_edit/automation/styles';
 
 import {useProxyState} from 'src/hooks';
 import {getDistinctAssignees} from 'src/utils';
@@ -158,18 +161,18 @@ const LegacyActionsEdit = ({playbook}: Props) => {
 
     return (
         <>
-            <StyledSection>
-                <StyledSectionTitle>
+            <AutomationCard>
+                <AutomationCardTitle>
                     <PlayIcon size={24}/>
                     <FormattedMessage defaultMessage='When a run starts'/>
-                </StyledSectionTitle>
-                <Setting id={'channel-action'}>
+                </AutomationCardTitle>
+                <AutomationCardSetting id={'channel-action'}>
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
                     />
-                </Setting>
-                <Setting id={'invite-users'}>
+                </AutomationCardSetting>
+                <AutomationCardSetting id={'invite-users'}>
                     <InviteUsers
                         disabled={archived}
                         enabled={playbook.invite_users_enabled}
@@ -183,8 +186,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
                         onRemovePreAssignedUsers={handleRemovePreAssignedUsers}
                     />
-                </Setting>
-                <Setting id={'assign-owner'}>
+                </AutomationCardSetting>
+                <AutomationCardSetting id={'assign-owner'}>
                     <AutoAssignOwner
                         disabled={archived}
                         enabled={playbook.default_owner_enabled}
@@ -194,8 +197,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         ownerID={playbook.default_owner_id}
                         onAssignOwner={handleAssignDefaultOwner}
                     />
-                </Setting>
-                <Setting id={'playbook-run-creation__outgoing-webhook'}>
+                </AutomationCardSetting>
+                <AutomationCardSetting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
                         disabled={archived}
                         enabled={playbook.webhook_on_creation_enabled}
@@ -212,15 +215,15 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         maxRows={64}
                         maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
                     />
-                </Setting>
-            </StyledSection>
+                </AutomationCardSetting>
+            </AutomationCard>
 
-            <StyledSection>
-                <StyledSectionTitle>
+            <AutomationCard>
+                <AutomationCardTitle>
                     <AccountPlusOutlineIcon size={22}/>
                     <FormattedMessage defaultMessage='When a participant joins the run'/>
-                </StyledSectionTitle>
-                <Setting id={'participant-joins-run'}>
+                </AutomationCardTitle>
+                <AutomationCardSetting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
                             disabled={archived}
@@ -234,15 +237,15 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                             <FormattedMessage defaultMessage='Add them to the run channel'/>
                         </Toggle>
                     </AutomationTitle>
-                </Setting>
-            </StyledSection>
+                </AutomationCardSetting>
+            </AutomationCard>
 
-            <StyledSection>
-                <StyledSectionTitle>
+            <AutomationCard>
+                <AutomationCardTitle>
                     <AccountMinusOutlineIcon size={22}/>
                     <FormattedMessage defaultMessage='When a participant leaves the run'/>
-                </StyledSectionTitle>
-                <Setting id={'participant-leaves-run'}>
+                </AutomationCardTitle>
+                <AutomationCardSetting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
                             disabled={archived}
@@ -256,40 +259,11 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                             <FormattedMessage defaultMessage='Remove them from the run channel'/>
                         </Toggle>
                     </AutomationTitle>
-                </Setting>
-            </StyledSection>
+                </AutomationCardSetting>
+            </AutomationCard>
         </>
     );
 };
 
 export default LegacyActionsEdit;
-
-const StyledSection = styled(Section)`
-    padding: 2rem;
-    padding-bottom: 0;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 8px;
-    margin: 0;
-    margin-bottom: 20px;
-`;
-
-const StyledSectionTitle = styled(SectionTitle)`
-    display: flex;
-    align-items: center;
-    margin: 0 0 24px;
-    font-size: 16px;
-    font-weight: 600;
-    gap: 8px;
-
-    svg {
-        color: rgba(var(--center-channel-color-rgb), 0.48);
-    }
-`;
-
-const Setting = styled.div`
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 24px;
-    gap: 8px;
-`;
 

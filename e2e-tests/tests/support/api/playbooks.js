@@ -633,3 +633,29 @@ Cypress.Commands.add('apiAttachConditionToTask', (playbookId, checklistIndex, it
         return cy.apiUpdatePlaybook(playbook);
     });
 });
+
+Cypress.Commands.add('apiRestoreRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/restore`,
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+Cypress.Commands.add('apiCreateAndAddUserToTeam', (teamId) => {
+    return cy.apiCreateUser().then(({user}) => {
+        cy.apiAddUserToTeam(teamId, user.id);
+        return cy.wrap(user);
+    });
+});
+
+Cypress.Commands.add('apiGetPropertyFieldByName', (playbookId, fieldName) => {
+    return cy.apiGetPropertyFields(playbookId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `property field "${fieldName}" should exist on playbook`).to.not.be.undefined;
+        return cy.wrap(field);
+    });
+});

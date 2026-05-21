@@ -63,6 +63,8 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_mode: string;
     channel_id: string;
 
+    owner_group_only_actions: boolean;
+
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
     webhook_on_creation_enabled: boolean;
@@ -215,6 +217,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
+        owner_group_only_actions: false,
         propertyFields: [],
     };
 }

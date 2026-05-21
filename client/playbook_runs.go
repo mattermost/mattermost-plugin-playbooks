@@ -208,6 +208,31 @@ func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) e
 	return nil
 }
 
+func (s *PlaybookRunService) Restore(ctx context.Context, playbookRunID string) error {
+	restoreURL := fmt.Sprintf("runs/%s/restore", playbookRunID)
+	req, err := s.client.newAPIRequest(http.MethodPut, restoreURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) ChangeOwner(ctx context.Context, playbookRunID, ownerID string) error {
+	ownerURL := fmt.Sprintf("runs/%s/owner", playbookRunID)
+	body := struct {
+		OwnerID string `json:"owner_id"`
+	}{OwnerID: ownerID}
+	req, err := s.client.newAPIRequest(http.MethodPost, ownerURL, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
 	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
 	req, err := s.client.newAPIRequest(http.MethodPost, createURL, checklist)
