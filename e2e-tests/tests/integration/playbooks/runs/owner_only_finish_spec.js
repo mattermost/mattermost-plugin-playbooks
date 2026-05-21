@@ -38,7 +38,7 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         }).then((playbook) => {
             result.playbook = playbook;
             cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
-            cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
+            cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle', playbook.id);
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: playbook.id,
@@ -65,6 +65,8 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         };
 
         const assertCannotFinish = () => {
+            // Wait for the RHS to be populated before asserting absence
+            cy.findByTestId('owner-profile-selector').should('be.visible');
             cy.findByTestId('rhs-finish-section').should('not.exist');
         };
 
@@ -331,7 +333,7 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
 
                 // # Enable owner_group_only_actions via the playbook editor UI toggle
                 cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
-                cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
+                cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle', playbook.id);
 
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,

@@ -342,7 +342,13 @@ Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
     cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
 });
 
-Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId) => {
+Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId, playbookId) => {
+    if (playbookId) {
+        cy.intercept('PUT', `**/api/v0/playbooks/${playbookId}`).as('togglePersist');
+    }
     cy.findByTestId(toggleTestId).find('label').click();
     cy.playbooksConfirmModal();
+    if (playbookId) {
+        cy.wait('@togglePersist').its('response.statusCode').should('be.oneOf', [200, 204]);
+    }
 });

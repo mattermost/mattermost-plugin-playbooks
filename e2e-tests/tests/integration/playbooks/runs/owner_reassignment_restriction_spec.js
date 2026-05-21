@@ -114,8 +114,14 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         // # Navigate to the run channel
         cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
 
+        // * Wait for RHS to load before interacting
+        cy.findByTestId('owner-profile-selector').should('contain', testOwner.username);
+
         // # Attempt to click the owner profile selector
         cy.findByTestId('owner-profile-selector').click();
+
+        // * Assert the permission toast appears — confirms the selector blocked the non-owner
+        cy.contains('Only the run owner can reassign ownership of this run.').should('be.visible');
 
         // * Assert no dropdown options appear — the selector is read-only for non-owners
         cy.findByRole('option').should('not.exist');

@@ -1528,9 +1528,10 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 // updateAllChecklistsAndItemsTimestamps sets the UpdateAt field for all checklist items in the given checklists
 func updateAllChecklistsAndItemsTimestamps(checklists []Checklist, now int64) {
 	for i := range checklists {
-		checklists[i].UpdateAt = now
-		for j := range checklists[i].Items {
-			checklists[i].Items[j].UpdateAt = now
+		checklist := &checklists[i]
+		checklist.UpdateAt = now
+		for j := range checklist.Items {
+			checklist.Items[j].UpdateAt = now
 		}
 	}
 }
@@ -4503,7 +4504,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 			if task.ChecklistItem.DueDate == 0 {
 				// add information about tasks without due date only if the full list was requested
 				if !onlyTasksDueUntilToday {
-					tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title))
+					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
 				}
 				tasksNoDueDate++
 				continue
@@ -4511,31 +4512,31 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 			dueTime := time.Unix(task.ChecklistItem.DueDate/1000, 0).In(timezone)
 			// due today
 			if timeutils.IsSameDay(dueTime, currentTime) {
-				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today")))
+				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today"))
 				continue
 			}
 			// due yesterday
 			if timeutils.IsSameDay(dueTime, yesterday) {
-				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday")))
+				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday"))
 				continue
 			}
 			// due before yesterday
 			if dueTime.Before(currentTime) {
 				days := timeutils.GetDaysDiff(dueTime, currentTime)
-				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days)))
+				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days))
 				continue
 			}
 			// due after today
 			if !onlyTasksDueUntilToday {
 				days := timeutils.GetDaysDiff(currentTime, dueTime)
-				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days)))
+				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days))
 			}
 			tasksDoAfterToday++
 		}
 
 		// omit run's title if tasks info is empty
 		if tasksInfo.String() != "" {
-			runsInfo.WriteString(fmt.Sprintf("[%s](%s?from=digest_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID)))
+			fmt.Fprintf(&runsInfo, "[%s](%s?from=digest_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
 			runsInfo.WriteString(tasksInfo.String())
 		}
 	}
