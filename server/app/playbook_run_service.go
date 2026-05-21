@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -383,6 +384,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
 		}
 	}
+	if playbookRun.OwnerUserID == "" {
+		playbookRun.OwnerUserID = userID
+	}
 
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
@@ -497,6 +501,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 			// Remap AssigneePropertyFieldID from playbook-level to run-level field IDs.
 			remapAssigneePropertyFieldIDs(playbookRun.Checklists, propertyCopyResult.FieldMappings)
+
+			// Resolve any property_user assignees from the run's initial property values.
+			resolvePropertyUserAssignmentsFromRun(playbookRun)
 
 			// Copy conditions from playbook to run using the field mappings if license allows
 			if s.licenseChecker.ConditionalPlaybooksAllowed() {
@@ -1854,6 +1861,16 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		originalRun = playbookRunToModify.Clone()
 	}
 
+	// Collect item titles before mutation so we can emit AssigneeChanged events per re-assigned task.
+	var ownerRoleItemTitles []string
+	for _, cl := range playbookRunToModify.Checklists {
+		for _, item := range cl.Items {
+			if item.AssigneeType == AssigneeTypeOwner && item.AssigneeID != ownerID {
+				ownerRoleItemTitles = append(ownerRoleItemTitles, item.Title)
+			}
+		}
+	}
+
 	playbookRunToModify.OwnerUserID = ownerID
 	resolveOwnerRoleAssignments(playbookRunToModify.Checklists, ownerID)
 	if _, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
@@ -1863,6 +1880,22 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	oldOwnerUsername := ""
 	if oldOwner != nil {
 		oldOwnerUsername = oldOwner.Username
+	}
+
+	// Emit one AssigneeChanged timeline event per task that was re-assigned due to the owner change.
+	reassignedAt := model.GetMillis()
+	for _, title := range ownerRoleItemTitles {
+		taskEvent := &TimelineEvent{
+			PlaybookRunID: playbookRunID,
+			CreateAt:      reassignedAt,
+			EventAt:       reassignedAt,
+			EventType:     AssigneeChanged,
+			Summary:       fmt.Sprintf("changed assignee of checklist item **%s** from **@%s** to **@%s**", stripmd.Strip(title), oldOwnerUsername, newOwner.Username),
+			SubjectUserID: userID,
+		}
+		if _, teErr := s.store.CreateTimelineEvent(taskEvent); teErr != nil {
+			logrus.WithError(teErr).WithField("playbook_run_id", playbookRunID).Warn("failed to create AssigneeChanged event for owner role task")
+		}
 	}
 
 	// Do we send a DM to the new owner?
@@ -5118,29 +5151,12 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 
 	newUserID := extractUserIDFromPropertyValue(value)
 
-	// Snapshot old AssigneeIDs for items that will be affected by resolvePropertyUserAssignmentsForField
-	// so we can emit per-item AssigneeChanged timeline events after the mutation.
-	type propertyUserItemSnapshot struct {
-		checklistIdx  int
-		itemIdx       int
-		title         string
-		oldAssigneeID string
+	fieldIDs := []string{propertyFieldID}
+	if parentFieldID != "" {
+		fieldIDs = append(fieldIDs, parentFieldID)
 	}
+
 	var affectedItemSnapshots []propertyUserItemSnapshot
-	for ci := range run.Checklists {
-		for ii := range run.Checklists[ci].Items {
-			item := &run.Checklists[ci].Items[ii]
-			if item.AssigneeType == AssigneeTypePropertyUser &&
-				(item.AssigneePropertyFieldID == propertyFieldID || (parentFieldID != "" && item.AssigneePropertyFieldID == parentFieldID)) {
-				affectedItemSnapshots = append(affectedItemSnapshots, propertyUserItemSnapshot{
-					checklistIdx:  ci,
-					itemIdx:       ii,
-					title:         item.Title,
-					oldAssigneeID: item.AssigneeID,
-				})
-			}
-		}
-	}
 
 	var valueChanged, shouldSendWS bool
 	var evaluationResult *ConditionEvaluationResult
@@ -5154,27 +5170,9 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 			return nil, errors.Wrap(err, "failed to evaluate property conditions")
 		}
 
-		// Re-capture snapshots to include any new items added by condition evaluation.
-		affectedItemSnapshots = affectedItemSnapshots[:0]
-		for ci := range run.Checklists {
-			for ii := range run.Checklists[ci].Items {
-				item := &run.Checklists[ci].Items[ii]
-				if item.AssigneeType == AssigneeTypePropertyUser &&
-					(item.AssigneePropertyFieldID == propertyFieldID || (parentFieldID != "" && item.AssigneePropertyFieldID == parentFieldID)) {
-					affectedItemSnapshots = append(affectedItemSnapshots, propertyUserItemSnapshot{
-						checklistIdx:  ci,
-						itemIdx:       ii,
-						title:         item.Title,
-						oldAssigneeID: item.AssigneeID,
-					})
-				}
-			}
-		}
+		// Snapshot after condition evaluation so any newly-added items are included.
+		affectedItemSnapshots = collectPropertyUserItemSnapshots(run.Checklists, fieldIDs)
 
-		fieldIDs := []string{propertyFieldID}
-		if parentFieldID != "" {
-			fieldIDs = append(fieldIDs, parentFieldID)
-		}
 		resolvePropertyUserAssignmentsForField(run.Checklists, fieldIDs, newUserID)
 
 		if _, err := s.store.UpdatePlaybookRun(run); err != nil {
@@ -5187,10 +5185,8 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	} else {
 		// Value unchanged — still resolve assignees in case new condition tasks were added.
-		fieldIDs := []string{propertyFieldID}
-		if parentFieldID != "" {
-			fieldIDs = append(fieldIDs, parentFieldID)
-		}
+		// Snapshot before resolving so we can detect which items actually changed.
+		affectedItemSnapshots = collectPropertyUserItemSnapshots(run.Checklists, fieldIDs)
 		assigneesChanged := resolvePropertyUserAssignmentsForField(run.Checklists, fieldIDs, newUserID)
 		if assigneesChanged {
 			shouldSendWS = true
@@ -5225,7 +5221,8 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	}
 
 	// Add the newly resolved user as a participant and DM them once for the whole field change.
-	if anyAssigneeChanged && newUserID != "" {
+	participantsMaybeChanged := anyAssigneeChanged && newUserID != ""
+	if participantsMaybeChanged {
 		var dmMessage string
 		if actor, aErr := s.pluginAPI.User.Get(userID); aErr == nil {
 			runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(playbookRunID))
@@ -5248,13 +5245,16 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	}
 
 	// Send WS notification when the value changed or assignees were re-resolved.
-	// Re-read the run so the WS payload reflects any participant/timeline changes made by
-	// addAssigneeParticipantAndDM (which mutates the store) rather than the stale in-memory run.
+	// Re-read the run only when addAssigneeParticipantAndDM ran, to pick up any participant
+	// list changes it made in the store. Otherwise the in-memory run is already up to date.
 	if shouldSendWS {
-		wsRun, wsErr := s.GetPlaybookRun(playbookRunID)
-		if wsErr != nil {
-			logrus.WithError(wsErr).WithField("run_id", playbookRunID).Warn("failed to refresh run before websocket update after property change")
-			wsRun = run
+		wsRun := run
+		if participantsMaybeChanged {
+			if refreshed, wsErr := s.GetPlaybookRun(playbookRunID); wsErr != nil {
+				logrus.WithError(wsErr).WithField("run_id", playbookRunID).Warn("failed to refresh run before websocket update after property change")
+			} else {
+				wsRun = refreshed
+			}
 		}
 		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, wsRun)
 	}
@@ -5397,7 +5397,7 @@ func (s *PlaybookRunServiceImpl) PostPropertyChangeMessage(userID string, run *P
 func resolveRoleAssignments(checklists []Checklist, ownerID, creatorID string) {
 	for ci := range checklists {
 		for ii := range checklists[ci].Items {
-			item := &checklists[ci].Items[ii]
+			item := &checklists[ci].Items[ii] //nolint:gosec
 			switch item.AssigneeType {
 			case AssigneeTypeOwner:
 				item.AssigneeID = ownerID
@@ -5413,11 +5413,11 @@ func resolveOwnerRoleAssignments(checklists []Checklist, ownerID string) {
 	now := model.GetMillis()
 	for ci := range checklists {
 		for ii := range checklists[ci].Items {
-			item := &checklists[ci].Items[ii]
+			item := &checklists[ci].Items[ii] //nolint:gosec
 			if item.AssigneeType == AssigneeTypeOwner && item.AssigneeID != ownerID {
 				item.AssigneeID = ownerID
 				item.AssigneeModified = now
-				updateChecklistAndItemTimestamp(&checklists[ci], item, now)
+				updateChecklistAndItemTimestamp(&checklists[ci], item, now) //nolint:gosec
 			}
 		}
 	}
@@ -5447,6 +5447,7 @@ func applyPropertyUserAssigneeUpdate(item *ChecklistItem, propertyFieldID string
 
 // extractUserIDFromPropertyValue extracts a user ID from a JSON property value.
 // Property values for User fields are stored as quoted JSON strings like `"uXYZ123"`.
+// The same wire format is validated by validatePropertyValue in property_service.go.
 func extractUserIDFromPropertyValue(value json.RawMessage) string {
 	if value == nil {
 		return ""
@@ -5466,7 +5467,7 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 		return
 	}
 	if resolvedUserID != ownerUserID {
-		if !sliceContains(participantIDs, resolvedUserID) {
+		if !slices.Contains(participantIDs, resolvedUserID) {
 			if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
 				logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
 			}
@@ -5490,7 +5491,7 @@ func resolvePropertyUserAssignmentsForField(checklists []Checklist, fieldIDs []s
 			item := &checklists[ci].Items[ii]
 			// AssigneePropertyFieldID equality is the load-bearing guard; the AssigneeType
 			// check prevents accidentally retyping items that happen to share the field ID.
-			if item.AssigneeType == AssigneeTypePropertyUser && sliceContains(fieldIDs, item.AssigneePropertyFieldID) {
+			if item.AssigneeType == AssigneeTypePropertyUser && slices.Contains(fieldIDs, item.AssigneePropertyFieldID) {
 				noChangeNeeded := applyPropertyUserAssigneeUpdate(item, item.AssigneePropertyFieldID, userID)
 				if !noChangeNeeded {
 					item.AssigneeModified = now
@@ -5555,6 +5556,35 @@ func remapAssigneePropertyFieldIDs(checklists []Checklist, fieldMappings map[str
 			}
 		}
 	}
+}
+
+// propertyUserItemSnapshot captures a checklist item's identity and its AssigneeID at a
+// point in time so that post-mutation code can detect which items actually changed.
+type propertyUserItemSnapshot struct {
+	checklistIdx  int
+	itemIdx       int
+	title         string
+	oldAssigneeID string
+}
+
+// collectPropertyUserItemSnapshots returns snapshots for all checklist items whose
+// AssigneeType is property_user and whose AssigneePropertyFieldID matches one of fieldIDs.
+func collectPropertyUserItemSnapshots(checklists []Checklist, fieldIDs []string) []propertyUserItemSnapshot {
+	var snapshots []propertyUserItemSnapshot
+	for ci := range checklists {
+		for ii := range checklists[ci].Items {
+			item := &checklists[ci].Items[ii]
+			if item.AssigneeType == AssigneeTypePropertyUser && slices.Contains(fieldIDs, item.AssigneePropertyFieldID) {
+				snapshots = append(snapshots, propertyUserItemSnapshot{
+					checklistIdx:  ci,
+					itemIdx:       ii,
+					title:         item.Title,
+					oldAssigneeID: item.AssigneeID,
+				})
+			}
+		}
+	}
+	return snapshots
 }
 
 // formatPropertyValueForDisplay formats a property value for display in bot messages

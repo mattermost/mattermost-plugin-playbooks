@@ -603,15 +603,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 	// Set ReporterUserID before CreatePlaybookRun so the creator is known from the start.
 	playbookRun.ReporterUserID = userID
-	// Pre-set OwnerUserID with priority: explicit caller value > DefaultOwnerID > creator (userID).
-	// CreatePlaybookRun validates team membership and may override this value.
-	if playbookRun.OwnerUserID == "" {
-		if playbookRun.DefaultOwnerID != "" {
-			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
-		} else {
-			playbookRun.OwnerUserID = userID
-		}
-	}
 	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
 	if err != nil {
 		return nil, err

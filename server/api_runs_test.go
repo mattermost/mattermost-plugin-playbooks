@@ -3543,3 +3543,88 @@ func TestDMGMParticipants(t *testing.T) {
 		assert.Contains(t, memberIDs, e.RegularUser2.Id, "DM membership should not be removed when leaving the run")
 	})
 }
+
+// TestRunCreation_OwnerFallsBackToCreator verifies that when OwnerUserID is not provided
+// in the create options the run owner defaults to the creator (the authenticated user).
+func TestRunCreation_OwnerFallsBackToCreator(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Ownerless Run",
+		OwnerUserID: "", // intentionally empty — should fall back to creator
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, e.RegularUser.Id, run.OwnerUserID,
+		"owner must fall back to the creator when OwnerUserID is not provided")
+}
+
+// TestChangeOwner_EmitsAssigneeChangedForOwnerRoleTasks verifies that changing the run owner
+// creates AssigneeChanged timeline events for every checklist item whose assignee type is
+// AssigneeTypeOwner (i.e., those that track the run owner automatically).
+func TestChangeOwner_EmitsAssigneeChangedForOwnerRoleTasks(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a playbook whose template has one owner-role task and one regular task.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Owner Role Task Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Checklists: []client.Checklist{
+			{
+				Title: "Tasks",
+				Items: []client.ChecklistItem{
+					{Title: "Owner task", AssigneeType: app.AssigneeTypeOwner},
+					{Title: "Regular task", AssigneeType: ""},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// Create the run as RegularUser with AdminUser as owner so they are distinct.
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Owner Change Run",
+		OwnerUserID: e.AdminUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  playbookID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, e.AdminUser.Id, run.OwnerUserID)
+
+	eventCountBefore := len(run.TimelineEvents)
+
+	// Change owner from AdminUser to RegularUser.
+	err = e.PlaybooksClient.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser.Id)
+	require.NoError(t, err)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.Equal(t, e.RegularUser.Id, run.OwnerUserID)
+
+	// Expect one OwnerChanged event plus one AssigneeChanged event for the owner-role task.
+	newEvents := run.TimelineEvents[eventCountBefore:]
+	var ownerChangedCount, assigneeChangedCount int
+	for _, ev := range newEvents {
+		switch ev.EventType {
+		case client.OwnerChanged:
+			ownerChangedCount++
+		case client.AssigneeChanged:
+			assigneeChangedCount++
+		}
+	}
+	assert.Equal(t, 1, ownerChangedCount, "expected exactly one OwnerChanged event")
+	assert.Equal(t, 1, assigneeChangedCount, "expected one AssigneeChanged event for the owner-role task")
+
+	// The owner-role task must be re-assigned to the new owner.
+	ownerItem := run.Checklists[0].Items[0]
+	assert.Equal(t, e.RegularUser.Id, ownerItem.AssigneeID,
+		"owner-role item must be re-assigned to the new owner")
+	// The regular task must be unaffected.
+	regularItem := run.Checklists[0].Items[1]
+	assert.Empty(t, regularItem.AssigneeID,
+		"non-owner-role item must be unaffected by the owner change")
+}

@@ -294,9 +294,12 @@ export default function ProfileSelector(props: Props) {
             return getUserOptions();
         }
 
+        // getUserOptions returns grouped sections only when props.userGroups is set AND
+        // both subset and non-subset lists are non-empty. Normalize to grouped for merging.
         const userOptions = getUserOptions();
-        const userSections = (Array.isArray(userOptions) && userOptions.length > 0 && 'options' in userOptions[0]) ?
-            userOptions :
+        const isGrouped = props.userGroups && userNotInSubsetOptions.length > 0;
+        const userSections = isGrouped ?
+            userOptions as Array<{label: string; options: Option[]}> :
             [{label: '', options: userOptions as Option[]}];
         return [...props.extraSections, ...userSections];
     };

@@ -244,45 +244,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const assigneeCallSeqRef = useRef(0);
     const assigneeStateRef = useRef({id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID});
-    useEffect(() => {
-        assigneeStateRef.current = {id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID};
-    }, [assigneeID, assigneeType, assigneePropertyFieldID]);
-
-    const onAssigneeChange = async (user?: UserProfile) => {
-        const seq = ++assigneeCallSeqRef.current;
-        const userId = user?.id || '';
-        const {id: prevAssigneeID, type: prevAssigneeType, fieldID: prevAssigneePropertyFieldID} = assigneeStateRef.current;
-        setAssigneeID(userId);
-        setAssigneeType('');
-        setAssigneePropertyFieldID('');
-        if (props.newItem) {
-            return;
-        }
-        if (props.playbookRunId) {
-            const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
-            if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
-                setAssigneeID(prevAssigneeID);
-                setAssigneeType(prevAssigneeType);
-                setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
-                toaster.add({
-                    content: formatMessage({defaultMessage: 'Failed to update assignee.'}),
-                    toastStyle: ToastStyle.Failure,
-                });
-            }
-        } else {
-            const newItem = {...props.checklistItem};
-            newItem.assignee_id = userId;
-            newItem.assignee_type = '';
-            newItem.assignee_property_field_id = '';
-            props.onUpdateChecklistItem?.(newItem);
-        }
-    };
 
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
         const {id: prevAssigneeID, type: prevAssigneeType, fieldID: prevAssigneePropertyFieldID} = assigneeStateRef.current;
+        assigneeStateRef.current = {id: updatedItem.assignee_id || '', type: updatedItem.assignee_type || '', fieldID: updatedItem.assignee_property_field_id || ''};
         const rollback = () => {
             if (isMounted.current && assigneeCallSeqRef.current === seq) {
+                assigneeStateRef.current = {id: prevAssigneeID, type: prevAssigneeType, fieldID: prevAssigneePropertyFieldID};
                 setAssigneeID(prevAssigneeID);
                 setAssigneeType(prevAssigneeType);
                 setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
@@ -317,6 +286,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             props.onUpdateChecklistItem?.(updatedItem);
         }
     }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster]);
+
+    const onAssigneeChange = useCallback((user?: UserProfile) => {
+        handleAssigneeDropdownChange({
+            ...props.checklistItem,
+            assignee_id: user?.id || '',
+            assignee_type: '',
+            assignee_property_field_id: '',
+        });
+    }, [props.checklistItem, handleAssigneeDropdownChange]);
 
     const onExtraOptionSelected = useCallback(async (value: string) => {
         const updatedItem = {...props.checklistItem};

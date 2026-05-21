@@ -411,6 +411,24 @@ func (s *PlaybookRunService) GetOwners(ctx context.Context) ([]OwnerInfo, error)
 	return owners, nil
 }
 
+// ChangeOwner changes the owner of a playbook run.
+func (s *PlaybookRunService) ChangeOwner(ctx context.Context, playbookRunID, newOwnerID string) error {
+	ownerURL := fmt.Sprintf("runs/%s/owner", playbookRunID)
+	body := struct {
+		OwnerID string `json:"owner_id"`
+	}{OwnerID: newOwnerID}
+	req, err := s.client.newAPIRequest(http.MethodPost, ownerURL, body)
+	if err != nil {
+		return err
+	}
+	resp, err := s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
+}
+
 // GetPropertyFields gets all property fields for a run. It is a wrapper around GetPropertyFieldsSince with updatedSince set to 0.
 func (s *PlaybookRunService) GetPropertyFields(ctx context.Context, playbookRunID string) ([]PropertyField, error) {
 	return s.GetPropertyFieldsSince(ctx, playbookRunID, 0)

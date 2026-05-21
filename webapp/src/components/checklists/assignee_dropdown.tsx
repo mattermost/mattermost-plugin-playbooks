@@ -85,6 +85,16 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         [propertyFields],
     );
 
+    const roleOptions = useMemo(() => [
+        {value: ROLE_NONE, displayLabel: formatMessage({defaultMessage: 'None'})},
+        {value: AssigneeTypeOwner, displayLabel: formatMessage({defaultMessage: 'Run Owner — Resolves to run owner at creation'})},
+        {value: AssigneeTypeCreator, displayLabel: formatMessage({defaultMessage: 'Run Creator — Resolves to run creator at creation'})},
+        ...(userPropertyFields.length > 0 ? [{
+            value: AssigneeTypePropertyUser,
+            displayLabel: formatMessage({defaultMessage: 'Run User — Resolves to a user-type attribute at creation'}),
+        }] : []),
+    ], [formatMessage, userPropertyFields.length]);
+
     if (!editable && isRoleBasedAssigneeType(assigneeType)) {
         let resolvedUserId: string | undefined;
         let badgeLabel: string;
@@ -127,16 +137,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             </Container>
         );
     }
-
-    const roleOptions = [
-        {value: ROLE_NONE, displayLabel: formatMessage({defaultMessage: 'None'})},
-        {value: AssigneeTypeOwner, displayLabel: formatMessage({defaultMessage: 'Run Owner \u2014 Resolves to run owner at creation'})},
-        {value: AssigneeTypeCreator, displayLabel: formatMessage({defaultMessage: 'Run Creator \u2014 Resolves to run creator at creation'})},
-        ...(userPropertyFields.length > 0 ? [{
-            value: AssigneeTypePropertyUser,
-            displayLabel: formatMessage({defaultMessage: 'Run User \u2014 Resolves to a user-type attribute at creation'}),
-        }] : []),
-    ];
 
     return (
         <Container>
