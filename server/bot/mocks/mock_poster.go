@@ -61,7 +61,7 @@ func (mr *MockPosterMockRecorder) EphemeralPost(arg0, arg1, arg2 interface{}) *g
 }
 
 // EphemeralPostWithAttachments mocks base method.
-func (m *MockPoster) EphemeralPostWithAttachments(arg0, arg1, arg2 string, arg3 []*model.SlackAttachment, arg4 string, arg5 ...interface{}) {
+func (m *MockPoster) EphemeralPostWithAttachments(arg0, arg1, arg2 string, arg3 []*model.MessageAttachment, arg4 string, arg5 ...interface{}) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2, arg3, arg4}
 	for _, a := range arg5 {
@@ -120,7 +120,7 @@ func (mr *MockPosterMockRecorder) Post(arg0 interface{}) *gomock.Call {
 }
 
 // PostCustomMessageWithAttachments mocks base method.
-func (m *MockPoster) PostCustomMessageWithAttachments(arg0, arg1 string, arg2 []*model.SlackAttachment, arg3 string) (*model.Post, error) {
+func (m *MockPoster) PostCustomMessageWithAttachments(arg0, arg1 string, arg2 []*model.MessageAttachment, arg3 string) (*model.Post, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PostCustomMessageWithAttachments", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*model.Post)
@@ -135,7 +135,7 @@ func (mr *MockPosterMockRecorder) PostCustomMessageWithAttachments(arg0, arg1, a
 }
 
 // PostCustomMessageWithAttachmentsf mocks base method.
-func (m *MockPoster) PostCustomMessageWithAttachmentsf(arg0, arg1 string, arg2 []*model.SlackAttachment, arg3 string, arg4 ...interface{}) (*model.Post, error) {
+func (m *MockPoster) PostCustomMessageWithAttachmentsf(arg0, arg1 string, arg2 []*model.MessageAttachment, arg3 string, arg4 ...interface{}) (*model.Post, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2, arg3}
 	for _, a := range arg4 {
@@ -189,7 +189,7 @@ func (mr *MockPosterMockRecorder) PostMessageToThread(arg0, arg1 interface{}) *g
 }
 
 // PostMessageWithAttachments mocks base method.
-func (m *MockPoster) PostMessageWithAttachments(arg0 string, arg1 []*model.SlackAttachment, arg2 string, arg3 ...interface{}) (*model.Post, error) {
+func (m *MockPoster) PostMessageWithAttachments(arg0 string, arg1 []*model.MessageAttachment, arg2 string, arg3 ...interface{}) (*model.Post, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {

@@ -1487,7 +1487,7 @@ func TestIgnoreKeywords(t *testing.T) {
 			ChannelId: e.BasicPrivateChannel.Id,
 			Message:   "test message",
 			Props: model.StringInterface{
-				"attachments": []*model.SlackAttachment{
+				"attachments": []*model.MessageAttachment{
 					{
 						Actions: []*model.PostAction{
 							{
@@ -1531,7 +1531,7 @@ func TestIgnoreKeywords(t *testing.T) {
 			ChannelId: e.BasicPrivateChannel.Id,
 			Message:   "test message",
 			Props: model.StringInterface{
-				"attachments": []*model.SlackAttachment{
+				"attachments": []*model.MessageAttachment{
 					{
 						Actions: []*model.PostAction{
 							{
