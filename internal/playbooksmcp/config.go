@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package playbooksmcp
 
 // Version is the version of the MCP server, used by both transports.
