@@ -102,7 +102,7 @@ func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body 
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if c.handler == nil {
-		return fmt.Errorf("Playbooks HTTP handler is nil")
+		return fmt.Errorf("playbooks HTTP handler is nil")
 	}
 	recorder := newPluginMCPResponseRecorder()
 	c.handler.ServeHTTP(recorder, req)

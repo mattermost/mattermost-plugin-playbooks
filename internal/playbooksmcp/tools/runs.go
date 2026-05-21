@@ -390,11 +390,11 @@ func formatListRuns(resp listRunsResponse) string {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Found %d runs (showing %d):\n\n", resp.TotalCount, len(resp.Items)))
+	fmt.Fprintf(&sb, "Found %d runs (showing %d):\n\n", resp.TotalCount, len(resp.Items))
 
 	for _, r := range resp.Items {
-		sb.WriteString(fmt.Sprintf("- **%s** (ID: %s)\n", r.Name, r.ID))
-		sb.WriteString(fmt.Sprintf("  Type: %s | Status: %s | Owner: %s | Playbook: %s\n", r.Type, r.CurrentStatus, r.OwnerUserID, r.PlaybookID))
+		fmt.Fprintf(&sb, "- **%s** (ID: %s)\n", r.Name, r.ID)
+		fmt.Fprintf(&sb, "  Type: %s | Status: %s | Owner: %s | Playbook: %s\n", r.Type, r.CurrentStatus, r.OwnerUserID, r.PlaybookID)
 	}
 
 	if resp.HasMore {
