@@ -61,11 +61,10 @@ func (c *PlaybooksClient) doRequest(ctx context.Context, method, endpoint string
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		respBody, readErr := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
-		if readErr != nil {
+		if _, readErr := io.Copy(io.Discard, io.LimitReader(resp.Body, 64*1024)); readErr != nil {
 			return fmt.Errorf("API error (status %d); could not read response body: %w", resp.StatusCode, readErr)
 		}
-		return fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(respBody))
+		return fmt.Errorf("API error (status %d)", resp.StatusCode)
 	}
 
 	if result != nil {
@@ -120,8 +119,8 @@ func (c *PlaybooksClient) GetCurrentUserID(ctx context.Context) (string, error) 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
-		return "", fmt.Errorf("token validation failed (status %d): %s", resp.StatusCode, string(respBody))
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64*1024))
+		return "", fmt.Errorf("token validation failed (status %d)", resp.StatusCode)
 	}
 
 	var user struct {
@@ -129,6 +128,9 @@ func (c *PlaybooksClient) GetCurrentUserID(ctx context.Context) (string, error) 
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
 		return "", fmt.Errorf("failed to decode user response: %w", err)
+	}
+	if user.ID == "" {
+		return "", fmt.Errorf("token validation failed: missing user id in response")
 	}
 
 	return user.ID, nil
