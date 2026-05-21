@@ -338,17 +338,16 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     {formatMessage({defaultMessage: 'This playbook requires a new channel for each run'})}
                 </HelpText>
             )}
-            {!newChannelOnly && (
-                <ChannelBlock>
-                    <StyledRadioInput
-                        data-testid={'link-existing-channel-radio'}
-                        type='radio'
-                        checked={linkExistingChannel}
-                        onChange={() => onSetChannelMode('link_existing_channel')}
-                    />
-                    <FormattedMessage defaultMessage='Link to an existing channel'/>
-                </ChannelBlock>
-            )}
+            <ChannelBlock>
+                <StyledRadioInput
+                    data-testid={'link-existing-channel-radio'}
+                    type='radio'
+                    checked={linkExistingChannel}
+                    disabled={newChannelOnly}
+                    onChange={() => onSetChannelMode('link_existing_channel')}
+                />
+                <FormattedMessage defaultMessage='Link to an existing channel'/>
+            </ChannelBlock>
             {linkExistingChannel && (
                 <SelectorWrapper>
                     <StyledChannelSelector
