@@ -2196,3 +2196,11 @@ func TestAdminOnlyEdit_PropertyFields(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func float64Ptr(f float64) *float64 {
+	return &f
+}
