@@ -177,6 +177,9 @@ func (p *PlaybooksToolProvider) addMCPHelperRunTools(server *mcphelper.Server) {
 
 func toolListRuns(ctx context.Context, client APIClient, args ListRunsArgs) (string, error) {
 	params := url.Values{}
+	if args.Page < 0 {
+		return "", fmt.Errorf("page must be >= 0")
+	}
 	if args.TeamID != "" {
 		params.Set("team_id", args.TeamID)
 	}
@@ -297,7 +300,7 @@ func toolUpdateRunStatus(ctx context.Context, client APIClient, args UpdateRunSt
 	if err := validateID(args.RunID, "run_id"); err != nil {
 		return "", err
 	}
-	if args.Message == "" {
+	if strings.TrimSpace(args.Message) == "" {
 		return "", fmt.Errorf("message is required")
 	}
 
