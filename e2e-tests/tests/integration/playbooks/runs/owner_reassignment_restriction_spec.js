@@ -18,6 +18,8 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
     let testNewOwner;
     let testPlaybook;
     let testPlaybookRun;
+    let inlinePlaybook;
+    let inlineRun;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -78,6 +80,14 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         cy.apiAdminLogin();
         if (testPlaybookRun) {
             cy.apiFinishRun(testPlaybookRun.id);
+        }
+        if (inlineRun) {
+            cy.apiFinishRun(inlineRun.id);
+            inlineRun = null;
+        }
+        if (inlinePlaybook) {
+            cy.apiArchivePlaybook(inlinePlaybook.id);
+            inlinePlaybook = null;
         }
     });
 
@@ -195,12 +205,14 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
             makePublic: true,
             createPublicPlaybookRun: true,
         }).then((playbook) => {
+            inlinePlaybook = playbook;
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: playbook.id,
                 playbookRunName: 'Open Ownership Run ' + getRandomId(),
                 ownerUserId: testOwner.id,
             }).then((run) => {
+                inlineRun = run;
                 cy.apiAddUsersToRun(run.id, [testParticipant.id, testNewOwner.id]);
                 cy.apiLogin(testParticipant);
                 cy.playbooksVisitRunChannel(testTeam.name, run);
