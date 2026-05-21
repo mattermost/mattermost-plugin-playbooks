@@ -15,7 +15,6 @@ import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
 
 import StatusUpdates from './section_status_updates';
@@ -28,20 +27,20 @@ interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
     canEdit: boolean;
-    restPlaybook?: PlaybookWithChecklist;
+    adminOnlyEdit?: boolean;
     showAdminSettings?: boolean;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = false}: Props) => {
+const Outline = ({playbook, refetch, canEdit, adminOnlyEdit, showAdminSettings = false}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
     const toaster = useToaster();
     const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
-    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
+    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? adminOnlyEdit ?? false;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -76,7 +75,7 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     };
 
     const handleAdminOnlyEditChange = (value: boolean) => {
-        if (archived || !playbook.id) {
+        if (archived) {
             return;
         }
         const prev = effectiveAdminOnlyEdit;
@@ -136,13 +135,15 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
             >
                 <StatusUpdates
                     playbook={playbook}
+                    canEdit={canEdit}
                 />
             </Section>
             <Section
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Tasks'})}
-                headerRight={archived ? undefined : (
+                headerRight={archived || !canEdit ? undefined : (
                     <BulkEditButton
+                        data-testid='bulk-edit-button'
                         $active={bulkEditMode}
                         onClick={() => setBulkEditMode(!bulkEditMode)}
                     >
@@ -183,6 +184,7 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
                 <Retrospective
                     playbook={playbook}
                     refetch={refetch}
+                    canEdit={canEdit}
                 />
             </Section>
             <Section
@@ -191,9 +193,10 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
             >
                 <Actions
                     playbook={playbook}
+                    canEdit={canEdit}
                 />
             </Section>
-            {showAdminSettings && restPlaybook && (
+            {showAdminSettings && (
                 <Section
                     id={'admin-edit-settings'}
                     title={formatMessage({defaultMessage: 'Settings'})}

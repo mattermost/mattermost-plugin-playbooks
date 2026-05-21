@@ -19,6 +19,7 @@ interface Props {
     updateField: (field: PropertyField) => void;
     existingNames: string[];
     autoFocus?: boolean;
+    disabled?: boolean;
 }
 
 export interface PropertyNameInputRef {
@@ -26,7 +27,7 @@ export interface PropertyNameInputRef {
     select: () => void;
 }
 
-const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updateField, existingNames, autoFocus}, ref) => {
+const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updateField, existingNames, autoFocus, disabled}, ref) => {
     const {formatMessage} = useIntl();
 
     const [localValue, setLocalValue] = useState<string | null>(null);
@@ -131,6 +132,7 @@ const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updat
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 $hasError={Boolean(errorMessage)}
+                disabled={disabled}
             />
             {errorMessage && (
                 <ErrorMessage>{errorMessage}</ErrorMessage>

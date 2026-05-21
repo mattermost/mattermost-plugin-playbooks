@@ -11,7 +11,7 @@
 
 import {getRandomId} from '../../../../utils';
 
-describe('playbooks > edit > admin only edit', () => {
+describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
     let testTeam;
     let testAdminUser;
     let testMemberUser;
@@ -19,13 +19,13 @@ describe('playbooks > edit > admin only edit', () => {
     let testPlaybook;
 
     before(() => {
-        cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-            testSysadminUser = sysadmin;
-        });
-
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testAdminUser = user;
+
+            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
+                testSysadminUser = sysadmin;
+            });
 
             // # Create a regular (non-admin) playbook member
             cy.apiCreateUser().then(({user: newUser}) => {
@@ -88,10 +88,12 @@ describe('playbooks > edit > admin only edit', () => {
     });
 
     it('playbook admin enables admin_only_edit via UI toggle and persists after reload', () => {
+        cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/**').as('savePlaybook');
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
         // # Click the toggle label to enable
         cy.findByTestId('admin-only-edit-toggle').find('label').click();
+        cy.wait('@savePlaybook');
 
         // * Checkbox should now be checked
         cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('be.checked');
@@ -108,6 +110,8 @@ describe('playbooks > edit > admin only edit', () => {
     });
 
     it('playbook admin disables admin_only_edit via UI toggle', () => {
+        cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/**').as('savePlaybook');
+
         // # Enable via API as the playbook admin
         cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
             cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
@@ -120,6 +124,7 @@ describe('playbooks > edit > admin only edit', () => {
 
         // # Click to disable
         cy.findByTestId('admin-only-edit-toggle').find('label').click();
+        cy.wait('@savePlaybook');
 
         // * Checkbox should now be unchecked
         cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('not.be.checked');
@@ -206,14 +211,20 @@ describe('playbooks > edit > admin only edit', () => {
             cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
         });
 
-        // # Attempt duplication as a plain member — must be denied
+        // # Login as non-admin member and navigate to the playbooks list
         cy.apiLogin(testMemberUser);
-        cy.request({
-            headers: {'X-Requested-With': 'XMLHttpRequest'},
-            url: `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`,
-            method: 'POST',
-            failOnStatusCode: false,
-        }).its('status').should('eq', 403);
+        cy.visit('/playbooks');
+        cy.findByTestId('playbooksLHSButton').click();
+
+        // # Open the dot menu for the locked playbook and click Duplicate
+        cy.contains('[data-testid="playbook-item"]', testPlaybook.title).within(() => {
+            cy.findByTestId('menuButtonActions').click();
+        });
+        cy.findByText('Duplicate').click();
+
+        // * Verify duplication was denied — no success toast and no copy in the list
+        cy.findByText('Successfully duplicated playbook').should('not.exist');
+        cy.findByText('Copy of ' + testPlaybook.title).should('not.exist');
     });
 
     it('playbook admin can duplicate an admin-locked playbook', () => {
@@ -222,34 +233,43 @@ describe('playbooks > edit > admin only edit', () => {
             cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
         });
 
-        // # Playbook admin duplicates — succeeds, new copy is editable by the duplicator
-        cy.request({
-            headers: {'X-Requested-With': 'XMLHttpRequest'},
-            url: `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`,
-            method: 'POST',
-        }).then((resp) => {
-            expect(resp.status).to.equal(201);
-            expect(resp.body.id).to.be.a('string');
-            expect(resp.body.id).to.not.equal(testPlaybook.id);
+        // # Navigate to the playbooks list as playbook admin (already logged in via beforeEach)
+        cy.visit('/playbooks');
+        cy.findByTestId('playbooksLHSButton').click();
+
+        // # Open the dot menu and click Duplicate
+        cy.contains('[data-testid="playbook-item"]', testPlaybook.title).within(() => {
+            cy.findByTestId('menuButtonActions').click();
         });
+        cy.findByText('Duplicate').click();
+
+        // * Verify duplication succeeded
+        cy.findByText('Successfully duplicated playbook').should('be.visible');
+        cy.contains('Copy of ' + testPlaybook.title).should('be.visible');
     });
 
     it('any user with create permission can import an admin_only_edit playbook', () => {
-        // # Export as admin to get a valid payload with the correct version, then override
-        // # admin_only_edit (excluded from export) before importing as a plain member.
+        // # Export as admin to get a valid payload, then inject admin_only_edit to simulate
+        // # a payload where the flag is set — the import should succeed and strip the flag.
         cy.apiExportPlaybook(testPlaybook.id).then((exportData) => {
-            const payload = {...exportData, admin_only_edit: true};
+            const importFile = {
+                fileName: 'admin-only-import.json',
+                contents: Cypress.Buffer.from(JSON.stringify({...exportData, admin_only_edit: true})),
+                mimeType: 'application/json',
+            };
 
+            // # Login as member user and open the playbooks list
             cy.apiLogin(testMemberUser);
-            cy.request({
-                headers: {'X-Requested-With': 'XMLHttpRequest'},
-                url: `/plugins/playbooks/api/v0/playbooks/import?team_id=${testTeam.id}`,
-                method: 'POST',
-                body: payload,
-            }).then((resp) => {
-                expect(resp.status).to.equal(201);
-                expect(resp.body.id).to.be.a('string');
+            cy.visit('/playbooks');
+            cy.findByTestId('playbooksLHSButton').click();
+
+            // # Upload via the import button
+            cy.findByTestId('titlePlaybook').within(() => {
+                cy.findByTestId('playbook-import-input').selectFile(importFile, {force: true});
             });
+
+            // * Verify the import succeeded — editor opens with the playbook title
+            cy.findByTestId('playbook-editor-title').should('contain', testPlaybook.title);
         });
     });
 });

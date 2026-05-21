@@ -7,8 +7,7 @@ import React from 'react';
 import renderer, {act} from 'react-test-renderer';
 
 import {clientFetchPlaybook, savePlaybook} from 'src/client';
-import {makeBasePlaybook} from 'src/utils/test_helpers';
-import {PlaybookWithChecklist} from 'src/types/playbook';
+import {findNodeByTestId} from 'src/utils/test_helpers';
 
 jest.mock('src/client', () => ({savePlaybook: jest.fn(), clientFetchPlaybook: jest.fn(), getSiteUrl: () => ''}));
 jest.mock('src/graphql/hooks', () => ({useUpdatePlaybook: () => jest.fn()}));
@@ -22,11 +21,29 @@ jest.mock('src/components/markdown_edit', () => () => null);
 jest.mock('src/components/checklist/checklist_list', () => () => null);
 jest.mock('src/components/playbook_actions_modal', () => () => null);
 jest.mock('src/components/backstage/playbook_edit/automation/toggle', () => ({Toggle: () => null}));
-jest.mock('./section', () => ({__esModule: true, default: ({children}: {children: React.ReactNode}) => <>{children}</>}));
-jest.mock('./section_status_updates', () => () => null);
-jest.mock('./section_retrospective', () => () => null);
-jest.mock('./section_actions', () => () => null);
+jest.mock('./section', () => ({__esModule: true, default: ({children, headerRight}: {children: React.ReactNode; headerRight?: React.ReactNode}) => <>{headerRight}{children}</>}));
 jest.mock('./scroll_nav', () => () => null);
+
+type SectionStatusUpdatesProps = {canEdit?: boolean};
+let statusUpdatesProps: SectionStatusUpdatesProps | null = null;
+jest.mock('./section_status_updates', () => (props: SectionStatusUpdatesProps) => {
+    statusUpdatesProps = props;
+    return null;
+});
+
+type SectionRetrospectiveProps = {canEdit?: boolean};
+let retrospectiveProps: SectionRetrospectiveProps | null = null;
+jest.mock('./section_retrospective', () => (props: SectionRetrospectiveProps) => {
+    retrospectiveProps = props;
+    return null;
+});
+
+type SectionActionsProps = {canEdit?: boolean};
+let actionsProps: SectionActionsProps | null = null;
+jest.mock('./section_actions', () => (props: SectionActionsProps) => {
+    actionsProps = props;
+    return null;
+});
 
 // Capture the props passed to AdminOnlyEditToggle so tests can drive and inspect state.
 type ToggleProps = {isChecked: boolean; onChange: (value: boolean) => void};
@@ -59,9 +76,6 @@ const makeFullPlaybook = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
 });
 
-const makeRestPlaybook = (adminOnlyEdit: boolean) =>
-    makeBasePlaybook({admin_only_edit: adminOnlyEdit}) as unknown as PlaybookWithChecklist;
-
 const renderOutline = (
     adminOnlyEdit: boolean,
     archived = false,
@@ -72,7 +86,7 @@ const renderOutline = (
             playbook={makeFullPlaybook({delete_at: archived ? 1 : 0}) as any}
             refetch={jest.fn()}
             canEdit={true}
-            restPlaybook={makeRestPlaybook(adminOnlyEdit)}
+            adminOnlyEdit={adminOnlyEdit}
             showAdminSettings={showAdminSettings}
         />,
     );
@@ -81,7 +95,10 @@ describe('Outline > handleAdminOnlyEditChange', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         toggleProps = null;
-        mockClientFetchPlaybook.mockResolvedValue(makeRestPlaybook(false) as any);
+        statusUpdatesProps = null;
+        retrospectiveProps = null;
+        actionsProps = null;
+        mockClientFetchPlaybook.mockResolvedValue(makeFullPlaybook({admin_only_edit: false}) as any);
     });
 
     it('calls savePlaybook with the toggled value', async () => {
@@ -182,5 +199,74 @@ describe('Outline > handleAdminOnlyEditChange', () => {
         renderOutline(false, false, {showAdminSettings: false});
 
         expect(toggleProps).toBeNull();
+    });
+});
+
+const renderOutlineWithCanEdit = (canEdit: boolean, archived = false) =>
+    renderer.create(
+        <Outline
+            playbook={makeFullPlaybook({delete_at: archived ? 1 : 0}) as any}
+            refetch={jest.fn()}
+            canEdit={canEdit}
+            adminOnlyEdit={false}
+            showAdminSettings={true}
+        />,
+    );
+
+const hasBulkEditButton = (tree: any): boolean => findNodeByTestId(tree, 'bulk-edit-button') !== null;
+
+describe('Outline > canEdit behavior', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        toggleProps = null;
+        statusUpdatesProps = null;
+        retrospectiveProps = null;
+        actionsProps = null;
+        mockClientFetchPlaybook.mockResolvedValue(makeFullPlaybook({admin_only_edit: false}) as any);
+    });
+
+    it('hides the bulk edit button when canEdit is false', () => {
+        const component = renderOutlineWithCanEdit(false);
+        expect(hasBulkEditButton(component.toJSON())).toBe(false);
+    });
+
+    it('shows the bulk edit button when canEdit is true', () => {
+        const component = renderOutlineWithCanEdit(true);
+        expect(hasBulkEditButton(component.toJSON())).toBe(true);
+    });
+
+    it('hides the bulk edit button when archived even if canEdit is true', () => {
+        const component = renderOutlineWithCanEdit(true, true);
+        expect(hasBulkEditButton(component.toJSON())).toBe(false);
+    });
+
+    it('passes canEdit=false to StatusUpdates', () => {
+        renderOutlineWithCanEdit(false);
+        expect(statusUpdatesProps?.canEdit).toBe(false);
+    });
+
+    it('passes canEdit=true to StatusUpdates', () => {
+        renderOutlineWithCanEdit(true);
+        expect(statusUpdatesProps?.canEdit).toBe(true);
+    });
+
+    it('passes canEdit=false to Retrospective', () => {
+        renderOutlineWithCanEdit(false);
+        expect(retrospectiveProps?.canEdit).toBe(false);
+    });
+
+    it('passes canEdit=true to Retrospective', () => {
+        renderOutlineWithCanEdit(true);
+        expect(retrospectiveProps?.canEdit).toBe(true);
+    });
+
+    it('passes canEdit=false to Actions', () => {
+        renderOutlineWithCanEdit(false);
+        expect(actionsProps?.canEdit).toBe(false);
+    });
+
+    it('passes canEdit=true to Actions', () => {
+        renderOutlineWithCanEdit(true);
+        expect(actionsProps?.canEdit).toBe(true);
     });
 });

@@ -23,10 +23,10 @@ import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
+import {isCurrentUserAdmin} from 'src/selectors';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
-import {useIsSystemAdmin} from 'src/hooks/permissions';
 import {useAllowPlaybookAttributes} from 'src/hooks/license';
 import {PlaybookRole} from 'src/types/permissions';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
@@ -60,7 +60,7 @@ const PlaybookEditor = () => {
     const stats = useStats(playbookId);
     const currentUserId = useAppSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
-    const isSystemAdmin = useIsSystemAdmin();
+    const isSystemAdmin = useAppSelector(isCurrentUserAdmin);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -83,16 +83,15 @@ const PlaybookEditor = () => {
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
     const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
 
-    const canEdit = restPlaybook == null ?
-        false :
-        !(restPlaybook.admin_only_edit) || isPlaybookAdmin || isSystemAdmin;
+    const adminOnlyEdit = restPlaybook?.admin_only_edit ?? false;
+    const canEdit = restPlaybook != null && (!adminOnlyEdit || isPlaybookAdmin || isSystemAdmin);
 
     if (error) {
         // not found
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
-    if (loading || !playbook || restPlaybook === undefined) {
+    if (loading || !playbook) {
         // loading
         return null;
     }
@@ -289,6 +288,7 @@ const PlaybookEditor = () => {
                     >
                         <PlaybookProperties
                             playbookID={playbook.id}
+                            canEdit={canEdit}
                         />
                     </Route>
                 )}
@@ -300,9 +300,8 @@ const PlaybookEditor = () => {
                         playbook={playbook}
                         refetch={refetch}
                         canEdit={canEdit}
-                        restPlaybook={restPlaybook ?? undefined}
-                        showAdminSettings={isSystemAdmin || isPlaybookAdmin}
-
+                        adminOnlyEdit={adminOnlyEdit}
+                        showAdminSettings={restPlaybook != null && (isSystemAdmin || isPlaybookAdmin)}
                     />
                 </Route>
                 <Route
