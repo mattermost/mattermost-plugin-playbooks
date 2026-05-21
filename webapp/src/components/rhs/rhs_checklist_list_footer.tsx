@@ -4,8 +4,8 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import styled from 'styled-components';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {DateTime} from 'luxon';
 
 import {
@@ -22,7 +22,6 @@ import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {finishRun} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
-import {OVERLAY_DELAY} from 'src/constants';
 
 import {ChecklistParent} from './rhs_checklist_list';
 
@@ -66,20 +65,15 @@ const RHSFooter = ({
                 <ParticipateContent>
                     <ParticipateText>{formatMessage({defaultMessage: 'Join to make changes or interact'})}</ParticipateText>
                     <ParticipateRightWrapper>
-                        <OverlayTrigger
-                            placement='top'
-                            delay={OVERLAY_DELAY}
-                            overlay={
-                                <Tooltip id='participate-tooltip'>
-                                    {formatMessage({defaultMessage: 'Join as a participant'})}
-                                </Tooltip>
-                            }
+                        <WithTooltip
+                            id='participate-tooltip'
+                            title={formatMessage({defaultMessage: 'Join as a participant'})}
                         >
                             <ParticipateButton onClick={showParticipateConfirm}>
                                 <AccountPlusOutlineIcon size={16}/>
                                 {formatMessage({defaultMessage: 'Join'})}
                             </ParticipateButton>
-                        </OverlayTrigger>
+                        </WithTooltip>
                     </ParticipateRightWrapper>
                 </ParticipateContent>
             </ParticipatePrompt>
@@ -147,15 +141,9 @@ const RHSFooter = ({
                                 }
                             </ResumeButton>
                         ) : (
-                            <OverlayTrigger
-                                placement='top'
-                                delay={OVERLAY_DELAY}
-                                overlay={
-                                    <Tooltip id='resume-disabled-tooltip'>
-                                        {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to restart'})
-                                        }
-                                    </Tooltip>
-                                }
+                            <WithTooltip
+                                id='resume-disabled-tooltip'
+                                title={playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to restart'})}
                             >
                                 <ResumeButtonWrapper>
                                     <ResumeButton
@@ -166,7 +154,7 @@ const RHSFooter = ({
                                         }
                                     </ResumeButton>
                                 </ResumeButtonWrapper>
-                            </OverlayTrigger>
+                            </WithTooltip>
                         )}
                     </FinishedRightWrapper>
                 </FinishedIndicator>

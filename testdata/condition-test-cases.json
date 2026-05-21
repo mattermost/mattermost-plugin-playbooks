@@ -9,9 +9,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -25,12 +28,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -51,9 +57,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -67,12 +76,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -93,9 +105,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -109,12 +124,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -135,9 +153,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -151,12 +172,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -177,9 +201,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -193,12 +220,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -219,9 +249,12 @@
         "type": "select",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -238,12 +271,15 @@
         "id": "value_select1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "select1",
         "value": "option1",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -264,9 +300,12 @@
         "type": "select",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -283,12 +322,15 @@
         "id": "value_select1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "select1",
         "value": "option1",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -309,9 +351,12 @@
         "type": "select",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -328,12 +373,15 @@
         "id": "value_select1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "select1",
         "value": "option1",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -354,9 +402,12 @@
         "type": "select",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -373,12 +424,15 @@
         "id": "value_select1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "select1",
         "value": "option1",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -399,9 +453,12 @@
         "type": "multiselect",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -419,12 +476,15 @@
         "id": "value_multi1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "multi1",
         "value": ["cat_a", "cat_b"],
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -445,9 +505,12 @@
         "type": "multiselect",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -465,12 +528,15 @@
         "id": "value_multi1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "multi1",
         "value": ["cat_a", "cat_b"],
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -491,9 +557,12 @@
         "type": "multiselect",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -511,12 +580,15 @@
         "id": "value_multi1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "multi1",
         "value": ["cat_a", "cat_b"],
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -537,9 +609,12 @@
         "type": "multiselect",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -557,12 +632,15 @@
         "id": "value_multi1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "multi1",
         "value": ["cat_a", "cat_b"],
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -583,9 +661,12 @@
         "type": "multiselect",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -603,12 +684,15 @@
         "id": "value_multi1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "multi1",
         "value": ["cat_a", "cat_b"],
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -629,9 +713,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -646,9 +733,12 @@
         "type": "select",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -665,23 +755,29 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       },
       {
         "id": "value_select1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "select1",
         "value": "option1",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -712,9 +808,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -729,9 +828,12 @@
         "type": "select",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -748,23 +850,29 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       },
       {
         "id": "value_select1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "select1",
         "value": "option1",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -795,9 +903,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -812,9 +923,12 @@
         "type": "select",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -831,23 +945,29 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       },
       {
         "id": "value_select1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "select1",
         "value": "option1",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -878,9 +998,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -895,9 +1018,12 @@
         "type": "select",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -914,23 +1040,29 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       },
       {
         "id": "value_select1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "select1",
         "value": "option1",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -961,9 +1093,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -978,9 +1113,12 @@
         "type": "multiselect",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -997,23 +1135,29 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       },
       {
         "id": "value_multi1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "multi1",
         "value": ["cat_a", "cat_b"],
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -1054,9 +1198,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -1070,12 +1217,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -1096,9 +1246,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -1112,12 +1265,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -1138,9 +1294,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -1155,9 +1314,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -1171,12 +1333,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {
@@ -1197,9 +1362,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -1213,12 +1381,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "Hello World",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {},
@@ -1234,9 +1405,12 @@
         "type": "text",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "create_at": 123456789,
         "update_at": 123456789,
         "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1",
         "attrs": {
           "visibility": "default",
           "sort_order": 0,
@@ -1250,12 +1424,15 @@
         "id": "value_text1",
         "target_id": "target1",
         "target_type": "playbook",
+        "object_type": "playbook",
         "group_id": "group1",
         "field_id": "text1",
         "value": "",
         "create_at": 123456789,
         "update_at": 123456789,
-        "delete_at": 0
+        "delete_at": 0,
+        "created_by": "user1",
+        "updated_by": "user1"
       }
     ],
     "condition": {

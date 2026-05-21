@@ -96,7 +96,7 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
 
         it('has a copy-link icon', () => {
             // # Mouseover on the icon
-            getHeaderIcon('.icon-link-variant').trigger('mouseover');
+            getHeaderIcon('.icon-link-variant').trigger('mouseenter');
 
             // * Assert tooltip is shown
             cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');

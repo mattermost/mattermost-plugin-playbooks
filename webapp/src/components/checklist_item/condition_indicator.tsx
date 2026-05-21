@@ -5,7 +5,8 @@ import React from 'react';
 import styled from 'styled-components';
 import {SourceBranchIcon} from '@mattermost/compass-icons/components';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {ChecklistItem} from 'src/types/playbook';
 
 interface ConditionIndicatorProps {
@@ -23,9 +24,9 @@ const ConditionIndicator = ({checklistItem, tooltipMessage}: ConditionIndicatorP
     const iconColor = useErrorColor ? 'var(--error-text)' : 'rgba(var(--center-channel-color-rgb), 0.56)';
 
     return (
-        <Tooltip
+        <WithTooltip
             id={tooltipId}
-            content={tooltipMessage}
+            title={tooltipMessage}
         >
             <IconWrapper data-testid={useErrorColor ? 'condition-indicator-error' : 'condition-indicator'}>
                 <SourceBranchIcon
@@ -33,7 +34,7 @@ const ConditionIndicator = ({checklistItem, tooltipMessage}: ConditionIndicatorP
                     color={iconColor}
                 />
             </IconWrapper>
-        </Tooltip>
+        </WithTooltip>
     );
 };
 

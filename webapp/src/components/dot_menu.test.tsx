@@ -10,11 +10,6 @@ jest.mock('src/utils', () => ({
     useUniqueId: () => 'test-id',
 }));
 
-jest.mock('src/components/widgets/tooltip', () => ({
-    __esModule: true,
-    default: ({children}: {children: React.ReactNode}) => <>{children}</>,
-}));
-
 /* eslint-disable formatjs/no-literal-string-in-jsx */
 
 describe('DropdownMenuItem', () => {

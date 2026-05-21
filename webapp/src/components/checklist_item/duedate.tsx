@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useId, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import styled, {css} from 'styled-components';
@@ -11,8 +11,7 @@ import {
     Duration,
     DurationLikeObject,
 } from 'luxon';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
-
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {Placement} from '@floating-ui/react';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from 'src/components/datetime_selector';
@@ -29,7 +28,7 @@ import {Timestamp} from 'src/webapp_globals';
 import {useAllowSetTaskDueDate} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
-import {AdminNotificationType, OVERLAY_DELAY} from 'src/constants';
+import {AdminNotificationType} from 'src/constants';
 
 interface Props {
     date?: number;
@@ -76,6 +75,7 @@ export const DueDateHoverMenuButton = ({
     mode,
     ...props
 }: Props) => {
+    const tooltipId = useId();
     const {formatMessage} = useIntl();
     const dueDateEditAvailable = useAllowSetTaskDueDate();
     const makeOption = useMakeOption(Mode.DurationValue);
@@ -115,14 +115,12 @@ export const DueDateHoverMenuButton = ({
     const placeholder = dueDateEditAvailable ? (
         hoverMenuButton
     ) : (
-        <OverlayTrigger
-            placement='top'
-            delay={OVERLAY_DELAY}
-            shouldUpdatePosition={true}
-            overlay={<Tooltip id='due-date-tooltip'>{toolTip}</Tooltip>}
+        <WithTooltip
+            id={`due-date-hover-menu-tooltip-${tooltipId}`}
+            title={toolTip}
         >
             {hoverMenuButton}
-        </OverlayTrigger>
+        </WithTooltip>
     );
 
     return (
@@ -151,6 +149,7 @@ export const DueDateButton = ({
     ignoreOverdue,
     ...props
 }: Props) => {
+    const tooltipId = useId();
     const {formatMessage} = useIntl();
     const dueDateEditAvailable = useAllowSetTaskDueDate();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -238,14 +237,12 @@ export const DueDateButton = ({
     // Show tooltip with date info if date exists and not editable
     if (date && mode === Mode.DateTimeValue && !props.editable) {
         dueDateButton = (
-            <OverlayTrigger
-                placement='bottom'
-                delay={OVERLAY_DELAY}
-                shouldUpdatePosition={true}
-                overlay={<Tooltip id='due-date-tooltip'>{dueDateToolTip}</Tooltip>}
+            <WithTooltip
+                id={`due-date-tooltip-${tooltipId}`}
+                title={dueDateToolTip}
             >
                 {dueDateButton}
-            </OverlayTrigger>
+            </WithTooltip>
         );
     }
 
@@ -253,13 +250,12 @@ export const DueDateButton = ({
     if (!date) {
         const tooltipText = mode === Mode.DurationValue ? addTimeFrameToolTip : dueDatePlaceholderToolTip;
         dueDateButton = (
-            <OverlayTrigger
-                placement='top'
-                delay={OVERLAY_DELAY}
-                overlay={<Tooltip id='due-date-placeholder-tooltip'>{tooltipText}</Tooltip>}
+            <WithTooltip
+                id={`due-date-tooltip-${tooltipId}`}
+                title={tooltipText}
             >
                 {dueDateButton}
-            </OverlayTrigger>
+            </WithTooltip>
         );
     }
 
