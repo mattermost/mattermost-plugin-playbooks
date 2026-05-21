@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/internal/playbooksmcp/tools"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -26,7 +27,9 @@ func NewStdioServer(config StdioConfig) (*StdioServer, error) {
 	client := NewPlaybooksClient(config.MMServerURL, config.PersonalAccessToken)
 
 	// Validate token at startup.
-	if err := client.ValidateToken(context.Background()); err != nil {
+	validateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := client.ValidateToken(validateCtx); err != nil {
 		return nil, fmt.Errorf("startup token validation failed: %w", err)
 	}
 
