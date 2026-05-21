@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useRef,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -12,6 +17,10 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {savePlaybook} from 'src/client';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -22,17 +31,22 @@ import Section from './section';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
+    restPlaybook?: PlaybookWithChecklist;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch}: Props) => {
+const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
+    const toaster = useToaster();
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
+    const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
+    const savingNewChannelOnly = useRef(false);
+    const effectiveNewChannelOnly = newChannelOnlyOverride ?? restPlaybook?.new_channel_only ?? false;
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -42,6 +56,33 @@ const Outline = ({playbook, refetch}: Props) => {
     };
     const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
         setChecklistCollapseState(state);
+    };
+
+    const handleNewChannelOnlyChange = ({new_channel_only}: {new_channel_only: boolean}) => {
+        if (archived || !playbook.id || savingNewChannelOnly.current || !restPlaybook) {
+            return;
+        }
+        const prev = effectiveNewChannelOnly;
+        if (prev === new_channel_only) {
+            return;
+        }
+        setNewChannelOnlyOverride(new_channel_only);
+        savingNewChannelOnly.current = true;
+        const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
+        savePlaybook(updated)
+            .then(() => {
+                refetch();
+            })
+            .catch(() => {
+                setNewChannelOnlyOverride(prev);
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+            })
+            .finally(() => {
+                savingNewChannelOnly.current = false;
+            });
     };
 
     const toggleStatusUpdate = () => {
@@ -157,6 +198,8 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <Actions
                     playbook={playbook}
+                    newChannelOnly={effectiveNewChannelOnly}
+                    onNewChannelOnlyChange={restPlaybook ? handleNewChannelOnlyChange : undefined}
                 />
             </Section>
             <PlaybookActionsModal

@@ -110,7 +110,7 @@ jobs:
     needs:
       - go
     container:
-      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
