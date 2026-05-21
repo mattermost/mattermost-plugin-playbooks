@@ -298,41 +298,12 @@ describe('runs > run details page > status update > template token preview', {te
     let testUser;
     let testPlaybook;
     let testRun;
-    const prefix = 'TPL';
 
     before(() => {
         cy.apiAdminLogin();
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-            cy.apiLogin(testUser);
-
-            // # Create a playbook with a sequential ID prefix and a select property field
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Template Preview Playbook ' + getRandomId(),
-                memberIDs: [testUser.id],
-                makePublic: true,
-            }).then((playbook) => {
-                testPlaybook = playbook;
-
-                // # Set run_number_prefix so {SEQ} resolves to e.g. TPL-00001
-                cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: prefix}).then(() => {
-                    // # Add a Zone select field with two options
-                    cy.apiAddPropertyField(testPlaybook.id, {
-                        name: 'Zone',
-                        type: 'select',
-                        attrs: {
-                            visibility: 'always',
-                            sortOrder: 0,
-                            options: [
-                                {name: 'Alpha'},
-                                {name: 'Bravo'},
-                            ],
-                        },
-                    });
-                });
-            });
         });
     });
 
@@ -340,17 +311,51 @@ describe('runs > run details page > status update > template token preview', {te
         cy.viewport('macbook-13');
         cy.apiLogin(testUser);
 
-        // # Start a fresh run for each test
-        cy.apiRunPlaybook({
+        // # Create a fresh playbook per test so testPlaybook is always valid on retry/reload
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Template Preview Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            makePublic: true,
+        }).then((playbook) => {
+            testPlaybook = playbook;
+
+            // # Set run_number_prefix so {SEQ} resolves to e.g. TPL-00001
+            cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'TPL'}).then(() => {
+                // # Add a Zone select field with two options
+                cy.apiAddPropertyField(testPlaybook.id, {
+                    name: 'Zone',
+                    type: 'select',
+                    attrs: {
+                        visibility: 'always',
+                        sortOrder: 0,
+                        options: [
+                            {name: 'Alpha'},
+                            {name: 'Bravo'},
+                        ],
+                    },
+                });
+            });
+        });
+
+        // # Start a fresh run for each test (depends on testPlaybook set above)
+        cy.then(() => cy.apiRunPlaybook({
             teamId: testTeam.id,
             playbookId: testPlaybook.id,
             playbookRunName: 'Template Preview Run ' + getRandomId(),
             ownerUserId: testUser.id,
-        }).then((run) => {
+        })).then((run) => {
             testRun = run;
             cy.visit(`/playbooks/runs/${run.id}`);
             cy.assertRunDetailsPageRenderComplete(testUser.username);
         });
+    });
+
+    afterEach(() => {
+        cy.apiLogin(testUser);
+        if (testPlaybook) {
+            cy.apiArchivePlaybook(testPlaybook.id);
+        }
     });
 
     const openStatusUpdateModal = () => {

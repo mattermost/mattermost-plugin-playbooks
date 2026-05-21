@@ -478,9 +478,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     });
 
                     // * The DM channel was NOT fetched repeatedly (regression cap: <4 calls).
-                    //   The fetch storm (when the bug exists) originates from
-                    //   BroadcastChannelSelector mount and resolves within ~1s; TWO_SEC
-                    //   leaves slack without inflating CI cost.
+                    //   cy.wait('@alias') is not usable here: we're asserting an upper-bound
+                    //   on the number of fetches (≤3), not waiting for a specific fetch.
+                    //   TWO_SEC is the observation window; the fetch storm (bug scenario)
+                    //   originates from BroadcastChannelSelector mount and resolves within ~1s.
                     cy.wait(TWO_SEC); // eslint-disable-line cypress/no-unnecessary-waiting
                     cy.get('@getDMChannel.all').should('have.length.lessThan', 4);
 

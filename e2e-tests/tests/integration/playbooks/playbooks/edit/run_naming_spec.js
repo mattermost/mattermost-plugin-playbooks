@@ -9,7 +9,6 @@
 // Stage: @prod
 // Group: @playbooks
 
-import * as TIMEOUTS from '../../../../fixtures/timeouts';
 import {getRandomId} from '../../../../utils';
 
 describe('playbooks > edit > run naming', {testIsolation: true}, () => {
@@ -132,7 +131,6 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # the bug (if present) wipes the prefix during this window, so the assertion
         // # below would catch it on retry.
         cy.wait('@PatchPlaybook').its('response.statusCode').should('be.oneOf', [200, 204]);
-        cy.wait(TIMEOUTS.ONE_SEC);
 
         // * The prefix MUST NOT disappear from the input after the GraphQL refetch
         cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
@@ -263,7 +261,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
             // # Select the {OWNER} suggestion by clicking it directly (avoids index-order fragility)
             cy.findByTestId('channel-access-run-name-template-suggestions').within(() => {
-                cy.findByText('{OWNER}').click({force: true});
+                cy.findByText('{OWNER}').scrollIntoView().click();
             });
 
             // * The template input should now have the second suggestion appended (OWNER)
@@ -297,7 +295,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
             // # Select the {OWNER} suggestion by clicking it directly (avoids index-order fragility)
             cy.findByTestId('channel-access-run-name-template-suggestions').within(() => {
-                cy.findByText('{OWNER}').click({force: true});
+                cy.findByText('{OWNER}').scrollIntoView().click();
             });
 
             // * The template should have the token appended

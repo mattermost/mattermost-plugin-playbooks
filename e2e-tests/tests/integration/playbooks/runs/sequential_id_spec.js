@@ -373,13 +373,14 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                     memberIDs: [testUser.id],
                     createPublicPlaybookRun: true,
                 }).then((playbookOnSecondTeam) => {
+                    // Push to createdPlaybookIds so afterEach cleans it up even if the
+                    // assertion below fails (prevents a prefix leak on test retry).
+                    createdPlaybookIds.push(playbookOnSecondTeam.id);
+
                     // * Same prefix on a different team should succeed (200)
                     cy.apiPatchPlaybook(playbookOnSecondTeam.id, {run_number_prefix: sharedPrefix}).then((updated) => {
                         expect(updated.run_number_prefix).to.equal(sharedPrefix);
                     });
-
-                    // # Clean up second-team playbook
-                    cy.apiArchivePlaybook(playbookOnSecondTeam.id);
                 });
             });
         });

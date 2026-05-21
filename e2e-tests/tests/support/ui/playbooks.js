@@ -343,7 +343,7 @@ Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
     // Profiles are loaded asynchronously via useProfilesInTeam. The dropdown
     // options refresh once the API response arrives and Redux updates, so we
     // wait up to HALF_MIN for the option to become available.
-    cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
+    cy.contains('[class*="react-select__option"]', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
     cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
     cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
 });
@@ -389,8 +389,9 @@ Cypress.Commands.add('playbooksOpenRunModal', (playbookId) => {
  */
 Cypress.Commands.add('playbooksFinishRunViaRHS', (teamName, run) => {
     cy.playbooksVisitRunChannel(teamName, run);
-    cy.findByTestId('rhs-finish-section').findByRole('button', {name: /finish/i}).click();
-    cy.playbooksConfirmFinishModal();
+    cy.findByTestId('run-finish-section').findByRole('button', {name: /finish/i}).click();
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').get('#confirmModalButton').click();
 });
 
 /**
@@ -414,13 +415,19 @@ Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value, {typ
     });
 
     if (type === 'text') {
-        cy.focused().clear().type(value);
+        cy.focused().clear();
+        cy.focused().type(value);
         cy.get('body').click(0, 0);
     } else {
         cy.contains('.property-select__option', value).click();
     }
 
     cy.wait('@SetRunPropertyValue');
+
+    // Confirm the UI reflects the saved value before returning. This ensures
+    // the re-render triggered by the mutation has settled, preventing DOM
+    // detachment when callers chain multiple property sets sequentially.
+    cy.findByTestId(testId).should('contain', value);
 });
 
 /**
