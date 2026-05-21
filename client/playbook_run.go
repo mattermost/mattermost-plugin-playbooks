@@ -111,6 +111,8 @@ const (
 	RunRestored            TimelineEventType = "run_restored"
 	StatusUpdatesEnabled   TimelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  TimelineEventType = "status_updates_disabled"
+	RetrospectiveEnabled   TimelineEventType = "retrospective_enabled"
+	RetrospectiveDisabled  TimelineEventType = "retrospective_disabled"
 )
 
 // TimelineEvent represents an event recorded to a playbook run's timeline.
@@ -291,8 +293,8 @@ type StatusUpdateOptions struct {
 
 // PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
 type PlaybookRunUpdateOptions struct {
-	Name        *string `json:"name,omitempty"`
-	Summary     *string `json:"summary,omitempty"`
+	Name    *string `json:"name,omitempty"`
+	Summary *string `json:"summary,omitempty"`
 }
 
 type RunMetricData struct {

@@ -2,6 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {isSystemAdmin} from 'mattermost-redux/utils/user_utils';
 
 import {useAppSelector} from 'src/hooks/redux';
 
@@ -145,6 +147,16 @@ export const useCanAdminRun = (run: RunPermissionFields | null | undefined, curr
 
     // For playbook runs, only owner or admin can delete
     return run.owner_user_id === currentUserId;
+};
+
+export const useCanToggleRunRetrospective = (run: RunPermissionFields | null | undefined, currentUserId: string): boolean => {
+    const currentUserRoles = useAppSelector((state) => getCurrentUser(state)?.roles ?? '');
+
+    if (!run) {
+        return false;
+    }
+
+    return run.owner_user_id === currentUserId || isSystemAdmin(currentUserRoles);
 };
 
 /**
