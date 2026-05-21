@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -487,7 +488,7 @@ func TestPlaybookUpdate(t *testing.T) {
 
 	t.Run("update playbook with too many webhoooks", func(t *testing.T) {
 		urls := []string{}
-		for i := 0; i < 65; i++ {
+		for i := range 65 {
 			urls = append(urls, "http://localhost/"+strconv.Itoa(i))
 		}
 		e.BasicPlaybook.WebhookOnCreationEnabled = true
@@ -1487,10 +1488,10 @@ func TestPlaybooksImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify properties key exists in export JSON
-		var exportData map[string]interface{}
+		var exportData map[string]any
 		err = json.Unmarshal(result, &exportData)
 		require.NoError(t, err)
-		props, ok := exportData["properties"].([]interface{})
+		props, ok := exportData["properties"].([]any)
 		require.True(t, ok, "export should contain properties")
 		require.Len(t, props, 1)
 
@@ -1507,7 +1508,7 @@ func TestPlaybooksImportExport(t *testing.T) {
 		assert.NotEqual(t, createdField.ID, newFields[0].ID, "imported property should have a new ID")
 
 		// Extract and verify options from Attrs
-		rawOptions, ok := newFields[0].Attrs["options"].([]interface{})
+		rawOptions, ok := newFields[0].Attrs["options"].([]any)
 		require.True(t, ok, "options should be present in attrs")
 		assert.Len(t, rawOptions, 2, "options should be preserved")
 	})
@@ -1549,9 +1550,9 @@ func TestPlaybooksImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// Extract the first option ID from Attrs
-		rawOptions, ok := createdField.Attrs["options"].([]interface{})
+		rawOptions, ok := createdField.Attrs["options"].([]any)
 		require.True(t, ok)
-		firstOpt, ok := rawOptions[0].(map[string]interface{})
+		firstOpt, ok := rawOptions[0].(map[string]any)
 		require.True(t, ok)
 		optionID, ok := firstOpt["id"].(string)
 		require.True(t, ok)
@@ -1577,15 +1578,15 @@ func TestPlaybooksImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify export has both properties and conditions
-		var exportData map[string]interface{}
+		var exportData map[string]any
 		err = json.Unmarshal(result, &exportData)
 		require.NoError(t, err)
 
-		props, ok := exportData["properties"].([]interface{})
+		props, ok := exportData["properties"].([]any)
 		require.True(t, ok, "export should contain properties")
 		require.Len(t, props, 1)
 
-		conds, ok := exportData["conditions"].([]interface{})
+		conds, ok := exportData["conditions"].([]any)
 		require.True(t, ok, "export should contain conditions")
 		require.Len(t, conds, 1)
 
@@ -1688,7 +1689,7 @@ func TestAddPostToTimeline(t *testing.T) {
 		TeamId: e.BasicTeam.Id,
 		UserId: e.RegularUser.Id,
 		State:  fmt.Sprintf(`{"post_id": "%s"}`, e.BasicPublicChannelPost.Id),
-		Submission: map[string]interface{}{
+		Submission: map[string]any{
 			app.DialogFieldPlaybookRunKey: e.BasicRun.ID,
 			app.DialogFieldSummary:        "a summary",
 		},
@@ -1934,12 +1935,7 @@ func TestPlaybooksGuests(t *testing.T) {
 
 // Helper functions for permission manipulation
 func inPerms(permission string, perms []string) bool {
-	for _, p := range perms {
-		if p == permission {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(perms, permission)
 }
 
 func removeFromPerms(permission string, perms []string) []string {

@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-starter-template/build
 
-go 1.26.2
+go 1.26.3
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
