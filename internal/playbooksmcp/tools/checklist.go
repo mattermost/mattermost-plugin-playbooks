@@ -3,6 +3,7 @@ package tools
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -166,17 +167,21 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 	if err := validateIndex(args.ChecklistNumber, "checklist_number"); err != nil {
 		return "", err
 	}
-	if args.Title == "" {
+	title := strings.TrimSpace(args.Title)
+	if title == "" {
 		return "", fmt.Errorf("title is required")
 	}
 
 	body := map[string]string{
-		"title": args.Title,
+		"title": title,
 	}
 	if args.Description != "" {
 		body["description"] = args.Description
 	}
 	if args.AssigneeID != "" {
+		if err := validateID(args.AssigneeID, "assignee_id"); err != nil {
+			return "", err
+		}
 		body["assignee_id"] = args.AssigneeID
 	}
 
@@ -185,7 +190,7 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 		return "", fmt.Errorf("failed to add checklist item: %w", err)
 	}
 
-	return fmt.Sprintf("Added item '%s' to checklist %d in run %s.", args.Title, args.ChecklistNumber, args.RunID), nil
+	return fmt.Sprintf("Added item '%s' to checklist %d in run %s.", title, args.ChecklistNumber, args.RunID), nil
 }
 
 func toolEditChecklistItem(ctx context.Context, client APIClient, args EditChecklistItemArgs) (string, error) {
@@ -261,12 +266,13 @@ func toolAddSection(ctx context.Context, client APIClient, args AddSectionArgs) 
 	if err := validateID(args.RunID, "run_id"); err != nil {
 		return "", err
 	}
-	if args.Title == "" {
+	title := strings.TrimSpace(args.Title)
+	if title == "" {
 		return "", fmt.Errorf("title is required")
 	}
 
 	body := map[string]string{
-		"title": args.Title,
+		"title": title,
 	}
 
 	endpoint := fmt.Sprintf("runs/%s/checklists", args.RunID)
@@ -274,7 +280,7 @@ func toolAddSection(ctx context.Context, client APIClient, args AddSectionArgs) 
 		return "", fmt.Errorf("failed to add section: %w", err)
 	}
 
-	return fmt.Sprintf("Added section '%s' to run %s.", args.Title, args.RunID), nil
+	return fmt.Sprintf("Added section '%s' to run %s.", title, args.RunID), nil
 }
 
 func toolRenameSection(ctx context.Context, client APIClient, args RenameSectionArgs) (string, error) {
@@ -284,12 +290,13 @@ func toolRenameSection(ctx context.Context, client APIClient, args RenameSection
 	if err := validateIndex(args.ChecklistNumber, "checklist_number"); err != nil {
 		return "", err
 	}
-	if args.Title == "" {
+	title := strings.TrimSpace(args.Title)
+	if title == "" {
 		return "", fmt.Errorf("title is required")
 	}
 
 	body := map[string]string{
-		"title": args.Title,
+		"title": title,
 	}
 
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d/rename", args.RunID, args.ChecklistNumber)
@@ -297,7 +304,7 @@ func toolRenameSection(ctx context.Context, client APIClient, args RenameSection
 		return "", fmt.Errorf("failed to rename section: %w", err)
 	}
 
-	return fmt.Sprintf("Renamed section %d in run %s to '%s'.", args.ChecklistNumber, args.RunID, args.Title), nil
+	return fmt.Sprintf("Renamed section %d in run %s to '%s'.", args.ChecklistNumber, args.RunID, title), nil
 }
 
 func toolRemoveSection(ctx context.Context, client APIClient, args RemoveSectionArgs) (string, error) {
