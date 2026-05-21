@@ -5,7 +5,7 @@ This repository uses a Dockerfile-backed Cursor Cloud Agent environment with Doc
 - `mattermostdevelopment/mattermost-enterprise-edition:master` (`linux/amd64`)
 - `postgres:16-alpine`
 
-The start script boots `dockerd`, loads those image archives, and writes this file to `.cursor/AGENTS.md`.
+The start script boots `dockerd`, logs in to Docker Hub when credentials are configured, loads those image archives, and writes this file to `.cursor/AGENTS.md`.
 
 ## Useful Commands
 
@@ -168,6 +168,7 @@ Do not print AWS credentials or secret environment variables. If `aws sts get-ca
 
 ## Gotchas
 
+- When `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are configured as Cloud Agent secrets, `cloud-agent-start.sh` logs in to Docker Hub so DinD pulls avoid anonymous rate limits. Without them, startup continues with a warning and preloaded image archives still load from disk.
 - Webapp dependencies install with `--ignore-scripts --legacy-peer-deps` (see `Makefile`); the install script uses `make webapp/node_modules` to match local development.
 - Go unit tests expect Postgres to be reachable; start the `mm-postgres` container before `make test`.
 - The Mattermost Enterprise `master` image runs as `linux/amd64` even on arm64 cloud agents; always pass `--platform linux/amd64` when starting Mattermost.
@@ -176,6 +177,7 @@ Do not print AWS credentials or secret environment variables. If `aws sts get-ca
 ## Troubleshooting
 
 - If Docker is unavailable, inspect `/tmp/docker-service-start.log` and `/tmp/dockerd.log`.
+- If Docker Hub pulls fail with rate-limit errors, configure `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` in the Cloud Agent dashboard or inspect `/tmp/docker-login.log`.
 - If browser automation fails, run `agent-browser install` to refresh browser assets.
 - If artifact uploads fail, run `aws sts get-caller-identity` and verify the target S3 URI before retrying.
 - If the plugin upload fails, confirm `MM_PLUGINSETTINGS_ENABLEUPLOADS=true` and the admin credentials are exported.
