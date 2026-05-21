@@ -11,7 +11,7 @@ func validateID(id, name string) error {
 		return fmt.Errorf("%s must be exactly 26 characters, got %d", name, len(id))
 	}
 	for _, c := range id {
-		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+		if (c < 'a' || c > 'z') && (c < '0' || c > '9') {
 			return fmt.Errorf("%s contains invalid characters (expected lowercase alphanumeric)", name)
 		}
 	}
