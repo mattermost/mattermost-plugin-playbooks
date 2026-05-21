@@ -425,6 +425,7 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             cy.wait('@ToggleRetrospective');
 
             // * Timeline entry appears with the correct description
+            // data-testid rendered as 'timeline-item ' + event_type in timeline_event_item.tsx
             cy.get('[data-testid="timeline-item retrospective_disabled"]').should('exist');
             cy.contains(`Retrospective disabled by ${testUser.username}`).should('exist');
         });
@@ -455,8 +456,62 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             cy.wait('@ToggleRetrospective');
 
             // * Timeline entry appears with the correct description
+            // data-testid rendered as 'timeline-item ' + event_type in timeline_event_item.tsx
             cy.get('[data-testid="timeline-item retrospective_enabled"]').should('exist');
             cy.contains(`Retrospective enabled by ${testUser.username}`).should('exist');
+        });
+    });
+
+    it('publishing after enabling retrospective updates the UI immediately without page reload', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retro Toggle Publish Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            retrospectiveEnabled: false,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+            return cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Enable Then Publish Run ' + getRandomId(),
+                ownerUserId: testUser.id,
+            });
+        }).then((run) => {
+            cy.visit(`/playbooks/runs/${run.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+            // * Retrospective section is hidden before enabling
+            cy.findByTestId('run-retrospective-section').should('not.exist');
+
+            // # Enable retrospective via context menu
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective-enabled`).as('ToggleRetrospective');
+            openContextMenu();
+            cy.findByTestId('enable-retrospective-menu-item').click();
+            confirmModal();
+            cy.wait('@ToggleRetrospective');
+
+            // * Retrospective section now visible with an enabled Publish button
+            cy.findByTestId('run-retrospective-section').should('exist').and('be.visible');
+            cy.findByTestId('run-retrospective-section').findByRole('button', {name: 'Publish'}).should('be.enabled');
+
+            // # Publish the retrospective
+            cy.intercept('POST', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective/publish`).as('PublishRetrospective');
+            cy.findByTestId('run-retrospective-section').findByRole('button', {name: 'Publish'}).click();
+            cy.get('#confirm-modal-light').within(() => {
+                cy.findByRole('button', {name: 'Publish'}).click();
+            });
+            cy.wait('@PublishRetrospective');
+
+            // * UI immediately shows published state without a page reload
+            cy.findByTestId('run-retrospective-section').within(() => {
+                cy.get('.icon-check-all').should('be.visible');
+                cy.findByRole('button', {name: 'Publish'}).should('be.disabled');
+            });
+
+            // * Backend confirms the published state
+            cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
+                expect(updatedRun.retrospective_published_at).to.be.greaterThan(0);
+            });
         });
     });
 });

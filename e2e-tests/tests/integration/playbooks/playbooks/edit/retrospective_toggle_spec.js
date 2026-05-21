@@ -348,15 +348,24 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             cy.url().should('include', `/playbooks/runs/${playbookRun.id}`);
             cy.findByTestId('run-retrospective-section').should('be.visible');
 
-            // # Click the report text area to enter edit mode, type, then click outside to save
+            // # Click the report text area to enter edit mode and type
+            cy.intercept('POST', `/plugins/playbooks/api/v0/runs/${playbookRun.id}/retrospective`).as('SaveRetrospective');
             cy.findByTestId('run-retrospective-section').within(() => {
                 cy.findByTestId('retro-report-text').click();
-                cy.focused().type('Retrospective report content');
+
+                // # clicking retro-report-text swaps the div for a <textarea> with no data-testid;
+                // # findByRole retries until the textarea mounts and is ready
+                cy.findByRole('textbox').type('Retrospective report content');
 
                 // # Click outside the textarea to end editing mode and flush changes before publishing
                 cy.findByText('Report').click();
+            });
 
-                // # Publish the retrospective
+            // # Wait for the auto-save to complete before publishing
+            cy.wait('@SaveRetrospective');
+
+            // # Publish the retrospective
+            cy.findByTestId('run-retrospective-section').within(() => {
                 cy.findByRole('button', {name: 'Publish'}).click();
             });
             cy.get('#confirm-modal-light').within(() => {
@@ -368,8 +377,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
 
             // * Verify the retrospective was published to the channel
-            cy.findAllByTestId('postView').last().
-                contains(`Retrospective for ${playbookRun.name} has been published by`).
+            cy.contains('[data-testid="postView"]', `Retrospective for ${playbookRun.name} has been published by`).
                 should('exist');
         });
     });

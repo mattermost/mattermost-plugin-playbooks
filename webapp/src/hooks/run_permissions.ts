@@ -149,7 +149,6 @@ export const useCanAdminRun = (run: RunPermissionFields | null | undefined, curr
     return run.owner_user_id === currentUserId;
 };
 
-// Matches the server-side RunToggleRetrospective permission: owner or system admin only.
 export const useCanToggleRunRetrospective = (run: RunPermissionFields | null | undefined, currentUserId: string): boolean => {
     const currentUserRoles = useAppSelector((state) => getCurrentUser(state)?.roles ?? '');
 

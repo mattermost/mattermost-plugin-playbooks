@@ -46,7 +46,7 @@ interface Props {
     disabled?: boolean;
 }
 
-const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
+const SectionRetrospective = ({playbook, refetch, disabled = false}: Props) => {
     const {formatMessage} = useIntl();
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
@@ -79,7 +79,7 @@ const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
                             retrospectiveReminderIntervalSeconds: seconds,
                         });
                     }}
-                    disabled={Boolean(disabled)}
+                    disabled={disabled}
                 />
             </SidebarBlock>
             <SidebarBlock id={'retrospective-metrics'}>
@@ -98,7 +98,7 @@ const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
-                    disabled={Boolean(disabled)}
+                    disabled={disabled}
                 />
             </SidebarBlock>
             <SidebarBlock>
@@ -117,7 +117,7 @@ const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
                             retrospectiveTemplate: value,
                         });
                     }}
-                    disabled={Boolean(disabled)}
+                    disabled={disabled}
                 />
             </SidebarBlock>
         </Card>
