@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"testing"
 
@@ -61,7 +62,7 @@ func TestGraphQLRunList(t *testing.T) {
 		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testRunsQuery,
 			OperationName: "Runs",
-			Variables:     map[string]interface{}{"userID": "me"},
+			Variables:     map[string]any{"userID": "me"},
 		}, &rResultTest)
 		require.NoError(t, err)
 
@@ -108,7 +109,7 @@ func TestGraphQLRunList(t *testing.T) {
 		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testRunsQuery,
 			OperationName: "Runs",
-			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID},
+			Variables:     map[string]any{"channelID": e.BasicRun.ChannelID},
 		}, &rResultTest)
 		require.NoError(t, err)
 
@@ -184,7 +185,7 @@ func TestGraphQLRunList(t *testing.T) {
 		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testRunsQuery,
 			OperationName: "Runs",
-			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID, "first": 2},
+			Variables:     map[string]any{"channelID": e.BasicRun.ChannelID, "first": 2},
 		}, &rResultTest)
 		require.NoError(t, err)
 
@@ -196,7 +197,7 @@ func TestGraphQLRunList(t *testing.T) {
 		err2 := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testRunsQuery,
 			OperationName: "Runs",
-			Variables:     map[string]interface{}{"channelID": e.BasicRun.ChannelID, "first": 2, "after": "1"},
+			Variables:     map[string]any{"channelID": e.BasicRun.ChannelID, "first": 2, "after": "1"},
 		}, &rResultTest)
 		require.NoError(t, err2)
 
@@ -335,13 +336,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, run.ParticipantIDs, len(tc.ExpectedRunParticipants))
 			for _, ep := range tc.ExpectedRunParticipants {
-				found := false
-				for _, p := range run.ParticipantIDs {
-					if p == ep {
-						found = true
-						break
-					}
-				}
+				found := slices.Contains(run.ParticipantIDs, ep)
 				assert.True(t, found, fmt.Sprintf("Participant %s not found", ep))
 			}
 			// assert followers
@@ -349,13 +344,7 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, meta.Followers, len(tc.ExpectedRunFollowers))
 			for _, ef := range tc.ExpectedRunFollowers {
-				found := false
-				for _, f := range meta.Followers {
-					if f == ef {
-						found = true
-						break
-					}
-				}
+				found := slices.Contains(meta.Followers, ef)
 				assert.True(t, found, fmt.Sprintf("Follower %s not found", ef))
 			}
 			//assert channel members
@@ -939,7 +928,7 @@ func TestUpdateRun(t *testing.T) {
 		require.Equal(t, "", run.Summary)
 		oldSummaryModifiedAt := run.SummaryModifiedAt
 
-		updates := map[string]interface{}{
+		updates := map[string]any{
 			"summary": "The updated summary",
 		}
 		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
@@ -957,7 +946,7 @@ func TestUpdateRun(t *testing.T) {
 		run := createRun()
 		require.Equal(t, "Run with private channel", run.Name)
 
-		updates := map[string]interface{}{
+		updates := map[string]any{
 			"name": "The updated name",
 		}
 		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
@@ -984,7 +973,7 @@ func TestUpdateRun(t *testing.T) {
 		require.Equal(t, app.StatusFinished, finishedRun.CurrentStatus)
 
 		// Try to update the name
-		updates := map[string]interface{}{
+		updates := map[string]any{
 			"name": "The updated name",
 		}
 		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
@@ -1007,7 +996,7 @@ func TestUpdateRun(t *testing.T) {
 		assert.True(t, prevRun.RemoveChannelMemberOnRemovedParticipant)
 
 		//update
-		updates := map[string]interface{}{
+		updates := map[string]any{
 			"statusUpdateBroadcastChannelsEnabled":    true,
 			"statusUpdateBroadcastWebhooksEnabled":    true,
 			"broadcastChannelIDs":                     []string{e.BasicPublicChannel.Id},
@@ -1034,7 +1023,7 @@ func TestUpdateRun(t *testing.T) {
 		run := createRun()
 
 		//update
-		updates := map[string]interface{}{
+		updates := map[string]any{
 			"channelID": e.BasicPrivateChannel.Id,
 		}
 		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
@@ -1178,7 +1167,7 @@ func TestBadGraphQLRequest(t *testing.T) {
 	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         testRunsQuery,
 		OperationName: "Runs",
-		Variables:     map[string]interface{}{"userID": "me"},
+		Variables:     map[string]any{"userID": "me"},
 	}, &result)
 	require.NoError(t, err)
 	require.Len(t, result.Errors, 1)
@@ -1195,7 +1184,7 @@ func addParticipants(c *client.Client, playbookRunID string, userIDs []string) (
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "AddRunParticipants",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"runID":   playbookRunID,
 			"userIDs": userIDs,
 		},
@@ -1215,7 +1204,7 @@ func removeParticipants(c *client.Client, playbookRunID string, userIDs []string
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "RemoveRunParticipants",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"runID":   playbookRunID,
 			"userIDs": userIDs,
 		},
@@ -1235,7 +1224,7 @@ func changeRunOwner(c *client.Client, playbookRunID string, newOwnerID string) (
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "ChangeRunOwner",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"runID":   playbookRunID,
 			"ownerID": newOwnerID,
 		},
@@ -1253,7 +1242,7 @@ func setRunFavorite(c *client.Client, playbookRunID string, fav bool) (graphql.R
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "SetRunFavorite",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"id":  playbookRunID,
 			"fav": fav,
 		},
@@ -1483,7 +1472,7 @@ func getRunFavorite(c *client.Client, playbookRunID string) (bool, error) {
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         query,
 		OperationName: "GetRunFavorite",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"id": playbookRunID,
 		},
 	}, &response)
@@ -1508,7 +1497,7 @@ func getRunFavorite(c *client.Client, playbookRunID string) (bool, error) {
 }
 
 // UpdateRun updates the run
-func updateRun(c *client.Client, playbookRunID string, updates map[string]interface{}) (graphql.Response, error) {
+func updateRun(c *client.Client, playbookRunID string, updates map[string]any) (graphql.Response, error) {
 	mutation := `
 		mutation UpdateRun($id: String!, $updates: RunUpdates!) {
 			updateRun(id: $id, updates: $updates)
@@ -1518,7 +1507,7 @@ func updateRun(c *client.Client, playbookRunID string, updates map[string]interf
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "UpdateRun",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"id":      playbookRunID,
 			"updates": updates,
 		},
@@ -1565,7 +1554,7 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": dmChannel.Id})
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{"channelID": dmChannel.Id})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resp.Errors, "expected error when moving playbook run to DM channel")
 	})
@@ -1582,7 +1571,7 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": gmChannel.Id})
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{"channelID": gmChannel.Id})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resp.Errors, "expected error when moving playbook run to GM channel")
 	})
@@ -1597,7 +1586,7 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": target.Id})
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{"channelID": target.Id})
 		require.NoError(t, err)
 		assert.Empty(t, resp.Errors, "same-team public channel move should succeed")
 
@@ -1617,7 +1606,7 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": target.Id})
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{"channelID": target.Id})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resp.Errors, "cross-team channel move should fail")
 	})
@@ -1639,7 +1628,7 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, e.BasicTeam.Id, run.TeamID)
 
-		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": dmChannel.Id})
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{"channelID": dmChannel.Id})
 		require.NoError(t, err)
 		assert.Empty(t, resp.Errors, "checklist should be allowed to move to DM")
 
@@ -1662,7 +1651,7 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": target.Id})
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{"channelID": target.Id})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resp.Errors, "cross-team channel move should fail for checklists too")
 	})
@@ -1685,7 +1674,7 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicPublicChannel.Id, e.RegularUser.Id)
 		require.NoError(t, err)
 
-		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": e.BasicPublicChannel.Id})
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{"channelID": e.BasicPublicChannel.Id})
 		require.NoError(t, err)
 		assert.Empty(t, resp.Errors, "expected no error when moving DM checklist to team channel")
 
@@ -1709,7 +1698,7 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]interface{}{"channelID": dstDM.Id})
+		resp, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{"channelID": dstDM.Id})
 		require.NoError(t, err)
 		assert.Empty(t, resp.Errors, "expected no error when moving DM checklist to another DM channel")
 
@@ -1730,7 +1719,7 @@ func UpdateRunTaskActions(c *client.Client, playbookRunID string, checklistNum f
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "UpdateRunTaskActions",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"runID":        playbookRunID,
 			"checklistNum": checklistNum,
 			"itemNum":      itemNum,
