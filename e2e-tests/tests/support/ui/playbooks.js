@@ -283,7 +283,7 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
  * @param {String} runName - The run name to locate in the list
  */
 Cypress.Commands.add('playbooksGetRunListRow', (runName) => {
-    return cy.get('#playbookRunList').findByText(runName).parents('[data-testid="run-list-item"]');
+    return cy.get('#playbookRunList').contains('[data-testid="run-list-item"]', runName);
 });
 
 /**
@@ -308,16 +308,17 @@ Cypress.Commands.add('playbooksInterceptChecklistItemState', (alias = 'SetCheckl
  * @param {Number} index - Zero-based task index within the checklist
  */
 Cypress.Commands.add('playbooksCompleteTaskAtIndex', (index) => {
-    cy.playbooksInterceptChecklistItemState();
+    const alias = `SetChecklistItemState_${index}`;
+    cy.playbooksInterceptChecklistItemState(alias);
     cy.findByTestId('run-checklist-section').
         findAllByTestId('checkbox-item-container').
         eq(index).
         find('input[type="checkbox"]').
-        should('exist').
-        then(($checkbox) => {
-            if (!$checkbox.is(':checked')) {
-                cy.wrap($checkbox).click();
-                cy.wait('@SetChecklistItemState');
-            }
-        });
+        should('not.be.checked');
+    cy.findByTestId('run-checklist-section').
+        findAllByTestId('checkbox-item-container').
+        eq(index).
+        find('input[type="checkbox"]').
+        click();
+    cy.wait(`@${alias}`);
 });

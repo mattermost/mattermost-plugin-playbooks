@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useId} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -12,6 +12,7 @@ interface Props {
 
 const TaskProgress = ({taskTotal, taskCompleted}: Props) => {
     const {formatMessage} = useIntl();
+    const labelId = useId();
 
     if (taskTotal == null || taskTotal === 0) {
         return null;
@@ -26,10 +27,10 @@ const TaskProgress = ({taskTotal, taskCompleted}: Props) => {
 
     return (
         <Container data-testid='task-progress-indicator'>
-            <Label>{label}</Label>
+            <Label id={labelId}>{label}</Label>
             <Bar
                 role='progressbar'
-                aria-label={label}
+                aria-labelledby={labelId}
                 aria-valuenow={pct}
                 aria-valuemin={0}
                 aria-valuemax={100}
