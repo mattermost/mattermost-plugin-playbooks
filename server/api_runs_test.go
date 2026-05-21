@@ -239,7 +239,7 @@ func TestRunCreation(t *testing.T) {
 				}
 
 				result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/dialog", string(dialogRequestBytes), nil)
-				if err == nil && result != nil {
+				if result != nil && result.Body != nil {
 					defer result.Body.Close()
 				}
 				tc.expected(t, result, err)
@@ -627,7 +627,11 @@ func TestRunRetrieval(t *testing.T) {
 
 	t.Run("checklist autocomplete", func(t *testing.T) {
 		resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "GET", "/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
+		if resp != nil && resp.Body != nil {
+			defer resp.Body.Close()
+		}
 		assert.Error(t, err)
+		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
@@ -736,7 +740,11 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		if result != nil && result.Body != nil {
+			defer result.Body.Close()
+		}
 		require.Error(t, err)
+		require.NotNil(t, result)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
@@ -1516,7 +1524,11 @@ func TestIgnoreKeywords(t *testing.T) {
 
 		// Make the request
 		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		if result != nil && result.Body != nil {
+			defer result.Body.Close()
+		}
 		require.Error(t, err)
+		require.NotNil(t, result)
 		require.Equal(t, http.StatusForbidden, result.StatusCode)
 	})
 
