@@ -80,6 +80,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", withContext(handler.getPlaybook)).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", withContext(handler.updatePlaybook)).Methods(http.MethodPut)
+	playbookRouter.HandleFunc("", withContext(handler.patchPlaybook)).Methods(http.MethodPatch)
 	playbookRouter.HandleFunc("", withContext(handler.archivePlaybook)).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
@@ -146,6 +147,17 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 			}
 		}
 	}
+	playbook.RunNumberPrefix = app.NormalizeRunNumberPrefix(playbook.RunNumberPrefix)
+	if err := app.ValidateRunNumberPrefix(playbook.RunNumberPrefix); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return false
+	}
+
+	if err := app.ValidateChannelNameTemplate(playbook.ChannelNameTemplate); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return false
+	}
+
 	for listIndex := range playbook.Checklists {
 		for itemIndex := range playbook.Checklists[listIndex].Items {
 			if err := validateTaskActions(playbook.Checklists[listIndex].Items[itemIndex].TaskActions); err != nil {
@@ -171,6 +183,8 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	playbook.NextRunNumber = 0
+
 	if playbook.ReminderTimerDefaultSeconds <= 0 {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
 		return
@@ -194,6 +208,11 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// At creation time no property fields exist, so only system tokens are allowed in the template.
+	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, nil) {
+		return
+	}
+
 	if err := h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
@@ -208,7 +227,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}
 
@@ -271,8 +290,26 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Preserve server-managed counters that must not be set via REST PUT.
+	playbook.NextRunNumber = oldPlaybook.NextRunNumber
+
 	if !h.validPlaybook(w, c.logger, &playbook) {
 		return
+	}
+
+	// Validate the template that will actually be stored after this PUT.
+	// Only cross-validate when the user is keeping or updating a non-empty template.
+	// Sending ChannelNameTemplate: "" (intent: clear it) skips validation so both
+	// template and prefix can be cleared atomically in a single PUT.
+	if playbook.ChannelNameTemplate != "" {
+		propertyFields, err := h.propertyService.GetPropertyFields(playbook.ID)
+		if err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+		if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, propertyFields) {
+			return
+		}
 	}
 
 	// Clean checklist IDs for incremental update compatibility
@@ -289,11 +326,59 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	err = h.playbookService.Update(playbook, userID)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageProperties(userID, playbook)) {
+		return
+	}
+
+	if playbook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Playbook cannot be modified", fmt.Errorf("playbook with id '%s' is archived", playbookID))
+		return
+	}
+
+	var body struct {
+		RunNumberPrefix     *string `json:"run_number_prefix"`
+		ChannelNameTemplate *string `json:"channel_name_template"`
+	}
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	if body.RunNumberPrefix != nil {
+		if err = h.playbookService.UpdateRunNumberPrefix(playbookID, *body.RunNumberPrefix, userID); err != nil {
+			h.handlePlaybookWriteError(w, c.logger, err)
+			return
+		}
+	}
+
+	if body.ChannelNameTemplate != nil {
+		if err = h.playbookService.UpdateChannelNameTemplate(playbookID, *body.ChannelNameTemplate, userID); err != nil {
+			h.handlePlaybookWriteError(w, c.logger, err)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func validatePreAssignment(pb app.Playbook) error {
@@ -363,7 +448,7 @@ func (h *PlaybookHandler) restorePlaybook(c *Context, w http.ResponseWriter, r *
 
 	err = h.playbookService.Restore(playbookToRestore, userID)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}
 
@@ -681,6 +766,8 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 	playbook := importBlock.Playbook
 
+	playbook.NextRunNumber = 0
+
 	if playbook.ID != "" {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook import should not have ID field", nil)
 		return
@@ -714,6 +801,16 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	importFields := make([]app.PropertyField, 0, len(importBlock.Properties))
+	for _, epf := range importBlock.Properties {
+		var pf app.PropertyField
+		pf.Name = epf.Name
+		importFields = append(importFields, pf)
+	}
+	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, importFields) {
+		return
+	}
+
 	id, err := h.playbookService.Import(app.PlaybookImportData{
 		Playbook:   playbook,
 		Version:    importBlock.Version,
@@ -721,7 +818,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		Conditions: importBlock.Conditions,
 	}, userID)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}
 
@@ -749,6 +846,32 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 		titles[m.Title] = true
 	}
 	return nil
+}
+
+// handlePlaybookWriteError maps known playbook write errors to HTTP status codes.
+func (h *PlaybookHandler) handlePlaybookWriteError(w http.ResponseWriter, logger logrus.FieldLogger, err error) {
+	if errors.Is(err, app.ErrDuplicateEntry) {
+		h.HandleErrorWithCode(w, logger, http.StatusConflict, app.ErrDuplicateEntry.Error(), err)
+	} else if errors.Is(err, app.ErrReservedPropertyFieldName) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, app.ErrReservedPropertyFieldName.Error(), err)
+	} else if errors.Is(err, app.ErrMalformedPlaybookRun) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+	} else {
+		h.HandleError(w, logger, err)
+	}
+}
+
+// validateTemplateWithFields validates a channel name template against a known field list and prefix.
+// Empty template is always valid. Pass nil fields to allow system tokens only (new-playbook case).
+func (h *PlaybookHandler) validateTemplateWithFields(w http.ResponseWriter, logger logrus.FieldLogger, template, prefix string, fields []app.PropertyField) bool {
+	if template == "" {
+		return true
+	}
+	if unknown := app.ValidateTemplate(template, app.ResolveOptions{Fields: fields}); len(unknown) > 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, fmt.Sprintf("channel name template references unknown field(s): %s", strings.Join(unknown, ", ")), nil)
+		return false
+	}
+	return true
 }
 
 func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -954,7 +1077,7 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 
 	createdField, err := h.playbookService.CreatePropertyField(playbookID, *propertyField)
 	if err != nil {
-		h.HandleError(w, logger, err)
+		h.handlePlaybookWriteError(w, logger, err)
 		return
 	}
 
@@ -1010,8 +1133,37 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 	propertyField := convertRequestToPropertyField(request)
 	propertyField.ID = fieldID
 
+	// Update the channel name template before renaming the field. If the rename then fails,
+	// the template update can be reverted; the reverse order would leave ChannelNameTemplate
+	// referencing a field name that no longer exists.
+	var (
+		templateWasUpdated bool
+		oldTemplate        string
+		newTemplate        string
+	)
+	if existingField.Name != propertyField.Name && currentPlaybook.ChannelNameTemplate != "" {
+		newTemplate = app.ReplaceFieldInTemplate(currentPlaybook.ChannelNameTemplate, existingField.Name, propertyField.Name)
+		if newTemplate != currentPlaybook.ChannelNameTemplate {
+			oldTemplate = currentPlaybook.ChannelNameTemplate
+			updated, err := h.playbookService.UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate)
+			if err != nil {
+				h.HandleError(w, logger, err)
+				return
+			}
+			templateWasUpdated = updated
+		}
+	}
+
 	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
 	if err != nil {
+		// Best-effort revert: if the template was updated but the field rename failed, try to
+		// roll the template back so we don't leave ChannelNameTemplate referencing a field name
+		// that was never applied.
+		if templateWasUpdated {
+			if _, revertErr := h.playbookService.UpdateChannelNameTemplateIfUnchanged(playbookID, newTemplate, oldTemplate); revertErr != nil {
+				logger.WithError(revertErr).Warn("failed to revert channel name template after failed field rename")
+			}
+		}
 		if errors.Is(err, app.ErrPropertyOptionsInUse) {
 			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
 			return
@@ -1020,7 +1172,7 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
 			return
 		}
-		h.HandleError(w, logger, err)
+		h.handlePlaybookWriteError(w, logger, err)
 		return
 	}
 
@@ -1064,6 +1216,21 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 
 	if existingField.TargetID != playbookID {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field does not belong to the specified playbook", errors.New("property field does not belong to the specified playbook"))
+		return
+	}
+
+	allFields, err := h.propertyService.GetPropertyFields(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+	remaining := make([]app.PropertyField, 0, len(allFields))
+	for _, f := range allFields {
+		if f.ID != fieldID {
+			remaining = append(remaining, f)
+		}
+	}
+	if !h.validateTemplateWithFields(w, logger, currentPlaybook.ChannelNameTemplate, currentPlaybook.RunNumberPrefix, remaining) {
 		return
 	}
 

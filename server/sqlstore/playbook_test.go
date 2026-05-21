@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
 
@@ -1778,6 +1780,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			DefaultPlaybookMemberRole: app.PlaybookRoleMember,
 			DefaultRunAdminRole:       app.RunRoleAdmin,
 			DefaultRunMemberRole:      app.RunRoleMember,
+			NextRunNumber:             1,
 		},
 	}
 }
@@ -2110,4 +2113,239 @@ func TestBumpPlaybookUpdatedAt(t *testing.T) {
 	updatedPlaybook, err := playbookStore.Get(id)
 	require.NoError(t, err)
 	require.Greater(t, updatedPlaybook.UpdateAt, int64(1))
+}
+
+func TestIncrementRunNumber(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	t.Run("first increment returns 1", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Test Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		runNumber, err := playbookStore.IncrementRunNumber(id)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), runNumber)
+
+		updated, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), updated.NextRunNumber)
+	})
+
+	t.Run("sequential increments return increasing values", func(t *testing.T) {
+		db2 := setupTestDB(t)
+		store2 := setupPlaybookStore(t, db2)
+
+		pb := NewPBBuilder().
+			WithTitle("Sequential Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+
+		pbID, err := store2.Create(pb)
+		require.NoError(t, err)
+
+		n1, err := store2.IncrementRunNumber(pbID)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), n1)
+
+		n2, err := store2.IncrementRunNumber(pbID)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), n2)
+
+		n3, err := store2.IncrementRunNumber(pbID)
+		require.NoError(t, err)
+		require.Equal(t, int64(3), n3)
+	})
+
+	t.Run("non-existent playbook returns ErrNotFound", func(t *testing.T) {
+		_, err := playbookStore.IncrementRunNumber(model.NewId())
+		require.Error(t, err)
+		require.True(t, errors.Is(err, app.ErrNotFound))
+	})
+
+	t.Run("empty playbookID returns error", func(t *testing.T) {
+		_, err := playbookStore.IncrementRunNumber("")
+		require.Error(t, err)
+	})
+
+	t.Run("archived playbook returns ErrNotFound", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Archived Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+
+		archivedID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		err = playbookStore.Archive(archivedID)
+		require.NoError(t, err)
+
+		_, err = playbookStore.IncrementRunNumber(archivedID)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, app.ErrNotFound))
+	})
+}
+
+func TestCreatePlaybookDuplicateID(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	pb := NewPBBuilder().
+		WithTitle("Duplicate ID Playbook").
+		WithTeamID(model.NewId()).
+		ToPlaybook()
+
+	firstID, err := playbookStore.Create(pb)
+	require.NoError(t, err)
+
+	// Force the same ID on a second create.
+	pb.ID = firstID
+	_, err = playbookStore.Create(pb)
+	require.Error(t, err)
+	require.True(t, errors.Is(err, app.ErrDuplicateEntry))
+}
+
+func TestUpdateChannelNameTemplateIfUnchanged(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	t.Run("empty playbookID returns error", func(t *testing.T) {
+		_, err := playbookStore.UpdateChannelNameTemplateIfUnchanged("", "old", "new")
+		require.Error(t, err)
+	})
+
+	t.Run("updates when old template matches", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Template Replace Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		pb.ChannelNameTemplate = "{Priority} - Channel"
+
+		pbID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		updated, err := playbookStore.UpdateChannelNameTemplateIfUnchanged(pbID, "{Priority} - Channel", "{Severity} - Channel")
+		require.NoError(t, err)
+		require.True(t, updated)
+
+		got, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.Equal(t, "{Severity} - Channel", got.ChannelNameTemplate)
+	})
+
+	t.Run("skips update when old template does not match", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Template Concurrent Edit Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		pb.ChannelNameTemplate = "{SEQ} - Channel"
+
+		pbID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		updated, err := playbookStore.UpdateChannelNameTemplateIfUnchanged(pbID, "stale-value", "new-value")
+		require.NoError(t, err)
+		require.False(t, updated)
+
+		got, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.Equal(t, "{SEQ} - Channel", got.ChannelNameTemplate)
+	})
+
+	t.Run("nonexistent playbook returns not-updated without error", func(t *testing.T) {
+		updated, err := playbookStore.UpdateChannelNameTemplateIfUnchanged("nonexistent-id", "old", "new")
+		require.NoError(t, err)
+		require.False(t, updated)
+	})
+}
+
+func TestGraphqlUpdateGuards(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	pb := NewPBBuilder().
+		WithTitle("GraphqlUpdate Guard Playbook").
+		WithTeamID(model.NewId()).
+		ToPlaybook()
+
+	pbID, err := playbookStore.Create(pb)
+	require.NoError(t, err)
+
+	t.Run("legitimate field update succeeds", func(t *testing.T) {
+		err := playbookStore.GraphqlUpdate(pbID, map[string]interface{}{
+			"Title": "Updated Title",
+		})
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.Equal(t, "Updated Title", updated.Title)
+	})
+
+	t.Run("empty id returns error", func(t *testing.T) {
+		err := playbookStore.GraphqlUpdate("", map[string]interface{}{
+			"Title": "Whatever",
+		})
+		require.Error(t, err)
+	})
+}
+
+func TestConcurrentRunNumberIncrement(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	pb := NewPBBuilder().
+		WithTitle("concurrent-run-number").
+		WithTeamID(model.NewId()).
+		ToPlaybook()
+
+	id, err := playbookStore.Create(pb)
+	require.NoError(t, err)
+
+	const numGoroutines = 10
+	results := make(chan int64, numGoroutines)
+	errs := make(chan error, numGoroutines)
+
+	var wg sync.WaitGroup
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			n, err := playbookStore.IncrementRunNumber(id)
+			if err != nil {
+				errs <- err
+				return
+			}
+			results <- n
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	close(results)
+	for err := range errs {
+		require.NoError(t, err)
+	}
+
+	seen := make(map[int64]bool, numGoroutines)
+	var minVal, maxVal int64
+	first := true
+	for n := range results {
+		assert.False(t, seen[n], "duplicate run number %d", n)
+		seen[n] = true
+		if first || n < minVal {
+			minVal = n
+		}
+		if first || n > maxVal {
+			maxVal = n
+		}
+		first = false
+	}
+
+	assert.Equal(t, numGoroutines, len(seen))
+	assert.Equal(t, int64(1), minVal)
+	assert.Equal(t, int64(numGoroutines), maxVal)
 }

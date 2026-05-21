@@ -1742,4 +1742,40 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		// Adds all columns and indexes introduced by the sequential run ID feature.
+		// Every operation is idempotent (IF NOT EXISTS / IF to_regclass IS NULL),
+		// so this migration is safe to re-run on environments that already have
+		// some or all of these schema changes (e.g. after a version-counter reset).
+		fromVersion: semver.MustParse("0.67.0"),
+		toVersion:   semver.MustParse("0.68.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Sequential ID system: prefix stored on playbook, counter and display ID on run.
+			if err := addColumnToPGTable(e, "IR_Playbook", "RunNumberPrefix", "VARCHAR(32) NOT NULL DEFAULT ''"); err != nil {
+				return errors.Wrapf(err, "failed adding RunNumberPrefix to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "NextRunNumber", "BIGINT NOT NULL DEFAULT 1"); err != nil {
+				return errors.Wrapf(err, "failed adding NextRunNumber to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "RunNumber", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+				return errors.Wrapf(err, "failed adding RunNumber to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "SequentialID", "VARCHAR(64) NOT NULL DEFAULT ''"); err != nil {
+				return errors.Wrapf(err, "failed adding SequentialID to IR_Incident")
+			}
+
+			// Partial functional index: case-insensitive prefix uniqueness per team,
+			// excluding archived playbooks (DeleteAt=0) and prefix-less ones (prefix<>'').
+			if _, err := e.Exec(createPartialUniquePGIndex(
+				"IR_Playbook_TeamID_RunNumberPrefix",
+				"IR_Playbook",
+				"TeamID, LOWER(RunNumberPrefix)",
+				"DeleteAt = 0 AND RunNumberPrefix <> ''",
+			)); err != nil {
+				return errors.Wrapf(err, "failed creating unique index IR_Playbook_TeamID_RunNumberPrefix")
+			}
+
+			return nil
+		},
+	},
 }

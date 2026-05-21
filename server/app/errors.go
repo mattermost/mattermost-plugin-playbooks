@@ -34,3 +34,9 @@ var ErrPropertyOptionsInUse = errors.New("property options are in use")
 
 // ErrPropertyFieldTypeChangeNotAllowed occurs when trying to change the type of a property field that is referenced by conditions.
 var ErrPropertyFieldTypeChangeNotAllowed = errors.New("property field type change not allowed")
+
+// ErrReservedPropertyFieldName occurs when trying to create or update a property field with a reserved name.
+var ErrReservedPropertyFieldName = errors.New("reserved property field name")
+
+// ErrInternalPrecondition occurs when a caller skipped a mandatory setup step; maps to HTTP 500.
+var ErrInternalPrecondition = errors.New("internal precondition violated")

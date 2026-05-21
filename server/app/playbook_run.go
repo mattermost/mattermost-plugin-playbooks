@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -27,14 +28,27 @@ const (
 )
 
 const (
-	RunSourcePost   = "post"
-	RunSourceDialog = "dialog"
+	RunSourcePost    = "post"
+	RunSourceDialog  = "dialog"
+	RunSourceCommand = "command"
 )
 
 const (
 	RunTypePlaybook         = "playbook"
 	RunTypeChannelChecklist = "channelChecklist"
 )
+
+// FormatSequentialID returns the formatted sequential identifier (e.g. "INC-00042") or empty string when RunNumber is 0.
+func FormatSequentialID(prefix string, runNumber int64) string {
+	if runNumber == 0 {
+		return ""
+	}
+	n := fmt.Sprintf("%05d", runNumber)
+	if prefix == "" {
+		return n
+	}
+	return prefix + "-" + n
+}
 
 // PlaybookRun holds the detailed information of a playbook run.
 //
@@ -211,6 +225,13 @@ type PlaybookRun struct {
 
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
+
+	// RunNumber is the sequential number assigned to this run within its playbook.
+	// 0 means no sequential ID assigned (pre-feature runs or standalone runs).
+	RunNumber int64 `json:"run_number"`
+
+	// SequentialID is the human-readable sequential identifier (e.g., "INC-00042").
+	SequentialID string `json:"sequential_id"`
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
@@ -429,6 +450,12 @@ func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string
 	}
 	if !compareItemsOrder(previous.GetItemsOrder(), current.GetItemsOrder()) {
 		changes["items_order"] = current.GetItemsOrder()
+	}
+	if previous.RunNumber != current.RunNumber {
+		changes["run_number"] = current.RunNumber
+	}
+	if previous.SequentialID != current.SequentialID {
+		changes["sequential_id"] = current.SequentialID
 	}
 }
 
@@ -876,9 +903,9 @@ func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
 // SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
 // effectively snapshoting the playbook's configuration in this moment of time.
 func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source string) {
-	// Runs created through managed dialog lack summary, and we should use the template (if enabled)
-	// Runs created though new modal would have filled the summary in the webapp
-	if playbook.RunSummaryTemplateEnabled && source == RunSourceDialog {
+	// Runs created through managed dialog or slash command lack summary, and we should use the template (if enabled)
+	// Runs created through new modal would have filled the summary in the webapp
+	if playbook.RunSummaryTemplateEnabled && (source == RunSourceDialog || source == RunSourceCommand) {
 		r.Summary = playbook.RunSummaryTemplate
 	}
 	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
@@ -1173,8 +1200,14 @@ type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
-	// CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
-	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
+	// CreatePlaybookRun persists a new playbook run. When a Playbook is provided, callers should
+	// call ResolveRunCreationParams first so template errors surface before a run number is consumed.
+	// CreatePlaybookRun always allocates the sequential identifier server-side.
+	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool, source string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error)
+
+	// ResolveRunCreationParams validates template placeholders and resolves the run owner.
+	// Call before CreatePlaybookRun to surface template errors before a run number is consumed.
+	ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) error
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook) error

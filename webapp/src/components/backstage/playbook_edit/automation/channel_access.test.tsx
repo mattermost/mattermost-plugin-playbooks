@@ -62,6 +62,8 @@ describe('CreateAChannel — link-existing channel selector', () => {
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
         };
 
         renderWithIntl(

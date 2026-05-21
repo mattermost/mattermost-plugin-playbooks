@@ -136,6 +136,8 @@ describe('websocket event actions', () => {
         current_status: 'InProgress' as any,
         type: PlaybookRunType.Playbook,
         items_order: ['checklist_1'],
+        run_number: 1,
+        sequential_id: 'TEST-00001',
     };
 
     const makeStateWithRun = (run: PlaybookRun) => ({
@@ -173,6 +175,27 @@ describe('websocket event actions', () => {
             // Check myPlaybookRunsByTeam update
             expect(newState.myPlaybookRunsByTeam[testPlaybookRun.team_id]![testPlaybookRun.channel_id].name).toBe('Updated Name');
             expect(newState.myPlaybookRunsByTeam[testPlaybookRun.team_id]![testPlaybookRun.channel_id].owner_user_id).toBe('user_2');
+        });
+
+        it('should propagate run_number and sequential_id via incremental update', () => {
+            const baseRun = {...testPlaybookRun, run_number: 0, sequential_id: ''};
+            const state = makeStateWithRun(baseRun);
+            const action = websocketPlaybookRunIncrementalUpdateReceived({
+                id: baseRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    run_number: 42,
+                    sequential_id: 'INC-00042',
+                },
+            });
+
+            // @ts-ignore
+            const newState = reducer(state, action);
+
+            expect(newState.myPlaybookRuns[baseRun.id].run_number).toBe(42);
+            expect(newState.myPlaybookRuns[baseRun.id].sequential_id).toBe('INC-00042');
+            expect(newState.myPlaybookRunsByTeam[baseRun.team_id]![baseRun.channel_id].run_number).toBe(42);
+            expect(newState.myPlaybookRunsByTeam[baseRun.team_id]![baseRun.channel_id].sequential_id).toBe('INC-00042');
         });
 
         it('should ignore updates for runs not in state', () => {
