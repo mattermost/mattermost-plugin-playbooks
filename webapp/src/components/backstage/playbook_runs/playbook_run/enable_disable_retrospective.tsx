@@ -7,7 +7,7 @@ import {useIntl} from 'react-intl';
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {toggleRunRetrospective} from 'src/client';
+import {fetchPlaybookRun, toggleRunRetrospective} from 'src/client';
 import {playbookRunUpdated} from 'src/actions';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
@@ -31,15 +31,17 @@ export const useToggleRunRetrospective = (playbookRun: PlaybookRun) => {
         };
 
         const onConfirm = async () => {
+            const errorMsg = formatMessage({defaultMessage: 'Failed to update retrospective setting'});
             try {
                 const result = await toggleRunRetrospective(playbookRun.id, enabled);
                 if (result && 'error' in result) {
-                    addToast({content: formatMessage({defaultMessage: 'Failed to update retrospective setting'}), toastStyle: ToastStyle.Failure});
+                    addToast({content: errorMsg, toastStyle: ToastStyle.Failure});
                     return;
                 }
-                dispatch(playbookRunUpdated({...playbookRun, retrospective_enabled: enabled}));
+                const updatedRun = await fetchPlaybookRun(playbookRun.id);
+                dispatch(playbookRunUpdated(updatedRun));
             } catch {
-                addToast({content: formatMessage({defaultMessage: 'Failed to update retrospective setting'}), toastStyle: ToastStyle.Failure});
+                addToast({content: errorMsg, toastStyle: ToastStyle.Failure});
             }
         };
 

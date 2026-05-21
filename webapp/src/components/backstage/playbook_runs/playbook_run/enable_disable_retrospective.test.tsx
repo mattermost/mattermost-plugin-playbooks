@@ -10,6 +10,7 @@ import {useToggleRunRetrospective} from './enable_disable_retrospective';
 
 const mockDispatch = jest.fn();
 const mockToggleRunRetrospective = jest.fn().mockResolvedValue({});
+const mockFetchPlaybookRun = jest.fn();
 const mockOpenModal: jest.Mock = jest.fn(() => ({type: 'OPEN_MODAL'}));
 const mockMakeConfirmModal = jest.fn((args) => args);
 const mockAddToast = jest.fn();
@@ -30,6 +31,7 @@ jest.mock('react-intl', () => {
 
 jest.mock('src/client', () => ({
     toggleRunRetrospective: (...args: any[]) => mockToggleRunRetrospective(...args),
+    fetchPlaybookRun: (...args: any[]) => mockFetchPlaybookRun(...args),
 }));
 
 jest.mock('src/webapp_globals', () => ({
@@ -94,6 +96,7 @@ describe('useToggleRunRetrospective', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockToggleRunRetrospective.mockResolvedValue({});
+        mockFetchPlaybookRun.mockResolvedValue(makeRun());
     });
 
     it('opens a confirmation modal when called', () => {
@@ -198,8 +201,11 @@ describe('useToggleRunRetrospective', () => {
         expect(mockAddToast).not.toHaveBeenCalled();
     });
 
-    it('dispatches playbookRunUpdated with the toggled value on success', async () => {
+    it('dispatches playbookRunUpdated with the server-fetched run on success', async () => {
         const run = makeRun({retrospective_enabled: true});
+        const fetchedRun = makeRun({retrospective_enabled: false});
+        mockFetchPlaybookRun.mockResolvedValueOnce(fetchedRun);
+
         const {result} = renderHook(() => useToggleRunRetrospective(run));
 
         act(() => {
@@ -211,7 +217,8 @@ describe('useToggleRunRetrospective', () => {
             await modalArgs.onConfirm();
         });
 
-        expect(mockPlaybookRunUpdated).toHaveBeenCalledWith({...run, retrospective_enabled: false});
+        expect(mockFetchPlaybookRun).toHaveBeenCalledWith('run-1');
+        expect(mockPlaybookRunUpdated).toHaveBeenCalledWith(fetchedRun);
         expect(mockDispatch).toHaveBeenCalledWith(expect.objectContaining({type: 'PLAYBOOK_RUN_UPDATED'}));
     });
 
