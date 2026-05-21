@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"runtime/debug"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/internal/playbooksmcp/tools"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -107,7 +108,9 @@ func (s *InMemoryServer) CreateConnectionForUser(userID, sessionID string, token
 
 	// Verify the token belongs to the expected user.
 	client := NewPlaybooksClient(s.config.GetServerURL(), token)
-	authenticatedUserID, err := client.GetCurrentUserID(context.Background())
+	authCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	authenticatedUserID, err := client.GetCurrentUserID(authCtx)
 	if err != nil {
 		return nil, fmt.Errorf("token validation failed for user %s: %w", userID, err)
 	}
@@ -131,7 +134,12 @@ func (s *InMemoryServer) CreateConnectionForUser(userID, sessionID string, token
 			}
 		}()
 
-		if err := s.mcpServer.Run(ctx, serverTransport); err != nil {
+		session, err := s.mcpServer.Connect(ctx, serverTransport, nil)
+		if err != nil {
+			log.Printf("In-memory MCP server connect failed: %v", err)
+			return
+		}
+		if err := session.Wait(); err != nil {
 			log.Printf("In-memory MCP server stopped: %v", err)
 		}
 	}()
