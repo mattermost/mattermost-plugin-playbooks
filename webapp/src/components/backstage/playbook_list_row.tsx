@@ -25,7 +25,9 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {isCurrentUserAdmin} from 'src/selectors';
 import {Playbook} from 'src/types/playbook';
+import {PlaybookRole} from 'src/types/permissions';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {
     DotMenuButton,
@@ -119,8 +121,12 @@ const PlaybookListRow = (props: Props) => {
     const team = useAppSelector((state) => getTeam(state, props.playbook.team_id || ''));
     const dispatch = useAppDispatch();
     const currentUser = useAppSelector(getCurrentUser);
+    const isSystemAdmin = useAppSelector(isCurrentUserAdmin);
     const currentUserPlaybookMember = useMemo(() => props.playbook?.members.find(({user_id}) => user_id === currentUser.id), [props.playbook?.members, currentUser.id]);
     const refreshLHS = useLHSRefresh();
+
+    const isPlaybookAdmin = currentUserPlaybookMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const canEdit = !props.playbook.admin_only_edit || isPlaybookAdmin || isSystemAdmin;
 
     const permissionForDuplicate = useHasTeamPermission(props.playbook.team_id, 'playbook_public_create');
     const {formatMessage} = useIntl();
@@ -260,7 +266,7 @@ const PlaybookListRow = (props: Props) => {
                     )}
                     dotMenuButton={DotMenuButtonStyled}
                 >
-                    {currentUserPlaybookMember ? (
+                    {currentUserPlaybookMember && canEdit ? (
                         <DropdownMenuItem
                             onClick={props.onEdit}
                         >
@@ -314,6 +320,8 @@ const PlaybookListRow = (props: Props) => {
                             {props.playbook.delete_at > 0 ? (
                                 <DropdownMenuItem
                                     onClick={props.onRestore}
+                                    disabled={!canEdit}
+                                    disabledAltText={formatMessage({defaultMessage: 'Only admins can restore this playbook.'})}
                                 >
                                     <RestoreIcon size={18}/>
                                     <FormattedMessage defaultMessage='Restore'/>
@@ -321,6 +329,8 @@ const PlaybookListRow = (props: Props) => {
                             ) : (
                                 <DropdownMenuItem
                                     onClick={props.onArchive}
+                                    disabled={!canEdit}
+                                    disabledAltText={formatMessage({defaultMessage: 'Only admins can archive this playbook.'})}
                                 >
                                     <RedText
                                         style={{

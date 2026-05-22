@@ -22,6 +22,7 @@ export interface Playbook {
     members: PlaybookMember[];
     default_playbook_member_role: string;
     active_runs: number;
+    admin_only_edit: boolean;
 }
 
 export interface PlaybookMember {
@@ -69,8 +70,6 @@ export interface PlaybookWithChecklist extends Playbook {
 
     // Property fields from GraphQL
     propertyFields: PropertyField[];
-
-    admin_only_edit: boolean;
 }
 
 import {MetricType, PropertyField} from 'src/graphql/generated/graphql';

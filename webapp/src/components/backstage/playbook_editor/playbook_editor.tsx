@@ -162,6 +162,7 @@ const PlaybookEditor = () => {
                                     playbook={playbook}
                                     editTitle={edit}
                                     refetch={refetch}
+                                    canEdit={canEdit}
                                 >
                                     <Title>
                                         {playbook.title}
@@ -226,6 +227,7 @@ const PlaybookEditor = () => {
                                 playbook={playbook}
                                 editTitle={edit}
                                 refetch={refetch}
+                                canEdit={canEdit}
                             >
                                 <span data-testid={'playbook-editor-title'}>
                                     {playbook.title}
@@ -312,6 +314,7 @@ const PlaybookEditor = () => {
                         playbookID={playbook.id}
                         playbookMetrics={playbook.metrics}
                         stats={stats}
+                        canEdit={canEdit}
                     />
                 </Route>
             </Switch>

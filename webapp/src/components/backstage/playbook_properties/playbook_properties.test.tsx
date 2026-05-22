@@ -36,16 +36,19 @@ jest.mock('@mattermost/compass-icons/components', () => ({
 }));
 jest.mock('./empty_state', () => ({
     __esModule: true,
-    default: ({buttonText, onButtonClick}: {buttonText?: React.ReactNode; onButtonClick?: () => void}) => (
-        buttonText ? (
-            <button
-                data-testid='empty-state-add-button'
-                onClick={onButtonClick}
-            >
-                {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                {'add'}
-            </button>
-        ) : null
+    default: ({buttonText, description, onButtonClick}: {buttonText?: React.ReactNode; description?: React.ReactNode; onButtonClick?: () => void}) => (
+        <>
+            <span data-testid='empty-state-description'>{description}</span>
+            {buttonText ? (
+                <button
+                    data-testid='empty-state-add-button'
+                    onClick={onButtonClick}
+                >
+                    {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                    {'add'}
+                </button>
+            ) : null}
+        </>
     ),
 }));
 jest.mock('react-beautiful-dnd', () => ({
@@ -145,5 +148,26 @@ describe('PlaybookProperties > canEdit=false empty state', () => {
     it('shows the add button in empty state when canEdit is true', () => {
         const component = render(true);
         expect(findEmptyStateButton(component.toJSON())).not.toBeNull();
+    });
+});
+
+describe('PlaybookProperties > empty state description', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockProperties = [];
+    });
+
+    it('shows a read-only description when canEdit is false', () => {
+        const component = render(false);
+        const descNode = findNodeByTestId(component.toJSON(), 'empty-state-description');
+        expect(descNode).not.toBeNull();
+        expect(JSON.stringify(descNode)).toContain('No custom attributes have been configured');
+    });
+
+    it('shows an actionable description when canEdit is true', () => {
+        const component = render(true);
+        const descNode = findNodeByTestId(component.toJSON(), 'empty-state-description');
+        expect(descNode).not.toBeNull();
+        expect(JSON.stringify(descNode)).toContain('Add custom attributes');
     });
 });
