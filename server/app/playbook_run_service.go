@@ -4970,7 +4970,8 @@ func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *Playboo
 	for playbookFieldID, rawValue := range initialValues {
 		runFieldID, ok := propertyCopyResult.FieldMappings[playbookFieldID]
 		if !ok {
-			return nil, errors.Errorf("initial property value references unknown playbook field ID %s", playbookFieldID)
+			logger.WithField("field_id", playbookFieldID).Warn("initial property value references unknown playbook field ID, skipping")
+			continue
 		}
 		if len(rawValue) == 0 {
 			continue
@@ -4981,7 +4982,8 @@ func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *Playboo
 		}
 		runField, ok := runFieldByID[runFieldID]
 		if !ok {
-			return nil, errors.Errorf("run field %s not found in copied fields", runFieldID)
+			logger.WithField("field_id", runFieldID).Warn("run field not found in copied fields, skipping")
+			continue
 		}
 		if _, err := s.propertyService.UpsertRunPropertyValueWithField(playbookRun.ID, runField, translatedValue); err != nil {
 			return nil, errors.Wrapf(err, "failed to upsert initial property value for field %s", runFieldID)
