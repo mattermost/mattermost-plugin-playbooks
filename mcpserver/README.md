@@ -38,6 +38,8 @@ export MM_ACCESS_TOKEN=<YOUR_PAT>
 | `--server-url`, `-s` | `MM_SERVER_URL` | Mattermost server URL (required) |
 | `--token`, `-t` | `MM_ACCESS_TOKEN` | Personal Access Token (required) |
 
+At startup, the server validates the provided token by calling `/api/v4/users/me` on the Mattermost server.
+
 ### Claude Desktop
 
 Add to your `claude_desktop_config.json`:
