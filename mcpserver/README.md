@@ -4,7 +4,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that e
 
 ## Prerequisites
 
-- Go 1.25+
+- Go 1.26.3+
 - A running Mattermost server with the Playbooks plugin installed
 - A [Personal Access Token (PAT)](https://docs.mattermost.com/developer/personal-access-tokens.html) from your Mattermost account (only for STDIO transport)
 

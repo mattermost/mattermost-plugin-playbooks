@@ -210,6 +210,13 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 	if args.Title == nil && args.Description == nil && args.Command == nil {
 		return "", fmt.Errorf("at least one field (title, description, or command) must be provided")
 	}
+	var title string
+	if args.Title != nil {
+		title = strings.TrimSpace(*args.Title)
+		if title == "" {
+			return "", fmt.Errorf("title is required")
+		}
+	}
 
 	var run playbookRunDetail
 	if err := client.Get(ctx, fmt.Sprintf("runs/%s", args.RunID), nil, &run); err != nil {
@@ -229,7 +236,7 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 		"command":     currentItem.Command,
 	}
 	if args.Title != nil {
-		body["title"] = *args.Title
+		body["title"] = title
 	}
 	if args.Description != nil {
 		body["description"] = *args.Description

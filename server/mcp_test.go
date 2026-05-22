@@ -110,7 +110,8 @@ func TestNewPlaybooksMCPServerRegistersExposeExternal(t *testing.T) {
 		requestCh: make(chan *http.Request, 1),
 		bodyCh:    make(chan []byte, 1),
 	}
-	server := newPlaybooksMCPServer(api, http.NotFoundHandler(), true)
+	server, err := newPlaybooksMCPServer(api, http.NotFoundHandler(), true)
+	require.NoError(t, err)
 
 	require.NoError(t, server.Register())
 
