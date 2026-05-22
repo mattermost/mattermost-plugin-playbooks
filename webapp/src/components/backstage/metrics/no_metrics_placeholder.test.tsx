@@ -23,7 +23,7 @@ import NoMetricsPlaceholder from './no_metrics_placeholder';
 const render = (canEdit?: boolean) =>
     renderer.create(
         <IntlProvider locale='en'>
-            <NoMetricsPlaceholder {...(canEdit !== undefined ? {canEdit} : {})}/>
+            <NoMetricsPlaceholder {...(canEdit === undefined ? {} : {canEdit})}/>
         </IntlProvider>,
     ).toJSON();
 

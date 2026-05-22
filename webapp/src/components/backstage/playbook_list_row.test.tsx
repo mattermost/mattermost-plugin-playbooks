@@ -62,6 +62,7 @@ jest.mock('src/components/widgets/tooltip', () => ({
     __esModule: true,
     default: ({children}: {children: React.ReactNode}) => <>{children}</>,
 }));
+
 // Blanket mock so styled-components doesn't receive undefined for any icon
 jest.mock('@mattermost/compass-icons/components', () =>
     new Proxy({}, {get: () => () => null}),
@@ -74,15 +75,15 @@ jest.mock('mattermost-redux/client', () => ({Client4: {getChannel: jest.fn()}}))
 
 // ── DotMenu mock: renders children always; captures disabled state ──────────
 jest.mock('src/components/dot_menu', () => {
-    const React = require('react');
+    const {createElement} = jest.requireActual<typeof import('react')>('react');
     return {
         __esModule: true,
-        default: ({children}: {children: React.ReactNode}) => React.createElement('div', {'data-testid': 'dot-menu'}, children),
+        default: ({children}: {children: unknown}) => createElement('div', {'data-testid': 'dot-menu'}, children as any),
         DotMenuButton: () => null,
-        DropdownMenuItem: ({children, disabled}: {children: React.ReactNode; disabled?: boolean}) =>
-            React.createElement('div', {'data-disabled': disabled ? 'true' : 'false'}, children),
-        DropdownMenuItemStyled: ({children}: {children: React.ReactNode}) =>
-            React.createElement('div', null, children),
+        DropdownMenuItem: ({children, disabled}: {children: unknown; disabled?: boolean}) =>
+            createElement('div', {'data-disabled': disabled ? 'true' : 'false'}, children as any),
+        DropdownMenuItemStyled: ({children}: {children: unknown}) =>
+            createElement('div', null, children as any),
         iconSplitStyling: '',
     };
 });
@@ -94,16 +95,26 @@ import PlaybookListRow from './playbook_list_row';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const containsText = (node: any, text: string): boolean => {
-    if (typeof node === 'string') return node === text;
-    if (Array.isArray(node)) return node.some((c: any) => containsText(c, text));
-    if (node?.children) return node.children.some((c: any) => containsText(c, text));
+    if (typeof node === 'string') {
+        return node === text;
+    }
+    if (Array.isArray(node)) {
+        return node.some((c: any) => containsText(c, text));
+    }
+    if (node?.children) {
+        return node.children.some((c: any) => containsText(c, text));
+    }
     return false;
 };
 
 const findAll = (node: any, pred: (n: any) => boolean): any[] => {
-    if (!node || typeof node === 'string') return [];
+    if (!node || typeof node === 'string') {
+        return [];
+    }
     const results: any[] = [];
-    if (pred(node)) results.push(node);
+    if (pred(node)) {
+        results.push(node);
+    }
     (Array.isArray(node) ? node : node.children ?? []).forEach((c: any) => results.push(...findAll(c, pred)));
     return results;
 };
@@ -140,13 +151,13 @@ const makePlaybook = (adminOnlyEdit: boolean, memberRole: string | null) => ({
     active_runs: 0,
     default_playbook_member_role: '',
     admin_only_edit: adminOnlyEdit,
-    members: memberRole !== null ? [
+    members: memberRole === null ? [] : [
         {
             user_id: 'user-1',
             roles: [],
             scheme_roles: [memberRole],
         },
-    ] : [],
+    ],
 });
 
 const defaultProps = {

@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -2029,6 +2030,40 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
 		require.NoError(t, err)
 		assert.False(t, confirmed.AdminOnlyEdit)
+	})
+
+	t.Run("PUT body without admin_only_edit preserves the lock", func(t *testing.T) {
+		// Ensure the lock is on before the test.
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.AdminOnlyEdit = true
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// Build a raw PUT body that omits admin_only_edit entirely to simulate
+		// a legacy client or integration that predates the field.
+		rawJSON, err := json.Marshal(pb)
+		require.NoError(t, err)
+		var rawMap map[string]json.RawMessage
+		require.NoError(t, json.Unmarshal(rawJSON, &rawMap))
+		delete(rawMap, "admin_only_edit")
+		bodyWithoutField, err := json.Marshal(rawMap)
+		require.NoError(t, err)
+
+		apiURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", e.ServerAdminClient.URL, playbookID)
+		req, err := http.NewRequest(http.MethodPut, apiURL, bytes.NewReader(bodyWithoutField))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		_ = resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.True(t, confirmed.AdminOnlyEdit, "admin_only_edit must be preserved when absent from the PUT body")
 	})
 }
 

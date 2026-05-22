@@ -27,7 +27,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {isCurrentUserAdmin} from 'src/selectors';
 import {Playbook} from 'src/types/playbook';
-import {PlaybookRole} from 'src/types/permissions';
+import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {
     DotMenuButton,
@@ -37,7 +37,6 @@ import DotMenu, {
 } from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
 import {createPlaybookRun, playbookExportProps} from 'src/client';
-import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';

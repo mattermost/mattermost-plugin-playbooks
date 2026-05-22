@@ -6,6 +6,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -243,8 +244,15 @@ func (h *PlaybookHandler) getPlaybook(c *Context, w http.ResponseWriter, r *http
 func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to read request body", err)
+		return
+	}
+
 	var playbook app.Playbook
-	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
+	if err := json.Unmarshal(body, &playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
@@ -255,6 +263,14 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
+	}
+
+	// Preserve AdminOnlyEdit when the client didn't explicitly include the field, so
+	// legacy clients or integrations that predate this field can't inadvertently disable the lock.
+	var rawFields map[string]json.RawMessage
+	_ = json.Unmarshal(body, &rawFields)
+	if _, ok := rawFields["admin_only_edit"]; !ok {
+		playbook.AdminOnlyEdit = oldPlaybook.AdminOnlyEdit
 	}
 
 	if err = h.validateMetrics(playbook); err != nil {

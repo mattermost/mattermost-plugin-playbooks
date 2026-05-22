@@ -360,9 +360,9 @@ const PlaybookProperties = ({playbookID, canEdit = true}: Props) => {
                 <InnerContainer>
                     <EmptyState
                         title={<FormattedMessage defaultMessage='No attributes yet'/>}
-                        description={canEdit
-                            ? <FormattedMessage defaultMessage='Add custom attributes to capture additional information about your playbook runs.'/>
-                            : <FormattedMessage defaultMessage='No custom attributes have been configured for this playbook.'/>
+                        description={canEdit ?
+                            <FormattedMessage defaultMessage='Add custom attributes to capture additional information about your playbook runs.'/> :
+                            <FormattedMessage defaultMessage='No custom attributes have been configured for this playbook.'/>
                         }
                         buttonText={canEdit ? <FormattedMessage defaultMessage='Add your first attribute'/> : undefined}
                         onButtonClick={addProperty}
