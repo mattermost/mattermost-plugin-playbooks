@@ -119,12 +119,14 @@ const AssignTo = (props: AssignedToProps) => {
 
         let label: string;
         let resolvedUserId: string | undefined;
+        let badgeTestId: string;
 
         if (assigneeType === AssigneeTypePropertyUser) {
             const field = props.propertyFields?.find((f) => f.id === props.assignee_property_field_id);
             label = field ?
                 formatMessage({defaultMessage: 'Run {name}'}, {name: field.name}) :
                 formatMessage({defaultMessage: 'Run User'});
+            badgeTestId = 'property-user-indicator-badge';
             if (props.mode === 'run') {
                 const propertyValue = props.propertyValues?.find((v) => v.field_id === props.assignee_property_field_id);
                 if (propertyValue?.value && typeof propertyValue.value === 'string') {
@@ -137,6 +139,7 @@ const AssignTo = (props: AssignedToProps) => {
             label = assigneeType === AssigneeTypeOwner ?
                 formatMessage({defaultMessage: 'Run Owner'}) :
                 formatMessage({defaultMessage: 'Run Creator'});
+            badgeTestId = 'role-indicator-badge';
             if (props.mode === 'run') {
                 resolvedUserId = props.assignee_id || (assigneeType === AssigneeTypeOwner ? props.runOwnerUserId : props.runCreatorUserId);
             }
@@ -144,17 +147,22 @@ const AssignTo = (props: AssignedToProps) => {
 
         if (resolvedUserId) {
             return (
-                <RoleAssigneeDisplay data-testid='role-assignee-display'>
+                <RoleAssigneeDisplay>
                     <Profile
                         userId={resolvedUserId}
-                        nameFormatter={() => <RolePillLabel>{label}</RolePillLabel>}
+                        nameFormatter={(preferredName) => (
+                            <>
+                                {preferredName}
+                                <RolePillLabel data-testid={badgeTestId}>{label}</RolePillLabel>
+                            </>
+                        )}
                     />
                 </RoleAssigneeDisplay>
             );
         }
 
         return (
-            <RoleAssigneeDisplay data-testid='role-assignee-display'>
+            <RoleAssigneeDisplay data-testid={badgeTestId}>
                 <RolePillContent>
                     <RoleUserAvatarIcon variant='chip'/>
                     <RolePillLabel>{label}</RolePillLabel>
