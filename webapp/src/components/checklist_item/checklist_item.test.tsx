@@ -53,6 +53,7 @@ jest.mock('src/components/backstage/toast', () => ({
 
 jest.mock('src/hooks', () => ({
     useProfilesInTeam: jest.fn(() => []),
+    useProfilesForRun: jest.fn(() => []),
 }));
 
 jest.mock('src/components/checklists/assignee_dropdown', () => ({
