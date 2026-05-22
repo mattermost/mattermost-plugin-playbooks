@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-playbooks/mcpserver
 
-go 1.24.11
+go 1.26.3
 
 require (
 	github.com/mattermost/mattermost-plugin-playbooks v0.0.0

@@ -5,6 +5,7 @@ package tools
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
@@ -31,8 +32,11 @@ type PlaybooksToolProvider struct {
 }
 
 // NewPlaybooksToolProvider creates a new tool provider.
-func NewPlaybooksToolProvider(clientFactory ClientFactory) *PlaybooksToolProvider {
-	return &PlaybooksToolProvider{clientFactory: clientFactory}
+func NewPlaybooksToolProvider(clientFactory ClientFactory) (*PlaybooksToolProvider, error) {
+	if clientFactory == nil {
+		return nil, fmt.Errorf("clientFactory cannot be nil")
+	}
+	return &PlaybooksToolProvider{clientFactory: clientFactory}, nil
 }
 
 // ProvideTools registers all available tools with the MCP server.

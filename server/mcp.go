@@ -130,7 +130,7 @@ func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body 
 	return nil
 }
 
-func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, exposeExternal bool) *mcphelper.Server {
+func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, exposeExternal bool) (*mcphelper.Server, error) {
 	server := mcphelper.NewServer(api, mcphelper.PluginMCPServer{
 		PluginID:       manifest.Id,
 		Name:           "Playbooks MCP",
@@ -145,11 +145,18 @@ func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, expose
 		}
 		return &pluginMCPClient{handler: handler, userID: userID}, nil
 	}
-	tools.NewPlaybooksToolProvider(factory).ProvideMCPHelperTools(server)
-	return server
+	provider, err := tools.NewPlaybooksToolProvider(factory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tool provider: %w", err)
+	}
+	provider.ProvideMCPHelperTools(server)
+	return server, nil
 }
 
 func (p *Plugin) ensureMCPServer() error {
+	p.mcpMu.Lock()
+	defer p.mcpMu.Unlock()
+
 	if p.mcpServer != nil {
 		return nil
 	}
@@ -159,31 +166,49 @@ func (p *Plugin) ensureMCPServer() error {
 		exposeExternal = p.config.GetConfiguration().ExposeMCPExternal
 	}
 
-	p.mcpServer = newPlaybooksMCPServer(p.API, p.handler, exposeExternal)
+	server, err := newPlaybooksMCPServer(p.API, p.handler, exposeExternal)
+	if err != nil {
+		return err
+	}
+	p.mcpServer = server
 	return nil
 }
 
+func (p *Plugin) getMCPServer() *mcphelper.Server {
+	p.mcpMu.RLock()
+	defer p.mcpMu.RUnlock()
+	return p.mcpServer
+}
+
+func (p *Plugin) setMCPServer(server *mcphelper.Server) {
+	p.mcpMu.Lock()
+	defer p.mcpMu.Unlock()
+	p.mcpServer = server
+}
+
 func (p *Plugin) registerMCPServerBestEffort() {
-	if p.mcpServer == nil {
+	server := p.getMCPServer()
+	if server == nil {
 		return
 	}
-	if err := p.mcpServer.Register(); err != nil {
+	if err := server.Register(); err != nil {
 		logrus.WithError(err).Warn("failed to register Playbooks MCP server with Agents")
 	}
 }
 
 func (p *Plugin) unregisterMCPServerBestEffort() {
-	if p.mcpServer == nil {
+	server := p.getMCPServer()
+	if server == nil {
 		return
 	}
-	if err := p.mcpServer.Unregister(); err != nil {
+	if err := server.Unregister(); err != nil {
 		logrus.WithError(err).Warn("failed to unregister Playbooks MCP server with Agents")
 	}
 }
 
 func (p *Plugin) isMCPEnabled() bool {
 	if p.config == nil {
-		return p.mcpServer != nil
+		return p.getMCPServer() != nil
 	}
 	return p.config.IsExperimentalFeaturesEnabled()
 }
@@ -196,10 +221,11 @@ func (p *Plugin) serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool {
 		http.NotFound(w, r)
 		return true
 	}
-	if p.mcpServer == nil {
+	server := p.getMCPServer()
+	if server == nil {
 		http.Error(w, "MCP server unavailable", http.StatusServiceUnavailable)
 		return true
 	}
-	p.mcpServer.ServeHTTP(w, r)
+	server.ServeHTTP(w, r)
 	return true
 }

@@ -53,7 +53,9 @@ func NewStdioServer(config StdioConfig) (*StdioServer, error) {
 		},
 	}
 
-	s.registerTools()
+	if err := s.registerTools(); err != nil {
+		return nil, err
+	}
 
 	return s, nil
 }

@@ -104,7 +104,7 @@ func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
 			},
 		},
 	}
-	newTitle := "new title"
+	newTitle := " new title "
 	args := EditChecklistItemArgs{
 		RunID:           "abcdefghijklmnopqrstuvwxyz",
 		ChecklistNumber: 0,
@@ -134,6 +134,28 @@ func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
 	}
 	if got := body["description"]; got != "old description" {
 		t.Errorf("expected existing description to be preserved, got %q", got)
+	}
+}
+
+func TestToolEditChecklistItemRejectsBlankTitle(t *testing.T) {
+	client := &fakeAPIClient{}
+	blankTitle := "   "
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+		Title:           &blankTitle,
+	}
+
+	if _, err := toolEditChecklistItem(context.Background(), client, args); err == nil || err.Error() != "title is required" {
+		t.Fatalf("expected title validation error, got %v", err)
+	}
+
+	if client.getEndpoint != "" {
+		t.Fatalf("expected validation to fail before fetching run, got endpoint %q", client.getEndpoint)
+	}
+	if client.putEndpoint != "" {
+		t.Fatalf("expected no update call, got endpoint %q", client.putEndpoint)
 	}
 }
 
