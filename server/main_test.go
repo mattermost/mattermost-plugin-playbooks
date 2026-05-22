@@ -39,6 +39,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
+const testUserPassword = "Password123!abcd"
+
 func testPtr[T any](v T) *T {
 	return &v
 }
@@ -313,7 +315,7 @@ func Setup(t *testing.T) *TestEnvironment {
 
 	// Authenticate as admin user
 	authStart := time.Now()
-	_, _, err = client.Login(context.Background(), "playbooksadmin", "Password123!")
+	_, _, err = client.Login(context.Background(), "playbooksadmin", testUserPassword)
 	require.NoError(t, err)
 	t.Logf("Authentication took: %v", time.Since(authStart))
 
@@ -384,11 +386,10 @@ func (e *TestEnvironment) CreateClients() {
 	e.T.Helper()
 
 	e.createClientsOnce.Do(func() {
-		userPassword := "Password123!"
 		admin, appErr := e.A.CreateUserAsAdmin(e.Context, &model.User{
 			Email:    "playbooksadmin@example.com",
 			Username: "playbooksadmin",
-			Password: userPassword,
+			Password: testUserPassword,
 		}, "")
 		require.Nil(e.T, appErr)
 		e.AdminUser = admin
@@ -396,7 +397,7 @@ func (e *TestEnvironment) CreateClients() {
 		user, appErr := e.A.CreateUser(e.Context, &model.User{
 			Email:     "playbooksuser@example.com",
 			Username:  "playbooksuser",
-			Password:  userPassword,
+			Password:  testUserPassword,
 			FirstName: "First 1",
 			LastName:  "Last 1",
 		})
@@ -406,7 +407,7 @@ func (e *TestEnvironment) CreateClients() {
 		user2, appErr := e.A.CreateUser(e.Context, &model.User{
 			Email:     "playbooksuser2@example.com",
 			Username:  "playbooksuser2",
-			Password:  userPassword,
+			Password:  testUserPassword,
 			FirstName: "First 2",
 			LastName:  "Last 2",
 		})
@@ -416,7 +417,7 @@ func (e *TestEnvironment) CreateClients() {
 		notInTeam, appErr := e.A.CreateUser(e.Context, &model.User{
 			Email:    "playbooksusernotinteam@example.com",
 			Username: "playbooksusenotinteam",
-			Password: userPassword,
+			Password: testUserPassword,
 		})
 		require.Nil(e.T, appErr)
 		e.RegularUserNotInTeam = notInTeam
@@ -424,7 +425,7 @@ func (e *TestEnvironment) CreateClients() {
 		siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
 
 		serverAdminClient := model.NewAPIv4Client(siteURL)
-		_, _, err := serverAdminClient.Login(context.Background(), admin.Email, userPassword)
+		_, _, err := serverAdminClient.Login(context.Background(), admin.Email, testUserPassword)
 		require.NoError(e.T, err)
 
 		playbooksAdminClient, err := client.New(serverAdminClient)
@@ -434,7 +435,7 @@ func (e *TestEnvironment) CreateClients() {
 		e.PlaybooksAdminClient = playbooksAdminClient
 
 		serverClient := model.NewAPIv4Client(siteURL)
-		_, _, err = serverClient.Login(context.Background(), user.Email, userPassword)
+		_, _, err = serverClient.Login(context.Background(), user.Email, testUserPassword)
 		require.NoError(e.T, err)
 
 		playbooksClient, err := client.New(serverClient)
@@ -445,14 +446,14 @@ func (e *TestEnvironment) CreateClients() {
 		require.NoError(e.T, err)
 
 		serverClient2 := model.NewAPIv4Client(siteURL)
-		_, _, err = serverClient2.Login(context.Background(), user2.Email, userPassword)
+		_, _, err = serverClient2.Login(context.Background(), user2.Email, testUserPassword)
 		require.NoError(e.T, err)
 
 		playbooksClient2, err := client.New(serverClient2)
 		require.NoError(e.T, err)
 
 		serverClientNotInTeam := model.NewAPIv4Client(siteURL)
-		_, _, err = serverClientNotInTeam.Login(context.Background(), notInTeam.Email, userPassword)
+		_, _, err = serverClientNotInTeam.Login(context.Background(), notInTeam.Email, testUserPassword)
 		require.NoError(e.T, err)
 
 		playbooksClientNotInTeam, err := client.New(serverClientNotInTeam)
@@ -650,11 +651,10 @@ func (e *TestEnvironment) CreateGuest() {
 	_, _, err := e.ServerAdminClient.UpdateConfig(context.Background(), cfg)
 	require.NoError(e.T, err)
 
-	userPassword := "password123!"
 	guest, appErr := e.A.CreateGuest(e.Context, &model.User{
 		Email:    "playbookguest@example.com",
 		Username: "playbookguest",
-		Password: userPassword,
+		Password: testUserPassword,
 	})
 	require.Nil(e.T, appErr)
 	e.GuestUser = guest
@@ -667,7 +667,7 @@ func (e *TestEnvironment) CreateGuest() {
 
 	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
 	serverClientGuest := model.NewAPIv4Client(siteURL)
-	_, _, err = serverClientGuest.Login(context.Background(), e.GuestUser.Email, userPassword)
+	_, _, err = serverClientGuest.Login(context.Background(), e.GuestUser.Email, testUserPassword)
 	require.NoError(e.T, err)
 
 	playbooksClientGuest, err := client.New(serverClientGuest)
