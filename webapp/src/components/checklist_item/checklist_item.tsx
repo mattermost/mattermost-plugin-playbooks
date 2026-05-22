@@ -391,28 +391,21 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return null;
         }
 
-        if (hasRoleAssignee) {
-            return (
-                <AssigneeDropdown
-                    checklistItem={localChecklistItem}
-                    editable={false}
-                    onChanged={handleAssigneeDropdownChange}
-                    participantUserIds={props.participantUserIds}
-                    runOwnerUserId={props.runOwnerId}
-                    runCreatorUserId={props.runCreatorId}
-                    mode={props.playbookRunId ? 'run' : 'template'}
-                    propertyFields={props.propertyFields}
-                    propertyValues={props.propertyValues}
-                />
-            );
-        }
-
         return (
             <AssignTo
                 participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
+                assignee_type={assigneeType}
+                assignee_property_field_id={assigneePropertyFieldID}
                 editable={!props.readOnly && !isSkipped()}
                 onSelectedChange={onAssigneeChange}
+                onExtraOptionSelected={onExtraOptionSelected}
+                roleOptions={roleOptions}
+                propertyFields={props.propertyFields}
+                propertyValues={props.propertyValues}
+                runOwnerUserId={props.runOwnerId}
+                runCreatorUserId={props.runCreatorId}
+                mode={props.playbookRunId ? 'run' : 'template'}
                 placement={'bottom-start'}
                 isEditing={false}
                 teamId={props.teamId}

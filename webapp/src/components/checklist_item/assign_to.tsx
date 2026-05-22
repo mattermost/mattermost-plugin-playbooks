@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
@@ -10,11 +10,21 @@ import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {Placement} from '@floating-ui/react';
 
+import {AccountOutlineIcon} from '@mattermost/compass-icons/components';
+
 import {OVERLAY_DELAY} from 'src/constants';
 
 import ProfileSelector, {ExtraSection, Option} from 'src/components/profile/profile_selector';
+import Profile from 'src/components/profile/profile';
 import {useProfilesForRun} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
+import {
+    AssigneeTypeCreator,
+    AssigneeTypeOwner,
+    AssigneeTypePropertyUser,
+    isRoleBasedAssigneeType,
+} from 'src/types/playbook';
+import {PropertyField, PropertyValue} from 'src/types/properties';
 
 export const EXTRA_OPTION_PREFIX_ROLE = 'role:';
 export const EXTRA_OPTION_PREFIX_PROPERTY_USER = 'property_user:';
@@ -24,9 +34,37 @@ export interface RoleOption {
     label: string;
 }
 
+const AVATAR_SIZE_PX = 24;
+const CHIP_HEIGHT_PX = 28;
+const CHIP_ROLE_ICON_SIZE_PX = 16;
+
+const assigneeDropdownContainerStyles = css`
+    .playbook-react-select .image {
+        width: ${AVATAR_SIZE_PX}px;
+        height: ${AVATAR_SIZE_PX}px;
+    }
+`;
+
+const RoleUserAvatarIcon = ({variant}: {variant: 'chip' | 'dropdown'}) => {
+    if (variant === 'dropdown') {
+        return (
+            <DropdownRoleAvatarIcon aria-hidden={true}>
+                <AccountOutlineIcon size={16}/>
+            </DropdownRoleAvatarIcon>
+        );
+    }
+
+    return (
+        <ChipRoleAvatarIcon aria-hidden={true}>
+            <AccountOutlineIcon size={CHIP_ROLE_ICON_SIZE_PX}/>
+        </ChipRoleAvatarIcon>
+    );
+};
+
 interface AssignedToProps {
     assignee_id: string;
     assignee_type?: string;
+    assignee_property_field_id?: string;
     participantUserIds: string[];
     editable: boolean;
     inHoverMenu?: boolean;
@@ -38,6 +76,11 @@ interface AssignedToProps {
     roleOptions?: RoleOption[];
     teamId?: string;
     channelId?: string;
+    propertyFields?: PropertyField[];
+    propertyValues?: PropertyValue[];
+    runOwnerUserId?: string;
+    runCreatorUserId?: string;
+    mode?: 'template' | 'run';
 }
 
 const AssignTo = (props: AssignedToProps) => {
@@ -64,7 +107,7 @@ const AssignTo = (props: AssignedToProps) => {
                 value: r.value,
                 label: (
                     <OptionRow>
-                        <RoleTriangle className='icon-menu-right'/>
+                        <RoleUserAvatarIcon variant='dropdown'/>
                         {r.label}
                     </OptionRow>
                 ),
@@ -73,11 +116,79 @@ const AssignTo = (props: AssignedToProps) => {
         });
     }
 
+    const roleAssigneeDisplay = useMemo(() => {
+        const assigneeType = props.assignee_type || '';
+        if (!isRoleBasedAssigneeType(assigneeType)) {
+            return null;
+        }
+
+        let label: string;
+        let resolvedUserId: string | undefined;
+
+        if (assigneeType === AssigneeTypePropertyUser) {
+            const field = props.propertyFields?.find((f) => f.id === props.assignee_property_field_id);
+            label = field ?
+                formatMessage({defaultMessage: 'Run {name}'}, {name: field.name}) :
+                formatMessage({defaultMessage: 'Run User'});
+            if (props.mode === 'run') {
+                const propertyValue = props.propertyValues?.find((v) => v.field_id === props.assignee_property_field_id);
+                if (propertyValue?.value && typeof propertyValue.value === 'string') {
+                    resolvedUserId = propertyValue.value;
+                } else if (props.assignee_id) {
+                    resolvedUserId = props.assignee_id;
+                }
+            }
+        } else {
+            label = assigneeType === AssigneeTypeOwner ?
+                formatMessage({defaultMessage: 'Run Owner'}) :
+                formatMessage({defaultMessage: 'Run Creator'});
+            if (props.mode === 'run') {
+                resolvedUserId = props.assignee_id || (assigneeType === AssigneeTypeOwner ? props.runOwnerUserId : props.runCreatorUserId);
+            }
+        }
+
+        if (resolvedUserId) {
+            return (
+                <RoleAssigneeDisplay data-testid='role-assignee-display'>
+                    <Profile
+                        userId={resolvedUserId}
+                        nameFormatter={() => <RolePillLabel>{label}</RolePillLabel>}
+                    />
+                </RoleAssigneeDisplay>
+            );
+        }
+
+        return (
+            <RoleAssigneeDisplay data-testid='role-assignee-display'>
+                <RolePillContent>
+                    <RoleUserAvatarIcon variant='chip'/>
+                    <RolePillLabel>{label}</RolePillLabel>
+                </RolePillContent>
+            </RoleAssigneeDisplay>
+        );
+    }, [
+        props.assignee_type,
+        props.assignee_property_field_id,
+        props.assignee_id,
+        props.propertyFields,
+        props.propertyValues,
+        props.runOwnerUserId,
+        props.runCreatorUserId,
+        props.mode,
+        formatMessage,
+    ]);
+
+    const profileSelectorProps = {
+        selectedUserId: roleAssigneeDisplay ? undefined : props.assignee_id,
+        assignedDisplay: roleAssigneeDisplay ?? undefined,
+    };
+
     if (props.inHoverMenu) {
         return (
             <ProfileSelector
                 key={profilesKey}
-                selectedUserId={props.assignee_id}
+                {...profileSelectorProps}
+                dropdownContainerStyles={assigneeDropdownContainerStyles}
                 onlyPlaceholder={true}
                 placeholder={
                     <ChecklistHoverMenuButton
@@ -119,7 +230,7 @@ const AssignTo = (props: AssignedToProps) => {
             <StyledProfileSelector
                 key={profilesKey}
                 testId={'assignee-profile-selector'}
-                selectedUserId={props.assignee_id}
+                {...profileSelectorProps}
                 userGroups={{
                     subsetUserIds: props.participantUserIds,
                     defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
@@ -152,7 +263,7 @@ const AssignTo = (props: AssignedToProps) => {
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
                 customControlProps={{
-                    showCustomReset: Boolean(props.assignee_id),
+                    showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
                     onCustomReset: resetAssignee,
                 }}
                 customDropdownArrow={dropdownArrow}
@@ -194,13 +305,14 @@ const ControlComponent = (ownProps: ControlProps<Option, boolean>) => (
     </div>
 );
 
-const StyledProfileSelector = styled(ProfileSelector)`
+const StyledProfileSelector = styled(ProfileSelector).attrs({
+    dropdownContainerStyles: assigneeDropdownContainerStyles,
+})`
     .Assigned-button, .NoAssignee-button, .NoName-Assigned-button {
         display: flex;
         align-items: center;
         max-width: 100%;
-        height: 24px;
-        padding: 2px 6px 2px 2px;
+        padding: 2px 6px 2px 4px;
         margin-top: 0;
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
@@ -209,6 +321,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         font-weight: 400;
         font-size: 12px;
         line-height: 10px;
+        box-sizing: border-box;
 
         ${({enableEdit}) => enableEdit && css`
             &:hover {
@@ -217,8 +330,8 @@ const StyledProfileSelector = styled(ProfileSelector)`
         `}
 
         .image {
-            width: 20px;
-            height: 20px;
+            width: ${AVATAR_SIZE_PX}px;
+            height: ${AVATAR_SIZE_PX}px;
         }
 
         .icon-chevron-down{
@@ -229,6 +342,10 @@ const StyledProfileSelector = styled(ProfileSelector)`
             line-height: 14px;
             text-align: center;
         }
+    }
+
+    .Assigned-button, .NoName-Assigned-button {
+        height: ${CHIP_HEIGHT_PX}px;
     }
 
     .NoName-Assigned-button {
@@ -306,8 +423,45 @@ const OptionRow = styled.div`
     gap: 8px;
 `;
 
-const RoleTriangle = styled.i`
-    font-size: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
+const DropdownRoleAvatarIcon = styled.span`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: ${AVATAR_SIZE_PX}px;
+    height: ${AVATAR_SIZE_PX}px;
     flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const ChipRoleAvatarIcon = styled.span`
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: ${AVATAR_SIZE_PX}px;
+    height: ${AVATAR_SIZE_PX}px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const RoleAssigneeDisplay = styled.div`
+    display: flex;
+    align-items: center;
+    min-width: 0;
+`;
+
+const RolePillContent = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+`;
+
+const RolePillLabel = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    line-height: 15px;
 `;

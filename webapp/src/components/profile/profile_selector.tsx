@@ -15,7 +15,7 @@ import {Placement} from '@floating-ui/react';
 
 import {useUpdateEffect} from 'react-use';
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {useAppSelector} from 'src/hooks/redux';
 
@@ -90,6 +90,8 @@ interface Props {
     userGroups?: UserGroup;
     extraSections?: ExtraSection[];
     onExtraOptionSelected?: (value: string) => void;
+    assignedDisplay?: React.ReactNode;
+    dropdownContainerStyles?: ReturnType<typeof css>;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -211,7 +213,22 @@ export default function ProfileSelector(props: Props) {
     );
 
     let target;
-    if (props.selectedUserId) {
+    if (props.assignedDisplay) {
+        target = (
+            <button
+                onClick={() => {
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
+                disabled={!props.enableEdit}
+                className={props.profileButtonClass || 'Assigned-button'}
+            >
+                {props.assignedDisplay}
+                {props.enableEdit && dropdownArrow}
+            </button>
+        );
+    } else if (props.selectedUserId) {
         target = (
             <ProfileButton
                 enableEdit={props.enableEdit}
@@ -310,6 +327,7 @@ export default function ProfileSelector(props: Props) {
             placement={props.placement}
             isOpen={isOpen}
             onOpenChange={setOpen}
+            containerStyles={props.dropdownContainerStyles}
         >
             <ReactSelect
                 autoFocus={true}
