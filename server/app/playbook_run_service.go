@@ -1570,6 +1570,18 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userI
 		return wrappedErr
 	}
 
+	channel, err := s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
+	if err != nil {
+		wrappedErr := errors.Wrapf(err, "failed to get channel for run (runID: %s)", playbookRunID)
+		auditRec.AddErrorDesc(wrappedErr.Error())
+		return wrappedErr
+	}
+	if channel.DeleteAt > 0 {
+		wrappedErr := errors.New("cannot toggle retrospective for an archived channel")
+		auditRec.AddErrorDesc(wrappedErr.Error())
+		return wrappedErr
+	}
+
 	model.AddEventParameterToAuditRec(auditRec, "currentlyEnabled", playbookRunToModify.RetrospectiveEnabled)
 
 	if enabled == playbookRunToModify.RetrospectiveEnabled {

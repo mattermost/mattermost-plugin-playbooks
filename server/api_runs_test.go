@@ -3254,6 +3254,36 @@ func TestToggleRunRetrospective(t *testing.T) {
 		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
 		assert.Equal(t, client.RetrospectiveEnabled, lastEvent.EventType)
 	})
+
+	t.Run("owner removed from channel is forbidden", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Ex-member Owner", e.RegularUser.Id)
+
+		// Remove the owner from the run's channel; they remain OwnerUserID in the DB.
+		_, err := e.ServerAdminClient.RemoveUserFromChannel(context.Background(), run.ChannelID, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusForbidden, status)
+
+		fetched, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "retro must remain enabled after forbidden toggle attempt")
+	})
+
+	t.Run("toggle is blocked on an archived channel", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Archived Channel", e.RegularUser.Id)
+
+		// Archive the run's channel.
+		_, err := e.ServerAdminClient.DeleteChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+
+		// Both owner and sysadmin should be blocked by the archived-channel guard in the service.
+		statusOwner := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusInternalServerError, statusOwner)
+
+		statusAdmin := toggleRunRetrospective(t, e, run.ID, e.AdminUser.Id, e.ServerAdminClient.AuthToken, false)
+		assert.Equal(t, http.StatusInternalServerError, statusAdmin)
+	})
 }
 
 // TestRetrospectiveDisabled_RunCreation verifies that the RetrospectiveEnabled flag on
