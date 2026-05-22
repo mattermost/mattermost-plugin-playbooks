@@ -46,19 +46,20 @@ export default TaskProgress;
 const Container = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     min-width: 80px;
+    padding-right: 24px;
 `;
 
 const Label = styled.span`
-    font-size: 11px;
+    font-size: 12px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 const Bar = styled.div`
-    height: 4px;
+    height: 6px;
     background: rgba(var(--center-channel-color-rgb), 0.16);
-    border-radius: 2px;
+    border-radius: 10px;
     overflow: hidden;
 `;
 
