@@ -146,6 +146,26 @@ func NewPlaybookRunHandler(
 	return handler
 }
 
+func isRunRestoreRequest(r *http.Request) bool {
+	if r.Method != http.MethodPut {
+		return false
+	}
+	vars := mux.Vars(r)
+	_, hasChecklist := vars["checklist"]
+	return !hasChecklist && strings.HasSuffix(r.URL.Path, "/restore")
+}
+
+func isRetrospectiveRequest(r *http.Request) bool {
+	if r.Method != http.MethodPost {
+		return false
+	}
+	return strings.Contains(r.URL.Path, "/retrospective") || strings.HasSuffix(r.URL.Path, "/no-retrospective-button")
+}
+
+func isExemptFromActiveRunCheck(r *http.Request) bool {
+	return isRunRestoreRequest(r) || isRetrospectiveRequest(r)
+}
+
 func (h *PlaybookRunHandler) checkEditPermissions(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := getLogger(r)
@@ -160,6 +180,13 @@ func (h *PlaybookRunHandler) checkEditPermissions(next http.Handler) http.Handle
 
 		if !h.PermissionsCheck(w, logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
 			return
+		}
+
+		if !isExemptFromActiveRunCheck(r) {
+			if err := app.EnsureRunIsActive(playbookRun); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "cannot modify a finished run", err)
+				return
+			}
 		}
 
 		next.ServeHTTP(w, r)
@@ -224,25 +251,13 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	userID := r.Header.Get("Mattermost-User-ID")
 	fieldsToUpdate := map[string]interface{}{}
 
-	oldPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
 		return
 	}
 
 	var updates client.PlaybookRunUpdateOptions
-	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
-		return
-	}
-
-	// Prevent updates on finished runs
-	if oldPlaybookRun.CurrentStatus == app.StatusFinished && (updates.Name != nil || updates.Summary != nil) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", app.ErrPlaybookRunNotActive)
 		return
 	}
 

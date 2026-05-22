@@ -1709,6 +1709,90 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 	})
 }
 
+func TestFinishedRunGraphQLWriteOperationsBlocked(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createAndFinishRun := func(t *testing.T) *client.PlaybookRun {
+		t.Helper()
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run to finish",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		finishedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusFinished, finishedRun.CurrentStatus)
+
+		return finishedRun
+	}
+
+	t.Run("change owner fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		response, err := changeRunOwner(e.PlaybooksClient, run.ID, e.AdminUser.Id)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+
+	t.Run("add participant fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		response, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+
+	t.Run("update run settings fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		response, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{
+			"statusUpdateBroadcastChannelsEnabled": true,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+
+	t.Run("update task actions fails", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with checklist",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		response, err := UpdateRunTaskActions(e.PlaybooksClient, run.ID, 0, 0, &[]app.TaskAction{
+			{
+				Trigger: app.Trigger{
+					Type:    app.KeywordsByUsersTriggerType,
+					Payload: `{"keywords":["test"], "user_ids":["abc"]}`,
+				},
+				Actions: []app.Action{{
+					Type:    app.MarkItemAsDoneActionType,
+					Payload: `{}`,
+				}},
+			},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+}
+
 func UpdateRunTaskActions(c *client.Client, playbookRunID string, checklistNum float64, itemNum float64, taskActions *[]app.TaskAction) (graphql.Response, error) {
 	mutation := `
 		mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {
