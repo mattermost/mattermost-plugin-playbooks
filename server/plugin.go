@@ -59,6 +59,7 @@ type Plugin struct {
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
 	mcpServer            *mcphelper.Server
+	mcpExposeExternal    bool
 
 	cancelRunning     context.CancelFunc
 	cancelRunningLock sync.Mutex

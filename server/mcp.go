@@ -150,16 +150,23 @@ func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, expose
 }
 
 func (p *Plugin) ensureMCPServer() error {
-	if p.mcpServer != nil {
-		return nil
-	}
-
 	exposeExternal := false
 	if p.config != nil {
 		exposeExternal = p.config.GetConfiguration().ExposeMCPExternal
 	}
 
+	// If the server exists and the config hasn't changed, no action needed
+	if p.mcpServer != nil && p.mcpExposeExternal == exposeExternal {
+		return nil
+	}
+
+	// Config changed or server doesn't exist - recreate
+	if p.mcpServer != nil {
+		p.unregisterMCPServerBestEffort()
+	}
+
 	p.mcpServer = newPlaybooksMCPServer(p.API, p.handler, exposeExternal)
+	p.mcpExposeExternal = exposeExternal
 	return nil
 }
 

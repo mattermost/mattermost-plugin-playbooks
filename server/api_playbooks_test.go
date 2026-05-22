@@ -1641,7 +1641,9 @@ func TestAddPostToTimeline(t *testing.T) {
 	resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	defer resp.Body.Close()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 }
 
 func TestPlaybookStats(t *testing.T) {
