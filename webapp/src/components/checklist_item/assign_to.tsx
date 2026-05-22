@@ -18,12 +18,7 @@ import ProfileSelector, {ExtraSection, Option} from 'src/components/profile/prof
 import Profile from 'src/components/profile/profile';
 import {useProfilesForRun} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {
-    AssigneeTypeCreator,
-    AssigneeTypeOwner,
-    AssigneeTypePropertyUser,
-    isRoleBasedAssigneeType,
-} from 'src/types/playbook';
+import {AssigneeTypeOwner, AssigneeTypePropertyUser, isRoleBasedAssigneeType} from 'src/types/playbook';
 import {PropertyField, PropertyValue} from 'src/types/properties';
 
 export const EXTRA_OPTION_PREFIX_ROLE = 'role:';
