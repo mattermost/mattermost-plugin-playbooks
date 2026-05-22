@@ -197,6 +197,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                             onChange={handleChannelNameTemplateChange}
                             fieldNames={fieldNames ?? []}
                             prefix={playbook.run_number_prefix ?? ''}
+                            maxLength={1024}
                             testId='channel-access-run-name-template'
                             openInsertToggle={insertCounter}
                         />

@@ -364,6 +364,9 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 		return
 	}
 
+	// These two updates are not atomic: if the prefix succeeds but the template fails,
+	// the prefix change is persisted. Clients that need consistency should send them
+	// in separate requests.
 	if body.RunNumberPrefix != nil {
 		if err = h.playbookService.UpdateRunNumberPrefix(playbookID, *body.RunNumberPrefix, userID); err != nil {
 			h.handlePlaybookWriteError(w, c.logger, err)

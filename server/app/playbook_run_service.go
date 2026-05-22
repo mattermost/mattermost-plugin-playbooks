@@ -540,11 +540,11 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 				if conditionsWereCopied {
 					_, err = s.conditionService.EvaluateAllConditionsForRun(playbookRun)
 					if err != nil {
-						logger.WithError(err).Warn("failed to re-evaluate conditions after applying initial property values")
+						return nil, errors.Wrap(err, "failed to re-evaluate conditions after applying initial property values")
 					}
 					playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
 					if err != nil {
-						logger.WithError(err).Warn("failed to update playbook run after re-evaluating conditions with initial property values")
+						return nil, errors.Wrap(err, "failed to update playbook run after re-evaluating conditions with initial property values")
 					}
 				}
 			}
@@ -4970,21 +4970,18 @@ func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *Playboo
 	for playbookFieldID, rawValue := range initialValues {
 		runFieldID, ok := propertyCopyResult.FieldMappings[playbookFieldID]
 		if !ok {
-			logger.WithField("field_id", playbookFieldID).Warn("initial property value references unknown playbook field ID, skipping")
-			continue
+			return nil, errors.Errorf("initial property value references unknown playbook field ID %s", playbookFieldID)
 		}
 		if len(rawValue) == 0 {
 			continue
 		}
 		translatedValue, err := translateOptionIDs(rawValue, propertyCopyResult.OptionMappings)
 		if err != nil {
-			logger.WithError(err).WithField("field_id", playbookFieldID).Warn("failed to translate option IDs for initial property value, skipping")
-			continue
+			return nil, errors.Wrapf(err, "failed to translate option IDs for initial property value for field %s", playbookFieldID)
 		}
 		runField, ok := runFieldByID[runFieldID]
 		if !ok {
-			logger.WithField("field_id", runFieldID).Warn("run field not found in copied fields, skipping")
-			continue
+			return nil, errors.Errorf("run field %s not found in copied fields", runFieldID)
 		}
 		if _, err := s.propertyService.UpsertRunPropertyValueWithField(playbookRun.ID, runField, translatedValue); err != nil {
 			return nil, errors.Wrapf(err, "failed to upsert initial property value for field %s", runFieldID)

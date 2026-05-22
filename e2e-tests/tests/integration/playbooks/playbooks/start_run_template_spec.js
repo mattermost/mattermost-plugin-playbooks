@@ -215,4 +215,42 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
             });
         });
     });
+
+    describe('template name too long', () => {
+        let longTemplatePlaybook;
+
+        beforeEach(() => {
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Long Template PB ' + getRandomId(),
+                makePublic: true,
+                memberIDs: [testUser.id],
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                longTemplatePlaybook = playbook;
+
+                // # 65-char static template exceeds the 64-char run name limit
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'x'.repeat(65)});
+            });
+        });
+
+        afterEach(() => {
+            if (longTemplatePlaybook) {
+                cy.apiArchivePlaybook(longTemplatePlaybook.id);
+            }
+        });
+
+        it('shows inline error and disables submit when resolved run name exceeds 64 characters', () => {
+            cy.playbooksOpenRunModal(longTemplatePlaybook.id);
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // * Inline error mentions the 64-character limit
+                cy.findByTestId('run-name-preview-error').should('be.visible');
+                cy.findByTestId('run-name-preview-error').should('contain', '64');
+
+                // * Submit button is disabled
+                cy.findByTestId('modal-confirm-button').should('be.disabled');
+            });
+        });
+    });
 });

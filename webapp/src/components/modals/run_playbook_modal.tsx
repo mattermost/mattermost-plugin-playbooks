@@ -278,7 +278,7 @@ export const RunPlaybookModal = ({
         if (mode === 'link_existing_channel' && playbook?.channel_mode === 'create_new_channel' && channelId === '' && currentChannelId && !currentChannelIsDMOrGM) {
             setChannelId(currentChannelId);
         }
-    }, [playbook?.channel_mode, channelId, currentChannelId]);
+    }, [playbook?.channel_mode, channelId, currentChannelId, currentChannelIsDMOrGM]);
 
     const onCreatePlaybook = () => {
         dispatch(displayPlaybookCreateModal({}));

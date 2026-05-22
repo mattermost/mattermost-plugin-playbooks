@@ -53,6 +53,8 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
     }, [playbook.id]);
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
+    const addToastRef = useRef(addToast);
+    addToastRef.current = addToast;
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
@@ -97,14 +99,18 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
                 })
                 .catch((err) => {
                     setPlaybookForCreateChannel((prev) => ({...prev, run_number_prefix: savedPrefixRef.current}));
-                    const isDuplicate = err?.status_code === 409;
-                    const message = isDuplicate ?
-                        formatMessage({defaultMessage: 'Another active playbook in this team already uses that prefix.'}) :
-                        formatMessage({defaultMessage: 'Invalid prefix: must start and end with a letter or number and contain only letters, numbers, and hyphens.'});
-                    addToast({content: message, toastStyle: ToastStyle.Failure});
+                    let message: string;
+                    if (err?.status_code === 409) {
+                        message = formatMessage({defaultMessage: 'Another active playbook in this team already uses that prefix.'});
+                    } else if (err?.status_code === 400) {
+                        message = formatMessage({defaultMessage: 'Invalid prefix: must start and end with a letter or number and contain only letters, numbers, and hyphens.'});
+                    } else {
+                        message = formatMessage({defaultMessage: 'Failed to save run number prefix. Please try again.'});
+                    }
+                    addToastRef.current({content: message, toastStyle: ToastStyle.Failure});
                 });
         }, 500),
-        [playbook.id, setPlaybookForCreateChannel, addToast, formatMessage],
+        [playbook.id, setPlaybookForCreateChannel, formatMessage],
     );
 
     useEffect(() => {
@@ -122,11 +128,17 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
                 .then(() => {
                     lastSavedTemplateRef.current = template;
                 })
-                .catch(() => {
+                .catch((err) => {
                     setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template: lastSavedTemplateRef.current}));
+                    addToastRef.current({
+                        content: formatMessage({defaultMessage: 'Failed to save run name template. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                    // eslint-disable-next-line no-console
+                    console.error('Failed to save channel name template', err);
                 });
         }, 500),
-        [playbook.id, setPlaybookForCreateChannel],
+        [playbook.id, setPlaybookForCreateChannel, formatMessage],
     );
 
     useEffect(() => {
