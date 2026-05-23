@@ -451,7 +451,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
         cy.findByRole('complementary').within(() => {
             cy.findByTestId(testId).within(() => {
-                cy.findByTestId('property-value').realClick();
+                cy.findByTestId('property-value').click();
             });
         });
 
