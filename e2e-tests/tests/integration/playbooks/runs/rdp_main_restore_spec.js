@@ -9,7 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
-describe('runs > run details page > Resume run', {testIsolation: true}, () => {
+describe('runs > run details page > resume run', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
     let testViewerUser;
@@ -79,7 +79,7 @@ describe('runs > run details page > Resume run', {testIsolation: true}, () => {
         });
     });
 
-    describe('Resume run', () => {
+    describe('resume run', () => {
         it('can be confirmed', () => {
             cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${testRun.id}/finish`).as('routeFinish');
             cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${testRun.id}/restore`).as('routeRestore');
