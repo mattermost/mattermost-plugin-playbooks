@@ -1053,6 +1053,10 @@ func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWrit
 	}
 
 	if err := h.playbookRunService.ToggleRetrospectiveEnabled(playbookRunID, userID, *payload.RetrospectiveEnabled); err != nil {
+		if errors.Is(err, app.ErrChannelArchived) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot toggle retrospective for an archived channel", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

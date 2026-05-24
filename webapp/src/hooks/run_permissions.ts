@@ -151,12 +151,18 @@ export const useCanAdminRun = (run: RunPermissionFields | null | undefined, curr
 
 export const useCanToggleRunRetrospective = (run: RunPermissionFields | null | undefined, currentUserId: string): boolean => {
     const currentUserRoles = useAppSelector((state) => getCurrentUser(state)?.roles ?? '');
+    const isChannelArchived = useIsChannelArchived(run?.channel_id || '');
 
     if (!run) {
         return false;
     }
 
-    return run.owner_user_id === currentUserId || isSystemAdmin(currentUserRoles);
+    const isSysAdmin = isSystemAdmin(currentUserRoles);
+    if (isChannelArchived && !isSysAdmin) {
+        return false;
+    }
+
+    return run.owner_user_id === currentUserId || isSysAdmin;
 };
 
 /**

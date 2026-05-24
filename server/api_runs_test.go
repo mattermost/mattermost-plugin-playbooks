@@ -3277,12 +3277,12 @@ func TestToggleRunRetrospective(t *testing.T) {
 		_, err := e.ServerAdminClient.DeleteChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 
-		// Both owner and sysadmin should be blocked by the archived-channel guard in the service.
+		// Non-admin owner is blocked by the archived-channel guard; sysadmins bypass it.
 		statusOwner := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
-		assert.Equal(t, http.StatusInternalServerError, statusOwner)
+		assert.Equal(t, http.StatusBadRequest, statusOwner)
 
 		statusAdmin := toggleRunRetrospective(t, e, run.ID, e.AdminUser.Id, e.ServerAdminClient.AuthToken, false)
-		assert.Equal(t, http.StatusInternalServerError, statusAdmin)
+		assert.Equal(t, http.StatusOK, statusAdmin)
 	})
 }
 

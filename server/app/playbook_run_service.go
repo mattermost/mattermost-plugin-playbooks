@@ -1576,8 +1576,8 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userI
 		auditRec.AddErrorDesc(wrappedErr.Error())
 		return wrappedErr
 	}
-	if channel.DeleteAt > 0 {
-		wrappedErr := errors.New("cannot toggle retrospective for an archived channel")
+	if channel.DeleteAt > 0 && !IsSystemAdmin(userID, s.pluginAPI) {
+		wrappedErr := errors.Wrap(ErrChannelArchived, "cannot toggle retrospective for an archived channel")
 		auditRec.AddErrorDesc(wrappedErr.Error())
 		return wrappedErr
 	}
