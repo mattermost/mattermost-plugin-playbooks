@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useRef,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -43,6 +48,7 @@ const Outline = ({playbook, refetch, canEdit, adminOnlyEdit, showAdminSettings =
     const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? adminOnlyEdit ?? false;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
+    const latestToggleReq = useRef(0);
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -78,6 +84,8 @@ const Outline = ({playbook, refetch, canEdit, adminOnlyEdit, showAdminSettings =
         if (archived) {
             return;
         }
+        latestToggleReq.current += 1;
+        const reqID = latestToggleReq.current;
         const prev = effectiveAdminOnlyEdit;
         setAdminOnlyEditOverride(value);
         clientFetchPlaybook(playbook.id)
@@ -89,11 +97,13 @@ const Outline = ({playbook, refetch, canEdit, adminOnlyEdit, showAdminSettings =
             })
             .then(() => refetch())
             .catch(() => {
-                setAdminOnlyEditOverride(prev);
-                toaster.add({
-                    content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
-                    toastStyle: ToastStyle.Failure,
-                });
+                if (reqID === latestToggleReq.current) {
+                    setAdminOnlyEditOverride(prev);
+                    toaster.add({
+                        content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                }
             });
     };
 

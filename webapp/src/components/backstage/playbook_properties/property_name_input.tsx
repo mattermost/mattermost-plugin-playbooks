@@ -172,6 +172,18 @@ const StyledInput = styled.input<{$hasError?: boolean}>`
         cursor: text;
     }
 
+    &:disabled {
+        cursor: default;
+        opacity: 0.72;
+        background: transparent;
+    }
+
+    &:disabled:hover,
+    &:disabled:focus {
+        cursor: default;
+        background: transparent;
+    }
+
     &::placeholder {
         color: rgba(var(--center-channel-color-rgb), 0.56);
     }

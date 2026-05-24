@@ -265,7 +265,7 @@ const PlaybookListRow = (props: Props) => {
                     )}
                     dotMenuButton={DotMenuButtonStyled}
                 >
-                    {currentUserPlaybookMember && canEdit ? (
+                    {canEdit && (currentUserPlaybookMember || isSystemAdmin) ? (
                         <DropdownMenuItem
                             onClick={props.onEdit}
                         >
@@ -315,6 +315,10 @@ const PlaybookListRow = (props: Props) => {
                                 <CloseIcon size={18}/>
                                 <FormattedMessage defaultMessage='Leave'/>
                             </DropdownMenuItem>
+                        </>
+                    )}
+                    {(currentUserPlaybookMember || isSystemAdmin) && (
+                        <>
                             <div className='MenuGroup menu-divider'/>
                             {props.playbook.delete_at > 0 ? (
                                 <DropdownMenuItem
