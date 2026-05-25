@@ -66,6 +66,12 @@ export interface PlaybookRun {
 
     /** Property values for this run (only included when requested) */
     property_values?: PropertyValue[];
+
+    /** Computed server-side; hidden items excluded, skipped items included. */
+    task_total?: number;
+
+    /** Computed server-side; closed or skipped counts as completed. */
+    task_completed?: number;
 }
 
 export interface PlaybookRunConnection extends Partial<PlaybookRun> {

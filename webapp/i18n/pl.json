@@ -980,5 +980,7 @@
     "gQMKIn": "Nie udało się zaktualizować terminu dla {count} zadań z {total}",
     "hK7XOC": "Kliknij dowolne zadanie, aby je zaznaczyć. Użyj paska akcji poniżej, aby zastosować zmiany do wszystkich wybranych zadań.",
     "ifNqB6": "Dodaj do stanu",
-    "qnLI4Z": "Nie udało się usunąć {count} z {total} zadań"
+    "qnLI4Z": "Nie udało się usunąć {count} z {total} zadań",
+    "B6S87C": "Niedostępne dla kanałów wiadomości bezpośrednich i grupowych",
+    "tnDRiU": "Wybierz członków kanału"
 }
