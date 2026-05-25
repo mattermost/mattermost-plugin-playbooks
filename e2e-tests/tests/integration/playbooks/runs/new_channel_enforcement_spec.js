@@ -105,6 +105,34 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
         });
     });
 
+    // API contract test: verifies the backend allows a new-channel run (no channel_id)
+    // when new_channel_only=true. Covers the happy path that the UI run modal follows.
+    it('API contract: flag=true allows run creation without channel_id', () => {
+        const runName = 'New Channel Run ' + getRandomId();
+
+        createNewChannelOnlyPlaybook('NewChannelOnly Happy Path ' + getRandomId(), [testUser.id], testTeam.id).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            // # Create a run without channel_id (new channel mode) — should succeed
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: runName,
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                // * Assert the run was created with a fresh channel
+                expect(run.id).to.be.a('string').and.not.be.empty;
+                expect(run.channel_id).to.be.a('string').and.not.be.empty;
+                expect(run.name).to.equal(runName);
+
+                // * Assert the channel exists
+                cy.apiGetChannel(run.channel_id).then(({channel}) => {
+                    expect(channel).to.exist;
+                });
+            });
+        });
+    });
+
     // API contract test: verifies the backend allows existing-channel runs when the
     // flag is false. The UI modal surfaces this as the "link existing channel" mode.
     it('API contract: flag=false allows run creation with existing channel', () => {

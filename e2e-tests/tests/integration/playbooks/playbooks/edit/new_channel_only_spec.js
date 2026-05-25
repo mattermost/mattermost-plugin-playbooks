@@ -65,9 +65,6 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
         });
     });
 
-    // NOTE: The API rejection test (new_channel_only=true + existing channel_id → 400)
-    // lives in runs/new_channel_enforcement_spec.js to keep API contract tests co-located.
-
     it('disables the "Link to existing channel" radio and selector in the editor when new_channel_only is true', () => {
         // # Enable new_channel_only via API
         cy.apiUpdatePlaybook({...testPlaybook, new_channel_only: true}).then(() => {
@@ -142,36 +139,6 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
         // * Assert via API that new_channel_only was persisted
         cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
             expect(pb.new_channel_only).to.equal(true);
-        });
-    });
-
-    it('API allows run creation without channel_id when new_channel_only is true', () => {
-        const runName = 'New Channel Run ' + getRandomId();
-
-        // # Enable new_channel_only on the playbook
-        cy.apiUpdatePlaybook({...testPlaybook, new_channel_only: true}).then(() => {
-            // * Assert via API that new_channel_only is now true
-            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
-                expect(pb.new_channel_only).to.equal(true);
-            });
-
-            // # Create a run without channel_id (new channel mode) — should succeed
-            cy.apiRunPlaybook({
-                teamId: testTeam.id,
-                playbookId: testPlaybook.id,
-                playbookRunName: runName,
-                ownerUserId: testUser.id,
-            }).then((run) => {
-                // * Assert the run was created with a fresh channel
-                expect(run.id).to.be.a('string').and.not.be.empty;
-                expect(run.channel_id).to.be.a('string').and.not.be.empty;
-                expect(run.name).to.equal(runName);
-
-                // * Assert the channel exists
-                cy.apiGetChannel(run.channel_id).then(({channel}) => {
-                    expect(channel).to.exist;
-                });
-            });
         });
     });
 });

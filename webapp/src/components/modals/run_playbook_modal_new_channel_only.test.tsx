@@ -283,7 +283,7 @@ describe('RunPlaybookModal - new_channel_only behavior', () => {
         expect(linkExistingRadio[0].props.disabled).toBe(true);
     });
 
-    it('when new_channel_only is true: tooltip shows enforcement message', () => {
+    it('when new_channel_only is true: hint message is rendered', () => {
         const playbook = makePlaybookWithNewChannelOnly(true);
         mockUsePlaybook.mockReturnValue([playbook, {error: null, isFetching: false}]);
         mockUseRestPlaybook.mockReturnValue([playbook]);
