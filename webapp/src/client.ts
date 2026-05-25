@@ -721,7 +721,7 @@ export const doFetchWithResponse = async <TData = any>(url: string, options = {}
     let data;
     if (response.ok) {
         const contentType = response.headers.get('content-type');
-        if (contentType === 'application/json') {
+        if (contentType?.includes('application/json')) {
             data = await response.json() as TData;
         }
 
