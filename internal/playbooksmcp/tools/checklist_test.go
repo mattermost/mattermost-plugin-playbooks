@@ -33,6 +33,8 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 		*v = f.run
 	case *listRunsResponse:
 		*v = f.listRuns
+	case *map[string]any:
+		*v = map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Created playbook"}
 	default:
 		return fmt.Errorf("unexpected get result type %T", result)
 	}
@@ -45,6 +47,11 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 	f.postResult = result
 	if run, ok := result.(*playbookRunDetail); ok {
 		*run = f.run
+	}
+	if created, ok := result.(*struct {
+		ID string `json:"id"`
+	}); ok {
+		created.ID = "abcdefghijklmnopqrstuvwxyz"
 	}
 	return nil
 }
@@ -60,7 +67,11 @@ func (f *fakeAPIClient) Delete(context.Context, string) error {
 }
 
 func (f *fakeAPIClient) GetCurrentUserID(context.Context) (string, error) {
-	return "current-user-id", nil
+	return "abcdefghijklmnopqrstuvwxy0", nil
+}
+
+func (f *fakeAPIClient) GetPlaybookURL(playbookID string) string {
+	return "https://mattermost.example.com/playbooks/playbooks/" + playbookID
 }
 
 func TestToolCheckItemOpenTranslatesToEmptyAPIState(t *testing.T) {
@@ -201,7 +212,7 @@ func TestToolCreateChecklistUsesCurrentUserAsOwner(t *testing.T) {
 	if !ok {
 		t.Fatalf("unexpected body type %T", client.postBody)
 	}
-	if got := body["owner_user_id"]; got != "current-user-id" {
+	if got := body["owner_user_id"]; got != "abcdefghijklmnopqrstuvwxy0" {
 		t.Errorf("expected current user as owner, got %q", got)
 	}
 	if got := body["name"]; got != "Release checklist" {

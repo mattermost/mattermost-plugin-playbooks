@@ -19,6 +19,7 @@ type APIClient interface {
 	Put(ctx context.Context, endpoint string, body any, result any) error
 	Delete(ctx context.Context, endpoint string) error
 	GetCurrentUserID(ctx context.Context) (string, error)
+	GetPlaybookURL(playbookID string) string
 }
 
 // ClientFactory creates an APIClient for the current request context.
@@ -43,12 +44,14 @@ func NewPlaybooksToolProvider(clientFactory ClientFactory) (*PlaybooksToolProvid
 func (p *PlaybooksToolProvider) ProvideTools(mcpServer *mcp.Server) {
 	p.addRunTools(mcpServer)
 	p.addChecklistTools(mcpServer)
+	p.addPlaybookTools(mcpServer)
 }
 
 // ProvideMCPHelperTools registers all available tools with a cross-plugin MCP helper server.
 func (p *PlaybooksToolProvider) ProvideMCPHelperTools(mcpServer *mcphelper.Server) {
 	p.addMCPHelperRunTools(mcpServer)
 	p.addMCPHelperChecklistTools(mcpServer)
+	p.addMCPHelperPlaybookTools(mcpServer)
 }
 
 // addTool registers a typed tool using the generic mcp.AddTool API.

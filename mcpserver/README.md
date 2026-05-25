@@ -70,6 +70,12 @@ Add to your Claude Code settings or `.mcp.json`:
 
 ## Available tools
 
+### Playbooks
+
+| Tool | Description |
+|------|-------------|
+| `create_playbook` | Create a full playbook in a team with optional stages/checklists, tasks, members, invitations, default owner, broadcast settings, metrics, run channel options, and webhooks. Returns the created playbook and browser URL. |
+
 ### Run management
 
 | Tool | Description |

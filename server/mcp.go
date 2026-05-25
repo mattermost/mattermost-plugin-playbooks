@@ -87,6 +87,10 @@ func (c *pluginMCPClient) GetCurrentUserID(context.Context) (string, error) {
 	return c.userID, nil
 }
 
+func (c *pluginMCPClient) GetPlaybookURL(playbookID string) string {
+	return "/playbooks/playbooks/" + playbookID
+}
+
 func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body any, result any) error {
 	var r io.Reader
 	if body != nil {
