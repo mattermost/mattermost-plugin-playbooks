@@ -206,7 +206,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                 hasSubtitle={retrospectiveAccess && !playbook.retrospective_enabled}
                 hoverEffect={true}
                 headerRight={(
-                    <HoverMenuContainer>
+                    <HoverMenuContainer data-testid='retrospective-toggle'>
                         <Toggle
                             disabled={archived || !retrospectiveAccess}
                             isChecked={playbook.retrospective_enabled}
@@ -219,6 +219,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                 <Retrospective
                     playbook={playbook}
                     refetch={refetch}
+                    disabled={archived}
                 />
             </Section>
             <Section
