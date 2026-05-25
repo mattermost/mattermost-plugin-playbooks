@@ -88,12 +88,12 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
     });
 
     it('playbook admin enables admin_only_edit via UI toggle and persists after reload', () => {
-        cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/**').as('savePlaybook');
+        cy.playbooksInterceptPlaybookSave();
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
         // # Click the toggle label to enable
         cy.findByTestId('admin-only-edit-toggle').find('label').click();
-        cy.wait('@savePlaybook');
+        cy.wait('@SavePlaybook');
 
         // * Checkbox should now be checked
         cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('be.checked');
@@ -110,7 +110,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
     });
 
     it('playbook admin disables admin_only_edit via UI toggle', () => {
-        cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/**').as('savePlaybook');
+        cy.playbooksInterceptPlaybookSave();
 
         // # Enable via API as the playbook admin
         cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
@@ -124,7 +124,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
         // # Click to disable
         cy.findByTestId('admin-only-edit-toggle').find('label').click();
-        cy.wait('@savePlaybook');
+        cy.wait('@SavePlaybook');
 
         // * Checkbox should now be unchecked
         cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('not.be.checked');
@@ -266,7 +266,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.contains('[data-testid="playbook-item"]', testPlaybook.title).within(() => {
             cy.findByTestId('menuButtonActions').click();
         });
-        cy.findByText('Archive').click({force: true});
+        cy.findByText('Archive').click({force: true}); // Archive is disabled for non-admins; force bypasses pointer-events:none to verify no action fires
 
         // * Confirm modal must not appear — the Archive item is disabled for non-admin members
         cy.get('#confirmModal').should('not.exist');
@@ -292,7 +292,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
             // # Upload via the import button
             cy.findByTestId('titlePlaybook').within(() => {
-                cy.findByTestId('playbook-import-input').selectFile(importFile, {force: true});
+                cy.findByTestId('playbook-import-input').selectFile(importFile, {force: true}); // file input is hidden by design
             });
 
             // * Verify the import succeeded — editor opens with the playbook title

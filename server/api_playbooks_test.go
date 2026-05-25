@@ -2414,23 +2414,27 @@ func TestAdminOnlyEdit_Conditions(t *testing.T) {
 	require.NoError(t, err)
 
 	// Seed a property field (needed to build a valid condition expression).
+	// The option ID must be a valid MM ID and must match the value used in makeCondition below.
+	opt1ID := model.NewId()
 	seededField, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
 		Name: "Priority",
 		Type: "select",
 		Attrs: &client.PropertyFieldAttrsInput{
 			Visibility: stringPtr("always"),
 			SortOrder:  float64Ptr(1.0),
+			Options:    &[]client.PropertyOptionInput{{ID: &opt1ID, Name: "Option1"}},
 		},
 	})
 	require.NoError(t, err)
 
 	makeCondition := func() client.Condition {
+		condValue, _ := json.Marshal([]string{opt1ID})
 		return client.Condition{
 			Version: 1,
 			ConditionExpr: client.ConditionExprV1{
 				Is: &client.ComparisonCondition{
 					FieldID: seededField.ID,
-					Value:   json.RawMessage(`["opt1"]`),
+					Value:   json.RawMessage(condValue),
 				},
 			},
 		}

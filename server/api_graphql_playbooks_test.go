@@ -786,14 +786,28 @@ func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
 			"sortOrder":  1.0,
 		},
 	}
+	updateField := map[string]interface{}{
+		"name": "UpdatedField",
+		"type": "text",
+		"attrs": map[string]interface{}{
+			"visibility": "always",
+			"sortOrder":  2.0,
+		},
+	}
 
 	doAdd := func(c *client.Client) error {
 		var resp graphql.Response
-		return c.DoGraphql(context.Background(), &client.GraphQLInput{
+		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         addMutation,
 			OperationName: "AddPlaybookPropertyField",
 			Variables:     map[string]interface{}{"playbookID": playbookID, "propertyField": baseField},
-		}, &resp)
+		}, &resp); err != nil {
+			return err
+		}
+		if len(resp.Errors) > 0 {
+			return resp.Errors[0]
+		}
+		return nil
 	}
 
 	t.Run("non-admin member AddPlaybookPropertyField is rejected", func(t *testing.T) {
@@ -814,24 +828,36 @@ func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
 
 	doUpdate := func(c *client.Client) error {
 		var resp graphql.Response
-		return c.DoGraphql(context.Background(), &client.GraphQLInput{
+		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         updateMutation,
 			OperationName: "UpdatePlaybookPropertyField",
 			Variables: map[string]interface{}{
 				"playbookID":      playbookID,
 				"propertyFieldID": seededFieldID.ID,
-				"propertyField":   baseField,
+				"propertyField":   updateField,
 			},
-		}, &resp)
+		}, &resp); err != nil {
+			return err
+		}
+		if len(resp.Errors) > 0 {
+			return resp.Errors[0]
+		}
+		return nil
 	}
 
 	doDelete := func(c *client.Client) error {
 		var resp graphql.Response
-		return c.DoGraphql(context.Background(), &client.GraphQLInput{
+		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         deleteMutation,
 			OperationName: "DeletePlaybookPropertyField",
 			Variables:     map[string]interface{}{"playbookID": playbookID, "propertyFieldID": seededFieldID.ID},
-		}, &resp)
+		}, &resp); err != nil {
+			return err
+		}
+		if len(resp.Errors) > 0 {
+			return resp.Errors[0]
+		}
+		return nil
 	}
 
 	t.Run("non-admin member UpdatePlaybookPropertyField is rejected", func(t *testing.T) {
