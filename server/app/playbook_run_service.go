@@ -2675,7 +2675,7 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", playbookRunToModify.Name, checklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", playbookRunID, checklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}

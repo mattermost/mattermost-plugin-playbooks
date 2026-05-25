@@ -75,10 +75,10 @@ jest.mock('src/components/backstage/shared', () => ({
         const {children, disabled, disabledAltText, ...rest} = props;
         return (
             <div
-                {...rest}
                 data-testid='dropdown-item'
                 data-disabled={String(disabled)}
                 data-disabled-text={disabledAltText ?? ''}
+                {...rest}
             >
                 {children as React.ReactNode}
             </div>
@@ -121,18 +121,44 @@ jest.mock('./restore_run', () => ({
     useOnRestoreRun: () => jest.fn(),
 }));
 
+// babel-plugin-formatjs with ast:true pre-compiles defaultMessage strings into
+// [{type: 0, value: '...'}] AST arrays. Extract the literal text from that.
+const extractMsg = (msg: unknown): string => {
+    if (typeof msg === 'string') {
+        return msg;
+    }
+    if (Array.isArray(msg)) {
+        return msg
+            .filter((el: {type: number}) => el.type === 0)
+            .map((el: {value: string}) => el.value)
+            .join('');
+    }
+    return String(msg);
+};
+
 jest.mock('react-intl', () => {
     const reactIntl = jest.requireActual('react-intl');
-    const intl = reactIntl.createIntl({locale: 'en', defaultLocale: 'en'});
     return {
         ...reactIntl,
-        useIntl: () => intl,
-        FormattedMessage: ({defaultMessage}: {defaultMessage: string}) => <span>{defaultMessage}</span>,
+        useIntl: () => ({
+            formatMessage: ({defaultMessage}: {defaultMessage: unknown}) => extractMsg(defaultMessage),
+        }),
+        FormattedMessage: ({defaultMessage}: {defaultMessage: unknown}) => <span>{extractMsg(defaultMessage)}</span>,
     };
 });
 
 jest.mock('@mattermost/compass-icons/components', () => ({
+    ArrowDownIcon: () => null,
+    BookOutlineIcon: () => null,
+    BullhornOutlineIcon: () => null,
+    CloseIcon: () => null,
     FlagOutlineIcon: () => null,
+    LightningBoltOutlineIcon: () => null,
+    LinkVariantIcon: () => null,
+    PencilOutlineIcon: () => null,
+    StarIcon: () => null,
+    StarOutlineIcon: () => null,
+    UpdateIcon: () => null,
 }));
 
 jest.mock('src/components/backstage/toast_banner', () => ({
