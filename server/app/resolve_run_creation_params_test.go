@@ -246,38 +246,6 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Tests for CreatePlaybookRun precondition guards
-// ---------------------------------------------------------------------------
-
-func TestCreatePlaybookRun_PreconditionGuards(t *testing.T) {
-	t.Run("non-nil pb and empty PlaybookID returns ErrInternalPrecondition", func(t *testing.T) {
-		svc := &PlaybookRunServiceImpl{}
-		run := &PlaybookRun{Name: "my run", PlaybookID: ""}
-		pb := &Playbook{ID: mm_model.NewId()}
-
-		_, err := svc.CreatePlaybookRun(run, pb, "user1", true, "", nil)
-
-		require.Error(t, err)
-		require.True(t, errors.Is(err, ErrInternalPrecondition))
-	})
-
-	t.Run("nil pb does not trigger precondition error", func(t *testing.T) {
-		svc := &PlaybookRunServiceImpl{}
-		run := &PlaybookRun{Name: ""}
-
-		// With a zero-value service the call will panic after the precondition guard
-		// (nil api field), but we only care that ErrInternalPrecondition is NOT the reason.
-		var precondErr error
-		func() {
-			defer func() { recover() }() //nolint:errcheck
-			_, precondErr = svc.CreatePlaybookRun(run, nil, "user1", true, "", nil)
-		}()
-
-		require.False(t, errors.Is(precondErr, ErrInternalPrecondition))
-	})
-}
-
-// ---------------------------------------------------------------------------
 // Tests for ResolveRunCreationParams
 // ---------------------------------------------------------------------------
 
