@@ -51,7 +51,7 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
     return (
         <PlaybookRunListHeader>
             <div className='row'>
-                <div className='col-sm-4'>
+                <div className='col-sm-3'>
                     <SortableColHeader
                         name={formatMessage({defaultMessage: 'Name'})}
                         direction={fetchParams.direction ? fetchParams.direction : 'desc'}
@@ -76,9 +76,12 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
                     />
                 </div>
                 <div className='col-sm-2'>
-                    {formatMessage({defaultMessage: 'Owner / Participants'})}
+                    {formatMessage({defaultMessage: 'Tasks'})}
                 </div>
                 <div className='col-sm-2'>
+                    {formatMessage({defaultMessage: 'Owner / Participants'})}
+                </div>
+                <div className='col-sm-1'>
                     {formatMessage({defaultMessage: 'Actions'})}
                 </div>
             </div>
