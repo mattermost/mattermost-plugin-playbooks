@@ -6,12 +6,16 @@ import renderer from 'react-test-renderer';
 
 // Capture values passed to Actions on each render so tests can inspect them
 // without coupling to DOM structure.
+let capturedNewChannelOnly: boolean = false;
+let capturedOnNewChannelOnlyChange: ((updated: {new_channel_only: boolean}) => void) | undefined;
 let capturedAutoArchiveChannel: boolean = false;
 let capturedOnAutoArchiveChange: ((updated: {auto_archive_channel: boolean}) => void) | undefined;
 
 jest.mock('./section_actions', () => ({
     __esModule: true,
-    default: ({autoArchiveChannel, onAutoArchiveChange}: {autoArchiveChannel: boolean; onAutoArchiveChange: (u: {auto_archive_channel: boolean}) => void}) => {
+    default: ({newChannelOnly, onNewChannelOnlyChange, autoArchiveChannel, onAutoArchiveChange}: {newChannelOnly: boolean; onNewChannelOnlyChange: (u: {new_channel_only: boolean}) => void; autoArchiveChannel: boolean; onAutoArchiveChange: (u: {auto_archive_channel: boolean}) => void}) => {
+        capturedNewChannelOnly = newChannelOnly;
+        capturedOnNewChannelOnlyChange = onNewChannelOnlyChange;
         capturedAutoArchiveChannel = autoArchiveChannel;
         capturedOnAutoArchiveChange = onAutoArchiveChange;
         return null;
@@ -71,21 +75,189 @@ const makePlaybook = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
 } as any);
 
-const makeRestPlaybook = (autoArchive: boolean) => ({
+const makeRestPlaybook = (val: boolean, channelMode = 'create_new_channel') => ({
     id: 'pb-1',
-    auto_archive_channel: autoArchive,
-    channel_mode: 'create_new_channel',
+    new_channel_only: val,
+    auto_archive_channel: val,
+    channel_mode: channelMode,
     checklists: [],
 } as any);
 
 beforeEach(() => {
     jest.clearAllMocks();
+    capturedNewChannelOnly = false;
+    capturedOnNewChannelOnlyChange = undefined;
     capturedAutoArchiveChannel = false;
     capturedOnAutoArchiveChange = undefined;
     clientFetchPlaybook.mockResolvedValue({id: 'pb-1', auto_archive_channel: false, channel_mode: 'create_new_channel', checklists: []});
 });
 
 // --- Tests ---
+
+describe('Outline — handleNewChannelOnlyChange', () => {
+    it('passes restPlaybook.new_channel_only to Actions when no override is active', () => {
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(true)}
+            />,
+        );
+
+        expect(capturedNewChannelOnly).toBe(true);
+    });
+
+    it('defaults to false when restPlaybook is absent', () => {
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+            />,
+        );
+
+        expect(capturedNewChannelOnly).toBe(false);
+    });
+
+    it('applies the optimistic override immediately — before the save resolves', () => {
+        savePlaybook.mockReturnValue(new Promise(() => undefined));
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        expect(capturedNewChannelOnly).toBe(false);
+
+        act(() => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: true});
+        });
+
+        expect(capturedNewChannelOnly).toBe(true);
+    });
+
+    it('calls savePlaybook with new_channel_only and channel_mode set to create_new_channel when toggling on', async () => {
+        savePlaybook.mockResolvedValue({});
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(false, 'link_existing_channel')}
+            />,
+        );
+
+        await act(async () => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: true});
+        });
+
+        expect(savePlaybook).toHaveBeenCalledTimes(1);
+        expect(savePlaybook).toHaveBeenCalledWith(
+            expect.objectContaining({new_channel_only: true, channel_mode: 'create_new_channel'}),
+        );
+    });
+
+    it('preserves existing channel_mode when toggling off', async () => {
+        savePlaybook.mockResolvedValue({});
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(true, 'create_new_channel')}
+            />,
+        );
+
+        await act(async () => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: false});
+        });
+
+        expect(savePlaybook).toHaveBeenCalledWith(
+            expect.objectContaining({new_channel_only: false, channel_mode: 'create_new_channel'}),
+        );
+    });
+
+    it('rolls back the optimistic override when savePlaybook rejects', async () => {
+        savePlaybook.mockRejectedValue(new Error('network error'));
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        act(() => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: true});
+        });
+        expect(capturedNewChannelOnly).toBe(true);
+
+        // eslint-disable-next-line no-empty-function
+        await act(async () => {});
+
+        expect(capturedNewChannelOnly).toBe(false);
+    });
+
+    it('does not call savePlaybook when the value did not change', async () => {
+        savePlaybook.mockResolvedValue({});
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(true)}
+            />,
+        );
+
+        await act(async () => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: true});
+        });
+
+        expect(savePlaybook).not.toHaveBeenCalled();
+    });
+
+    it('does not call savePlaybook when the playbook is archived', async () => {
+        renderer.create(
+            <Outline
+                playbook={makePlaybook({delete_at: 1})}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        await act(async () => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: true});
+        });
+
+        expect(savePlaybook).not.toHaveBeenCalled();
+        expect(capturedNewChannelOnly).toBe(false);
+    });
+
+    it('calls refetch and keeps the optimistic override after savePlaybook resolves', async () => {
+        savePlaybook.mockResolvedValue({});
+        const refetch = jest.fn();
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={refetch}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        await act(async () => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: true});
+        });
+
+        expect(refetch).toHaveBeenCalledTimes(1);
+
+        // Override stays at the toggled value until refetch updates restPlaybook
+        expect(capturedNewChannelOnly).toBe(true);
+    });
+});
 
 describe('Outline — auto-archive optimistic state', () => {
     it('passes restPlaybook.auto_archive_channel to Actions when no override is active', () => {

@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useRef,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -41,6 +46,9 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
     const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
     const [bulkEditMode, setBulkEditMode] = useState(false);
+    const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
+    const savingNewChannelOnly = useRef(false);
+    const effectiveNewChannelOnly = newChannelOnlyOverride ?? restPlaybook?.new_channel_only ?? false;
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -50,6 +58,33 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     };
     const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
         setChecklistCollapseState(state);
+    };
+
+    const handleNewChannelOnlyChange = ({new_channel_only}: {new_channel_only: boolean}) => {
+        if (archived || !playbook.id || savingNewChannelOnly.current || !restPlaybook) {
+            return;
+        }
+        const prev = effectiveNewChannelOnly;
+        if (prev === new_channel_only) {
+            return;
+        }
+        setNewChannelOnlyOverride(new_channel_only);
+        savingNewChannelOnly.current = true;
+        const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
+        savePlaybook(updated)
+            .then(() => {
+                refetch();
+            })
+            .catch(() => {
+                setNewChannelOnlyOverride(prev);
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+            })
+            .finally(() => {
+                savingNewChannelOnly.current = false;
+            });
     };
 
     const toggleStatusUpdate = () => {
@@ -192,6 +227,8 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             >
                 <Actions
                     playbook={playbook}
+                    newChannelOnly={effectiveNewChannelOnly}
+                    onNewChannelOnlyChange={restPlaybook ? handleNewChannelOnlyChange : undefined}
                     restPlaybook={restPlaybook}
                     autoArchiveChannel={effectiveAutoArchive}
                     onAutoArchiveChange={handleAutoArchiveChange}
