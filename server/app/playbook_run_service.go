@@ -1840,11 +1840,11 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	// with OwnerGroupOnlyActions enabled would lock the run for all other participants.
 	if playbookRunToModify.TeamID == "" {
 		if _, memberErr := s.pluginAPI.Channel.GetMember(playbookRunToModify.ChannelID, ownerID); memberErr != nil {
-			return errors.Errorf("user %s is not a member of the run's channel and cannot be set as owner", newOwner.Username)
+			return errors.Wrap(ErrInvalidOwner, fmt.Sprintf("user %s is not a member of the run's channel and cannot be set as owner", newOwner.Username))
 		}
 	} else {
 		if !IsMemberOfTeam(ownerID, playbookRunToModify.TeamID, s.pluginAPI) {
-			return errors.Errorf("user %s is not a member of the run's team and cannot be set as owner", newOwner.Username)
+			return errors.Wrap(ErrInvalidOwner, fmt.Sprintf("user %s is not a member of the run's team and cannot be set as owner", newOwner.Username))
 		}
 	}
 

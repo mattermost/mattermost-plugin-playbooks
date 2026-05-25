@@ -786,6 +786,39 @@ func TestRunRestore(t *testing.T) {
 		require.NoError(t, svc.RunRestore(memberID, runID))
 	})
 
+	t.Run("deleted playbook — owner and system admin can restore, non-owner cannot", func(t *testing.T) {
+		deletedPlaybookTests := []struct {
+			name          string
+			userID        string
+			isAdmin       bool
+			shouldSucceed bool
+		}{
+			{"owner can restore", ownerID, false, true},
+			{"system admin can restore", adminID, true, true},
+			{"non-owner member cannot restore", memberID, false, false},
+		}
+		for _, tt := range deletedPlaybookTests {
+			t.Run(tt.name, func(t *testing.T) {
+				adminIDs := []string{}
+				if tt.isAdmin {
+					adminIDs = append(adminIDs, tt.userID)
+				}
+				svc := newPermissionsServiceForTest(
+					&stubRunService{run: baseRun, err: nil},
+					&stubPlaybookService{playbook: Playbook{}, err: ErrNotFound},
+					newPluginAPIAllowingAdmins(t, adminIDs...),
+				)
+				err := svc.RunRestore(tt.userID, runID)
+				if tt.shouldSucceed {
+					require.NoError(t, err)
+				} else {
+					require.Error(t, err)
+					assert.True(t, errors.Is(err, ErrNoPermissions), "got: %v", err)
+				}
+			})
+		}
+	})
+
 	t.Run("run not found propagates error without panic", func(t *testing.T) {
 		notFoundErr := errors.New("run not found in store")
 		svc := newPermissionsServiceForTest(

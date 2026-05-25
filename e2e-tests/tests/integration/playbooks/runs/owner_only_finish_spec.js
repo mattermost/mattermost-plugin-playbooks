@@ -26,27 +26,26 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         });
     });
 
-    // Helper to setup a playbook with owner-only actions enabled
-    const setupOwnerOnlyPlaybookRun = (result) => {
+    // Helper to setup a playbook with owner-only actions enabled.
+    // Returns a cy chain that yields { playbook, run }.
+    const setupOwnerOnlyPlaybookRun = () => {
         cy.viewport('macbook-13');
         cy.apiLogin(testOwner);
-        cy.apiCreatePlaybook({
+        return cy.apiCreatePlaybook({
             teamId: testTeam.id,
             title: 'Owner Only Playbook ' + getRandomId(),
             memberIDs: [],
             createPublicPlaybookRun: true,
+            ownerGroupOnlyActions: true,
         }).then((playbook) => {
-            result.playbook = playbook;
-            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
-            cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle', playbook.id);
-            cy.apiRunPlaybook({
+            return cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: playbook.id,
                 playbookRunName: 'Owner Only Run ' + getRandomId(),
                 ownerUserId: testOwner.id,
             }).then((playbookRun) => {
-                result.run = playbookRun;
                 cy.apiAddUsersToRun(playbookRun.id, [testParticipant.id]);
+                return cy.wrap({playbook, run: playbookRun});
             });
         });
     };
@@ -71,11 +70,9 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         };
 
         beforeEach(() => {
-            const setup = {};
-            setupOwnerOnlyPlaybookRun(setup);
-            cy.wrap(setup).then((s) => {
-                testPlaybook = s.playbook;
-                testPlaybookRun = s.run;
+            setupOwnerOnlyPlaybookRun().then(({playbook, run}) => {
+                testPlaybook = playbook;
+                testPlaybookRun = run;
             });
         });
 
@@ -85,7 +82,12 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             // would cause a 403 if we tried to finish as testOwner.
             cy.apiAdminLogin();
             if (innerRun) {
-                cy.apiFinishRun(innerRun.id);
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/${innerRun.id}/finish`,
+                    method: 'PUT',
+                    failOnStatusCode: false,
+                });
                 innerRun = null;
             }
             if (innerPlaybook) {
@@ -93,7 +95,12 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
                 innerPlaybook = null;
             }
             if (testPlaybookRun) {
-                cy.apiFinishRun(testPlaybookRun.id);
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/${testPlaybookRun.id}/finish`,
+                    method: 'PUT',
+                    failOnStatusCode: false,
+                });
             }
             if (testPlaybook) {
                 cy.apiArchivePlaybook(testPlaybook.id);
@@ -328,12 +335,9 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
                 title: 'Creator Not Owner Playbook ' + getRandomId(),
                 memberIDs: [],
                 createPublicPlaybookRun: true,
+                ownerGroupOnlyActions: true,
             }).then((playbook) => {
                 innerPlaybook = playbook;
-
-                // # Enable owner_group_only_actions via the playbook editor UI toggle
-                cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
-                cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle', playbook.id);
 
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
@@ -369,13 +373,11 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         let testPlaybookRun;
 
         beforeEach(() => {
-            const setup = {};
-            setupOwnerOnlyPlaybookRun(setup);
-            cy.wrap(setup).then((s) => {
-                testPlaybook = s.playbook;
-                testPlaybookRun = s.run;
+            setupOwnerOnlyPlaybookRun().then(({playbook, run}) => {
+                testPlaybook = playbook;
+                testPlaybookRun = run;
                 cy.apiAdminLogin();
-                cy.apiFinishRun(testPlaybookRun.id);
+                cy.apiFinishRun(run.id);
                 cy.apiLogin(testOwner);
             });
         });
@@ -431,6 +433,25 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
                 expect(run.current_status).to.equal('InProgress');
             });
+        });
+
+        it('non-owner sees Restart as disabled with owner-only tooltip in the run dropdown', () => {
+            // # Login as non-owner participant and visit the run detail page (backstage)
+            cy.apiLogin(testParticipant);
+            cy.playbooksVisitRun(testPlaybookRun.id);
+
+            // # Open the run header dropdown
+            cy.findByTestId('run-header-section').find('h1').click();
+            cy.findByTestId('dropdownmenu').should('be.visible');
+
+            // * Restart item is present in the dropdown (visible to participants) but disabled
+            cy.findByTestId('dropdownmenu').contains('Restart').should('exist');
+
+            // # Hover to trigger the tooltip
+            cy.findByTestId('dropdownmenu').contains('Restart').trigger('mouseover');
+
+            // * Tooltip confirms the owner-only restriction
+            cy.uiGetToolTip('Only the run owner can restart this run');
         });
     });
 

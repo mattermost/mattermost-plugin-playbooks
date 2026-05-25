@@ -77,9 +77,18 @@ jest.mock('src/selectors', () => ({
     isCurrentUserAdmin: () => false,
 }));
 
-jest.mock('src/hooks/permissions', () => ({
-    useIsBlockedByOwnerOnlyForFinishRestore: (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined) =>
+// Declared as a jest.fn() so individual tests can override the return value
+// (e.g. to simulate the system-admin bypass without pulling in Redux).
+// Jest hoists variables starting with "mock", so this is safe to reference
+// inside the jest.mock factory below.
+const mockIsBlockedByOwnerOnly = jest.fn(
+    (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined) =>
         Boolean(ownerGroupOnlyActions && !isOwner),
+);
+
+jest.mock('src/hooks/permissions', () => ({
+    useIsBlockedByOwnerOnlyForFinishRestore: (...args: [boolean | undefined, boolean | undefined]) =>
+        mockIsBlockedByOwnerOnly(...args),
 }));
 
 // ---------------------------------------------------------------------------
@@ -138,6 +147,13 @@ const baseRun = {
 describe('FinishRun component', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+
+        // Restore the default implementation so tests that don't override it
+        // still get the expected ownerOnly behaviour.
+        mockIsBlockedByOwnerOnly.mockImplementation(
+            (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined) =>
+                Boolean(ownerGroupOnlyActions && !isOwner),
+        );
     });
 
     it('renders the finish section when the run is in progress', () => {
@@ -169,6 +185,21 @@ describe('FinishRun component', () => {
                 playbookRun={baseRun}
                 ownerGroupOnlyActions={true}
                 isOwner={true}
+            />,
+        );
+        const json = JSON.stringify(component.toJSON());
+        expect(json).toContain('run-finish-section');
+    });
+
+    it('renders when the hook reports not-blocked (e.g. system admin bypass with ownerGroupOnlyActions=true)', () => {
+        // The real hook returns false for system admins; simulate that here so
+        // FinishRun renders even though the caller is not the owner.
+        mockIsBlockedByOwnerOnly.mockReturnValue(false);
+        const component = renderer.create(
+            <FinishRun
+                playbookRun={baseRun}
+                ownerGroupOnlyActions={true}
+                isOwner={false}
             />,
         );
         const json = JSON.stringify(component.toJSON());

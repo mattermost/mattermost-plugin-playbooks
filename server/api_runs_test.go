@@ -3556,7 +3556,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		// OwnerGroupOnlyActions=true they could hold owner status without channel access,
 		// locking the run for all other participants.
 		err = e.PlaybooksAdminClient.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUserNotInTeam.Id)
-		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 
 		// Owner must be unchanged.
 		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)

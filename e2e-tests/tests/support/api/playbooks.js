@@ -264,6 +264,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         channelMode = 'create_new_channel',
         channelId = '',
         metrics,
+        ownerGroupOnlyActions,
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -306,6 +307,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             channel_mode: channelMode,
             channel_id: channelId,
             metrics,
+            owner_group_only_actions: ownerGroupOnlyActions,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);

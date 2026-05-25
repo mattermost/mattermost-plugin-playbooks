@@ -45,3 +45,6 @@ var ErrPropertyOptionsInUse = errors.New("property options are in use")
 
 // ErrPropertyFieldTypeChangeNotAllowed occurs when trying to change the type of a property field that is referenced by conditions.
 var ErrPropertyFieldTypeChangeNotAllowed = errors.New("property field type change not allowed")
+
+// ErrInvalidOwner occurs when the proposed new owner is not a member of the run's team or channel.
+var ErrInvalidOwner = errors.New("invalid owner")

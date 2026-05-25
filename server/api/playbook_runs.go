@@ -822,6 +822,10 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 	}
 
 	if err := h.playbookRunService.ChangeOwner(vars["id"], userID, params.OwnerID); err != nil {
+		if errors.Is(err, app.ErrInvalidOwner) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
