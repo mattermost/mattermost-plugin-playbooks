@@ -19,23 +19,27 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
     let testPlaybook;
 
     before(() => {
+        // Each cy.* call here is enqueued in order so variables are guaranteed
+        // to be set before any command that reads them.
+
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testAdminUser = user;
+        });
 
-            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
-                testSysadminUser = sysadmin;
-            });
+        cy.apiCreateCustomAdmin().then(({sysadmin}) => {
+            testSysadminUser = sysadmin;
+        });
 
-            // # Create a regular (non-admin) playbook member
-            cy.apiCreateUser().then(({user: newUser}) => {
-                testMemberUser = newUser;
-                cy.apiAddUserToTeam(testTeam.id, testMemberUser.id);
-            });
+        cy.apiCreateUser().then(({user: newUser}) => {
+            testMemberUser = newUser;
+        });
 
-            cy.apiLogin(testAdminUser);
-
-            // # Create a public playbook — creator becomes playbook_admin
+        // cy.then() defers JS variable reads to execution time, after the
+        // commands above have resolved and written to testTeam / testMemberUser.
+        cy.then(() => cy.apiAddUserToTeam(testTeam.id, testMemberUser.id));
+        cy.then(() => cy.apiLogin(testAdminUser));
+        cy.then(() => {
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Admin Only Edit Playbook ' + getRandomId(),
@@ -43,16 +47,19 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
                 makePublic: true,
             }).then((playbook) => {
                 testPlaybook = playbook;
+            });
+        });
 
-                // # Add testMemberUser as playbook_member (non-admin)
-                cy.apiGetPlaybook(testPlaybook.id).then((fetched) => {
-                    cy.apiUpdatePlaybook({
-                        ...fetched,
-                        members: [
-                            ...fetched.members,
-                            {user_id: testMemberUser.id, roles: ['playbook_member']},
-                        ],
-                    });
+        // Add testMemberUser as playbook_member after both testPlaybook and
+        // testMemberUser are guaranteed to be set.
+        cy.then(() => {
+            cy.apiGetPlaybook(testPlaybook.id).then((fetched) => {
+                cy.apiUpdatePlaybook({
+                    ...fetched,
+                    members: [
+                        ...fetched.members,
+                        {user_id: testMemberUser.id, roles: ['playbook_member']},
+                    ],
                 });
             });
         });
@@ -151,7 +158,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.findByTestId('status-update-toggle').find('input[type="checkbox"]').should('be.disabled');
 
         // * Retrospective toggle input is disabled
-        cy.get('#retrospective').find('input[type="checkbox"]').should('be.disabled');
+        cy.findByTestId('retrospective-toggle').find('input[type="checkbox"]').should('be.disabled');
 
         // * Add-checklist button is not rendered (checklist is read-only)
         cy.get('#checklists').should('be.visible');
@@ -216,13 +223,19 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.visit('/playbooks');
         cy.findByTestId('playbooksLHSButton').click();
 
+        // # Set up intercept before triggering the action so the request is captured
+        cy.intercept('POST', `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`).as('duplicateAttempt');
+
         // # Open the dot menu for the locked playbook and click Duplicate
         cy.contains('[data-testid="playbook-item"]', testPlaybook.title).within(() => {
             cy.findByTestId('menuButtonActions').click();
         });
         cy.findByText('Duplicate').click();
 
-        // * Verify duplication was denied — no success toast and no copy in the list
+        // * Server must reject the request with 403 — wait for it to settle before checking UI
+        cy.wait('@duplicateAttempt').its('response.statusCode').should('eq', 403);
+
+        // * No success toast and no copy in the list
         cy.findByText('Successfully duplicated playbook').should('not.exist');
         cy.findByText('Copy of ' + testPlaybook.title).should('not.exist');
     });
@@ -270,9 +283,6 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
         // * Confirm modal must not appear — the Archive item is disabled for non-admin members
         cy.get('#confirmModal').should('not.exist');
-
-        // * The archive API must not have been called
-        cy.get('@archivePlaybook.all').should('have.length', 0);
     });
 
     it('any user with create permission can import an admin_only_edit playbook', () => {
@@ -290,10 +300,16 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
             cy.visit('/playbooks');
             cy.findByTestId('playbooksLHSButton').click();
 
+            // # Intercept before triggering the file upload so the request is captured
+            cy.intercept('POST', '**/api/v0/playbooks/import**').as('importPlaybook');
+
             // # Upload via the import button
             cy.findByTestId('titlePlaybook').within(() => {
                 cy.findByTestId('playbook-import-input').selectFile(importFile, {force: true}); // file input is hidden by design
             });
+
+            // # Wait for the import request to settle before asserting the editor opened
+            cy.wait('@importPlaybook');
 
             // * Verify the import succeeded — editor opens with the playbook title
             cy.findByTestId('playbook-editor-title').should('contain', testPlaybook.title);

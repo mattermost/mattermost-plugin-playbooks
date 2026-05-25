@@ -81,7 +81,8 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
-    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const playbookAdminRole = restPlaybook?.default_playbook_admin_role || PlaybookRole.Admin;
+    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(playbookAdminRole) ?? false;
 
     const adminOnlyEdit = restPlaybook?.admin_only_edit ?? false;
     const canEdit = restPlaybook != null && (!adminOnlyEdit || isPlaybookAdmin || isSystemAdmin);

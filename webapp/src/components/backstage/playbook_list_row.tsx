@@ -124,7 +124,8 @@ const PlaybookListRow = (props: Props) => {
     const currentUserPlaybookMember = useMemo(() => props.playbook?.members.find(({user_id}) => user_id === currentUser.id), [props.playbook?.members, currentUser.id]);
     const refreshLHS = useLHSRefresh();
 
-    const isPlaybookAdmin = currentUserPlaybookMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const playbookAdminRole = props.playbook.default_playbook_admin_role || PlaybookRole.Admin;
+    const isPlaybookAdmin = currentUserPlaybookMember?.scheme_roles?.includes(playbookAdminRole) ?? false;
     const canEdit = !props.playbook.admin_only_edit || isPlaybookAdmin || isSystemAdmin;
 
     const permissionForDuplicate = useHasTeamPermission(props.playbook.team_id, 'playbook_public_create');

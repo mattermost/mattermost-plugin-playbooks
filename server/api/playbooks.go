@@ -250,6 +250,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to read request body", err)

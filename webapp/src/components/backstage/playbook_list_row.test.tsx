@@ -133,7 +133,7 @@ const archiveIsEnabled = (tree: any): boolean => {
 };
 
 // ── Playbook factory ───────────────────────────────────────────────────────
-const makePlaybook = (adminOnlyEdit: boolean, memberRole: string | null) => ({
+const makePlaybook = (adminOnlyEdit: boolean, memberRole: string | null, defaultPlaybookAdminRole?: string) => ({
     id: 'pb-1',
     title: 'Test Playbook',
     description: '',
@@ -150,6 +150,7 @@ const makePlaybook = (adminOnlyEdit: boolean, memberRole: string | null) => ({
     default_owner_enabled: false,
     active_runs: 0,
     default_playbook_member_role: '',
+    default_playbook_admin_role: defaultPlaybookAdminRole,
     admin_only_edit: adminOnlyEdit,
     members: memberRole === null ? [] : [
         {
@@ -169,11 +170,11 @@ const defaultProps = {
     onMembershipChanged: jest.fn(),
 };
 
-const renderRow = (adminOnlyEdit: boolean, memberRole: string | null) =>
+const renderRow = (adminOnlyEdit: boolean, memberRole: string | null, defaultPlaybookAdminRole?: string) =>
     renderer.create(
         <IntlProvider locale='en'>
             <PlaybookListRow
-                playbook={makePlaybook(adminOnlyEdit, memberRole) as any}
+                playbook={makePlaybook(adminOnlyEdit, memberRole, defaultPlaybookAdminRole) as any}
                 {...defaultProps}
             />
         </IntlProvider>,
@@ -236,5 +237,33 @@ describe('PlaybookListRow > Archive disabled state', () => {
         mockSelectors.isAdmin = true;
         const tree = renderRow(true, PlaybookRole.Member);
         expect(archiveIsEnabled(tree)).toBe(true);
+    });
+});
+
+describe('PlaybookListRow > default_playbook_admin_role', () => {
+    beforeEach(() => {
+        mockSelectors.isAdmin = false;
+    });
+
+    it('shows Edit when member holds the custom admin role', () => {
+        const tree = renderRow(true, 'custom_admin_role', 'custom_admin_role');
+        expect(hasText(tree, 'Edit')).toBe(true);
+        expect(hasText(tree, 'View')).toBe(false);
+    });
+
+    it('shows View when member holds PlaybookRole.Admin but custom role is required', () => {
+        const tree = renderRow(true, PlaybookRole.Admin, 'custom_admin_role');
+        expect(hasText(tree, 'View')).toBe(true);
+        expect(hasText(tree, 'Edit')).toBe(false);
+    });
+
+    it('Archive is enabled when member holds the custom admin role', () => {
+        const tree = renderRow(true, 'custom_admin_role', 'custom_admin_role');
+        expect(archiveIsEnabled(tree)).toBe(true);
+    });
+
+    it('Archive is disabled when member holds PlaybookRole.Admin but custom role is required', () => {
+        const tree = renderRow(true, PlaybookRole.Admin, 'custom_admin_role');
+        expect(archiveIsDisabled(tree)).toBe(true);
     });
 });
