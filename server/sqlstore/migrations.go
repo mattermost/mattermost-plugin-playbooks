@@ -1775,6 +1775,21 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed creating unique index IR_Playbook_TeamID_RunNumberPrefix")
 			}
 
+			if err := addColumnToPGTable(e, "IR_Playbook", "NewChannelOnly", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding NewChannelOnly column to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "AutoArchiveChannel", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AutoArchiveChannel to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "ChannelCreatedByRun", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column ChannelCreatedByRun to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "AutoArchivedChannel", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AutoArchivedChannel to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "AutoArchiveChannel", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AutoArchiveChannel to IR_Incident")
+			}
 			return nil
 		},
 	},

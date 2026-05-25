@@ -116,6 +116,18 @@ Cypress.Commands.add('apiRunPlaybook', (
     });
 });
 
+// Restore (un-finish) a playbook run programmatically. Uses the currently logged-in user.
+Cypress.Commands.add('apiRestoreRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/restore`,
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
 // Finish a playbook's run programmaticially. Uses currently logged in user, so that user must
 // have edit permissions on the run
 Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
@@ -280,6 +292,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         channelMode = 'create_new_channel',
         channelId = '',
         metrics,
+        autoArchiveChannel = false,
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -323,6 +336,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             channel_mode: channelMode,
             channel_id: channelId,
             metrics,
+            auto_archive_channel: autoArchiveChannel,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);

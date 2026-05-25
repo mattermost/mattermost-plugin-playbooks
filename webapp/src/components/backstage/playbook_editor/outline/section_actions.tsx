@@ -15,13 +15,20 @@ import debounce from 'debounce';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
+import {
+    AccountMinusOutlineIcon,
+    AccountPlusOutlineIcon,
+    CheckCircleOutlineIcon,
+    PlayIcon,
+} from '@mattermost/compass-icons/components';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {fetchPlaybookPropertyFields, updatePlaybookChannelNameTemplate, updatePlaybookRunNumberPrefix} from 'src/client';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -35,16 +42,24 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 
+import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_channel_only_toggle';
+
 import {useProxyState} from 'src/hooks';
 import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
     disabled?: boolean;
+    newChannelOnly?: boolean;
+    onNewChannelOnlyChange?: (updated: {new_channel_only: boolean}) => void;
+    restPlaybook?: PlaybookWithChecklist;
+    autoArchiveChannel: boolean;
+    onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook, disabled}: Props) => {
-    const [restPlaybook] = useRestPlaybook(playbook.id);
+const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange}: Props) => {
+    const [restPlaybookLocal] = useRestPlaybook(playbook.id);
+    const restPlaybook = restPlaybookProp ?? restPlaybookLocal;
     const [fieldNames, setFieldNames] = useState<string[]>([]);
     useEffect(() => {
         fetchPlaybookPropertyFields(playbook.id)
@@ -268,6 +283,14 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
                         disabled={disabled || archived}
                         onRunNumberPrefixChange={handleRunNumberPrefixSave}
                         onChannelNameTemplateChange={handleChannelNameTemplateSave}
+                        newChannelOnly={newChannelOnly}
+                    />
+                </Setting>
+                <Setting id={'new-channel-only'}>
+                    <NewChannelOnlyToggle
+                        playbook={{new_channel_only: newChannelOnly}}
+                        disabled={archived || !onNewChannelOnlyChange}
+                        onChange={onNewChannelOnlyChange}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
@@ -359,6 +382,32 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
                     </AutomationTitle>
                 </Setting>
             </StyledSection>
+            {restPlaybook && (
+                <StyledSection>
+                    <StyledSectionTitle>
+                        <CheckCircleOutlineIcon
+                            size={22}
+                            aria-hidden={true}
+                        />
+                        <FormattedMessage
+                            id='V3tvkc'
+                            defaultMessage='When a run finishes'
+                        />
+                    </StyledSectionTitle>
+                    <Setting id={'run-finishes'}>
+                        <AutomationTitle>
+                            <div data-testid='auto-archive-channel-toggle'>
+                                <AutoArchiveToggle
+                                    autoArchive={autoArchiveChannel}
+                                    isLinkedChannel={playbookForCreateChannel.channel_mode === 'link_existing_channel'}
+                                    disabled={archived}
+                                    onChange={onAutoArchiveChange}
+                                />
+                            </div>
+                        </AutomationTitle>
+                    </Setting>
+                </StyledSection>
+            )}
         </>
     );
 };

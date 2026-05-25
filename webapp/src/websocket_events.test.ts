@@ -147,6 +147,8 @@ describe('incremental updates', () => {
         items_order: ['checklist_1'],
         run_number: 1,
         sequential_id: 'TEST-00001',
+        task_total: 0,
+        task_completed: 0,
     };
 
     describe('handleWebsocketPlaybookRunUpdatedIncremental', () => {
@@ -475,6 +477,30 @@ describe('incremental updates', () => {
             expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
             expect(dispatchedAction.data.changed_fields.run_number).toBe(42);
             expect(dispatchedAction.data.changed_fields.sequential_id).toBe('INC-00042');
+        });
+
+        it('handles task_total and task_completed field updates', () => {
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    task_total: 4,
+                    task_completed: 3,
+                },
+            };
+
+            const msg = makeWebSocketMessage(JSON.stringify(update));
+
+            handler(msg);
+
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data.changed_fields.task_total).toBe(4);
+            expect(dispatchedAction.data.changed_fields.task_completed).toBe(3);
         });
     });
 

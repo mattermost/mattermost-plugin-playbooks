@@ -35,9 +35,10 @@ interface Props {
     disabled?: boolean;
     onRunNumberPrefixChange?: (prefix: string) => void;
     onChannelNameTemplateChange?: (template: string) => void;
+    newChannelOnly?: boolean;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange, newChannelOnly = false}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
@@ -92,10 +93,11 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                 <AutomationTitle
                     style={{alignSelf: 'flex-start'}}
                 >
-                    <AutomationLabel disabled={disabled}>
+                    <AutomationLabel disabled={disabled || newChannelOnly}>
                         <ChannelModeRadio
                             type='radio'
-                            disabled={disabled}
+                            data-testid='playbook-link-existing-channel-radio'
+                            disabled={disabled || newChannelOnly}
                             checked={playbook.channel_mode === 'link_existing_channel'}
                             onChange={() => handleChannelModeChange('link_existing_channel')}
                         />
@@ -109,7 +111,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                         channelIds={playbook.channel_id === '' ? [] : [playbook.channel_id]}
                         isClearable={true}
                         selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                        isDisabled={disabled || playbook.channel_mode === 'create_new_channel'}
+                        isDisabled={disabled || newChannelOnly || playbook.channel_mode === 'create_new_channel'}
                         captureMenuScroll={false}
                         shouldRenderValue={true}
                         teamId={teamId}

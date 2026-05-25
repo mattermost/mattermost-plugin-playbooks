@@ -64,6 +64,8 @@ type PlaybookRun struct {
 	RemoveChannelMemberOnRemovedParticipant bool            `json:"remove_channel_member_on_removed_participant"`
 	RunNumber                               int64           `json:"run_number"`
 	SequentialID                            string          `json:"sequential_id"`
+	TaskTotal                               int             `json:"task_total"`
+	TaskCompleted                           int             `json:"task_completed"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the
@@ -114,6 +116,10 @@ const (
 	RunRestored            TimelineEventType = "run_restored"
 	StatusUpdatesEnabled   TimelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  TimelineEventType = "status_updates_disabled"
+	RetrospectiveEnabled   TimelineEventType = "retrospective_enabled"
+	RetrospectiveDisabled  TimelineEventType = "retrospective_disabled"
+	ChannelArchived        TimelineEventType = "channel_archived"
+	ChannelUnarchived      TimelineEventType = "channel_unarchived"
 )
 
 // TimelineEvent represents an event recorded to a playbook run's timeline.

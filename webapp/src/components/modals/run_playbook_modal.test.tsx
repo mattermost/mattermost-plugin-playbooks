@@ -59,6 +59,10 @@ jest.mock('src/hooks', () => ({
     usePlaybookAttributes: jest.fn(() => null),
 }));
 
+jest.mock('src/hooks/crud', () => ({
+    usePlaybook: jest.fn().mockReturnValue([undefined]),
+}));
+
 jest.mock('src/hooks/general', () => ({
     useProfilesInTeam: jest.fn(() => []),
     useUserDisplayNameMap: jest.fn(() => ({})),

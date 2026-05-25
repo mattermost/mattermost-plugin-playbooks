@@ -74,6 +74,8 @@ describe('playbook_run_updates utilities', () => {
         items_order: ['checklist_1'],
         run_number: 0,
         sequential_id: '',
+        task_total: 0,
+        task_completed: 0,
     };
 
     describe('applyIncrementalUpdate', () => {
@@ -186,6 +188,22 @@ describe('playbook_run_updates utilities', () => {
 
             expect(result.run_number).toBe(3);
             expect(result.sequential_id).toBe('INC-00003');
+        });
+
+        it('should apply task_total and task_completed from a WS incremental update', () => {
+            const update = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    task_total: 5,
+                    task_completed: 3,
+                },
+            };
+
+            const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+            expect(result.task_total).toBe(5);
+            expect(result.task_completed).toBe(3);
         });
 
         it('should return the original run reference unchanged when update is older than current state', () => {

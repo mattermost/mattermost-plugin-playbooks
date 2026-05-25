@@ -1781,6 +1781,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			DefaultRunAdminRole:       app.RunRoleAdmin,
 			DefaultRunMemberRole:      app.RunRoleMember,
 			NextRunNumber:             1,
+			RetrospectiveEnabled:      true,
 		},
 	}
 }
@@ -2348,4 +2349,173 @@ func TestConcurrentRunNumberIncrement(t *testing.T) {
 	assert.Equal(t, numGoroutines, len(seen))
 	assert.Equal(t, int64(1), minVal)
 	assert.Equal(t, int64(numGoroutines), maxVal)
+}
+
+func TestRetrospectiveEnabledRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+
+	t.Run("RetrospectiveEnabled defaults to true when omitted", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("retro-default-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.True(t, got.RetrospectiveEnabled)
+	})
+
+	t.Run("RetrospectiveEnabled true persists through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("retro-enabled-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.RetrospectiveEnabled = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.True(t, got.RetrospectiveEnabled)
+	})
+
+	t.Run("RetrospectiveEnabled false persists through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("retro-disabled-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.RetrospectiveEnabled = false
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.False(t, got.RetrospectiveEnabled)
+	})
+
+	t.Run("RetrospectiveEnabled persists through Update", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("retro-update").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.RetrospectiveEnabled = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		got.RetrospectiveEnabled = false
+		err = playbookStore.Update(got)
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		require.False(t, updated.RetrospectiveEnabled)
+	})
+}
+
+func TestNewChannelOnlyRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+
+	pb := NewPBBuilder().
+		WithTitle("nco-persist").
+		WithTeamID(teamID).
+		ToPlaybook()
+	pb.NewChannelOnly = true
+
+	id, err := playbookStore.Create(pb)
+	require.NoError(t, err)
+
+	got, err := playbookStore.Get(id)
+	require.NoError(t, err)
+	require.True(t, got.NewChannelOnly)
+
+	got.NewChannelOnly = false
+	err = playbookStore.Update(got)
+	require.NoError(t, err)
+
+	updated, err := playbookStore.Get(id)
+	require.NoError(t, err)
+	require.False(t, updated.NewChannelOnly)
+
+	all, err := playbookStore.GetPlaybooks()
+	require.NoError(t, err)
+
+	found := false
+	for _, listed := range all {
+		if listed.ID == id {
+			require.False(t, listed.NewChannelOnly)
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
+}
+
+func TestAutoArchiveChannelRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+
+	t.Run("AutoArchiveChannel persists through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("auto-archive-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.AutoArchiveChannel = true
+		pb.RetrospectiveEnabled = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		assert.True(t, got.AutoArchiveChannel)
+		assert.True(t, got.RetrospectiveEnabled)
+	})
+
+	t.Run("AutoArchiveChannel persists through Update", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("auto-archive-update").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.AutoArchiveChannel = true
+		pb.RetrospectiveEnabled = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		got.AutoArchiveChannel = false
+		got.RetrospectiveEnabled = false
+
+		err = playbookStore.Update(got)
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		assert.False(t, updated.AutoArchiveChannel)
+		assert.False(t, updated.RetrospectiveEnabled)
+	})
 }

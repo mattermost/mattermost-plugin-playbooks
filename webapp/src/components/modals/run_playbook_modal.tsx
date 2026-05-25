@@ -28,6 +28,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {useCanCreatePlaybooksInTeam, usePlaybook, usePlaybookAttributes} from 'src/hooks';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
@@ -44,6 +45,7 @@ import {useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
 import {PropertyField, PropertyFieldType} from 'src/types/properties';
+import {HelpText} from 'src/components/backstage/playbook_runs/shared';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -80,6 +82,7 @@ export const RunPlaybookModal = ({
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook, {isFetching: playbookLoading, error: playbookError}] = usePlaybook(selectedPlaybookId || '');
     const playbookAttributes = usePlaybookAttributes(selectedPlaybookId || '');
+    const [restPlaybook] = useRestPlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
@@ -150,6 +153,8 @@ export const RunPlaybookModal = ({
         }
     }, [userIdsInPropertyValues, ensureProfilesStore, dispatch]);
 
+    const isNewChannelOnly = Boolean(restPlaybook?.new_channel_only);
+
     // Single effect for atomic init: prevents race conditions from independent effects exposing stale state.
     useEffect(() => {
         // Reset form state first; skip isSubmitting if a submission is already in flight
@@ -177,10 +182,10 @@ export const RunPlaybookModal = ({
         setRunName(playbook.channel_name_template ?? '');
 
         setRunSummary(playbook.run_summary_template_enabled ? playbook.run_summary_template : '');
-        setChannelMode(playbook.channel_mode);
+        setChannelMode(isNewChannelOnly ? 'create_new_channel' : playbook.channel_mode);
         setChannelId(playbook.channel_id);
         setCreatePublicRun(playbook.create_public_playbook_run);
-    }, [playbook?.id, selectedPlaybookId]);
+    }, [playbook?.id, selectedPlaybookId, isNewChannelOnly]);
 
     const templateFieldNames = useMemo(() => {
         const names = new Set<string>();
@@ -244,7 +249,7 @@ export const RunPlaybookModal = ({
         );
     }, [playbook?.channel_name_template, playbook?.run_number_prefix, playbookAttributes, playbook?.next_run_number, propertyValues, effectiveUserMap, userId, currentUserId, formatMessage]);
 
-    const createNewChannel = channelMode === 'create_new_channel';
+    const createNewChannel = channelMode === 'create_new_channel' || isNewChannelOnly;
 
     // Name is required unless the playbook has a name template.
     // In template mode the resolved preview must also fit within the limit so the backend
@@ -269,6 +274,10 @@ export const RunPlaybookModal = ({
     const isFormValid = !attributesLoading && nameValid && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
 
     const handleSetChannelMode = useCallback((mode: 'link_existing_channel' | 'create_new_channel') => {
+        if (isNewChannelOnly && mode === 'link_existing_channel') {
+            return;
+        }
+
         setChannelMode(mode);
 
         // Default to the current channel when choosing link to the existing channel, we are in a channel context and the playbook does not have a linked channel.
@@ -278,7 +287,7 @@ export const RunPlaybookModal = ({
         if (mode === 'link_existing_channel' && playbook?.channel_mode === 'create_new_channel' && channelId === '' && currentChannelId && !currentChannelIsDMOrGM) {
             setChannelId(currentChannelId);
         }
-    }, [playbook?.channel_mode, channelId, currentChannelId, currentChannelIsDMOrGM]);
+    }, [isNewChannelOnly, playbook?.channel_mode, channelId, currentChannelId, currentChannelIsDMOrGM]);
 
     const onCreatePlaybook = () => {
         dispatch(displayPlaybookCreateModal({}));
@@ -474,6 +483,7 @@ export const RunPlaybookModal = ({
                         channelId={channelId}
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
+                        newChannelOnly={isNewChannelOnly}
                         onSetCreatePublicRun={setCreatePublicRun}
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
@@ -581,22 +591,32 @@ type ChannelProps = {
     channelMode: string;
     channelId: string;
     createPublicRun: boolean;
+    newChannelOnly?: boolean;
     onSetCreatePublicRun: (val: boolean) => void;
     onSetChannelMode: (mode: 'link_existing_channel' | 'create_new_channel') => void;
     onSetChannelId: (channelId: string) => void;
 };
 
-const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: ChannelProps) => {
+const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, newChannelOnly = false, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: ChannelProps) => {
     const {formatMessage} = useIntl();
-    const createNewChannel = channelMode === 'create_new_channel';
-    const linkExistingChannel = channelMode === 'link_existing_channel';
+    const createNewChannel = channelMode === 'create_new_channel' || newChannelOnly;
+    const linkExistingChannel = channelMode === 'link_existing_channel' && !newChannelOnly;
     return (
         <ChannelContainer>
+            {newChannelOnly && (
+                <HelpText
+                    id='new-channel-only-hint'
+                    data-testid='new-channel-only-hint'
+                >
+                    {formatMessage({defaultMessage: 'This playbook requires a new channel for each run'})}
+                </HelpText>
+            )}
             <ChannelBlock>
                 <StyledRadioInput
                     data-testid={'link-existing-channel-radio'}
                     type='radio'
                     checked={linkExistingChannel}
+                    disabled={newChannelOnly}
                     onChange={() => onSetChannelMode('link_existing_channel')}
                 />
                 <FormattedMessage defaultMessage='Link to an existing channel'/>
@@ -605,6 +625,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                 <SelectorWrapper>
                     <StyledChannelSelector
                         id={'link-existing-channel-selector'}
+                        data-testid={'link-existing-channel-selector'}
                         onChannelSelected={(channel_id: string) => onSetChannelId(channel_id)}
                         channelIds={channelId ? [channelId] : []}
                         isClearable={true}
@@ -677,7 +698,6 @@ const StyledGenericModal = styled(GenericModal)`
         .modal-header {
             padding: 24px 31px;
             margin-bottom: 0;
-            box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
         }
 
         .modal-content {

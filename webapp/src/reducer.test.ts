@@ -138,6 +138,8 @@ describe('websocket event actions', () => {
         items_order: ['checklist_1'],
         run_number: 1,
         sequential_id: 'TEST-00001',
+        task_total: 0,
+        task_completed: 0,
     };
 
     const makeStateWithRun = (run: PlaybookRun) => ({

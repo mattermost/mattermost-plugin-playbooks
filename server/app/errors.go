@@ -40,3 +40,6 @@ var ErrReservedPropertyFieldName = errors.New("reserved property field name")
 
 // ErrInternalPrecondition occurs when a caller skipped a mandatory setup step; maps to HTTP 500.
 var ErrInternalPrecondition = errors.New("internal precondition violated")
+
+// ErrChannelArchived occurs when trying to modify a run whose linked channel has been archived.
+var ErrChannelArchived = errors.New("channel is archived")

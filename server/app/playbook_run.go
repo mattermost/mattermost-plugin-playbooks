@@ -232,6 +232,38 @@ type PlaybookRun struct {
 
 	// SequentialID is the human-readable sequential identifier (e.g., "INC-00042").
 	SequentialID string `json:"sequential_id"`
+
+	ChannelCreatedByRun bool `json:"-"`
+
+	// AutoArchivedChannel tracks whether this run auto-archived its channel; checked independently
+	// of the current playbook flag so restore behaves correctly even if the flag was toggled.
+	AutoArchivedChannel bool `json:"-"`
+
+	// AutoArchiveChannel is snapshotted from the playbook at run creation so the archive
+	// behaviour reflects the setting at start time and avoids a DB lookup on every finish.
+	AutoArchiveChannel bool `json:"-"`
+
+	// TaskTotal and TaskCompleted are computed from Checklists; not persisted. Hidden items are
+	// excluded; Skipped items count as completed. See ComputeTaskProgress.
+	TaskTotal     int `json:"task_total"`
+	TaskCompleted int `json:"task_completed"`
+}
+
+func (r *PlaybookRun) ComputeTaskProgress() {
+	total, completed := 0, 0
+	for _, cl := range r.Checklists {
+		for _, item := range cl.Items {
+			if item.ConditionAction == ConditionActionHidden {
+				continue
+			}
+			total++
+			if item.State == ChecklistItemStateClosed || item.State == ChecklistItemStateSkipped {
+				completed++
+			}
+		}
+	}
+	r.TaskTotal = total
+	r.TaskCompleted = completed
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
@@ -456,6 +488,12 @@ func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string
 	}
 	if previous.SequentialID != current.SequentialID {
 		changes["sequential_id"] = current.SequentialID
+	}
+	if previous.TaskTotal != current.TaskTotal {
+		changes["task_total"] = current.TaskTotal
+	}
+	if previous.TaskCompleted != current.TaskCompleted {
+		changes["task_completed"] = current.TaskCompleted
 	}
 }
 
@@ -1035,9 +1073,13 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	ChannelArchived        timelineEventType = "channel_archived"
+	ChannelUnarchived      timelineEventType = "channel_unarchived"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
+	RetrospectiveEnabled   timelineEventType = "retrospective_enabled"
+	RetrospectiveDisabled  timelineEventType = "retrospective_disabled"
 	PropertyChanged        timelineEventType = "property_changed"
 )
 
@@ -1415,6 +1457,9 @@ type PlaybookRunService interface {
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
+	// ToggleRetrospectiveEnabled enables or disables the retrospective for the run.
+	ToggleRetrospectiveEnabled(playbookRunID, userID string, enabled bool) error
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
 	MessageHasBeenPosted(post *model.Post)

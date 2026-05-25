@@ -16,18 +16,20 @@ describe('runs > sequential id', {testIsolation: true}, () => {
     let testUser;
     let createdPlaybookIds = [];
 
+    before(() => {
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
+        });
+    });
+
     beforeEach(() => {
         createdPlaybookIds = [];
 
         // # Size the viewport to show the runs list without covering elements
         cy.viewport('macbook-13');
 
-        cy.apiInitSetup().then(({team, user}) => {
-            testTeam = team;
-            testUser = user;
-        });
-
-        // # Login as testUser
+        // # Login as testUser; cy.then() defers evaluation so testUser is resolved from before()
         cy.then(() => cy.apiLogin(testUser));
     });
 

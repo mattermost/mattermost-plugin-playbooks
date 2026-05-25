@@ -8,7 +8,9 @@ import debounce from 'debounce';
 
 import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {publishRetrospective, updateRetrospective} from 'src/client';
+import {fetchPlaybookRun, publishRetrospective, updateRetrospective} from 'src/client';
+import {playbookRunUpdated} from 'src/actions';
+import {useAppDispatch} from 'src/hooks/redux';
 import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/hooks';
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
@@ -37,6 +39,7 @@ const Retrospective = ({
     role,
     focusMetricId,
 }: Props) => {
+    const dispatch = useAppDispatch();
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -84,8 +87,10 @@ const Retrospective = ({
         );
     }
 
-    const onConfirmPublish = () => {
-        publishRetrospective(playbookRun.id, playbookRun.retrospective, playbookRun.metrics_data);
+    const onConfirmPublish = async () => {
+        await publishRetrospective(playbookRun.id, playbookRun.retrospective, playbookRun.metrics_data);
+        const updatedRun = await fetchPlaybookRun(playbookRun.id);
+        dispatch(playbookRunUpdated(updatedRun));
         setShowConfirmation(false);
     };
 
