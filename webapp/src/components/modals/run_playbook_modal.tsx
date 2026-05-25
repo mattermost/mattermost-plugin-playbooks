@@ -17,6 +17,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {usePlaybook} from 'src/graphql/hooks';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
@@ -28,6 +29,7 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import PlaybooksSelector from 'src/components/playbooks_selector';
 import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
+import {HelpText} from 'src/components/backstage/playbook_runs/shared';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -49,7 +51,7 @@ type Props = {
     onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
-const RunPlaybookModal = ({
+export const RunPlaybookModal = ({
     playbookId,
     triggerChannelId,
     teamId,
@@ -62,6 +64,7 @@ const RunPlaybookModal = ({
     const [step, setStep] = useState(playbookId === undefined ? 'select-playbook' : 'run-details');
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook] = usePlaybook(selectedPlaybookId || '');
+    const [restPlaybook] = useRestPlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
@@ -79,41 +82,49 @@ const RunPlaybookModal = ({
         userId = playbook.default_owner_id;
     }
 
-    useEffect(() => {
-        if (playbook?.channel_mode === 'create_new_channel') {
-            setRunName(playbook.channel_name_template);
-        }
-    }, [playbook, playbook?.channel_name_template, playbook?.channel_mode]);
+    const effectiveChannelMode = restPlaybook?.new_channel_only ? 'create_new_channel' : playbook?.channel_mode;
 
     useEffect(() => {
-        if (playbook && playbook?.run_summary_template_enabled) {
+        if (!effectiveChannelMode) {
+            return;
+        }
+        setChannelMode(effectiveChannelMode);
+    }, [effectiveChannelMode]);
+
+    useEffect(() => {
+        if (effectiveChannelMode === 'create_new_channel') {
+            setRunName(playbook?.channel_name_template ?? '');
+        }
+    }, [effectiveChannelMode, playbook?.id, playbook?.channel_name_template]);
+
+    useEffect(() => {
+        if (playbook?.run_summary_template_enabled) {
             setRunSummary(playbook.run_summary_template);
         }
-    }, [playbook, playbook?.run_summary_template_enabled, playbook?.run_summary_template]);
+    }, [playbook?.id, playbook?.run_summary_template_enabled, playbook?.run_summary_template]);
 
     useEffect(() => {
-        if (playbook) {
-            setChannelMode(playbook.channel_mode);
-        }
-    }, [playbook, playbook?.channel_mode]);
-
-    useEffect(() => {
-        if (playbook) {
+        if (playbook?.channel_id) {
             setChannelId(playbook.channel_id);
         }
-    }, [playbook, playbook?.channel_id]);
+    }, [playbook?.id, playbook?.channel_id]);
 
     useEffect(() => {
         if (playbook) {
             setCreatePublicRun(playbook.create_public_playbook_run);
         }
-    }, [playbook, playbook?.create_public_playbook_run]);
+    }, [playbook?.id, playbook?.create_public_playbook_run]);
 
-    const createNewChannel = channelMode === 'create_new_channel';
-    const linkExistingChannel = channelMode === 'link_existing_channel';
+    const isNewChannelOnly = Boolean(restPlaybook?.new_channel_only);
+    const createNewChannel = channelMode === 'create_new_channel' || isNewChannelOnly;
+    const linkExistingChannel = channelMode === 'link_existing_channel' && !isNewChannelOnly;
     const isFormValid = runName !== '' && runName.length <= RUN_NAME_MAX_LENGTH && (createNewChannel || channelId !== '');
 
     const handleSetChannelMode = (mode: 'link_existing_channel' | 'create_new_channel') => {
+        if (isNewChannelOnly && mode === 'link_existing_channel') {
+            return;
+        }
+
         setChannelMode(mode);
 
         // Default to the current channel when choosing link to the existing channel, we are in a channel context and the playbook does not have a linked channel.
@@ -153,7 +164,7 @@ const RunPlaybookModal = ({
                     hasPlaybookChanged: playbookId !== selectedPlaybookId,
                     hasNameChanged: runName !== playbook.channel_name_template,
                     hasSummaryChanged: runSummary !== playbook.run_summary_template,
-                    hasChannelModeChanged: channelMode !== playbook.channel_mode,
+                    hasChannelModeChanged: channelMode !== effectiveChannelMode,
                     hasChannelIdChanged: channelId !== playbook.channel_id,
                     hasPublicChanged: !linkExistingChannel && createPublicRun !== playbook.create_public_playbook_run,
                 };
@@ -213,6 +224,7 @@ const RunPlaybookModal = ({
                         channelId={channelId}
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
+                        newChannelOnly={isNewChannelOnly}
                         onSetCreatePublicRun={setCreatePublicRun}
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
@@ -306,22 +318,32 @@ type channelProps = {
     channelMode: string;
     channelId: string;
     createPublicRun: boolean;
+    newChannelOnly?: boolean;
     onSetCreatePublicRun: (val: boolean) => void;
     onSetChannelMode: (mode: 'link_existing_channel' | 'create_new_channel') => void;
     onSetChannelId: (channelId: string) => void;
 };
 
-const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
+const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, newChannelOnly = false, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
     const {formatMessage} = useIntl();
-    const createNewChannel = channelMode === 'create_new_channel';
-    const linkExistingChannel = channelMode === 'link_existing_channel';
+    const createNewChannel = channelMode === 'create_new_channel' || newChannelOnly;
+    const linkExistingChannel = channelMode === 'link_existing_channel' && !newChannelOnly;
     return (
         <ChannelContainer>
+            {newChannelOnly && (
+                <HelpText
+                    id='new-channel-only-hint'
+                    data-testid='new-channel-only-hint'
+                >
+                    {formatMessage({defaultMessage: 'This playbook requires a new channel for each run'})}
+                </HelpText>
+            )}
             <ChannelBlock>
                 <StyledRadioInput
                     data-testid={'link-existing-channel-radio'}
                     type='radio'
                     checked={linkExistingChannel}
+                    disabled={newChannelOnly}
                     onChange={() => onSetChannelMode('link_existing_channel')}
                 />
                 <FormattedMessage defaultMessage='Link to an existing channel'/>
@@ -330,6 +352,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                 <SelectorWrapper>
                     <StyledChannelSelector
                         id={'link-existing-channel-selector'}
+                        data-testid={'link-existing-channel-selector'}
                         onChannelSelected={(channel_id: string) => onSetChannelId(channel_id)}
                         channelIds={channelId ? [channelId] : []}
                         isClearable={true}
@@ -394,7 +417,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
 };
 
 const StyledGenericModal = styled(GenericModal)`
-    &&& {
+    &&&& {
         h1 {
             width:100%;
         }
@@ -402,7 +425,6 @@ const StyledGenericModal = styled(GenericModal)`
         .modal-header {
             padding: 24px 31px;
             margin-bottom: 0;
-            box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
         }
 
         .modal-content {
@@ -410,12 +432,12 @@ const StyledGenericModal = styled(GenericModal)`
         }
 
         .modal-body {
-            padding: 24px 31px;
+            padding: 8px 32px;
         }
 
         .modal-footer {
-           padding: 0 31px 28px;
-           box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
+            padding: 24px 32px;
+            box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
         }
     }
 `;

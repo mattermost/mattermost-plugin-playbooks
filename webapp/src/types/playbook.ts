@@ -63,6 +63,8 @@ export interface PlaybookWithChecklist extends Playbook {
 
     channel_mode: string;
     channel_id: string;
+    new_channel_only: boolean;
+    auto_archive_channel: boolean;
 
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
@@ -156,6 +158,7 @@ export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 
 // setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
 export const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     ...playbook,
+    auto_archive_channel: playbook.auto_archive_channel ?? false,
     title: playbook.title.trim() || 'Untitled playbook',
     checklists: playbook.checklists.map((checklist) => ({
         ...checklist,
@@ -217,6 +220,8 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         channel_id: '',
         channel_mode: 'create_new_channel',
         admin_only_edit: false,
+        new_channel_only: false,
+        auto_archive_channel: false,
         propertyFields: [],
     };
 }

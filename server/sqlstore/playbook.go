@@ -164,6 +164,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.ChannelID",
 			"p.ChannelMode",
 			"p.AdminOnlyEdit",
+			"p.NewChannelOnly",
+			"p.AutoArchiveChannel",
 			"p.ChecklistsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
 			"p.RunSummaryTemplateEnabled",
@@ -274,6 +276,8 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
 			"AdminOnlyEdit":                           rawPlaybook.AdminOnlyEdit,
+			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
+			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -369,6 +373,7 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 		) AS NumActions`,
 		"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
 		"p.AdminOnlyEdit",
+		"p.NewChannelOnly",
 		"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 		"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 		"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -460,6 +465,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			) AS NumActions`,
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
 			"p.AdminOnlyEdit",
+			"p.NewChannelOnly",
 			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -710,6 +716,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
 			"AdminOnlyEdit":                           rawPlaybook.AdminOnlyEdit,
+			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
+			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

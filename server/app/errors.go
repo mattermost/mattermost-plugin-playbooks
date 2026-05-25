@@ -34,3 +34,6 @@ var ErrPropertyOptionsInUse = errors.New("property options are in use")
 
 // ErrPropertyFieldTypeChangeNotAllowed occurs when trying to change the type of a property field that is referenced by conditions.
 var ErrPropertyFieldTypeChangeNotAllowed = errors.New("property field type change not allowed")
+
+// ErrChannelArchived occurs when trying to modify a run whose linked channel has been archived.
+var ErrChannelArchived = errors.New("channel is archived")

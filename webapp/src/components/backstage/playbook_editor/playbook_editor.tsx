@@ -304,6 +304,7 @@ const PlaybookEditor = () => {
                         canEdit={canEdit}
                         adminOnlyEdit={adminOnlyEdit}
                         showAdminSettings={restPlaybook != null && (isSystemAdmin || isPlaybookAdmin)}
+                        restPlaybook={restPlaybook ?? undefined}
                     />
                 </Route>
                 <Route
