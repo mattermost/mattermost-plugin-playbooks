@@ -3284,6 +3284,48 @@ func TestToggleRunRetrospective(t *testing.T) {
 		statusAdmin := toggleRunRetrospective(t, e, run.ID, e.AdminUser.Id, e.ServerAdminClient.AuthToken, false)
 		assert.Equal(t, http.StatusOK, statusAdmin)
 	})
+
+	t.Run("re-enabling on a finished published run does not post a new reminder", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Re-enable Published", e.RegularUser.Id)
+
+		// Finish the run with retro enabled — the initial reminder fires.
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		// Publish the retrospective.
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.PublishRetrospective(context.Background(), run.ID, e.RegularUser.Id, client.RetrospectiveUpdate{}))
+
+		// Confirm the retrospective is now published.
+		published, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotZero(t, published.RetrospectivePublishedAt, "retrospective must be published before this sub-test is meaningful")
+
+		// Disable retro on the published run.
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+
+		// Count retro reminder posts before re-enable.
+		countRetroRemPosts := func() int {
+			posts, _, err := e.ServerAdminClient.GetPostsForChannel(context.Background(), run.ChannelID, 0, 100, "", false, false)
+			require.NoError(t, err)
+			n := 0
+			for _, p := range posts.Posts {
+				if p.Type == "custom_retro_rem" || p.Type == "custom_retro_rem_first" {
+					n++
+				}
+			}
+			return n
+		}
+		countBefore := countRetroRemPosts()
+
+		// Re-enable on a PUBLISHED run — must NOT post a new reminder.
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		countAfter := countRetroRemPosts()
+		assert.Equal(t, countBefore, countAfter, "re-enabling on a published run must not post a new retrospective reminder")
+
+		fetched, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled)
+	})
 }
 
 // TestRetrospectiveDisabled_RunCreation verifies that the RetrospectiveEnabled flag on
@@ -3352,6 +3394,48 @@ func TestRetrospectiveDisabled_RunCreation(t *testing.T) {
 		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		assert.True(t, fetched.RetrospectiveEnabled, "run should inherit retrospective_enabled=true from playbook")
+	})
+}
+
+// TestRetrospectiveDisabled_FinishRun verifies that finishing a run with retrospective_enabled=false
+// does NOT post a retrospective reminder post to the channel.
+func TestRetrospectiveDisabled_FinishRun(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("finishing a run with retrospective disabled posts no retro reminder", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "No Retro Finish Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, false)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No Retro Finish Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.False(t, run.RetrospectiveEnabled)
+
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		posts, _, err := e.ServerAdminClient.GetPostsForChannel(context.Background(), run.ChannelID, 0, 100, "", false, false)
+		require.NoError(t, err)
+		for _, p := range posts.Posts {
+			assert.NotEqual(t, "custom_retro_rem_first", p.Type,
+				"no retro reminder post expected when retrospective is disabled")
+		}
 	})
 }
 

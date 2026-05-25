@@ -104,4 +104,22 @@ describe('SectionRetrospective', () => {
         expect(treeStr).toContain('retrospective-metrics');
         expect(treeStr).toContain('markdown-edit');
     });
+
+    it('renders input controls as disabled when retrospective_enabled is true but disabled prop is true', () => {
+        const playbook = makePlaybook({retrospective_enabled: true});
+
+        const tree = renderWithIntl(
+            <SectionRetrospective
+                playbook={playbook}
+                refetch={jest.fn()}
+                disabled={true}
+            />,
+        ).toJSON();
+
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).not.toContain('A retrospective is not expected.');
+        expect(treeStr).toContain('retrospective-interval-selector');
+        expect(treeStr).toContain('retrospective-metrics');
+        expect(treeStr).toContain('markdown-edit');
+    });
 });
