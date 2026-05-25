@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -1649,5 +1651,100 @@ func TestSendWebhooksOnCreationDMGM(t *testing.T) {
 			ChannelID: channelID,
 		})
 		// AssertExpectations confirms GetTeam was called exactly once
+	})
+}
+
+func TestShouldAutoArchiveChannel(t *testing.T) {
+	base := PlaybookRun{
+		AutoArchiveChannel:  true,
+		ChannelCreatedByRun: true,
+		ChannelID:           model.NewId(),
+	}
+
+	tests := []struct {
+		name     string
+		mutate   func(*PlaybookRun)
+		expected bool
+	}{
+		{"all conditions true", func(_ *PlaybookRun) {}, true},
+		{"AutoArchiveChannel false", func(r *PlaybookRun) { r.AutoArchiveChannel = false }, false},
+		{"ChannelCreatedByRun false", func(r *PlaybookRun) { r.ChannelCreatedByRun = false }, false},
+		{"ChannelID empty", func(r *PlaybookRun) { r.ChannelID = "" }, false},
+	}
+
+	svc := &PlaybookRunServiceImpl{}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			run := base
+			tc.mutate(&run)
+			assert.Equal(t, tc.expected, svc.shouldAutoArchiveChannel(&run))
+		})
+	}
+}
+
+func TestDeleteChannelByID(t *testing.T) {
+	channelID := model.NewId()
+
+	t.Run("returns true on success", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("DeleteChannel", channelID).Return((*model.AppError)(nil)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.True(t, svc.deleteChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+
+	t.Run("returns false on API error", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("DeleteChannel", channelID).Return(model.NewAppError("test", "err", nil, "", 500)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.False(t, svc.deleteChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+}
+
+func TestRestoreChannelByID(t *testing.T) {
+	channelID := model.NewId()
+
+	t.Run("archived channel is un-archived and returns true", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		ch := &model.Channel{Id: channelID, DeleteAt: 1000}
+		api.On("GetChannel", channelID).Return(ch, (*model.AppError)(nil)).Once()
+		api.On("UpdateChannel", ch).Return(ch, (*model.AppError)(nil)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.True(t, svc.restoreChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+
+	t.Run("already active channel returns false without calling Update", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		ch := &model.Channel{Id: channelID, DeleteAt: 0}
+		api.On("GetChannel", channelID).Return(ch, (*model.AppError)(nil)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.False(t, svc.restoreChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+
+	t.Run("GetChannel failure returns false", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("GetChannel", channelID).Return((*model.Channel)(nil), model.NewAppError("test", "err", nil, "", 500)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.False(t, svc.restoreChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+
+	t.Run("UpdateChannel failure returns false", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		ch := &model.Channel{Id: channelID, DeleteAt: 1000}
+		api.On("GetChannel", channelID).Return(ch, (*model.AppError)(nil)).Once()
+		api.On("UpdateChannel", ch).Return((*model.Channel)(nil), model.NewAppError("test", "err", nil, "", 500)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.False(t, svc.restoreChannelByID(channelID, logrus.WithField("test", "true")))
 	})
 }

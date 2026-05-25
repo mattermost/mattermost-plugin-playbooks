@@ -212,6 +212,16 @@ type PlaybookRun struct {
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
 
+	ChannelCreatedByRun bool `json:"-"`
+
+	// AutoArchivedChannel tracks whether this run auto-archived its channel; checked independently
+	// of the current playbook flag so restore behaves correctly even if the flag was toggled.
+	AutoArchivedChannel bool `json:"-"`
+
+	// AutoArchiveChannel is snapshotted from the playbook at run creation so the archive
+	// behaviour reflects the setting at start time and avoids a DB lookup on every finish.
+	AutoArchiveChannel bool `json:"-"`
+
 	// TaskTotal and TaskCompleted are computed from Checklists; not persisted. Hidden items are
 	// excluded; Skipped items count as completed. See ComputeTaskProgress.
 	TaskTotal     int `json:"task_total"`
@@ -1036,6 +1046,8 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	ChannelArchived        timelineEventType = "channel_archived"
+	ChannelUnarchived      timelineEventType = "channel_unarchived"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
