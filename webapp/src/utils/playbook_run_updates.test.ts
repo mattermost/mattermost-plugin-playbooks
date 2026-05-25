@@ -108,5 +108,23 @@ describe('playbook_run_updates utilities', () => {
             expect(testPlaybookRun.name).toBe('Test Run'); // Original unchanged
             expect(result.name).toBe('Updated Name'); // Result changed
         });
+
+        it('should apply task_total and task_completed from a WS incremental update', () => {
+            const update = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    task_total: 5,
+                    task_completed: 3,
+                },
+            };
+
+            const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+            expect(result.task_total).toBe(5);
+            expect(result.task_completed).toBe(3);
+            expect(testPlaybookRun.task_total).toBe(0); // original unchanged
+            expect(testPlaybookRun.task_completed).toBe(0);
+        });
     });
 });
