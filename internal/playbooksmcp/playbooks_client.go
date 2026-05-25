@@ -144,3 +144,8 @@ func (c *PlaybooksClient) ValidateToken(ctx context.Context) error {
 	_, err := c.GetCurrentUserID(ctx)
 	return err
 }
+
+// GetPlaybookURL returns the browser URL for a playbook.
+func (c *PlaybooksClient) GetPlaybookURL(playbookID string) string {
+	return fmt.Sprintf("%s/playbooks/playbooks/%s", c.baseURL, playbookID)
+}
