@@ -181,4 +181,3 @@ const FinishRunButton = styled(TertiaryButton)`
     padding: 0 48px;
     font-size: 12px;
 `;
-

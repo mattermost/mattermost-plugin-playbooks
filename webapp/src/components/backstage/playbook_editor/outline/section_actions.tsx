@@ -6,12 +6,21 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
-import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
+import styled from 'styled-components';
+import {
+    AccountMinusOutlineIcon,
+    AccountPlusOutlineIcon,
+    CheckCircleOutlineIcon,
+    PlayIcon,
+} from '@mattermost/compass-icons/components';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 
+import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
@@ -19,21 +28,23 @@ import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import {
-    AutomationCard,
-    AutomationCardSetting,
-    AutomationCardTitle,
-    AutomationTitle,
-} from 'src/components/backstage/playbook_edit/automation/styles';
+import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
+
+import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_channel_only_toggle';
 
 import {useProxyState} from 'src/hooks';
 import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    newChannelOnly?: boolean;
+    onNewChannelOnlyChange?: (updated: {new_channel_only: boolean}) => void;
+    restPlaybook?: PlaybookWithChecklist;
+    autoArchiveChannel: boolean;
+    onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook}: Props) => {
+const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook, autoArchiveChannel, onAutoArchiveChange}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
@@ -161,18 +172,26 @@ const LegacyActionsEdit = ({playbook}: Props) => {
 
     return (
         <>
-            <AutomationCard>
-                <AutomationCardTitle>
+            <StyledSection>
+                <StyledSectionTitle>
                     <PlayIcon size={24}/>
                     <FormattedMessage defaultMessage='When a run starts'/>
-                </AutomationCardTitle>
-                <AutomationCardSetting id={'channel-action'}>
+                </StyledSectionTitle>
+                <Setting id={'channel-action'}>
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
+                        newChannelOnly={newChannelOnly}
                     />
-                </AutomationCardSetting>
-                <AutomationCardSetting id={'invite-users'}>
+                </Setting>
+                <Setting id={'new-channel-only'}>
+                    <NewChannelOnlyToggle
+                        playbook={{new_channel_only: newChannelOnly}}
+                        disabled={archived || !onNewChannelOnlyChange}
+                        onChange={onNewChannelOnlyChange}
+                    />
+                </Setting>
+                <Setting id={'invite-users'}>
                     <InviteUsers
                         disabled={archived}
                         enabled={playbook.invite_users_enabled}
@@ -186,8 +205,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
                         onRemovePreAssignedUsers={handleRemovePreAssignedUsers}
                     />
-                </AutomationCardSetting>
-                <AutomationCardSetting id={'assign-owner'}>
+                </Setting>
+                <Setting id={'assign-owner'}>
                     <AutoAssignOwner
                         disabled={archived}
                         enabled={playbook.default_owner_enabled}
@@ -197,8 +216,8 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         ownerID={playbook.default_owner_id}
                         onAssignOwner={handleAssignDefaultOwner}
                     />
-                </AutomationCardSetting>
-                <AutomationCardSetting id={'playbook-run-creation__outgoing-webhook'}>
+                </Setting>
+                <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
                         disabled={archived}
                         enabled={playbook.webhook_on_creation_enabled}
@@ -215,15 +234,15 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         maxRows={64}
                         maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
                     />
-                </AutomationCardSetting>
-            </AutomationCard>
+                </Setting>
+            </StyledSection>
 
-            <AutomationCard>
-                <AutomationCardTitle>
+            <StyledSection>
+                <StyledSectionTitle>
                     <AccountPlusOutlineIcon size={22}/>
                     <FormattedMessage defaultMessage='When a participant joins the run'/>
-                </AutomationCardTitle>
-                <AutomationCardSetting id={'participant-joins-run'}>
+                </StyledSectionTitle>
+                <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
                             disabled={archived}
@@ -237,15 +256,15 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                             <FormattedMessage defaultMessage='Add them to the run channel'/>
                         </Toggle>
                     </AutomationTitle>
-                </AutomationCardSetting>
-            </AutomationCard>
+                </Setting>
+            </StyledSection>
 
-            <AutomationCard>
-                <AutomationCardTitle>
+            <StyledSection>
+                <StyledSectionTitle>
                     <AccountMinusOutlineIcon size={22}/>
                     <FormattedMessage defaultMessage='When a participant leaves the run'/>
-                </AutomationCardTitle>
-                <AutomationCardSetting id={'participant-leaves-run'}>
+                </StyledSectionTitle>
+                <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
                             disabled={archived}
@@ -259,11 +278,66 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                             <FormattedMessage defaultMessage='Remove them from the run channel'/>
                         </Toggle>
                     </AutomationTitle>
-                </AutomationCardSetting>
-            </AutomationCard>
+                </Setting>
+            </StyledSection>
+            {restPlaybook && (
+                <StyledSection>
+                    <StyledSectionTitle>
+                        <CheckCircleOutlineIcon
+                            size={22}
+                            aria-hidden={true}
+                        />
+                        <FormattedMessage
+                            id='V3tvkc'
+                            defaultMessage='When a run finishes'
+                        />
+                    </StyledSectionTitle>
+                    <Setting id={'run-finishes'}>
+                        <AutomationTitle>
+                            <div data-testid='auto-archive-channel-toggle'>
+                                <AutoArchiveToggle
+                                    autoArchive={autoArchiveChannel}
+                                    isLinkedChannel={playbookForCreateChannel.channel_mode === 'link_existing_channel'}
+                                    disabled={archived}
+                                    onChange={onAutoArchiveChange}
+                                />
+                            </div>
+                        </AutomationTitle>
+                    </Setting>
+                </StyledSection>
+            )}
         </>
     );
 };
 
 export default LegacyActionsEdit;
+
+const StyledSection = styled(Section)`
+    padding: 2rem;
+    padding-bottom: 0;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 8px;
+    margin: 0;
+    margin-bottom: 20px;
+`;
+
+const StyledSectionTitle = styled(SectionTitle)`
+    display: flex;
+    align-items: center;
+    margin: 0 0 24px;
+    font-size: 16px;
+    font-weight: 600;
+    gap: 8px;
+
+    svg {
+        color: rgba(var(--center-channel-color-rgb), 0.48);
+    }
+`;
+
+const Setting = styled.div`
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+    gap: 8px;
+`;
 

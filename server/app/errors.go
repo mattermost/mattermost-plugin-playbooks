@@ -48,3 +48,6 @@ var ErrPropertyFieldTypeChangeNotAllowed = errors.New("property field type chang
 
 // ErrInvalidOwner occurs when the proposed new owner is not a member of the run's team or channel.
 var ErrInvalidOwner = errors.New("invalid owner")
+
+// ErrChannelArchived occurs when trying to modify a run whose linked channel has been archived.
+var ErrChannelArchived = errors.New("channel is archived")

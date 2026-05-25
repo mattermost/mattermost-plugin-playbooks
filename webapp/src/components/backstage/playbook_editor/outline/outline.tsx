@@ -6,6 +6,7 @@ import React, {
     Children,
     ReactNode,
     useCallback,
+    useRef,
     useState,
 } from 'react';
 
@@ -51,7 +52,12 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: P
         {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} :
         restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
+    const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
+    const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
     const [bulkEditMode, setBulkEditMode] = useState(false);
+    const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
+    const savingNewChannelOnly = useRef(false);
+    const effectiveNewChannelOnly = newChannelOnlyOverride ?? restPlaybook?.new_channel_only ?? false;
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -63,6 +69,33 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: P
         setChecklistCollapseState(state);
     };
 
+    const handleNewChannelOnlyChange = ({new_channel_only}: {new_channel_only: boolean}) => {
+        if (archived || !playbook.id || savingNewChannelOnly.current || !restPlaybook) {
+            return;
+        }
+        const prev = effectiveNewChannelOnly;
+        if (prev === new_channel_only) {
+            return;
+        }
+        setNewChannelOnlyOverride(new_channel_only);
+        savingNewChannelOnly.current = true;
+        const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
+        savePlaybook(updated)
+            .then(() => {
+                refetch();
+            })
+            .catch(() => {
+                setNewChannelOnlyOverride(prev);
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+            })
+            .finally(() => {
+                savingNewChannelOnly.current = false;
+            });
+    };
+
     const toggleStatusUpdate = () => {
         if (archived) {
             return;
@@ -72,6 +105,33 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: P
             webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
             broadcastEnabled: !playbook.status_update_enabled,
         });
+    };
+
+    const handleAutoArchiveChange = (updated: {auto_archive_channel: boolean}) => {
+        if (!archived && playbook.id) {
+            const prev = effectiveAutoArchive;
+            const isForcedLinkedReset =
+                updated.auto_archive_channel === false &&
+                restPlaybook?.channel_mode === 'link_existing_channel';
+            setAutoArchiveOverride(updated.auto_archive_channel);
+            clientFetchPlaybook(playbook.id)
+                .then((latest) => {
+                    if (!latest) {
+                        throw new Error('Unable to fetch latest playbook before save');
+                    }
+                    return savePlaybook({...latest, auto_archive_channel: updated.auto_archive_channel});
+                })
+                .then(() => refetch())
+                .catch(() => {
+                    if (!isForcedLinkedReset) {
+                        setAutoArchiveOverride(prev);
+                    }
+                    toaster.add({
+                        content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                });
+        }
     };
 
     const toggleRetrospective = () => {
@@ -179,7 +239,7 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: P
                 hasSubtitle={retrospectiveAccess && !playbook.retrospective_enabled}
                 hoverEffect={true}
                 headerRight={(
-                    <HoverMenuContainer>
+                    <HoverMenuContainer data-testid='retrospective-toggle'>
                         <Toggle
                             disabled={archived || !retrospectiveAccess}
                             isChecked={playbook.retrospective_enabled}
@@ -192,6 +252,7 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: P
                 <Retrospective
                     playbook={playbook}
                     refetch={refetch}
+                    disabled={archived}
                 />
             </Section>
             <Section
@@ -200,6 +261,11 @@ const Outline = ({playbook, refetch, restPlaybook, showAdminSettings = false}: P
             >
                 <Actions
                     playbook={playbook}
+                    newChannelOnly={effectiveNewChannelOnly}
+                    onNewChannelOnlyChange={restPlaybook ? handleNewChannelOnlyChange : undefined}
+                    restPlaybook={restPlaybook}
+                    autoArchiveChannel={effectiveAutoArchive}
+                    onAutoArchiveChange={handleAutoArchiveChange}
                 />
             </Section>
             {showAdminSettings && effectiveRestPlaybook && (

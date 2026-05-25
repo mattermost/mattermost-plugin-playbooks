@@ -79,6 +79,10 @@ type Playbook struct {
 
 	OwnerGroupOnlyActions bool `json:"owner_group_only_actions" export:"owner_group_only_actions"`
 
+	NewChannelOnly bool `json:"new_channel_only" export:"new_channel_only"`
+
+	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
+
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
@@ -618,6 +622,15 @@ func ValidateWebhookURLs(urls []string) error {
 		}
 	}
 
+	return nil
+}
+
+// ValidateNewChannelOnlyMode checks that NewChannelOnly is not enabled when ChannelMode
+// is set to link an existing channel.
+func ValidateNewChannelOnlyMode(newChannelOnly bool, channelMode ChannelPlaybookMode) error {
+	if newChannelOnly && channelMode == PlaybookRunLinkExistingChannel {
+		return errors.New("this playbook requires runs to create a new channel, but the channel mode is set to link an existing channel")
+	}
 	return nil
 }
 

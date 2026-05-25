@@ -4,8 +4,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -517,6 +520,46 @@ func TestCreateInvalidRuns(t *testing.T) {
 		})
 		t.Logf("Error: %v", err)
 		require.Error(t, err)
+	})
+}
+
+func TestCreateRunWithNewChannelOnlyPlaybook(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a playbook with NewChannelOnly=true
+	pbCreateOptions := client.PlaybookCreateOptions{
+		Public:         true,
+		Title:          "New Channel Only Playbook",
+		TeamID:         e.BasicTeam.Id,
+		ChannelMode:    client.PlaybookRunCreateNewChannel,
+		NewChannelOnly: true,
+	}
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), pbCreateOptions)
+	require.NoError(t, err)
+
+	t.Run("run creation without channel_id succeeds", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run without channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, run)
+		assert.NotEmpty(t, run.ChannelID)
+	})
+
+	t.Run("run creation with explicit channel_id fails", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run with channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   e.BasicPublicChannel.Id,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Nil(t, run)
 	})
 }
 
@@ -2514,6 +2557,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
 	})
+
 }
 
 func TestRunGetMetadata(t *testing.T) {
@@ -3021,6 +3065,69 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 	require.NoError(t, err, "cross-team run creation should succeed when user has run_create in the target team")
 	require.NotNil(t, run)
 	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
+}
+
+// playbookWithRetro is a minimal struct used to PUT a playbook body that includes
+// retrospective_enabled, which is not present in the exported client.Playbook type.
+type playbookWithRetro struct {
+	client.Playbook
+	RetrospectiveEnabled bool `json:"retrospective_enabled"`
+}
+
+// setRetrospectiveEnabledAsAdmin performs a raw PUT /plugins/playbooks/api/v0/playbooks/{id}
+// with the retrospective_enabled flag set. Always acts as the system admin user.
+func setRetrospectiveEnabledAsAdmin(t *testing.T, e *TestEnvironment, playbookID string, enabled bool) {
+	t.Helper()
+
+	pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+	require.NoError(t, err)
+
+	body := playbookWithRetro{
+		Playbook:             *pb,
+		RetrospectiveEnabled: enabled,
+	}
+	bodyBytes, err := json.Marshal(body)
+	require.NoError(t, err)
+
+	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
+	endpoint := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", siteURL, playbookID)
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, endpoint, bytes.NewReader(bodyBytes))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Mattermost-User-ID", e.AdminUser.Id)
+	req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("setRetrospectiveEnabledAsAdmin failed: status=%d body=%s", resp.StatusCode, string(body))
+	}
+}
+
+// toggleRunRetrospective performs a raw PUT /plugins/playbooks/api/v0/runs/{runID}/retrospective-enabled
+// as the given user, returning the HTTP status code.
+func toggleRunRetrospective(t *testing.T, e *TestEnvironment, runID, userID, authToken string, enabled bool) int {
+	t.Helper()
+
+	bodyBytes, err := json.Marshal(map[string]bool{"retrospective_enabled": enabled})
+	require.NoError(t, err)
+
+	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
+	endpoint := fmt.Sprintf("%s/plugins/playbooks/api/v0/runs/%s/retrospective-enabled", siteURL, runID)
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, endpoint, bytes.NewReader(bodyBytes))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Mattermost-User-ID", userID)
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	return resp.StatusCode
 }
 
 // TestRunFinish_OwnerGroupOnlyActions tests the OwnerGroupOnlyActions playbook flag that restricts
@@ -3669,6 +3776,720 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, string(client.StatusInProgress), still.CurrentStatus)
 	})
+}
+
+// TestToggleRunRetrospective verifies the PUT /runs/{id}/retrospective-enabled endpoint:
+// owner can toggle, sysadmin can toggle, non-owner non-admin is forbidden, and toggled state persists across Finish.
+func TestToggleRunRetrospective(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRunOwnedBy := func(t *testing.T, name, ownerID string) *client.PlaybookRun {
+		t.Helper()
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  name + " Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, true)
+
+		var creator *client.Client
+		if ownerID == e.AdminUser.Id {
+			creator = e.PlaybooksAdminClient
+		} else {
+			creator = e.PlaybooksClient
+		}
+		run, err := creator.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        name + " Run",
+			OwnerUserID: ownerID,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.True(t, run.RetrospectiveEnabled, "run should start with retro enabled")
+		return run
+	}
+
+	t.Run("owner can toggle retrospective off and it persists", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Owner Off", e.RegularUser.Id)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusOK, status)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.False(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("owner can toggle retrospective back on", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Owner On", e.RegularUser.Id)
+
+		// Disable first, then re-enable
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("sysadmin can toggle a run they don't own", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Sysadmin Toggle", e.RegularUser.Id)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.AdminUser.Id, e.ServerAdminClient.AuthToken, false)
+		assert.Equal(t, http.StatusOK, status)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.False(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("non-owner non-admin is forbidden", func(t *testing.T) {
+		// Run is owned by AdminUser; RegularUser tries to toggle.
+		run := createRunOwnedBy(t, "Non Owner Forbidden", e.AdminUser.Id)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusForbidden, status)
+
+		fetched, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "retro must remain enabled after forbidden toggle attempt")
+	})
+
+	t.Run("disabled state persists after the run is finished", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Persist After Finish", e.RegularUser.Id)
+
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusFinished, fetched.CurrentStatus)
+		assert.False(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("toggling off creates a RetrospectiveDisabled timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Timeline Disable", e.RegularUser.Id)
+
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveDisabled, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("toggling on creates a RetrospectiveEnabled timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Timeline Enable", e.RegularUser.Id)
+
+		// Disable first so we can test re-enable
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveEnabled, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("idempotent: same value returns 200 and creates no new timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Idempotent Same Value", e.RegularUser.Id)
+
+		// Run starts with retro enabled; count events before the no-op toggle
+		before, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		eventCountBefore := len(before.TimelineEvents)
+
+		// Toggle to the same value (enabled → enabled)
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true)
+		assert.Equal(t, http.StatusOK, status)
+
+		after, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, after.RetrospectiveEnabled)
+		assert.Equal(t, eventCountBefore, len(after.TimelineEvents), "no-op toggle must not create a timeline event")
+	})
+
+	t.Run("re-enabling on a finished unpublished run persists and creates timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Re-enable Finished", e.RegularUser.Id)
+
+		// Disable retro, then finish the run (retro is off so no reminder fires on finish)
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		// Re-enable retro on the finished, unpublished run — exercises the scheduler
+		// restart branch in ToggleRetrospectiveEnabled (playbook_run_service.go:1598-1608)
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusFinished, fetched.CurrentStatus)
+		assert.True(t, fetched.RetrospectiveEnabled)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveEnabled, lastEvent.EventType)
+	})
+
+	t.Run("owner removed from channel is forbidden", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Ex-member Owner", e.RegularUser.Id)
+
+		// Remove the owner from the run's channel; they remain OwnerUserID in the DB.
+		_, err := e.ServerAdminClient.RemoveUserFromChannel(context.Background(), run.ChannelID, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusForbidden, status)
+
+		fetched, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "retro must remain enabled after forbidden toggle attempt")
+	})
+
+	t.Run("toggle is blocked on an archived channel", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Archived Channel", e.RegularUser.Id)
+
+		// Archive the run's channel.
+		_, err := e.ServerAdminClient.DeleteChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+
+		// Non-admin owner is blocked by the archived-channel guard; sysadmins bypass it.
+		statusOwner := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusBadRequest, statusOwner)
+
+		statusAdmin := toggleRunRetrospective(t, e, run.ID, e.AdminUser.Id, e.ServerAdminClient.AuthToken, false)
+		assert.Equal(t, http.StatusOK, statusAdmin)
+	})
+
+	t.Run("re-enabling on a finished published run does not post a new reminder", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Re-enable Published", e.RegularUser.Id)
+
+		// Finish the run with retro enabled — the initial reminder fires.
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		// Publish the retrospective.
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.PublishRetrospective(context.Background(), run.ID, e.RegularUser.Id, client.RetrospectiveUpdate{}))
+
+		// Confirm the retrospective is now published.
+		published, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotZero(t, published.RetrospectivePublishedAt, "retrospective must be published before this sub-test is meaningful")
+
+		// Disable retro on the published run.
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+
+		// Count retro reminder posts before re-enable.
+		countRetroRemPosts := func() int {
+			posts, _, err := e.ServerAdminClient.GetPostsForChannel(context.Background(), run.ChannelID, 0, 100, "", false, false)
+			require.NoError(t, err)
+			n := 0
+			for _, p := range posts.Posts {
+				if p.Type == "custom_retro_rem" || p.Type == "custom_retro_rem_first" {
+					n++
+				}
+			}
+			return n
+		}
+		countBefore := countRetroRemPosts()
+
+		// Re-enable on a PUBLISHED run — must NOT post a new reminder.
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		countAfter := countRetroRemPosts()
+		assert.Equal(t, countBefore, countAfter, "re-enabling on a published run must not post a new retrospective reminder")
+
+		fetched, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled)
+	})
+}
+
+// TestRetrospectiveDisabled_RunCreation verifies that the RetrospectiveEnabled flag on
+// a playbook is propagated to runs created from that playbook.
+func TestRetrospectiveDisabled_RunCreation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("run inherits retrospective_enabled=false from playbook", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro Disabled Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, false)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Disabled Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.False(t, fetched.RetrospectiveEnabled, "run should inherit retrospective_enabled=false from playbook")
+	})
+
+	t.Run("run inherits retrospective_enabled=true from playbook", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro Enabled Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, true)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Enabled Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "run should inherit retrospective_enabled=true from playbook")
+	})
+}
+
+// TestRetrospectiveDisabled_FinishRun verifies that finishing a run with retrospective_enabled=false
+// does NOT post a retrospective reminder post to the channel.
+func TestRetrospectiveDisabled_FinishRun(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("finishing a run with retrospective disabled posts no retro reminder", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "No Retro Finish Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, false)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No Retro Finish Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.False(t, run.RetrospectiveEnabled)
+
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		posts, _, err := e.ServerAdminClient.GetPostsForChannel(context.Background(), run.ChannelID, 0, 100, "", false, false)
+		require.NoError(t, err)
+		for _, p := range posts.Posts {
+			assert.NotEqual(t, "custom_retro_rem_first", p.Type,
+				"no retro reminder post expected when retrospective is disabled")
+		}
+	})
+}
+
+func TestAutoArchiveChannel_RunFinish(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("channel is archived after run finish when AutoArchiveChannel=true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotEmpty(t, run.ChannelID)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		assert.NotEqual(t, int64(0), channel.DeleteAt,
+			"channel must be archived (DeleteAt != 0) after finishing a run with AutoArchiveChannel=true")
+
+		assertHasTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelArchived)
+	})
+
+	t.Run("channel is not archived after run finish when AutoArchiveChannel=false", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "No Auto Archive Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      false,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No Auto Archive Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotEmpty(t, run.ChannelID)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"channel must not be archived after finishing a run with AutoArchiveChannel=false")
+
+		assertNoTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelArchived)
+	})
+
+	t.Run("linked channel is not archived after run finish even when AutoArchiveChannel=true", func(t *testing.T) {
+		// Create a pre-existing channel to link to the run.
+		existingChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      e.BasicTeam.Id,
+			Type:        model.ChannelTypeOpen,
+			Name:        "existing-channel-" + model.NewId(),
+			DisplayName: "Existing Channel",
+		})
+		require.NoError(t, err)
+
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Linked Channel Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun: true,
+			AutoArchiveChannel:      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Linked Channel Run",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   existingChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Equal(t, existingChannel.Id, run.ChannelID)
+
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), existingChannel.Id, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"pre-existing linked channel must not be archived even when AutoArchiveChannel=true")
+
+		assertNoTimelineEvent(t, e.PlaybooksAdminClient, run.ID, client.ChannelArchived)
+	})
+
+	t.Run("channel swapped via UpdateRun is not archived after run finish", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Swap Channel Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun: true,
+			AutoArchiveChannel:      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Swap Channel Run",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		originalChannelID := run.ChannelID
+
+		victimChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      e.BasicTeam.Id,
+			Type:        model.ChannelTypeOpen,
+			Name:        "victim-channel-" + model.NewId(),
+			DisplayName: "Victim Channel",
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksAdminClient, run.ID, map[string]interface{}{
+			"channelID": victimChannel.Id,
+		})
+		require.NoError(t, err)
+		require.Empty(t, resp.Errors)
+
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// ChannelCreatedByRun was cleared when ChannelID was swapped, so auto-archive must not fire.
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), victimChannel.Id, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"victim channel must not be archived after ChannelID was swapped via UpdateRun")
+
+		origChannel, _, err := e.ServerAdminClient.GetChannel(context.Background(), originalChannelID, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), origChannel.DeleteAt,
+			"original channel must not be archived after ChannelID was swapped away")
+
+		assertNoTimelineEvent(t, e.PlaybooksAdminClient, run.ID, client.ChannelArchived)
+	})
+}
+
+// TestAutoArchiveChannel_RunRestore verifies that when a run with AutoArchiveChannel=true is
+// restored, the channel is un-archived.
+func TestAutoArchiveChannel_RunRestore(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("channel is unarchived after run restore when AutoArchiveChannel=true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Restore Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Restore Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotEmpty(t, run.ChannelID)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		require.NotEqual(t, int64(0), channel.DeleteAt,
+			"channel must be archived before restore")
+
+		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"channel must be unarchived (DeleteAt == 0) after restoring a run with AutoArchiveChannel=true")
+
+		assertHasTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelUnarchived)
+	})
+
+	t.Run("channel is not touched after run restore when AutoArchiveChannel=false", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "No Auto Archive Restore Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      false,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No Auto Archive Restore Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotEmpty(t, run.ChannelID)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"channel must remain unarchived after restoring a run that was not auto-archived")
+
+		assertNoTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelUnarchived)
+	})
+}
+
+// TestAutoArchiveChannel_ManualUnarchiveBeforeRestore verifies that restoring a run whose channel
+// was manually unarchived before restore still clears the AutoArchivedChannel marker so future
+// finishes start fresh.
+func TestAutoArchiveChannel_ManualUnarchiveBeforeRestore(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Auto Archive Manual Unarchive Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		CreatePublicPlaybookRun:                 true,
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
+		AutoArchiveChannel:                      true,
+	})
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Auto Archive Manual Unarchive Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  playbookID,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, run.ChannelID)
+
+	// Finish the run — channel gets auto-archived.
+	err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+	require.NoError(t, err)
+
+	channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+	require.NoError(t, err)
+	require.NotEqual(t, int64(0), channel.DeleteAt, "channel must be archived before manual unarchive")
+
+	// Manually unarchive the channel (simulating an admin un-archiving outside of Playbooks).
+	_, _, err = e.ServerAdminClient.RestoreChannel(context.Background(), run.ChannelID)
+	require.NoError(t, err)
+
+	channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+	require.NoError(t, err)
+	require.Equal(t, int64(0), channel.DeleteAt, "channel must be unarchived after manual restore")
+
+	// Restore the run — even though the channel was already unarchived manually, the run
+	// must restore cleanly and clear AutoArchivedChannel so the next finish starts fresh.
+	err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
+	require.NoError(t, err)
+
+	channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), channel.DeleteAt,
+		"channel must remain unarchived after run restore (it was already unarchived manually)")
+
+	// Finish the run a second time — auto-archive must trigger again.
+	err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+	require.NoError(t, err)
+
+	channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+	require.NoError(t, err)
+	assert.NotEqual(t, int64(0), channel.DeleteAt,
+		"channel must be archived again on second finish — AutoArchivedChannel flag was correctly cleared on restore")
+}
+
+// assertHasTimelineEvent fetches the run and asserts that at least one timeline event of the
+// given type exists.
+func assertHasTimelineEvent(t *testing.T, c *client.Client, runID string, eventType client.TimelineEventType) {
+	t.Helper()
+	run, err := c.PlaybookRuns.Get(context.Background(), runID)
+	require.NoError(t, err)
+	for _, ev := range run.TimelineEvents {
+		if ev.EventType == eventType {
+			return
+		}
+	}
+	assert.Failf(t, "missing timeline event", "expected a %q timeline event on run %s", eventType, runID)
+}
+
+// assertNoTimelineEvent fetches the run and asserts that no timeline event of the given type
+// exists.
+func assertNoTimelineEvent(t *testing.T, c *client.Client, runID string, eventType client.TimelineEventType) {
+	t.Helper()
+	run, err := c.PlaybookRuns.Get(context.Background(), runID)
+	require.NoError(t, err)
+	for _, ev := range run.TimelineEvents {
+		if ev.EventType == eventType {
+			assert.Failf(t, "unexpected timeline event", "did not expect a %q timeline event on run %s", eventType, runID)
+			return
+		}
+	}
 }
 
 // TestDMGMChannelSupport verifies the gate that rejects playbook runs (PlaybookID != "")
