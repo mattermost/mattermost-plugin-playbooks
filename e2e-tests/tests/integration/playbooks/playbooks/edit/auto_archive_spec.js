@@ -458,4 +458,211 @@ describe('playbooks > edit > auto archive', () => {
             });
         });
     });
+
+    it('shows channel_archived timeline event on the run details page after finishing', () => {
+        let testRun;
+
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Timeline Archive Run Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            autoArchiveChannel: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Timeline Archive Run (' + getRandomId() + ')',
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                testRun = run;
+
+                // # Visit the run details page and finish via the Finish button there
+                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.findByTestId('run-header-section').should('be.visible');
+
+                cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${testRun.id}/finish`).as('routeFinish');
+                cy.findByTestId('run-finish-section').find('button').click();
+                cy.playbooksConfirmFinishModal();
+                cy.wait('@routeFinish');
+
+                // * Assert the badge flips to Finished
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
+
+                // Wait for the async channel archive and timeline event write before asserting
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not archived after run finish'},
+                );
+
+                // * Assert the channel_archived timeline event is visible in the UI
+                cy.findAllByTestId('timeline-item channel_archived').should('have.length.gte', 1);
+            });
+        });
+    });
+
+    it('unarchives channel and shows channel_unarchived timeline event when restored via run details page UI', () => {
+        let testRun;
+
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'UI Restore Timeline Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            autoArchiveChannel: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'UI Restore Run (' + getRandomId() + ')',
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                testRun = run;
+
+                // # Finish via API so the channel is archived
+                cy.apiFinishRun(testRun.id);
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not archived after run finish'},
+                );
+
+                // # Visit the run details page and restore via the dropdown
+                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
+
+                cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${testRun.id}/restore`).as('routeRestore');
+                cy.findByTestId('runDropdown').click();
+                cy.get('.restartRun').click();
+                cy.get('#confirmModal').get('#confirmModalButton').click();
+                cy.wait('@routeRestore');
+
+                // * Assert the badge flips to In Progress
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
+
+                // * Assert the channel is unarchived
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at === 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not unarchived after run restore'},
+                );
+
+                // * Assert the channel_unarchived timeline event is visible in the UI
+                // should('have.length.gte', 1) retries with Cypress's built-in timeout, giving
+                // the server time to commit the timeline row after the channel unarchive.
+                cy.findAllByTestId('timeline-item channel_unarchived').should('have.length.gte', 1);
+            });
+        });
+    });
+
+    it('posts a status message in the unarchived channel after restore', () => {
+        let testRun;
+
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Status Message After Restore Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            autoArchiveChannel: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Status Message Run (' + getRandomId() + ')',
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                testRun = run;
+
+                // # Finish the run — channel is auto-archived
+                cy.apiFinishRun(testRun.id);
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not archived after run finish'},
+                );
+
+                // # Restore the run — the server unarchives the channel then posts the status message
+                cy.apiRestoreRun(testRun.id);
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at === 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not unarchived after run restore'},
+                );
+
+                // # Visit the now-active channel
+                cy.playbooksVisitRunChannel(testTeam.name, testRun);
+                cy.get('#channel-header').should('be.visible');
+
+                // * Assert the restore status message is present in the channel
+                cy.get('.post-message__text').contains('from Finished to In Progress').should('exist');
+            });
+        });
+    });
+
+    it('allows next finish to auto-archive channel after manual unarchive and run restore', () => {
+        let testRun;
+
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Manual Unarchive Before Restore Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            autoArchiveChannel: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Manual Unarchive Run (' + getRandomId() + ')',
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                testRun = run;
+
+                // # Finish the run — channel is auto-archived
+                cy.apiFinishRun(testRun.id);
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not archived after first finish'},
+                );
+
+                // # Manually unarchive the channel as an admin (simulates using the channel header outside Playbooks)
+                cy.apiAdminLogin();
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/api/v4/channels/${testRun.channel_id}/restore`,
+                    method: 'POST',
+                });
+                cy.apiLogin(testUser);
+
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at === 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not manually unarchived'},
+                );
+
+                // # Restore the run via the run details page — clears the AutoArchivedChannel marker
+                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
+
+                cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${testRun.id}/restore`).as('routeRestore');
+                cy.findByTestId('runDropdown').click();
+                cy.get('.restartRun').click();
+                cy.get('#confirmModal').get('#confirmModalButton').click();
+                cy.wait('@routeRestore');
+
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
+
+                // # Finish the run a second time — auto-archive must fire again because the marker was cleared
+                cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${testRun.id}/finish`).as('routeFinish2');
+                cy.findByTestId('run-finish-section').find('button').click();
+                cy.playbooksConfirmFinishModal();
+                cy.wait('@routeFinish2');
+                cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
+
+                // * Assert the channel is archived again on the second finish
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not re-archived on second finish after manual unarchive and restore'},
+                );
+            });
+        });
+    });
 });
