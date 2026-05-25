@@ -38,7 +38,9 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
     });
 
     afterEach(() => {
-        cy.apiLogin(testOwner);
+        if (testOwner) {
+            cy.apiLogin(testOwner);
+        }
         createdPlaybookIds.forEach((id) => cy.apiArchivePlaybook(id));
         createdPlaybookIds = [];
     });
@@ -366,15 +368,18 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
             cy.visit('/playbooks/playbooks/' + playbook.id + '/outline');
             cy.get('#checklists').should('be.visible');
 
+            // # Register intercept before typing so it is guaranteed to capture the save mutation.
+            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+
             cy.get('#checklists').within(() => {
                 cy.contains('[data-testid="checkbox-item-container"]', 'Unassigned Task').within(($item) => {
                     cy.wrap($item).trigger('mouseover');
                     cy.findByTestId('hover-menu-edit-button').click();
-                    cy.findByDisplayValue('Unassigned Task').clear().type('Renamed Task');
+                    // Split clear and type into separate queries to avoid DOM detachment if the
+                    // input re-renders after clear().
+                    cy.findByDisplayValue('Unassigned Task').clear();
+                    cy.findByTestId('checklist-item-textarea-title').type('Renamed Task');
                 });
-
-                // # Alias after typing so we capture the save mutation, not a debounce-during-typing mutation
-                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
                 // Re-query the save button after typing (the $item ref above goes stale on re-render)
                 cy.findByTestId('checklist-item-save-button').click();
@@ -795,9 +800,8 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 // element rather than calling it as a standalone cy.trigger() inside
                 // .within(), which throws "child command before parent" in Cypress.
                 cy.findByTestId('pb-checklists-inner-container').within(() => {
-                    cy.contains('[data-testid="checkbox-item-container"]', 'Assignee Task').
-                        trigger('mouseover').
-                        findByTestId('hover-menu-edit-button').click();
+                    cy.contains('[data-testid="checkbox-item-container"]', 'Assignee Task').trigger('mouseover');
+                    cy.findByTestId('hover-menu-edit-button').click();
                 });
 
                 // * The role dropdown must contain the "Run User" option.

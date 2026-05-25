@@ -245,6 +245,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const assigneeCallSeqRef = useRef(0);
     const assigneeStateRef = useRef({id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID});
 
+    useEffect(() => {
+        assigneeStateRef.current = {id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID};
+    }, [assigneeID, assigneeType, assigneePropertyFieldID]);
+
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
         const {id: prevAssigneeID, type: prevAssigneeType, fieldID: prevAssigneePropertyFieldID} = assigneeStateRef.current;

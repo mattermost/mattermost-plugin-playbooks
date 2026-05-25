@@ -5470,6 +5470,7 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 		if !slices.Contains(participantIDs, resolvedUserID) {
 			if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
 				logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
+				return
 			}
 		}
 	}
