@@ -25,25 +25,29 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testOwner = user;
+        });
+        cy.then(() => {
             cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
                 testParticipant = newUser;
-                cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUserB) => {
-                    testNewOwner = newUserB;
-                    cy.apiLogin(testOwner);
-                    cy.apiCreatePlaybook({
-                        teamId: testTeam.id,
-                        title: 'Owner Reassignment Restricted Playbook ' + getRandomId(),
-                        memberIDs: [],
-                        makePublic: true,
-                        createPublicPlaybookRun: true,
-                    }).then((playbook) => {
-                        testPlaybook = playbook;
+            });
+            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUserB) => {
+                testNewOwner = newUserB;
+            });
+        });
+        cy.then(() => {
+            cy.apiLogin(testOwner);
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Owner Reassignment Restricted Playbook ' + getRandomId(),
+                memberIDs: [],
+                makePublic: true,
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                testPlaybook = playbook;
 
-                        // Set owner_group_only_actions via API to avoid fragile UI navigation
-                        // inside before(), which would make all tests fail on a single page-load error.
-                        cy.apiUpdatePlaybook({...playbook, owner_group_only_actions: true});
-                    });
-                });
+                // Set owner_group_only_actions via API to avoid fragile UI navigation
+                // inside before(), which would make all tests fail on a single page-load error.
+                cy.apiUpdatePlaybook({...playbook, owner_group_only_actions: true});
             });
         });
     });
@@ -131,7 +135,7 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         cy.findByTestId('owner-profile-selector').click();
 
         // * Assert the permission toast appears — confirms the selector blocked the non-owner
-        cy.contains('Only the run owner can reassign ownership of this run.').should('be.visible');
+        cy.findByText('Only the run owner can reassign ownership of this run.').should('be.visible');
 
         // * Assert no dropdown options appear — the selector is read-only for non-owners
         cy.findByRole('option').should('not.exist');

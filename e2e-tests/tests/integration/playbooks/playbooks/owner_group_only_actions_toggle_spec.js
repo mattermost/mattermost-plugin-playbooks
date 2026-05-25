@@ -30,26 +30,24 @@ describe('playbooks > owner_group_only_actions toggle', {testIsolation: true}, (
     });
 
     afterEach(() => {
-        if (midRunRun || midRunPlaybook) {
-            cy.apiAdminLogin();
-            if (midRunRun) {
-                cy.request({
-                    headers: {'X-Requested-With': 'XMLHttpRequest'},
-                    url: `/plugins/playbooks/api/v0/runs/${midRunRun.id}/finish`,
-                    method: 'PUT',
-                    failOnStatusCode: false,
-                });
-                midRunRun = null;
-            }
-            if (midRunPlaybook) {
-                cy.request({
-                    headers: {'X-Requested-With': 'XMLHttpRequest'},
-                    url: `/plugins/playbooks/api/v0/playbooks/${midRunPlaybook.id}`,
-                    method: 'DELETE',
-                    failOnStatusCode: false,
-                });
-                midRunPlaybook = null;
-            }
+        cy.apiAdminLogin();
+        if (midRunRun) {
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                url: `/plugins/playbooks/api/v0/runs/${midRunRun.id}/finish`,
+                method: 'PUT',
+                failOnStatusCode: false,
+            });
+            midRunRun = null;
+        }
+        if (midRunPlaybook) {
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                url: `/plugins/playbooks/api/v0/playbooks/${midRunPlaybook.id}`,
+                method: 'DELETE',
+                failOnStatusCode: false,
+            });
+            midRunPlaybook = null;
         }
     });
 

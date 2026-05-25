@@ -445,10 +445,10 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             cy.findByTestId('dropdownmenu').should('be.visible');
 
             // * Restart item is present in the dropdown (visible to participants) but disabled
-            cy.findByTestId('dropdownmenu').contains('Restart').should('exist');
+            cy.findByTestId('dropdownmenu').findByText('Restart').should('exist');
 
             // # Hover to trigger the tooltip
-            cy.findByTestId('dropdownmenu').contains('Restart').trigger('mouseover');
+            cy.findByTestId('dropdownmenu').findByText('Restart').trigger('mouseover');
 
             // * Tooltip confirms the owner-only restriction
             cy.uiGetToolTip('Only the run owner can restart this run');
