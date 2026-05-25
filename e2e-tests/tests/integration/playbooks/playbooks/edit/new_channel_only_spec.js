@@ -124,11 +124,15 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
         // # Visit the playbook outline editor with default state (new_channel_only=false)
         cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
+        // # Track playbook save request so we can wait for server-side persistence
+        cy.playbooksInterceptPlaybookSave();
+
         // # Click the toggle to enable new-channel-only
         cy.findByTestId('new-channel-only-toggle').click();
 
-        // # Confirm the confirmation modal
-        cy.get('#confirmModalButton').click();
+        // # Confirm the confirmation modal and wait for the save to complete
+        cy.playbooksConfirmModal();
+        cy.wait('@SavePlaybook');
 
         // # Reload the editor to verify the value was persisted to the server
         cy.visitPlaybookEditor(testPlaybook.id, 'outline');
