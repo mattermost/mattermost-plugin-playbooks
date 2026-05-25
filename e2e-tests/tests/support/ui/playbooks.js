@@ -317,64 +317,6 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
     });
 });
 
-Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
-    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
-});
-
-Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
-    cy.apiGetChannel(run.channel_id).then(({channel}) => {
-        cy.visit(`/${teamName}/channels/${channel.name}`);
-    });
-});
-
-Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
-    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
-        if (req.body && req.body.operationName === operationName) {
-            req.alias = operationName;
-        }
-    });
-});
-
-Cypress.Commands.add('playbooksConfirmModal', () => {
-    cy.get('#confirmModal').should('be.visible');
-    cy.get('#confirmModal').find('#confirmModalButton').click();
-});
-
-Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId) => {
-    cy.findByTestId(toggleTestId).find('label').click();
-    cy.playbooksConfirmModal();
-});
-
-Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
-    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
-});
-
-Cypress.Commands.add('playbooksOpenRunModal', (playbookId) => {
-    cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
-    cy.findByTestId('run-playbook').should('be.visible').and('not.be.disabled').click();
-});
-
-Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName) => {
-    cy.playbooksOpenRunModal(playbookId);
-    cy.findByTestId('run-name-input').then(($input) => {
-        if (!$input.attr('readonly')) {
-            cy.wrap($input).clear().type(runName);
-        }
-    });
-    cy.findByTestId('modal-confirm-button').click();
-    cy.url().should('include', '/playbooks/runs/');
-});
-
-Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
-    cy.url().should('include', '/playbooks/runs/');
-    return cy.url().then((url) => {
-        const urlObj = new URL(url);
-        const [, afterRuns = ''] = urlObj.pathname.split('/playbooks/runs/');
-        const runId = afterRuns.split('/')[0];
-        return cy.wrap(runId);
-    });
-});
-
 /**
  * Find a run row in the runs list (#playbookRunList) by run name.
  * @param {String} runName - The run name to locate in the list

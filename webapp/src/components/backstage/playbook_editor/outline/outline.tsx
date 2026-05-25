@@ -20,10 +20,10 @@ import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import StatusUpdates from './section_status_updates';
+import SectionAdminSettings from './section_admin_settings';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
 import ScrollNavBase from './scroll_nav';
@@ -276,13 +276,12 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                 <Section
                     id={'admin-edit-settings'}
                     title={formatMessage({defaultMessage: 'Settings'})}
+                    hideHeader={true}
                 >
-                    <div data-testid='admin-only-edit-toggle'>
-                        <AdminOnlyEditToggle
-                            isChecked={effectiveAdminOnlyEdit}
-                            onChange={handleAdminOnlyEditChange}
-                        />
-                    </div>
+                    <SectionAdminSettings
+                        isChecked={effectiveAdminOnlyEdit}
+                        onChange={handleAdminOnlyEditChange}
+                    />
                 </Section>
             )}
             <PlaybookActionsModal

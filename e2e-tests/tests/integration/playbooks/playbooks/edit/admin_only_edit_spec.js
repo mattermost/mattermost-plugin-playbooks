@@ -248,6 +248,33 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.contains('Copy of ' + testPlaybook.title).should('be.visible');
     });
 
+    it('non-admin member cannot archive an admin-locked playbook via the dot menu', () => {
+        // # Lock the playbook as the playbook admin
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
+        });
+
+        // # Login as non-admin member and navigate to the playbooks list
+        cy.apiLogin(testMemberUser);
+        cy.visit('/playbooks');
+        cy.findByTestId('playbooksLHSButton').click();
+
+        // # Intercept the archive API call so we can assert it is never made
+        cy.intercept('DELETE', `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}`).as('archivePlaybook');
+
+        // # Open the dot menu for the locked playbook and click the disabled Archive item
+        cy.contains('[data-testid="playbook-item"]', testPlaybook.title).within(() => {
+            cy.findByTestId('menuButtonActions').click();
+        });
+        cy.findByText('Archive').click({force: true});
+
+        // * Confirm modal must not appear — the Archive item is disabled for non-admin members
+        cy.get('#confirmModal').should('not.exist');
+
+        // * The archive API must not have been called
+        cy.get('@archivePlaybook.all').should('have.length', 0);
+    });
+
     it('any user with create permission can import an admin_only_edit playbook', () => {
         // # Export as admin to get a valid payload, then inject admin_only_edit to simulate
         // # a payload where the flag is set — the import should succeed and strip the flag.

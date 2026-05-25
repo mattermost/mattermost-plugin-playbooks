@@ -81,7 +81,7 @@ jest.mock('./section_actions', () => ({
     },
 }));
 
-jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () => ({
+jest.mock('./section_admin_settings', () => ({
     __esModule: true,
     default: (props: ToggleProps) => {
         toggleProps = props;
@@ -92,6 +92,11 @@ jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () 
             />
         );
     },
+}));
+
+jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () => ({
+    __esModule: true,
+    default: () => null,
 }));
 
 const mockSavePlaybook = savePlaybook as jest.MockedFunction<typeof savePlaybook>;
