@@ -45,10 +45,10 @@ jest.mock('./section_actions', () => (props: SectionActionsProps) => {
     return null;
 });
 
-// Capture the props passed to AdminOnlyEditToggle so tests can drive and inspect state.
 type ToggleProps = {isChecked: boolean; onChange: (value: boolean) => void};
 let toggleProps: ToggleProps | null = null;
-jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () => ({
+
+jest.mock('./section_admin_settings', () => ({
     __esModule: true,
     default: (props: ToggleProps) => {
         toggleProps = props;
@@ -59,6 +59,11 @@ jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () 
             />
         );
     },
+}));
+
+jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () => ({
+    __esModule: true,
+    default: () => null,
 }));
 
 import Outline from './outline';
