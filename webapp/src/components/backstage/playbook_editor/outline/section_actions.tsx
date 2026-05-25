@@ -7,11 +7,18 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
+import {
+    AccountMinusOutlineIcon,
+    AccountPlusOutlineIcon,
+    CheckCircleOutlineIcon,
+    PlayIcon,
+} from '@mattermost/compass-icons/components';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -32,9 +39,12 @@ interface Props {
     playbook: Loaded<FullPlaybook>;
     newChannelOnly?: boolean;
     onNewChannelOnlyChange?: (updated: {new_channel_only: boolean}) => void;
+    restPlaybook?: PlaybookWithChecklist;
+    autoArchiveChannel: boolean;
+    onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyChange}: Props) => {
+const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook, autoArchiveChannel, onAutoArchiveChange}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
@@ -270,6 +280,32 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                     </AutomationTitle>
                 </Setting>
             </StyledSection>
+            {restPlaybook && (
+                <StyledSection>
+                    <StyledSectionTitle>
+                        <CheckCircleOutlineIcon
+                            size={22}
+                            aria-hidden={true}
+                        />
+                        <FormattedMessage
+                            id='V3tvkc'
+                            defaultMessage='When a run finishes'
+                        />
+                    </StyledSectionTitle>
+                    <Setting id={'run-finishes'}>
+                        <AutomationTitle>
+                            <div data-testid='auto-archive-channel-toggle'>
+                                <AutoArchiveToggle
+                                    autoArchive={autoArchiveChannel}
+                                    isLinkedChannel={playbookForCreateChannel.channel_mode === 'link_existing_channel'}
+                                    disabled={archived}
+                                    onChange={onAutoArchiveChange}
+                                />
+                            </div>
+                        </AutomationTitle>
+                    </Setting>
+                </StyledSection>
+            )}
         </>
     );
 };

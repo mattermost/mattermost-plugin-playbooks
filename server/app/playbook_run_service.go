@@ -62,6 +62,9 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 	// Determine if incremental updates are enabled
 	if !s.configService.IsIncrementalUpdatesEnabled() {
+		if currentRun != nil {
+			currentRun.ComputeTaskProgress()
+		}
 		// If incremental updates are disabled, fall back to the standard WS update
 		sendWSOptions := RunWSOptions{
 			AdditionalUserIDs: additionalUserIDs,
@@ -79,6 +82,12 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 			logger.WithError(err).Error("failed to get current state of playbook run")
 			return
 		}
+	} else {
+		currentRun.ComputeTaskProgress()
+	}
+
+	if previousRun != nil {
+		previousRun.ComputeTaskProgress()
 	}
 
 	// Pre-calculate changed fields for incremental updates
@@ -263,6 +272,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 		if values, exists := valuesMap[runID]; exists {
 			results.Items[i].PropertyValues = values
 		}
+		results.Items[i].ComputeTaskProgress()
 	}
 
 	return results, nil
@@ -431,6 +441,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		playbookRun.ChannelID = channel.Id
+		playbookRun.ChannelCreatedByRun = true
+		if pb != nil {
+			playbookRun.AutoArchiveChannel = pb.AutoArchiveChannel
+		}
 		createdChannel = true
 	} else {
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -670,6 +684,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		s.sendWebhooksOnCreation(*playbookRun)
 	}
 
+	playbookRun.ComputeTaskProgress()
+
 	if playbookRun.PostID == "" {
 		auditRec.Success()
 		return playbookRun, nil
@@ -897,6 +913,8 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 		SubjectUserID: post.UserId,
 		CreatorUserID: userID,
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -1323,6 +1341,11 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	s.metricsService.IncrementRunsFinishedCount(1)
+
+	if s.shouldAutoArchiveChannel(playbookRunToModify) {
+		playbookRunToModify = s.autoArchiveChannelOnFinish(playbookRunToModify, playbookRunID, userID, endAt, logger)
+	}
+
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
@@ -1498,6 +1521,32 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
+	// Un-archive the channel before posting so the message lands in an active channel.
+	// Always clear AutoArchivedChannel when set — even if the channel was manually unarchived
+	// before the restore, the marker must be cleared so future finishes start fresh.
+	if playbookRunToRestore.AutoArchivedChannel && playbookRunToRestore.ChannelID != "" {
+		unarchived := s.restoreChannelByID(playbookRunToRestore.ChannelID, logger)
+		candidate := *playbookRunToRestore
+		candidate.AutoArchivedChannel = false
+		if updatedRun, err := s.store.UpdatePlaybookRun(&candidate); err != nil {
+			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
+		} else {
+			playbookRunToRestore = updatedRun
+		}
+		if unarchived {
+			unarchiveEvent := &TimelineEvent{
+				PlaybookRunID: playbookRunID,
+				CreateAt:      restoreAt + 1,
+				EventAt:       restoreAt + 1,
+				EventType:     ChannelUnarchived,
+				SubjectUserID: userID,
+			}
+			if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
+				logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
+			}
+		}
+	}
+
 	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
@@ -1544,6 +1593,87 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	auditRec.AddEventResultState(*playbookRunToRestore)
 
 	return nil
+}
+
+// shouldAutoArchiveChannel returns true if the run's channel should be auto-archived on finish:
+// AutoArchiveChannel was snapshotted from the playbook at run creation and the channel was
+// created by this run (not linked).
+func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun) bool {
+	return run.AutoArchiveChannel && run.ChannelCreatedByRun && run.ChannelID != ""
+}
+
+// deleteChannelByID archives (soft-deletes) the given channel. Returns true on success.
+func (s *PlaybookRunServiceImpl) deleteChannelByID(channelID string, logger *logrus.Entry) bool {
+	if err := s.pluginAPI.Channel.Delete(channelID); err != nil {
+		logger.WithError(err).Warn("failed to archive channel")
+		return false
+	}
+	return true
+}
+
+// restoreChannelByID clears DeleteAt on the given channel (un-archives it).
+// NOTE: Get→mutate→Update is not atomic. Channel.Update sends the full channel object, so any
+// concurrent channel property edit (display name, purpose) made between Get and Update will be
+// silently overwritten. This is acceptable as a best-effort operation until the plugin API
+// exposes a dedicated RestoreChannel method.
+func (s *PlaybookRunServiceImpl) restoreChannelByID(channelID string, logger *logrus.Entry) bool {
+	ch, err := s.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		logger.WithError(err).Warn("failed to get channel for un-archive")
+		return false
+	}
+	if ch.DeleteAt == 0 {
+		return false
+	}
+	ch.DeleteAt = 0
+	if err := s.pluginAPI.Channel.Update(ch); err != nil {
+		logger.WithError(err).Warn("failed to un-archive channel")
+		return false
+	}
+	return true
+}
+
+// autoArchiveChannelOnFinish persists AutoArchivedChannel, archives the channel, and records the
+// timeline event. Returns the (possibly updated) run. See shouldAutoArchiveChannel for the guard.
+func (s *PlaybookRunServiceImpl) autoArchiveChannelOnFinish(run *PlaybookRun, playbookRunID, userID string, endAt int64, logger *logrus.Entry) *PlaybookRun {
+	// Persist the flag first so that if the archive call fails and we reset the flag,
+	// the worst-case double-failure leaves AutoArchivedChannel=true in the DB (safe: the
+	// next restore will call restoreChannelByID which no-ops on an already-active channel
+	// and clears the flag). The old "archive first, persist second" order could leave the
+	// channel permanently archived with AutoArchivedChannel=false.
+	run.AutoArchivedChannel = true
+	updatedRun, err := s.store.UpdatePlaybookRun(run)
+	if err != nil {
+		logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag; skipping channel archive")
+		return run
+	}
+	run = updatedRun
+
+	if !s.deleteChannelByID(run.ChannelID, logger.WithField("context", "auto-archive on run finish")) {
+		run.AutoArchivedChannel = false
+		if resetRun, resetErr := s.store.UpdatePlaybookRun(run); resetErr != nil {
+			// Flag is true but channel is not archived. The next restore will call
+			// restoreChannelByID, which returns alreadyActive=true for an active
+			// channel and clears the flag as a no-op — safe recovery path.
+			logger.WithField("channel_id", run.ChannelID).
+				WithError(resetErr).Error("failed to reset AutoArchivedChannel after archive failure — flag is true but channel not archived; next restore will clear it")
+		} else {
+			run = resetRun
+		}
+		return run
+	}
+
+	archiveEvent := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      endAt + 1,
+		EventAt:       endAt + 1,
+		EventType:     ChannelArchived,
+		SubjectUserID: userID,
+	}
+	if _, err := s.store.CreateTimelineEvent(archiveEvent); err != nil {
+		logger.WithError(err).Warn("failed to create channel_archived timeline event")
+	}
+	return run
 }
 
 // updateAllChecklistsAndItemsTimestamps sets the UpdateAt field for all checklist items in the given checklists
@@ -1698,6 +1828,8 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*Playbook
 		}
 		playbookRun.PropertyValues = propertyValues
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	return playbookRun, nil
 }

@@ -17,7 +17,7 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {savePlaybook} from 'src/client';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -43,6 +43,8 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const archived = playbook.delete_at !== 0;
     const toaster = useToaster();
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
+    const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
+    const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
     const [bulkEditMode, setBulkEditMode] = useState(false);
     const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
     const savingNewChannelOnly = useRef(false);
@@ -94,6 +96,33 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
             broadcastEnabled: !playbook.status_update_enabled,
         });
+    };
+
+    const handleAutoArchiveChange = (updated: {auto_archive_channel: boolean}) => {
+        if (!archived && playbook.id) {
+            const prev = effectiveAutoArchive;
+            const isForcedLinkedReset =
+                updated.auto_archive_channel === false &&
+                restPlaybook?.channel_mode === 'link_existing_channel';
+            setAutoArchiveOverride(updated.auto_archive_channel);
+            clientFetchPlaybook(playbook.id)
+                .then((latest) => {
+                    if (!latest) {
+                        throw new Error('Unable to fetch latest playbook before save');
+                    }
+                    return savePlaybook({...latest, auto_archive_channel: updated.auto_archive_channel});
+                })
+                .then(() => refetch())
+                .catch(() => {
+                    if (!isForcedLinkedReset) {
+                        setAutoArchiveOverride(prev);
+                    }
+                    toaster.add({
+                        content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                });
+        }
     };
 
     const toggleRetrospective = () => {
@@ -200,6 +229,9 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                     playbook={playbook}
                     newChannelOnly={effectiveNewChannelOnly}
                     onNewChannelOnlyChange={restPlaybook ? handleNewChannelOnlyChange : undefined}
+                    restPlaybook={restPlaybook}
+                    autoArchiveChannel={effectiveAutoArchive}
+                    onAutoArchiveChange={handleAutoArchiveChange}
                 />
             </Section>
             <PlaybookActionsModal

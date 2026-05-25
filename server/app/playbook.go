@@ -79,6 +79,8 @@ type Playbook struct {
 
 	NewChannelOnly bool `json:"new_channel_only" export:"new_channel_only"`
 
+	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
+
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`

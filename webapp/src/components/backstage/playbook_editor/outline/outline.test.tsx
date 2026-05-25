@@ -8,12 +8,16 @@ import renderer from 'react-test-renderer';
 // without coupling to DOM structure.
 let capturedNewChannelOnly: boolean = false;
 let capturedOnNewChannelOnlyChange: ((updated: {new_channel_only: boolean}) => void) | undefined;
+let capturedAutoArchiveChannel: boolean = false;
+let capturedOnAutoArchiveChange: ((updated: {auto_archive_channel: boolean}) => void) | undefined;
 
 jest.mock('./section_actions', () => ({
     __esModule: true,
-    default: ({newChannelOnly, onNewChannelOnlyChange}: {newChannelOnly: boolean; onNewChannelOnlyChange: (u: {new_channel_only: boolean}) => void}) => {
+    default: ({newChannelOnly, onNewChannelOnlyChange, autoArchiveChannel, onAutoArchiveChange}: {newChannelOnly: boolean; onNewChannelOnlyChange: (u: {new_channel_only: boolean}) => void; autoArchiveChannel: boolean; onAutoArchiveChange: (u: {auto_archive_channel: boolean}) => void}) => {
         capturedNewChannelOnly = newChannelOnly;
         capturedOnNewChannelOnlyChange = onNewChannelOnlyChange;
+        capturedAutoArchiveChannel = autoArchiveChannel;
+        capturedOnAutoArchiveChange = onAutoArchiveChange;
         return null;
     },
 }));
@@ -30,6 +34,7 @@ jest.mock('src/components/playbook_actions_modal', () => ({__esModule: true, def
 
 jest.mock('src/graphql/hooks', () => ({
     useUpdatePlaybook: jest.fn(() => jest.fn()),
+    useAllowRetrospectiveAccess: jest.fn(() => false),
 }));
 
 jest.mock('src/hooks', () => ({
@@ -38,18 +43,22 @@ jest.mock('src/hooks', () => ({
 
 jest.mock('src/client', () => ({
     savePlaybook: jest.fn(),
+    clientFetchPlaybook: jest.fn(),
 }));
 
-jest.mock('src/components/backstage/toast_banner', () => ({
-    useToaster: () => ({add: jest.fn()}),
-}));
+jest.mock('src/components/backstage/toast_banner', () => ({useToaster: () => ({add: jest.fn()})}));
 
 jest.mock('react-intl', () => {
     const reactIntl = jest.requireActual('react-intl');
-    return {...reactIntl, useIntl: () => reactIntl.createIntl({locale: 'en'})};
+    const intl = reactIntl.createIntl({locale: 'en'});
+    return {
+        ...reactIntl,
+        useIntl: () => intl,
+    };
 });
 
 const {savePlaybook} = jest.requireMock('src/client');
+const {clientFetchPlaybook} = jest.requireMock('src/client');
 
 import Outline from './outline';
 
@@ -66,9 +75,10 @@ const makePlaybook = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
 } as any);
 
-const makeRestPlaybook = (newChannelOnly: boolean, channelMode = 'create_new_channel') => ({
+const makeRestPlaybook = (val: boolean, channelMode = 'create_new_channel') => ({
     id: 'pb-1',
-    new_channel_only: newChannelOnly,
+    new_channel_only: val,
+    auto_archive_channel: val,
     channel_mode: channelMode,
     checklists: [],
 } as any);
@@ -77,6 +87,9 @@ beforeEach(() => {
     jest.clearAllMocks();
     capturedNewChannelOnly = false;
     capturedOnNewChannelOnlyChange = undefined;
+    capturedAutoArchiveChannel = false;
+    capturedOnAutoArchiveChange = undefined;
+    clientFetchPlaybook.mockResolvedValue({id: 'pb-1', auto_archive_channel: false, channel_mode: 'create_new_channel', checklists: []});
 });
 
 // --- Tests ---
@@ -243,5 +256,146 @@ describe('Outline — handleNewChannelOnlyChange', () => {
 
         // Override stays at the toggled value until refetch updates restPlaybook
         expect(capturedNewChannelOnly).toBe(true);
+    });
+});
+
+describe('Outline — auto-archive optimistic state', () => {
+    it('passes restPlaybook.auto_archive_channel to Actions when no override is active', () => {
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(true)}
+            />,
+        );
+
+        expect(capturedAutoArchiveChannel).toBe(true);
+    });
+
+    it('defaults to false when restPlaybook is absent', () => {
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+            />,
+        );
+
+        expect(capturedAutoArchiveChannel).toBe(false);
+    });
+
+    it('applies the optimistic override immediately on toggle — before the save resolves', () => {
+        // savePlaybook never resolves so we can observe the mid-flight state
+        savePlaybook.mockReturnValue(new Promise(() => undefined));
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        expect(capturedAutoArchiveChannel).toBe(false);
+
+        act(() => {
+            capturedOnAutoArchiveChange!({auto_archive_channel: true});
+        });
+
+        expect(capturedAutoArchiveChannel).toBe(true);
+    });
+
+    it('calls refetch after savePlaybook resolves successfully', async () => {
+        const refetch = jest.fn();
+        savePlaybook.mockResolvedValue({});
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={refetch}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        await act(async () => {
+            capturedOnAutoArchiveChange!({auto_archive_channel: true});
+        });
+
+        expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('rolls back the optimistic override to the previous value when savePlaybook rejects', async () => {
+        savePlaybook.mockRejectedValue(new Error('network error'));
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        // Optimistic update: override jumps to true
+        act(() => {
+            capturedOnAutoArchiveChange!({auto_archive_channel: true});
+        });
+        expect(capturedAutoArchiveChannel).toBe(true);
+
+        // After rejection, override resets to previous value (false)
+        // eslint-disable-next-line no-empty-function
+        await act(async () => {});
+
+        expect(capturedAutoArchiveChannel).toBe(false);
+    });
+
+    it('does not call savePlaybook when the playbook is archived', () => {
+        renderer.create(
+            <Outline
+                playbook={makePlaybook({delete_at: 1})}
+                refetch={jest.fn()}
+                restPlaybook={makeRestPlaybook(false)}
+            />,
+        );
+
+        act(() => {
+            capturedOnAutoArchiveChange!({auto_archive_channel: true});
+        });
+
+        expect(savePlaybook).not.toHaveBeenCalled();
+        expect(capturedAutoArchiveChannel).toBe(false);
+    });
+
+    it('effective value stays correct when restPlaybook updates while an override is active', () => {
+        // savePlaybook never resolves — we control restPlaybook directly
+        savePlaybook.mockReturnValue(new Promise(() => undefined));
+
+        let component!: renderer.ReactTestRenderer;
+
+        act(() => {
+            component = renderer.create(
+                <Outline
+                    playbook={makePlaybook()}
+                    refetch={jest.fn()}
+                    restPlaybook={makeRestPlaybook(false)}
+                />,
+            );
+        });
+
+        act(() => {
+            capturedOnAutoArchiveChange!({auto_archive_channel: true});
+        });
+        expect(capturedAutoArchiveChannel).toBe(true);
+
+        // Simulate restPlaybook updating (e.g. a background refetch) while override is active
+        act(() => {
+            component.update(
+                <Outline
+                    playbook={makePlaybook()}
+                    refetch={jest.fn()}
+                    restPlaybook={makeRestPlaybook(true)}
+                />,
+            );
+        });
+
+        expect(capturedAutoArchiveChannel).toBe(true);
     });
 });

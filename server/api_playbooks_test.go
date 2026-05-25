@@ -1653,6 +1653,22 @@ func TestPlaybooksDuplicate(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, duplicated.NewChannelOnly)
 	})
+	t.Run("AutoArchiveChannel is preserved on duplicate", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:              "Auto-archive Source",
+			TeamID:             e.BasicTeam.Id,
+			Public:             true,
+			AutoArchiveChannel: true,
+		})
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		duplicated, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		assert.True(t, duplicated.AutoArchiveChannel)
+	})
 }
 
 func TestNewChannelOnlyImportExport(t *testing.T) {
@@ -1678,6 +1694,32 @@ func TestNewChannelOnlyImportExport(t *testing.T) {
 		imported, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
 		require.NoError(t, err)
 		assert.True(t, imported.NewChannelOnly)
+	})
+}
+
+func TestAutoArchiveChannelImportExport(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+
+	t.Run("AutoArchiveChannel is preserved through export/import", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:              "Auto-archive Export",
+			TeamID:             e.BasicTeam.Id,
+			Public:             true,
+			AutoArchiveChannel: true,
+		})
+		require.NoError(t, err)
+
+		exported, err := e.PlaybooksClient.Playbooks.Export(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), exported, e.BasicTeam.Id)
+		require.NoError(t, err)
+
+		imported, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		assert.True(t, imported.AutoArchiveChannel)
 	})
 }
 
