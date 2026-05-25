@@ -4960,7 +4960,7 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 
 // applyInitialPropertyValues upserts caller-supplied initial property values onto a newly-created run.
 // propertyCopyResult must come from CopyPlaybookPropertiesToRun so field/option mappings are available.
-// Returns an error if any upsert fails so that run creation is aborted rather than silently incomplete.
+// Returns an error if any submitted value cannot be applied so that run creation is aborted rather than silently incomplete.
 func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *PlaybookRun, propertyCopyResult *PropertyCopyResult, initialValues map[string]json.RawMessage, logger *logrus.Entry) (*PlaybookRun, error) {
 	runFieldByID := make(map[string]*PropertyField, len(propertyCopyResult.CopiedFields))
 	for i := range propertyCopyResult.CopiedFields {
@@ -4970,8 +4970,7 @@ func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *Playboo
 	for playbookFieldID, rawValue := range initialValues {
 		runFieldID, ok := propertyCopyResult.FieldMappings[playbookFieldID]
 		if !ok {
-			logger.WithField("field_id", playbookFieldID).Warn("initial property value references unknown playbook field ID, skipping")
-			continue
+			return nil, errors.Errorf("initial property value references unknown playbook field ID %s", playbookFieldID)
 		}
 		if len(rawValue) == 0 {
 			continue
@@ -4982,8 +4981,7 @@ func (s *PlaybookRunServiceImpl) applyInitialPropertyValues(playbookRun *Playboo
 		}
 		runField, ok := runFieldByID[runFieldID]
 		if !ok {
-			logger.WithField("field_id", runFieldID).Warn("run field not found in copied fields, skipping")
-			continue
+			return nil, errors.Errorf("run field %s (mapped from playbook field %s) not found in copied fields", runFieldID, playbookFieldID)
 		}
 		if _, err := s.propertyService.UpsertRunPropertyValueWithField(playbookRun.ID, runField, translatedValue); err != nil {
 			return nil, errors.Wrapf(err, "failed to upsert initial property value for field %s", runFieldID)

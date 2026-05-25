@@ -688,6 +688,7 @@ Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode 
 });
 
 Cypress.Commands.add('assertRunPropertyValueStored', (playbookRunId, fieldName, expectedValue = null) => {
+    let fieldId;
     cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `${playbookRunsEndpoint}/${playbookRunId}/property_fields`,
@@ -695,14 +696,14 @@ Cypress.Commands.add('assertRunPropertyValueStored', (playbookRunId, fieldName, 
     }).then(({body: runFields}) => {
         const field = runFields.find((f) => f.name === fieldName);
         expect(field, `run-level field "${fieldName}" should exist`).to.exist;
-
-        cy.apiGetPlaybookRun(playbookRunId).then(({body: run}) => {
-            const pv = (run.property_values || []).find((v) => v.field_id === field.id);
-            expect(pv, `property value for field "${fieldName}" should be stored`).to.exist;
-            if (expectedValue !== null) {
-                expect(pv.value, `property value for "${fieldName}" should equal expected`).to.equal(expectedValue);
-            }
-        });
+        fieldId = field.id;
+    });
+    cy.then(() => cy.apiGetPlaybookRun(playbookRunId)).then(({body: run}) => {
+        const pv = (run.property_values || []).find((v) => v.field_id === fieldId);
+        expect(pv, `property value for field "${fieldName}" should be stored`).to.exist;
+        if (expectedValue !== null) {
+            expect(pv.value, `property value for "${fieldName}" should equal expected`).to.equal(expectedValue);
+        }
     });
 });
 

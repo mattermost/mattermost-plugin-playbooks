@@ -217,6 +217,7 @@ import {usePlaybook, usePlaybookAttributes} from 'src/hooks';
 import {createPlaybookRun} from 'src/client';
 import {useUserDisplayNameMap} from 'src/hooks/general';
 import {findNodeByTestId} from 'src/utils/test_helpers';
+import {RUN_NAME_MAX_LENGTH} from 'src/constants';
 
 import {RunPlaybookModal} from './run_playbook_modal';
 
@@ -679,6 +680,28 @@ describe('RunPlaybookModal — template mode', () => {
             // The modal starts on 'select-playbook' step since playbookId is undefined
             const json = toJson(component!);
             expect(json).toContain('playbooks-selector');
+        });
+    });
+
+    describe('namePreviewTooLong', () => {
+        it('shows error and disables confirm button when resolved name exceeds 64 chars', () => {
+            const longTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1);
+            const pbLongName = {
+                ...basePlaybook,
+                channel_name_template: longTemplate,
+                propertyFields: [],
+            };
+            mockUsePlaybook.mockReturnValue([pbLongName, {isFetching: false, error: undefined}]);
+
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            const json = toJson(component);
+
+            expect(json).toContain('exceeds');
+
+            const tree = component.toJSON();
+            const btn = findNodeByTestId(tree, 'confirm-button');
+            expect(btn).not.toBeNull();
+            expect(btn.props.disabled).toBe(true);
         });
     });
 

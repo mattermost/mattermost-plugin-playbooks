@@ -142,17 +142,16 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 		assert.Equal(t, runFieldID, result.PropertyValues[0].FieldID)
 	})
 
-	t.Run("unknown playbook field ID is skipped", func(t *testing.T) {
+	t.Run("unknown playbook field ID returns error", func(t *testing.T) {
 		stub := &stubUpsertPropertyService{}
 		svc := &PlaybookRunServiceImpl{propertyService: stub}
 
-		result, err := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
+		_, err := svc.applyInitialPropertyValues(makeRun(), makeCopyResult(), map[string]json.RawMessage{
 			"unknown_field_id": json.RawMessage(`"high"`),
 		}, logger)
 
-		require.NoError(t, err)
+		assert.Error(t, err)
 		assert.Equal(t, 0, stub.upsertCalled)
-		assert.Empty(t, result.PropertyValues)
 	})
 
 	t.Run("nil raw value is skipped", func(t *testing.T) {
@@ -208,7 +207,7 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 		assert.Equal(t, json.RawMessage(`"run-opt-1"`), stub.lastValue)
 	})
 
-	t.Run("run field not in CopiedFields is skipped", func(t *testing.T) {
+	t.Run("run field not in CopiedFields returns error", func(t *testing.T) {
 		stub := &stubUpsertPropertyService{}
 		svc := &PlaybookRunServiceImpl{propertyService: stub}
 
@@ -218,13 +217,12 @@ func TestApplyInitialPropertyValues(t *testing.T) {
 			FieldMappings: map[string]string{playbookFieldID: runFieldID},
 		}
 
-		result, err := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
+		_, err := svc.applyInitialPropertyValues(makeRun(), copyResult, map[string]json.RawMessage{
 			playbookFieldID: json.RawMessage(`"high"`),
 		}, logger)
 
-		require.NoError(t, err)
+		assert.Error(t, err)
 		assert.Equal(t, 0, stub.upsertCalled)
-		assert.Empty(t, result.PropertyValues)
 	})
 
 	t.Run("multiselect value with one unknown option ID is dropped before upsert", func(t *testing.T) {

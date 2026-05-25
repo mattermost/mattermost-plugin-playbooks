@@ -85,6 +85,69 @@ func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 	})
 }
 
+func TestRunNumberPrefixUniqueness(t *testing.T) {
+	makeService := func(ctrl *gomock.Controller) (app.PlaybookService, *mock_app.MockPlaybookStore) {
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		mockPoster := mock_bot.NewMockPoster(ctrl)
+		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+		mockAuditor.EXPECT().MakeAuditRecord(gomock.Any(), gomock.Any()).Return(&model.AuditRecord{}).AnyTimes()
+		mockAuditor.EXPECT().LogAuditRec(gomock.Any()).AnyTimes()
+
+		svc := app.NewPlaybookService(
+			mockStore,
+			mockPoster,
+			nil,
+			mockAuditor,
+			&metrics.Metrics{},
+			mockPropertyService,
+			mockConditionService,
+		)
+		return svc, mockStore
+	}
+
+	t.Run("duplicate prefix on same team is rejected with ErrDuplicateEntry", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, mockStore := makeService(ctrl)
+
+		playbookB := app.Playbook{
+			ID:              "pb2",
+			Title:           "Second Playbook",
+			TeamID:          "team1",
+			RunNumberPrefix: "INC",
+		}
+
+		mockStore.EXPECT().IsRunNumberPrefixUsed("team1", "INC", "pb2").Return(true, nil)
+
+		err := svc.Update(playbookB, "user1")
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, app.ErrDuplicateEntry))
+	})
+
+	t.Run("same prefix on different team is allowed", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, mockStore := makeService(ctrl)
+
+		playbookC := app.Playbook{
+			ID:              "pb3",
+			Title:           "Third Playbook",
+			TeamID:          "team2",
+			RunNumberPrefix: "INC",
+		}
+
+		mockStore.EXPECT().IsRunNumberPrefixUsed("team2", "INC", "pb3").Return(false, nil)
+		mockStore.EXPECT().Update(gomock.Any()).Return(nil)
+
+		err := svc.Update(playbookC, "user1")
+		require.NoError(t, err)
+	})
+}
+
 func TestPlaybookService_IncrementRunNumber(t *testing.T) {
 	makeService := func(ctrl *gomock.Controller) (app.PlaybookService, *mock_app.MockPlaybookStore) {
 		mockStore := mock_app.NewMockPlaybookStore(ctrl)
