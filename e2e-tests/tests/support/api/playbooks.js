@@ -276,6 +276,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         channelMode = 'create_new_channel',
         channelId = '',
         metrics,
+        ownerGroupOnlyActions,
         autoArchiveChannel = false,
     }) => {
     return cy.request({
@@ -319,6 +320,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             channel_mode: channelMode,
             channel_id: channelId,
             metrics,
+            owner_group_only_actions: ownerGroupOnlyActions,
             auto_archive_channel: autoArchiveChannel,
         },
     }).then((response) => {
@@ -651,6 +653,17 @@ Cypress.Commands.add('apiAttachConditionToTask', (playbookId, checklistIndex, it
 Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode = StatusOK) => {
     return cy.apiGetPlaybook(playbookId).then((fullPlaybook) => {
         return cy.apiUpdatePlaybook({...fullPlaybook, ...updates}, expectedHttpCode);
+    });
+});
+
+Cypress.Commands.add('apiRestoreRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/restore`,
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
     });
 });
 

@@ -375,13 +375,12 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 cy.contains('[data-testid="checkbox-item-container"]', 'Unassigned Task').within(($item) => {
                     cy.wrap($item).trigger('mouseover');
                     cy.findByTestId('hover-menu-edit-button').click();
-                    // Split clear and type into separate queries to avoid DOM detachment if the
-                    // input re-renders after clear().
-                    cy.findByDisplayValue('Unassigned Task').clear();
-                    cy.findByTestId('checklist-item-textarea-title').type('Renamed Task');
                 });
 
-                // Re-query the save button after typing (the $item ref above goes stale on re-render)
+                // Re-query from outer scope — clicking edit re-renders the item, making
+                // the inner $item container stale for any subsequent queries.
+                cy.findByDisplayValue('Unassigned Task').clear();
+                cy.findByTestId('checklist-item-textarea-title').type('Renamed Task');
                 cy.findByTestId('checklist-item-save-button').click();
             });
 

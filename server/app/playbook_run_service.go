@@ -1285,6 +1285,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	// Add current run context to audit
 	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToModify.CurrentStatus)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
+	model.AddEventParameterToAuditRec(auditRec, "ownerUserID", playbookRunToModify.OwnerUserID)
 
 	if playbookRunToModify.CurrentStatus == StatusFinished {
 		auditRec.Success()
@@ -1517,6 +1518,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	// Add current run context to audit
 	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToRestore.CurrentStatus)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToRestore.TeamID)
+	model.AddEventParameterToAuditRec(auditRec, "ownerUserID", playbookRunToRestore.OwnerUserID)
 
 	if playbookRunToRestore.CurrentStatus != StatusFinished {
 		auditRec.Success()
@@ -2094,6 +2096,19 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	subjectUser, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	// Validate that the new owner is a member of the run's team/channel before assigning.
+	// AddParticipants silently skips non-members; setting OwnerUserID to a non-member
+	// with OwnerGroupOnlyActions enabled would lock the run for all other participants.
+	if playbookRunToModify.TeamID == "" {
+		if _, memberErr := s.pluginAPI.Channel.GetMember(playbookRunToModify.ChannelID, ownerID); memberErr != nil {
+			return errors.Wrap(ErrInvalidOwner, fmt.Sprintf("user %s is not a member of the run's channel and cannot be set as owner", newOwner.Username))
+		}
+	} else {
+		if !IsMemberOfTeam(ownerID, playbookRunToModify.TeamID, s.pluginAPI) {
+			return errors.Wrap(ErrInvalidOwner, fmt.Sprintf("user %s is not a member of the run's team and cannot be set as owner", newOwner.Username))
+		}
 	}
 
 	// add owner as user
@@ -2896,10 +2911,9 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
 
-	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", runName, checklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", playbookRunID, checklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}

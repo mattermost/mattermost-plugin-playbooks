@@ -1,8 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* eslint-disable formatjs/no-literal-string-in-jsx */
+
 import React, {act} from 'react';
 import renderer from 'react-test-renderer';
+
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 
 // Capture values passed to Actions on each render so tests can inspect them
 // without coupling to DOM structure.
@@ -46,7 +50,10 @@ jest.mock('src/client', () => ({
     clientFetchPlaybook: jest.fn(),
 }));
 
-jest.mock('src/components/backstage/toast_banner', () => ({useToaster: () => ({add: jest.fn()})}));
+jest.mock('src/components/backstage/toast_banner', () => ({
+    useToaster: () => ({add: jest.fn()}),
+    ToastStyle: {Failure: 'failure'},
+}));
 
 jest.mock('react-intl', () => {
     const reactIntl = jest.requireActual('react-intl');
@@ -57,12 +64,43 @@ jest.mock('react-intl', () => {
     };
 });
 
-const {savePlaybook} = jest.requireMock('src/client');
-const {clientFetchPlaybook} = jest.requireMock('src/client');
+// Capture the latest props passed to OwnerGroupOnlyActionsToggle so tests
+// can invoke its onChange and observe the playbook prop (which reflects
+// optimistic updates and rollback on save failure).
+type ToggleProps = {
+    playbook: {owner_group_only_actions?: boolean};
+    isPlaybookAdmin: boolean;
+    disabled?: boolean;
+    onChange: (updated: {owner_group_only_actions: boolean}) => void;
+};
+const latestToggleProps: {current: ToggleProps | null} = {current: null};
+jest.mock('src/components/backstage/playbook_editor/owner_group_only_actions_toggle', () => (props: ToggleProps) => {
+    latestToggleProps.current = props;
+    return null;
+});
+
+jest.mock('src/hooks/redux', () => ({
+    useAppSelector: () => 'user-1',
+}));
 
 import Outline from './outline';
 
-// --- Helpers ---
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const makeGraphQLPlaybook = (overrides: Record<string, unknown> = {}) => ({
+    id: 'playbook-1',
+    title: 'Test Playbook',
+    delete_at: 0,
+    status_update_enabled: true,
+    retrospective_enabled: true,
+    run_summary_template_enabled: false,
+    run_summary_template: '',
+    checklists: [],
+    members: [],
+    ...overrides,
+});
 
 const makePlaybook = (overrides: Record<string, unknown> = {}) => ({
     id: 'pb-1',
@@ -75,6 +113,30 @@ const makePlaybook = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
 } as any);
 
+// Used by owner-group-only-actions tests
+const makeOwnerRestPlaybook = (ownerGroupOnlyActions: boolean) => ({
+    id: 'playbook-1',
+    title: 'Test Playbook',
+    description: '',
+    team_id: 'team-1',
+    public: true,
+    create_public_playbook_run: false,
+    delete_at: 0,
+    num_stages: 0,
+    num_steps: 0,
+    num_runs: 0,
+    num_actions: 0,
+    last_run_at: 0,
+    members: [],
+    default_playbook_member_role: '',
+    active_runs: 0,
+    default_owner_id: '',
+    default_owner_enabled: false,
+    run_summary_template_enabled: false,
+    owner_group_only_actions: ownerGroupOnlyActions,
+} as any);
+
+// Used by new-channel-only / auto-archive tests
 const makeRestPlaybook = (val: boolean, channelMode = 'create_new_channel') => ({
     id: 'pb-1',
     new_channel_only: val,
@@ -83,16 +145,145 @@ const makeRestPlaybook = (val: boolean, channelMode = 'create_new_channel') => (
     checklists: [],
 } as any);
 
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+
 beforeEach(() => {
-    jest.clearAllMocks();
+    latestToggleProps.current = null;
     capturedNewChannelOnly = false;
     capturedOnNewChannelOnlyChange = undefined;
     capturedAutoArchiveChannel = false;
     capturedOnAutoArchiveChange = undefined;
-    clientFetchPlaybook.mockResolvedValue({id: 'pb-1', auto_archive_channel: false, channel_mode: 'create_new_channel', checklists: []});
+    (savePlaybook as jest.Mock).mockReset();
+    (clientFetchPlaybook as jest.Mock).mockReset();
+    (clientFetchPlaybook as jest.Mock).mockResolvedValue({id: 'pb-1', auto_archive_channel: false, channel_mode: 'create_new_channel', checklists: []});
 });
 
-// --- Tests ---
+// ---------------------------------------------------------------------------
+// Tests — handleOwnerGroupOnlyActionsChange
+// ---------------------------------------------------------------------------
+
+describe('Outline — handleOwnerGroupOnlyActionsChange', () => {
+    it('saves playbook with the new value and no stale override spread', async () => {
+        (savePlaybook as jest.Mock).mockResolvedValue({});
+        const restPlaybook = makeOwnerRestPlaybook(false);
+        (clientFetchPlaybook as jest.Mock).mockResolvedValue(restPlaybook);
+
+        renderer.create(
+            <Outline
+                showAdminSettings={true}
+                playbook={makeGraphQLPlaybook() as any}
+                refetch={jest.fn()}
+                restPlaybook={restPlaybook}
+            />,
+        );
+
+        expect(latestToggleProps.current).not.toBeNull();
+        await act(async () => {
+            latestToggleProps.current!.onChange({owner_group_only_actions: true});
+        });
+
+        expect(savePlaybook).toHaveBeenCalledTimes(1);
+        const saved = (savePlaybook as jest.Mock).mock.calls[0][0];
+        expect(saved.owner_group_only_actions).toBe(true);
+        expect(saved.id).toBe(restPlaybook.id);
+    });
+
+    it('optimistically updates the toggle playbook prop before save resolves', async () => {
+        let resolveSave: (v: unknown) => void = () => undefined;
+        (savePlaybook as jest.Mock).mockReturnValue(new Promise((resolve) => {
+            resolveSave = resolve;
+        }));
+        (clientFetchPlaybook as jest.Mock).mockResolvedValue(makeOwnerRestPlaybook(false));
+
+        renderer.create(
+            <Outline
+                showAdminSettings={true}
+                playbook={makeGraphQLPlaybook() as any}
+                refetch={jest.fn()}
+                restPlaybook={makeOwnerRestPlaybook(false)}
+            />,
+        );
+
+        expect(latestToggleProps.current!.playbook.owner_group_only_actions).toBe(false);
+
+        await act(async () => {
+            latestToggleProps.current!.onChange({owner_group_only_actions: true});
+        });
+
+        // Optimistic: toggle sees the new value before the save resolves.
+        expect(latestToggleProps.current!.playbook.owner_group_only_actions).toBe(true);
+
+        await act(async () => {
+            resolveSave({});
+            await flush();
+        });
+
+        expect(latestToggleProps.current!.playbook.owner_group_only_actions).toBe(true);
+    });
+
+    it('rolls back the toggle playbook prop when savePlaybook rejects', async () => {
+        (savePlaybook as jest.Mock).mockRejectedValue(new Error('network error'));
+
+        renderer.create(
+            <Outline
+                showAdminSettings={true}
+                playbook={makeGraphQLPlaybook() as any}
+                refetch={jest.fn()}
+                restPlaybook={makeOwnerRestPlaybook(false)}
+            />,
+        );
+
+        await act(async () => {
+            latestToggleProps.current!.onChange({owner_group_only_actions: true});
+            await flush();
+        });
+
+        // After rejection, the optimistic override is reverted to the prior value.
+        expect(latestToggleProps.current!.playbook.owner_group_only_actions).toBe(false);
+    });
+
+    it('does nothing when the playbook is archived', async () => {
+        (savePlaybook as jest.Mock).mockResolvedValue({});
+
+        renderer.create(
+            <Outline
+                showAdminSettings={true}
+                playbook={makeGraphQLPlaybook({delete_at: 123456}) as any}
+                refetch={jest.fn()}
+                restPlaybook={makeOwnerRestPlaybook(false)}
+            />,
+        );
+
+        await act(async () => {
+            latestToggleProps.current!.onChange({owner_group_only_actions: true});
+        });
+
+        expect(savePlaybook).not.toHaveBeenCalled();
+        expect(latestToggleProps.current!.playbook.owner_group_only_actions).toBe(false);
+    });
+
+    it('does nothing when restPlaybook is undefined', async () => {
+        (savePlaybook as jest.Mock).mockResolvedValue({});
+
+        renderer.create(
+            <Outline
+                showAdminSettings={true}
+                playbook={makeGraphQLPlaybook() as any}
+                refetch={jest.fn()}
+                restPlaybook={undefined}
+            />,
+        );
+
+        // Toggle is not rendered without effectiveRestPlaybook, so no onChange path
+        // to invoke. Assert the component is gated out.
+        expect(latestToggleProps.current).toBeNull();
+        expect(savePlaybook).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — handleNewChannelOnlyChange
+// ---------------------------------------------------------------------------
 
 describe('Outline — handleNewChannelOnlyChange', () => {
     it('passes restPlaybook.new_channel_only to Actions when no override is active', () => {
@@ -119,7 +310,7 @@ describe('Outline — handleNewChannelOnlyChange', () => {
     });
 
     it('applies the optimistic override immediately — before the save resolves', () => {
-        savePlaybook.mockReturnValue(new Promise(() => undefined));
+        (savePlaybook as jest.Mock).mockReturnValue(new Promise(() => undefined));
 
         renderer.create(
             <Outline
@@ -139,7 +330,7 @@ describe('Outline — handleNewChannelOnlyChange', () => {
     });
 
     it('calls savePlaybook with new_channel_only and channel_mode set to create_new_channel when toggling on', async () => {
-        savePlaybook.mockResolvedValue({});
+        (savePlaybook as jest.Mock).mockResolvedValue({});
 
         renderer.create(
             <Outline
@@ -160,7 +351,7 @@ describe('Outline — handleNewChannelOnlyChange', () => {
     });
 
     it('preserves existing channel_mode when toggling off', async () => {
-        savePlaybook.mockResolvedValue({});
+        (savePlaybook as jest.Mock).mockResolvedValue({});
 
         renderer.create(
             <Outline
@@ -180,7 +371,7 @@ describe('Outline — handleNewChannelOnlyChange', () => {
     });
 
     it('rolls back the optimistic override when savePlaybook rejects', async () => {
-        savePlaybook.mockRejectedValue(new Error('network error'));
+        (savePlaybook as jest.Mock).mockRejectedValue(new Error('network error'));
 
         renderer.create(
             <Outline
@@ -202,7 +393,7 @@ describe('Outline — handleNewChannelOnlyChange', () => {
     });
 
     it('does not call savePlaybook when the value did not change', async () => {
-        savePlaybook.mockResolvedValue({});
+        (savePlaybook as jest.Mock).mockResolvedValue({});
 
         renderer.create(
             <Outline
@@ -237,7 +428,7 @@ describe('Outline — handleNewChannelOnlyChange', () => {
     });
 
     it('calls refetch and keeps the optimistic override after savePlaybook resolves', async () => {
-        savePlaybook.mockResolvedValue({});
+        (savePlaybook as jest.Mock).mockResolvedValue({});
         const refetch = jest.fn();
 
         renderer.create(
@@ -258,6 +449,10 @@ describe('Outline — handleNewChannelOnlyChange', () => {
         expect(capturedNewChannelOnly).toBe(true);
     });
 });
+
+// ---------------------------------------------------------------------------
+// Tests — auto-archive optimistic state
+// ---------------------------------------------------------------------------
 
 describe('Outline — auto-archive optimistic state', () => {
     it('passes restPlaybook.auto_archive_channel to Actions when no override is active', () => {
@@ -285,7 +480,7 @@ describe('Outline — auto-archive optimistic state', () => {
 
     it('applies the optimistic override immediately on toggle — before the save resolves', () => {
         // savePlaybook never resolves so we can observe the mid-flight state
-        savePlaybook.mockReturnValue(new Promise(() => undefined));
+        (savePlaybook as jest.Mock).mockReturnValue(new Promise(() => undefined));
 
         renderer.create(
             <Outline
@@ -306,7 +501,7 @@ describe('Outline — auto-archive optimistic state', () => {
 
     it('calls refetch after savePlaybook resolves successfully', async () => {
         const refetch = jest.fn();
-        savePlaybook.mockResolvedValue({});
+        (savePlaybook as jest.Mock).mockResolvedValue({});
 
         renderer.create(
             <Outline
@@ -324,7 +519,7 @@ describe('Outline — auto-archive optimistic state', () => {
     });
 
     it('rolls back the optimistic override to the previous value when savePlaybook rejects', async () => {
-        savePlaybook.mockRejectedValue(new Error('network error'));
+        (savePlaybook as jest.Mock).mockRejectedValue(new Error('network error'));
 
         renderer.create(
             <Outline
@@ -366,7 +561,7 @@ describe('Outline — auto-archive optimistic state', () => {
 
     it('effective value stays correct when restPlaybook updates while an override is active', () => {
         // savePlaybook never resolves — we control restPlaybook directly
-        savePlaybook.mockReturnValue(new Promise(() => undefined));
+        (savePlaybook as jest.Mock).mockReturnValue(new Promise(() => undefined));
 
         let component!: renderer.ReactTestRenderer;
 
