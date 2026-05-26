@@ -2229,6 +2229,117 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 	})
 }
 
+// TestSetAssignee_ClearsRoleType verifies that calling SetItemAssignee with a concrete user ID
+// on an item that previously had a role-based assignee type (owner / creator / property_user)
+// clears AssigneeType and AssigneePropertyFieldID. Without this, the role badge would persist
+// in the UI even though the user explicitly switched to a specific person.
+func TestSetAssignee_ClearsRoleType(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRunWithRoleItem := func(t *testing.T, assigneeType string) (*client.PlaybookRun, string) {
+		t.Helper()
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Clear Role Type Playbook " + assigneeType,
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{Title: "Tasks", Items: []client.ChecklistItem{
+					{Title: "Role task", AssigneeType: assigneeType},
+				}},
+			},
+		})
+		require.NoError(t, err)
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Clear Role Type Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+		return run, pbID
+	}
+
+	t.Run("SetAssignee on owner-type item clears assignee_type", func(t *testing.T) {
+		run, _ := createRunWithRoleItem(t, app.AssigneeTypeOwner)
+		require.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "", run.Checklists[0].Items[0].AssigneeType,
+			"AssigneeType must be cleared when switching from role to specific user")
+		assert.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+	})
+
+	t.Run("SetAssignee on creator-type item clears assignee_type", func(t *testing.T) {
+		run, _ := createRunWithRoleItem(t, app.AssigneeTypeCreator)
+		require.Equal(t, app.AssigneeTypeCreator, run.Checklists[0].Items[0].AssigneeType)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "", run.Checklists[0].Items[0].AssigneeType,
+			"AssigneeType must be cleared when switching from creator role to specific user")
+		assert.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+	})
+}
+
+// TestSetAssignee_SiblingRoleTasksUnaffected verifies that editing one checklist item's
+// assignee does not wipe the role metadata (assignee_type / assignee_property_field_id)
+// from sibling items in the same checklist. This was a pre-existing bug: updating a single
+// item's assignee would rewrite the whole checklist, losing role fields on other items.
+func TestSetAssignee_SiblingRoleTasksUnaffected(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Sibling Role Preservation Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Checklists: []client.Checklist{
+			{Title: "Tasks", Items: []client.ChecklistItem{
+				{Title: "Owner task", AssigneeType: app.AssigneeTypeOwner},
+				{Title: "Creator task", AssigneeType: app.AssigneeTypeCreator},
+				{Title: "Plain task", AssigneeType: ""},
+			}},
+		},
+	})
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Sibling Preservation Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType)
+	require.Equal(t, app.AssigneeTypeCreator, run.Checklists[0].Items[1].AssigneeType)
+
+	// Edit the plain task (index 2) by assigning a specific user.
+	err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 2, e.RegularUser2.Id)
+	require.NoError(t, err)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+
+	assert.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType,
+		"owner-type sibling must keep its assignee_type after a different item is edited")
+	assert.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID,
+		"owner-type sibling must keep its resolved assignee_id")
+	assert.Equal(t, app.AssigneeTypeCreator, run.Checklists[0].Items[1].AssigneeType,
+		"creator-type sibling must keep its assignee_type after a different item is edited")
+	assert.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[1].AssigneeID,
+		"creator-type sibling must keep its resolved assignee_id")
+	assert.Equal(t, e.RegularUser2.Id, run.Checklists[0].Items[2].AssigneeID,
+		"edited item must have the new assignee_id")
+}
+
 func TestChecklisItem_SetCommand(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -5328,11 +5439,29 @@ func TestSetRunPropertyValue_UserField_ParticipantCannotAddNewMember(t *testing.
 	})
 	require.NoError(t, err)
 
-	_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+	pbField, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
 		context.Background(),
 		pbID,
 		client.PropertyFieldRequest{Name: "Assignee", Type: "user"},
 	)
+	require.NoError(t, err)
+
+	// Add a property_user checklist item that references the field. This is required because
+	// addAssigneeParticipantAndDM is only triggered when a task's resolved assignee changes —
+	// without this item the property value update has no task to re-resolve and the auto-add
+	// side effect never fires.
+	pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pbID)
+	require.NoError(t, err)
+	pb.Checklists = []client.Checklist{
+		{Title: "Tasks", Items: []client.ChecklistItem{
+			{
+				Title:                   "Assignee task",
+				AssigneeType:            app.AssigneeTypePropertyUser,
+				AssigneePropertyFieldID: pbField.ID,
+			},
+		}},
+	}
+	err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
 	require.NoError(t, err)
 
 	// Run owned by RegularUser.
