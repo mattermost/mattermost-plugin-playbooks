@@ -5310,3 +5310,100 @@ func TestSetRunPropertyValue_UserField_RejectsNonTeamMember(t *testing.T) {
 	)
 	require.NoError(t, err, "setting a user-type property to a team member must succeed")
 }
+
+// TestSetRunPropertyValue_UserField_ParticipantCannotAddNewMember verifies that a regular
+// participant cannot use a user-type property field to invite arbitrary team members into a
+// run. Setting such a field auto-adds the chosen user as a run participant, so only the run
+// owner or a system admin is allowed to trigger that behaviour.
+func TestSetRunPropertyValue_UserField_ParticipantCannotAddNewMember(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	// Create a playbook with a user-type property field.
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Participant Cannot Add Member Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+		context.Background(),
+		pbID,
+		client.PropertyFieldRequest{Name: "Assignee", Type: "user"},
+	)
+	require.NoError(t, err)
+
+	// Run owned by RegularUser.
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Participant Cannot Add Member Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+
+	// Add RegularUser2 as a participant (not owner).
+	_, err = addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+	require.NoError(t, err)
+
+	// Create a third team member who is NOT yet in the run.
+	targetUser, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+		Email:    "target-" + model.NewId() + "@example.com",
+		Username: "target" + model.NewId(),
+		Password: "Password123!",
+	})
+	require.NoError(t, err)
+	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, targetUser.Id)
+	require.NoError(t, err)
+
+	runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+	require.NoError(t, err)
+	var runFieldID string
+	for _, f := range runFields {
+		if f.Name == "Assignee" && f.Type == "user" {
+			runFieldID = f.ID
+			break
+		}
+	}
+	require.NotEmpty(t, runFieldID)
+
+	// Non-owner participant sets the user field to targetUser — property write should succeed
+	// but targetUser must NOT be added to the run's participant list.
+	_, err = e.PlaybooksClient2.PlaybookRuns.SetPropertyValue(
+		context.Background(),
+		run.ID,
+		runFieldID,
+		client.PropertyValueRequest{Value: []byte(`"` + targetUser.Id + `"`)},
+	)
+	require.NoError(t, err, "non-owner participant must be allowed to set a user-type property")
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.NotContains(t, run.ParticipantIDs, targetUser.Id,
+		"non-owner participant must not be able to add a new member to the run via property assignment")
+
+	// Clear the field so the owner can set it to the same target user cleanly.
+	_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+		context.Background(),
+		run.ID,
+		runFieldID,
+		client.PropertyValueRequest{Value: []byte(`""`)},
+	)
+	require.NoError(t, err)
+
+	// Run owner sets the user field to targetUser — targetUser SHOULD become a participant.
+	_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+		context.Background(),
+		run.ID,
+		runFieldID,
+		client.PropertyValueRequest{Value: []byte(`"` + targetUser.Id + `"`)},
+	)
+	require.NoError(t, err)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.Contains(t, run.ParticipantIDs, targetUser.Id,
+		"run owner must be able to add a new member to the run via property assignment")
+}

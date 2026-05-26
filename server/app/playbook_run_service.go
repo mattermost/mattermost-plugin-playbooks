@@ -5741,9 +5741,14 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 	}
 	if resolvedUserID != ownerUserID {
 		if !slices.Contains(participantIDs, resolvedUserID) {
-			if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
-				logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
-				return
+			// Only the run owner or a system admin may auto-add the assigned user
+			// as a run participant. Without this check, any participant could set a
+			// user-type property field to invite arbitrary team members into the run.
+			if actorUserID == ownerUserID || IsSystemAdmin(actorUserID, s.pluginAPI) {
+				if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
+					logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
+					return
+				}
 			}
 		}
 	}
