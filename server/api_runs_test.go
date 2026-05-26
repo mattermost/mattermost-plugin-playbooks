@@ -718,7 +718,11 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 
 		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.NoError(t, err)
-		defer result.Body.Close()
+		defer func() {
+			if result != nil && result.Body != nil {
+				_ = result.Body.Close()
+			}
+		}()
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -1573,7 +1577,11 @@ func TestIgnoreKeywords(t *testing.T) {
 		// Make the request
 		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.NoError(t, err)
-		defer result.Body.Close()
+		defer func() {
+			if result != nil && result.Body != nil {
+				_ = result.Body.Close()
+			}
+		}()
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})
 }

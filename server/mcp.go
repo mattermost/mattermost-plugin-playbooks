@@ -26,6 +26,7 @@ const (
 type pluginMCPClient struct {
 	handler http.Handler
 	userID  string
+	siteURL string
 }
 
 type pluginMCPResponseRecorder struct {
@@ -88,7 +89,7 @@ func (c *pluginMCPClient) GetCurrentUserID(context.Context) (string, error) {
 }
 
 func (c *pluginMCPClient) GetPlaybookURL(playbookID string) string {
-	return "/playbooks/playbooks/" + playbookID
+	return strings.TrimRight(c.siteURL, "/") + "/playbooks/playbooks/" + playbookID
 }
 
 func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body any, result any) error {
@@ -134,7 +135,7 @@ func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body 
 	return nil
 }
 
-func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, exposeExternal bool) (*mcphelper.Server, error) {
+func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, exposeExternal bool, siteURL string) (*mcphelper.Server, error) {
 	server := mcphelper.NewServer(api, mcphelper.PluginMCPServer{
 		PluginID:       manifest.Id,
 		Name:           "Playbooks MCP",
@@ -147,7 +148,7 @@ func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, expose
 		if userID == "" {
 			return nil, fmt.Errorf("missing Mattermost user ID")
 		}
-		return &pluginMCPClient{handler: handler, userID: userID}, nil
+		return &pluginMCPClient{handler: handler, userID: userID, siteURL: siteURL}, nil
 	}
 	provider, err := tools.NewPlaybooksToolProvider(factory)
 	if err != nil {
@@ -167,7 +168,7 @@ func (p *Plugin) ensureMCPServer() error {
 	}
 	p.mcpMu.RUnlock()
 
-	server, err := newPlaybooksMCPServer(p.API, p.handler, exposeExternal)
+	server, err := newPlaybooksMCPServer(p.API, p.handler, exposeExternal, p.currentSiteURL())
 	if err != nil {
 		return err
 	}
@@ -195,6 +196,17 @@ func (p *Plugin) currentMCPExposeExternal() bool {
 		return false
 	}
 	return p.config.GetConfiguration().ExposeMCPExternal
+}
+
+func (p *Plugin) currentSiteURL() string {
+	if p.pluginAPI == nil {
+		return ""
+	}
+	cfg := p.pluginAPI.Configuration.GetConfig()
+	if cfg == nil || cfg.ServiceSettings.SiteURL == nil {
+		return ""
+	}
+	return *cfg.ServiceSettings.SiteURL
 }
 
 func (p *Plugin) getMCPServer() *mcphelper.Server {

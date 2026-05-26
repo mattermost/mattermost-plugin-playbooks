@@ -69,6 +69,11 @@ func TestPluginMCPClientSendsJSONBody(t *testing.T) {
 	assert.JSONEq(t, `{"message":"done"}`, capturedBody)
 }
 
+func TestPluginMCPClientGetPlaybookURLReturnsAbsoluteURL(t *testing.T) {
+	client := &pluginMCPClient{siteURL: "https://mattermost.example.com/"}
+	assert.Equal(t, "https://mattermost.example.com/playbooks/playbooks/playbook-id", client.GetPlaybookURL("playbook-id"))
+}
+
 func TestPluginMCPClientReturnsAPIErrorBody(t *testing.T) {
 	client := &pluginMCPClient{
 		userID: "user-id",
@@ -110,7 +115,7 @@ func TestNewPlaybooksMCPServerRegistersExposeExternal(t *testing.T) {
 		requestCh: make(chan *http.Request, 1),
 		bodyCh:    make(chan []byte, 1),
 	}
-	server, err := newPlaybooksMCPServer(api, http.NotFoundHandler(), true)
+	server, err := newPlaybooksMCPServer(api, http.NotFoundHandler(), true, "https://mattermost.example.com")
 	require.NoError(t, err)
 
 	require.NoError(t, server.Register())
