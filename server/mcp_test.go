@@ -174,6 +174,7 @@ func TestServeMCPIfMatchServesToolCall(t *testing.T) {
 	p := &Plugin{mcpServer: helperServer}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Set("Mattermost-Plugin-ID", bridgeclient.AiPluginID)
+		r.Header.Set("Mattermost-User-Id", "user-id")
 		r.Header.Set("X-Mattermost-UserID", "user-id")
 		if !p.serveMCPIfMatch(w, r) {
 			http.NotFound(w, r)
