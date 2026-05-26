@@ -10,11 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
@@ -219,7 +214,7 @@ func TestPlaybookEdit(t *testing.T) {
 	})
 }
 
-func TestIsPlaybookAdmin(t *testing.T) {
+func TestIsPlaybookAdmin_DefaultAdminRole(t *testing.T) {
 	const (
 		teamID  = "team-1"
 		userID  = "u-1"
@@ -390,6 +385,9 @@ func TestPlaybookModifyWithFixes_AdminOnlyEditFlip(t *testing.T) {
 		err := f.svc.PlaybookModifyWithFixes(memberID, &updated, old)
 		assert.ErrorIs(t, err, ErrNoPermissions)
 		assert.Contains(t, err.Error(), "admin_only_edit")
+	})
+}
+
 // ---------------------------------------------------------------------------
 // stubRunService — minimal implementation of PlaybookRunService.
 // Only GetPlaybookRun is exercised by the permission helpers.

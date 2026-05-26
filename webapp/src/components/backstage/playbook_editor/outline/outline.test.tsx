@@ -9,18 +9,11 @@ import renderer from 'react-test-renderer';
 import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {findNodeByTestId} from 'src/utils/test_helpers';
 
-// Capture values passed to Actions on each render so tests can inspect them
-// without coupling to DOM structure.
-let capturedNewChannelOnly: boolean = false;
-let capturedOnNewChannelOnlyChange: ((updated: {new_channel_only: boolean}) => void) | undefined;
-let capturedAutoArchiveChannel: boolean = false;
-let capturedOnAutoArchiveChange: ((updated: {auto_archive_channel: boolean}) => void) | undefined;
-
 // --- Captured mock state ---
 
 // AdminOnlyEditToggle
-type ToggleProps = {isChecked: boolean; onChange: (value: boolean) => void};
-let toggleProps: ToggleProps | null = null;
+type AdminSettingsToggleProps = {isChecked: boolean; onChange: (value: boolean) => void};
+let toggleProps: AdminSettingsToggleProps | null = null;
 
 // Section mocks
 type SectionStatusUpdatesProps = {canEdit?: boolean};
@@ -92,7 +85,7 @@ jest.mock('./section_actions', () => ({
 
 jest.mock('./section_admin_settings', () => ({
     __esModule: true,
-    default: (props: ToggleProps) => {
+    default: (props: AdminSettingsToggleProps) => {
         toggleProps = props;
         return (
             <span
