@@ -317,16 +317,6 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
     });
 });
 
-Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
-    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
-});
-
-Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
-    cy.apiGetChannel(run.channel_id).then(({channel}) => {
-        cy.visit(`/${teamName}/channels/${channel.name}`);
-    });
-});
-
 Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
     cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
     cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').click();
@@ -368,13 +358,6 @@ Cypress.Commands.add('playbooksConfirmModal', () => {
     cy.get('#confirmModal').find('#confirmModalButton').click();
 
     // Wait for dismissal so callers don't race a still-open modal on the next action.
-    cy.get('#confirmModal').should('not.exist');
-});
-
-Cypress.Commands.add('playbooksConfirmFinishModal', () => {
-    cy.get('#confirmModal').should('be.visible');
-    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
-    cy.get('#confirmModal').find('#confirmModalButton').click();
     cy.get('#confirmModal').should('not.exist');
 });
 

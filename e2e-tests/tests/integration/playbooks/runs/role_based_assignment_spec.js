@@ -506,8 +506,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 // # Pick the user from the profile selector dropdown (rendered as @username)
                 cy.contains('.playbook-react-select__option', '@' + testOwner.username).click();
 
-                // # Wait for both mutations: the role-clear and the user-pick
-                cy.wait('@UpdatePlaybook');
+                // # Wait for the save to complete
                 cy.wait('@UpdatePlaybook');
 
                 // * Server must have assignee_type cleared and assignee_id set;

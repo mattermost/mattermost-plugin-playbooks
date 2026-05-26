@@ -656,17 +656,6 @@ Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode 
     });
 });
 
-Cypress.Commands.add('apiRestoreRun', (playbookRunId) => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${playbookRunsEndpoint}/${playbookRunId}/restore`,
-        method: 'PUT',
-    }).then((response) => {
-        expect(response.status).to.equal(StatusOK);
-        cy.wrap(response.body);
-    });
-});
-
 Cypress.Commands.add('apiCreateAndAddUserToTeam', (teamId) => {
     return cy.apiCreateUser().then(({user}) => {
         cy.apiAddUserToTeam(teamId, user.id);
