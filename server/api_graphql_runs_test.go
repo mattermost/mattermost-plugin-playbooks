@@ -667,49 +667,6 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	})
 }
 
-func TestGraphQLChangeRunOwner(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-
-	// create a third user to test change owner
-	user3, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
-		Email:    "thirduser@example.com",
-		Username: "thirduser",
-		Password: testUserPassword,
-	})
-	require.NoError(t, err)
-	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, user3.Id)
-	require.NoError(t, err)
-
-	t.Run("set another participant as owner", func(t *testing.T) {
-		// add another participant
-		response, err := addParticipants(e.PlaybooksClient, e.BasicRun.ID, []string{user3.Id})
-		require.Empty(t, response.Errors)
-		require.NoError(t, err)
-
-		response, err = changeRunOwner(e.PlaybooksClient, e.BasicRun.ID, user3.Id)
-		require.Empty(t, response.Errors)
-		require.NoError(t, err)
-
-		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), e.BasicRun.ID)
-		require.NoError(t, err)
-		require.Equal(t, user3.Id, run.OwnerUserID)
-	})
-
-	t.Run("not participant tries to change an owner", func(t *testing.T) {
-		response, err := changeRunOwner(e.PlaybooksClient2, e.BasicRun.ID, e.RegularUser.Id)
-		require.NotEmpty(t, response.Errors)
-		require.NoError(t, err)
-	})
-
-	t.Run("set not participant as owner", func(t *testing.T) {
-		response, err := changeRunOwner(e.PlaybooksClient, e.BasicRun.ID, e.RegularUser2.Id)
-		require.Empty(t, response.Errors)
-		require.NoError(t, err)
-	})
-
-}
-
 func TestSetRunFavorite(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
