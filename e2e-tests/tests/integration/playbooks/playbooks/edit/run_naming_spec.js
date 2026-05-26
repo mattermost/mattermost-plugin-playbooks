@@ -224,6 +224,27 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         });
     });
 
+    it('typing { in the template input opens autocomplete with SEQ, OWNER, and CREATOR tokens', () => {
+        // # Visit the playbook outline editor
+        cy.playbooksVisitEditor(testPlaybook.id, 'outline');
+
+        // * Wait for the template input to be visible
+        cy.findByTestId('channel-access-run-name-template-input').scrollIntoView().should('be.visible');
+
+        // # Type an opening brace — this triggers the autocomplete dropdown
+        cy.findByTestId('channel-access-run-name-template-input').type('{', {parseSpecialCharSequences: false});
+
+        // * The suggestion list should be visible
+        cy.findByTestId('channel-access-run-name-template-suggestions').should('be.visible');
+
+        // * The three built-in tokens are always present in the suggestions
+        cy.findByTestId('channel-access-run-name-template-suggestions').within(() => {
+            cy.findByText('{SEQ}').should('exist');
+            cy.findByText('{OWNER}').should('exist');
+            cy.findByText('{CREATOR}').should('exist');
+        });
+    });
+
     it('shows an insert variable button next to the template input', () => {
         // # Visit the playbook outline editor
         cy.playbooksVisitEditor(testPlaybook.id, 'outline');

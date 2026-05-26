@@ -282,9 +282,9 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ChannelMode":                             rawPlaybook.ChannelMode,
 			"RunNumberPrefix":                         rawPlaybook.RunNumberPrefix,
 			// NextRunNumber omitted: DB default (1) is always correct for new playbooks.
-			"OwnerGroupOnlyActions":                   rawPlaybook.OwnerGroupOnlyActions,
-			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
-			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
+			"OwnerGroupOnlyActions": rawPlaybook.OwnerGroupOnlyActions,
+			"NewChannelOnly":        rawPlaybook.NewChannelOnly,
+			"AutoArchiveChannel":    rawPlaybook.AutoArchiveChannel,
 		}))
 	if err != nil {
 		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
