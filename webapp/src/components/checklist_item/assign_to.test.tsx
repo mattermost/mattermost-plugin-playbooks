@@ -5,8 +5,8 @@
 
 import React from 'react';
 import renderer from 'react-test-renderer';
-
 import {OverlayTrigger} from 'react-bootstrap';
+
 import ProfileSelectorDefault from 'src/components/profile/profile_selector';
 
 import AssignTo from './assign_to';
