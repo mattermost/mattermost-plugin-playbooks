@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -2086,4 +2087,585 @@ func removeFromPerms(permission string, perms []string) []string {
 		}
 	}
 	return result
+}
+
+// TestAdminOnlyEdit_APIEnforcement verifies that the AdminOnlyEdit flag restricts
+// playbook PUT requests to playbook admins only.
+// NOTE: subtests share a single playbook row and must remain sequential — do NOT add t.Parallel().
+func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a playbook with AdminOnlyEdit=true.
+	// PlaybooksAdminClient (system admin) creates it and is also a playbook admin.
+	// RegularUser is a plain playbook member.
+	// RegularUser2 is a non-sysadmin playbook admin used to test the admin-member path.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit Test Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit:                           true,
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("non-admin member PUT /playbooks/{id} returns 403", func(t *testing.T) {
+		// Fetch as admin so we have a full struct to PUT back (RegularUser lacks read permission when admin_only_edit=true)
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		pb.Title = "Non-Admin Attempted Edit"
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("admin member PUT /playbooks/{id} returns 200", func(t *testing.T) {
+		// Fetch as sysadmin so we have a full struct to PUT back.
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// Update as RegularUser2 (non-sysadmin playbook_admin) to verify the admin-member path.
+		pb.Title = "Admin Allowed Edit"
+		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksClient2.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Equal(t, "Admin Allowed Edit", updated.Title)
+	})
+
+	t.Run("system admin PUT /playbooks/{id} returns 200", func(t *testing.T) {
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		pb.Title = "System Admin Edit"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Equal(t, "System Admin Edit", updated.Title)
+	})
+
+	t.Run("system admin can edit playbook where sysadmin is not a member", func(t *testing.T) {
+		// Create a playbook where the sysadmin is deliberately excluded from Members.
+		// This isolates the sysadmin-override path: the edit must succeed via the
+		// system-admin bypass, not via the playbook_admin role.
+		isolatedID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Sysadmin Override Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), isolatedID)
+		require.NoError(t, err)
+
+		pb.Title = "Sysadmin Override Edit"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), isolatedID)
+		require.NoError(t, err)
+		assert.Equal(t, "Sysadmin Override Edit", updated.Title)
+	})
+
+	t.Run("playbook admin (non-sysadmin) can disable AdminOnlyEdit", func(t *testing.T) {
+		// Ensure the flag is on before the test (self-contained).
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.AdminOnlyEdit = true
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// RegularUser2 is a non-sysadmin playbook admin — disabling the flag should be allowed.
+		pb.AdminOnlyEdit = false
+		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.False(t, confirmed.AdminOnlyEdit)
+	})
+
+	t.Run("playbook admin (non-sysadmin) can enable AdminOnlyEdit", func(t *testing.T) {
+		// Ensure the flag is off before the test (self-contained).
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.AdminOnlyEdit = false
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// RegularUser2 is a non-sysadmin playbook admin — enabling the flag is symmetric with disable.
+		pb.AdminOnlyEdit = true
+		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.True(t, confirmed.AdminOnlyEdit)
+	})
+
+	t.Run("non-admin member cannot enable AdminOnlyEdit", func(t *testing.T) {
+		// Reset to off as sysadmin; RegularUser is a plain member, so flipping the flag
+		// must be denied regardless of direction.
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.AdminOnlyEdit = false
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		pb.AdminOnlyEdit = true
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.False(t, confirmed.AdminOnlyEdit)
+	})
+
+	t.Run("PUT body without admin_only_edit preserves the lock", func(t *testing.T) {
+		// Ensure the lock is on before the test.
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.AdminOnlyEdit = true
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// Build a raw PUT body that omits admin_only_edit entirely to simulate
+		// a legacy client or integration that predates the field.
+		rawJSON, err := json.Marshal(pb)
+		require.NoError(t, err)
+		var rawMap map[string]json.RawMessage
+		require.NoError(t, json.Unmarshal(rawJSON, &rawMap))
+		delete(rawMap, "admin_only_edit")
+		bodyWithoutField, err := json.Marshal(rawMap)
+		require.NoError(t, err)
+
+		apiURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", e.ServerAdminClient.URL, playbookID)
+		req, err := http.NewRequest(http.MethodPut, apiURL, bytes.NewReader(bodyWithoutField))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		_ = resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.True(t, confirmed.AdminOnlyEdit, "admin_only_edit must be preserved when absent from the PUT body")
+	})
+
+	t.Run("non-admin member regains edit access after AdminOnlyEdit is disabled", func(t *testing.T) {
+		// Precondition: lock is on (left by the previous subtest).
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.True(t, pb.AdminOnlyEdit, "expected admin_only_edit=true entering this subtest")
+
+		// Confirm non-admin is still blocked while the lock is on.
+		pb.Title = "Should Be Blocked"
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		// Admin disables the lock.
+		pb, err = e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.AdminOnlyEdit = false
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// Non-admin member must now succeed.
+		pb, err = e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.Title = "Member Edit After Unlock"
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Equal(t, "Member Edit After Unlock", confirmed.Title)
+	})
+}
+
+// TestAdminOnlyEdit_Create verifies that any user with playbook-create permission
+// can create a playbook with AdminOnlyEdit pre-enabled, since the creator becomes
+// the implicit admin of the new playbook.
+func TestAdminOnlyEdit_Create(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("regular user creating playbook with AdminOnlyEdit=true succeeds", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:         "Non-Admin AdminOnlyEdit Playbook",
+			TeamID:        e.BasicTeam.Id,
+			Public:        true,
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, id)
+	})
+
+	t.Run("system admin creating playbook with AdminOnlyEdit=true succeeds", func(t *testing.T) {
+		id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:         "Admin AdminOnlyEdit Playbook",
+			TeamID:        e.BasicTeam.Id,
+			Public:        true,
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, id)
+	})
+
+}
+
+// TestAdminOnlyEdit_Duplicate verifies the duplicate-time gate: when the source
+// playbook has AdminOnlyEdit=true, only playbook admins of the source or system
+// admins may duplicate it. Non-admin members must not be able to spawn editable
+// copies of an admin-locked configuration.
+func TestAdminOnlyEdit_Duplicate(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	// Source is locked. RegularUser is a plain member; RegularUser2 is a playbook admin.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit Duplicate Source",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("non-admin member duplicating AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin (non-sysadmin) of source can duplicate", func(t *testing.T) {
+		newID, err := e.PlaybooksClient2.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.NotEmpty(t, newID)
+		require.NotEqual(t, playbookID, newID)
+	})
+
+	t.Run("system admin duplicating AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+		newID, err := e.PlaybooksAdminClient.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.NotEmpty(t, newID)
+		require.NotEqual(t, playbookID, newID)
+	})
+}
+
+// TestAdminOnlyEdit_Import verifies that any user with create permission can import
+// a playbook that has AdminOnlyEdit enabled. The importer becomes the sole admin of
+// the imported playbook.
+// Note: AdminOnlyEdit is excluded from exports (export:"-"), so we craft a raw
+// JSON payload with admin_only_edit: true to exercise the import path directly.
+func TestAdminOnlyEdit_Import(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// version must match app.CurrentPlaybookExportVersion.
+	payload := []byte(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":1}`)
+
+	t.Run("regular user importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
+		require.NoError(t, err)
+		require.NotEmpty(t, newID)
+	})
+
+	t.Run("system admin importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+		newID, err := e.PlaybooksAdminClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
+		require.NoError(t, err)
+		require.NotEmpty(t, newID)
+	})
+}
+
+// TestAdminOnlyEdit_PropertyFields verifies that property field CRUD endpoints honor
+// AdminOnlyEdit. The three mutating handlers covered here (create/update/delete) all go
+// through PlaybookEdit, so a non-admin member must be blocked while playbook admins
+// and system admins must succeed.
+func TestAdminOnlyEdit_PropertyFields(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence() // property fields require license
+
+	// Source playbook is admin-locked. RegularUser is a plain member; RegularUser2 is a playbook admin.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit PropertyFields Source",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	makeFieldRequest := func(name string) client.PropertyFieldRequest {
+		return client.PropertyFieldRequest{
+			Name: name,
+			Type: "text",
+			Attrs: &client.PropertyFieldAttrsInput{
+				Visibility: stringPtr("when_set"),
+				SortOrder:  float64Ptr(1.0),
+			},
+		}
+	}
+
+	t.Run("non-admin member create returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("blocked"))
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	// Seed a field as the playbook admin so update/delete have something to operate on.
+	seeded, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("seed"))
+	require.NoError(t, err)
+	fieldID := seeded.ID
+
+	t.Run("non-admin member update returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, fieldID, makeFieldRequest("renamed"))
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("non-admin member delete returns 403", func(t *testing.T) {
+		err := e.PlaybooksClient.Playbooks.DeletePropertyField(context.Background(), playbookID, fieldID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin (non-sysadmin) can create a property field", func(t *testing.T) {
+		created, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("admin-created"))
+		require.NoError(t, err)
+		require.NotEmpty(t, created.ID)
+	})
+
+	t.Run("system admin can update a property field", func(t *testing.T) {
+		_, err := e.PlaybooksAdminClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, fieldID, makeFieldRequest("sysadmin-updated"))
+		require.NoError(t, err)
+	})
+}
+
+// TestAdminOnlyEdit_Archive verifies that the DELETE /playbooks/{id} endpoint
+// honors AdminOnlyEdit: regular members cannot archive a locked playbook.
+func TestAdminOnlyEdit_Archive(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit Archive Test",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("non-admin member archive returns 403", func(t *testing.T) {
+		err := e.PlaybooksClient.Playbooks.Archive(context.Background(), playbookID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin (non-sysadmin) can archive", func(t *testing.T) {
+		// Create a fresh playbook so archiving doesn't affect other subtests.
+		lockedID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Archive by Admin",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+		err = e.PlaybooksClient2.Playbooks.Archive(context.Background(), lockedID)
+		require.NoError(t, err)
+	})
+
+	t.Run("system admin can archive", func(t *testing.T) {
+		lockedID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Archive by SysAdmin",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+		err = e.PlaybooksAdminClient.Playbooks.Archive(context.Background(), lockedID)
+		require.NoError(t, err)
+	})
+}
+
+// TestAdminOnlyEdit_Conditions verifies that the conditions CRUD endpoints
+// (POST/PUT/DELETE /playbooks/{id}/conditions) honor AdminOnlyEdit.
+// All three handlers route through PlaybookManageConditions → PlaybookEdit.
+func TestAdminOnlyEdit_Conditions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence() // conditions require license
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit Conditions Test",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	// Seed a property field (needed to build a valid condition expression).
+	// The option ID must be a valid MM ID and must match the value used in makeCondition below.
+	opt1ID := model.NewId()
+	seededField, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+		Name: "Priority",
+		Type: "select",
+		Attrs: &client.PropertyFieldAttrsInput{
+			Visibility: stringPtr("always"),
+			SortOrder:  float64Ptr(1.0),
+			Options:    &[]client.PropertyOptionInput{{ID: &opt1ID, Name: "Option1"}},
+		},
+	})
+	require.NoError(t, err)
+
+	makeCondition := func() client.Condition {
+		condValue, _ := json.Marshal([]string{opt1ID})
+		return client.Condition{
+			Version: 1,
+			ConditionExpr: client.ConditionExprV1{
+				Is: &client.ComparisonCondition{
+					FieldID: seededField.ID,
+					Value:   json.RawMessage(condValue),
+				},
+			},
+		}
+	}
+
+	t.Run("non-admin member create condition returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.PlaybookConditions.Create(context.Background(), playbookID, makeCondition())
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	// Seed a condition as the playbook admin so update/delete have a target.
+	seeded, err := e.PlaybooksClient2.PlaybookConditions.Create(context.Background(), playbookID, makeCondition())
+	require.NoError(t, err)
+
+	t.Run("non-admin member update condition returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.PlaybookConditions.Update(context.Background(), playbookID, seeded.ID, makeCondition())
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("non-admin member delete condition returns 403", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookConditions.Delete(context.Background(), playbookID, seeded.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin (non-sysadmin) can create a condition", func(t *testing.T) {
+		created, err := e.PlaybooksClient2.PlaybookConditions.Create(context.Background(), playbookID, makeCondition())
+		require.NoError(t, err)
+		require.NotEmpty(t, created.ID)
+		// cleanup
+		_ = e.PlaybooksClient2.PlaybookConditions.Delete(context.Background(), playbookID, created.ID)
+	})
+
+	t.Run("playbook admin (non-sysadmin) can update a condition", func(t *testing.T) {
+		_, err := e.PlaybooksClient2.PlaybookConditions.Update(context.Background(), playbookID, seeded.ID, makeCondition())
+		require.NoError(t, err)
+	})
+
+	t.Run("system admin can update a condition", func(t *testing.T) {
+		_, err := e.PlaybooksAdminClient.PlaybookConditions.Update(context.Background(), playbookID, seeded.ID, makeCondition())
+		require.NoError(t, err)
+	})
+
+	t.Run("system admin can delete a condition", func(t *testing.T) {
+		_, err := e.PlaybooksClient2.PlaybookConditions.Create(context.Background(), playbookID, makeCondition())
+		require.NoError(t, err)
+		err = e.PlaybooksAdminClient.PlaybookConditions.Delete(context.Background(), playbookID, seeded.ID)
+		require.NoError(t, err)
+	})
+}
+
+// TestAdminOnlyEdit_ReorderPropertyFields verifies that
+// POST /playbooks/{id}/property-fields/reorder honors AdminOnlyEdit.
+func TestAdminOnlyEdit_ReorderPropertyFields(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence() // property fields require license
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit Reorder Test",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	// Seed a field to reorder.
+	seeded, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+		Name: "Status",
+		Type: "text",
+		Attrs: &client.PropertyFieldAttrsInput{
+			Visibility: stringPtr("always"),
+			SortOrder:  float64Ptr(1.0),
+		},
+	})
+	require.NoError(t, err)
+
+	reorderReq := client.ReorderPropertyFieldsRequest{FieldID: seeded.ID, TargetPosition: 0}
+
+	t.Run("non-admin member reorder returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.ReorderPropertyFields(context.Background(), playbookID, reorderReq)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin (non-sysadmin) can reorder", func(t *testing.T) {
+		_, err := e.PlaybooksClient2.Playbooks.ReorderPropertyFields(context.Background(), playbookID, reorderReq)
+		require.NoError(t, err)
+	})
+
+	t.Run("system admin can reorder", func(t *testing.T) {
+		_, err := e.PlaybooksAdminClient.Playbooks.ReorderPropertyFields(context.Background(), playbookID, reorderReq)
+		require.NoError(t, err)
+	})
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func float64Ptr(f float64) *float64 {
+	return &f
 }

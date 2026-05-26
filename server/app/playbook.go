@@ -77,6 +77,8 @@ type Playbook struct {
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
 
+	AdminOnlyEdit bool `json:"admin_only_edit" export:"-"`
+
 	OwnerGroupOnlyActions bool `json:"owner_group_only_actions" export:"owner_group_only_actions"`
 
 	NewChannelOnly bool `json:"new_channel_only" export:"new_channel_only"`

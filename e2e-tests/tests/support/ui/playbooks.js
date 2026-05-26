@@ -277,17 +277,6 @@ Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
 });
 
 /**
- * Assert the run finish confirmation modal is visible and confirm it.
- * The modal h1 must contain "Confirm finish".
- */
-Cypress.Commands.add('playbooksConfirmFinishModal', () => {
-    cy.get('#confirmModal').should('be.visible');
-    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
-    cy.get('#confirmModal').find('#confirmModalButton').click();
-    cy.get('#confirmModal').should('not.exist');
-});
-
-/**
  * Intercept the REST PUT that saves a playbook (client.ts savePlaybook).
  * Alias: SavePlaybook
  */
@@ -330,13 +319,49 @@ Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
     cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
 });
 
-Cypress.Commands.add('playbooksVisitRun', (runId) => {
-    cy.visit(`/playbooks/runs/${runId}`);
-    cy.findByTestId('run-header-section').should('exist');
+/**
+ * Find a run row in the runs list (#playbookRunList) by run name.
+ * @param {String} runName - The run name to locate in the list
+ */
+Cypress.Commands.add('playbooksGetRunListRow', (runName) => {
+    return cy.get('#playbookRunList').contains('[data-testid="run-list-item"]', runName);
 });
 
+/**
+ * Navigate directly to a playbook run details page by run ID.
+ * @param {String} runId - The run ID
+ */
+Cypress.Commands.add('playbooksVisitRun', (runId) => {
+    cy.visit(`/playbooks/runs/${runId}`);
+    cy.findByTestId('run-header-section').should('be.visible');
+});
+
+/**
+ * Intercept the REST call that toggles a checklist item's state (PUT …/state).
+ * Alias: @SetChecklistItemState
+ */
 Cypress.Commands.add('playbooksInterceptChecklistItemState', (alias = 'SetChecklistItemState') => {
     cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/checklists/*/item/*/state').as(alias);
+});
+
+/**
+ * Complete the checklist task at the given zero-based index via the UI.
+ * @param {Number} index - Zero-based task index within the checklist
+ */
+Cypress.Commands.add('playbooksCompleteTaskAtIndex', (index) => {
+    const alias = `SetChecklistItemState_${index}`;
+    cy.playbooksInterceptChecklistItemState(alias);
+    cy.findByTestId('run-checklist-section').
+        findAllByTestId('checkbox-item-container').
+        eq(index).
+        find('input[type="checkbox"]').
+        should('not.be.checked');
+    cy.findByTestId('run-checklist-section').
+        findAllByTestId('checkbox-item-container').
+        eq(index).
+        find('input[type="checkbox"]').
+        click();
+    cy.wait(`@${alias}`);
 });
 
 Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
@@ -421,32 +446,4 @@ Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
         const runId = afterRuns.split('/')[0];
         return cy.wrap(runId);
     });
-});
-
-/**
- * Find a run row in the runs list (#playbookRunList) by run name.
- * @param {String} runName - The run name to locate in the list
- */
-Cypress.Commands.add('playbooksGetRunListRow', (runName) => {
-    return cy.get('#playbookRunList').contains('[data-testid="run-list-item"]', runName);
-});
-
-/**
- * Complete the checklist task at the given zero-based index via the UI.
- * @param {Number} index - Zero-based task index within the checklist
- */
-Cypress.Commands.add('playbooksCompleteTaskAtIndex', (index) => {
-    const alias = `SetChecklistItemState_${index}`;
-    cy.playbooksInterceptChecklistItemState(alias);
-    cy.findByTestId('run-checklist-section').
-        findAllByTestId('checkbox-item-container').
-        eq(index).
-        find('input[type="checkbox"]').
-        should('not.be.checked');
-    cy.findByTestId('run-checklist-section').
-        findAllByTestId('checkbox-item-container').
-        eq(index).
-        find('input[type="checkbox"]').
-        click();
-    cy.wait(`@${alias}`);
 });
