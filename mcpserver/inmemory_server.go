@@ -127,24 +127,50 @@ func (s *InMemoryServer) CreateConnectionForUser(userID, sessionID string, token
 
 	// Create in-memory transport pair.
 	serverTransport, clientTransport := mcp.NewInMemoryTransports()
+	ready := make(chan error, 1)
 
 	// Run the MCP server on the server-side transport in a goroutine.
 	go func() {
+		readySent := false
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("MCP server panicked: %v\n%s", r, debug.Stack())
+				if !readySent {
+					closeInMemoryTransport(clientTransport)
+					ready <- fmt.Errorf("MCP server panicked during connect: %v", r)
+				}
 			}
 		}()
 
 		session, err := s.mcpServer.Connect(ctx, serverTransport, nil)
 		if err != nil {
 			log.Printf("In-memory MCP server connect failed: %v", err)
+			closeInMemoryTransport(clientTransport)
+			readySent = true
+			ready <- err
 			return
 		}
+		readySent = true
+		ready <- nil
 		if err := session.Wait(); err != nil {
 			log.Printf("In-memory MCP server stopped: %v", err)
 		}
 	}()
 
+	if err := <-ready; err != nil {
+		return nil, fmt.Errorf("in-memory MCP server connect failed: %w", err)
+	}
+
 	return clientTransport, nil
+}
+
+func closeInMemoryTransport(transport *mcp.InMemoryTransport) {
+	conn, err := transport.Connect(context.Background())
+	if err != nil {
+		log.Printf("Failed to connect in-memory transport for cleanup: %v", err)
+		return
+	}
+	if err := conn.Close(); err != nil {
+		log.Printf("Failed to close in-memory transport: %v", err)
+	}
 }
