@@ -287,6 +287,10 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         });
         cy.findByText('Archive').click({force: true}); // Archive is disabled for non-admins; force bypasses pointer-events:none to verify no action fires
 
+        // * Menu dismisses on click — use this as a synchronous proxy that the
+        // click handler completed before asserting the modal never appeared.
+        cy.findByText('Archive').should('not.exist');
+
         // * Confirm modal must not appear — the Archive item is disabled for non-admin members
         cy.get('#confirmModal').should('not.exist');
     });
@@ -315,7 +319,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
             });
 
             // # Wait for the import request to settle before asserting the editor opened
-            cy.wait('@importPlaybook');
+            cy.wait('@importPlaybook').its('response.statusCode').should('eq', 200);
 
             // * Verify the import succeeded — editor opens with the playbook title
             cy.findByTestId('playbook-editor-title').should('contain', testPlaybook.title);

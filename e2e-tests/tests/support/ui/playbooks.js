@@ -277,17 +277,6 @@ Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
 });
 
 /**
- * Assert the run finish confirmation modal is visible and confirm it.
- * The modal h1 must contain "Confirm finish".
- */
-Cypress.Commands.add('playbooksConfirmFinishModal', () => {
-    cy.get('#confirmModal').should('be.visible');
-    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
-    cy.get('#confirmModal').find('#confirmModalButton').click();
-    cy.get('#confirmModal').should('not.exist');
-});
-
-/**
  * Intercept the REST PUT that saves a playbook (client.ts savePlaybook).
  * Alias: SavePlaybook
  */
