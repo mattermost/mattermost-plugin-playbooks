@@ -8,6 +8,17 @@ import "github.com/pkg/errors"
 // ErrNotFound used when an entity is not found.
 var ErrNotFound = errors.New("not found")
 
+// ErrNoPermissions if the error is caused by the user not having permissions
+var ErrNoPermissions = errors.New("does not have permissions")
+
+// ErrOwnerGroupOnlyAction is returned when an action is blocked because the playbook's
+// OwnerGroupOnlyActions flag is set and the requesting user is not the run owner or an admin.
+// It wraps ErrNoPermissions so callers checking errors.Is(err, ErrNoPermissions) still match.
+var ErrOwnerGroupOnlyAction = errors.Wrap(ErrNoPermissions, "action restricted to run owner or admin")
+
+// ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
+var ErrLicensedFeature = errors.New("not covered by current server license")
+
 // ErrChannelDisplayNameInvalid is used when a channel name is too long.
 var ErrChannelDisplayNameInvalid = errors.New("channel name is invalid or too long")
 
@@ -40,6 +51,9 @@ var ErrReservedPropertyFieldName = errors.New("reserved property field name")
 
 // ErrInternalPrecondition occurs when a caller skipped a mandatory setup step; maps to HTTP 500.
 var ErrInternalPrecondition = errors.New("internal precondition violated")
+
+// ErrInvalidOwner occurs when the proposed new owner is not a member of the run's team or channel.
+var ErrInvalidOwner = errors.New("invalid owner")
 
 // ErrChannelArchived occurs when trying to modify a run whose linked channel has been archived.
 var ErrChannelArchived = errors.New("channel is archived")

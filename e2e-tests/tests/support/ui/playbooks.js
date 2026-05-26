@@ -389,6 +389,89 @@ Cypress.Commands.add('playbooksAssertSequentialIdInList', (runName, expectedIdFr
     cy.playbooksGetRunListRow(runName).findByTestId('run-sequential-id').should('contain', expectedIdFragment);
 });
 
+Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});
+
+Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
+    cy.apiGetChannel(run.channel_id).then(({channel}) => {
+        cy.visit(`/${teamName}/channels/${channel.name}`);
+    });
+});
+
+Cypress.Commands.add('playbooksVisitRun', (runId) => {
+    cy.visit(`/playbooks/runs/${runId}`);
+    cy.findByTestId('run-header-section').should('exist');
+});
+
+Cypress.Commands.add('playbooksInterceptChecklistItemState', (alias = 'SetChecklistItemState') => {
+    cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/checklists/*/item/*/state').as(alias);
+});
+
+Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
+    const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
+
+    cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
+
+    cy.findByTestId(testId).within(() => {
+        cy.findByTestId('property-value').click();
+    });
+
+    cy.contains('.property-select__option', value).click();
+
+    cy.wait('@SetRunPropertyValue');
+});
+
+Cypress.Commands.add('playbooksConfirmModal', () => {
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+
+    // Wait for dismissal so callers don't race a still-open modal on the next action.
+    cy.get('#confirmModal').should('not.exist');
+});
+
+Cypress.Commands.add('playbooksConfirmFinishModal', () => {
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+    cy.get('#confirmModal').should('not.exist');
+});
+
+Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
+        if (req.body && req.body.operationName === operationName) {
+            req.alias = operationName;
+        }
+    });
+});
+
+Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').click();
+
+    // Profiles are loaded asynchronously via useProfilesInTeam. The dropdown
+    // options refresh once the API response arrives and Redux updates, so we
+    // wait up to HALF_MIN for the option to become available.
+    cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
+    cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
+});
+
+Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId, playbookId) => {
+    if (playbookId) {
+        cy.intercept('PUT', `**/api/v0/playbooks/${playbookId}`).as('togglePersist');
+    }
+    cy.findByTestId(toggleTestId).find('label').click();
+    cy.playbooksConfirmModal();
+    if (playbookId) {
+        cy.wait('@togglePersist').its('response.statusCode').should('be.oneOf', [200, 204]);
+    }
+});
+
+Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});
+
 /**
  * Navigate to the playbook outline page and open the RunPlaybook modal.
  * This is the common 2-step preamble used before filling in the run modal.
@@ -519,13 +602,6 @@ Cypress.Commands.add('playbooksPostStatusUpdateViaUI', (teamName, run, message) 
     return cy.getLastPostId().then((postId) => cy.apiGetPostMessage(postId));
 });
 
-/**
- * Intercept the REST call that toggles a checklist item's state (PUT …/state).
- * Alias: @SetChecklistItemState
- */
-Cypress.Commands.add('playbooksInterceptChecklistItemState', (alias = 'SetChecklistItemState') => {
-    cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/checklists/*/item/*/state').as(alias);
-});
 
 /**
  * Complete the checklist task at the given zero-based index via the UI.

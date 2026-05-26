@@ -72,6 +72,7 @@ export interface PlaybookWithChecklist extends Playbook {
 
     run_number_prefix: string;
     next_run_number: number;
+    owner_group_only_actions: boolean;
 
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
@@ -224,6 +225,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         channel_mode: 'create_new_channel',
         run_number_prefix: '',
         next_run_number: 1,
+        owner_group_only_actions: false,
         new_channel_only: false,
         auto_archive_channel: false,
         propertyFields: [],

@@ -168,6 +168,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.ChannelMode",
 			"p.RunNumberPrefix",
 			"p.NextRunNumber",
+			"p.OwnerGroupOnlyActions",
 			"p.NewChannelOnly",
 			"p.AutoArchiveChannel",
 			"p.ChecklistsJSON",
@@ -281,8 +282,9 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ChannelMode":                             rawPlaybook.ChannelMode,
 			"RunNumberPrefix":                         rawPlaybook.RunNumberPrefix,
 			// NextRunNumber omitted: DB default (1) is always correct for new playbooks.
-			"NewChannelOnly":     rawPlaybook.NewChannelOnly,
-			"AutoArchiveChannel": rawPlaybook.AutoArchiveChannel,
+			"OwnerGroupOnlyActions":                   rawPlaybook.OwnerGroupOnlyActions,
+			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
+			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 		}))
 	if err != nil {
 		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
@@ -382,6 +384,7 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 		"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
 		"p.RunNumberPrefix",
 		"p.NextRunNumber",
+		"p.OwnerGroupOnlyActions",
 		"p.NewChannelOnly",
 		"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 		"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
@@ -475,6 +478,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
 			"p.RunNumberPrefix",
 			"p.NextRunNumber",
+			"p.OwnerGroupOnlyActions",
 			"p.NewChannelOnly",
 			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
@@ -726,6 +730,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
 			"RunNumberPrefix":                         rawPlaybook.RunNumberPrefix,
+			"OwnerGroupOnlyActions":                   rawPlaybook.OwnerGroupOnlyActions,
 			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 		}).

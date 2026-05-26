@@ -292,6 +292,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         channelMode = 'create_new_channel',
         channelId = '',
         metrics,
+        ownerGroupOnlyActions,
         autoArchiveChannel = false,
     }) => {
     return cy.request({
@@ -336,6 +337,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             channel_mode: channelMode,
             channel_id: channelId,
             metrics,
+            owner_group_only_actions: ownerGroupOnlyActions,
             auto_archive_channel: autoArchiveChannel,
         },
     }).then((response) => {
@@ -729,5 +731,24 @@ Cypress.Commands.add('apiGetPostMessage', (postId) => {
     }).then((response) => {
         expect(response.status).to.equal(200);
         cy.wrap(response.body.message);
+    });
+});
+
+Cypress.Commands.add('apiRestoreRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/restore`,
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+Cypress.Commands.add('apiGetPropertyFieldByName', (playbookId, fieldName) => {
+    return cy.apiGetPropertyFields(playbookId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `property field "${fieldName}" should exist on playbook`).to.not.be.undefined;
+        return cy.wrap(field);
     });
 });

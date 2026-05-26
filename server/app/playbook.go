@@ -83,6 +83,8 @@ type Playbook struct {
 	// NextRunNumber is a server-managed counter. It is write-ignored on API input and must never be set by callers.
 	NextRunNumber int64 `json:"-" export:"-"`
 
+	OwnerGroupOnlyActions bool `json:"owner_group_only_actions" export:"owner_group_only_actions"`
+
 	NewChannelOnly bool `json:"new_channel_only" export:"new_channel_only"`
 
 	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
