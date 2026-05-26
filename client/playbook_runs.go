@@ -208,6 +208,21 @@ func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) e
 	return nil
 }
 
+func (s *PlaybookRunService) Restore(ctx context.Context, playbookRunID string) error {
+	restoreURL := fmt.Sprintf("runs/%s/restore", playbookRunID)
+	req, err := s.client.newAPIRequest(http.MethodPut, restoreURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
 	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
 	req, err := s.client.newAPIRequest(http.MethodPost, createURL, checklist)

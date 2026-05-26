@@ -21,6 +21,8 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {noRetrospective} from 'src/client';
 
+import {PlaybookRunIDs} from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
+
 import {
     CustomPostButtonRow,
     CustomPostContainer,
@@ -101,7 +103,7 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                 </CustomPostHeader>
                 <CustomPostButtonRow>
                     <PrimaryButton
-                        onClick={() => playbookRun && navigateToPluginUrl(`/runs/${playbookRun.id}/retrospective`)}
+                        onClick={() => playbookRun && navigateToPluginUrl(`/runs/${playbookRun.id}#${PlaybookRunIDs.SectionRetrospective}`)}
                         disabled={disableButtons}
                     >
                         {props.primary}

@@ -40,3 +40,6 @@ var ErrReservedPropertyFieldName = errors.New("reserved property field name")
 
 // ErrPropertyFieldNotOnRun occurs when a property field does not belong to the specified run.
 var ErrPropertyFieldNotOnRun = errors.New("property field does not belong to run")
+
+// ErrChannelArchived occurs when trying to modify a run whose linked channel has been archived.
+var ErrChannelArchived = errors.New("channel is archived")

@@ -475,8 +475,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
             cy.findByText(/duplicate/i).click();
 
-            // # Wait for duplication
-            cy.wait(500);
+            // # Wait for duplicate row to appear and its name input to be populated
+            cy.findAllByTestId('property-field-row').should('have.length', 2);
+            cy.findAllByTestId('property-field-row').eq(1).within(() => {
+                cy.findByLabelText('Attribute name').should('have.value', 'Original Copy');
+            });
 
             // # Edit the duplicate's name
             editAttributeName(1, 'Modified Copy');

@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useCallback} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -17,6 +17,8 @@ import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/con
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {ChecklistItemState} from 'src/types/playbook';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 interface ChecklistsSubset {
     items: {
@@ -57,17 +59,26 @@ export const useFinishRunConfirmationMessage = (run: Maybe<{checklists: Checklis
     return confirmationMessage;
 };
 
-export const useOnFinishRun = (playbookRun: PlaybookRun, location: string = 'backstage') => {
+export const useOnFinishRun = (playbookRun: PlaybookRun | null, location: string = 'backstage') => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
     const confirmationMessage = useFinishRunConfirmationMessage(playbookRun);
+    const toaster = useToaster();
 
-    return () => {
+    return useCallback(() => {
+        if (!playbookRun) {
+            return;
+        }
         const onConfirm = async () => {
-            await finishRun(playbookRun.id);
-
-            // Only refresh LHS when in Backstage, not in RHS
+            const result = await finishRun(playbookRun.id);
+            if (result?.error) {
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'It wasn\'t possible to finish the run.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+                return;
+            }
             if (location === 'backstage') {
                 refreshLHS();
             }
@@ -82,7 +93,7 @@ export const useOnFinishRun = (playbookRun: PlaybookRun, location: string = 'bac
             // eslint-disable-next-line no-empty-function
             onCancel: () => {},
         })));
-    };
+    }, [dispatch, formatMessage, refreshLHS, confirmationMessage, toaster, location, playbookRun]);
 };
 
 interface Props {
@@ -158,4 +169,3 @@ const FinishRunButton = styled(TertiaryButton)`
     padding: 0 48px;
     font-size: 12px;
 `;
-

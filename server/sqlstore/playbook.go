@@ -163,6 +163,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.RemoveChannelMemberOnRemovedParticipant",
 			"p.ChannelID",
 			"p.ChannelMode",
+			"p.NewChannelOnly",
+			"p.AutoArchiveChannel",
 			"p.ChecklistsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
 			"p.RunSummaryTemplateEnabled",
@@ -272,6 +274,8 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
+			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
+			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -366,6 +370,7 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 			CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
 		) AS NumActions`,
 		"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+		"p.NewChannelOnly",
 		"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 		"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 		"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -456,6 +461,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+			"p.NewChannelOnly",
 			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -705,6 +711,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
+			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
+			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

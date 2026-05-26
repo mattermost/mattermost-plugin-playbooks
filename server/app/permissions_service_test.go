@@ -226,3 +226,59 @@ func TestRunManagePropertiesDMGM(t *testing.T) {
 		require.ErrorIs(t, svc.RunManageProperties(userID, run.ID), ErrNoPermissions)
 	})
 }
+
+func TestRunToggleRetrospective(t *testing.T) {
+	ownerID := model.NewId()
+	channelID := model.NewId()
+	run := &PlaybookRun{
+		ID:          model.NewId(),
+		ChannelID:   channelID,
+		OwnerUserID: ownerID,
+	}
+
+	t.Run("system admin can toggle any run", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		adminID := model.NewId()
+		api.On("HasPermissionTo", adminID, model.PermissionManageSystem).Return(true)
+
+		svc := newPermSvc(api, run)
+		require.NoError(t, svc.RunToggleRetrospective(adminID, run.ID))
+	})
+
+	t.Run("run owner with channel access can toggle", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		api.On("HasPermissionTo", ownerID, model.PermissionManageSystem).Return(false)
+		api.On("HasPermissionToChannel", ownerID, channelID, model.PermissionReadChannel).Return(true)
+
+		svc := newPermSvc(api, run)
+		require.NoError(t, svc.RunToggleRetrospective(ownerID, run.ID))
+	})
+
+	t.Run("channel member who is not owner is forbidden", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		nonOwner := model.NewId()
+		api.On("HasPermissionTo", nonOwner, model.PermissionManageSystem).Return(false)
+		api.On("HasPermissionToChannel", nonOwner, channelID, model.PermissionReadChannel).Return(true)
+
+		svc := newPermSvc(api, run)
+		require.ErrorIs(t, svc.RunToggleRetrospective(nonOwner, run.ID), ErrNoPermissions)
+	})
+
+	t.Run("user without channel access is forbidden", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		outsider := model.NewId()
+		api.On("HasPermissionTo", outsider, model.PermissionManageSystem).Return(false)
+		api.On("HasPermissionToChannel", outsider, channelID, model.PermissionReadChannel).Return(false)
+
+		svc := newPermSvc(api, run)
+		require.ErrorIs(t, svc.RunToggleRetrospective(outsider, run.ID), ErrNoPermissions)
+	})
+}

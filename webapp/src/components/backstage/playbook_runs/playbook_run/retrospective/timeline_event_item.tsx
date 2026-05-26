@@ -279,6 +279,10 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdatesDisabled:
             return formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.RetrospectiveEnabled:
+            return formatMessage({defaultMessage: 'Retrospective enabled by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.RetrospectiveDisabled:
+            return formatMessage({defaultMessage: 'Retrospective disabled by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.PropertyChanged: {
             const details = parsedDetails as PropertyChangedDetails;
             if (details.old_value_display === null && details.new_value_display !== null) {
@@ -331,6 +335,8 @@ const TimelineEventItem = (props: Props) => {
             return 'icon-cancel';
         case TimelineEventType.StatusUpdatesEnabled:
         case TimelineEventType.StatusUpdatesDisabled:
+        case TimelineEventType.RetrospectiveEnabled:
+        case TimelineEventType.RetrospectiveDisabled:
             return 'icon-clock-outline';
         case TimelineEventType.PropertyChanged:
             return 'icon-pencil-outline';
