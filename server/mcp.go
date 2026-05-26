@@ -15,6 +15,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
 	"github.com/mattermost/mattermost-plugin-playbooks/internal/playbooksmcp/tools"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/sirupsen/logrus"
 )
 
@@ -261,17 +262,21 @@ func (p *Plugin) serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool {
 	if r.URL.Path != playbooksMCPEndpoint && !strings.HasPrefix(r.URL.Path, playbooksMCPEndpoint+"/") {
 		return false
 	}
-	if !p.isMCPEnabled() {
-		http.NotFound(w, r)
-		return true
-	}
 
-	p.mcpMu.RLock()
-	defer p.mcpMu.RUnlock()
-	if p.mcpServer == nil {
-		http.Error(w, "MCP server unavailable", http.StatusServiceUnavailable)
-		return true
-	}
-	p.mcpServer.ServeHTTP(w, r)
+	handler := api.LogRequest(api.MattermostAuthorizationRequired(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !p.isMCPEnabled() {
+			http.NotFound(w, r)
+			return
+		}
+
+		p.mcpMu.RLock()
+		defer p.mcpMu.RUnlock()
+		if p.mcpServer == nil {
+			http.Error(w, "MCP server unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		p.mcpServer.ServeHTTP(w, r)
+	})))
+	handler.ServeHTTP(w, r)
 	return true
 }
