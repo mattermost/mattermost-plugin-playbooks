@@ -244,21 +244,27 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const assigneeCallSeqRef = useRef(0);
     const assigneeStateRef = useRef({id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID});
+    const checklistItemRef = useRef(props.checklistItem);
 
     useEffect(() => {
         assigneeStateRef.current = {id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID};
     }, [assigneeID, assigneeType, assigneePropertyFieldID]);
 
+    useEffect(() => {
+        checklistItemRef.current = props.checklistItem;
+    }, [props.checklistItem]);
+
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
-        const {id: prevAssigneeID, type: prevAssigneeType, fieldID: prevAssigneePropertyFieldID} = assigneeStateRef.current;
         assigneeStateRef.current = {id: updatedItem.assignee_id || '', type: updatedItem.assignee_type || '', fieldID: updatedItem.assignee_property_field_id || ''};
         const rollback = () => {
             if (isMounted.current && assigneeCallSeqRef.current === seq) {
-                assigneeStateRef.current = {id: prevAssigneeID, type: prevAssigneeType, fieldID: prevAssigneePropertyFieldID};
-                setAssigneeID(prevAssigneeID);
-                setAssigneeType(prevAssigneeType);
-                setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
+                // Use latest props so a server push during the mutation isn't lost on rollback.
+                const latest = checklistItemRef.current;
+                assigneeStateRef.current = {id: latest.assignee_id || '', type: latest.assignee_type || '', fieldID: latest.assignee_property_field_id || ''};
+                setAssigneeID(latest.assignee_id || '');
+                setAssigneeType(latest.assignee_type || '');
+                setAssigneePropertyFieldID(latest.assignee_property_field_id || '');
             }
         };
         const handleError = (hasError: boolean) => {
