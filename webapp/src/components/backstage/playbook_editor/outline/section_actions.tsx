@@ -49,7 +49,7 @@ import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
-    disabled?: boolean;
+    canEdit?: boolean;
     newChannelOnly?: boolean;
     onNewChannelOnlyChange?: (updated: {new_channel_only: boolean}) => void;
     restPlaybook?: PlaybookWithChecklist;
@@ -57,7 +57,7 @@ interface Props {
     onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange}: Props) => {
+const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange}: Props) => {
     const [restPlaybookLocal] = useRestPlaybook(playbook.id);
     const restPlaybook = restPlaybookProp ?? restPlaybookLocal;
     const [fieldNames, setFieldNames] = useState<string[]>([]);
@@ -73,6 +73,7 @@ const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewCha
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
+    const disabled = archived || !canEdit;
 
     // run_number_prefix is REST-only (not in GraphQL schema). restPlaybook is fetched
     // once and never refreshed, so we track the most recently saved prefix locally and
@@ -280,7 +281,7 @@ const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewCha
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
                         fieldNames={fieldNames}
-                        disabled={disabled || archived}
+                        disabled={disabled}
                         onRunNumberPrefixChange={handleRunNumberPrefixSave}
                         onChannelNameTemplateChange={handleChannelNameTemplateSave}
                         newChannelOnly={newChannelOnly}
@@ -295,7 +296,7 @@ const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewCha
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
-                        disabled={disabled || archived}
+                        disabled={disabled}
                         enabled={playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
@@ -310,7 +311,7 @@ const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewCha
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner
-                        disabled={disabled || archived}
+                        disabled={disabled}
                         enabled={playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
@@ -321,7 +322,7 @@ const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewCha
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
-                        disabled={disabled || archived}
+                        disabled={disabled}
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
@@ -347,7 +348,7 @@ const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewCha
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={disabled || archived}
+                            disabled={disabled}
                             isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
@@ -369,7 +370,7 @@ const LegacyActionsEdit = ({playbook, disabled, newChannelOnly = false, onNewCha
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={disabled || archived}
+                            disabled={disabled}
                             isChecked={playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
                                 updatePlaybook({

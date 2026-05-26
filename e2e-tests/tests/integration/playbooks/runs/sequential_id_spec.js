@@ -15,6 +15,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
     let createdPlaybookIds = [];
+    let createdTeamIds = [];
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -25,17 +26,21 @@ describe('runs > sequential id', {testIsolation: true}, () => {
 
     beforeEach(() => {
         createdPlaybookIds = [];
+        createdTeamIds = [];
 
         // # Size the viewport to show the runs list without covering elements
         cy.viewport('macbook-13');
 
-        // # Login as testUser; cy.then() defers evaluation so testUser is resolved from before()
-        cy.then(() => cy.apiLogin(testUser));
+        cy.apiLogin(testUser);
     });
 
     afterEach(() => {
         cy.apiLogin(testUser);
         createdPlaybookIds.forEach((id) => cy.apiArchivePlaybook(id));
+        if (createdTeamIds.length > 0) {
+            cy.apiAdminLogin();
+            createdTeamIds.forEach((id) => cy.apiDeleteTeam(id));
+        }
     });
 
     it('shows sequential IDs with configured prefix for runs in the list', () => {
@@ -322,6 +327,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
 
     it('shows sequential ID in run details info panel', () => {
         const hdrPrefix = 'H' + getRandomId().slice(0, 2).toUpperCase();
+        let testPlaybook;
 
         // # Create a playbook with a unique run_number_prefix (different from test 1 to avoid uniqueness conflict)
         cy.apiCreatePlaybook({
@@ -330,29 +336,30 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             memberIDs: [testUser.id],
             createPublicPlaybookRun: true,
         }).then((playbook) => {
+            testPlaybook = playbook;
             createdPlaybookIds.push(playbook.id);
+        });
 
-            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: hdrPrefix}).then(() => {
-                // # Start a run via API
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: playbook.id,
-                    playbookRunName: 'Header ID Run ' + getRandomId(),
-                    ownerUserId: testUser.id,
-                }).then((playbookRun) => {
-                    // * Verify sequential_id is stored in backend (not just rendered in UI)
-                    cy.apiGetPlaybookRun(playbookRun.id).then(({body: runData}) => {
-                        expect(runData.sequential_id).to.equal(formatSequentialID(hdrPrefix, 1));
-                    });
+        cy.then(() => cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: hdrPrefix}));
 
-                    // # Visit the run details page directly
-                    cy.playbooksVisitRun(playbookRun.id);
-
-                    // * Assert sequential ID is shown in the RHS info overview
-                    cy.findByTestId('run-sequential-id').should('exist');
-                    cy.findByTestId('run-sequential-id').should('contain', formatSequentialID(hdrPrefix, 1));
-                });
+        // # Start a run via API
+        cy.then(() => cy.apiRunPlaybook({
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
+            playbookRunName: 'Header ID Run ' + getRandomId(),
+            ownerUserId: testUser.id,
+        })).then((playbookRun) => {
+            // * Verify sequential_id is stored in backend (not just rendered in UI)
+            cy.apiGetPlaybookRun(playbookRun.id).then(({body: runData}) => {
+                expect(runData.sequential_id).to.equal(formatSequentialID(hdrPrefix, 1));
             });
+
+            // # Visit the run details page directly
+            cy.playbooksVisitRun(playbookRun.id);
+
+            // * Assert sequential ID is shown in the RHS info overview
+            cy.findByTestId('run-sequential-id').should('exist');
+            cy.findByTestId('run-sequential-id').should('contain', formatSequentialID(hdrPrefix, 1));
         });
     });
 
@@ -363,6 +370,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         // # Create a second team (requires admin privileges)
         cy.apiAdminLogin();
         cy.apiCreateTeam('cross-team-' + getRandomId(), 'Cross Team ' + getRandomId()).then(({team: secondTeam}) => {
+            createdTeamIds.push(secondTeam.id);
             cy.apiAddUserToTeam(secondTeam.id, testUser.id);
             cy.apiLogin(testUser);
 
@@ -383,7 +391,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
 
             // # Create playbook B on secondTeam and attempt the same prefix
             cy.then(() => {
-                cy.apiCreatePlaybook({
+                return cy.apiCreatePlaybook({
                     teamId: secondTeam.id,
                     title: 'Cross Team B ' + getRandomId(),
                     memberIDs: [testUser.id],
@@ -423,7 +431,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
 
         // # Create playbook B and attempt the same prefix
         cy.then(() => {
-            cy.apiCreatePlaybook({
+            return cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Prefix Dup B ' + getRandomId(),
                 memberIDs: [testUser.id],

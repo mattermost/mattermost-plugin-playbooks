@@ -162,8 +162,27 @@ func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Pl
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to playbook `%s`", userID, playbook.ID)
 }
 
-// IsPlaybookAdmin returns true if the user has the admin role on the playbook.
-// Team-view access is enforced transitively via getPlaybookRole.
+// PlaybookEdit checks whether the user can edit a playbook's configuration.
+func (p *PermissionsService) PlaybookEdit(userID string, playbook Playbook) error {
+	if !playbook.AdminOnlyEdit {
+		return p.PlaybookManageProperties(userID, playbook)
+	}
+	if IsSystemAdmin(userID, p.pluginAPI) {
+		return nil
+	}
+	if !p.canViewTeam(userID, playbook.TeamID) {
+		return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s: no team access", userID, playbook.ID)
+	}
+	if p.IsPlaybookAdmin(userID, playbook) {
+		return nil
+	}
+	return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s (admin-only)", userID, playbook.ID)
+}
+
+// IsPlaybookAdmin reports whether the user holds the playbook's admin role.
+// Uses DefaultPlaybookAdminRole when set, falling back to PlaybookRoleAdmin.
+// Returns false if the user is not an active member of the playbook's team,
+// even if their playbook membership record carries the admin role.
 func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
 	adminRole := playbook.DefaultPlaybookAdminRole
 	if adminRole == "" {
@@ -178,7 +197,7 @@ func (p *PermissionsService) PlaybookManageConditions(userID string, playbook Pl
 		return errors.Wrapf(ErrLicensedFeature, "conditional playbooks feature is not covered by current server license")
 	}
 
-	return p.PlaybookManageProperties(userID, playbook)
+	return p.PlaybookEdit(userID, playbook)
 }
 
 // PlaybookViewConditions returns an error if the user cannot view conditions for the playbook
@@ -203,10 +222,18 @@ func (p *PermissionsService) RunViewConditions(userID string, runID string) erro
 // performs permissions checks that can be resolved though modification of the input.
 // This function modifies the playbook argument.
 func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Playbook, oldPlaybook Playbook) error {
-	// It is assumed that if you are calling this function there are properties changes
-	// This means that you need the manage properties permission to manage members for now.
-	if err := p.PlaybookManageProperties(userID, oldPlaybook); err != nil {
+	if err := p.PlaybookEdit(userID, oldPlaybook); err != nil {
 		return err
+	}
+
+	// Toggling AdminOnlyEdit changes who can edit the playbook, so the flip itself must be
+	// restricted to playbook admins (or system admins) regardless of direction. Without this,
+	// a user with PlaybookManageProperties could enable the lock when oldPlaybook.AdminOnlyEdit=false,
+	// because PlaybookEdit only enforces the admin-only path against the old state.
+	if oldPlaybook.AdminOnlyEdit != playbook.AdminOnlyEdit {
+		if !IsSystemAdmin(userID, p.pluginAPI) && !p.IsPlaybookAdmin(userID, oldPlaybook) {
+			return errors.Wrapf(ErrNoPermissions, "only a playbook admin can change admin_only_edit on playbook %s", oldPlaybook.ID)
+		}
 	}
 
 	if err := p.NoAddedBroadcastChannelsWithoutPermission(userID, playbook.BroadcastChannelIDs, oldPlaybook.BroadcastChannelIDs); err != nil {
@@ -334,7 +361,7 @@ func (p *PermissionsService) FilterInvitedGroupIDs(invitedGroupIDs []string) []s
 }
 
 func (p *PermissionsService) DeletePlaybook(userID string, playbook Playbook) error {
-	return p.PlaybookManageProperties(userID, playbook)
+	return p.PlaybookEdit(userID, playbook)
 }
 
 func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID string, broadcastChannelIDs, oldBroadcastChannelIDs []string) error {

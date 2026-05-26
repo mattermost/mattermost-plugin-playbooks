@@ -734,17 +734,6 @@ Cypress.Commands.add('apiGetPostMessage', (postId) => {
     });
 });
 
-Cypress.Commands.add('apiRestoreRun', (playbookRunId) => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${playbookRunsEndpoint}/${playbookRunId}/restore`,
-        method: 'PUT',
-    }).then((response) => {
-        expect(response.status).to.equal(StatusOK);
-        cy.wrap(response.body);
-    });
-});
-
 Cypress.Commands.add('apiGetPropertyFieldByName', (playbookId, fieldName) => {
     return cy.apiGetPropertyFields(playbookId).then((fields) => {
         const field = fields.find((f) => f.name === fieldName);

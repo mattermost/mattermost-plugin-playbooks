@@ -6,6 +6,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -267,8 +268,16 @@ func (h *PlaybookHandler) getPlaybook(c *Context, w http.ResponseWriter, r *http
 func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to read request body", err)
+		return
+	}
+
 	var playbook app.Playbook
-	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
+	if err := json.Unmarshal(body, &playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
@@ -279,6 +288,14 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
+	}
+
+	// Preserve AdminOnlyEdit when the client didn't explicitly include the field, so
+	// legacy clients or integrations that predate this field can't inadvertently disable the lock.
+	var rawFields map[string]json.RawMessage
+	_ = json.Unmarshal(body, &rawFields)
+	if _, ok := rawFields["admin_only_edit"]; !ok {
+		playbook.AdminOnlyEdit = oldPlaybook.AdminOnlyEdit
 	}
 
 	if err = h.validateMetrics(playbook); err != nil {
@@ -744,6 +761,10 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookEdit(userID, playbook)) {
+		return
+	}
+
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -1065,8 +1086,7 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
 		return
 	}
 
@@ -1111,8 +1131,7 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
 		return
 	}
 
@@ -1206,8 +1225,7 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
 		return
 	}
 
@@ -1277,8 +1295,7 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 		return
 	}
 
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+	if !h.PermissionsCheck(w, logger, h.permissions.PlaybookEdit(userID, currentPlaybook)) {
 		return
 	}
 

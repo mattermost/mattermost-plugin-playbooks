@@ -142,7 +142,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                                 onChange={() => handlePublicChange(true)}
                             />
                             <Icon
-                                $disabled={playbook.channel_mode === 'link_existing_channel'}
+                                $disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                                 $active={playbook.create_public_playbook_run}
                                 className={'icon-globe'}
                             />
@@ -157,7 +157,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                                 onChange={() => handlePublicChange(false)}
                             />
                             <Icon
-                                $disabled={playbook.channel_mode === 'link_existing_channel'}
+                                $disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                                 $active={!playbook.create_public_playbook_run}
                                 className={'icon-lock-outline'}
                             />

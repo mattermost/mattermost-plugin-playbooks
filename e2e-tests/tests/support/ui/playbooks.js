@@ -372,8 +372,40 @@ Cypress.Commands.add('playbooksAssertSequentialIdInList', (runName, expectedIdFr
     cy.playbooksGetRunListRow(runName).findByTestId('run-sequential-id').should('contain', expectedIdFragment);
 });
 
+/**
+ * Find a run row in the runs list (#playbookRunList) by run name.
+ * @param {String} runName - The run name to locate in the list
+ */
+Cypress.Commands.add('playbooksGetRunListRow', (runName) => {
+    return cy.findByTestId('playbookRunList').contains('[data-testid="run-list-item"]', runName);
+});
+
+/**
+ * Intercept the REST call that toggles a checklist item's state (PUT …/state).
+ * Alias: @SetChecklistItemState
+ */
 Cypress.Commands.add('playbooksInterceptChecklistItemState', (alias = 'SetChecklistItemState') => {
     cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/checklists/*/item/*/state').as(alias);
+});
+
+/**
+ * Complete the checklist task at the given zero-based index via the UI.
+ * @param {Number} index - Zero-based task index within the checklist
+ */
+Cypress.Commands.add('playbooksCompleteTaskAtIndex', (index) => {
+    const alias = `SetChecklistItemState_${index}`;
+    cy.playbooksInterceptChecklistItemState(alias);
+    cy.findByTestId('run-checklist-section').
+        findAllByTestId('checkbox-item-container').
+        eq(index).
+        find('input[type="checkbox"]').
+        should('not.be.checked');
+    cy.findByTestId('run-checklist-section').
+        findAllByTestId('checkbox-item-container').
+        eq(index).
+        find('input[type="checkbox"]').
+        click();
+    cy.wait(`@${alias}`);
 });
 
 Cypress.Commands.add('playbooksConfirmModal', () => {
@@ -506,14 +538,6 @@ Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
     });
 });
 
-/**
- * Find a run row in the runs list (#playbookRunList) by run name.
- * @param {String} runName - The run name to locate in the list
- */
-Cypress.Commands.add('playbooksGetRunListRow', (runName) => {
-    return cy.get('#playbookRunList').contains('[data-testid="run-list-item"]', runName);
-});
-
 // typeEscape escapes opening curly braces so cy.type() treats them as literal characters.
 const typeEscape = (str) => str.replace(/{/g, '{{}');
 
@@ -526,24 +550,4 @@ Cypress.Commands.add('playbooksPostStatusUpdateViaUI', (teamName, run, message) 
     });
     cy.getStatusUpdateDialog().should('not.exist');
     return cy.getLastPostId().then((postId) => cy.apiGetPostMessage(postId));
-});
-
-/**
- * Complete the checklist task at the given zero-based index via the UI.
- * @param {Number} index - Zero-based task index within the checklist
- */
-Cypress.Commands.add('playbooksCompleteTaskAtIndex', (index) => {
-    const alias = `SetChecklistItemState_${index}`;
-    cy.playbooksInterceptChecklistItemState(alias);
-    cy.findByTestId('run-checklist-section').
-        findAllByTestId('checkbox-item-container').
-        eq(index).
-        find('input[type="checkbox"]').
-        should('not.be.checked');
-    cy.findByTestId('run-checklist-section').
-        findAllByTestId('checkbox-item-container').
-        eq(index).
-        find('input[type="checkbox"]').
-        click();
-    cy.wait(`@${alias}`);
 });
