@@ -158,24 +158,43 @@ func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, expose
 }
 
 func (p *Plugin) ensureMCPServer() error {
-	p.mcpMu.Lock()
-	defer p.mcpMu.Unlock()
+	exposeExternal := p.currentMCPExposeExternal()
 
-	if p.mcpServer != nil {
+	p.mcpMu.RLock()
+	if p.mcpServer != nil && p.mcpExposeExternal == exposeExternal {
+		p.mcpMu.RUnlock()
 		return nil
 	}
-
-	exposeExternal := false
-	if p.config != nil {
-		exposeExternal = p.config.GetConfiguration().ExposeMCPExternal
-	}
+	p.mcpMu.RUnlock()
 
 	server, err := newPlaybooksMCPServer(p.API, p.handler, exposeExternal)
 	if err != nil {
 		return err
 	}
+
+	p.mcpMu.Lock()
+	oldServer := p.mcpServer
+	if oldServer != nil && p.mcpExposeExternal == exposeExternal {
+		p.mcpMu.Unlock()
+		return nil
+	}
 	p.mcpServer = server
+	p.mcpExposeExternal = exposeExternal
+	p.mcpMu.Unlock()
+
+	if oldServer != nil {
+		if err := oldServer.Unregister(); err != nil {
+			logrus.WithError(err).Warn("failed to unregister replaced Playbooks MCP server with Agents")
+		}
+	}
 	return nil
+}
+
+func (p *Plugin) currentMCPExposeExternal() bool {
+	if p.config == nil {
+		return false
+	}
+	return p.config.GetConfiguration().ExposeMCPExternal
 }
 
 func (p *Plugin) getMCPServer() *mcphelper.Server {
@@ -184,10 +203,19 @@ func (p *Plugin) getMCPServer() *mcphelper.Server {
 	return p.mcpServer
 }
 
-func (p *Plugin) setMCPServer(server *mcphelper.Server) {
+func (p *Plugin) clearMCPServer() {
 	p.mcpMu.Lock()
-	defer p.mcpMu.Unlock()
-	p.mcpServer = server
+	server := p.mcpServer
+	p.mcpServer = nil
+	p.mcpExposeExternal = false
+	p.mcpMu.Unlock()
+
+	if server == nil {
+		return
+	}
+	if err := server.Unregister(); err != nil {
+		logrus.WithError(err).Warn("failed to unregister Playbooks MCP server with Agents")
+	}
 }
 
 func (p *Plugin) registerMCPServerBestEffort() {
@@ -225,11 +253,13 @@ func (p *Plugin) serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool {
 		http.NotFound(w, r)
 		return true
 	}
-	server := p.getMCPServer()
-	if server == nil {
+
+	p.mcpMu.RLock()
+	defer p.mcpMu.RUnlock()
+	if p.mcpServer == nil {
 		http.Error(w, "MCP server unavailable", http.StatusServiceUnavailable)
 		return true
 	}
-	server.ServeHTTP(w, r)
+	p.mcpServer.ServeHTTP(w, r)
 	return true
 }

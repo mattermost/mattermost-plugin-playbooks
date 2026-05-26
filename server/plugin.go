@@ -59,6 +59,7 @@ type Plugin struct {
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
 	mcpServer            *mcphelper.Server
+	mcpExposeExternal    bool
 	mcpMu                sync.RWMutex
 
 	cancelRunning     context.CancelFunc
@@ -311,8 +312,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	if !p.isMCPEnabled() {
-		p.unregisterMCPServerBestEffort()
-		p.setMCPServer(nil)
+		p.clearMCPServer()
 		return nil
 	}
 
