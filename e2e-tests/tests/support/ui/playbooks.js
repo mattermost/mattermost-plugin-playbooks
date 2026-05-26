@@ -602,7 +602,6 @@ Cypress.Commands.add('playbooksPostStatusUpdateViaUI', (teamName, run, message) 
     return cy.getLastPostId().then((postId) => cy.apiGetPostMessage(postId));
 });
 
-
 /**
  * Complete the checklist task at the given zero-based index via the UI.
  * @param {Number} index - Zero-based task index within the checklist
