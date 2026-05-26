@@ -79,6 +79,8 @@ type Playbook struct {
 
 	AdminOnlyEdit bool `json:"admin_only_edit" export:"-"`
 
+	OwnerGroupOnlyActions bool `json:"owner_group_only_actions" export:"owner_group_only_actions"`
+
 	NewChannelOnly bool `json:"new_channel_only" export:"new_channel_only"`
 
 	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`

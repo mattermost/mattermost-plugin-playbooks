@@ -40,6 +40,7 @@ type Playbook struct {
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
 	AdminOnlyEdit                           bool                   `json:"admin_only_edit"`
+	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
 	NewChannelOnly                          bool                   `json:"new_channel_only"`
 	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 }
@@ -121,6 +122,7 @@ type PlaybookCreateOptions struct {
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
 	AdminOnlyEdit                           bool                   `json:"admin_only_edit"`
+	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
 	NewChannelOnly                          bool                   `json:"new_channel_only"`
 	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 }

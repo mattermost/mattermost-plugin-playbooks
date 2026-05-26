@@ -250,11 +250,17 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.visit('/playbooks');
         cy.findByTestId('playbooksLHSButton').click();
 
+        // # Intercept before clicking so the request is captured
+        cy.intercept('POST', `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`).as('duplicatePlaybook');
+
         // # Open the dot menu and click Duplicate
         cy.contains('[data-testid="playbook-item"]', testPlaybook.title).within(() => {
             cy.findByTestId('menuButtonActions').click();
         });
         cy.findByText('Duplicate').click();
+
+        // * Wait for the server to respond before asserting UI state
+        cy.wait('@duplicatePlaybook').its('response.statusCode').should('eq', 200);
 
         // * Verify duplication succeeded
         cy.findByText('Successfully duplicated playbook').should('be.visible');

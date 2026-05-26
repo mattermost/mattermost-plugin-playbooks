@@ -9,6 +9,7 @@ import {
 } from 'mattermost-redux/selectors/entities/roles';
 import {loadRolesIfNeeded} from 'mattermost-redux/actions/roles';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+import Permissions from 'mattermost-redux/constants/permissions';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
@@ -83,4 +84,18 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
     }
 
     return false;
+};
+
+export const useIsSystemAdmin = (): boolean => {
+    return useHasSystemPermission(Permissions.MANAGE_SYSTEM);
+};
+
+// Returns true when the user is blocked from finishing/restoring due to OwnerGroupOnlyActions.
+// Returns true while ownerGroupOnlyActions is undefined (playbook loading) to prevent a flash.
+export const useIsBlockedByOwnerOnlyForFinishRestore = (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined): boolean => {
+    const isSystemAdmin = useIsSystemAdmin();
+    if (ownerGroupOnlyActions === undefined) {
+        return true;
+    }
+    return Boolean(ownerGroupOnlyActions && !isOwner && !isSystemAdmin);
 };

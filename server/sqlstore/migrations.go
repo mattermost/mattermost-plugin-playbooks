@@ -1749,6 +1749,9 @@ var migrations = []Migration{
 			if err := addColumnToPGTable(e, "IR_Playbook", "AdminOnlyEdit", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
 				return errors.Wrapf(err, "failed adding column AdminOnlyEdit to IR_Playbook")
 			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "OwnerGroupOnlyActions", "BOOLEAN NOT NULL DEFAULT false"); err != nil {
+				return errors.Wrapf(err, "failed adding column OwnerGroupOnlyActions to IR_Playbook")
+			}
 			if err := addColumnToPGTable(e, "IR_Playbook", "NewChannelOnly", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
 				return errors.Wrapf(err, "failed adding NewChannelOnly column to IR_Playbook")
 			}

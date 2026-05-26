@@ -28,8 +28,8 @@ import {isCurrentUserAdmin} from 'src/selectors';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
 import {useAllowPlaybookAttributes} from 'src/hooks/license';
-import {PlaybookRole} from 'src/types/permissions';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
+import {PlaybookRole} from 'src/types/permissions';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
@@ -44,6 +44,7 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import Tooltip from 'src/components/widgets/tooltip';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
+import {useIsSystemAdmin} from 'src/hooks/permissions';
 
 import Outline, {ScrollNav, Sections} from './outline/outline';
 import * as Controls from './controls';
@@ -83,6 +84,7 @@ const PlaybookEditor = () => {
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
     const playbookAdminRole = restPlaybook?.default_playbook_admin_role || PlaybookRole.Admin;
     const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(playbookAdminRole) ?? false;
+    const showAdminSettings = isSystemAdmin || isPlaybookAdmin;
 
     const adminOnlyEdit = restPlaybook?.admin_only_edit ?? false;
     const canEdit = restPlaybook != null && (!adminOnlyEdit || isPlaybookAdmin || isSystemAdmin);
@@ -304,7 +306,7 @@ const PlaybookEditor = () => {
                         refetch={refetch}
                         canEdit={canEdit}
                         adminOnlyEdit={adminOnlyEdit}
-                        showAdminSettings={restPlaybook != null && (isSystemAdmin || isPlaybookAdmin)}
+                        showAdminSettings={showAdminSettings}
                         restPlaybook={restPlaybook ?? undefined}
                     />
                 </Route>
