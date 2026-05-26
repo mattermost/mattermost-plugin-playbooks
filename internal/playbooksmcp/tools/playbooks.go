@@ -195,7 +195,7 @@ func toolCreatePlaybook(ctx context.Context, client APIClient, args CreatePlaybo
 
 func validateCreatePlaybookArgs(args CreatePlaybookArgs) error {
 	if args.ReminderTimerDefaultSeconds < 0 {
-		return fmt.Errorf("reminder_timer_default_seconds must be positive")
+		return fmt.Errorf("reminder_timer_default_seconds must be non-negative")
 	}
 	if args.DefaultOwnerID != "" {
 		if err := validateID(args.DefaultOwnerID, "default_owner_id"); err != nil {
