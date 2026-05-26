@@ -5381,6 +5381,18 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
+	// For user-type fields, reject any non-empty user ID that is not a member of the
+	// run's team. This prevents an attacker with property-write access from adding
+	// arbitrary users to the run as participants via addAssigneeParticipantAndDM.
+	if propertyField.Type == model.PropertyFieldTypeUser {
+		var targetUserID string
+		if err := json.Unmarshal(value, &targetUserID); err == nil && targetUserID != "" {
+			if !IsMemberOfTeam(targetUserID, run.TeamID, s.pluginAPI) {
+				return nil, errors.Wrapf(ErrNoPermissions, "user %s is not a member of team %s", targetUserID, run.TeamID)
+			}
+		}
+	}
+
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upsert property value")

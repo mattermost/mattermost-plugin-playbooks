@@ -5241,3 +5241,72 @@ func TestPropertyValueChange_ReResolvesPropertyUserTasks(t *testing.T) {
 	assert.Equal(t, app.AssigneeTypePropertyUser, item.AssigneeType,
 		"AssigneeType must remain property_user after re-resolution")
 }
+
+// TestSetRunPropertyValue_UserField_RejectsNonTeamMember verifies that setting a user-type
+// property field to a user who is not a member of the run's team is rejected. Without this
+// guard, an attacker with property-write access could add arbitrary users as run participants
+// via addAssigneeParticipantAndDM.
+func TestSetRunPropertyValue_UserField_RejectsNonTeamMember(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Non-member Rejection Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+		context.Background(),
+		pbID,
+		client.PropertyFieldRequest{Name: "Assignee", Type: "user"},
+	)
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Non-member Rejection Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+
+	runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+	require.NoError(t, err)
+	var runFieldID string
+	for _, f := range runFields {
+		if f.Name == "Assignee" && f.Type == "user" {
+			runFieldID = f.ID
+			break
+		}
+	}
+	require.NotEmpty(t, runFieldID, "run-level Assignee field not found")
+
+	// Create a user who is NOT added to the team.
+	outsider, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+		Email:    "outsider-" + model.NewId() + "@example.com",
+		Username: "outsider" + model.NewId(),
+		Password: "Password123!",
+	})
+	require.NoError(t, err)
+
+	// Setting the user field to the outsider must be rejected.
+	_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+		context.Background(),
+		run.ID,
+		runFieldID,
+		client.PropertyValueRequest{Value: []byte(`"` + outsider.Id + `"`)},
+	)
+	require.Error(t, err, "setting a user-type property to a non-team-member must be rejected")
+
+	// Setting it to a valid team member must still succeed.
+	_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+		context.Background(),
+		run.ID,
+		runFieldID,
+		client.PropertyValueRequest{Value: []byte(`"` + e.AdminUser.Id + `"`)},
+	)
+	require.NoError(t, err, "setting a user-type property to a team member must succeed")
+}

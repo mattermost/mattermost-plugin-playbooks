@@ -379,7 +379,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
 
                 // Re-query from outer scope — clicking edit re-renders the item, making
                 // the inner $item container stale for any subsequent queries.
-                cy.findByDisplayValue('Unassigned Task').clear();
+                cy.findByTestId('checklist-item-textarea-title').clear();
                 cy.findByTestId('checklist-item-textarea-title').type('Renamed Task');
                 cy.findByTestId('checklist-item-save-button').click();
             });
@@ -504,7 +504,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 });
 
                 // # Pick the user from the profile selector dropdown (rendered as @username)
-                cy.get('.playbook-react-select').contains('@' + testOwner.username).click();
+                cy.contains('.playbook-react-select__option', '@' + testOwner.username).click();
 
                 // # Wait for both mutations: the role-clear and the user-pick
                 cy.wait('@UpdatePlaybook');
