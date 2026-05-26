@@ -362,8 +362,9 @@ type TitleMenuProps = {
     className?: string;
     editTitle: () => void;
     refetch: () => void;
+    canEdit?: boolean;
 } & PropsWithChildren<ControlProps>;
-const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: TitleMenuProps) => {
+const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEdit = true}: TitleMenuProps) => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const [exportHref, exportFilename] = playbookExportProps(playbook);
@@ -416,8 +417,8 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         <div className='MenuGroup menu-divider'/>
                         <DropdownMenuItem
                             onClick={editTitle}
-                            disabled={archived}
-                            disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
+                            disabled={archived || !canEdit}
+                            disabledAltText={archived ? formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'}) : formatMessage({defaultMessage: 'Only admins can rename this playbook.'})}
                         >
                             <PencilOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Rename'/>
@@ -483,6 +484,8 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         {archived ? (
                             <DropdownMenuItem
                                 onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
+                                disabled={!canEdit}
+                                disabledAltText={formatMessage({defaultMessage: 'Only admins can restore this playbook.'})}
                             >
                                 <RestoreIcon size={18}/>
                                 <FormattedMessage defaultMessage='Restore'/>
@@ -490,6 +493,8 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         ) : (
                             <DropdownMenuItem
                                 onClick={() => openDeletePlaybookModal(playbook)}
+                                disabled={!canEdit}
+                                disabledAltText={formatMessage({defaultMessage: 'Only admins can archive this playbook.'})}
                             >
                                 <RedText
                                     style={{

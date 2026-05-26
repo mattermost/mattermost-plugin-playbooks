@@ -51,9 +51,10 @@ import PropertyNameInput from './property_name_input';
 
 interface Props {
     playbookID: string;
+    canEdit?: boolean;
 }
 
-const PlaybookProperties = ({playbookID}: Props) => {
+const PlaybookProperties = ({playbookID, canEdit = true}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
     const dispatch = useAppDispatch();
@@ -79,6 +80,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
     }, [pendingAutoFocusName, properties]);
 
     const updateProperty = useCallback(async (updatedProperty: PropertyField) => {
+        if (!canEdit) {
+            return;
+        }
         const propertyFieldInput: PropertyFieldInput = {
             name: updatedProperty.name,
             type: updatedProperty.type,
@@ -99,9 +103,12 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 duration: 8000,
             });
         }
-    }, [dispatch, playbookID, addToast]);
+    }, [dispatch, playbookID, addToast, canEdit]);
 
     const deleteProperty = useCallback(async (propertyId: string) => {
+        if (!canEdit) {
+            return false;
+        }
         try {
             await dispatch(deletePlaybookPropertyFieldAction(playbookID, propertyId));
             return true;
@@ -113,10 +120,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
             });
             return false;
         }
-    }, [dispatch, playbookID, addToast]);
+    }, [dispatch, playbookID, addToast, canEdit]);
 
     const addProperty = useCallback(async () => {
-        if (properties.length >= MAX_PROPERTIES_LIMIT) {
+        if (!canEdit || properties.length >= MAX_PROPERTIES_LIMIT) {
             return;
         }
 
@@ -148,10 +155,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 duration: 8000,
             });
         }
-    }, [dispatch, playbookID, properties, addToast]);
+    }, [dispatch, playbookID, properties, addToast, canEdit]);
 
     const handleDragEnd = useCallback(async (result: any) => {
-        if (!result.destination) {
+        if (!canEdit || !result.destination) {
             return;
         }
 
@@ -170,7 +177,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 duration: 8000,
             });
         }
-    }, [properties, dispatch, playbookID, addToast]);
+    }, [properties, dispatch, playbookID, addToast, canEdit]);
 
     const columnHelper = createColumnHelper<PropertyField>();
 
@@ -213,7 +220,8 @@ const PlaybookProperties = ({playbookID}: Props) => {
 
                     const target = (
                         <TypeIconButton
-                            onClick={() => setEditingTypeId(info.row.original.id)}
+                            onClick={canEdit ? () => setEditingTypeId(info.row.original.id) : undefined}
+                            disabled={!canEdit}
                             aria-label={formatMessage({defaultMessage: 'Change attribute type'})}
                         >
                             <TypeIcon/>
@@ -243,6 +251,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                 updateField={updateProperty}
                                 existingNames={properties.map((p) => p.name)}
                                 autoFocus={info.row.original.id === autoFocusPropertyId}
+                                disabled={!canEdit}
                             />
                         </PropertyCellContent>
                     );
@@ -258,10 +267,11 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     <PropertyValuesInput
                         field={info.row.original}
                         updateField={updateProperty}
+                        disabled={!canEdit}
                     />
                 ),
             }),
-            columnHelper.display({
+            ...(canEdit ? [columnHelper.display({
                 id: 'actions',
                 header: () => (
                     <HeaderColEnd>
@@ -309,9 +319,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
                         }}
                     />
                 ),
-            }),
+            })] : []),
         ],
-        [columnHelper, formatMessage, updateProperty, properties, editingTypeId, dispatch, playbookID, addToast, autoFocusPropertyId]
+        [columnHelper, formatMessage, updateProperty, properties, editingTypeId, dispatch, playbookID, addToast, autoFocusPropertyId, canEdit]
     );
 
     const table = useReactTable({
@@ -350,8 +360,11 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 <InnerContainer>
                     <EmptyState
                         title={<FormattedMessage defaultMessage='No attributes yet'/>}
-                        description={<FormattedMessage defaultMessage='Add custom attributes to capture additional information about your playbook runs.'/>}
-                        buttonText={<FormattedMessage defaultMessage='Add your first attribute'/>}
+                        description={canEdit ?
+                            <FormattedMessage defaultMessage='Add custom attributes to capture additional information about your playbook runs.'/> :
+                            <FormattedMessage defaultMessage='No custom attributes have been configured for this playbook.'/>
+                        }
+                        buttonText={canEdit ? <FormattedMessage defaultMessage='Add your first attribute'/> : undefined}
                         onButtonClick={addProperty}
                     />
                 </InnerContainer>
@@ -395,6 +408,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                                 key={row.original.id}
                                                 draggableId={row.original.id}
                                                 index={index}
+                                                isDragDisabled={!canEdit}
                                             >
                                                 {(dragProvided) => (
                                                     <TableRow
@@ -427,8 +441,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 </TableContainer>
 
                 <AddPropertyButton
+                    data-testid='add-attribute-button'
                     onClick={addProperty}
-                    disabled={properties.length >= MAX_PROPERTIES_LIMIT}
+                    disabled={!canEdit || properties.length >= MAX_PROPERTIES_LIMIT}
                     title={properties.length >= MAX_PROPERTIES_LIMIT ? formatMessage({defaultMessage: 'Maximum of {limit} attributes allowed'}, {limit: MAX_PROPERTIES_LIMIT}) : undefined}
                 >
                     <i className='icon-plus'/>
@@ -595,9 +610,14 @@ const TypeIconButton = styled.button`
     height: 40px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    &:hover {
+    &:hover:not(:disabled) {
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
+    }
+
+    &:disabled {
+        cursor: default;
+        color: rgba(var(--center-channel-color-rgb), 0.32);
     }
 `;
 

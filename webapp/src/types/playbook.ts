@@ -21,7 +21,9 @@ export interface Playbook {
     last_run_at: number;
     members: PlaybookMember[];
     default_playbook_member_role: string;
+    default_playbook_admin_role?: string;
     active_runs: number;
+    admin_only_edit: boolean;
 }
 
 export interface PlaybookMember {
@@ -220,6 +222,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
+        admin_only_edit: false,
         owner_group_only_actions: false,
         new_channel_only: false,
         auto_archive_channel: false,

@@ -69,7 +69,7 @@ func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, arg
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
@@ -110,7 +110,7 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
@@ -168,7 +168,7 @@ func (r *PropertyRootResolver) DeletePlaybookPropertyField(ctx context.Context, 
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 

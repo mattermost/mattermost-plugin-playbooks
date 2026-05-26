@@ -23,6 +23,7 @@ import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
+import {isCurrentUserAdmin} from 'src/selectors';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
@@ -43,7 +44,6 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import Tooltip from 'src/components/widgets/tooltip';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
-import {useIsSystemAdmin} from 'src/hooks/permissions';
 
 import Outline, {ScrollNav, Sections} from './outline/outline';
 import * as Controls from './controls';
@@ -60,6 +60,7 @@ const PlaybookEditor = () => {
     const stats = useStats(playbookId);
     const currentUserId = useAppSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
+    const isSystemAdmin = useAppSelector(isCurrentUserAdmin);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -80,9 +81,13 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
-    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
-    const isSystemAdmin = useIsSystemAdmin();
+    const playbookAdminRole = restPlaybook?.default_playbook_admin_role || PlaybookRole.Admin;
+    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(playbookAdminRole) ?? false;
     const showAdminSettings = isSystemAdmin || isPlaybookAdmin;
+
+    const adminOnlyEdit = restPlaybook?.admin_only_edit ?? false;
+    const canEdit = restPlaybook != null && (!adminOnlyEdit || isPlaybookAdmin || isSystemAdmin);
+
     if (error) {
         // not found
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
@@ -135,7 +140,7 @@ const PlaybookEditor = () => {
                         />
                     </StarButton>
                     <TextEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                         value={playbook.title}
                         onSave={(title) => updatePlaybook({title})}
@@ -159,6 +164,7 @@ const PlaybookEditor = () => {
                                     playbook={playbook}
                                     editTitle={edit}
                                     refetch={refetch}
+                                    canEdit={canEdit}
                                 >
                                     <Title>
                                         {playbook.title}
@@ -192,6 +198,7 @@ const PlaybookEditor = () => {
             </TitleBar>
             <Header ref={headingRef}>
                 <TextEdit
+                    disabled={archived || !canEdit}
                     placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                     value={playbook.title}
                     onSave={(title) => updatePlaybook({title})}
@@ -222,6 +229,7 @@ const PlaybookEditor = () => {
                                 playbook={playbook}
                                 editTitle={edit}
                                 refetch={refetch}
+                                canEdit={canEdit}
                             >
                                 <span data-testid={'playbook-editor-title'}>
                                     {playbook.title}
@@ -234,7 +242,7 @@ const PlaybookEditor = () => {
                 </TextEdit>
                 <Description>
                     <MarkdownEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
                         value={playbook.description}
                         onSave={(description) => updatePlaybook({description})}
@@ -284,6 +292,7 @@ const PlaybookEditor = () => {
                     >
                         <PlaybookProperties
                             playbookID={playbook.id}
+                            canEdit={canEdit}
                         />
                     </Route>
                 )}
@@ -294,8 +303,10 @@ const PlaybookEditor = () => {
                     <Outline
                         playbook={playbook}
                         refetch={refetch}
-                        restPlaybook={restPlaybook ?? undefined}
+                        canEdit={canEdit}
+                        adminOnlyEdit={adminOnlyEdit}
                         showAdminSettings={showAdminSettings}
+                        restPlaybook={restPlaybook ?? undefined}
                     />
                 </Route>
                 <Route
@@ -306,6 +317,7 @@ const PlaybookEditor = () => {
                         playbookID={playbook.id}
                         playbookMetrics={playbook.metrics}
                         stats={stats}
+                        canEdit={canEdit}
                     />
                 </Route>
             </Switch>

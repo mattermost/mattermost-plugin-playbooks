@@ -9,8 +9,8 @@ import {SecondaryButton} from 'src/components/assets/buttons';
 interface Props {
     title: React.ReactNode;
     description: React.ReactNode;
-    buttonText: React.ReactNode;
-    onButtonClick: () => void;
+    buttonText?: React.ReactNode;
+    onButtonClick?: () => void;
     icon?: React.ReactNode;
 }
 
@@ -27,9 +27,11 @@ const EmptyState = ({
                 {icon && <IconContainer>{icon}</IconContainer>}
                 <Title>{title}</Title>
                 <Description>{description}</Description>
-                <StyledButton onClick={onButtonClick}>
-                    {buttonText}
-                </StyledButton>
+                {buttonText && (
+                    <StyledButton onClick={onButtonClick}>
+                        {buttonText}
+                    </StyledButton>
+                )}
             </InnerContainer>
         </Container>
     );

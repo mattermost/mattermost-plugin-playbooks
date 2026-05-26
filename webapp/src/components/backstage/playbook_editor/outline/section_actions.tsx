@@ -37,6 +37,7 @@ import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    canEdit?: boolean;
     newChannelOnly?: boolean;
     onNewChannelOnlyChange?: (updated: {new_channel_only: boolean}) => void;
     restPlaybook?: PlaybookWithChecklist;
@@ -44,11 +45,12 @@ interface Props {
     onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook, autoArchiveChannel, onAutoArchiveChange}: Props) => {
+const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook, autoArchiveChannel, onAutoArchiveChange}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
+    const disabled = archived || !canEdit;
 
     const [
         playbookForCreateChannel,
@@ -181,6 +183,7 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
+                        disabled={disabled}
                         newChannelOnly={newChannelOnly}
                     />
                 </Setting>
@@ -193,7 +196,7 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
-                        disabled={archived}
+                        disabled={disabled}
                         enabled={playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
@@ -208,7 +211,7 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner
-                        disabled={archived}
+                        disabled={disabled}
                         enabled={playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
@@ -219,7 +222,7 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
-                        disabled={archived}
+                        disabled={disabled}
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
@@ -245,7 +248,7 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
+                            disabled={disabled}
                             isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
@@ -267,7 +270,7 @@ const LegacyActionsEdit = ({playbook, newChannelOnly = false, onNewChannelOnlyCh
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
+                            disabled={disabled}
                             isChecked={playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
                                 updatePlaybook({
