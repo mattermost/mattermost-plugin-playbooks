@@ -164,16 +164,15 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.get('#checklists').should('be.visible');
         cy.findByTestId('add-a-checklist-button').should('not.exist');
 
-        // * Summary section has no edit pencil (description is read-only)
-        cy.get('#summary').find('[data-testid="hover-menu-edit-button"]').should('not.exist');
-
-        // * No inline edit pencil anywhere on the page — all MarkdownEdits are disabled
+        // * No inline edit pencil anywhere on the page — all MarkdownEdits are disabled (includes #summary)
         cy.get('[data-testid="hover-menu-edit-button"]').should('not.exist');
 
         // * Title Rename option in the dot-menu is disabled (renders as a non-clickable div, not an <a>)
-        cy.get('[data-testid="menuButton"]').first().click();
+        // Scope to playbook-editor-header to avoid fragile .first() when other dot-menus are in the DOM
+        cy.get('[data-testid="playbook-editor-header"]').findByTestId('menuButton').click();
         cy.get('[data-testid="dropdownmenu"]').should('be.visible');
         cy.get('[data-testid="dropdownmenu"]').within(() => {
+            // Disabled DropdownMenuItem renders as styled.div (no href); enabled renders as styled.a href="#"
             cy.contains('Rename').should('not.have.attr', 'href');
         });
         cy.get('body').click(0, 0);
@@ -289,18 +288,15 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.visit('/playbooks');
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Intercept the archive API call so we can assert it is never made
-        cy.intercept('DELETE', `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}`).as('archivePlaybook');
-
         // # Open the dot menu for the locked playbook and click the disabled Archive item
         cy.contains('[data-testid="playbook-item"]', testPlaybook.title).within(() => {
             cy.findByTestId('menuButtonActions').click();
         });
         cy.findByText('Archive').click({force: true}); // Archive is disabled for non-admins; force bypasses pointer-events:none to verify no action fires
 
-        // * Menu dismisses on click — use this as a synchronous proxy that the
-        // click handler completed before asserting the modal never appeared.
-        cy.findByText('Archive').should('not.exist');
+        // * Give any async click handler a tick to fire before asserting nothing happened
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(300);
 
         // * Confirm modal must not appear — the Archive item is disabled for non-admin members
         cy.get('#confirmModal').should('not.exist');
@@ -309,31 +305,36 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
     it('any user with create permission can import an admin_only_edit playbook', () => {
         // # Export as admin to get a valid payload, then inject admin_only_edit to simulate
         // # a payload where the flag is set — the import should succeed and strip the flag.
+        // importFile is populated in .then() at execution time; all UI commands are top-level
+        // so they benefit from full Cypress retry semantics.
+        let importFile;
         cy.apiExportPlaybook(testPlaybook.id).then((exportData) => {
-            const importFile = {
+            importFile = {
                 fileName: 'admin-only-import.json',
                 contents: Cypress.Buffer.from(JSON.stringify({...exportData, admin_only_edit: true})),
                 mimeType: 'application/json',
             };
+        });
 
-            // # Login as member user and open the playbooks list
-            cy.apiLogin(testMemberUser);
-            cy.visit('/playbooks');
-            cy.findByTestId('playbooksLHSButton').click();
+        // # Login as member user and open the playbooks list
+        cy.apiLogin(testMemberUser);
+        cy.visit('/playbooks');
+        cy.findByTestId('playbooksLHSButton').click();
 
-            // # Intercept before triggering the file upload so the request is captured
-            cy.intercept('POST', '**/api/v0/playbooks/import**').as('importPlaybook');
+        // # Intercept before triggering the file upload so the request is captured
+        cy.intercept('POST', '**/api/v0/playbooks/import**').as('importPlaybook');
 
-            // # Upload via the import button
-            cy.findByTestId('titlePlaybook').within(() => {
+        // # Upload via the import button — importFile is read at execution time via cy.then()
+        cy.findByTestId('titlePlaybook').within(() => {
+            cy.then(() => {
                 cy.findByTestId('playbook-import-input').selectFile(importFile, {force: true}); // file input is hidden by design
             });
-
-            // # Wait for the import request to settle before asserting the editor opened
-            cy.wait('@importPlaybook').its('response.statusCode').should('eq', 201);
-
-            // * Verify the import succeeded — editor opens with the playbook title
-            cy.findByTestId('playbook-editor-title').should('contain', testPlaybook.title);
         });
+
+        // # Wait for the import request to settle before asserting the editor opened
+        cy.wait('@importPlaybook').its('response.statusCode').should('eq', 201);
+
+        // * Verify the import succeeded — editor opens with the playbook title
+        cy.findByTestId('playbook-editor-title').should('contain', testPlaybook.title);
     });
 });
