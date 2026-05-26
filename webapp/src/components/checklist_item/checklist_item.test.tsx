@@ -43,8 +43,9 @@ jest.mock('src/client', () => ({
     setChecklistItemState: jest.fn(),
 }));
 
+const mockToasterAdd = jest.fn();
 jest.mock('src/components/backstage/toast_banner', () => ({
-    useToaster: jest.fn(() => ({add: jest.fn()})),
+    useToaster: jest.fn(() => ({add: mockToasterAdd})),
 }));
 
 jest.mock('src/components/backstage/toast', () => ({
@@ -129,6 +130,7 @@ const renderItem = (overrides = {}) => renderer.create(
 describe('ChecklistItem › onExtraOptionSelected', () => {
     beforeEach(() => {
         MockHoverMenu.mockClear();
+        mockToasterAdd.mockClear();
     });
 
     it('role:owner sets assignee_type=owner and clears assignee_id and assignee_property_field_id', async () => {
@@ -179,6 +181,23 @@ describe('ChecklistItem › onExtraOptionSelected', () => {
             assignee_type: 'property_user',
             assignee_property_field_id: 'field-abc-123',
             assignee_id: '',
+        }));
+    });
+
+    it('shows failure toast when setRoleAssignee throws in run mode', async () => {
+        const {setRoleAssignee} = jest.requireMock('src/client');
+        (setRoleAssignee as jest.Mock).mockRejectedValueOnce(new Error('network error'));
+
+        renderItem({playbookRunId: 'run-1'});
+
+        const {onExtraOptionSelected} = MockHoverMenu.mock.calls[0][0];
+
+        await act(async () => {
+            await onExtraOptionSelected('role:owner');
+        });
+
+        expect(mockToasterAdd).toHaveBeenCalledWith(expect.objectContaining({
+            toastStyle: 'failure',
         }));
     });
 });

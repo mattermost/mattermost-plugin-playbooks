@@ -276,7 +276,7 @@ const AssignTo = (props: AssignedToProps) => {
         </AssignToContainer>
     );
 
-    if (props.isEditing && !props.assignee_id) {
+    if (props.isEditing && !props.assignee_id && !props.assignee_type) {
         assignToButton = (
             <OverlayTrigger
                 placement='top'

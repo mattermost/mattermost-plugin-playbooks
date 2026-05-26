@@ -277,15 +277,19 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return;
         }
         if (props.playbookRunId) {
-            let response;
-            if (updatedItem.assignee_type === AssigneeTypeOwner || updatedItem.assignee_type === AssigneeTypeCreator) {
-                response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
-            } else if (updatedItem.assignee_type === AssigneeTypePropertyUser && updatedItem.assignee_property_field_id) {
-                response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
-            } else {
-                response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
+            try {
+                let response;
+                if (updatedItem.assignee_type === AssigneeTypeOwner || updatedItem.assignee_type === AssigneeTypeCreator) {
+                    response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
+                } else if (updatedItem.assignee_type === AssigneeTypePropertyUser && updatedItem.assignee_property_field_id) {
+                    response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
+                } else {
+                    response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
+                }
+                handleError(Boolean(response.error));
+            } catch {
+                handleError(true);
             }
-            handleError(Boolean(response.error));
         } else {
             props.onUpdateChecklistItem?.(updatedItem);
         }

@@ -5382,13 +5382,20 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	}
 
 	// For user-type fields, reject any non-empty user ID that is not a member of the
-	// run's team. This prevents an attacker with property-write access from adding
+	// run's team/channel. This prevents an attacker with property-write access from adding
 	// arbitrary users to the run as participants via addAssigneeParticipantAndDM.
 	if propertyField.Type == model.PropertyFieldTypeUser {
 		var targetUserID string
 		if err := json.Unmarshal(value, &targetUserID); err == nil && targetUserID != "" {
-			if !IsMemberOfTeam(targetUserID, run.TeamID, s.pluginAPI) {
-				return nil, errors.Wrapf(ErrNoPermissions, "user %s is not a member of team %s", targetUserID, run.TeamID)
+			var notMember bool
+			if run.TeamID == "" {
+				_, memberErr := s.pluginAPI.Channel.GetMember(run.ChannelID, targetUserID)
+				notMember = memberErr != nil
+			} else {
+				notMember = !IsMemberOfTeam(targetUserID, run.TeamID, s.pluginAPI)
+			}
+			if notMember {
+				return nil, errors.Wrapf(ErrNoPermissions, "user %s does not have access to the run", targetUserID)
 			}
 		}
 	}
@@ -5749,6 +5756,9 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 					logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
 					return
 				}
+			} else {
+				// Actor lacks permission to add resolvedUserID; skip DM to avoid leaking run details.
+				return
 			}
 		}
 	}

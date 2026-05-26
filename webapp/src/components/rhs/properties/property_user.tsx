@@ -179,6 +179,7 @@ export const MultiuserProperty = (props: Props) => {
                                 withoutName={true}
                             />
                             <RemoveButton
+                                type='button'
                                 aria-label={formatMessage({id: 'playbooks.property_user.remove_user', defaultMessage: 'Remove user'})}
                                 onClick={() => handleRemoveUser(uid)}
                             >

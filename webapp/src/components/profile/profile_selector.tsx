@@ -216,7 +216,8 @@ export default function ProfileSelector(props: Props) {
     if (props.assignedDisplay) {
         target = (
             <button
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     if (props.enableEdit) {
                         toggleOpen();
                     }
