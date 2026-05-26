@@ -39,6 +39,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
+// testUserPassword is the shared password for test users. It must be at least
+// 14 characters to satisfy FIPS password requirements enforced by the server.
 const testUserPassword = "Password123!abcd"
 
 func testPtr[T any](v T) *T {
