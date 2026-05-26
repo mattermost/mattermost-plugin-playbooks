@@ -166,6 +166,17 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
         // * Summary section has no edit pencil (description is read-only)
         cy.get('#summary').find('[data-testid="hover-menu-edit-button"]').should('not.exist');
+
+        // * No inline edit pencil anywhere on the page — all MarkdownEdits are disabled
+        cy.get('[data-testid="hover-menu-edit-button"]').should('not.exist');
+
+        // * Title Rename option in the dot-menu is disabled (renders as a non-clickable div, not an <a>)
+        cy.get('[data-testid="menuButton"]').first().click();
+        cy.get('[data-testid="dropdownmenu"]').should('be.visible');
+        cy.get('[data-testid="dropdownmenu"]').within(() => {
+            cy.contains('Rename').should('not.have.attr', 'href');
+        });
+        cy.get('body').click(0, 0);
     });
 
     it('UI: playbook admin retains edit access when admin_only_edit is enabled', () => {
@@ -260,7 +271,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.findByText('Duplicate').click();
 
         // * Wait for the server to respond before asserting UI state
-        cy.wait('@duplicatePlaybook').its('response.statusCode').should('eq', 200);
+        cy.wait('@duplicatePlaybook').its('response.statusCode').should('eq', 201);
 
         // * Verify duplication succeeded
         cy.findByText('Successfully duplicated playbook').should('be.visible');
@@ -319,7 +330,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
             });
 
             // # Wait for the import request to settle before asserting the editor opened
-            cy.wait('@importPlaybook').its('response.statusCode').should('eq', 200);
+            cy.wait('@importPlaybook').its('response.statusCode').should('eq', 201);
 
             // * Verify the import succeeded — editor opens with the playbook title
             cy.findByTestId('playbook-editor-title').should('contain', testPlaybook.title);

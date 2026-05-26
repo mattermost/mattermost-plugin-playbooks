@@ -2169,6 +2169,36 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, confirmed.AdminOnlyEdit, "admin_only_edit must be preserved when absent from the PUT body")
 	})
+
+	t.Run("non-admin member regains edit access after AdminOnlyEdit is disabled", func(t *testing.T) {
+		// Precondition: lock is on (left by the previous subtest).
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.True(t, pb.AdminOnlyEdit, "expected admin_only_edit=true entering this subtest")
+
+		// Confirm non-admin is still blocked while the lock is on.
+		pb.Title = "Should Be Blocked"
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		// Admin disables the lock.
+		pb, err = e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.AdminOnlyEdit = false
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// Non-admin member must now succeed.
+		pb, err = e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.Title = "Member Edit After Unlock"
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Equal(t, "Member Edit After Unlock", confirmed.Title)
+	})
 }
 
 // TestAdminOnlyEdit_Create verifies that any user with playbook-create permission
