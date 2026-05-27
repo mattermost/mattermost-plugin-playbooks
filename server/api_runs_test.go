@@ -4150,7 +4150,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 
 		// Build an authenticated client for RegularUser2 to submit the dialog
 		serverClient2 := model.NewAPIv4Client(e.ServerClient.URL)
-		_, _, err = serverClient2.Login(context.Background(), e.RegularUser2.Email, "Password123!")
+		_, _, err = serverClient2.Login(context.Background(), e.RegularUser2.Email, testUserPassword)
 		require.NoError(t, err)
 
 		dialogRequest := model.SubmitDialogRequest{
