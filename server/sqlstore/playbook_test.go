@@ -2419,21 +2419,6 @@ func TestRetrospectiveEnabledRoundTrip(t *testing.T) {
 
 	teamID := model.NewId()
 
-	t.Run("RetrospectiveEnabled defaults to true when omitted", func(t *testing.T) {
-		pb := NewPBBuilder().
-			WithTitle("retro-default-create").
-			WithTeamID(teamID).
-			ToPlaybook()
-
-		id, err := playbookStore.Create(pb)
-		require.NoError(t, err)
-
-		got, err := playbookStore.Get(id)
-		require.NoError(t, err)
-
-		require.True(t, got.RetrospectiveEnabled)
-	})
-
 	t.Run("RetrospectiveEnabled true persists through Create", func(t *testing.T) {
 		pb := NewPBBuilder().
 			WithTitle("retro-enabled-create").

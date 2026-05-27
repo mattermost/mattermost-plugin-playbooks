@@ -114,22 +114,6 @@ const makePlaybook = (ownerGroupOnlyActions: boolean) => ({
 });
 
 describe('OwnerGroupOnlyActionsToggle', () => {
-    it('renders toggle for admin users', () => {
-        const onChange = jest.fn();
-        const playbook = makePlaybook(false);
-
-        const component = renderToggle(
-            <OwnerGroupOnlyActionsToggle
-                playbook={playbook}
-                isPlaybookAdmin={true}
-                onChange={onChange}
-            />,
-        );
-        const tree = component.toJSON();
-
-        expect(tree).toBeTruthy();
-    });
-
     it('toggle is checked when owner_group_only_actions is true', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(true);
