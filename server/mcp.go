@@ -263,7 +263,7 @@ func (p *Plugin) serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 
-	handler := api.LogRequest(api.MattermostAuthorizationRequired(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := api.LogRequest(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !p.isMCPEnabled() {
 			http.NotFound(w, r)
 			return
@@ -276,7 +276,7 @@ func (p *Plugin) serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool {
 			return
 		}
 		p.mcpServer.ServeHTTP(w, r)
-	})))
+	}))
 	handler.ServeHTTP(w, r)
 	return true
 }
