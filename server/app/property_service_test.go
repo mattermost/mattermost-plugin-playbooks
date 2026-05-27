@@ -923,6 +923,19 @@ func TestValidateReservedFieldName(t *testing.T) {
 		assert.Error(t, validateReservedFieldName("creator"))
 	})
 
+	t.Run("rejects SEQ", func(t *testing.T) {
+		// SEQ is the sequential-run-number system token; reserving its name as a property
+		// field prevents a user-defined "SEQ" property from shadowing the template's
+		// system token in ChannelNameTemplate / ReminderMessageTemplate.
+		assert.Error(t, validateReservedFieldName("SEQ"))
+		assert.ErrorIs(t, validateReservedFieldName("SEQ"), ErrReservedPropertyFieldName)
+	})
+
+	t.Run("rejects seq (case-insensitive)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("seq"))
+		assert.Error(t, validateReservedFieldName("Seq"))
+	})
+
 	t.Run("rejects PROPERTY_USER", func(t *testing.T) {
 		assert.Error(t, validateReservedFieldName("PROPERTY_USER"))
 	})
