@@ -6002,7 +6002,7 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 	}
 
 	sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)
-	return s.dryRunValidateTemplate(pb, playbookRun, template, fields, sanitizedValues, logger)
+	return s.dryRunValidateTemplate(pb, playbookRun, template, fields, sanitizedValues, nil, logger)
 }
 
 // resolveAndAllocate prepares the run name template, allocates the sequential run number, and
@@ -6039,7 +6039,11 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 
 	sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)
 
-	if err := s.dryRunValidateTemplate(pb, playbookRun, template, fields, sanitizedValues, logger); err != nil {
+	// Create one formatFunc instance shared between dry-run validation and real resolution
+	// to avoid duplicate pluginAPI.User.Get calls for user-type fields.
+	formatFunc := s.makeRunNameFormatFunc()
+
+	if err := s.dryRunValidateTemplate(pb, playbookRun, template, fields, sanitizedValues, formatFunc, logger); err != nil {
 		return "", err
 	}
 
@@ -6055,7 +6059,7 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 		}
 	}
 
-	return s.resolveRunName(playbookRun, pb, template, fields, sanitizedValues, userSuppliedName, runNumber, logger)
+	return s.resolveRunName(playbookRun, pb, template, fields, sanitizedValues, userSuppliedName, runNumber, formatFunc, logger)
 }
 
 // loadTemplateFields checks whether the attributes licence is active and, if the playbook's
@@ -6094,6 +6098,15 @@ func (s *PlaybookRunServiceImpl) resolveOwner(playbookRun *PlaybookRun, logger *
 			"run_id":      playbookRun.ID,
 			"playbook_id": playbookRun.PlaybookID,
 		}).Warn("resolved owner is not a team member and ReporterUserID is empty; OwnerUserID will remain unset")
+		return
+	}
+	if !IsMemberOfTeam(playbookRun.ReporterUserID, playbookRun.TeamID, s.pluginAPI) {
+		logger.WithFields(logrus.Fields{
+			"user_id":     playbookRun.ReporterUserID,
+			"team_id":     playbookRun.TeamID,
+			"run_id":      playbookRun.ID,
+			"playbook_id": playbookRun.PlaybookID,
+		}).Warn("reporter is not a member of the run's team; OwnerUserID will remain unset")
 		return
 	}
 	playbookRun.OwnerUserID = playbookRun.ReporterUserID
@@ -6173,11 +6186,14 @@ func (s *PlaybookRunServiceImpl) sanitizePropertyValues(fields []PropertyField, 
 // dryRunValidateTemplate validates that all fields referenced by the channel name template have
 // non-empty values. It uses a sentinel sequential ID to avoid consuming a real run number.
 // sanitizedValues must come from sanitizePropertyValues — callers are responsible for sanitizing once.
-func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRun *PlaybookRun, template string, fields []PropertyField, sanitizedValues map[string]json.RawMessage, logger *logrus.Entry) error {
+// Pass a non-nil formatFunc to share its user-display-name cache with a subsequent resolveRunName call.
+func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRun *PlaybookRun, template string, fields []PropertyField, sanitizedValues map[string]json.RawMessage, formatFunc FormatFunc, logger *logrus.Entry) error {
 	if template == "" {
 		return nil
 	}
-	formatFunc := s.makeRunNameFormatFunc()
+	if formatFunc == nil {
+		formatFunc = s.makeRunNameFormatFunc()
+	}
 	systemTokens := s.buildSystemTokens(playbookRun, "")
 
 	const dryRunSeqSentinel int64 = 99999
@@ -6202,13 +6218,16 @@ func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRu
 // resolveRunName resolves the channel name template using the given runNumber (already allocated
 // by the caller), sets playbookRun.Name, RunNumber, and SequentialID, and returns the channel
 // display name. sanitizedValues must come from sanitizePropertyValues — callers are responsible
-// for sanitizing once.
-func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Playbook, template string, fields []PropertyField, sanitizedValues map[string]json.RawMessage, userSuppliedName string, runNumber int64, logger *logrus.Entry) (string, error) {
+// for sanitizing once. Pass a non-nil formatFunc to reuse its user-display-name cache from a
+// prior dryRunValidateTemplate call.
+func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Playbook, template string, fields []PropertyField, sanitizedValues map[string]json.RawMessage, userSuppliedName string, runNumber int64, formatFunc FormatFunc, logger *logrus.Entry) (string, error) {
 	playbookRun.RunNumber = runNumber
 	seqID := FormatSequentialID(pb.RunNumberPrefix, runNumber)
 	playbookRun.SequentialID = seqID
 
-	formatFunc := s.makeRunNameFormatFunc()
+	if formatFunc == nil {
+		formatFunc = s.makeRunNameFormatFunc()
+	}
 	systemTokens := s.buildSystemTokens(playbookRun, "")
 
 	var resolvedRunName, resolvedChannelName string
@@ -6411,8 +6430,16 @@ func (s *PlaybookRunServiceImpl) resolveAttributePlaceholders(msg string, run *P
 
 	resolved, _ := s.resolveRunTemplate(msg, run, run.SequentialID, run.PropertyFields, valuesMap)
 	// Strip {SEQ} from legacy runs (no sequential ID) rather than leaving the placeholder verbatim.
+	// Also clean up any orphaned separator left by the removal (e.g. "{SEQ} - title" → "title").
 	if run.SequentialID == "" {
 		resolved = seqTokenRegex.ReplaceAllString(resolved, "")
+		resolved = strings.TrimSpace(resolved)
+		if strings.HasPrefix(resolved, "- ") {
+			resolved = strings.TrimSpace(resolved[2:])
+		}
+		if strings.HasSuffix(resolved, " -") {
+			resolved = strings.TrimSpace(resolved[:len(resolved)-2])
+		}
 	}
 	return resolved
 }

@@ -215,7 +215,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	// At creation time no property fields exist, so only system tokens are allowed in the template.
-	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, nil) {
+	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, nil) {
 		return
 	}
 
@@ -329,7 +329,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 			h.HandleError(w, c.logger, err)
 			return
 		}
-		if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, propertyFields) {
+		if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, propertyFields) {
 			return
 		}
 	}
@@ -836,7 +836,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		pf.Name = epf.Name
 		importFields = append(importFields, pf)
 	}
-	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, playbook.RunNumberPrefix, importFields) {
+	if !h.validateTemplateWithFields(w, c.logger, playbook.ChannelNameTemplate, importFields) {
 		return
 	}
 
@@ -890,9 +890,9 @@ func (h *PlaybookHandler) handlePlaybookWriteError(w http.ResponseWriter, logger
 	}
 }
 
-// validateTemplateWithFields validates a channel name template against a known field list and prefix.
+// validateTemplateWithFields validates a channel name template against a known field list.
 // Empty template is always valid. Pass nil fields to allow system tokens only (new-playbook case).
-func (h *PlaybookHandler) validateTemplateWithFields(w http.ResponseWriter, logger logrus.FieldLogger, template, prefix string, fields []app.PropertyField) bool {
+func (h *PlaybookHandler) validateTemplateWithFields(w http.ResponseWriter, logger logrus.FieldLogger, template string, fields []app.PropertyField) bool {
 	if template == "" {
 		return true
 	}
@@ -1256,7 +1256,7 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 			remaining = append(remaining, f)
 		}
 	}
-	if !h.validateTemplateWithFields(w, logger, currentPlaybook.ChannelNameTemplate, currentPlaybook.RunNumberPrefix, remaining) {
+	if !h.validateTemplateWithFields(w, logger, currentPlaybook.ChannelNameTemplate, remaining) {
 		return
 	}
 

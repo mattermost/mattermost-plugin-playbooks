@@ -17,7 +17,7 @@ func TestResolveAttributePlaceholders_SEQStripping(t *testing.T) {
 		svc := &PlaybookRunServiceImpl{}
 		run := &PlaybookRun{SequentialID: ""}
 		result := svc.resolveAttributePlaceholders("{SEQ} - Incident Report", run)
-		assert.Equal(t, " - Incident Report", result)
+		assert.Equal(t, "Incident Report", result)
 	})
 
 	t.Run("SEQ token resolved when run has a sequential ID", func(t *testing.T) {
