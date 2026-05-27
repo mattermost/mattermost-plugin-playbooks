@@ -6079,37 +6079,20 @@ func (s *PlaybookRunServiceImpl) loadTemplateFields(pb *Playbook) (fields []Prop
 // falling back to ReporterUserID when the resolved owner is not on the team.
 func (s *PlaybookRunServiceImpl) resolveOwner(playbookRun *PlaybookRun, logger *logrus.Entry) {
 	if playbookRun.OwnerUserID == "" && playbookRun.DefaultOwnerID != "" {
-		playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
+		if playbookRun.TeamID != "" && !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
+			logger.WithFields(logrus.Fields{
+				"user_id":     playbookRun.DefaultOwnerID,
+				"team_id":     playbookRun.TeamID,
+				"run_id":      playbookRun.ID,
+				"playbook_id": playbookRun.PlaybookID,
+			}).Warn("default owner is not a member of the run's team; falling back to run creator as owner")
+		} else {
+			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
+		}
 	}
-	if playbookRun.OwnerUserID == "" || playbookRun.TeamID == "" {
-		return
+	if playbookRun.OwnerUserID == "" {
+		playbookRun.OwnerUserID = playbookRun.ReporterUserID
 	}
-	if IsMemberOfTeam(playbookRun.OwnerUserID, playbookRun.TeamID, s.pluginAPI) {
-		return
-	}
-	logger.WithFields(logrus.Fields{
-		"user_id":     playbookRun.OwnerUserID,
-		"team_id":     playbookRun.TeamID,
-		"run_id":      playbookRun.ID,
-		"playbook_id": playbookRun.PlaybookID,
-	}).Warn("resolved owner is not a member of the run's team; falling back to run creator as owner")
-	if playbookRun.ReporterUserID == "" {
-		logger.WithFields(logrus.Fields{
-			"run_id":      playbookRun.ID,
-			"playbook_id": playbookRun.PlaybookID,
-		}).Warn("resolved owner is not a team member and ReporterUserID is empty; OwnerUserID will remain unset")
-		return
-	}
-	if !IsMemberOfTeam(playbookRun.ReporterUserID, playbookRun.TeamID, s.pluginAPI) {
-		logger.WithFields(logrus.Fields{
-			"user_id":     playbookRun.ReporterUserID,
-			"team_id":     playbookRun.TeamID,
-			"run_id":      playbookRun.ID,
-			"playbook_id": playbookRun.PlaybookID,
-		}).Warn("reporter is not a member of the run's team; OwnerUserID will remain unset")
-		return
-	}
-	playbookRun.OwnerUserID = playbookRun.ReporterUserID
 }
 
 // prepareTemplate validates and self-heals the channel name template from the playbook snapshot.
