@@ -692,7 +692,7 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 	})
 }
 
-func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string]interface{}) error {
+func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string]any) error {
 	const mutation = `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 		updatePlaybook(id: $id, updates: $updates)
 	}`
@@ -700,7 +700,7 @@ func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "UpdatePlaybook",
-		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
+		Variables:     map[string]any{"id": playbookID, "updates": updates},
 	}, &response)
 	if err != nil {
 		return errors.Wrapf(err, "gqlDoPlaybookUpdate graphql failure")
@@ -732,17 +732,17 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("non-admin member GraphQL update is rejected", func(t *testing.T) {
-		err := gqlDoPlaybookUpdate(e.PlaybooksClient, playbookID, map[string]interface{}{"title": "Non-Admin GraphQL Edit"})
+		err := gqlDoPlaybookUpdate(e.PlaybooksClient, playbookID, map[string]any{"title": "Non-Admin GraphQL Edit"})
 		require.Error(t, err)
 	})
 
 	t.Run("playbook admin (non-sysadmin) GraphQL update succeeds", func(t *testing.T) {
-		err := gqlDoPlaybookUpdate(e.PlaybooksClient2, playbookID, map[string]interface{}{"title": "Admin GraphQL Edit"})
+		err := gqlDoPlaybookUpdate(e.PlaybooksClient2, playbookID, map[string]any{"title": "Admin GraphQL Edit"})
 		require.NoError(t, err)
 	})
 
 	t.Run("system admin GraphQL update succeeds", func(t *testing.T) {
-		err := gqlDoPlaybookUpdate(e.PlaybooksAdminClient, playbookID, map[string]interface{}{"title": "SysAdmin GraphQL Edit"})
+		err := gqlDoPlaybookUpdate(e.PlaybooksAdminClient, playbookID, map[string]any{"title": "SysAdmin GraphQL Edit"})
 		require.NoError(t, err)
 	})
 
@@ -770,18 +770,18 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 		deletePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID)
 	}`
 
-		baseField := map[string]interface{}{
+		baseField := map[string]any{
 			"name": "TestField",
 			"type": "text",
-			"attrs": map[string]interface{}{
+			"attrs": map[string]any{
 				"visibility": "always",
 				"sortOrder":  1.0,
 			},
 		}
-		updateField := map[string]interface{}{
+		updateField := map[string]any{
 			"name": "UpdatedField",
 			"type": "text",
-			"attrs": map[string]interface{}{
+			"attrs": map[string]any{
 				"visibility": "always",
 				"sortOrder":  2.0,
 			},
@@ -792,7 +792,7 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 			if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 				Query:         addMutation,
 				OperationName: "AddPlaybookPropertyField",
-				Variables:     map[string]interface{}{"playbookID": playbookID, "propertyField": baseField},
+				Variables:     map[string]any{"playbookID": playbookID, "propertyField": baseField},
 			}, &resp); err != nil {
 				return err
 			}
@@ -823,7 +823,7 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 			if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 				Query:         updateMutation,
 				OperationName: "UpdatePlaybookPropertyField",
-				Variables: map[string]interface{}{
+				Variables: map[string]any{
 					"playbookID":      playbookID,
 					"propertyFieldID": seededFieldID.ID,
 					"propertyField":   updateField,
@@ -842,7 +842,7 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 			if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 				Query:         deleteMutation,
 				OperationName: "DeletePlaybookPropertyField",
-				Variables:     map[string]interface{}{"playbookID": playbookID, "propertyFieldID": seededFieldID.ID},
+				Variables:     map[string]any{"playbookID": playbookID, "propertyFieldID": seededFieldID.ID},
 			}, &resp); err != nil {
 				return err
 			}
