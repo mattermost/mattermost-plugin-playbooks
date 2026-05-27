@@ -672,6 +672,9 @@ func (s *propertyService) UpsertRunPropertyValueWithField(runID string, field *P
 	if field == nil {
 		return nil, errors.Wrap(ErrInternalPrecondition, "field must not be nil")
 	}
+	if field.TargetType != PropertyTargetTypeRun || field.TargetID != runID {
+		return nil, ErrPropertyFieldNotOnRun
+	}
 	mmField := field.ToMattermostPropertyField()
 	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(mmField, value, true)
 	if err != nil {
@@ -720,6 +723,9 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 		var arrayValue []string
 		if err := json.Unmarshal(value, &arrayValue); err != nil {
 			return nil, errors.New("multiselect field value must be an array of strings")
+		}
+		if !validateOptions {
+			return value, nil
 		}
 		return value, s.validateMultiselectValue(propertyField, arrayValue)
 	case model.PropertyFieldTypeDate:

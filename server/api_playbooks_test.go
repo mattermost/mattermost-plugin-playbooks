@@ -2663,6 +2663,7 @@ func TestPatchPlaybook(t *testing.T) {
 		getResp, err := http.DefaultClient.Do(getReq)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
+		require.Equal(t, http.StatusOK, getResp.StatusCode)
 		var raw struct {
 			ChannelNameTemplate string `json:"channel_name_template"`
 		}

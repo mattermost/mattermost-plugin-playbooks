@@ -445,6 +445,28 @@ func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 	}
 }
 
+// TestSanitizePropertyValue verifies that SanitizePropertyValue (validateOptions=false) skips
+// option-membership checks for every field type that has options (select, multiselect).
+// This test exists to catch the class of bug where validateOptions is wired up in one branch
+// of the type-switch but silently omitted in a parallel branch.
+func TestSanitizePropertyValue_SkipsOptionValidation(t *testing.T) {
+	s := &propertyService{}
+
+	// An option ID that does not exist on any field — validation must not run.
+	unknownSelectID := json.RawMessage(`"does-not-exist"`)
+	unknownMultiselectIDs := json.RawMessage(`["does-not-exist-1","does-not-exist-2"]`)
+
+	t.Run("select with unknown option ID passes when validateOptions=false", func(t *testing.T) {
+		_, err := s.SanitizePropertyValue(model.PropertyFieldTypeSelect, unknownSelectID)
+		assert.NoError(t, err)
+	})
+
+	t.Run("multiselect with unknown option IDs passes when validateOptions=false", func(t *testing.T) {
+		_, err := s.SanitizePropertyValue(model.PropertyFieldTypeMultiselect, unknownMultiselectIDs)
+		assert.NoError(t, err)
+	})
+}
+
 func TestPropertyService_TestPropertySortOrder(t *testing.T) {
 	tests := []struct {
 		name          string
