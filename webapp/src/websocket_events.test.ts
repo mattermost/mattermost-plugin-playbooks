@@ -82,6 +82,7 @@ describe('incremental updates', () => {
                         state: 'Open',
                         state_modified: 0,
                         assignee_id: '',
+                        assignee_type: '',
                         assignee_modified: 0,
                         command: '',
                         description: '',
@@ -98,6 +99,7 @@ describe('incremental updates', () => {
                         state: 'Open',
                         state_modified: 0,
                         assignee_id: '',
+                        assignee_type: '',
                         assignee_modified: 0,
                         command: '',
                         description: '',
@@ -1192,6 +1194,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',
@@ -1318,6 +1321,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',
@@ -1357,6 +1361,7 @@ describe('incremental updates', () => {
                             state: 'Open',
                             state_modified: 0,
                             assignee_id: '',
+                            assignee_type: '',
                             assignee_modified: 0,
                             command: '',
                             description: '',
@@ -1397,6 +1402,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',
@@ -1424,6 +1430,8 @@ describe('incremental updates', () => {
 
         describe('error handling and edge cases', () => {
             it('handles malformed websocket payloads gracefully', () => {
+                // eslint-disable-next-line no-empty-function
+                const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
                 const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
                 // Malformed JSON
@@ -1431,6 +1439,8 @@ describe('incremental updates', () => {
 
                 expect(() => handler(msg)).not.toThrow();
                 expect(testDispatch).not.toHaveBeenCalled();
+                expect(consoleError).toHaveBeenCalledTimes(1);
+                consoleError.mockRestore();
             });
 
             it('handles missing fields in update payload', () => {

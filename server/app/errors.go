@@ -52,6 +52,9 @@ var ErrReservedPropertyFieldName = errors.New("reserved property field name")
 // ErrInternalPrecondition occurs when a caller skipped a mandatory setup step; maps to HTTP 500.
 var ErrInternalPrecondition = errors.New("internal precondition violated")
 
+// ErrPropertyFieldNotOnRun occurs when a property field does not belong to the specified run.
+var ErrPropertyFieldNotOnRun = errors.New("property field does not belong to run")
+
 // ErrInvalidOwner occurs when the proposed new owner is not a member of the run's team or channel.
 var ErrInvalidOwner = errors.New("invalid owner")
 

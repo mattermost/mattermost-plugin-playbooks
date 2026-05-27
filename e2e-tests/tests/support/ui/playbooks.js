@@ -363,6 +363,19 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
     });
 });
 
+Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').click();
+
+    // Profiles are loaded asynchronously via useProfilesInTeam. The dropdown
+    // options refresh once the API response arrives and Redux updates, so we
+    // wait up to HALF_MIN for the option to become available.
+    cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
+    cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
+
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
+});
+
 /**
  * Assert that a run in the runs list shows the expected sequential ID badge.
  * @param {String} runName - The run name to locate in the list
@@ -426,6 +439,34 @@ Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
     cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
     cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
     cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
+});
+
+Cypress.Commands.add('playbooksConfirmFinishModal', () => {
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+    cy.get('#confirmModal').should('not.exist');
+});
+
+Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
+        if (req.body && req.body.operationName === operationName) {
+            req.alias = operationName;
+        }
+    });
+});
+
+Cypress.Commands.add('playbooksOpenTaskAssigneeEditor', (playbookId, taskTitle) => {
+    cy.visit('/playbooks/playbooks/' + playbookId + '/outline');
+    cy.get('#checklists').within(() => {
+        cy.findByText(taskTitle).trigger('mouseover');
+        cy.findByTestId('hover-menu-edit-button').click();
+    });
+});
+
+Cypress.Commands.add('playbooksFindTaskItem', (title) => {
+    return cy.findByTestId('run-checklist-section').findByText(title).
+        parents('[data-testid="checkbox-item-container"]');
 });
 
 Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId, playbookId) => {
@@ -550,4 +591,20 @@ Cypress.Commands.add('playbooksPostStatusUpdateViaUI', (teamName, run, message) 
     });
     cy.getStatusUpdateDialog().should('not.exist');
     return cy.getLastPostId().then((postId) => cy.apiGetPostMessage(postId));
+});
+
+// Post a status update from the run details page using the "Post update" button.
+// The browser must already be on the run details page.
+Cypress.Commands.add('playbooksPostStatusUpdateViaRunPage', (run, message) => {
+    cy.findByTestId('post-update-button').click();
+    cy.getStatusUpdateDialog().within(() => {
+        cy.findByTestId('update_run_status_textbox').clear().type(typeEscape(message));
+        cy.findByTestId('modal-confirm-button').click();
+    });
+    cy.getStatusUpdateDialog().should('not.exist');
+    return cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
+        const statusPosts = updatedRun.status_posts || [];
+        const lastPost = statusPosts[statusPosts.length - 1];
+        return cy.apiGetPostMessage(lastPost.id);
+    });
 });

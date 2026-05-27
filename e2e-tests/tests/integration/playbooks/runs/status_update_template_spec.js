@@ -23,68 +23,70 @@ describe('runs > status update template resolution', {testIsolation: true}, () =
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-        });
-    });
 
-    beforeEach(() => {
-        cy.apiLogin(testUser);
-        cy.viewport('macbook-13');
+            cy.apiLogin(user);
 
-        // # Create a playbook with status updates enabled and two text property fields
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'Status Update Template Playbook ' + getRandomId(),
-            memberIDs: [testUser.id],
-            makePublic: true,
-            createPublicPlaybookRun: true,
-            statusUpdateEnabled: true,
-            reminderTimerDefaultSeconds: 86400,
-        }).then((playbook) => {
-            testPlaybook = playbook;
+            // # Create a shared playbook with status updates enabled and two text property fields.
+            // # The playbook is created once; only individual runs are recreated per test.
+            cy.apiCreatePlaybook({
+                teamId: team.id,
+                title: 'Status Update Template Playbook ' + getRandomId(),
+                memberIDs: [user.id],
+                makePublic: true,
+                createPublicPlaybookRun: true,
+                statusUpdateEnabled: true,
+                reminderTimerDefaultSeconds: 86400,
+            }).then((playbook) => {
+                testPlaybook = playbook;
 
-            cy.apiAddPropertyField(testPlaybook.id, {
-                name: 'Zone',
-                type: 'text',
-                attrs: {visibility: 'always', sortOrder: 0},
-            });
+                cy.apiAddPropertyField(playbook.id, {
+                    name: 'Zone',
+                    type: 'text',
+                    attrs: {visibility: 'always', sortOrder: 0},
+                });
 
-            cy.apiAddPropertyField(testPlaybook.id, {
-                name: 'Manager',
-                type: 'text',
-                attrs: {visibility: 'always', sortOrder: 1},
-            });
-        });
-
-        cy.then(() => {
-            cy.apiRunPlaybook({
-                teamId: testTeam.id,
-                playbookId: testPlaybook.id,
-                playbookRunName: 'Template Status Update Run (' + getRandomId() + ')',
-                ownerUserId: testUser.id,
-            }).then((run) => {
-                testRun = run;
-
-                // # Set property values via the run details page sidebar
-                cy.playbooksVisitRun(testRun.id);
-                cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha', {type: 'text'});
-                cy.playbooksSetRunPropertyViaRHS('Manager', 'Jane Smith', {type: 'text'});
-
-                // Verify properties were actually persisted before running tests
-                cy.assertRunPropertyValueStored(testRun.id, 'Zone', 'Alpha');
-                cy.assertRunPropertyValueStored(testRun.id, 'Manager', 'Jane Smith');
+                cy.apiAddPropertyField(playbook.id, {
+                    name: 'Manager',
+                    type: 'text',
+                    attrs: {visibility: 'always', sortOrder: 1},
+                });
             });
         });
     });
 
-    afterEach(() => {
+    after(() => {
         cy.apiLogin(testUser);
         if (testPlaybook) {
             cy.apiArchivePlaybook(testPlaybook.id);
         }
     });
 
+    beforeEach(() => {
+        cy.apiLogin(testUser);
+        cy.viewport('macbook-13');
+
+        // # Create a fresh run per test (status update posts mutate run state)
+        cy.apiRunPlaybook({
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
+            playbookRunName: 'Template Status Update Run (' + getRandomId() + ')',
+            ownerUserId: testUser.id,
+        }).then((run) => {
+            testRun = run;
+
+            // # Set property values via the run details page sidebar
+            cy.playbooksVisitRun(testRun.id);
+            cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha', {type: 'text'});
+            cy.playbooksSetRunPropertyViaRHS('Manager', 'Jane Smith', {type: 'text'});
+
+            // Verify properties were actually persisted before running tests
+            cy.assertRunPropertyValueStored(testRun.id, 'Zone', 'Alpha');
+            cy.assertRunPropertyValueStored(testRun.id, 'Manager', 'Jane Smith');
+        });
+    });
+
     it('system tokens {OWNER} and {CREATOR} are resolved in status update messages', () => {
-        cy.playbooksPostStatusUpdateViaUI(testTeam.name, testRun, `Owner: ${TOKEN_OWNER}. Created by: ${TOKEN_CREATOR}.`).then((resolvedMessage) => {
+        cy.playbooksPostStatusUpdateViaRunPage(testRun, `Owner: ${TOKEN_OWNER}. Created by: ${TOKEN_CREATOR}.`).then((resolvedMessage) => {
             // * Static label must survive resolution
             expect(resolvedMessage).to.include('Owner:');
 
@@ -105,7 +107,7 @@ describe('runs > status update template resolution', {testIsolation: true}, () =
     });
 
     it('custom attribute token {Zone} is resolved in status update messages', () => {
-        cy.playbooksPostStatusUpdateViaUI(testTeam.name, testRun, '{Zone} zone update.').then((resolvedMessage) => {
+        cy.playbooksPostStatusUpdateViaRunPage(testRun, '{Zone} zone update.').then((resolvedMessage) => {
             // * The Zone attribute value "Alpha" must appear
             expect(resolvedMessage).to.include('Alpha');
 
@@ -117,7 +119,7 @@ describe('runs > status update template resolution', {testIsolation: true}, () =
     it('demo template: {SEQ}, {Zone}, {OWNER}, {Manager}, {CREATOR} all resolve together', () => {
         // This is the exact template from Feature 13 demo (SS-16):
         // "[{SEQ}] {Zone} zone update. Owner: {OWNER}. Manager: {Manager}. Created by: {CREATOR}."
-        cy.playbooksPostStatusUpdateViaUI(testTeam.name, testRun, `[{SEQ}] {Zone} zone update. Owner: ${TOKEN_OWNER}. Manager: {Manager}. Created by: ${TOKEN_CREATOR}.`).then((resolvedMessage) => {
+        cy.playbooksPostStatusUpdateViaRunPage(testRun, `[{SEQ}] {Zone} zone update. Owner: ${TOKEN_OWNER}. Manager: {Manager}. Created by: ${TOKEN_CREATOR}.`).then((resolvedMessage) => {
             // * The Zone attribute value "Alpha" must appear
             expect(resolvedMessage).to.include('Alpha');
 
@@ -138,7 +140,7 @@ describe('runs > status update template resolution', {testIsolation: true}, () =
 
     it('unknown tokens are left as-is (lenient resolution)', () => {
         // The template engine is lenient — unknown tokens pass through unchanged.
-        cy.playbooksPostStatusUpdateViaUI(testTeam.name, testRun, `Update from ${TOKEN_OWNER}. Unknown: {DoesNotExist}.`).then((resolvedMessage) => {
+        cy.playbooksPostStatusUpdateViaRunPage(testRun, `Update from ${TOKEN_OWNER}. Unknown: {DoesNotExist}.`).then((resolvedMessage) => {
             // * Unknown token is preserved verbatim
             expect(resolvedMessage).to.include('{DoesNotExist}');
 

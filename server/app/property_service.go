@@ -531,6 +531,9 @@ func (s *propertyService) copyPropertyFieldForPlaybook(sourceProperty *model.Pro
 		}
 	}
 
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrapf(err, "failed to validate playbook property field for %s", sourceProperty.Name)
 	}
@@ -545,6 +548,7 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 	}
 
 	propertyField.ID = ""
+	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypeRun
 	propertyField.TargetID = runID
 	propertyField.Attrs.ParentID = playbookProperty.ID
@@ -555,6 +559,9 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 		}
 	}
 
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrapf(err, "failed to validate run property field for %s", playbookProperty.Name)
 	}
@@ -602,14 +609,19 @@ func (s *propertyService) GetRunPropertyValueByFieldID(runID, propertyFieldID st
 }
 
 func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
-	// CopyPlaybookPropertiesToRun creates run-scoped field copies (TargetType=run) that
-	// GetPropertyField(groupID) cannot find. Fall back to GetRunPropertyFields in that case.
+	// Get the property field to validate against.
+	// GetPropertyField filters by the playbook group scope, so run-level fields (targettype=run)
+	// may return "no rows". When that happens, fall back to searching the run's property fields
+	// directly to find the matching field.
 	mmPropertyField, getErr := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
 	var propertyField *model.PropertyField
 	if getErr != nil {
+		if getErr != pluginapi.ErrNotFound {
+			return nil, errors.Wrapf(getErr, "failed to get property field %s", propertyFieldID)
+		}
 		runFields, rfErr := s.GetRunPropertyFields(runID)
 		if rfErr != nil {
-			return nil, errors.Wrap(rfErr, "failed to get property field")
+			return nil, errors.Wrapf(rfErr, "failed to get run property fields while resolving property field %s for run %s", propertyFieldID, runID)
 		}
 		for _, rf := range runFields {
 			if rf.ID == propertyFieldID {
@@ -618,12 +630,16 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 			}
 		}
 		if propertyField == nil {
-			return nil, errors.Wrap(getErr, "failed to get property field")
+			return nil, errors.Wrapf(getErr, "property field %s not found on run %s", propertyFieldID, runID)
 		}
 	} else if mmPropertyField == nil {
 		return nil, ErrNotFound
 	} else {
 		propertyField = mmPropertyField
+	}
+
+	if propertyField.TargetType != PropertyTargetTypeRun || propertyField.TargetID != runID {
+		return nil, ErrPropertyFieldNotOnRun
 	}
 
 	// Sanitize and validate the value based on field type
@@ -705,10 +721,7 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 		if err := json.Unmarshal(value, &arrayValue); err != nil {
 			return nil, errors.New("multiselect field value must be an array of strings")
 		}
-		if validateOptions {
-			return value, s.validateMultiselectValue(propertyField, arrayValue)
-		}
-		return value, nil
+		return value, s.validateMultiselectValue(propertyField, arrayValue)
 	case model.PropertyFieldTypeDate:
 		normalized, err := normalizeDateValue(value)
 		if err != nil {
@@ -716,11 +729,11 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 		}
 		return normalized, nil
 	case model.PropertyFieldTypeUser:
-		var stringValue string
-		if err := json.Unmarshal(value, &stringValue); err != nil {
+		var userID string
+		if err := json.Unmarshal(value, &userID); err != nil {
 			return nil, errors.New("user field value must be a string")
 		}
-		if !model.IsValidId(stringValue) {
+		if userID != "" && !model.IsValidId(userID) {
 			return nil, errors.New("user field value must be a valid 26-character ID")
 		}
 		return value, nil

@@ -46,6 +46,7 @@ import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_c
 
 import {useProxyState} from 'src/hooks';
 import {getDistinctAssignees} from 'src/utils';
+import {mapChecklistItemToInput} from 'src/components/checklist/checklist_list';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
@@ -193,17 +194,9 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
         const checklists = playbook.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
-                title: ci.title,
-                description: ci.description,
-                state: ci.state,
-                stateModified: ci.state_modified || 0,
-                assigneeID: ci.assignee_id === userId ? '' : ci.assignee_id || '',
-                assigneeModified: ci.assignee_modified || 0,
-                command: ci.command,
-                commandLastRun: ci.command_last_run,
-                dueDate: ci.due_date,
-                taskActions: ci.task_actions,
+                ...mapChecklistItemToInput(ci),
                 conditionID: ci.condition_id || '',
+                assigneeID: ci.assignee_id === userId ? '' : ci.assignee_id || '',
             })),
         }));
         const idx = playbook.invited_user_ids.indexOf(userId);
@@ -218,17 +211,11 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
         const checklists = playbook.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
-                title: ci.title,
-                description: ci.description,
-                state: ci.state,
-                stateModified: ci.state_modified || 0,
-                assigneeID: '',
-                assigneeModified: ci.assignee_modified || 0,
-                command: ci.command,
-                commandLastRun: ci.command_last_run,
-                dueDate: ci.due_date,
-                taskActions: ci.task_actions,
+                ...mapChecklistItemToInput(ci),
                 conditionID: ci.condition_id || '',
+                assigneeID: '',
+                assigneeType: '',
+                assigneePropertyFieldID: '',
             })),
         }));
         updatePlaybook({

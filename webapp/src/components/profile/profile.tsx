@@ -47,7 +47,7 @@ export const ProfileImage = styled.img`
     .Assigned-button & {
         width: 20px;
         height: 20px;
-        margin: 0 4px 0 0;
+        margin: 0 6px 0 0;
     }
 `;
 

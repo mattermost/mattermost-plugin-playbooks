@@ -92,11 +92,25 @@ const RHSAbout = (props: Props) => {
         }
         const response = await setOwner(props.playbookRun.id, userId);
         if (response.error) {
+            // eslint-disable-next-line no-warning-comments
+            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
+            console.log(response.error); // eslint-disable-line no-console
             // Re-fetch to correct stale ownership in Redux — this causes the Finish button
             // to disappear for users who no longer have permission to finish the run.
             fetchPlaybookRun(props.playbookRun.id)
                 .then((run) => dispatch(playbookRunUpdated(run)))
                 .catch(() => undefined);
+            return;
+        }
+
+        // Fetch the updated run and push it to Redux so the UI reflects the
+        // new owner (and re-resolved checklist assignees) immediately, without
+        // waiting for the WebSocket event to arrive.
+        try {
+            const updatedRun = await fetchPlaybookRun(props.playbookRun.id);
+            dispatch(playbookRunUpdated(updatedRun));
+        } catch {
+            // Non-fatal: the WebSocket event will update the UI shortly.
         }
     };
 

@@ -60,7 +60,8 @@ type ResolveOptions struct {
 // systemTokens are the built-in token names always valid in templates (even without property fields).
 // These names are reserved as property field names — enforced by validateReservedFieldName.
 // SEQ: sequential run number; OWNER: run owner display name; CREATOR: run creator display name.
-var systemTokens = []string{"SEQ", "OWNER", "CREATOR"}
+// PROPERTY_USER: reserved assignee type name.
+var systemTokens = []string{"SEQ", "OWNER", "CREATOR", "PROPERTY_USER"}
 
 // isSystemToken checks if a name matches a built-in system token (case-insensitive).
 func isSystemToken(name string) bool {
@@ -73,10 +74,11 @@ func isSystemToken(name string) bool {
 }
 
 // validateReservedFieldName rejects field names that would conflict with built-in
-// template placeholders. Reserved names: SEQ, OWNER, CREATOR (case-insensitive).
+// template placeholders or assignee types. Reserved: SEQ, OWNER, CREATOR, PROPERTY_USER (case-insensitive).
 func validateReservedFieldName(name string) error {
+	name = strings.TrimSpace(name)
 	if isSystemToken(name) {
-		return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+name+"' is reserved as a system token")
+		return errors.Wrapf(ErrReservedPropertyFieldName, "field name %q is reserved", name)
 	}
 	return nil
 }

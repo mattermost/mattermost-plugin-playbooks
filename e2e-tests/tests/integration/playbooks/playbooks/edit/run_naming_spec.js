@@ -21,35 +21,33 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            cy.apiLogin(user);
+
+            // # Create a single shared playbook; state is reset per test via apiPatchPlaybook.
+            cy.apiCreatePlaybook({
+                teamId: team.id,
+                title: 'Run Naming Playbook ' + getRandomId(),
+                memberIDs: [user.id],
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
         });
     });
 
-    beforeEach(() => {
-        // # Login as testUser
+    after(() => {
         cy.apiLogin(testUser);
-
-        // # Size the viewport
-        cy.viewport('macbook-13');
-
-        // # Create a fresh playbook for each test
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'Run Naming Playbook ' + getRandomId(),
-            memberIDs: [testUser.id],
-        }).then((playbook) => {
-            testPlaybook = playbook;
-        });
-    });
-
-    afterEach(() => {
-        // # Ensure we're logged in as testUser before cleanup — tests may end as a different user
-        cy.apiLogin(testUser);
-
-        // # Archive the playbook to free up the run_number_prefix unique constraint
-        // # This prevents 409 conflicts when Cypress retries a test with the same prefix
         if (testPlaybook) {
             cy.apiArchivePlaybook(testPlaybook.id);
         }
+    });
+
+    beforeEach(() => {
+        cy.apiLogin(testUser);
+        cy.viewport('macbook-13');
+
+        // # Reset mutable fields so each test starts from a clean state
+        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: '', channel_name_template: ''});
     });
 
     it('shows run naming fields inside the Actions section', () => {
