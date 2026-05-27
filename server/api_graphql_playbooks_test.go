@@ -130,17 +130,19 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	t.Run("checklist with preset values that need to be cleared", func(t *testing.T) {
 		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       "",
-				"assigneeModified": 101,
-				"state":            "Closed",
-				"stateModified":    102,
-				"command":          "",
-				"commandLastRun":   103,
-				"lastSkipped":      104,
-				"dueDate":          100,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              "",
+				"assigneeModified":        101,
+				"state":                   "Closed",
+				"stateModified":           102,
+				"command":                 "",
+				"commandLastRun":          103,
+				"lastSkipped":             104,
+				"dueDate":                 100,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 
@@ -185,17 +187,19 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	t.Run("update playbook with pre-assigned task, valid invite user list, and invitations enabled", func(t *testing.T) {
 		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
@@ -237,17 +241,19 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	t.Run("update playbook with pre-assigned task fails due to disabled invitations", func(t *testing.T) {
 		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
@@ -263,17 +269,19 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	t.Run("update playbook with pre-assigned task fails due to missing assignee in existing invite user list", func(t *testing.T) {
 		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
@@ -289,17 +297,19 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	t.Run("update playbook with pre-assigned task fails due to assignee missing in new invite user list", func(t *testing.T) {
 		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
@@ -316,17 +326,19 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	t.Run("update playbook with invite user list fails due to missing a pre-assignee", func(t *testing.T) {
 		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
@@ -348,17 +360,19 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	t.Run("update playbook fails if invitations are getting disabled but there are pre-assigned users", func(t *testing.T) {
 		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
@@ -711,11 +725,13 @@ func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string
 	return nil
 }
 
-func TestAdminOnlyEdit_GraphQLUpdatePlaybook(t *testing.T) {
+// TestAdminOnlyEdit_GraphQL verifies that GraphQL playbook mutations honor AdminOnlyEdit.
+func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
+	e.SetEnterpriseLicence()
 
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	updatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "AdminOnlyEdit GraphQL Test Playbook",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
@@ -731,31 +747,21 @@ func TestAdminOnlyEdit_GraphQLUpdatePlaybook(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("non-admin member GraphQL update is rejected", func(t *testing.T) {
-		err := gqlDoPlaybookUpdate(e.PlaybooksClient, playbookID, map[string]interface{}{"title": "Non-Admin GraphQL Edit"})
+		err := gqlDoPlaybookUpdate(e.PlaybooksClient, updatePlaybookID, map[string]interface{}{"title": "Non-Admin GraphQL Edit"})
 		require.Error(t, err)
 	})
 
 	t.Run("playbook admin (non-sysadmin) GraphQL update succeeds", func(t *testing.T) {
-		err := gqlDoPlaybookUpdate(e.PlaybooksClient2, playbookID, map[string]interface{}{"title": "Admin GraphQL Edit"})
+		err := gqlDoPlaybookUpdate(e.PlaybooksClient2, updatePlaybookID, map[string]interface{}{"title": "Admin GraphQL Edit"})
 		require.NoError(t, err)
 	})
 
 	t.Run("system admin GraphQL update succeeds", func(t *testing.T) {
-		err := gqlDoPlaybookUpdate(e.PlaybooksAdminClient, playbookID, map[string]interface{}{"title": "SysAdmin GraphQL Edit"})
+		err := gqlDoPlaybookUpdate(e.PlaybooksAdminClient, updatePlaybookID, map[string]interface{}{"title": "SysAdmin GraphQL Edit"})
 		require.NoError(t, err)
 	})
-}
 
-// TestAdminOnlyEdit_GraphQLPropertyFields verifies that the GraphQL property-field
-// mutations (AddPlaybookPropertyField, UpdatePlaybookPropertyField,
-// DeletePlaybookPropertyField) honor AdminOnlyEdit.  All three route through
-// PlaybookEdit in graphql_root_property.go (lines 72, 113, 171).
-func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-	e.SetEnterpriseLicence()
-
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	propFieldsPlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "AdminOnlyEdit GQL PropertyFields Test",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
@@ -800,7 +806,7 @@ func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
 		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         addMutation,
 			OperationName: "AddPlaybookPropertyField",
-			Variables:     map[string]interface{}{"playbookID": playbookID, "propertyField": baseField},
+			Variables:     map[string]interface{}{"playbookID": propFieldsPlaybookID, "propertyField": baseField},
 		}, &resp); err != nil {
 			return err
 		}
@@ -816,7 +822,7 @@ func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
 	})
 
 	// Seed a field as the playbook admin so update/delete have a target.
-	seededFieldID, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+	seededFieldID, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), propFieldsPlaybookID, client.PropertyFieldRequest{
 		Name: "Seeded",
 		Type: "text",
 		Attrs: &client.PropertyFieldAttrsInput{
@@ -832,7 +838,7 @@ func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
 			Query:         updateMutation,
 			OperationName: "UpdatePlaybookPropertyField",
 			Variables: map[string]interface{}{
-				"playbookID":      playbookID,
+				"playbookID":      propFieldsPlaybookID,
 				"propertyFieldID": seededFieldID.ID,
 				"propertyField":   updateField,
 			},
@@ -850,7 +856,7 @@ func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
 		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         deleteMutation,
 			OperationName: "DeletePlaybookPropertyField",
-			Variables:     map[string]interface{}{"playbookID": playbookID, "propertyFieldID": seededFieldID.ID},
+			Variables:     map[string]interface{}{"playbookID": propFieldsPlaybookID, "propertyFieldID": seededFieldID.ID},
 		}, &resp); err != nil {
 			return err
 		}

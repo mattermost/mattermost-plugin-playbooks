@@ -415,7 +415,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                             cy.findByText('Untitled task').trigger('mouseover');
                             cy.findByTestId('hover-menu-edit-button').click();
                             cy.findByTestId('assignee-profile-selector').should('exist');
-                            cy.get('.icon-account-plus-outline').should('exist'); // Icon shows when no assignee
+                            cy.findByText(`@${testUser.username}`).should('not.exist');
                         });
 
                         cy.get('#actions').within(() => {
@@ -473,7 +473,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                             cy.findByText('Untitled task').trigger('mouseover');
                             cy.findByTestId('hover-menu-edit-button').click();
                             cy.findByTestId('assignee-profile-selector').should('exist');
-                            cy.get('.icon-account-plus-outline').should('exist'); // Icon shows when no assignee
+                            cy.findByText(`@${testUser.username}`).should('not.exist');
                         });
 
                         cy.get('#actions').within(() => {

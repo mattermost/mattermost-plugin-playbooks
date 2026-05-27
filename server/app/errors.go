@@ -46,6 +46,12 @@ var ErrPropertyOptionsInUse = errors.New("property options are in use")
 // ErrPropertyFieldTypeChangeNotAllowed occurs when trying to change the type of a property field that is referenced by conditions.
 var ErrPropertyFieldTypeChangeNotAllowed = errors.New("property field type change not allowed")
 
+// ErrReservedPropertyFieldName occurs when trying to create or update a property field with a reserved name.
+var ErrReservedPropertyFieldName = errors.New("reserved property field name")
+
+// ErrPropertyFieldNotOnRun occurs when a property field does not belong to the specified run.
+var ErrPropertyFieldNotOnRun = errors.New("property field does not belong to run")
+
 // ErrInvalidOwner occurs when the proposed new owner is not a member of the run's team or channel.
 var ErrInvalidOwner = errors.New("invalid owner")
 

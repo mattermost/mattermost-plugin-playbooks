@@ -223,19 +223,6 @@ func (s *PlaybookRunService) Restore(ctx context.Context, playbookRunID string) 
 	return nil
 }
 
-func (s *PlaybookRunService) ChangeOwner(ctx context.Context, playbookRunID, ownerID string) error {
-	ownerURL := fmt.Sprintf("runs/%s/owner", playbookRunID)
-	body := struct {
-		OwnerID string `json:"owner_id"`
-	}{OwnerID: ownerID}
-	req, err := s.client.newAPIRequest(http.MethodPost, ownerURL, body)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.client.do(ctx, req, nil)
-	return err
-}
 
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
 	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
@@ -348,16 +335,32 @@ func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookR
 }
 
 func (s *PlaybookRunService) SetItemAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, assigneeID string) error {
-	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", playbookRunID, checklistIdx, itemIdx)
-	body := struct {
+	return s.putItemAssignee(ctx, playbookRunID, checklistIdx, itemIdx, struct {
 		AssigneeID string `json:"assignee_id"`
-	}{assigneeID}
+	}{assigneeID})
+}
 
-	req, err := s.client.newAPIRequest(http.MethodPut, createURL, body)
+// SetItemRoleAssignee sets a role-based assignee ("owner" or "creator") on the specified checklist item.
+func (s *PlaybookRunService) SetItemRoleAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, assigneeType string) error {
+	return s.putItemAssignee(ctx, playbookRunID, checklistIdx, itemIdx, struct {
+		AssigneeType string `json:"assignee_type"`
+	}{assigneeType})
+}
+
+// SetItemPropertyUserAssignee sets the assignee of the specified checklist item to whoever
+// the given User-type property field resolves to on this run.
+func (s *PlaybookRunService) SetItemPropertyUserAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, propertyFieldID string) error {
+	return s.putItemAssignee(ctx, playbookRunID, checklistIdx, itemIdx, struct {
+		AssigneePropertyFieldID string `json:"assignee_property_field_id"`
+	}{propertyFieldID})
+}
+
+func (s *PlaybookRunService) putItemAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, body interface{}) error {
+	url := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", playbookRunID, checklistIdx, itemIdx)
+	req, err := s.client.newAPIRequest(http.MethodPut, url, body)
 	if err != nil {
 		return err
 	}
-
 	resp, err := s.client.do(ctx, req, nil)
 	if resp != nil && resp.Body != nil {
 		resp.Body.Close()
@@ -422,6 +425,24 @@ func (s *PlaybookRunService) GetOwners(ctx context.Context) ([]OwnerInfo, error)
 	resp.Body.Close()
 
 	return owners, nil
+}
+
+// ChangeOwner changes the owner of a playbook run.
+func (s *PlaybookRunService) ChangeOwner(ctx context.Context, playbookRunID, newOwnerID string) error {
+	ownerURL := fmt.Sprintf("runs/%s/owner", playbookRunID)
+	body := struct {
+		OwnerID string `json:"owner_id"`
+	}{OwnerID: newOwnerID}
+	req, err := s.client.newAPIRequest(http.MethodPost, ownerURL, body)
+	if err != nil {
+		return err
+	}
+	resp, err := s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
 }
 
 // GetPropertyFields gets all property fields for a run. It is a wrapper around GetPropertyFieldsSince with updatedSince set to 0.
