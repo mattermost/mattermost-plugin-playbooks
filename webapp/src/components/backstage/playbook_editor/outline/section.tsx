@@ -16,6 +16,7 @@ interface Props {
     hoverEffect?: boolean;
     onHeaderClick?: () => void;
     hasSubtitle?: boolean;
+    hideHeader?: boolean;
 }
 
 const Section = ({
@@ -26,6 +27,7 @@ const Section = ({
     hoverEffect,
     onHeaderClick,
     hasSubtitle,
+    hideHeader,
 }: Props) => {
     const {url} = useRouteMatch();
 
@@ -33,27 +35,29 @@ const Section = ({
         <Wrapper
             id={id}
         >
-            <Header
-                $clickable={Boolean(onHeaderClick)}
-                $hasSubtitle={hasSubtitle}
-                $hoverEffect={hoverEffect}
-                onClick={onHeaderClick}
-            >
-                <Title>
-                    <CopyLink
-                        id={`section-link-${id}`}
-                        to={getSiteUrl() + `${url}#${id}`}
-                        name={title}
-                        aria-hidden={true}
-                    />
-                    {title}
-                </Title>
-                {headerRight && (
-                    <HeaderRight>
-                        {headerRight}
-                    </HeaderRight>
-                )}
-            </Header>
+            {!hideHeader && (
+                <Header
+                    $clickable={Boolean(onHeaderClick)}
+                    $hasSubtitle={hasSubtitle}
+                    $hoverEffect={hoverEffect}
+                    onClick={onHeaderClick}
+                >
+                    <Title>
+                        <CopyLink
+                            id={`section-link-${id}`}
+                            to={getSiteUrl() + `${url}#${id}`}
+                            name={title}
+                            aria-hidden={true}
+                        />
+                        {title}
+                    </Title>
+                    {headerRight && (
+                        <HeaderRight>
+                            {headerRight}
+                        </HeaderRight>
+                    )}
+                </Header>
+            )}
             {children}
         </Wrapper>
     );

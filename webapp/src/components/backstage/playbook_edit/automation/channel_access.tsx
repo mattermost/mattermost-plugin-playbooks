@@ -31,13 +31,16 @@ interface Props {
     playbook: PlaybookSubset;
     setPlaybook: React.Dispatch<React.SetStateAction<PlaybookSubset>>;
     setChangesMade?: (b: boolean) => void;
+    disabled?: boolean;
+    newChannelOnly?: boolean;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, disabled: disabledProp, newChannelOnly = false}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
     const archived = playbook.delete_at !== 0;
+    const disabled = archived || (disabledProp ?? false);
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -76,10 +79,11 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                 <AutomationTitle
                     style={{alignSelf: 'flex-start'}}
                 >
-                    <AutomationLabel disabled={archived}>
+                    <AutomationLabel disabled={disabled || newChannelOnly}>
                         <ChannelModeRadio
                             type='radio'
-                            disabled={archived}
+                            data-testid='playbook-link-existing-channel-radio'
+                            disabled={disabled || newChannelOnly}
                             checked={playbook.channel_mode === 'link_existing_channel'}
                             onChange={() => handleChannelModeChange('link_existing_channel')}
                         />
@@ -93,7 +97,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         channelIds={playbook.channel_id === '' ? [] : [playbook.channel_id]}
                         isClearable={true}
                         selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                        isDisabled={archived || playbook.channel_mode === 'create_new_channel'}
+                        isDisabled={disabled || newChannelOnly || playbook.channel_mode === 'create_new_channel'}
                         captureMenuScroll={false}
                         shouldRenderValue={true}
                         teamId={teamId}
@@ -104,10 +108,10 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             </AutomationHeader>
             <AutomationHeader id={'create-new-channel'}>
                 <AutomationTitle style={{alignSelf: 'flex-start'}} >
-                    <AutomationLabel disabled={archived}>
+                    <AutomationLabel disabled={disabled}>
                         <ChannelModeRadio
                             type='radio'
-                            disabled={archived}
+                            disabled={disabled}
                             checked={playbook.channel_mode === 'create_new_channel'}
                             onChange={() => handleChannelModeChange('create_new_channel')}
                         />
@@ -116,30 +120,30 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                 </AutomationTitle>
                 <HorizontalSplit>
                     <VerticalSplit>
-                        <ButtonLabel disabled={archived || playbook.channel_mode === 'link_existing_channel'}>
+                        <ButtonLabel disabled={disabled || playbook.channel_mode === 'link_existing_channel'}>
                             <RadioInput
                                 type='radio'
-                                disabled={archived || playbook.channel_mode === 'link_existing_channel'}
+                                disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                                 checked={playbook.create_public_playbook_run}
                                 onChange={() => handlePublicChange(true)}
                             />
                             <Icon
-                                $disabled={playbook.channel_mode === 'link_existing_channel'}
+                                $disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                                 $active={playbook.create_public_playbook_run}
                                 className={'icon-globe'}
                             />
                             <BigText>{formatMessage({defaultMessage: 'Public'})}</BigText>
                         </ButtonLabel>
                         <HorizontalSpacer $size={8}/>
-                        <ButtonLabel disabled={archived || playbook.channel_mode === 'link_existing_channel'}>
+                        <ButtonLabel disabled={disabled || playbook.channel_mode === 'link_existing_channel'}>
                             <RadioInput
                                 type='radio'
-                                disabled={archived || playbook.channel_mode === 'link_existing_channel'}
+                                disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                                 checked={!playbook.create_public_playbook_run}
                                 onChange={() => handlePublicChange(false)}
                             />
                             <Icon
-                                $disabled={playbook.channel_mode === 'link_existing_channel'}
+                                $disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                                 $active={!playbook.create_public_playbook_run}
                                 className={'icon-lock-outline'}
                             />
@@ -147,7 +151,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         </ButtonLabel>
                     </VerticalSplit>
                     <PatternedInput
-                        enabled={!archived && playbook.channel_mode === 'create_new_channel'}
+                        enabled={!disabled && playbook.channel_mode === 'create_new_channel'}
                         input={playbook.channel_name_template}
                         onChange={handleChannelNameTemplateChange}
                         pattern={'[\\S][\\s\\S]*[\\S]'} // at least two non-whitespace characters
@@ -156,7 +160,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
                     />
                     <ChannelActionButton
-                        disabled={archived || playbook.channel_mode === 'link_existing_channel'}
+                        disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                         data-testid='playbook-channel-actions-button'
                         onClick={() => dispatch(showPlaybookActionsModal())}
                     >

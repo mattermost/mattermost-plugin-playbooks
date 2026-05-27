@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -62,6 +63,9 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 	// Determine if incremental updates are enabled
 	if !s.configService.IsIncrementalUpdatesEnabled() {
+		if currentRun != nil {
+			currentRun.ComputeTaskProgress()
+		}
 		// If incremental updates are disabled, fall back to the standard WS update
 		sendWSOptions := RunWSOptions{
 			AdditionalUserIDs: additionalUserIDs,
@@ -79,6 +83,12 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 			logger.WithError(err).Error("failed to get current state of playbook run")
 			return
 		}
+	} else {
+		currentRun.ComputeTaskProgress()
+	}
+
+	if previousRun != nil {
+		previousRun.ComputeTaskProgress()
 	}
 
 	// Pre-calculate changed fields for incremental updates
@@ -263,6 +273,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 		if values, exists := valuesMap[runID]; exists {
 			results.Items[i].PropertyValues = values
 		}
+		results.Items[i].ComputeTaskProgress()
 	}
 
 	return results, nil
@@ -358,6 +369,25 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
+func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
+	if playbookRun == nil {
+		return errors.New("playbookRun cannot be nil")
+	}
+	if pb == nil {
+		return nil
+	}
+	if playbookRun.PlaybookID != "" && pb.ID != playbookRun.PlaybookID {
+		return errors.Wrap(ErrMalformedPlaybookRun, "playbook ID mismatch between run and supplied playbook")
+	}
+	if playbookRun.PlaybookID == "" {
+		playbookRun.PlaybookID = pb.ID
+	}
+	if pb.NewChannelOnly && playbookRun.ChannelID != "" {
+		return errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires runs to create a new channel, but a channel_id was provided")
+	}
+	return nil
+}
+
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
@@ -372,6 +402,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
 	}
 
+	if err := normalizeAndValidateRunCreationParams(playbookRun, pb); err != nil {
+		return nil, err
+	}
+
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
 		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
@@ -382,6 +416,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		} else {
 			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
 		}
+	}
+	if playbookRun.OwnerUserID == "" {
+		playbookRun.OwnerUserID = userID
 	}
 
 	playbookRun.ReporterUserID = userID
@@ -408,6 +445,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		playbookRun.ChannelID = channel.Id
+		playbookRun.ChannelCreatedByRun = true
+		if pb != nil {
+			playbookRun.AutoArchiveChannel = pb.AutoArchiveChannel
+		}
 		createdChannel = true
 	} else {
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -472,6 +513,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
+	// Resolve role-based task assignments (Owner/Creator) before persisting
+	resolveRoleAssignments(playbookRun.Checklists, playbookRun.OwnerUserID, playbookRun.ReporterUserID)
+
 	playbookRun, err = s.store.CreatePlaybookRun(playbookRun)
 	if err != nil {
 		err := errors.Wrap(err, "failed to create playbook run")
@@ -483,9 +527,20 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		propertyCopyResult, err := s.propertyService.CopyPlaybookPropertiesToRun(pb.ID, playbookRun.ID)
 		if err != nil {
 			logger.WithError(err).Warn("failed to copy playbook properties to run")
+			remapAssigneePropertyFieldIDs(playbookRun.Checklists, nil)
+			playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+			if err != nil {
+				logger.WithError(err).Warn("failed to persist cleared property field IDs after copy failure")
+			}
 		} else {
 			// Assign the copied property fields to the run
 			playbookRun.PropertyFields = propertyCopyResult.CopiedFields
+
+			// Remap AssigneePropertyFieldID from playbook-level to run-level field IDs.
+			remapAssigneePropertyFieldIDs(playbookRun.Checklists, propertyCopyResult.FieldMappings)
+
+			// Resolve any property_user assignees from the run's initial property values.
+			resolvePropertyUserAssignmentsFromRun(playbookRun)
 
 			// Copy conditions from playbook to run using the field mappings if license allows
 			if s.licenseChecker.ConditionalPlaybooksAllowed() {
@@ -503,13 +558,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 							logger.WithError(err).Warn("failed to evaluate conditions for run")
 						}
 					}
-
-					// Save the updated playbook run with correct condition IDs and visibility states
-					playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
-					if err != nil {
-						logger.WithError(err).Warn("failed to update playbook run with new condition IDs")
-					}
 				}
+			}
+
+			// Persist checklist remapping (and condition ID/visibility updates if any) in one write.
+			playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+			if err != nil {
+				logger.WithError(err).Warn("failed to update playbook run with property field remapping")
 			}
 		}
 	}
@@ -646,6 +701,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if len(playbookRun.WebhookOnCreationURLs) != 0 {
 		s.sendWebhooksOnCreation(*playbookRun)
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	if playbookRun.PostID == "" {
 		auditRec.Success()
@@ -874,6 +931,8 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 		SubjectUserID: post.UserId,
 		CreatorUserID: userID,
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -1226,6 +1285,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	// Add current run context to audit
 	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToModify.CurrentStatus)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
+	model.AddEventParameterToAuditRec(auditRec, "ownerUserID", playbookRunToModify.OwnerUserID)
 
 	if playbookRunToModify.CurrentStatus == StatusFinished {
 		auditRec.Success()
@@ -1300,6 +1360,11 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	s.metricsService.IncrementRunsFinishedCount(1)
+
+	if s.shouldAutoArchiveChannel(playbookRunToModify) {
+		playbookRunToModify = s.autoArchiveChannelOnFinish(playbookRunToModify, playbookRunID, userID, endAt, logger)
+	}
+
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
@@ -1453,6 +1518,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	// Add current run context to audit
 	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToRestore.CurrentStatus)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToRestore.TeamID)
+	model.AddEventParameterToAuditRec(auditRec, "ownerUserID", playbookRunToRestore.OwnerUserID)
 
 	if playbookRunToRestore.CurrentStatus != StatusFinished {
 		auditRec.Success()
@@ -1473,6 +1539,32 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	// Un-archive the channel before posting so the message lands in an active channel.
+	// Always clear AutoArchivedChannel when set — even if the channel was manually unarchived
+	// before the restore, the marker must be cleared so future finishes start fresh.
+	if playbookRunToRestore.AutoArchivedChannel && playbookRunToRestore.ChannelID != "" {
+		unarchived := s.restoreChannelByID(playbookRunToRestore.ChannelID, logger)
+		candidate := *playbookRunToRestore
+		candidate.AutoArchivedChannel = false
+		if updatedRun, err := s.store.UpdatePlaybookRun(&candidate); err != nil {
+			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
+		} else {
+			playbookRunToRestore = updatedRun
+		}
+		if unarchived {
+			unarchiveEvent := &TimelineEvent{
+				PlaybookRunID: playbookRunID,
+				CreateAt:      restoreAt + 1,
+				EventAt:       restoreAt + 1,
+				EventType:     ChannelUnarchived,
+				SubjectUserID: userID,
+			}
+			if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
+				logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
+			}
+		}
 	}
 
 	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
@@ -1523,6 +1615,87 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	return nil
 }
 
+// shouldAutoArchiveChannel returns true if the run's channel should be auto-archived on finish:
+// AutoArchiveChannel was snapshotted from the playbook at run creation and the channel was
+// created by this run (not linked).
+func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun) bool {
+	return run.AutoArchiveChannel && run.ChannelCreatedByRun && run.ChannelID != ""
+}
+
+// deleteChannelByID archives (soft-deletes) the given channel. Returns true on success.
+func (s *PlaybookRunServiceImpl) deleteChannelByID(channelID string, logger *logrus.Entry) bool {
+	if err := s.pluginAPI.Channel.Delete(channelID); err != nil {
+		logger.WithError(err).Warn("failed to archive channel")
+		return false
+	}
+	return true
+}
+
+// restoreChannelByID clears DeleteAt on the given channel (un-archives it).
+// NOTE: Get→mutate→Update is not atomic. Channel.Update sends the full channel object, so any
+// concurrent channel property edit (display name, purpose) made between Get and Update will be
+// silently overwritten. This is acceptable as a best-effort operation until the plugin API
+// exposes a dedicated RestoreChannel method.
+func (s *PlaybookRunServiceImpl) restoreChannelByID(channelID string, logger *logrus.Entry) bool {
+	ch, err := s.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		logger.WithError(err).Warn("failed to get channel for un-archive")
+		return false
+	}
+	if ch.DeleteAt == 0 {
+		return false
+	}
+	ch.DeleteAt = 0
+	if err := s.pluginAPI.Channel.Update(ch); err != nil {
+		logger.WithError(err).Warn("failed to un-archive channel")
+		return false
+	}
+	return true
+}
+
+// autoArchiveChannelOnFinish persists AutoArchivedChannel, archives the channel, and records the
+// timeline event. Returns the (possibly updated) run. See shouldAutoArchiveChannel for the guard.
+func (s *PlaybookRunServiceImpl) autoArchiveChannelOnFinish(run *PlaybookRun, playbookRunID, userID string, endAt int64, logger *logrus.Entry) *PlaybookRun {
+	// Persist the flag first so that if the archive call fails and we reset the flag,
+	// the worst-case double-failure leaves AutoArchivedChannel=true in the DB (safe: the
+	// next restore will call restoreChannelByID which no-ops on an already-active channel
+	// and clears the flag). The old "archive first, persist second" order could leave the
+	// channel permanently archived with AutoArchivedChannel=false.
+	run.AutoArchivedChannel = true
+	updatedRun, err := s.store.UpdatePlaybookRun(run)
+	if err != nil {
+		logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag; skipping channel archive")
+		return run
+	}
+	run = updatedRun
+
+	if !s.deleteChannelByID(run.ChannelID, logger.WithField("context", "auto-archive on run finish")) {
+		run.AutoArchivedChannel = false
+		if resetRun, resetErr := s.store.UpdatePlaybookRun(run); resetErr != nil {
+			// Flag is true but channel is not archived. The next restore will call
+			// restoreChannelByID, which returns alreadyActive=true for an active
+			// channel and clears the flag as a no-op — safe recovery path.
+			logger.WithField("channel_id", run.ChannelID).
+				WithError(resetErr).Error("failed to reset AutoArchivedChannel after archive failure — flag is true but channel not archived; next restore will clear it")
+		} else {
+			run = resetRun
+		}
+		return run
+	}
+
+	archiveEvent := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      endAt + 1,
+		EventAt:       endAt + 1,
+		EventType:     ChannelArchived,
+		SubjectUserID: userID,
+	}
+	if _, err := s.store.CreateTimelineEvent(archiveEvent); err != nil {
+		logger.WithError(err).Warn("failed to create channel_archived timeline event")
+	}
+	return run
+}
+
 // updateAllChecklistsAndItemsTimestamps sets the UpdateAt field for all checklist items in the given checklists
 func updateAllChecklistsAndItemsTimestamps(checklists []Checklist, now int64) {
 	for i := range checklists {
@@ -1555,7 +1728,103 @@ func updateChecklistAndItemTimestamp(checklist *Checklist, item *ChecklistItem, 
 	checklist.UpdateAt = timestamp
 }
 
-// GraphqlUpdate updates fields based on a setmap
+func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userID string, enabled bool) error {
+	auditRec := plugin.MakeAuditRecord("togglePlaybookRunRetrospective", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "retrospectiveEnabled", enabled)
+
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		wrappedErr := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s)", playbookRunID)
+		auditRec.AddErrorDesc(wrappedErr.Error())
+		return wrappedErr
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
+	if err != nil {
+		wrappedErr := errors.Wrapf(err, "failed to get channel for run (runID: %s)", playbookRunID)
+		auditRec.AddErrorDesc(wrappedErr.Error())
+		return wrappedErr
+	}
+	if channel.DeleteAt > 0 && !IsSystemAdmin(userID, s.pluginAPI) {
+		wrappedErr := errors.Wrap(ErrChannelArchived, "cannot toggle retrospective for an archived channel")
+		auditRec.AddErrorDesc(wrappedErr.Error())
+		return wrappedErr
+	}
+
+	model.AddEventParameterToAuditRec(auditRec, "currentlyEnabled", playbookRunToModify.RetrospectiveEnabled)
+
+	if enabled == playbookRunToModify.RetrospectiveEnabled {
+		auditRec.Success()
+		auditRec.AddEventResultState(*playbookRunToModify)
+		return nil
+	}
+
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
+	}
+
+	updateAt := model.GetMillis()
+	playbookRunToModify.RetrospectiveEnabled = enabled
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
+		wrappedErr := errors.Wrapf(err, "failed to update RetrospectiveEnabled for playbook run (runID: %s)", playbookRunID)
+		auditRec.AddErrorDesc(wrappedErr.Error())
+		return wrappedErr
+	}
+
+	reminderKey := RetrospectivePrefix + playbookRunID
+
+	// Scheduler side-effects: disabling cancels any pending reminder; re-enabling on a finished,
+	// unpublished run restarts it so the owner still gets prompted.
+	if !enabled {
+		s.scheduler.Cancel(reminderKey)
+	} else if s.licenseChecker.RetrospectiveAllowed() &&
+		playbookRunToModify.CurrentStatus == StatusFinished &&
+		playbookRunToModify.RetrospectivePublishedAt == 0 {
+		// Reminder/scheduler errors are intentionally non-fatal: the toggle has already
+		// been persisted to the DB. Failure here means the owner won't be automatically
+		// prompted, but the retrospective is still enabled and can be submitted manually.
+		if remErr := s.postRetrospectiveReminder(playbookRunToModify, false); remErr != nil {
+			s.pluginAPI.Log.Error("failed to post retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
+		}
+		if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
+			if remErr := s.SetReminder(reminderKey, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); remErr != nil {
+				s.pluginAPI.Log.Error("failed to restart retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
+			}
+		}
+	}
+
+	eventType := RetrospectiveEnabled
+	if !enabled {
+		eventType = RetrospectiveDisabled
+	}
+	if _, err = s.store.CreateTimelineEvent(&TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      updateAt,
+		EventAt:       updateAt,
+		EventType:     eventType,
+		SubjectUserID: userID,
+	}); err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil, userID)
+
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "updateAt", updateAt)
+	auditRec.AddEventResultState(*playbookRunToModify)
+
+	return nil
+}
+
+// GraphqlUpdate updates fields based on a setmap.
 func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if len(setmap) == 0 {
 		return nil
@@ -1564,17 +1833,14 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	auditRec := plugin.MakeAuditRecord("graphqlUpdatePlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
-	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", id)
 
-	// Capture field names being updated (for audit visibility)
 	fieldNames := make([]string, 0, len(setmap))
 	for fieldName := range setmap {
 		fieldNames = append(fieldNames, fieldName)
 	}
 	model.AddEventParameterToAuditRec(auditRec, "fieldsUpdated", strings.Join(fieldNames, ","))
 
-	// Get the current playbook run state before changes if incremental updates are enabled
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		var err error
@@ -1588,7 +1854,6 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	}
 
 	now := model.GetMillis()
-	// Update checklist timestamps if checklists are being modified
 	if checklists, ok := setmap["Checklists"].([]Checklist); ok {
 		updateAllChecklistsAndItemsTimestamps(checklists, now)
 		model.AddEventParameterToAuditRec(auditRec, "checklistsUpdated", len(checklists))
@@ -1675,6 +1940,8 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*Playbook
 		}
 		playbookRun.PropertyValues = propertyValues
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	return playbookRun, nil
 }
@@ -1815,14 +2082,12 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		return nil
 	}
 
-	var originalRun *PlaybookRun
-	if s.configService.IsIncrementalUpdatesEnabled() {
-		originalRun = playbookRunToModify.Clone()
-	}
-
-	oldOwner, err := s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", playbookRunToModify.OwnerUserID)
+	var oldOwner *model.User
+	if playbookRunToModify.OwnerUserID != "" {
+		oldOwner, err = s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("failed to resolve previous owner; proceeding with owner change", "user_id", playbookRunToModify.OwnerUserID, "err", err.Error())
+		}
 	}
 	newOwner, err := s.pluginAPI.User.Get(ownerID)
 	if err != nil {
@@ -1833,25 +2098,76 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
+	// Validate that the new owner is a member of the run's team/channel before assigning.
+	// AddParticipants silently skips non-members; setting OwnerUserID to a non-member
+	// with OwnerGroupOnlyActions enabled would lock the run for all other participants.
+	if playbookRunToModify.TeamID == "" {
+		if _, memberErr := s.pluginAPI.Channel.GetMember(playbookRunToModify.ChannelID, ownerID); memberErr != nil {
+			return errors.Wrap(ErrInvalidOwner, fmt.Sprintf("user %s is not a member of the run's channel and cannot be set as owner", newOwner.Username))
+		}
+	} else {
+		if !IsMemberOfTeam(ownerID, playbookRunToModify.TeamID, s.pluginAPI) {
+			return errors.Wrap(ErrInvalidOwner, fmt.Sprintf("user %s is not a member of the run's team and cannot be set as owner", newOwner.Username))
+		}
+	}
+
 	// add owner as user
 	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
 
+	// Snapshot AFTER AddParticipants so the WS diff only includes the owner change.
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
+	}
+
+	// Collect item titles before mutation so we can emit AssigneeChanged events per re-assigned task.
+	var ownerRoleItemTitles []string
+	for _, cl := range playbookRunToModify.Checklists {
+		for _, item := range cl.Items {
+			if item.AssigneeType == AssigneeTypeOwner && item.AssigneeID != ownerID {
+				ownerRoleItemTitles = append(ownerRoleItemTitles, item.Title)
+			}
+		}
+	}
+
 	playbookRunToModify.OwnerUserID = ownerID
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
-	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
+	resolveOwnerRoleAssignments(playbookRunToModify.Checklists, ownerID)
+	if _, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run owner")
+	}
+
+	oldOwnerUsername := ""
+	if oldOwner != nil {
+		oldOwnerUsername = oldOwner.Username
+	}
+
+	// Emit one AssigneeChanged timeline event per task that was re-assigned due to the owner change.
+	reassignedAt := model.GetMillis()
+	for _, title := range ownerRoleItemTitles {
+		taskEvent := &TimelineEvent{
+			PlaybookRunID: playbookRunID,
+			CreateAt:      reassignedAt,
+			EventAt:       reassignedAt,
+			EventType:     AssigneeChanged,
+			Summary:       fmt.Sprintf("changed assignee of checklist item **%s** from **@%s** to **@%s**", stripmd.Strip(title), oldOwnerUsername, newOwner.Username),
+			SubjectUserID: userID,
+		}
+		if _, teErr := s.store.CreateTimelineEvent(taskEvent); teErr != nil {
+			logrus.WithError(teErr).WithField("playbook_run_id", playbookRunID).Warn("failed to create AssigneeChanged event for owner role task")
+		}
 	}
 
 	// Do we send a DM to the new owner?
 	if ownerID != userID {
 		msg := fmt.Sprintf("@%s changed the owner for run: [%s](%s) from **@%s** to **@%s**",
 			subjectUser.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunToModify.ID),
-			oldOwner.Username, newOwner.Username)
+			oldOwnerUsername, newOwner.Username)
+		// DM notification to new owner is best-effort: a delivery failure must not abort the owner change.
 		if err = s.poster.DM(ownerID, &model.Post{Message: msg}); err != nil {
-			return errors.Wrapf(err, "failed to send DM in ChangeOwner")
+			logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to send DM to new owner in ChangeOwner")
 		}
 	}
 
@@ -1861,22 +2177,36 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		CreateAt:      eventTime,
 		EventAt:       eventTime,
 		EventType:     OwnerChanged,
-		Summary:       fmt.Sprintf("@%s to @%s", oldOwner.Username, newOwner.Username),
-		SubjectUserID: userID,
+		Summary:       fmt.Sprintf("@%s to @%s", oldOwnerUsername, newOwner.Username),
+		SubjectUserID: ownerID,
+		CreatorUserID: userID,
 	}
 
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+	createdEvent, err := s.store.CreateTimelineEvent(event)
+	if err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
+	playbookRunToModify.TimelineEvents = append(playbookRunToModify.TimelineEvents, *createdEvent)
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	// Re-read the run to pick up any changes from AddParticipants before sending the WS event.
+	// Use the service-level GetPlaybookRun (not store-level) so PropertyFields/PropertyValues
+	// are populated — otherwise DetectChangedFields sees them as removed and sends null to the
+	// frontend, wiping the property data that the AssigneeDropdown needs to resolve Run User assignees.
+	updatedRun, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to re-read playbook run after ChangeOwner for WS event")
+		updatedRun = playbookRunToModify
+	}
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, updatedRun)
 
 	// Mark success and add result state for audit
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "oldOwnerId", oldOwner.Id)
+	if oldOwner != nil {
+		model.AddEventParameterToAuditRec(auditRec, "oldOwnerId", oldOwner.Id)
+	}
 	model.AddEventParameterToAuditRec(auditRec, "newOwnerId", newOwner.Id)
 	model.AddEventParameterToAuditRec(auditRec, "changeTimestamp", eventTime)
-	auditRec.AddEventResultState(*playbookRunToModify)
+	auditRec.AddEventResultState(*updatedRun)
 
 	return nil
 }
@@ -2039,11 +2369,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return err
 	}
 
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
-	}
-
-	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	// Add current context to audit
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
@@ -2053,7 +2379,11 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
-	if assigneeID == itemToCheck.AssigneeID {
+
+	// Only skip the store write if BOTH the assignee AND the type are already correct.
+	// If AssigneeType is still a role-based value ("owner"/"creator"), we MUST fall through
+	// to the store write to persist the clear.
+	if applyAssigneeUpdate(itemToCheck, assigneeID) {
 		auditRec.Success()
 		return nil
 	}
@@ -2063,7 +2393,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		var newUser *model.User
 		newUser, err = s.pluginAPI.User.Get(assigneeID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
+			return errors.Wrapf(err, "failed to resolve user %s", assigneeID)
 		}
 		newAssigneeUserAtMention = "@" + newUser.Username
 	}
@@ -2073,7 +2403,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		var oldUser *model.User
 		oldUser, err = s.pluginAPI.User.Get(itemToCheck.AssigneeID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
+			return errors.Wrapf(err, "failed to resolve user %s", itemToCheck.AssigneeID)
 		}
 		oldAssigneeUserAtMention = "@" + oldUser.Username
 	}
@@ -2081,47 +2411,24 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	itemToCheck.AssigneeID = assigneeID
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeModified = timestamp
-	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	// add the user as run participant if they was not already
-	if assigneeID != "" && assigneeID != playbookRunToModify.OwnerUserID {
-		var isParticipant bool
-		for _, participantID := range playbookRunToModify.ParticipantIDs {
-			if participantID == assigneeID {
-				isParticipant = true
-				break
-			}
-		}
-		if !isParticipant {
-			err = s.AddParticipants(playbookRunID, []string{assigneeID}, userID, false, false)
-			if err != nil {
-				return errors.Wrapf(err, "failed to add assignee to run")
-			}
+	var dmMsg string
+	if assigneeID != "" && assigneeID != userID {
+		if subjectUser, userErr := s.pluginAPI.User.Get(userID); userErr != nil {
+			s.pluginAPI.Log.Warn("failed to get user for assignee DM", "user_id", userID, "err", userErr.Error())
+		} else {
+			runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
+			dmMsg = fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
+				subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
 		}
 	}
-
-	// Do we send a DM to the new assignee?
-	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
-		var subjectUser *model.User
-		subjectUser, err = s.pluginAPI.User.Get(userID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
-		}
-
-		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
-		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
-			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
-
-		if err = s.poster.DM(itemToCheck.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
-			return errors.Wrapf(err, "failed to send DM in SetAssignee")
-		}
-	}
+	s.addAssigneeParticipantAndDM(playbookRunID, userID, assigneeID, playbookRunToModify.ParticipantIDs, playbookRunToModify.OwnerUserID, dmMsg)
 
 	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
 		stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, newAssigneeUserAtMention)
@@ -2148,7 +2455,200 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	return nil
 }
 
-// SetCommandToChecklistItem sets command to checklist item
+// SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
+// property field resolves to on this run.
+func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID string, checklistNumber, itemNumber int, propertyFieldID string) error {
+	auditRec := plugin.MakeAuditRecord("setChecklistItemPropertyUserAssignee", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "propertyFieldID", propertyFieldID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+
+	if propertyFieldID == "" {
+		return errors.Wrap(ErrMalformedPlaybookRun, "propertyFieldID must not be empty")
+	}
+
+	playbookRun, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	itemToCheck := &playbookRun.Checklists[checklistNumber].Items[itemNumber]
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
+
+	// Find the run-level field that matches either by its own ID (run-level) or its parent ID
+	// (playbook-level). Callers may pass either form.
+	var runFieldID string
+	var runFieldName string
+	for _, pf := range playbookRun.PropertyFields {
+		if pf.ID == propertyFieldID || pf.Attrs.ParentID == propertyFieldID {
+			if pf.Type != model.PropertyFieldTypeUser {
+				return errors.Wrap(ErrMalformedPlaybookRun, "property field is not of user type")
+			}
+			runFieldID = pf.ID
+			runFieldName = pf.Name
+			break
+		}
+	}
+	if runFieldID == "" {
+		return errors.Wrapf(ErrPropertyFieldNotOnRun, "property field %s not found on run", propertyFieldID)
+	}
+
+	var resolvedUserID string
+	for _, pv := range playbookRun.PropertyValues {
+		if pv.FieldID == runFieldID {
+			resolvedUserID = extractUserIDFromPropertyValue(pv.Value)
+			break
+		}
+	}
+	if resolvedUserID == "" {
+		s.pluginAPI.Log.Debug("property field has no user value set; task will be unassigned", "field_id", runFieldID, "run_id", playbookRunID)
+	}
+
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRun.Clone()
+	}
+
+	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, runFieldID, resolvedUserID)
+	if noChangeNeeded {
+		auditRec.Success()
+		return nil
+	}
+
+	timestamp := model.GetMillis()
+	itemToCheck.AssigneeModified = timestamp
+	updateChecklistAndItemTimestamp(&playbookRun.Checklists[checklistNumber], itemToCheck, timestamp)
+
+	playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
+	}
+
+	if resolvedUserID != "" {
+		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRun.Name, GetRunDetailsRelativeURL(playbookRunID))
+		var dmMessage string
+		if actor, aErr := s.pluginAPI.User.Get(userID); aErr == nil {
+			dmMessage = fmt.Sprintf("@%s assigned you the task **%s** for the run: %s   #taskassigned",
+				actor.Username, stripmd.Strip(itemToCheck.Title), runURL)
+		}
+		s.addAssigneeParticipantAndDM(playbookRunID, userID, resolvedUserID, playbookRun.ParticipantIDs, playbookRun.OwnerUserID, dmMessage)
+	}
+
+	modifyMessage := fmt.Sprintf("set assignee of checklist item **%s** to property field %s", stripmd.Strip(itemToCheck.Title), runFieldName)
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      timestamp,
+		EventAt:       timestamp,
+		EventType:     AssigneeChanged,
+		Summary:       modifyMessage,
+		SubjectUserID: userID,
+	}
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
+	auditRec.AddEventResultState(*playbookRun)
+
+	return nil
+}
+
+// SetRoleAssignee sets a role-based assignee type ("owner" or "creator") for the specified checklist item.
+func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assigneeType string, checklistNumber, itemNumber int) error {
+	auditRec := plugin.MakeAuditRecord("setChecklistItemRoleAssignee", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "assigneeType", assigneeType)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+
+	if assigneeType != AssigneeTypeOwner && assigneeType != AssigneeTypeCreator {
+		return errors.Wrap(ErrMalformedPlaybookRun, "invalid role assignee type: must be 'owner' or 'creator'")
+	}
+
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
+
+	// Resolve the concrete user ID for the role upfront so the idempotency check
+	// can compare both the type AND the resolved ID — if the owner changed since
+	// the role was last set, AssigneeType matches but AssigneeID is stale.
+	var resolvedAssigneeID string
+	switch assigneeType {
+	case AssigneeTypeOwner:
+		resolvedAssigneeID = playbookRunToModify.OwnerUserID
+	case AssigneeTypeCreator:
+		resolvedAssigneeID = playbookRunToModify.ReporterUserID
+	}
+
+	if itemToCheck.AssigneeType == assigneeType && itemToCheck.AssigneeID == resolvedAssigneeID && itemToCheck.AssigneePropertyFieldID == "" {
+		auditRec.Success()
+		return nil
+	}
+
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
+	}
+
+	timestamp := model.GetMillis()
+	itemToCheck.AssigneeType = assigneeType
+	itemToCheck.AssigneeID = resolvedAssigneeID
+	itemToCheck.AssigneePropertyFieldID = ""
+	itemToCheck.AssigneeModified = timestamp
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
+	}
+
+	var dmMsg string
+	if resolvedAssigneeID != "" && resolvedAssigneeID != userID {
+		if subjectUser, userErr := s.pluginAPI.User.Get(userID); userErr != nil {
+			s.pluginAPI.Log.Warn("failed to get user for role assignee DM", "user_id", userID, "err", userErr.Error())
+		} else {
+			runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
+			dmMsg = fmt.Sprintf("@%s assigned you the task **%s** (as %s) for the run: %s   #taskassigned",
+				subjectUser.Username, stripmd.Strip(itemToCheck.Title), assigneeType, runURL)
+		}
+	}
+	s.addAssigneeParticipantAndDM(playbookRunID, userID, resolvedAssigneeID, playbookRunToModify.ParticipantIDs, playbookRunToModify.OwnerUserID, dmMsg)
+
+	modifyMessage := fmt.Sprintf("set assignee of checklist item **%s** to %s", stripmd.Strip(itemToCheck.Title), assigneeType)
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      timestamp,
+		EventAt:       timestamp,
+		EventType:     AssigneeChanged,
+		Summary:       modifyMessage,
+		SubjectUserID: userID,
+	}
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
+	auditRec.AddEventResultState(*playbookRunToModify)
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error {
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
@@ -2413,7 +2913,7 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", playbookRunToModify.Name, checklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", playbookRunID, checklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2493,9 +2993,10 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists[:checklistNumber], playbookRunToModify.Checklists[checklistNumber+1:]...)
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing checklist '%s'", playbookRunToModify.Name, checklistToRemove.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing checklist '%s'", runName, checklistToRemove.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2547,9 +3048,10 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 	playbookRunToModify.Checklists[checklistNumber].Title = newTitle
 	playbookRunToModify.Checklists[checklistNumber].UpdateAt = model.GetMillis()
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after renaming checklist from '%s' to '%s'", playbookRunToModify.Name, currentChecklist.Title, newTitle)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after renaming checklist from '%s' to '%s'", runName, currentChecklist.Title, newTitle)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2595,9 +3097,10 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &checklistItem, 0)
 	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding item '%s' to checklist '%s'", playbookRunToModify.Name, checklistItem.Title, currentChecklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding item '%s' to checklist '%s'", runName, checklistItem.Title, currentChecklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -2647,9 +3150,10 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 
 	playbookRunToModify.Checklists[checklistNumber].UpdateAt = model.GetMillis()
 
+	runName := playbookRunToModify.Name
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing item '%s' from checklist '%s'", playbookRunToModify.Name, itemToRemove.Title, currentChecklist.Title)
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing item '%s' from checklist '%s'", runName, itemToRemove.Title, currentChecklist.Title)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -3313,10 +3817,21 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 	introText := T("app.user.new_run.intro", data)
 
 	defaultPlaybookID := ""
-	defaultChannelNameTemplate := ""
 	if len(playbooks) == 1 {
 		defaultPlaybookID = playbooks[0].ID
-		defaultChannelNameTemplate = playbooks[0].ChannelNameTemplate
+	}
+
+	// When there is exactly one selectable playbook and it has a ChannelNameTemplate,
+	// the name field is optional because the template will generate a name at run-creation
+	// time. With multiple playbooks the user may select one without a template, so the
+	// name field remains required.
+	nameOptional := false
+	nameMinLength := 1
+	nameDefault := ""
+	if len(playbooks) == 1 && playbooks[0].ChannelMode == PlaybookRunCreateNewChannel && playbooks[0].ChannelNameTemplate != "" {
+		nameOptional = true
+		nameMinLength = 0
+		nameDefault = playbooks[0].ChannelNameTemplate
 	}
 
 	return &model.Dialog{
@@ -3335,9 +3850,10 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 				DisplayName: T("app.user.new_run.run_name"),
 				Name:        DialogFieldNameKey,
 				Type:        "text",
-				MinLength:   1,
+				Default:     nameDefault,
+				MinLength:   nameMinLength,
 				MaxLength:   64,
-				Default:     defaultChannelNameTemplate,
+				Optional:    nameOptional,
 			},
 		},
 		SubmitLabel:    T("app.user.new_run.submit_label"),
@@ -4101,7 +4617,6 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	if err != nil {
 		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("failed to get channel")
 	}
-
 	s.failedInvitedUserActions(usersFailedToInvite, channel)
 
 	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
@@ -4714,6 +5229,7 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(post *model.Post) {
 							err := s.doActions(ta.Actions, runID, post.UserId, ChecklistItemStateClosed, checklistNum, itemNum)
 							if err != nil {
 								logrus.WithError(err).WithFields(logrus.Fields{
+									"run_id":       runID,
 									"checklistNum": checklistNum,
 									"itemNum":      itemNum,
 								}).Error("can't process task actions")
@@ -4749,18 +5265,18 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]stri
 	return s.store.GetPlaybookRunIDsForUser(userID)
 }
 
-// createPropertyChangeTimelineEvent creates a timeline event for property changes
+// createPropertyChangeTimelineEvent creates a timeline event for property changes and returns it.
 func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 	userID string,
 	playbookRunID string,
 	propertyField *PropertyField,
 	oldValue json.RawMessage,
 	newValue json.RawMessage,
-) error {
+) (*TimelineEvent, error) {
 	// Get user info for summary
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", userID)
 	}
 
 	// Format values for display
@@ -4800,7 +5316,7 @@ func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 
 	detailsJSON, err := json.Marshal(details)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal property change details")
+		return nil, errors.Wrap(err, "failed to marshal property change details")
 	}
 
 	// Create timeline event
@@ -4815,16 +5331,25 @@ func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 		SubjectUserID: userID,
 	}
 
-	_, err = s.store.CreateTimelineEvent(event)
+	createdEvent, err := s.store.CreateTimelineEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "failed to create timeline event for property change")
+		return nil, errors.Wrap(err, "failed to create timeline event for property change")
 	}
 
-	return nil
+	return createdEvent, nil
 }
 
 // SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
 func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+	auditRec := plugin.MakeAuditRecord("setRunPropertyValue", model.AuditStatusFail)
+	if s.api != nil {
+		defer s.api.LogAuditRec(auditRec)
+	}
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "propertyFieldID", propertyFieldID)
+
 	run, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get playbook run")
@@ -4839,6 +5364,15 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
+	if propertyField == nil {
+		return nil, errors.Wrap(ErrPropertyFieldNotOnRun, "property field does not belong to this run")
+	}
+
+	// Items set via SetPropertyUserAssignee store the caller's field ID, which may be the
+	// playbook-level parent ID rather than the run-level field ID. Compute the parent so
+	// resolvePropertyUserAssignmentsForField can find both kinds of items.
+	parentFieldID := propertyField.Attrs.ParentID
+
 	var currentValue json.RawMessage
 	for _, pfv := range run.PropertyValues {
 		if pfv.FieldID == propertyFieldID {
@@ -4847,9 +5381,39 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
+	// For user-type fields, reject any non-empty user ID that is not a member of the
+	// run's team/channel. This prevents an attacker with property-write access from adding
+	// arbitrary users to the run as participants via addAssigneeParticipantAndDM.
+	if propertyField.Type == model.PropertyFieldTypeUser {
+		var targetUserID string
+		if err := json.Unmarshal(value, &targetUserID); err == nil && targetUserID != "" {
+			var notMember bool
+			if run.TeamID == "" {
+				_, memberErr := s.pluginAPI.Channel.GetMember(run.ChannelID, targetUserID)
+				notMember = memberErr != nil
+			} else {
+				notMember = !IsMemberOfTeam(targetUserID, run.TeamID, s.pluginAPI)
+			}
+			if notMember {
+				return nil, errors.Wrapf(ErrNoPermissions, "user %s does not have access to the run", targetUserID)
+			}
+		}
+	}
+
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upsert property value")
+	}
+	if propertyValue == nil {
+		return nil, errors.New("upsert property value returned nil without error")
+	}
+
+	// Capture the full pre-mutation run for the WS incremental diff. Must be a deep clone
+	// because resolvePropertyUserAssignmentsForField mutates run.Checklists in-place, and a
+	// shallow struct copy would share the same backing slice.
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = run.Clone()
 	}
 
 	// replace it in the run object we have at hand
@@ -4865,34 +5429,118 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		run.PropertyValues = append(run.PropertyValues, *propertyValue)
 	}
 
+	newUserID := extractUserIDFromPropertyValue(value)
+
+	fieldIDs := []string{propertyFieldID}
+	if parentFieldID != "" {
+		fieldIDs = append(fieldIDs, parentFieldID)
+	}
+
+	var affectedItemSnapshots []propertyUserItemSnapshot
+
+	var valueChanged, shouldSendWS bool
+	var evaluationResult *ConditionEvaluationResult
+
 	if !s.propertyValuesEqual(propertyField, currentValue, value) {
-		evaluationResult, err := s.conditionService.EvaluateConditionsOnValueChanged(run, propertyFieldID)
+		valueChanged = true
+		shouldSendWS = true
+		var err error
+		evaluationResult, err = s.conditionService.EvaluateConditionsOnValueChanged(run, propertyFieldID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to evaluate property conditions")
 		}
 
-		if err = s.createPropertyChangeTimelineEvent(userID, playbookRunID, propertyField, currentValue, value); err != nil {
-			return nil, errors.Wrap(err, "failed to create timeline event for property change")
+		// Snapshot after condition evaluation so any newly-added items are included.
+		affectedItemSnapshots = collectPropertyUserItemSnapshots(run.Checklists, fieldIDs)
+
+		resolvePropertyUserAssignmentsForField(run.Checklists, fieldIDs, newUserID)
+
+		if _, err := s.store.UpdatePlaybookRun(run); err != nil {
+			return nil, errors.Wrap(err, "failed to update run checklists")
 		}
 
 		// ONLY post channel message if new tasks were added
 		if evaluationResult != nil && evaluationResult.AnythingAdded() {
 			s.PostPropertyChangeMessage(userID, run, propertyField, value, evaluationResult)
 		}
-
-		if evaluationResult.AnythingChanged() {
+	} else {
+		// Value unchanged — still resolve assignees in case new condition tasks were added.
+		// Snapshot before resolving so we can detect which items actually changed.
+		affectedItemSnapshots = collectPropertyUserItemSnapshots(run.Checklists, fieldIDs)
+		assigneesChanged := resolvePropertyUserAssignmentsForField(run.Checklists, fieldIDs, newUserID)
+		if assigneesChanged {
+			shouldSendWS = true
 			if _, err := s.store.UpdatePlaybookRun(run); err != nil {
-				return nil, errors.Wrap(err, "failed to update playbook run")
-			}
-		} else {
-			// Update the playbook run's updated_at timestamp when property value changes
-			if err := s.store.BumpRunUpdatedAt(playbookRunID); err != nil {
-				return nil, errors.Wrap(err, "failed to bump playbook run timestamp")
+				return nil, errors.Wrap(err, "failed to persist property_user assignee re-resolution")
 			}
 		}
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID)
+	// Create AssigneeChanged timeline events for items whose resolved assignee changed.
+	var anyAssigneeChanged bool
+	for _, snap := range affectedItemSnapshots {
+		item := &run.Checklists[snap.checklistIdx].Items[snap.itemIdx]
+		if item.AssigneeID == snap.oldAssigneeID {
+			continue
+		}
+		anyAssigneeChanged = true
+		summary := fmt.Sprintf("changed assignee of checklist item **%s** via property field", stripmd.Strip(snap.title))
+		te := &TimelineEvent{
+			PlaybookRunID: playbookRunID,
+			CreateAt:      item.AssigneeModified,
+			EventAt:       item.AssigneeModified,
+			EventType:     AssigneeChanged,
+			Summary:       summary,
+			SubjectUserID: userID,
+		}
+		if createdTE, teErr := s.store.CreateTimelineEvent(te); teErr != nil {
+			logrus.WithError(teErr).WithField("run_id", playbookRunID).Warn("failed to create AssigneeChanged event for property_user")
+		} else {
+			run.TimelineEvents = append(run.TimelineEvents, *createdTE)
+		}
+	}
+
+	// Add the newly resolved user as a participant and DM them once for the whole field change.
+	participantsMaybeChanged := anyAssigneeChanged && newUserID != ""
+	if participantsMaybeChanged {
+		var dmMessage string
+		if actor, aErr := s.pluginAPI.User.Get(userID); aErr == nil {
+			runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(playbookRunID))
+			dmMessage = fmt.Sprintf("@%s assigned you task(s) via the **%s** property for the run: %s   #taskassigned",
+				actor.Username, propertyField.Name, runURL)
+		} else {
+			s.pluginAPI.Log.Warn("failed to get user for property-user assignee DM", "user_id", userID, "err", aErr.Error())
+		}
+		s.addAssigneeParticipantAndDM(playbookRunID, userID, newUserID, run.ParticipantIDs, run.OwnerUserID, dmMessage)
+	}
+
+	// Create timeline event for the property change and append it to the run so the
+	// WS diff includes the new event and the frontend is notified without a page reload.
+	if valueChanged {
+		if createdEvent, err := s.createPropertyChangeTimelineEvent(userID, playbookRunID, propertyField, currentValue, value); err != nil {
+			logrus.WithError(err).WithField("run_id", playbookRunID).Warn("failed to create timeline event for property change")
+		} else {
+			run.TimelineEvents = append(run.TimelineEvents, *createdEvent)
+		}
+	}
+
+	// Send WS notification when the value changed or assignees were re-resolved.
+	// Re-read the run only when addAssigneeParticipantAndDM ran, to pick up any participant
+	// list changes it made in the store. Otherwise the in-memory run is already up to date.
+	if shouldSendWS {
+		wsRun := run
+		if participantsMaybeChanged {
+			if refreshed, wsErr := s.GetPlaybookRun(playbookRunID); wsErr != nil {
+				logrus.WithError(wsErr).WithField("run_id", playbookRunID).Warn("failed to refresh run before websocket update after property change")
+			} else {
+				wsRun = refreshed
+			}
+		}
+		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, wsRun)
+	}
+
+	auditRec.Success()
+
 	return propertyValue, nil
 }
 
@@ -5024,6 +5672,208 @@ func (s *PlaybookRunServiceImpl) PostPropertyChangeMessage(userID string, run *P
 			"channel_id":        run.ChannelID,
 		}).Error("failed to post property change message")
 	}
+}
+
+func resolveRoleAssignments(checklists []Checklist, ownerID, creatorID string) {
+	for ci := range checklists {
+		for ii := range checklists[ci].Items {
+			item := &checklists[ci].Items[ii] //nolint:gosec
+			switch item.AssigneeType {
+			case AssigneeTypeOwner:
+				item.AssigneeID = ownerID
+			case AssigneeTypeCreator:
+				item.AssigneeID = creatorID
+			}
+		}
+	}
+}
+
+// resolveOwnerRoleAssignments re-resolves ONLY Owner role assignments when ownership changes.
+func resolveOwnerRoleAssignments(checklists []Checklist, ownerID string) {
+	now := model.GetMillis()
+	for ci := range checklists {
+		for ii := range checklists[ci].Items {
+			item := &checklists[ci].Items[ii] //nolint:gosec
+			if item.AssigneeType == AssigneeTypeOwner && item.AssigneeID != ownerID {
+				item.AssigneeID = ownerID
+				item.AssigneeModified = now
+				updateChecklistAndItemTimestamp(&checklists[ci], item, now) //nolint:gosec
+			}
+		}
+	}
+}
+
+// applyAssigneeUpdate normalizes the item to a specific-user assignment.
+// Returns true when the item was already in that state (caller may skip the store write);
+// returns false when role/property-field state must still be persisted, even if AssigneeID is unchanged.
+func applyAssigneeUpdate(item *ChecklistItem, assigneeID string) (noChangeNeeded bool) {
+	noChangeNeeded = assigneeID == item.AssigneeID && item.AssigneeType == AssigneeTypeSpecificUser && item.AssigneePropertyFieldID == ""
+	item.AssigneeType = AssigneeTypeSpecificUser
+	item.AssigneePropertyFieldID = ""
+	return noChangeNeeded
+}
+
+// applyPropertyUserAssigneeUpdate sets the item's assignee type to property_user, sets the field
+// ID and the already-resolved user ID. Returns true if no change was needed (all fields already match).
+func applyPropertyUserAssigneeUpdate(item *ChecklistItem, propertyFieldID string, resolvedUserID string) (noChangeNeeded bool) {
+	noChangeNeeded = propertyFieldID == item.AssigneePropertyFieldID &&
+		item.AssigneeType == AssigneeTypePropertyUser &&
+		resolvedUserID == item.AssigneeID
+	item.AssigneeType = AssigneeTypePropertyUser
+	item.AssigneePropertyFieldID = propertyFieldID
+	item.AssigneeID = resolvedUserID
+	return noChangeNeeded
+}
+
+// extractUserIDFromPropertyValue extracts a user ID from a JSON property value.
+// Property values for User fields are stored as quoted JSON strings like `"uXYZ123"`.
+// The same wire format is validated by validatePropertyValue in property_service.go.
+func extractUserIDFromPropertyValue(value json.RawMessage) string {
+	if value == nil {
+		return ""
+	}
+	var userID string
+	if err := json.Unmarshal(value, &userID); err != nil {
+		return ""
+	}
+	return userID
+}
+
+// addAssigneeParticipantAndDM adds resolvedUserID as a run participant (if not already)
+// and sends them a DM notification. Both operations are best-effort and do not abort the
+// caller on failure. Pass dmMessage="" to skip the DM (e.g. when the actor IS the assignee).
+func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, actorUserID, resolvedUserID string, participantIDs []string, ownerUserID, dmMessage string) {
+	if resolvedUserID == "" {
+		return
+	}
+	if resolvedUserID != ownerUserID {
+		if !slices.Contains(participantIDs, resolvedUserID) {
+			// Only the run owner or a system admin may auto-add the assigned user
+			// as a run participant. Without this check, any participant could set a
+			// user-type property field to invite arbitrary team members into the run.
+			if actorUserID == ownerUserID || IsSystemAdmin(actorUserID, s.pluginAPI) {
+				if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
+					logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
+					return
+				}
+			} else {
+				// Actor lacks permission to add resolvedUserID; skip DM to avoid leaking run details.
+				return
+			}
+		}
+	}
+	if dmMessage != "" && resolvedUserID != actorUserID {
+		if err := s.poster.DM(resolvedUserID, &model.Post{Message: dmMessage}); err != nil {
+			logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to send DM to property_user assignee")
+		}
+	}
+}
+
+// resolvePropertyUserAssignmentsForField returns true if any item's AssigneeID changed.
+// fieldIDs may contain a run-level field ID and/or its playbook-level parent ID so that
+// items stored with either form are resolved in a single pass.
+func resolvePropertyUserAssignmentsForField(checklists []Checklist, fieldIDs []string, userID string) bool {
+	anyChanged := false
+	now := model.GetMillis()
+	for ci := range checklists {
+		for ii := range checklists[ci].Items {
+			item := &checklists[ci].Items[ii]
+			// AssigneePropertyFieldID equality is the load-bearing guard; the AssigneeType
+			// check prevents accidentally retyping items that happen to share the field ID.
+			if item.AssigneeType == AssigneeTypePropertyUser && slices.Contains(fieldIDs, item.AssigneePropertyFieldID) {
+				noChangeNeeded := applyPropertyUserAssigneeUpdate(item, item.AssigneePropertyFieldID, userID)
+				if !noChangeNeeded {
+					item.AssigneeModified = now
+					updateChecklistAndItemTimestamp(&checklists[ci], item, now)
+					anyChanged = true
+				}
+			}
+		}
+	}
+	return anyChanged
+}
+
+// resolvePropertyUserAssignmentsFromRun resolves property_user assignees by looking up
+// each item's field ID in the run's in-memory PropertyValues slice.
+// Returns true if any item's AssigneeID changed.
+func resolvePropertyUserAssignmentsFromRun(run *PlaybookRun) bool {
+	if run == nil {
+		return false
+	}
+	pvMap := make(map[string]json.RawMessage, len(run.PropertyValues))
+	for _, pv := range run.PropertyValues {
+		pvMap[pv.FieldID] = pv.Value
+	}
+
+	now := model.GetMillis()
+	anyChanged := false
+	for ci := range run.Checklists {
+		for ii := range run.Checklists[ci].Items {
+			item := &run.Checklists[ci].Items[ii]
+			if item.AssigneeType != AssigneeTypePropertyUser || item.AssigneePropertyFieldID == "" {
+				continue
+			}
+			resolvedUserID := extractUserIDFromPropertyValue(pvMap[item.AssigneePropertyFieldID])
+			noChangeNeeded := applyPropertyUserAssigneeUpdate(item, item.AssigneePropertyFieldID, resolvedUserID)
+			if !noChangeNeeded {
+				item.AssigneeModified = now
+				anyChanged = true
+			}
+		}
+	}
+	return anyChanged
+}
+
+// remapAssigneePropertyFieldIDs updates AssigneePropertyFieldID on checklist items
+// from playbook-level field IDs to run-level field IDs using the provided mapping.
+func remapAssigneePropertyFieldIDs(checklists []Checklist, fieldMappings map[string]string) {
+	for ci := range checklists {
+		for ii := range checklists[ci].Items {
+			item := &checklists[ci].Items[ii]
+			if item.AssigneePropertyFieldID == "" {
+				continue
+			}
+			if newID, ok := fieldMappings[item.AssigneePropertyFieldID]; ok {
+				item.AssigneePropertyFieldID = newID
+			} else {
+				// Field not copied to the run (e.g., deleted from the playbook).
+				// Clear the stale reference so the item falls back to unassigned
+				// rather than remaining permanently unresolvable.
+				item.AssigneePropertyFieldID = ""
+				item.AssigneeType = AssigneeTypeSpecificUser
+				item.AssigneeID = ""
+			}
+		}
+	}
+}
+
+// propertyUserItemSnapshot captures a checklist item's identity and its AssigneeID at a
+// point in time so that post-mutation code can detect which items actually changed.
+type propertyUserItemSnapshot struct {
+	checklistIdx  int
+	itemIdx       int
+	title         string
+	oldAssigneeID string
+}
+
+// collectPropertyUserItemSnapshots returns snapshots for all checklist items whose
+// AssigneeType is property_user and whose AssigneePropertyFieldID matches one of fieldIDs.
+func collectPropertyUserItemSnapshots(checklists []Checklist, fieldIDs []string) []propertyUserItemSnapshot {
+	var snapshots []propertyUserItemSnapshot
+	for ci := range checklists {
+		for ii := range checklists[ci].Items {
+			item := &checklists[ci].Items[ii]
+			if item.AssigneeType == AssigneeTypePropertyUser && slices.Contains(fieldIDs, item.AssigneePropertyFieldID) {
+				snapshots = append(snapshots, propertyUserItemSnapshot{
+					checklistIdx:  ci,
+					itemIdx:       ii,
+					title:         item.Title,
+					oldAssigneeID: item.AssigneeID,
+				})
+			}
+		}
+	}
+	return snapshots
 }
 
 // formatPropertyValueForDisplay formats a property value for display in bot messages

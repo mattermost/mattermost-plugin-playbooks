@@ -265,6 +265,34 @@ Cypress.Commands.add('getFirstPostId', () => {
         invoke('replace', 'post_', '');
 });
 
+/**
+ * Navigate to the channel associated with a playbook run.
+ * @param {String} teamName - The team name (slug) for the URL
+ * @param {Object} run - The run object (must have channel_id)
+ */
+Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
+    cy.apiGetChannel(run.channel_id).then(({channel}) => {
+        cy.visit(`/${teamName}/channels/${channel.name}`);
+    });
+});
+
+/**
+ * Intercept the REST PUT that saves a playbook (client.ts savePlaybook).
+ * Alias: SavePlaybook
+ */
+Cypress.Commands.add('playbooksInterceptPlaybookSave', () => {
+    cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*').as('SavePlaybook');
+});
+
+/**
+ * Navigate to a playbook editor page.
+ * @param {String} playbookId - The playbook ID
+ * @param {String} [tab='outline'] - The tab to navigate to (e.g. 'outline', 'attributes')
+ */
+Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});
+
 Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
     // LHS uses position:fixed — use 'exist' to avoid Cypress 15 strict visibility checks
     cy.findByTestId('lhs-navigation').should('exist').within(() => {
@@ -275,5 +303,154 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
         cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);
         cy.findAllByTestId('timeline-item', {exact: false}).should('have.length.of.at.least', 1);
         cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
+    });
+});
+
+Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').click();
+
+    // Profiles are loaded asynchronously via useProfilesInTeam. The dropdown
+    // options refresh once the API response arrives and Redux updates, so we
+    // wait up to HALF_MIN for the option to become available.
+    cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
+    cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
+
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
+});
+
+/**
+ * Find a run row in the runs list (#playbookRunList) by run name.
+ * @param {String} runName - The run name to locate in the list
+ */
+Cypress.Commands.add('playbooksGetRunListRow', (runName) => {
+    return cy.get('#playbookRunList').contains('[data-testid="run-list-item"]', runName);
+});
+
+/**
+ * Navigate directly to a playbook run details page by run ID.
+ * @param {String} runId - The run ID
+ */
+Cypress.Commands.add('playbooksVisitRun', (runId) => {
+    cy.visit(`/playbooks/runs/${runId}`);
+    cy.findByTestId('run-header-section').should('be.visible');
+});
+
+/**
+ * Intercept the REST call that toggles a checklist item's state (PUT …/state).
+ * Alias: @SetChecklistItemState
+ */
+Cypress.Commands.add('playbooksInterceptChecklistItemState', (alias = 'SetChecklistItemState') => {
+    cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/checklists/*/item/*/state').as(alias);
+});
+
+/**
+ * Complete the checklist task at the given zero-based index via the UI.
+ * @param {Number} index - Zero-based task index within the checklist
+ */
+Cypress.Commands.add('playbooksCompleteTaskAtIndex', (index) => {
+    const alias = `SetChecklistItemState_${index}`;
+    cy.playbooksInterceptChecklistItemState(alias);
+    cy.findByTestId('run-checklist-section').
+        findAllByTestId('checkbox-item-container').
+        eq(index).
+        find('input[type="checkbox"]').
+        should('not.be.checked');
+    cy.findByTestId('run-checklist-section').
+        findAllByTestId('checkbox-item-container').
+        eq(index).
+        find('input[type="checkbox"]').
+        click();
+    cy.wait(`@${alias}`);
+});
+
+Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
+    const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
+
+    cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
+
+    cy.findByTestId(testId).within(() => {
+        cy.findByTestId('property-value').click();
+    });
+
+    cy.contains('.property-select__option', value).click();
+
+    cy.wait('@SetRunPropertyValue');
+});
+
+Cypress.Commands.add('playbooksConfirmModal', () => {
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+
+    // Wait for dismissal so callers don't race a still-open modal on the next action.
+    cy.get('#confirmModal').should('not.exist');
+});
+
+Cypress.Commands.add('playbooksConfirmFinishModal', () => {
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+    cy.get('#confirmModal').should('not.exist');
+});
+
+Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
+        if (req.body && req.body.operationName === operationName) {
+            req.alias = operationName;
+        }
+    });
+});
+
+Cypress.Commands.add('playbooksOpenTaskAssigneeEditor', (playbookId, taskTitle) => {
+    cy.visit('/playbooks/playbooks/' + playbookId + '/outline');
+    cy.get('#checklists').within(() => {
+        cy.findByText(taskTitle).trigger('mouseover');
+        cy.findByTestId('hover-menu-edit-button').click();
+    });
+});
+
+Cypress.Commands.add('playbooksFindTaskItem', (title) => {
+    return cy.findByTestId('run-checklist-section').findByText(title).
+        parents('[data-testid="checkbox-item-container"]');
+});
+
+Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId, playbookId) => {
+    if (playbookId) {
+        cy.intercept('PUT', `**/api/v0/playbooks/${playbookId}`).as('togglePersist');
+    }
+    cy.findByTestId(toggleTestId).find('label').click();
+    cy.playbooksConfirmModal();
+    if (playbookId) {
+        cy.wait('@togglePersist').its('response.statusCode').should('be.oneOf', [200, 204]);
+    }
+});
+
+Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});
+
+Cypress.Commands.add('playbooksOpenRunModal', (playbookId) => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
+    cy.findByTestId('run-playbook').should('be.visible').and('not.be.disabled').click();
+});
+
+Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName) => {
+    cy.playbooksOpenRunModal(playbookId);
+    cy.findByTestId('run-name-input').then(($input) => {
+        if (!$input.attr('readonly')) {
+            cy.wrap($input).clear().type(runName);
+        }
+    });
+    cy.findByTestId('modal-confirm-button').click();
+    cy.url().should('include', '/playbooks/runs/');
+});
+
+Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
+    cy.url().should('include', '/playbooks/runs/');
+    return cy.url().then((url) => {
+        const urlObj = new URL(url);
+        const [, afterRuns = ''] = urlObj.pathname.split('/playbooks/runs/');
+        const runId = afterRuns.split('/')[0];
+        return cy.wrap(runId);
     });
 });

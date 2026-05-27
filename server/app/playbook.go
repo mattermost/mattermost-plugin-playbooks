@@ -77,6 +77,14 @@ type Playbook struct {
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
 
+	AdminOnlyEdit bool `json:"admin_only_edit" export:"-"`
+
+	OwnerGroupOnlyActions bool `json:"owner_group_only_actions" export:"owner_group_only_actions"`
+
+	NewChannelOnly bool `json:"new_channel_only" export:"new_channel_only"`
+
+	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
+
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
@@ -301,6 +309,10 @@ type ChecklistItem struct {
 	// AssigneeModified is the timestamp, in milliseconds since epoch, of the last time the item's
 	// assignee was modified. 0 if it was never modified.
 	AssigneeModified int64 `json:"assignee_modified" export:"-"`
+	// AssigneeType determines how the assignee is resolved. Empty string means a specific user (AssigneeID).
+	AssigneeType string `json:"assignee_type" export:"assignee_type"`
+	// AssigneePropertyFieldID is the property field whose value is used when AssigneeType == AssigneeTypePropertyUser.
+	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"assignee_property_field_id"`
 
 	// Command, if not empty, is the slash command that can be run as part of this item.
 	Command string `json:"command" export:"command"`
@@ -537,6 +549,22 @@ const (
 	ChecklistItemStateSkipped    = "skipped"
 )
 
+const (
+	AssigneeTypeSpecificUser = ""              // assigned to a specific user identified by AssigneeID
+	AssigneeTypeOwner        = "owner"         // resolved to the run owner at assignment time
+	AssigneeTypeCreator      = "creator"       // resolved to the run creator at assignment time
+	AssigneeTypePropertyUser = "property_user" // resolved via a User-type property field
+)
+
+// IsValidAssigneeType returns true for all recognised AssigneeType values:
+// AssigneeTypeSpecificUser, AssigneeTypeOwner, AssigneeTypeCreator, and AssigneeTypePropertyUser.
+func IsValidAssigneeType(assigneeType string) bool {
+	return assigneeType == AssigneeTypeSpecificUser ||
+		assigneeType == AssigneeTypeOwner ||
+		assigneeType == AssigneeTypeCreator ||
+		assigneeType == AssigneeTypePropertyUser
+}
+
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
 		state == ChecklistItemStateInProgress ||
@@ -616,6 +644,15 @@ func ValidateWebhookURLs(urls []string) error {
 		}
 	}
 
+	return nil
+}
+
+// ValidateNewChannelOnlyMode checks that NewChannelOnly is not enabled when ChannelMode
+// is set to link an existing channel.
+func ValidateNewChannelOnlyMode(newChannelOnly bool, channelMode ChannelPlaybookMode) error {
+	if newChannelOnly && channelMode == PlaybookRunLinkExistingChannel {
+		return errors.New("this playbook requires runs to create a new channel, but the channel mode is set to link an existing channel")
+	}
 	return nil
 }
 

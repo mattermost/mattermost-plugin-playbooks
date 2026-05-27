@@ -99,6 +99,18 @@ Cypress.Commands.add('apiRunPlaybook', (
     });
 });
 
+// Restore (un-finish) a playbook run programmatically. Uses the currently logged-in user.
+Cypress.Commands.add('apiRestoreRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/restore`,
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
 // Finish a playbook's run programmaticially. Uses currently logged in user, so that user must
 // have edit permissions on the run
 Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
@@ -264,6 +276,8 @@ Cypress.Commands.add('apiCreatePlaybook', (
         channelMode = 'create_new_channel',
         channelId = '',
         metrics,
+        ownerGroupOnlyActions,
+        autoArchiveChannel = false,
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -306,6 +320,8 @@ Cypress.Commands.add('apiCreatePlaybook', (
             channel_mode: channelMode,
             channel_id: channelId,
             metrics,
+            owner_group_only_actions: ownerGroupOnlyActions,
+            auto_archive_channel: autoArchiveChannel,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
@@ -631,5 +647,100 @@ Cypress.Commands.add('apiAttachConditionToTask', (playbookId, checklistIndex, it
     return cy.apiGetPlaybook(playbookId).then((playbook) => {
         playbook.checklists[checklistIndex].items[itemIndex].condition_id = conditionId;
         return cy.apiUpdatePlaybook(playbook);
+    });
+});
+
+Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode = StatusOK) => {
+    return cy.apiGetPlaybook(playbookId).then((fullPlaybook) => {
+        return cy.apiUpdatePlaybook({...fullPlaybook, ...updates}, expectedHttpCode);
+    });
+});
+
+Cypress.Commands.add('apiCreateAndAddUserToTeam', (teamId) => {
+    return cy.apiCreateUser().then(({user}) => {
+        cy.apiAddUserToTeam(teamId, user.id);
+        return cy.wrap(user);
+    });
+});
+
+Cypress.Commands.add('apiCreatePlaybookWithProperties', (playbookConfig, propertyFields = [], patchUpdates = null) => {
+    return cy.apiCreatePlaybook(playbookConfig).then((playbook) => {
+        // Add each property field sequentially
+        const addFields = (fields) => {
+            if (fields.length === 0) {
+                return cy.wrap(playbook);
+            }
+            const [head, ...tail] = fields;
+            return cy.apiAddPropertyField(playbook.id, head).then(() => addFields(tail));
+        };
+
+        return addFields(propertyFields).then(() => {
+            if (patchUpdates) {
+                return cy.apiPatchPlaybook(playbook.id, patchUpdates).then(() => cy.apiGetPlaybook(playbook.id));
+            }
+            return cy.apiGetPlaybook(playbook.id);
+        });
+    });
+});
+
+/**
+ * Get a single property field by name from a playbook. Fails if not found.
+ * Yields the full field object (including id, attrs.options, etc.)
+ * @param {String} playbookId - The playbook ID
+ * @param {String} fieldName  - The property field name to find
+ */
+Cypress.Commands.add('apiGetPropertyFieldByName', (playbookId, fieldName) => {
+    return cy.apiGetPropertyFields(playbookId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `property field "${fieldName}" should exist on playbook`).to.not.be.undefined;
+        return cy.wrap(field);
+    });
+});
+
+/**
+ * Set a property value on a run via REST API.
+ * @param {String} runId - The run ID
+ * @param {String} fieldId - The property field ID (run-scoped)
+ * @param {*} value - The value to set (will be JSON-serialised as the "value" field)
+ */
+Cypress.Commands.add('apiSetRunPropertyValue', (runId, fieldId, value) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${runId}/property_fields/${fieldId}/value`,
+        method: 'PUT',
+        body: {value},
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Set a property value on a run by field name (looks up the run-scoped field ID internally).
+ * @param {String} runId - The run ID
+ * @param {String} fieldName - The property field name to look up
+ * @param {*} value - The value to set
+ */
+Cypress.Commands.add('apiSetRunPropertyValueByName', (runId, fieldName, value) => {
+    return cy.apiGetRunPropertyFields(runId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `run-level field "${fieldName}" should exist`).to.exist;
+        return cy.apiSetRunPropertyValue(runId, field.id, value);
+    });
+});
+
+/**
+ * Get property fields for a run via REST API.
+ * @param {String} runId - The run ID
+ * @returns {Array} Array of property field objects with run-scoped IDs
+ */
+Cypress.Commands.add('apiGetRunPropertyFields', (runId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${runId}/property_fields`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
     });
 });

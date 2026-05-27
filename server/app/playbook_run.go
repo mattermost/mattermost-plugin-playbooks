@@ -222,6 +222,38 @@ type PlaybookRun struct {
 
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
+
+	ChannelCreatedByRun bool `json:"-"`
+
+	// AutoArchivedChannel tracks whether this run auto-archived its channel; checked independently
+	// of the current playbook flag so restore behaves correctly even if the flag was toggled.
+	AutoArchivedChannel bool `json:"-"`
+
+	// AutoArchiveChannel is snapshotted from the playbook at run creation so the archive
+	// behaviour reflects the setting at start time and avoids a DB lookup on every finish.
+	AutoArchiveChannel bool `json:"-"`
+
+	// TaskTotal and TaskCompleted are computed from Checklists; not persisted. Hidden items are
+	// excluded; Skipped items count as completed. See ComputeTaskProgress.
+	TaskTotal     int `json:"task_total"`
+	TaskCompleted int `json:"task_completed"`
+}
+
+func (r *PlaybookRun) ComputeTaskProgress() {
+	total, completed := 0, 0
+	for _, cl := range r.Checklists {
+		for _, item := range cl.Items {
+			if item.ConditionAction == ConditionActionHidden {
+				continue
+			}
+			total++
+			if item.State == ChecklistItemStateClosed || item.State == ChecklistItemStateSkipped {
+				completed++
+			}
+		}
+	}
+	r.TaskTotal = total
+	r.TaskCompleted = completed
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
@@ -440,6 +472,12 @@ func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string
 	}
 	if !compareItemsOrder(previous.GetItemsOrder(), current.GetItemsOrder()) {
 		changes["items_order"] = current.GetItemsOrder()
+	}
+	if previous.TaskTotal != current.TaskTotal {
+		changes["task_total"] = current.TaskTotal
+	}
+	if previous.TaskCompleted != current.TaskCompleted {
+		changes["task_completed"] = current.TaskCompleted
 	}
 }
 
@@ -708,6 +746,12 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			}
 			if prev.AssigneeModified != item.AssigneeModified {
 				fields["assignee_modified"] = item.AssigneeModified
+			}
+			if prev.AssigneeType != item.AssigneeType {
+				fields["assignee_type"] = item.AssigneeType
+			}
+			if prev.AssigneePropertyFieldID != item.AssigneePropertyFieldID {
+				fields["assignee_property_field_id"] = item.AssigneePropertyFieldID
 			}
 			if prev.Command != item.Command {
 				fields["command"] = item.Command
@@ -1019,9 +1063,13 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	ChannelArchived        timelineEventType = "channel_archived"
+	ChannelUnarchived      timelineEventType = "channel_unarchived"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
+	RetrospectiveEnabled   timelineEventType = "retrospective_enabled"
+	RetrospectiveDisabled  timelineEventType = "retrospective_disabled"
 	PropertyChanged        timelineEventType = "property_changed"
 )
 
@@ -1250,6 +1298,13 @@ type PlaybookRunService interface {
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
+	// SetRoleAssignee sets a role-based assignee type ("owner" or "creator") for the specified checklist item.
+	SetRoleAssignee(playbookRunID, userID, assigneeType string, checklistNumber, itemNumber int) error
+
+	// SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
+	// property field resolves to on this run.
+	SetPropertyUserAssignee(playbookRunID, userID string, checklistNumber, itemNumber int, propertyFieldID string) error
+
 	// SetCommandToChecklistItem sets command to checklist item
 	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
 
@@ -1393,6 +1448,9 @@ type PlaybookRunService interface {
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
+	// ToggleRetrospectiveEnabled enables or disables the retrospective for the run.
+	ToggleRetrospectiveEnabled(playbookRunID, userID string, enabled bool) error
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
 	MessageHasBeenPosted(post *model.Post)

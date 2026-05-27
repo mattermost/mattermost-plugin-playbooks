@@ -2,7 +2,13 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useCallback,
+    useRef,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -11,9 +17,15 @@ import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
 
 import StatusUpdates from './section_status_updates';
+import SectionAdminSettings from './section_admin_settings';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
 import ScrollNavBase from './scroll_nav';
@@ -22,17 +34,36 @@ import Section from './section';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
+    canEdit?: boolean;
+    adminOnlyEdit?: boolean;
+    showAdminSettings?: boolean;
+    restPlaybook?: PlaybookWithChecklist;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch}: Props) => {
+const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSettings = false, restPlaybook}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
+    const toaster = useToaster();
+    const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
+    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? adminOnlyEdit ?? false;
     const archived = playbook.delete_at !== 0;
+    const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
+    const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
+    const effectiveOwnerGroupOnlyActions = ownerGroupOnlyActionsOverride ?? restPlaybook?.owner_group_only_actions;
+    const effectiveRestPlaybook = restPlaybook && effectiveOwnerGroupOnlyActions !== undefined ?
+        {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} :
+        restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
+    const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
+    const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
     const [bulkEditMode, setBulkEditMode] = useState(false);
+    const latestToggleReq = useRef(0);
+    const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
+    const savingNewChannelOnly = useRef(false);
+    const effectiveNewChannelOnly = newChannelOnlyOverride ?? restPlaybook?.new_channel_only ?? false;
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -44,8 +75,35 @@ const Outline = ({playbook, refetch}: Props) => {
         setChecklistCollapseState(state);
     };
 
+    const handleNewChannelOnlyChange = ({new_channel_only}: {new_channel_only: boolean}) => {
+        if (archived || !playbook.id || savingNewChannelOnly.current || !restPlaybook) {
+            return;
+        }
+        const prev = effectiveNewChannelOnly;
+        if (prev === new_channel_only) {
+            return;
+        }
+        setNewChannelOnlyOverride(new_channel_only);
+        savingNewChannelOnly.current = true;
+        const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
+        savePlaybook(updated)
+            .then(() => {
+                refetch();
+            })
+            .catch(() => {
+                setNewChannelOnlyOverride(prev);
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+            })
+            .finally(() => {
+                savingNewChannelOnly.current = false;
+            });
+    };
+
     const toggleStatusUpdate = () => {
-        if (archived) {
+        if (archived || !canEdit) {
             return;
         }
         updatePlaybook({
@@ -55,14 +113,92 @@ const Outline = ({playbook, refetch}: Props) => {
         });
     };
 
+    const handleAutoArchiveChange = (updated: {auto_archive_channel: boolean}) => {
+        if (!archived && playbook.id) {
+            const prev = effectiveAutoArchive;
+            const isForcedLinkedReset =
+                updated.auto_archive_channel === false &&
+                restPlaybook?.channel_mode === 'link_existing_channel';
+            setAutoArchiveOverride(updated.auto_archive_channel);
+            clientFetchPlaybook(playbook.id)
+                .then((latest) => {
+                    if (!latest) {
+                        throw new Error('Unable to fetch latest playbook before save');
+                    }
+                    return savePlaybook({...latest, auto_archive_channel: updated.auto_archive_channel});
+                })
+                .then(() => refetch())
+                .catch(() => {
+                    if (!isForcedLinkedReset) {
+                        setAutoArchiveOverride(prev);
+                    }
+                    toaster.add({
+                        content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                });
+        }
+    };
+
     const toggleRetrospective = () => {
-        if (archived || !retrospectiveAccess) {
+        if (archived || !canEdit || !retrospectiveAccess) {
             return;
         }
         updatePlaybook({
             retrospectiveEnabled: !playbook.retrospective_enabled,
         });
     };
+
+    const handleAdminOnlyEditChange = (value: boolean) => {
+        if (archived) {
+            return;
+        }
+        latestToggleReq.current += 1;
+        const reqID = latestToggleReq.current;
+        const prev = effectiveAdminOnlyEdit;
+        setAdminOnlyEditOverride(value);
+        clientFetchPlaybook(playbook.id)
+            .then((latest) => {
+                if (!latest) {
+                    throw new Error('Unable to fetch latest playbook before save');
+                }
+                return savePlaybook({...latest, admin_only_edit: value});
+            })
+            .then(() => refetch())
+            .catch(() => {
+                if (reqID === latestToggleReq.current) {
+                    setAdminOnlyEditOverride(prev);
+                    toaster.add({
+                        content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                }
+            });
+    };
+
+    const handleOwnerGroupOnlyActionsChange = useCallback(async (updated: {owner_group_only_actions: boolean}) => {
+        if (archived || !restPlaybook) {
+            return;
+        }
+        const prev = ownerGroupOnlyActionsOverride ?? restPlaybook.owner_group_only_actions;
+        setIsSavingOwnerGroupOnlyActions(true);
+        setOwnerGroupOnlyActionsOverride(updated.owner_group_only_actions);
+        try {
+            const latest = await clientFetchPlaybook(restPlaybook.id);
+            if (!latest) {
+                throw new Error('Unable to fetch latest playbook before save');
+            }
+            await savePlaybook({...latest, owner_group_only_actions: updated.owner_group_only_actions});
+        } catch {
+            setOwnerGroupOnlyActionsOverride(prev);
+            toaster.add({
+                content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                toastStyle: ToastStyle.Failure,
+            });
+        } finally {
+            setIsSavingOwnerGroupOnlyActions(false);
+        }
+    }, [archived, restPlaybook, ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride, toaster, formatMessage]);
 
     return (
         <Sections
@@ -73,7 +209,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 title={formatMessage({defaultMessage: 'Summary'})}
             >
                 <MarkdownEdit
-                    disabled={archived}
+                    disabled={archived || !canEdit}
                     placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
                     value={(playbook.run_summary_template_enabled && playbook.run_summary_template) || ''}
                     onSave={(runSummaryTemplate) => {
@@ -92,7 +228,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 headerRight={(
                     <HoverMenuContainer data-testid={'status-update-toggle'}>
                         <Toggle
-                            disabled={archived}
+                            disabled={archived || !canEdit}
                             isChecked={playbook.status_update_enabled}
                             onChange={toggleStatusUpdate}
                         />
@@ -102,13 +238,15 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <StatusUpdates
                     playbook={playbook}
+                    canEdit={canEdit}
                 />
             </Section>
             <Section
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Tasks'})}
-                headerRight={archived ? undefined : (
+                headerRight={archived || !canEdit ? undefined : (
                     <BulkEditButton
+                        data-testid='bulk-edit-button'
                         $active={bulkEditMode}
                         onClick={() => setBulkEditMode(!bulkEditMode)}
                     >
@@ -122,7 +260,7 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <ChecklistList
                     playbook={playbook}
-                    isReadOnly={false}
+                    isReadOnly={!canEdit}
                     checklistsCollapseState={checklistCollapseState}
                     onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
                     onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
@@ -136,9 +274,9 @@ const Outline = ({playbook, refetch}: Props) => {
                 hasSubtitle={retrospectiveAccess && !playbook.retrospective_enabled}
                 hoverEffect={true}
                 headerRight={(
-                    <HoverMenuContainer>
+                    <HoverMenuContainer data-testid='retrospective-toggle'>
                         <Toggle
-                            disabled={archived || !retrospectiveAccess}
+                            disabled={archived || !canEdit || !retrospectiveAccess}
                             isChecked={playbook.retrospective_enabled}
                             onChange={toggleRetrospective}
                         />
@@ -149,6 +287,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 <Retrospective
                     playbook={playbook}
                     refetch={refetch}
+                    canEdit={canEdit}
                 />
             </Section>
             <Section
@@ -157,11 +296,39 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <Actions
                     playbook={playbook}
+                    canEdit={canEdit}
+                    newChannelOnly={effectiveNewChannelOnly}
+                    onNewChannelOnlyChange={restPlaybook ? handleNewChannelOnlyChange : undefined}
+                    restPlaybook={restPlaybook}
+                    autoArchiveChannel={effectiveAutoArchive}
+                    onAutoArchiveChange={handleAutoArchiveChange}
                 />
             </Section>
+            {showAdminSettings && (
+                <Section
+                    id={'admin-edit-settings'}
+                    title={formatMessage({defaultMessage: 'Settings'})}
+                    hideHeader={true}
+                >
+                    <SectionAdminSettings
+                        isChecked={effectiveAdminOnlyEdit}
+                        onChange={handleAdminOnlyEditChange}
+                    />
+                </Section>
+            )}
+            {showAdminSettings && effectiveRestPlaybook && (
+                <AdminSettingsSection>
+                    <OwnerGroupOnlyActionsToggle
+                        playbook={effectiveRestPlaybook}
+                        isPlaybookAdmin={showAdminSettings}
+                        disabled={archived || isSavingOwnerGroupOnlyActions}
+                        onChange={handleOwnerGroupOnlyActionsChange}
+                    />
+                </AdminSettingsSection>
+            )}
             <PlaybookActionsModal
                 playbook={playbook}
-                readOnly={false}
+                readOnly={!canEdit}
             />
         </Sections>
     );
@@ -173,11 +340,13 @@ type SectionItem = {id: string, title: string};
 
 type SectionsProps = {
     children: ReactNode;
+    'data-testid'?: string;
 }
 
 const SectionsImpl = ({
     children,
     className,
+    'data-testid': dataTestId,
 }: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
@@ -197,7 +366,10 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div className={className}>
+            <div
+                className={className}
+                data-testid={dataTestId}
+            >
                 {children}
             </div>
         </>
@@ -214,6 +386,10 @@ export const Sections = styled(SectionsImpl)`
     margin-bottom: 40px;
     background: var(--center-channel-bg);
     box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
+`;
+
+const AdminSettingsSection = styled.div`
+    padding: 0.5rem 3rem 2rem;
 `;
 
 const HoverMenuContainer = styled.div`

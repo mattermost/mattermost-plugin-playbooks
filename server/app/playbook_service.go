@@ -56,6 +56,11 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
+	if err := ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return "", err
+	}
+
 	playbook.CreateAt = model.GetMillis()
 	playbook.UpdateAt = playbook.CreateAt
 
@@ -304,6 +309,11 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 		return err
 	}
 
+	if err := ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
 	playbook.UpdateAt = model.GetMillis()
 
 	// Perform the actual operation
@@ -486,24 +496,29 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 		}
 	}
 
-	// Update checklist item condition IDs to reference the new condition IDs
-	if len(conditionMapping) > 0 {
-		// Need to get the playbook, update it, and save it back
+	// Update checklist items to reference the new field and condition IDs
+	needsUpdate := (propertyMappings != nil && len(propertyMappings.FieldMappings) > 0) || len(conditionMapping) > 0
+	if needsUpdate {
 		newPlaybook, err = s.Get(playbookID)
 		if err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
 				"playbook_id": playbookID,
-			}).Error("failed to get newly created playbook for updating condition IDs")
+			}).Error("failed to get newly created playbook for updating field and condition IDs")
 			auditRec.AddErrorDesc(err.Error())
 			return "", err
 		}
 
-		newPlaybook.SwapConditionIDs(conditionMapping)
+		if propertyMappings != nil {
+			remapAssigneePropertyFieldIDs(newPlaybook.Checklists, propertyMappings.FieldMappings)
+		}
+		if len(conditionMapping) > 0 {
+			newPlaybook.SwapConditionIDs(conditionMapping)
+		}
 
 		if err := s.Update(newPlaybook, userID); err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
 				"playbook_id": playbookID,
-			}).Error("failed to update playbook with new condition IDs")
+			}).Error("failed to update playbook with new field and condition IDs")
 			auditRec.AddErrorDesc(err.Error())
 			return "", err
 		}

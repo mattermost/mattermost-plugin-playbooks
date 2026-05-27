@@ -298,6 +298,14 @@ export async function toggleRunStatusUpdates(playbookRunId: string, status_enabl
     }
 }
 
+export async function toggleRunRetrospective(playbookRunId: string, retrospective_enabled: boolean) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/retrospective-enabled`, JSON.stringify({retrospective_enabled}));
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setOwner(playbookRunId: string, ownerId: string) {
     const body = `{"owner_id": "${ownerId}"}`;
     try {
@@ -308,13 +316,31 @@ export async function setOwner(playbookRunId: string, ownerId: string) {
     }
 }
 
-export async function setAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
-    const body = JSON.stringify({assignee_id: assigneeId});
+async function putAssignee(playbookRunId: string, checklistNum: number, itemNum: number, body: Record<string, unknown>) {
     try {
-        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`, JSON.stringify(body));
     } catch (error) {
         return {error};
     }
+}
+
+export async function setAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_id: assigneeId});
+}
+
+export async function setRoleAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeType: string) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_type: assigneeType});
+}
+
+export async function setPropertyUserAssignee(
+    playbookRunId: string,
+    checklistNum: number,
+    itemNum: number,
+    propertyFieldId: string,
+) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {
+        assignee_property_field_id: propertyFieldId,
+    });
 }
 
 export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number) {
@@ -713,7 +739,7 @@ export const doFetchWithResponse = async <TData = any>(url: string, options = {}
     let data;
     if (response.ok) {
         const contentType = response.headers.get('content-type');
-        if (contentType === 'application/json') {
+        if (contentType?.includes('application/json')) {
             data = await response.json() as TData;
         }
 

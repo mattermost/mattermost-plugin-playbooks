@@ -882,3 +882,53 @@ func TestPropertyService_copyPropertyFieldForPlaybook(t *testing.T) {
 		require.Equal(t, "Improvement", targetOptions[2].GetName())
 	})
 }
+
+func TestValidateReservedFieldName(t *testing.T) {
+	t.Run("rejects OWNER (uppercase)", func(t *testing.T) {
+		err := validateReservedFieldName("OWNER")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrReservedPropertyFieldName)
+	})
+
+	t.Run("rejects owner (lowercase)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("owner"))
+	})
+
+	t.Run("rejects Owner (mixed case)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("Owner"))
+	})
+
+	t.Run("rejects CREATOR", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("CREATOR"))
+	})
+
+	t.Run("rejects creator (lowercase)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("creator"))
+	})
+
+	t.Run("rejects PROPERTY_USER", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("PROPERTY_USER"))
+	})
+
+	t.Run("rejects property_user (lowercase)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("property_user"))
+	})
+
+	t.Run("rejects name with surrounding whitespace", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("  owner  "))
+	})
+
+	t.Run("accepts name that contains but does not equal a reserved word", func(t *testing.T) {
+		assert.NoError(t, validateReservedFieldName("owner_backup"))
+		assert.NoError(t, validateReservedFieldName("my_creator"))
+		assert.NoError(t, validateReservedFieldName("run_owner"))
+	})
+
+	t.Run("accepts empty string", func(t *testing.T) {
+		assert.NoError(t, validateReservedFieldName(""))
+	})
+
+	t.Run("accepts arbitrary name", func(t *testing.T) {
+		assert.NoError(t, validateReservedFieldName("Manager"))
+	})
+}
