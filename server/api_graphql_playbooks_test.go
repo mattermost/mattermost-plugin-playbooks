@@ -748,132 +748,132 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 
 	{
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:  "AdminOnlyEdit GQL PropertyFields Test",
-		TeamID: e.BasicTeam.Id,
-		Public: true,
-		Members: []client.PlaybookMember{
-			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
-			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
-			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
-		},
-		AdminOnlyEdit: true,
-	})
-	require.NoError(t, err)
+			Title:  "AdminOnlyEdit GQL PropertyFields Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
 
-	const addMutation = `mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+		const addMutation = `mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
 		addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
 	}`
-	const updateMutation = `mutation UpdatePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!, $propertyField: PropertyFieldInput!) {
+		const updateMutation = `mutation UpdatePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!, $propertyField: PropertyFieldInput!) {
 		updatePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID, propertyField: $propertyField)
 	}`
-	const deleteMutation = `mutation DeletePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!) {
+		const deleteMutation = `mutation DeletePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!) {
 		deletePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID)
 	}`
 
-	baseField := map[string]interface{}{
-		"name": "TestField",
-		"type": "text",
-		"attrs": map[string]interface{}{
-			"visibility": "always",
-			"sortOrder":  1.0,
-		},
-	}
-	updateField := map[string]interface{}{
-		"name": "UpdatedField",
-		"type": "text",
-		"attrs": map[string]interface{}{
-			"visibility": "always",
-			"sortOrder":  2.0,
-		},
-	}
-
-	doAdd := func(c *client.Client) error {
-		var resp graphql.Response
-		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         addMutation,
-			OperationName: "AddPlaybookPropertyField",
-			Variables:     map[string]interface{}{"playbookID": playbookID, "propertyField": baseField},
-		}, &resp); err != nil {
-			return err
-		}
-		if len(resp.Errors) > 0 {
-			return resp.Errors[0]
-		}
-		return nil
-	}
-
-	t.Run("non-admin member AddPlaybookPropertyField is rejected", func(t *testing.T) {
-		err := doAdd(e.PlaybooksClient)
-		require.Error(t, err)
-	})
-
-	// Seed a field as the playbook admin so update/delete have a target.
-	seededFieldID, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
-		Name: "Seeded",
-		Type: "text",
-		Attrs: &client.PropertyFieldAttrsInput{
-			Visibility: stringPtr("always"),
-			SortOrder:  float64Ptr(1.0),
-		},
-	})
-	require.NoError(t, err)
-
-	doUpdate := func(c *client.Client) error {
-		var resp graphql.Response
-		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         updateMutation,
-			OperationName: "UpdatePlaybookPropertyField",
-			Variables: map[string]interface{}{
-				"playbookID":      playbookID,
-				"propertyFieldID": seededFieldID.ID,
-				"propertyField":   updateField,
+		baseField := map[string]interface{}{
+			"name": "TestField",
+			"type": "text",
+			"attrs": map[string]interface{}{
+				"visibility": "always",
+				"sortOrder":  1.0,
 			},
-		}, &resp); err != nil {
-			return err
 		}
-		if len(resp.Errors) > 0 {
-			return resp.Errors[0]
+		updateField := map[string]interface{}{
+			"name": "UpdatedField",
+			"type": "text",
+			"attrs": map[string]interface{}{
+				"visibility": "always",
+				"sortOrder":  2.0,
+			},
 		}
-		return nil
-	}
 
-	doDelete := func(c *client.Client) error {
-		var resp graphql.Response
-		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         deleteMutation,
-			OperationName: "DeletePlaybookPropertyField",
-			Variables:     map[string]interface{}{"playbookID": playbookID, "propertyFieldID": seededFieldID.ID},
-		}, &resp); err != nil {
-			return err
+		doAdd := func(c *client.Client) error {
+			var resp graphql.Response
+			if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+				Query:         addMutation,
+				OperationName: "AddPlaybookPropertyField",
+				Variables:     map[string]interface{}{"playbookID": playbookID, "propertyField": baseField},
+			}, &resp); err != nil {
+				return err
+			}
+			if len(resp.Errors) > 0 {
+				return resp.Errors[0]
+			}
+			return nil
 		}
-		if len(resp.Errors) > 0 {
-			return resp.Errors[0]
+
+		t.Run("non-admin member AddPlaybookPropertyField is rejected", func(t *testing.T) {
+			err := doAdd(e.PlaybooksClient)
+			require.Error(t, err)
+		})
+
+		// Seed a field as the playbook admin so update/delete have a target.
+		seededFieldID, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "Seeded",
+			Type: "text",
+			Attrs: &client.PropertyFieldAttrsInput{
+				Visibility: stringPtr("always"),
+				SortOrder:  float64Ptr(1.0),
+			},
+		})
+		require.NoError(t, err)
+
+		doUpdate := func(c *client.Client) error {
+			var resp graphql.Response
+			if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+				Query:         updateMutation,
+				OperationName: "UpdatePlaybookPropertyField",
+				Variables: map[string]interface{}{
+					"playbookID":      playbookID,
+					"propertyFieldID": seededFieldID.ID,
+					"propertyField":   updateField,
+				},
+			}, &resp); err != nil {
+				return err
+			}
+			if len(resp.Errors) > 0 {
+				return resp.Errors[0]
+			}
+			return nil
 		}
-		return nil
-	}
 
-	t.Run("non-admin member UpdatePlaybookPropertyField is rejected", func(t *testing.T) {
-		require.Error(t, doUpdate(e.PlaybooksClient))
-	})
+		doDelete := func(c *client.Client) error {
+			var resp graphql.Response
+			if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+				Query:         deleteMutation,
+				OperationName: "DeletePlaybookPropertyField",
+				Variables:     map[string]interface{}{"playbookID": playbookID, "propertyFieldID": seededFieldID.ID},
+			}, &resp); err != nil {
+				return err
+			}
+			if len(resp.Errors) > 0 {
+				return resp.Errors[0]
+			}
+			return nil
+		}
 
-	t.Run("non-admin member DeletePlaybookPropertyField is rejected", func(t *testing.T) {
-		require.Error(t, doDelete(e.PlaybooksClient))
-	})
+		t.Run("non-admin member UpdatePlaybookPropertyField is rejected", func(t *testing.T) {
+			require.Error(t, doUpdate(e.PlaybooksClient))
+		})
 
-	t.Run("playbook admin (non-sysadmin) AddPlaybookPropertyField succeeds", func(t *testing.T) {
-		require.NoError(t, doAdd(e.PlaybooksClient2))
-	})
+		t.Run("non-admin member DeletePlaybookPropertyField is rejected", func(t *testing.T) {
+			require.Error(t, doDelete(e.PlaybooksClient))
+		})
 
-	t.Run("playbook admin (non-sysadmin) UpdatePlaybookPropertyField succeeds", func(t *testing.T) {
-		require.NoError(t, doUpdate(e.PlaybooksClient2))
-	})
+		t.Run("playbook admin (non-sysadmin) AddPlaybookPropertyField succeeds", func(t *testing.T) {
+			require.NoError(t, doAdd(e.PlaybooksClient2))
+		})
 
-	t.Run("system admin UpdatePlaybookPropertyField succeeds", func(t *testing.T) {
-		require.NoError(t, doUpdate(e.PlaybooksAdminClient))
-	})
+		t.Run("playbook admin (non-sysadmin) UpdatePlaybookPropertyField succeeds", func(t *testing.T) {
+			require.NoError(t, doUpdate(e.PlaybooksClient2))
+		})
 
-	t.Run("system admin DeletePlaybookPropertyField succeeds", func(t *testing.T) {
-		require.NoError(t, doDelete(e.PlaybooksAdminClient))
-	})
+		t.Run("system admin UpdatePlaybookPropertyField succeeds", func(t *testing.T) {
+			require.NoError(t, doUpdate(e.PlaybooksAdminClient))
+		})
+
+		t.Run("system admin DeletePlaybookPropertyField succeeds", func(t *testing.T) {
+			require.NoError(t, doDelete(e.PlaybooksAdminClient))
+		})
 	}
 }
