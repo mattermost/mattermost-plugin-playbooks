@@ -2720,16 +2720,27 @@ func TestPatchPlaybook(t *testing.T) {
 			Title:  "Non-member PATCH Test",
 			TeamID: e.BasicTeam.Id,
 			Public: false,
-			// RegularUser2 is intentionally not added as a member.
 		})
 		require.NoError(t, err)
 
-		// Log in as RegularUser2 (not a member of this private playbook) to get an auth token.
-		user2Client := model.NewAPIv4Client(e.ServerAdminClient.URL)
-		_, _, loginErr := user2Client.Login(context.Background(), e.RegularUser2.Email, "Password123!")
-		require.NoError(t, loginErr)
+		// Create a fresh team member who is intentionally not a playbook member,
+		// then log in once to obtain an auth token for the PATCH attempt.
+		nonMemberPassword := "Password123!"
+		suffix := model.NewId()
+		nonMember, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+			Email:    "patch-nonmember-" + suffix + "@example.com",
+			Username: "patchnonmember" + suffix,
+			Password: nonMemberPassword,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, nonMember.Id)
+		require.NoError(t, err)
 
-		resp := patchPlaybook(user2Client, id, map[string]any{"run_number_prefix": "NOPE"})
+		nonMemberClient := model.NewAPIv4Client(e.ServerAdminClient.URL)
+		_, _, err = nonMemberClient.Login(context.Background(), nonMember.Email, nonMemberPassword)
+		require.NoError(t, err)
+
+		resp := patchPlaybook(nonMemberClient, id, map[string]any{"run_number_prefix": "NOPE"})
 		defer resp.Body.Close()
 		require.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
