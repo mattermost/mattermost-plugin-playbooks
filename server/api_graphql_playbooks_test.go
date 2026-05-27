@@ -837,12 +837,12 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 			return nil
 		}
 
-		doDelete := func(c *client.Client) error {
+		doDelete := func(c *client.Client, fieldID string) error {
 			var resp graphql.Response
 			if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 				Query:         deleteMutation,
 				OperationName: "DeletePlaybookPropertyField",
-				Variables:     map[string]any{"playbookID": playbookID, "propertyFieldID": seededFieldID.ID},
+				Variables:     map[string]any{"playbookID": playbookID, "propertyFieldID": fieldID},
 			}, &resp); err != nil {
 				return err
 			}
@@ -857,7 +857,7 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 		})
 
 		t.Run("non-admin member DeletePlaybookPropertyField is rejected", func(t *testing.T) {
-			require.Error(t, doDelete(e.PlaybooksClient))
+			require.Error(t, doDelete(e.PlaybooksClient, seededFieldID.ID))
 		})
 
 		t.Run("playbook admin (non-sysadmin) AddPlaybookPropertyField succeeds", func(t *testing.T) {
@@ -872,8 +872,22 @@ func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 			require.NoError(t, doUpdate(e.PlaybooksAdminClient))
 		})
 
+		t.Run("playbook admin (non-sysadmin) DeletePlaybookPropertyField succeeds", func(t *testing.T) {
+			require.NoError(t, doDelete(e.PlaybooksClient2, seededFieldID.ID))
+		})
+
+		seededFieldID2, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "SeededForSysAdmin",
+			Type: "text",
+			Attrs: &client.PropertyFieldAttrsInput{
+				Visibility: stringPtr("always"),
+				SortOrder:  float64Ptr(2.0),
+			},
+		})
+		require.NoError(t, err)
+
 		t.Run("system admin DeletePlaybookPropertyField succeeds", func(t *testing.T) {
-			require.NoError(t, doDelete(e.PlaybooksAdminClient))
+			require.NoError(t, doDelete(e.PlaybooksAdminClient, seededFieldID2.ID))
 		})
 	}
 }
