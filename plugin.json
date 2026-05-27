@@ -53,8 +53,8 @@
       {
         "key": "ExposeMCPExternal",
         "type": "bool",
-        "display_name": "Expose Playbooks MCP tools externally",
-        "help_text": "When enabled, allows the Agents plugin to expose Playbooks MCP tools through its external MCP endpoint. The Agents plugin admin settings must also allow and enable the server/tools.",
+        "display_name": "Expose Playbooks MCP tools externally (experimental)",
+        "help_text": "Requires Enable Experimental Features to be enabled. When enabled, allows the Agents plugin to expose Playbooks MCP tools through its external MCP endpoint. The Agents plugin admin settings must also allow and enable the server/tools.",
         "default": false
       }
     ]
