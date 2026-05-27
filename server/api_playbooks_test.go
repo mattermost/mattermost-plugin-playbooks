@@ -2355,8 +2355,7 @@ func TestAdminOnlyEdit(t *testing.T) {
 	})
 
 	t.Run("import", func(t *testing.T) {
-		// version must match app.CurrentPlaybookExportVersion.
-		payload := []byte(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":1}`)
+		payload := []byte(fmt.Sprintf(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":%d}`, app.CurrentPlaybookExportVersion))
 
 		t.Run("regular user importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
 			newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
