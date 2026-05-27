@@ -3780,7 +3780,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 
 // TestToggleRunRetrospective verifies the PUT /runs/{id}/retrospective-enabled endpoint:
 // owner can toggle, sysadmin can toggle, non-owner non-admin is forbidden, and toggled state persists across Finish.
-func TestToggleRunRetrospective(t *testing.T) {
+func TestRetrospective(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
@@ -4014,13 +4014,6 @@ func TestToggleRunRetrospective(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, fetched.RetrospectiveEnabled)
 	})
-}
-
-// TestRetrospectiveDisabled_RunCreation verifies that the RetrospectiveEnabled flag on
-// a playbook is propagated to runs created from that playbook.
-func TestRetrospectiveDisabled_RunCreation(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
 
 	t.Run("run inherits retrospective_enabled=false from playbook", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -4083,13 +4076,6 @@ func TestRetrospectiveDisabled_RunCreation(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, fetched.RetrospectiveEnabled, "run should inherit retrospective_enabled=true from playbook")
 	})
-}
-
-// TestRetrospectiveDisabled_FinishRun verifies that finishing a run with retrospective_enabled=false
-// does NOT post a retrospective reminder post to the channel.
-func TestRetrospectiveDisabled_FinishRun(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
 
 	t.Run("finishing a run with retrospective disabled posts no retro reminder", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -4127,7 +4113,7 @@ func TestRetrospectiveDisabled_FinishRun(t *testing.T) {
 	})
 }
 
-func TestAutoArchiveChannel_RunFinish(t *testing.T) {
+func TestAutoArchiveChannel(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
@@ -4303,13 +4289,6 @@ func TestAutoArchiveChannel_RunFinish(t *testing.T) {
 
 		assertNoTimelineEvent(t, e.PlaybooksAdminClient, run.ID, client.ChannelArchived)
 	})
-}
-
-// TestAutoArchiveChannel_RunRestore verifies that when a run with AutoArchiveChannel=true is
-// restored, the channel is un-archived.
-func TestAutoArchiveChannel_RunRestore(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
 
 	t.Run("channel is unarchived after run restore when AutoArchiveChannel=true", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -4395,73 +4374,67 @@ func TestAutoArchiveChannel_RunRestore(t *testing.T) {
 
 		assertNoTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelUnarchived)
 	})
-}
 
-// TestAutoArchiveChannel_ManualUnarchiveBeforeRestore verifies that restoring a run whose channel
-// was manually unarchived before restore still clears the AutoArchivedChannel marker so future
-// finishes start fresh.
-func TestAutoArchiveChannel_ManualUnarchiveBeforeRestore(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
+	t.Run("run restore clears auto-archive marker for subsequent finish", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Manual Unarchive Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      true,
+		})
+		require.NoError(t, err)
 
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:  "Auto Archive Manual Unarchive Playbook",
-		TeamID: e.BasicTeam.Id,
-		Public: true,
-		Members: []client.PlaybookMember{
-			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
-			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
-		},
-		CreatePublicPlaybookRun:                 true,
-		CreateChannelMemberOnNewParticipant:     true,
-		RemoveChannelMemberOnRemovedParticipant: true,
-		AutoArchiveChannel:                      true,
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Manual Unarchive Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, run.ChannelID)
+
+		// Finish the run — channel gets auto-archived.
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		require.NotEqual(t, int64(0), channel.DeleteAt, "channel must be archived before manual unarchive")
+
+		// Manually unarchive the channel (simulating an admin un-archiving outside of Playbooks).
+		_, _, err = e.ServerAdminClient.RestoreChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		require.Equal(t, int64(0), channel.DeleteAt, "channel must be unarchived after manual restore")
+
+		// Restore the run — even though the channel was already unarchived manually, the run
+		// must restore cleanly and clear AutoArchivedChannel so the next finish starts fresh.
+		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"channel must remain unarchived after run restore (it was already unarchived manually)")
+
+		// Finish the run a second time — auto-archive must trigger again.
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		require.NoError(t, err)
+		assert.NotEqual(t, int64(0), channel.DeleteAt,
+			"channel must be archived again on second finish — AutoArchivedChannel flag was correctly cleared on restore")
 	})
-	require.NoError(t, err)
-
-	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-		Name:        "Auto Archive Manual Unarchive Run",
-		OwnerUserID: e.RegularUser.Id,
-		TeamID:      e.BasicTeam.Id,
-		PlaybookID:  playbookID,
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, run.ChannelID)
-
-	// Finish the run — channel gets auto-archived.
-	err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
-	require.NoError(t, err)
-
-	channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
-	require.NoError(t, err)
-	require.NotEqual(t, int64(0), channel.DeleteAt, "channel must be archived before manual unarchive")
-
-	// Manually unarchive the channel (simulating an admin un-archiving outside of Playbooks).
-	_, _, err = e.ServerAdminClient.RestoreChannel(context.Background(), run.ChannelID)
-	require.NoError(t, err)
-
-	channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
-	require.NoError(t, err)
-	require.Equal(t, int64(0), channel.DeleteAt, "channel must be unarchived after manual restore")
-
-	// Restore the run — even though the channel was already unarchived manually, the run
-	// must restore cleanly and clear AutoArchivedChannel so the next finish starts fresh.
-	err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
-	require.NoError(t, err)
-
-	channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
-	require.NoError(t, err)
-	assert.Equal(t, int64(0), channel.DeleteAt,
-		"channel must remain unarchived after run restore (it was already unarchived manually)")
-
-	// Finish the run a second time — auto-archive must trigger again.
-	err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
-	require.NoError(t, err)
-
-	channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
-	require.NoError(t, err)
-	assert.NotEqual(t, int64(0), channel.DeleteAt,
-		"channel must be archived again on second finish — AutoArchivedChannel flag was correctly cleared on restore")
 }
 
 // assertHasTimelineEvent fetches the run and asserts that at least one timeline event of the

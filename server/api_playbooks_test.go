@@ -1672,7 +1672,7 @@ func TestPlaybooksDuplicate(t *testing.T) {
 	})
 }
 
-func TestNewChannelOnlyImportExport(t *testing.T) {
+func TestPlaybookFlagImportExport(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
@@ -1696,12 +1696,6 @@ func TestNewChannelOnlyImportExport(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, imported.NewChannelOnly)
 	})
-}
-
-func TestAutoArchiveChannelImportExport(t *testing.T) {
-	e := Setup(t)
-	e.CreateClients()
-	e.CreateBasicServer()
 
 	t.Run("AutoArchiveChannel is preserved through export/import", func(t *testing.T) {
 		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -1994,9 +1988,10 @@ func removeFromPerms(permission string, perms []string) []string {
 // TestAdminOnlyEdit_APIEnforcement verifies that the AdminOnlyEdit flag restricts
 // playbook PUT requests to playbook admins only.
 // NOTE: subtests share a single playbook row and must remain sequential — do NOT add t.Parallel().
-func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
+func TestAdminOnlyEdit(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
+	e.SetEnterpriseLicence()
 
 	// Create a playbook with AdminOnlyEdit=true.
 	// PlaybooksAdminClient (system admin) creates it and is also a playbook admin.
@@ -2199,14 +2194,6 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "Member Edit After Unlock", confirmed.Title)
 	})
-}
-
-// TestAdminOnlyEdit_Create verifies that any user with playbook-create permission
-// can create a playbook with AdminOnlyEdit pre-enabled, since the creator becomes
-// the implicit admin of the new playbook.
-func TestAdminOnlyEdit_Create(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
 
 	t.Run("regular user creating playbook with AdminOnlyEdit=true succeeds", func(t *testing.T) {
 		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -2230,19 +2217,9 @@ func TestAdminOnlyEdit_Create(t *testing.T) {
 		require.NotEmpty(t, id)
 	})
 
-}
-
-// TestAdminOnlyEdit_Duplicate verifies the duplicate-time gate: when the source
-// playbook has AdminOnlyEdit=true, only playbook admins of the source or system
-// admins may duplicate it. Non-admin members must not be able to spawn editable
-// copies of an admin-locked configuration.
-func TestAdminOnlyEdit_Duplicate(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-	e.SetEnterpriseLicence()
-
-	// Source is locked. RegularUser is a plain member; RegularUser2 is a playbook admin.
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	// Duplicate subtests: source playbook with AdminOnlyEdit=true.
+	{
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "AdminOnlyEdit Duplicate Source",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
@@ -2273,44 +2250,29 @@ func TestAdminOnlyEdit_Duplicate(t *testing.T) {
 		require.NotEmpty(t, newID)
 		require.NotEqual(t, playbookID, newID)
 	})
-}
+	}
 
-// TestAdminOnlyEdit_Import verifies that any user with create permission can import
-// a playbook that has AdminOnlyEdit enabled. The importer becomes the sole admin of
-// the imported playbook.
-// Note: AdminOnlyEdit is excluded from exports (export:"-"), so we craft a raw
-// JSON payload with admin_only_edit: true to exercise the import path directly.
-func TestAdminOnlyEdit_Import(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
+	// Import subtests: any user with create permission can import AdminOnlyEdit=true.
+	{
+		// version must match app.CurrentPlaybookExportVersion.
+		payload := []byte(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":1}`)
 
-	// version must match app.CurrentPlaybookExportVersion.
-	payload := []byte(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":1}`)
+		t.Run("regular user importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+			newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
+			require.NoError(t, err)
+			require.NotEmpty(t, newID)
+		})
 
-	t.Run("regular user importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
-		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
-		require.NoError(t, err)
-		require.NotEmpty(t, newID)
-	})
+		t.Run("system admin importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+			newID, err := e.PlaybooksAdminClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
+			require.NoError(t, err)
+			require.NotEmpty(t, newID)
+		})
+	}
 
-	t.Run("system admin importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
-		newID, err := e.PlaybooksAdminClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
-		require.NoError(t, err)
-		require.NotEmpty(t, newID)
-	})
-}
-
-// TestAdminOnlyEdit_PropertyFields verifies that property field CRUD endpoints honor
-// AdminOnlyEdit. The three mutating handlers covered here (create/update/delete) all go
-// through PlaybookEdit, so a non-admin member must be blocked while playbook admins
-// and system admins must succeed.
-func TestAdminOnlyEdit_PropertyFields(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-	e.SetEnterpriseLicence() // property fields require license
-
-	// Source playbook is admin-locked. RegularUser is a plain member; RegularUser2 is a playbook admin.
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	// PropertyFields subtests: CRUD endpoints honor AdminOnlyEdit.
+	{
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "AdminOnlyEdit PropertyFields Source",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
@@ -2364,16 +2326,12 @@ func TestAdminOnlyEdit_PropertyFields(t *testing.T) {
 		_, err := e.PlaybooksAdminClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, fieldID, makeFieldRequest("sysadmin-updated"))
 		require.NoError(t, err)
 	})
-}
+	}
 
-// TestAdminOnlyEdit_Archive verifies that the DELETE /playbooks/{id} endpoint
-// honors AdminOnlyEdit: regular members cannot archive a locked playbook.
-func TestAdminOnlyEdit_Archive(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:  "AdminOnlyEdit Archive Test",
+	// Archive subtests: DELETE /playbooks/{id} honors AdminOnlyEdit.
+	{
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Archive Test",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
 		Members: []client.PlaybookMember{
@@ -2420,18 +2378,12 @@ func TestAdminOnlyEdit_Archive(t *testing.T) {
 		err = e.PlaybooksAdminClient.Playbooks.Archive(context.Background(), lockedID)
 		require.NoError(t, err)
 	})
-}
+	}
 
-// TestAdminOnlyEdit_Conditions verifies that the conditions CRUD endpoints
-// (POST/PUT/DELETE /playbooks/{id}/conditions) honor AdminOnlyEdit.
-// All three handlers route through PlaybookManageConditions → PlaybookEdit.
-func TestAdminOnlyEdit_Conditions(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-	e.SetEnterpriseLicence() // conditions require license
-
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:  "AdminOnlyEdit Conditions Test",
+	// Conditions subtests: CRUD endpoints honor AdminOnlyEdit.
+	{
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Conditions Test",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
 		Members: []client.PlaybookMember{
@@ -2513,17 +2465,12 @@ func TestAdminOnlyEdit_Conditions(t *testing.T) {
 		err = e.PlaybooksAdminClient.PlaybookConditions.Delete(context.Background(), playbookID, seeded.ID)
 		require.NoError(t, err)
 	})
-}
+	}
 
-// TestAdminOnlyEdit_ReorderPropertyFields verifies that
-// POST /playbooks/{id}/property-fields/reorder honors AdminOnlyEdit.
-func TestAdminOnlyEdit_ReorderPropertyFields(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-	e.SetEnterpriseLicence() // property fields require license
-
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:  "AdminOnlyEdit Reorder Test",
+	// ReorderPropertyFields subtests: reorder endpoint honors AdminOnlyEdit.
+	{
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Reorder Test",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
 		Members: []client.PlaybookMember{
@@ -2562,6 +2509,7 @@ func TestAdminOnlyEdit_ReorderPropertyFields(t *testing.T) {
 		_, err := e.PlaybooksAdminClient.Playbooks.ReorderPropertyFields(context.Background(), playbookID, reorderReq)
 		require.NoError(t, err)
 	})
+	}
 }
 
 func stringPtr(s string) *string {

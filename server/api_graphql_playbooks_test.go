@@ -711,9 +711,10 @@ func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string
 	return nil
 }
 
-func TestAdminOnlyEdit_GraphQLUpdatePlaybook(t *testing.T) {
+func TestAdminOnlyEdit_GraphQL(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
+	e.SetEnterpriseLicence()
 
 	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "AdminOnlyEdit GraphQL Test Playbook",
@@ -744,18 +745,9 @@ func TestAdminOnlyEdit_GraphQLUpdatePlaybook(t *testing.T) {
 		err := gqlDoPlaybookUpdate(e.PlaybooksAdminClient, playbookID, map[string]interface{}{"title": "SysAdmin GraphQL Edit"})
 		require.NoError(t, err)
 	})
-}
 
-// TestAdminOnlyEdit_GraphQLPropertyFields verifies that the GraphQL property-field
-// mutations (AddPlaybookPropertyField, UpdatePlaybookPropertyField,
-// DeletePlaybookPropertyField) honor AdminOnlyEdit.  All three route through
-// PlaybookEdit in graphql_root_property.go (lines 72, 113, 171).
-func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-	e.SetEnterpriseLicence()
-
-	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	{
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "AdminOnlyEdit GQL PropertyFields Test",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
@@ -883,4 +875,5 @@ func TestAdminOnlyEdit_GraphQLPropertyFields(t *testing.T) {
 	t.Run("system admin DeletePlaybookPropertyField succeeds", func(t *testing.T) {
 		require.NoError(t, doDelete(e.PlaybooksAdminClient))
 	})
+	}
 }
