@@ -3,7 +3,7 @@
 
 import styled from 'styled-components';
 
-export const BaseInput = styled.input<{$invalid?: boolean}>`
+export const BaseInput = styled.input<{$invalid?: boolean; $readOnly?: boolean}>`
     height: 40px;
     padding: 0 16px;
     border: none;

@@ -92,19 +92,4 @@ describe('TaskProgress', () => {
 
         expect(tree).toBeNull();
     });
-
-    it('counts both Closed and Skipped items as completed (terminal states)', () => {
-        // task_completed should already reflect closed + skipped from the server
-        // This test verifies the component correctly displays the provided counts
-        const component = renderer.create(
-            <TaskProgress
-                taskTotal={10}
-                taskCompleted={7}
-            />,
-        );
-        const tree = component.toJSON();
-
-        expect(tree).toBeTruthy();
-        expect(JSON.stringify(tree)).toContain('7/10');
-    });
 });

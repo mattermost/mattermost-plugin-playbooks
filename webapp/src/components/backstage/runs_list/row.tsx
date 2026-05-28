@@ -26,6 +26,7 @@ import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
+import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
 import TaskProgress from 'src/components/backstage/runs_list/task_progress';
 import {ToastStyle} from 'src/components/backstage/toast';
 
@@ -61,7 +62,19 @@ const SmallStatusBadge = styled(StatusBadge)`
     line-height: 16px;
 `;
 
+const NameRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+`;
+
 const RunName = styled.div`
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 14px;
     font-weight: 600;
     line-height: 16px;
@@ -116,7 +129,14 @@ const Row = (props: Props) => {
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
             <div className='col-sm-3'>
-                <RunName>{props.playbookRun.name}</RunName>
+                <NameRow>
+                    {props.playbookRun.sequential_id && (
+                        <SequentialIdDisplay
+                            sequentialId={props.playbookRun.sequential_id}
+                        />
+                    )}
+                    <RunName>{props.playbookRun.name}</RunName>
+                </NameRow>
                 {infoLine}
             </div>
             <div className='col-sm-2'>

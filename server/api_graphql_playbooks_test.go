@@ -706,7 +706,7 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 	})
 }
 
-func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string]interface{}) error {
+func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string]any) error {
 	const mutation = `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 		updatePlaybook(id: $id, updates: $updates)
 	}`
@@ -714,7 +714,7 @@ func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "UpdatePlaybook",
-		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
+		Variables:     map[string]any{"id": playbookID, "updates": updates},
 	}, &response)
 	if err != nil {
 		return errors.Wrapf(err, "gqlDoPlaybookUpdate graphql failure")

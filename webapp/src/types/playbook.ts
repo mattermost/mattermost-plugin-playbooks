@@ -1,6 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {MetricType} from 'src/graphql/generated/graphql';
+import {PropertyField} from 'src/types/properties';
+
+export {MetricType};
+
 export interface Playbook {
     id: string;
     title: string;
@@ -67,6 +72,8 @@ export interface PlaybookWithChecklist extends Playbook {
     new_channel_only: boolean;
     auto_archive_channel: boolean;
 
+    run_number_prefix: string;
+    next_run_number: number;
     owner_group_only_actions: boolean;
 
     // Deprecated: preserved for backwards compatibility with v1.27
@@ -76,10 +83,6 @@ export interface PlaybookWithChecklist extends Playbook {
     // Property fields from GraphQL
     propertyFields: PropertyField[];
 }
-
-import {MetricType, PropertyField} from 'src/graphql/generated/graphql';
-
-export {MetricType};
 
 export interface Metric {
     id: string;
@@ -231,6 +234,8 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
+        run_number_prefix: '',
+        next_run_number: 1,
         admin_only_edit: false,
         owner_group_only_actions: false,
         new_channel_only: false,

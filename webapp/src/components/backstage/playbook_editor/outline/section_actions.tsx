@@ -1,8 +1,16 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useCallback, useMemo} from 'react';
+import React, {
+    ComponentProps,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
+import debounce from 'debounce';
 
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
@@ -17,10 +25,14 @@ import {
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {fetchPlaybookPropertyFields, updatePlaybookChannelNameTemplate, updatePlaybookRunNumberPrefix} from 'src/client';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
 import {WebhookSetting} from 'src/components/backstage/playbook_edit/automation/webhook_setting';
@@ -46,24 +58,109 @@ interface Props {
     onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook, autoArchiveChannel, onAutoArchiveChange}: Props) => {
+const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange}: Props) => {
+    const [restPlaybookLocal] = useRestPlaybook(playbook.id);
+    const restPlaybook = restPlaybookProp ?? restPlaybookLocal;
+    const [fieldNames, setFieldNames] = useState<string[]>([]);
+    useEffect(() => {
+        fetchPlaybookPropertyFields(playbook.id)
+            .then((fields) => setFieldNames(fields.map((f) => f.name)))
+            .catch(() => { /* ignore fetch errors — fieldNames stays empty */ });
+    }, [playbook.id]);
     const {formatMessage} = useIntl();
+    const {add: addToast} = useToaster();
+    const addToastRef = useRef(addToast);
+    addToastRef.current = addToast;
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
     const disabled = archived || !canEdit;
 
+    // run_number_prefix is REST-only (not in GraphQL schema). restPlaybook is fetched
+    // once and never refreshed, so we track the most recently saved prefix locally and
+    // use it as the source of truth — otherwise the prefix field is overwritten with the
+    // stale restPlaybook value the next time channelPlaybookSource is recomputed (e.g.
+    // after a GraphQL refetch triggered by editing the channel name template).
+    const [savedPrefix, setSavedPrefix] = useState(restPlaybook?.run_number_prefix ?? '');
+    const savedPrefixRef = useRef(savedPrefix);
+    useEffect(() => {
+        savedPrefixRef.current = savedPrefix;
+    }, [savedPrefix]);
+    useEffect(() => {
+        setSavedPrefix(restPlaybook?.run_number_prefix ?? '');
+    }, [restPlaybook?.run_number_prefix]);
+
+    // Merge GraphQL playbook with REST-only fields so CreateAChannel can display run_number_prefix.
+    const channelPlaybookSource = useMemo(() => ({
+        ...playbook,
+        run_number_prefix: savedPrefix,
+        next_run_number: restPlaybook?.next_run_number,
+    }), [playbook, savedPrefix, restPlaybook?.next_run_number]);
+
     const [
         playbookForCreateChannel,
         setPlaybookForCreateChannel,
-    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(playbook, useCallback((update) => {
+    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(channelPlaybookSource as ComponentProps<typeof CreateAChannel>['playbook'], useCallback((update) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
-            channelNameTemplate: update.channel_name_template,
             channelMode: update.channel_mode,
             channelId: update.channel_id,
         });
     }, [updatePlaybook]));
+
+    const handleRunNumberPrefixSave = useMemo(
+        () => debounce((prefix: string) => {
+            updatePlaybookRunNumberPrefix(playbook.id, prefix)
+                .then(() => {
+                    setSavedPrefix(prefix);
+                })
+                .catch((err) => {
+                    setPlaybookForCreateChannel((prev) => ({...prev, run_number_prefix: savedPrefixRef.current}));
+                    let message: string;
+                    if (err?.status_code === 409) {
+                        message = formatMessage({defaultMessage: 'Another active playbook in this team already uses that prefix.'});
+                    } else if (err?.status_code === 400) {
+                        message = formatMessage({defaultMessage: 'Invalid prefix: must start and end with a letter or number and contain only letters, numbers, and hyphens.'});
+                    } else {
+                        message = formatMessage({defaultMessage: 'Failed to save run number prefix. Please try again.'});
+                    }
+                    addToastRef.current({content: message, toastStyle: ToastStyle.Failure});
+                });
+        }, 500),
+        [playbook.id, setPlaybookForCreateChannel, formatMessage],
+    );
+
+    useEffect(() => {
+        return () => handleRunNumberPrefixSave.flush();
+    }, [handleRunNumberPrefixSave]);
+
+    // channel_name_template: save via REST PATCH (with server-side validation) instead of GraphQL.
+    const lastSavedTemplateRef = useRef(playbook.channel_name_template ?? '');
+    useEffect(() => {
+        lastSavedTemplateRef.current = playbook.channel_name_template ?? '';
+    }, [playbook.channel_name_template]);
+    const handleChannelNameTemplateSave = useMemo(
+        () => debounce((template: string) => {
+            updatePlaybookChannelNameTemplate(playbook.id, template)
+                .then(() => {
+                    lastSavedTemplateRef.current = template;
+                })
+                .catch((err) => {
+                    setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template: lastSavedTemplateRef.current}));
+                    addToastRef.current({
+                        content: formatMessage({defaultMessage: 'Failed to save run name template. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                    // eslint-disable-next-line no-console
+                    console.error('Failed to save channel name template', err);
+                });
+        }, 500),
+        [playbook.id, setPlaybookForCreateChannel, formatMessage],
+    );
+
+    useEffect(() => {
+        return () => handleChannelNameTemplateSave.flush();
+    }, [handleChannelNameTemplateSave]);
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);
@@ -170,7 +267,10 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
+                        fieldNames={fieldNames}
                         disabled={disabled}
+                        onRunNumberPrefixChange={handleRunNumberPrefixSave}
+                        onChannelNameTemplateChange={handleChannelNameTemplateSave}
                         newChannelOnly={newChannelOnly}
                     />
                 </Setting>

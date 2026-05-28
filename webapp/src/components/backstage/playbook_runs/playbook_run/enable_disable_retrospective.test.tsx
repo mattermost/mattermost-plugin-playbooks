@@ -89,6 +89,8 @@ const makeRun = (overrides: Partial<PlaybookRun> = {}): PlaybookRun => ({
     remove_channel_member_on_removed_participant: false,
     items_order: [],
     type: PlaybookRunType.Playbook,
+    run_number: 0,
+    sequential_id: '',
     ...overrides,
 });
 
