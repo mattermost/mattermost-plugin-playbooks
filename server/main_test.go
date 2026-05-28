@@ -410,7 +410,7 @@ func (e *TestEnvironment) username(base string) string {
 }
 
 func (e *TestEnvironment) email(base string) string {
-	return fmt.Sprintf("pb-%s-%d@example.com", base, e.id)
+	return e.username(base) + "@example.com"
 }
 
 func (e *TestEnvironment) resourceName(base string) string {
