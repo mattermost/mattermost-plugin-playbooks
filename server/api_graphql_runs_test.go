@@ -222,8 +222,8 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	e.Permissions.AddPermissionToRole(t, model.PermissionManagePrivateChannelMembers.Id, model.TeamUserRoleId)
 
 	user3, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
-		Email:    "thirduser@example.com",
-		Username: "thirduser",
+		Email:    e.email("thirduser"),
+		Username: e.username("thirduser"),
 		Password: testUserPassword,
 	})
 	require.NoError(t, err)
@@ -231,8 +231,8 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	require.NoError(t, err)
 
 	userNotInTeam, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
-		Email:    "notinteam@example.com",
-		Username: "notinteam",
+		Email:    e.email("gqlnotinteam"),
+		Username: e.username("gqlnotinteam"),
 		Password: testUserPassword,
 	})
 	require.NoError(t, err)

@@ -21,7 +21,9 @@ import (
 )
 
 func TestGraphQLPlaybooks(t *testing.T) {
-	e := Setup(t)
+	// The "list" subtest lists playbooks across the whole server, so this test
+	// requires a globally-empty database.
+	e := SetupIsolated(t)
 	e.CreateBasic()
 
 	t.Run("basic get", func(t *testing.T) {
