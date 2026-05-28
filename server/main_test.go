@@ -159,7 +159,7 @@ func (e *TestEnvironment) DoPluginAPIRequestWithHeaders(ctx context.Context, cli
 	if resp.StatusCode >= 300 {
 		parsedErr := model.AppErrorFromJSON(resp.Body)
 		_ = resp.Body.Close()
-		return nil, parsedErr
+		return resp, parsedErr
 	}
 	return resp, nil
 }
