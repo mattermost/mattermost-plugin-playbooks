@@ -94,9 +94,9 @@ describe('runs > run details page > resume run', {testIsolation: true}, () => {
             cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
 
             cy.findByTestId('runDropdown').click();
-            cy.get('.restartRun').find('span').contains('Restart');
+            cy.get('.resumeRun').find('span').contains('Resume');
 
-            cy.get('.restartRun').click();
+            cy.get('.resumeRun').click();
             cy.get('#confirmModal').get('#confirmModalButton').click();
             cy.wait('@routeRestore');
             cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');

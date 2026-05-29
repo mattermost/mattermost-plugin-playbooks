@@ -255,10 +255,10 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
                 <Separator/>
                 <StyledDropdownMenuItem
                     onClick={onRestoreRun}
-                    className='restartRun'
+                    className='resumeRun'
                 >
                     <FlagOutlineIcon size={18}/>
-                    {isChannelChecklist ? <FormattedMessage defaultMessage='Resume'/> : <FormattedMessage defaultMessage='Restart'/>}
+                    <FormattedMessage defaultMessage='Resume'/>
                 </StyledDropdownMenuItem>
             </>
         );

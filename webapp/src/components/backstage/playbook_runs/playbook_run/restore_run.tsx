@@ -20,9 +20,9 @@ export const useOnRestoreRun = (playbookRun: PlaybookRun, location: string = 'ba
     const isChannelChecklist = playbookRun?.type === PlaybookRunType.ChannelChecklist;
 
     return () => {
-        const title = isChannelChecklist ? formatMessage({defaultMessage: 'Confirm resume'}) : formatMessage({defaultMessage: 'Confirm restart'});
-        const message = isChannelChecklist ? formatMessage({defaultMessage: 'Are you sure you want to resume {name}?'}, {name: playbookRun.name}) : formatMessage({defaultMessage: 'Are you sure you want to restart {name}?'}, {name: playbookRun.name});
-        const confirmButtonText = isChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'});
+        const title = formatMessage({defaultMessage: 'Confirm resume'});
+        const message = isChannelChecklist ? formatMessage({defaultMessage: 'Are you sure you want to resume {name}?'}, {name: playbookRun.name}) : formatMessage({defaultMessage: 'Are you sure you want to resume {name}?'}, {name: playbookRun.name});
+        const confirmButtonText = isChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Resume'});
 
         const onConfirm = async () => {
             if (!playbookRun) {

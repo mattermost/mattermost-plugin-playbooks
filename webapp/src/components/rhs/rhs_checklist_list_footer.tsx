@@ -143,7 +143,7 @@ const RHSFooter = ({
                                 onClick={handleResume}
                                 disabled={false}
                             >
-                                {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
+                                {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Resume'})
                                 }
                             </ResumeButton>
                         ) : (
@@ -152,7 +152,7 @@ const RHSFooter = ({
                                 delay={OVERLAY_DELAY}
                                 overlay={
                                     <Tooltip id='resume-disabled-tooltip'>
-                                        {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to restart'})
+                                        {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to resume'})
                                         }
                                     </Tooltip>
                                 }
@@ -162,7 +162,7 @@ const RHSFooter = ({
                                         onClick={handleResume}
                                         disabled={true}
                                     >
-                                        {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
+                                        {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Resume'})
                                         }
                                     </ResumeButton>
                                 </ResumeButtonWrapper>
