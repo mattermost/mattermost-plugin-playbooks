@@ -62,6 +62,11 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 }
 
 func (s *playbookService) Import(playbook Playbook, userID string) (string, error) {
+	// Strip metric IDs on import (export omits them); prevents treating foreign IDs as in-playbook updates.
+	for i := range playbook.Metrics {
+		playbook.Metrics[i].ID = ""
+	}
+
 	newID, err := s.Create(playbook, userID)
 	if err != nil {
 		return "", err
