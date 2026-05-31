@@ -52,6 +52,10 @@ runs:
       with:
         entrypoint: ./.github/actions/e2e-test/generate-test-data.sh
 
+    - name: ci/e2e-setup-start
+      run: echo "Setting up e2e test environment"
+      shell: bash
+
     - name: ci/installing-deps
       if: steps.cache-node-modules.outputs.cache-hit != 'true'
       shell: bash
@@ -72,12 +76,24 @@ runs:
         cd e2e-tests/
         npx cypress install
 
+    - name: ci/upload-plugin-start
+      run: echo "Uploading Playbooks plugin to test server"
+      shell: bash
+
     - name: ci/install-playbooks
       env:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
         MM_ADMIN_USERNAME: sysadmin
         MM_ADMIN_PASSWORD: Sys@dmin-sample1
       run: make upload-to-server
+      shell: bash
+
+    - name: ci/upload-plugin-done
+      run: echo "Plugin upload complete"
+      shell: bash
+
+    - name: ci/cypress-tests-start
+      run: echo "Starting Cypress e2e tests"
       shell: bash
 
     - name: ci/run-cypress-tests
@@ -98,6 +114,11 @@ runs:
       run: |
         cd e2e-tests
         npm run test -- --spec "${{ inputs.SPECS }}"
+      shell: bash
+
+    - name: ci/cypress-tests-done
+      if: always()
+      run: echo "Cypress e2e tests complete"
       shell: bash
 
     - name: ci/upload-cypress-test-results
