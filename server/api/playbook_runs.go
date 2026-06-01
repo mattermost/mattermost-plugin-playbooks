@@ -120,17 +120,21 @@ func NewPlaybookRunHandler(
 	checklistRouter.HandleFunc("/restore", withContext(handler.checklistRestore)).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/duplicate", withContext(handler.duplicateChecklist)).Methods(http.MethodPost)
 
-	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
-	checklistItem.HandleFunc("", withContext(handler.itemDelete)).Methods(http.MethodDelete)
-	checklistItem.HandleFunc("", withContext(handler.itemEdit)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/skip", withContext(handler.itemSkip)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/restore", withContext(handler.itemRestore)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/state", withContext(handler.itemSetState)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
-	checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
-	checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
+	registerChecklistItemRoutes := func(checklistItem *mux.Router) {
+		checklistItem.HandleFunc("", withContext(handler.itemDelete)).Methods(http.MethodDelete)
+		checklistItem.HandleFunc("", withContext(handler.itemEdit)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/skip", withContext(handler.itemSkip)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/restore", withContext(handler.itemRestore)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/state", withContext(handler.itemSetState)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
+		checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
+		checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
+	}
+
+	registerChecklistItemRoutes(checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter())
+	registerChecklistItemRoutes(checklistRouter.PathPrefix("/items/{item:[0-9]+}").Subrouter())
 
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
 	retrospectiveRouter.HandleFunc("", withContext(handler.updateRetrospective)).Methods(http.MethodPost)
