@@ -202,40 +202,42 @@ jobs:
         run: make dist
 
   dist-fips:
-    # Skip FIPS testing for forks, which won't have docker login credentials.
+    # Skip FIPS testing for forks, which won't have the chainguard identity.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - go
       - lint
-    container:
-      image: mattermost/mattermost-build-server-fips:${{ needs.go.outputs.version }}
-      credentials:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    env:
-      FIPS_ENABLED: true
+    permissions:
+      contents: read
+      id-token: write # required for chainctl OIDC inside build-fips
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: "0"
-      - name: ci/configure-git-safe-directory
-        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+      - name: ci/setup-go
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version: ${{ needs.go.outputs.version }}
+      - name: ci/setup-node
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
       - name: ci/get-short-sha
         id: short-sha
         run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-      - name: ci/build-for-upload
-        run: make dist
+      - name: ci/build-fips
+        uses: mattermost/actions/plugin-ci/build-fips@c7a06bc642f72fc227deb2cae3af03cff72c0f0d
+        with:
+          chainguard-identity: ${{ secrets.CHAINGUARD_IDENTITY }}
       - name: ci/upload-build-artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: playbooks-bundle-fips-${{ steps.short-sha.outputs.sha }}
           path: |
-            dist/playbooks-*.tar.gz
+            dist-fips/playbooks-*.tar.gz
           retention-days: 7 ## No need to keep build artifacts for more than 7 days
-      - name: ci/ensure-build-on-all-platforms ## Verify builds on all platforms *after* ci/build-for-upload to keep artifact small
-        run: make dist
 
   upload:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
