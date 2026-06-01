@@ -1751,7 +1751,7 @@ func TestRequestUpdate(t *testing.T) {
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.CreatorUserID)
 		assert.NotZero(t, lastEvent.PostID)
-		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+		assert.Equal(t, fmt.Sprintf("@%s requested a status update", e.RegularUser2.Username), lastEvent.Summary)
 	})
 
 	t.Run("public - viewer access ", func(t *testing.T) {
@@ -1773,7 +1773,7 @@ func TestRequestUpdate(t *testing.T) {
 		lastEvent := publicRun.TimelineEvents[len(publicRun.TimelineEvents)-1]
 		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
-		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+		assert.Equal(t, fmt.Sprintf("@%s requested a status update", e.RegularUser2.Username), lastEvent.Summary)
 
 		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUserNotInTeam.Id)
 		assert.Error(t, err)
@@ -2628,7 +2628,9 @@ func TestGetByChannelID(t *testing.T) {
 }
 
 func TestGetOwners(t *testing.T) {
-	e := Setup(t)
+	// GetOwners returns owners across all runs on the server, so this test
+	// requires a globally-empty database.
+	e := SetupIsolated(t)
 	e.CreateBasic()
 
 	ownerFromUser := func(u *model.User) client.OwnerInfo {
