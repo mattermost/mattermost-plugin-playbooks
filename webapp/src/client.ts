@@ -94,7 +94,8 @@ export async function createPlaybookRun(
     name: string,
     summary: string,
     channel_id?: string,
-    create_public_run?: boolean
+    create_public_run?: boolean,
+    property_values?: Record<string, string | number | boolean | null | string[]>
 ) {
     const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
         owner_user_id,
@@ -104,6 +105,7 @@ export async function createPlaybookRun(
         playbook_id,
         channel_id,
         create_public_run,
+        property_values,
     }));
     return run as PlaybookRun;
 }
@@ -247,6 +249,20 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
     return data;
 }
 
+export async function updatePlaybookRunNumberPrefix(playbookId: Playbook['id'], runNumberPrefix: string) {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({run_number_prefix: runNumberPrefix}),
+    });
+}
+
+export async function updatePlaybookChannelNameTemplate(playbookId: Playbook['id'], channelNameTemplate: string) {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({channel_name_template: channelNameTemplate}),
+    });
+}
+
 export async function restorePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
         method: 'PUT',
@@ -298,6 +314,14 @@ export async function toggleRunStatusUpdates(playbookRunId: string, status_enabl
     }
 }
 
+export async function toggleRunRetrospective(playbookRunId: string, retrospective_enabled: boolean) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/retrospective-enabled`, JSON.stringify({retrospective_enabled}));
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setOwner(playbookRunId: string, ownerId: string) {
     const body = `{"owner_id": "${ownerId}"}`;
     try {
@@ -308,13 +332,31 @@ export async function setOwner(playbookRunId: string, ownerId: string) {
     }
 }
 
-export async function setAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
-    const body = JSON.stringify({assignee_id: assigneeId});
+async function putAssignee(playbookRunId: string, checklistNum: number, itemNum: number, body: Record<string, unknown>) {
     try {
-        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`, JSON.stringify(body));
     } catch (error) {
         return {error};
     }
+}
+
+export async function setAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_id: assigneeId});
+}
+
+export async function setRoleAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeType: string) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_type: assigneeType});
+}
+
+export async function setPropertyUserAssignee(
+    playbookRunId: string,
+    checklistNum: number,
+    itemNum: number,
+    propertyFieldId: string,
+) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {
+        assignee_property_field_id: propertyFieldId,
+    });
 }
 
 export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number) {
@@ -713,7 +755,7 @@ export const doFetchWithResponse = async <TData = any>(url: string, options = {}
     let data;
     if (response.ok) {
         const contentType = response.headers.get('content-type');
-        if (contentType === 'application/json') {
+        if (contentType?.includes('application/json')) {
             data = await response.json() as TData;
         }
 

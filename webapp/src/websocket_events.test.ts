@@ -82,6 +82,7 @@ describe('incremental updates', () => {
                         state: 'Open',
                         state_modified: 0,
                         assignee_id: '',
+                        assignee_type: '',
                         assignee_modified: 0,
                         command: '',
                         description: '',
@@ -98,6 +99,7 @@ describe('incremental updates', () => {
                         state: 'Open',
                         state_modified: 0,
                         assignee_id: '',
+                        assignee_type: '',
                         assignee_modified: 0,
                         command: '',
                         description: '',
@@ -145,6 +147,10 @@ describe('incremental updates', () => {
         current_status: PlaybookRunStatus.InProgress,
         type: PlaybookRunType.Playbook,
         items_order: ['checklist_1'],
+        run_number: 1,
+        sequential_id: 'TEST-00001',
+        task_total: 0,
+        task_completed: 0,
     };
 
     describe('handleWebsocketPlaybookRunUpdatedIncremental', () => {
@@ -449,6 +455,54 @@ describe('incremental updates', () => {
             expect(dispatchedAction.data).toEqual(update);
             expect(dispatchedAction.data.playbook_run_updated_at).toBe(1500);
             expect(dispatchedAction.data.changed_fields.name).toBe('Updated Name with Timestamp');
+        });
+
+        it('handles run_number and sequential_id field updates', () => {
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    run_number: 42,
+                    sequential_id: 'INC-00042',
+                },
+            };
+
+            const msg = makeWebSocketMessage(JSON.stringify(update));
+
+            handler(msg);
+
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data.changed_fields.run_number).toBe(42);
+            expect(dispatchedAction.data.changed_fields.sequential_id).toBe('INC-00042');
+        });
+
+        it('handles task_total and task_completed field updates', () => {
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    task_total: 4,
+                    task_completed: 3,
+                },
+            };
+
+            const msg = makeWebSocketMessage(JSON.stringify(update));
+
+            handler(msg);
+
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data.changed_fields.task_total).toBe(4);
+            expect(dispatchedAction.data.changed_fields.task_completed).toBe(3);
         });
     });
 
@@ -1140,6 +1194,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',
@@ -1266,6 +1321,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',
@@ -1305,6 +1361,7 @@ describe('incremental updates', () => {
                             state: 'Open',
                             state_modified: 0,
                             assignee_id: '',
+                            assignee_type: '',
                             assignee_modified: 0,
                             command: '',
                             description: '',
@@ -1345,6 +1402,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',
@@ -1372,6 +1430,8 @@ describe('incremental updates', () => {
 
         describe('error handling and edge cases', () => {
             it('handles malformed websocket payloads gracefully', () => {
+                // eslint-disable-next-line no-empty-function
+                const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
                 const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
                 // Malformed JSON
@@ -1379,6 +1439,8 @@ describe('incremental updates', () => {
 
                 expect(() => handler(msg)).not.toThrow();
                 expect(testDispatch).not.toHaveBeenCalled();
+                expect(consoleError).toHaveBeenCalledTimes(1);
+                consoleError.mockRestore();
             });
 
             it('handles missing fields in update payload', () => {

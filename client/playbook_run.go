@@ -4,6 +4,7 @@
 package client
 
 import (
+	"encoding/json"
 	"time"
 
 	"gopkg.in/guregu/null.v4"
@@ -61,6 +62,10 @@ type PlaybookRun struct {
 	MetricsData                             []RunMetricData `json:"metrics_data"`
 	CreateChannelMemberOnNewParticipant     bool            `json:"create_channel_member_on_new_participant"`
 	RemoveChannelMemberOnRemovedParticipant bool            `json:"remove_channel_member_on_removed_participant"`
+	RunNumber                               int64           `json:"run_number"`
+	SequentialID                            string          `json:"sequential_id"`
+	TaskTotal                               int             `json:"task_total"`
+	TaskCompleted                           int             `json:"task_completed"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the
@@ -111,6 +116,10 @@ const (
 	RunRestored            TimelineEventType = "run_restored"
 	StatusUpdatesEnabled   TimelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  TimelineEventType = "status_updates_disabled"
+	RetrospectiveEnabled   TimelineEventType = "retrospective_enabled"
+	RetrospectiveDisabled  TimelineEventType = "retrospective_disabled"
+	ChannelArchived        TimelineEventType = "channel_archived"
+	ChannelUnarchived      TimelineEventType = "channel_unarchived"
 )
 
 // TimelineEvent represents an event recorded to a playbook run's timeline.
@@ -130,15 +139,16 @@ type TimelineEvent struct {
 
 // PlaybookRunCreateOptions specifies the parameters for PlaybookRunService.Create method.
 type PlaybookRunCreateOptions struct {
-	Name            string `json:"name"`
-	OwnerUserID     string `json:"owner_user_id"`
-	TeamID          string `json:"team_id"`
-	ChannelID       string `json:"channel_id"`
-	Summary         string `json:"summary"`
-	PostID          string `json:"post_id"`
-	PlaybookID      string `json:"playbook_id"`
-	CreatePublicRun *bool  `json:"create_public_run"`
-	Type            string `json:"type"`
+	Name            string                     `json:"name"`
+	OwnerUserID     string                     `json:"owner_user_id"`
+	TeamID          string                     `json:"team_id"`
+	ChannelID       string                     `json:"channel_id"`
+	Summary         string                     `json:"summary"`
+	PostID          string                     `json:"post_id"`
+	PlaybookID      string                     `json:"playbook_id"`
+	CreatePublicRun *bool                      `json:"create_public_run"`
+	Type            string                     `json:"type"`
+	PropertyValues  map[string]json.RawMessage `json:"property_values,omitempty"`
 }
 
 // RunAction represents the run action settings. Frontend passes this struct to update settings.
@@ -291,8 +301,8 @@ type StatusUpdateOptions struct {
 
 // PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
 type PlaybookRunUpdateOptions struct {
-	Name        *string `json:"name,omitempty"`
-	Summary     *string `json:"summary,omitempty"`
+	Name    *string `json:"name,omitempty"`
+	Summary *string `json:"summary,omitempty"`
 }
 
 type RunMetricData struct {

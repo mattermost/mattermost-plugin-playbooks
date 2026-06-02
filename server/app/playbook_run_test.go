@@ -7,12 +7,48 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
+
+func TestFormatSequentialID(t *testing.T) {
+	t.Run("zero runNumber returns empty string", func(t *testing.T) {
+		require.Equal(t, "", FormatSequentialID("INC", 0))
+	})
+
+	t.Run("zero runNumber with empty prefix returns empty string", func(t *testing.T) {
+		require.Equal(t, "", FormatSequentialID("", 0))
+	})
+
+	t.Run("prefix and runNumber produces hyphen-separated result", func(t *testing.T) {
+		require.Equal(t, "INC-00042", FormatSequentialID("INC", 42))
+	})
+
+	t.Run("empty prefix returns zero-padded number only", func(t *testing.T) {
+		require.Equal(t, "00042", FormatSequentialID("", 42))
+	})
+
+	t.Run("runNumber 1 produces five-digit padded result", func(t *testing.T) {
+		require.Equal(t, "INC-00001", FormatSequentialID("INC", 1))
+	})
+
+	t.Run("runNumber exactly at five digits", func(t *testing.T) {
+		require.Equal(t, "INC-99999", FormatSequentialID("INC", 99999))
+	})
+
+	t.Run("runNumber exceeds five digits is not truncated", func(t *testing.T) {
+		require.Equal(t, "INC-100000", FormatSequentialID("INC", 100000))
+	})
+
+	t.Run("multi-segment prefix", func(t *testing.T) {
+		require.Equal(t, "INC-PROD-00007", FormatSequentialID("INC-PROD", 7))
+	})
+}
 
 func TestPlaybookRun_MarshalJSON(t *testing.T) {
 	t.Run("marshal pointer", func(t *testing.T) {
@@ -593,6 +629,59 @@ func TestDetectChangedFields(t *testing.T) {
 		// When order is the same, no changes should be detected
 		prev.Checklists[0].Items = curr.Checklists[0].Items
 		changes = DetectChangedFields(prev, curr)
+		require.Empty(t, changes)
+	})
+
+	t.Run("run_number change is detected", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", RunNumber: 1, SequentialID: "INC-00001"}
+		curr := &PlaybookRun{ID: "run1", RunNumber: 2, SequentialID: "INC-00002"}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Equal(t, int64(2), changes["run_number"])
+		require.Equal(t, "INC-00002", changes["sequential_id"])
+	})
+
+	t.Run("sequential_id change without run_number change is detected", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", RunNumber: 5, SequentialID: "OLD-00005"}
+		curr := &PlaybookRun{ID: "run1", RunNumber: 5, SequentialID: "INC-00005"}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Equal(t, "INC-00005", changes["sequential_id"])
+		require.NotContains(t, changes, "run_number")
+	})
+
+	t.Run("no sequential change is not detected", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", RunNumber: 3, SequentialID: "INC-00003"}
+		curr := &PlaybookRun{ID: "run1", RunNumber: 3, SequentialID: "INC-00003"}
+
+		changes := DetectChangedFields(prev, curr)
+		require.NotContains(t, changes, "run_number")
+		require.NotContains(t, changes, "sequential_id")
+	})
+
+	t.Run("task progress changes", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", TaskTotal: 3, TaskCompleted: 1}
+		curr := &PlaybookRun{ID: "run1", TaskTotal: 3, TaskCompleted: 2}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		require.Equal(t, 2, changes["task_completed"])
+	})
+
+	t.Run("task total and completed both change", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", TaskTotal: 2, TaskCompleted: 0}
+		curr := &PlaybookRun{ID: "run1", TaskTotal: 3, TaskCompleted: 1}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Equal(t, 3, changes["task_total"])
+		require.Equal(t, 1, changes["task_completed"])
+	})
+
+	t.Run("no task progress change is not detected", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", TaskTotal: 4, TaskCompleted: 2}
+		curr := &PlaybookRun{ID: "run1", TaskTotal: 4, TaskCompleted: 2}
+
+		changes := DetectChangedFields(prev, curr)
 		require.Empty(t, changes)
 	})
 }
@@ -1476,6 +1565,94 @@ func TestPlaybookRun_MarshalJSON_ItemsOrder(t *testing.T) {
 	})
 }
 
+func TestComputeTaskProgress(t *testing.T) {
+	makeItem := func(state string, conditionAction ConditionAction) ChecklistItem {
+		return ChecklistItem{State: state, ConditionAction: conditionAction}
+	}
+
+	t.Run("no checklists gives zero totals", func(t *testing.T) {
+		run := &PlaybookRun{}
+		run.ComputeTaskProgress()
+		require.Equal(t, 0, run.TaskTotal)
+		require.Equal(t, 0, run.TaskCompleted)
+	})
+
+	t.Run("all open items", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 2, run.TaskTotal)
+		require.Equal(t, 0, run.TaskCompleted)
+	})
+
+	t.Run("closed items count as completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateClosed, ConditionActionNone),
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 2, run.TaskTotal)
+		require.Equal(t, 1, run.TaskCompleted)
+	})
+
+	t.Run("skipped items count as completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateSkipped, ConditionActionNone),
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 2, run.TaskTotal)
+		require.Equal(t, 1, run.TaskCompleted)
+	})
+
+	t.Run("in-progress items are not completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateInProgress, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 1, run.TaskTotal)
+		require.Equal(t, 0, run.TaskCompleted)
+	})
+
+	t.Run("hidden items are excluded from total and completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateClosed, ConditionActionHidden),
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 1, run.TaskTotal)
+		require.Equal(t, 0, run.TaskCompleted)
+	})
+
+	t.Run("multiple checklists are summed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{
+			{Items: []ChecklistItem{
+				makeItem(ChecklistItemStateClosed, ConditionActionNone),
+				makeItem(ChecklistItemStateOpen, ConditionActionNone),
+			}},
+			{Items: []ChecklistItem{
+				makeItem(ChecklistItemStateSkipped, ConditionActionNone),
+				makeItem(ChecklistItemStateInProgress, ConditionActionNone),
+			}},
+		}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 4, run.TaskTotal)
+		require.Equal(t, 2, run.TaskCompleted)
+	})
+
+	t.Run("all tasks completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateClosed, ConditionActionNone),
+			makeItem(ChecklistItemStateSkipped, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 2, run.TaskTotal)
+		require.Equal(t, 2, run.TaskCompleted)
+	})
+}
+
 // TestSendWebhooksOnCreationDMGM verifies channel URL construction for team-based vs
 // DM/GM runs. sendWebhooksOnUpdateStatus uses the same ownerFirstTeamName + getDMGMChannelURL
 // path; its URL construction is covered by TestGetDMGMChannelURL in urls_test.go.
@@ -1535,5 +1712,100 @@ func TestSendWebhooksOnCreationDMGM(t *testing.T) {
 			ChannelID: channelID,
 		})
 		// AssertExpectations confirms GetTeam was called exactly once
+	})
+}
+
+func TestShouldAutoArchiveChannel(t *testing.T) {
+	base := PlaybookRun{
+		AutoArchiveChannel:  true,
+		ChannelCreatedByRun: true,
+		ChannelID:           model.NewId(),
+	}
+
+	tests := []struct {
+		name     string
+		mutate   func(*PlaybookRun)
+		expected bool
+	}{
+		{"all conditions true", func(_ *PlaybookRun) {}, true},
+		{"AutoArchiveChannel false", func(r *PlaybookRun) { r.AutoArchiveChannel = false }, false},
+		{"ChannelCreatedByRun false", func(r *PlaybookRun) { r.ChannelCreatedByRun = false }, false},
+		{"ChannelID empty", func(r *PlaybookRun) { r.ChannelID = "" }, false},
+	}
+
+	svc := &PlaybookRunServiceImpl{}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			run := base
+			tc.mutate(&run)
+			assert.Equal(t, tc.expected, svc.shouldAutoArchiveChannel(&run))
+		})
+	}
+}
+
+func TestDeleteChannelByID(t *testing.T) {
+	channelID := model.NewId()
+
+	t.Run("returns true on success", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("DeleteChannel", channelID).Return((*model.AppError)(nil)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.True(t, svc.deleteChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+
+	t.Run("returns false on API error", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("DeleteChannel", channelID).Return(model.NewAppError("test", "err", nil, "", 500)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.False(t, svc.deleteChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+}
+
+func TestRestoreChannelByID(t *testing.T) {
+	channelID := model.NewId()
+
+	t.Run("archived channel is un-archived and returns true", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		ch := &model.Channel{Id: channelID, DeleteAt: 1000}
+		api.On("GetChannel", channelID).Return(ch, (*model.AppError)(nil)).Once()
+		api.On("UpdateChannel", ch).Return(ch, (*model.AppError)(nil)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.True(t, svc.restoreChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+
+	t.Run("already active channel returns false without calling Update", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		ch := &model.Channel{Id: channelID, DeleteAt: 0}
+		api.On("GetChannel", channelID).Return(ch, (*model.AppError)(nil)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.False(t, svc.restoreChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+
+	t.Run("GetChannel failure returns false", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("GetChannel", channelID).Return((*model.Channel)(nil), model.NewAppError("test", "err", nil, "", 500)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.False(t, svc.restoreChannelByID(channelID, logrus.WithField("test", "true")))
+	})
+
+	t.Run("UpdateChannel failure returns false", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		ch := &model.Channel{Id: channelID, DeleteAt: 1000}
+		api.On("GetChannel", channelID).Return(ch, (*model.AppError)(nil)).Once()
+		api.On("UpdateChannel", ch).Return((*model.Channel)(nil), model.NewAppError("test", "err", nil, "", 500)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		assert.False(t, svc.restoreChannelByID(channelID, logrus.WithField("test", "true")))
 	})
 }

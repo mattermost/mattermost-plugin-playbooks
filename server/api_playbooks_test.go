@@ -4,10 +4,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -95,7 +97,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  id,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("playbooks can be searched by title", func(t *testing.T) {
@@ -333,6 +335,18 @@ func TestCreateInvalidPlaybook(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 		assert.Empty(t, id)
 	})
+
+	t.Run("fails if new_channel_only=true combined with link_existing_channel mode", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:          "conflict-nco",
+			TeamID:         e.BasicTeam.Id,
+			Public:         true,
+			NewChannelOnly: true,
+			ChannelMode:    client.PlaybookRunLinkExistingChannel,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Empty(t, id)
+	})
 }
 
 func TestPlaybooksRetrieval(t *testing.T) {
@@ -475,11 +489,18 @@ func TestPlaybookUpdate(t *testing.T) {
 
 	t.Run("update playbook with too many webhoooks", func(t *testing.T) {
 		urls := []string{}
-		for i := 0; i < 65; i++ {
+		for i := range 65 {
 			urls = append(urls, "http://localhost/"+strconv.Itoa(i))
 		}
 		e.BasicPlaybook.WebhookOnCreationEnabled = true
 		e.BasicPlaybook.WebhookOnCreationURLs = urls
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("fails if new_channel_only=true combined with link_existing_channel mode", func(t *testing.T) {
+		e.BasicPlaybook.NewChannelOnly = true
+		e.BasicPlaybook.ChannelMode = client.PlaybookRunLinkExistingChannel
 		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
@@ -1468,10 +1489,10 @@ func TestPlaybooksImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify properties key exists in export JSON
-		var exportData map[string]interface{}
+		var exportData map[string]any
 		err = json.Unmarshal(result, &exportData)
 		require.NoError(t, err)
-		props, ok := exportData["properties"].([]interface{})
+		props, ok := exportData["properties"].([]any)
 		require.True(t, ok, "export should contain properties")
 		require.Len(t, props, 1)
 
@@ -1488,7 +1509,7 @@ func TestPlaybooksImportExport(t *testing.T) {
 		assert.NotEqual(t, createdField.ID, newFields[0].ID, "imported property should have a new ID")
 
 		// Extract and verify options from Attrs
-		rawOptions, ok := newFields[0].Attrs["options"].([]interface{})
+		rawOptions, ok := newFields[0].Attrs["options"].([]any)
 		require.True(t, ok, "options should be present in attrs")
 		assert.Len(t, rawOptions, 2, "options should be preserved")
 	})
@@ -1530,9 +1551,9 @@ func TestPlaybooksImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// Extract the first option ID from Attrs
-		rawOptions, ok := createdField.Attrs["options"].([]interface{})
+		rawOptions, ok := createdField.Attrs["options"].([]any)
 		require.True(t, ok)
-		firstOpt, ok := rawOptions[0].(map[string]interface{})
+		firstOpt, ok := rawOptions[0].(map[string]any)
 		require.True(t, ok)
 		optionID, ok := firstOpt["id"].(string)
 		require.True(t, ok)
@@ -1558,15 +1579,15 @@ func TestPlaybooksImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify export has both properties and conditions
-		var exportData map[string]interface{}
+		var exportData map[string]any
 		err = json.Unmarshal(result, &exportData)
 		require.NoError(t, err)
 
-		props, ok := exportData["properties"].([]interface{})
+		props, ok := exportData["properties"].([]any)
 		require.True(t, ok, "export should contain properties")
 		require.Len(t, props, 1)
 
-		conds, ok := exportData["conditions"].([]interface{})
+		conds, ok := exportData["conditions"].([]any)
 		require.True(t, ok, "export should contain conditions")
 		require.Len(t, conds, 1)
 
@@ -1616,6 +1637,183 @@ func TestPlaybooksDuplicate(t *testing.T) {
 		assert.Equal(t, e.BasicPlaybook.Description, duplicatedPlaybook.Description)
 		assert.Equal(t, e.BasicPlaybook.TeamID, duplicatedPlaybook.TeamID)
 	})
+
+	t.Run("AssigneeType and AssigneePropertyFieldID are preserved on duplicate", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		// Create source playbook without checklists first so we can get a real field ID.
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Assignee Placeholder Source",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		sourceField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			playbookID,
+			client.PropertyFieldRequest{Name: "Reviewer", Type: "user"},
+		)
+		require.NoError(t, err)
+
+		// Fetch the full playbook so the PUT update retains all existing fields.
+		sourcePB, err := e.PlaybooksClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		sourcePB.Checklists = []client.Checklist{
+			{
+				Title: "Tasks",
+				Items: []client.ChecklistItem{
+					{Title: "Specific user task", AssigneeType: ""},
+					{Title: "Owner task", AssigneeType: "owner"},
+					{Title: "Creator task", AssigneeType: "creator"},
+					{Title: "Property user task", AssigneeType: "property_user", AssigneePropertyFieldID: sourceField.ID},
+				},
+			},
+		}
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *sourcePB)
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		duplicated, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		require.Len(t, duplicated.Checklists, 1)
+		require.Len(t, duplicated.Checklists[0].Items, 4)
+		assert.Equal(t, "", duplicated.Checklists[0].Items[0].AssigneeType)
+		assert.Equal(t, "owner", duplicated.Checklists[0].Items[1].AssigneeType)
+		assert.Equal(t, "creator", duplicated.Checklists[0].Items[2].AssigneeType)
+		assert.Equal(t, "property_user", duplicated.Checklists[0].Items[3].AssigneeType)
+
+		// The duplicated item must reference the new playbook's copy of the field,
+		// not the source playbook's field ID.
+		assert.NotEmpty(t, duplicated.Checklists[0].Items[3].AssigneePropertyFieldID)
+		assert.NotEqual(t, sourceField.ID, duplicated.Checklists[0].Items[3].AssigneePropertyFieldID)
+
+		dupFields, err := e.PlaybooksClient.Playbooks.GetPropertyFields(context.Background(), newID)
+		require.NoError(t, err)
+		var dupFieldIDs []string
+		for _, f := range dupFields {
+			dupFieldIDs = append(dupFieldIDs, f.ID)
+		}
+		assert.Contains(t, dupFieldIDs, duplicated.Checklists[0].Items[3].AssigneePropertyFieldID,
+			"AssigneePropertyFieldID must reference a real field on the duplicated playbook")
+	})
+	t.Run("NewChannelOnly is preserved on duplicate", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:          "New-channel-only Source",
+			TeamID:         e.BasicTeam.Id,
+			Public:         true,
+			NewChannelOnly: true,
+		})
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		duplicated, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		assert.True(t, duplicated.NewChannelOnly)
+	})
+	t.Run("AutoArchiveChannel is preserved on duplicate", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:              "Auto-archive Source",
+			TeamID:             e.BasicTeam.Id,
+			Public:             true,
+			AutoArchiveChannel: true,
+		})
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		duplicated, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		assert.True(t, duplicated.AutoArchiveChannel)
+	})
+}
+
+func TestAssigneePlaceholderImportExport(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+
+	t.Run("AssigneeType is preserved through export/import", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Assignee Placeholder Export",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "Tasks",
+					Items: []client.ChecklistItem{
+						{Title: "Owner task", AssigneeType: "owner"},
+						{Title: "Creator task", AssigneeType: "creator"},
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		exported, err := e.PlaybooksClient.Playbooks.Export(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), exported, e.BasicTeam.Id)
+		require.NoError(t, err)
+
+		imported, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		require.Len(t, imported.Checklists, 1)
+		require.Len(t, imported.Checklists[0].Items, 2)
+		assert.Equal(t, "owner", imported.Checklists[0].Items[0].AssigneeType)
+		assert.Equal(t, "creator", imported.Checklists[0].Items[1].AssigneeType)
+	})
+}
+
+func TestChannelFlagsImportExport(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+
+	t.Run("NewChannelOnly is preserved through export/import", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:          "New-channel-only Export",
+			TeamID:         e.BasicTeam.Id,
+			Public:         true,
+			NewChannelOnly: true,
+		})
+		require.NoError(t, err)
+
+		exported, err := e.PlaybooksClient.Playbooks.Export(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), exported, e.BasicTeam.Id)
+		require.NoError(t, err)
+
+		imported, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		assert.True(t, imported.NewChannelOnly)
+	})
+
+	t.Run("AutoArchiveChannel is preserved through export/import", func(t *testing.T) {
+		playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:              "Auto-archive Export",
+			TeamID:             e.BasicTeam.Id,
+			Public:             true,
+			AutoArchiveChannel: true,
+		})
+		require.NoError(t, err)
+
+		exported, err := e.PlaybooksClient.Playbooks.Export(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), exported, e.BasicTeam.Id)
+		require.NoError(t, err)
+
+		imported, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+		assert.True(t, imported.AutoArchiveChannel)
+	})
 }
 
 func TestAddPostToTimeline(t *testing.T) {
@@ -1626,7 +1824,7 @@ func TestAddPostToTimeline(t *testing.T) {
 		TeamId: e.BasicTeam.Id,
 		UserId: e.RegularUser.Id,
 		State:  fmt.Sprintf(`{"post_id": "%s"}`, e.BasicPublicChannelPost.Id),
-		Submission: map[string]interface{}{
+		Submission: map[string]any{
 			app.DialogFieldPlaybookRunKey: e.BasicRun.ID,
 			app.DialogFieldSummary:        "a summary",
 		},
@@ -1637,7 +1835,7 @@ func TestAddPostToTimeline(t *testing.T) {
 	require.NoError(t, err)
 
 	// Post the request with the dialog payload and verify it is allowed
-	_, err = e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
+	_, err = e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
 	require.NoError(t, err)
 }
 
@@ -1872,12 +2070,7 @@ func TestPlaybooksGuests(t *testing.T) {
 
 // Helper functions for permission manipulation
 func inPerms(permission string, perms []string) bool {
-	for _, p := range perms {
-		if p == permission {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(perms, permission)
 }
 
 func removeFromPerms(permission string, perms []string) []string {
@@ -1888,4 +2081,823 @@ func removeFromPerms(permission string, perms []string) []string {
 		}
 	}
 	return result
+}
+
+// TestAdminOnlyEdit verifies that the AdminOnlyEdit flag is enforced across all
+// mutating playbook endpoints.
+// NOTE: the API enforcement subtests share a single playbook row and must remain sequential — do NOT add t.Parallel().
+func TestAdminOnlyEdit(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence() // hoisted; idempotent — needed by Duplicate, PropertyFields, Conditions, ReorderPropertyFields
+
+	t.Run("API enforcement", func(t *testing.T) {
+		// Create a playbook with AdminOnlyEdit=true.
+		// PlaybooksAdminClient (system admin) creates it and is also a playbook admin.
+		// RegularUser is a plain playbook member.
+		// RegularUser2 is a non-sysadmin playbook admin used to test the admin-member path.
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit:                           true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		t.Run("non-admin member PUT /playbooks/{id} returns 403", func(t *testing.T) {
+			// Fetch as admin so we have a full struct to PUT back (RegularUser lacks read permission when admin_only_edit=true)
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+
+			pb.Title = "Non-Admin Attempted Edit"
+			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("admin member PUT /playbooks/{id} returns 200", func(t *testing.T) {
+			// Fetch as sysadmin so we have a full struct to PUT back.
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+
+			// Update as RegularUser2 (non-sysadmin playbook_admin) to verify the admin-member path.
+			pb.Title = "Admin Allowed Edit"
+			err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			updated, err := e.PlaybooksClient2.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			assert.Equal(t, "Admin Allowed Edit", updated.Title)
+		})
+
+		t.Run("system admin PUT /playbooks/{id} returns 200", func(t *testing.T) {
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+
+			pb.Title = "System Admin Edit"
+			err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			assert.Equal(t, "System Admin Edit", updated.Title)
+		})
+
+		t.Run("system admin can edit playbook where sysadmin is not a member", func(t *testing.T) {
+			// Create a playbook where the sysadmin is deliberately excluded from Members.
+			// This isolates the sysadmin-override path: the edit must succeed via the
+			// system-admin bypass, not via the playbook_admin role.
+			isolatedID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+				Title:  "Sysadmin Override Test",
+				TeamID: e.BasicTeam.Id,
+				Public: true,
+				Members: []client.PlaybookMember{
+					{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				},
+				AdminOnlyEdit: true,
+			})
+			require.NoError(t, err)
+
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), isolatedID)
+			require.NoError(t, err)
+
+			pb.Title = "Sysadmin Override Edit"
+			err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), isolatedID)
+			require.NoError(t, err)
+			assert.Equal(t, "Sysadmin Override Edit", updated.Title)
+		})
+
+		t.Run("playbook admin (non-sysadmin) can disable AdminOnlyEdit", func(t *testing.T) {
+			// Ensure the flag is on before the test (self-contained).
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			pb.AdminOnlyEdit = true
+			err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			// RegularUser2 is a non-sysadmin playbook admin — disabling the flag should be allowed.
+			pb.AdminOnlyEdit = false
+			err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			assert.False(t, confirmed.AdminOnlyEdit)
+		})
+
+		t.Run("playbook admin (non-sysadmin) can enable AdminOnlyEdit", func(t *testing.T) {
+			// Ensure the flag is off before the test (self-contained).
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			pb.AdminOnlyEdit = false
+			err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			// RegularUser2 is a non-sysadmin playbook admin — enabling the flag is symmetric with disable.
+			pb.AdminOnlyEdit = true
+			err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			assert.True(t, confirmed.AdminOnlyEdit)
+		})
+
+		t.Run("non-admin member cannot enable AdminOnlyEdit", func(t *testing.T) {
+			// Reset to off as sysadmin; RegularUser is a plain member, so flipping the flag
+			// must be denied regardless of direction.
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			pb.AdminOnlyEdit = false
+			err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			pb.AdminOnlyEdit = true
+			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+			confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			assert.False(t, confirmed.AdminOnlyEdit)
+		})
+
+		t.Run("PUT body without admin_only_edit preserves the lock", func(t *testing.T) {
+			// Ensure the lock is on before the test.
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			pb.AdminOnlyEdit = true
+			err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			// Build a raw PUT body that omits admin_only_edit entirely to simulate
+			// a legacy client or integration that predates the field.
+			rawJSON, err := json.Marshal(pb)
+			require.NoError(t, err)
+			var rawMap map[string]json.RawMessage
+			require.NoError(t, json.Unmarshal(rawJSON, &rawMap))
+			delete(rawMap, "admin_only_edit")
+			bodyWithoutField, err := json.Marshal(rawMap)
+			require.NoError(t, err)
+
+			apiURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", e.ServerAdminClient.URL, playbookID)
+			req, err := http.NewRequest(http.MethodPut, apiURL, bytes.NewReader(bodyWithoutField))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			_ = resp.Body.Close()
+			require.Equal(t, http.StatusOK, resp.StatusCode)
+
+			confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			assert.True(t, confirmed.AdminOnlyEdit, "admin_only_edit must be preserved when absent from the PUT body")
+		})
+
+		t.Run("non-admin member regains edit access after AdminOnlyEdit is disabled", func(t *testing.T) {
+			// Precondition: lock is on (left by the previous subtest).
+			pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			require.True(t, pb.AdminOnlyEdit, "expected admin_only_edit=true entering this subtest")
+
+			// Confirm non-admin is still blocked while the lock is on.
+			pb.Title = "Should Be Blocked"
+			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+			// Admin disables the lock.
+			pb, err = e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			pb.AdminOnlyEdit = false
+			err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			// Non-admin member must now succeed.
+			pb, err = e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			pb.Title = "Member Edit After Unlock"
+			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+			require.NoError(t, err)
+
+			confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+			require.NoError(t, err)
+			assert.Equal(t, "Member Edit After Unlock", confirmed.Title)
+		})
+	})
+
+	t.Run("create", func(t *testing.T) {
+		t.Run("regular user creating playbook with AdminOnlyEdit=true succeeds", func(t *testing.T) {
+			id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+				Title:         "Non-Admin AdminOnlyEdit Playbook",
+				TeamID:        e.BasicTeam.Id,
+				Public:        true,
+				AdminOnlyEdit: true,
+			})
+			require.NoError(t, err)
+			require.NotEmpty(t, id)
+		})
+
+		t.Run("system admin creating playbook with AdminOnlyEdit=true succeeds", func(t *testing.T) {
+			id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+				Title:         "Admin AdminOnlyEdit Playbook",
+				TeamID:        e.BasicTeam.Id,
+				Public:        true,
+				AdminOnlyEdit: true,
+			})
+			require.NoError(t, err)
+			require.NotEmpty(t, id)
+		})
+	})
+
+	t.Run("duplicate", func(t *testing.T) {
+		// Source is locked. RegularUser is a plain member; RegularUser2 is a playbook admin.
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Duplicate Source",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+
+		t.Run("non-admin member duplicating AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
+			_, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("playbook admin (non-sysadmin) of source can duplicate", func(t *testing.T) {
+			newID, err := e.PlaybooksClient2.Playbooks.Duplicate(context.Background(), playbookID)
+			require.NoError(t, err)
+			require.NotEmpty(t, newID)
+			require.NotEqual(t, playbookID, newID)
+		})
+
+		t.Run("system admin duplicating AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+			newID, err := e.PlaybooksAdminClient.Playbooks.Duplicate(context.Background(), playbookID)
+			require.NoError(t, err)
+			require.NotEmpty(t, newID)
+			require.NotEqual(t, playbookID, newID)
+		})
+	})
+
+	t.Run("import", func(t *testing.T) {
+		payload := []byte(fmt.Sprintf(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":%d}`, app.CurrentPlaybookExportVersion))
+
+		t.Run("regular user importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+			newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
+			require.NoError(t, err)
+			require.NotEmpty(t, newID)
+		})
+
+		t.Run("system admin importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+			newID, err := e.PlaybooksAdminClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
+			require.NoError(t, err)
+			require.NotEmpty(t, newID)
+		})
+	})
+
+	t.Run("property fields", func(t *testing.T) {
+		// Source playbook is admin-locked. RegularUser is a plain member; RegularUser2 is a playbook admin.
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit PropertyFields Source",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+
+		makeFieldRequest := func(name string) client.PropertyFieldRequest {
+			return client.PropertyFieldRequest{
+				Name: name,
+				Type: "text",
+				Attrs: &client.PropertyFieldAttrsInput{
+					Visibility: stringPtr("when_set"),
+					SortOrder:  float64Ptr(1.0),
+				},
+			}
+		}
+
+		t.Run("non-admin member create returns 403", func(t *testing.T) {
+			_, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("blocked"))
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		// Seed a field as the playbook admin so update/delete have something to operate on.
+		seeded, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("seed"))
+		require.NoError(t, err)
+		fieldID := seeded.ID
+
+		t.Run("non-admin member update returns 403", func(t *testing.T) {
+			_, err := e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, fieldID, makeFieldRequest("renamed"))
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("non-admin member delete returns 403", func(t *testing.T) {
+			err := e.PlaybooksClient.Playbooks.DeletePropertyField(context.Background(), playbookID, fieldID)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("playbook admin (non-sysadmin) can create a property field", func(t *testing.T) {
+			created, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, makeFieldRequest("admin-created"))
+			require.NoError(t, err)
+			require.NotEmpty(t, created.ID)
+		})
+
+		t.Run("system admin can update a property field", func(t *testing.T) {
+			_, err := e.PlaybooksAdminClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, fieldID, makeFieldRequest("sysadmin-updated"))
+			require.NoError(t, err)
+		})
+	})
+
+	t.Run("archive", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Archive Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+
+		t.Run("non-admin member archive returns 403", func(t *testing.T) {
+			err := e.PlaybooksClient.Playbooks.Archive(context.Background(), playbookID)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("playbook admin (non-sysadmin) can archive", func(t *testing.T) {
+			// Create a fresh playbook so archiving doesn't affect other subtests.
+			lockedID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+				Title:  "AdminOnlyEdit Archive by Admin",
+				TeamID: e.BasicTeam.Id,
+				Public: true,
+				Members: []client.PlaybookMember{
+					{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				},
+				AdminOnlyEdit: true,
+			})
+			require.NoError(t, err)
+			err = e.PlaybooksClient2.Playbooks.Archive(context.Background(), lockedID)
+			require.NoError(t, err)
+		})
+
+		t.Run("system admin can archive", func(t *testing.T) {
+			lockedID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+				Title:  "AdminOnlyEdit Archive by SysAdmin",
+				TeamID: e.BasicTeam.Id,
+				Public: true,
+				Members: []client.PlaybookMember{
+					{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				},
+				AdminOnlyEdit: true,
+			})
+			require.NoError(t, err)
+			err = e.PlaybooksAdminClient.Playbooks.Archive(context.Background(), lockedID)
+			require.NoError(t, err)
+		})
+	})
+
+	t.Run("conditions", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Conditions Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+
+		// Seed a property field (needed to build a valid condition expression).
+		// The option ID must be a valid MM ID and must match the value used in makeCondition below.
+		opt1ID := model.NewId()
+		seededField, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "Priority",
+			Type: "select",
+			Attrs: &client.PropertyFieldAttrsInput{
+				Visibility: stringPtr("always"),
+				SortOrder:  float64Ptr(1.0),
+				Options:    &[]client.PropertyOptionInput{{ID: &opt1ID, Name: "Option1"}},
+			},
+		})
+		require.NoError(t, err)
+
+		makeCondition := func() client.Condition {
+			condValue, _ := json.Marshal([]string{opt1ID})
+			return client.Condition{
+				Version: 1,
+				ConditionExpr: client.ConditionExprV1{
+					Is: &client.ComparisonCondition{
+						FieldID: seededField.ID,
+						Value:   json.RawMessage(condValue),
+					},
+				},
+			}
+		}
+
+		t.Run("non-admin member create condition returns 403", func(t *testing.T) {
+			_, err := e.PlaybooksClient.PlaybookConditions.Create(context.Background(), playbookID, makeCondition())
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		// Seed a condition as the playbook admin so update/delete have a target.
+		seeded, err := e.PlaybooksClient2.PlaybookConditions.Create(context.Background(), playbookID, makeCondition())
+		require.NoError(t, err)
+
+		t.Run("non-admin member update condition returns 403", func(t *testing.T) {
+			_, err := e.PlaybooksClient.PlaybookConditions.Update(context.Background(), playbookID, seeded.ID, makeCondition())
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("non-admin member delete condition returns 403", func(t *testing.T) {
+			err := e.PlaybooksClient.PlaybookConditions.Delete(context.Background(), playbookID, seeded.ID)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("playbook admin (non-sysadmin) can create a condition", func(t *testing.T) {
+			created, err := e.PlaybooksClient2.PlaybookConditions.Create(context.Background(), playbookID, makeCondition())
+			require.NoError(t, err)
+			require.NotEmpty(t, created.ID)
+			// cleanup
+			_ = e.PlaybooksClient2.PlaybookConditions.Delete(context.Background(), playbookID, created.ID)
+		})
+
+		t.Run("playbook admin (non-sysadmin) can update a condition", func(t *testing.T) {
+			_, err := e.PlaybooksClient2.PlaybookConditions.Update(context.Background(), playbookID, seeded.ID, makeCondition())
+			require.NoError(t, err)
+		})
+
+		t.Run("system admin can update a condition", func(t *testing.T) {
+			_, err := e.PlaybooksAdminClient.PlaybookConditions.Update(context.Background(), playbookID, seeded.ID, makeCondition())
+			require.NoError(t, err)
+		})
+
+		t.Run("system admin can delete a condition", func(t *testing.T) {
+			_, err := e.PlaybooksClient2.PlaybookConditions.Create(context.Background(), playbookID, makeCondition())
+			require.NoError(t, err)
+			err = e.PlaybooksAdminClient.PlaybookConditions.Delete(context.Background(), playbookID, seeded.ID)
+			require.NoError(t, err)
+		})
+	})
+
+	t.Run("reorder property fields", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminOnlyEdit Reorder Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+
+		// Seed a field to reorder.
+		seeded, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "Status",
+			Type: "text",
+			Attrs: &client.PropertyFieldAttrsInput{
+				Visibility: stringPtr("always"),
+				SortOrder:  float64Ptr(1.0),
+			},
+		})
+		require.NoError(t, err)
+
+		reorderReq := client.ReorderPropertyFieldsRequest{FieldID: seeded.ID, TargetPosition: 0}
+
+		t.Run("non-admin member reorder returns 403", func(t *testing.T) {
+			_, err := e.PlaybooksClient.Playbooks.ReorderPropertyFields(context.Background(), playbookID, reorderReq)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("playbook admin (non-sysadmin) can reorder", func(t *testing.T) {
+			_, err := e.PlaybooksClient2.Playbooks.ReorderPropertyFields(context.Background(), playbookID, reorderReq)
+			require.NoError(t, err)
+		})
+
+		t.Run("system admin can reorder", func(t *testing.T) {
+			_, err := e.PlaybooksAdminClient.Playbooks.ReorderPropertyFields(context.Background(), playbookID, reorderReq)
+			require.NoError(t, err)
+		})
+	})
+}
+
+func TestPatchPlaybook(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	patchPlaybook := func(serverClient *model.Client4, playbookID string, body map[string]any) *http.Response {
+		bodyBytes, err := json.Marshal(body)
+		require.NoError(t, err)
+		apiURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", serverClient.URL, playbookID)
+		req, err := http.NewRequest(http.MethodPatch, apiURL, bytes.NewReader(bodyBytes))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+serverClient.AuthToken)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		return resp
+	}
+
+	t.Run("run_number_prefix set and persisted", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Patch Prefix Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": "INC"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		assert.Equal(t, "INC", pb.RunNumberPrefix)
+	})
+
+	t.Run("channel_name_template set and persisted", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Patch Template Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"channel_name_template": "Incident {SEQ}"})
+		resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		// client.Playbook does not expose channel_name_template, so verify via raw GET.
+		getURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", e.ServerClient.URL, id)
+		getReq, err := http.NewRequest(http.MethodGet, getURL, nil)
+		require.NoError(t, err)
+		getReq.Header.Set("Authorization", "Bearer "+e.ServerClient.AuthToken)
+		getResp, err := http.DefaultClient.Do(getReq)
+		require.NoError(t, err)
+		defer getResp.Body.Close()
+		require.Equal(t, http.StatusOK, getResp.StatusCode)
+		var raw struct {
+			ChannelNameTemplate string `json:"channel_name_template"`
+		}
+		require.NoError(t, json.NewDecoder(getResp.Body).Decode(&raw))
+		assert.Equal(t, "Incident {SEQ}", raw.ChannelNameTemplate)
+	})
+
+	t.Run("duplicate prefix on same team returns 409", func(t *testing.T) {
+		id1, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Dupe A",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+		id2, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Dupe B",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id1, map[string]any{"run_number_prefix": "DUPE"})
+		resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		resp2 := patchPlaybook(e.ServerClient, id2, map[string]any{"run_number_prefix": "DUPE"})
+		defer resp2.Body.Close()
+		require.Equal(t, http.StatusConflict, resp2.StatusCode)
+	})
+
+	t.Run("invalid prefix format returns 400", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Invalid Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": "has spaces"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("unknown field in body returns 400", func(t *testing.T) {
+		resp := patchPlaybook(e.ServerClient, e.BasicPlaybook.ID, map[string]any{"unknown_field": "value"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("non-member returns 403", func(t *testing.T) {
+		// Private playbook: PermissionPrivatePlaybookManageProperties is NOT granted at
+		// team level, so only explicit playbook members can modify it.
+		id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Non-member PATCH Test",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+		})
+		require.NoError(t, err)
+
+		// Create a fresh team member who is intentionally not a playbook member,
+		// then log in once to obtain an auth token for the PATCH attempt.
+		nonMemberPassword := testUserPassword
+		suffix := model.NewId()
+		nonMember, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+			Email:    "patch-nonmember-" + suffix + "@example.com",
+			Username: "patchnonmember" + suffix,
+			Password: nonMemberPassword,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, nonMember.Id)
+		require.NoError(t, err)
+
+		nonMemberClient := model.NewAPIv4Client(e.ServerAdminClient.URL)
+		_, _, err = nonMemberClient.Login(context.Background(), nonMember.Email, nonMemberPassword)
+		require.NoError(t, err)
+
+		resp := patchPlaybook(nonMemberClient, id, map[string]any{"run_number_prefix": "NOPE"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("archived playbook returns 400", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Archived PATCH Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+		err = e.PlaybooksClient.Playbooks.Archive(context.Background(), id)
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": "INC"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("prefix at 32 chars accepted", func(t *testing.T) {
+		// Boundary: 32 alphanumeric chars must be accepted.
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Boundary 32 Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		max32 := strings.Repeat("A", 32)
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": max32})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode, "32-char prefix is on the inclusive boundary and must be accepted")
+	})
+
+	t.Run("prefix at 33 chars rejected", func(t *testing.T) {
+		// Boundary: 33 chars must be rejected (limit is 32, inclusive).
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Boundary 33 Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		over32 := strings.Repeat("A", 33)
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": over32})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode, "33-char prefix must exceed the 32-char limit")
+	})
+
+	t.Run("channel template at 1024 chars accepted", func(t *testing.T) {
+		// Boundary: a 1024-char template (no field references) is on the inclusive limit.
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Template Boundary 1024 Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		template := strings.Repeat("A", 1024)
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"channel_name_template": template})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode, "1024-char template is on the inclusive boundary and must be accepted")
+	})
+
+	t.Run("channel template over 1024 chars rejected", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Template Boundary 1025 Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		template := strings.Repeat("A", 1025)
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"channel_name_template": template})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode, "1025-char template must exceed the 1024-char limit")
+	})
+
+	t.Run("field deletion blocked when referenced in template", func(t *testing.T) {
+		// Create a playbook, add a property field, set the template to reference that field,
+		// then attempt to delete the field — the API guard must reject the delete.
+		id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Field Deletion Template Guard Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		field, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(context.Background(), id, client.PropertyFieldRequest{
+			Name: "Zone",
+			Type: "text",
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerAdminClient, id, map[string]any{"channel_name_template": "{Zone}"})
+		resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		// Attempt to delete the field that the template references.
+		delErr := e.PlaybooksAdminClient.Playbooks.DeletePropertyField(context.Background(), id, field.ID)
+		require.Error(t, delErr, "deleting a field referenced by the channel name template must fail")
+		requireErrorWithStatusCode(t, delErr, http.StatusBadRequest)
+	})
+}
+
+// TestSequentialIDFrozenAtCreation pins the contract that SequentialID is frozen at
+// run creation: changing the playbook's RunNumberPrefix afterwards must NOT alter
+// existing runs' stamped IDs. Only NEW runs see the new prefix.
+func TestSequentialIDFrozenAtCreation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:           "Sequential ID Frozen Test",
+		TeamID:          e.BasicTeam.Id,
+		Public:          true,
+		RunNumberPrefix: "OLD",
+	})
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Frozen-ID Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, run.SequentialID, "new run must receive a sequential ID")
+	originalSeqID := run.SequentialID
+	require.True(t, strings.HasPrefix(originalSeqID, "OLD-"), "sequential ID must use the prefix in force at creation time")
+
+	// Change the prefix to NEW. Existing runs must NOT see the change.
+	patchResp := func() *http.Response {
+		bodyBytes, err := json.Marshal(map[string]any{"run_number_prefix": "NEW"})
+		require.NoError(t, err)
+		apiURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", e.ServerAdminClient.URL, pbID)
+		req, err := http.NewRequest(http.MethodPatch, apiURL, bytes.NewReader(bodyBytes))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		return resp
+	}()
+	patchResp.Body.Close()
+	require.Equal(t, http.StatusNoContent, patchResp.StatusCode)
+
+	// Re-fetch the original run and verify SequentialID is unchanged (frozen).
+	refetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.Equal(t, originalSeqID, refetched.SequentialID, "existing run's SequentialID must be frozen — changing the playbook prefix afterwards must NOT rewrite it")
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func float64Ptr(f float64) *float64 {
+	return &f
 }

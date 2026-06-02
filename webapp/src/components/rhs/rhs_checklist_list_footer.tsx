@@ -15,13 +15,12 @@ import {
     FlagOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
-import {useAppDispatch} from 'src/hooks/redux';
-
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
-import {finishRun} from 'src/actions';
+import {useOnFinishRun} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
+import {useIsBlockedByOwnerOnlyForFinishRestore, useIsSystemAdmin} from 'src/hooks/permissions';
 
 import {ChecklistParent} from './rhs_checklist_list';
 
@@ -36,6 +35,8 @@ interface RHSFooterProps {
     showParticipateConfirm: () => void;
     handleResume: () => void;
     onBackClick?: () => void;
+    ownerGroupOnlyActions?: boolean;
+    isOwner?: boolean;
 }
 
 const RHSFooter = ({
@@ -49,17 +50,21 @@ const RHSFooter = ({
     showParticipateConfirm,
     handleResume,
     onBackClick,
+    ownerGroupOnlyActions,
+    isOwner,
 }: RHSFooterProps) => {
     const {formatMessage} = useIntl();
-    const dispatch = useAppDispatch();
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
+    const isSystemAdmin = useIsSystemAdmin();
+    const onFinishRun = useOnFinishRun(playbookRun, 'rhs');
 
     // Only show footers in RHS
     if (parentContainer !== ChecklistParent.RHS || !playbookRun) {
         return null;
     }
 
-    // Priority 1: Show ParticipatePrompt if active and not a participant
-    if (active && !isParticipant) {
+    // System admins bypass the participate gate — they should see action controls directly.
+    if (active && !isParticipant && !isSystemAdmin) {
         return (
             <ParticipatePrompt>
                 <ParticipateContent>
@@ -80,21 +85,16 @@ const RHSFooter = ({
         );
     }
 
-    // Priority 2: Show FinishPrompt if active and can modify
-    if (active && canModify) {
+    if (active && (canModify || isSystemAdmin) && !blockedByOwnerOnly) {
         return (
-            <FinishPrompt>
+            <FinishPrompt data-testid='rhs-finish-section'>
                 <FinishContent>
                     <FinishIconWrapper>
                         <FlagOutlineIcon size={24}/>
                     </FinishIconWrapper>
                     <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
                     <FinishRightWrapper>
-                        <FinishButton
-                            onClick={() => {
-                                dispatch(finishRun(playbookRun.team_id, playbookRun.id));
-                            }}
-                        >
+                        <FinishButton onClick={onFinishRun}>
                             <CheckIcon size={16}/>
                             {formatMessage({defaultMessage: 'Finish'})}
                         </FinishButton>
@@ -104,7 +104,14 @@ const RHSFooter = ({
         );
     }
 
-    // Priority 3: Show FinishedFooter if finished
+    let resumeTooltipMsg: string;
+    if (blockedByOwnerOnly) {
+        resumeTooltipMsg = formatMessage({defaultMessage: 'Only the run owner can restore this run'});
+    } else if (playbookRun.type === PlaybookRunType.ChannelChecklist) {
+        resumeTooltipMsg = formatMessage({defaultMessage: 'Join as a participant to resume'});
+    } else {
+        resumeTooltipMsg = formatMessage({defaultMessage: 'Join as a participant to restart'});
+    }
     if (finished) {
         return (
             <FinishedFooter>
@@ -132,7 +139,7 @@ const RHSFooter = ({
                         </FinishedTime>
                     </FinishedNotice>
                     <FinishedRightWrapper>
-                        {canRestore ? (
+                        {(canRestore || isSystemAdmin) && !blockedByOwnerOnly ? (
                             <ResumeButton
                                 onClick={handleResume}
                                 disabled={false}
@@ -143,7 +150,7 @@ const RHSFooter = ({
                         ) : (
                             <WithTooltip
                                 id='resume-disabled-tooltip'
-                                title={playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to restart'})}
+                                title={resumeTooltipMsg}
                             >
                                 <ResumeButtonWrapper>
                                     <ResumeButton

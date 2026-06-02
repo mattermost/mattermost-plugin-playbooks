@@ -16,6 +16,7 @@ import {DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
 type Props = {
     field: PropertyField;
     updateField: (field: PropertyField) => void;
+    disabled?: boolean;
 };
 
 type Option = {label: string; id: string; value: string};
@@ -23,6 +24,7 @@ type Option = {label: string; id: string; value: string};
 const PropertyValuesInput = ({
     field,
     updateField,
+    disabled,
 }: Props) => {
     const {formatMessage} = useIntl();
 
@@ -87,20 +89,23 @@ const PropertyValuesInput = ({
                         field={field}
                         setFieldOptions={setFieldOptions}
                         formatMessage={formatMessage}
+                        disabled={disabled}
                     />
                 ))}
-                <WithTooltip
-                    id='add_value_tooltip'
-                    title={formatMessage({defaultMessage: 'Add value'})}
-                >
-                    <AddButton
-                        onClick={addNewValue}
+                {!disabled && (
+                    <WithTooltip
+                        id='add_value_tooltip'
                         title={formatMessage({defaultMessage: 'Add value'})}
-                        aria-label={formatMessage({defaultMessage: 'Add value'})}
                     >
-                        <PlusIcon size={16}/>
-                    </AddButton>
-                </WithTooltip>
+                        <AddButton
+                            onClick={addNewValue}
+                            title={formatMessage({defaultMessage: 'Add value'})}
+                            aria-label={formatMessage({defaultMessage: 'Add value'})}
+                        >
+                            <PlusIcon size={16}/>
+                        </AddButton>
+                    </WithTooltip>
+                )}
             </ValuesContainer>
         </Container>
     );
@@ -112,6 +117,7 @@ const ClickableMultiValue = (props: {
     field: PropertyField;
     setFieldOptions: (options: Array<{id: string; name: string; color?: string}>) => void;
     formatMessage: (descriptor: {defaultMessage: string}) => string;
+    disabled?: boolean;
 }) => {
     const [editValue, setEditValue] = useState(props.data.label);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -171,6 +177,14 @@ const ClickableMultiValue = (props: {
     const handleBlur = () => {
         handleRename();
     };
+
+    if (props.disabled) {
+        return (
+            <MultiValueContainer>
+                <MultiValueLabel>{props.data.label}</MultiValueLabel>
+            </MultiValueContainer>
+        );
+    }
 
     return (
         <Dropdown

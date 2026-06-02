@@ -269,11 +269,6 @@ func TestPropertyService_sanitizeTextValue(t *testing.T) {
 			input:          "   ",
 			expectedOutput: "",
 		},
-		{
-			name:           "empty string is allowed",
-			input:          "",
-			expectedOutput: "",
-		},
 	}
 
 	for _, tt := range tests {
@@ -439,7 +434,7 @@ func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := s.sanitizeAndValidatePropertyValue(tt.propertyField, tt.input)
+			result, err := s.sanitizeAndValidatePropertyValue(tt.propertyField, tt.input, true)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
@@ -448,6 +443,28 @@ func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestSanitizePropertyValue verifies that SanitizePropertyValue (validateOptions=false) skips
+// option-membership checks for every field type that has options (select, multiselect).
+// This test exists to catch the class of bug where validateOptions is wired up in one branch
+// of the type-switch but silently omitted in a parallel branch.
+func TestSanitizePropertyValue_SkipsOptionValidation(t *testing.T) {
+	s := &propertyService{}
+
+	// An option ID that does not exist on any field — validation must not run.
+	unknownSelectID := json.RawMessage(`"does-not-exist"`)
+	unknownMultiselectIDs := json.RawMessage(`["does-not-exist-1","does-not-exist-2"]`)
+
+	t.Run("select with unknown option ID passes when validateOptions=false", func(t *testing.T) {
+		_, err := s.SanitizePropertyValue(model.PropertyFieldTypeSelect, unknownSelectID)
+		assert.NoError(t, err)
+	})
+
+	t.Run("multiselect with unknown option IDs passes when validateOptions=false", func(t *testing.T) {
+		_, err := s.SanitizePropertyValue(model.PropertyFieldTypeMultiselect, unknownMultiselectIDs)
+		assert.NoError(t, err)
+	})
 }
 
 func TestPropertyService_TestPropertySortOrder(t *testing.T) {
@@ -880,5 +897,68 @@ func TestPropertyService_copyPropertyFieldForPlaybook(t *testing.T) {
 		require.Equal(t, "Bug", targetOptions[0].GetName())
 		require.Equal(t, "Feature", targetOptions[1].GetName())
 		require.Equal(t, "Improvement", targetOptions[2].GetName())
+	})
+}
+
+func TestValidateReservedFieldName(t *testing.T) {
+	t.Run("rejects OWNER (uppercase)", func(t *testing.T) {
+		err := validateReservedFieldName("OWNER")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrReservedPropertyFieldName)
+	})
+
+	t.Run("rejects owner (lowercase)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("owner"))
+	})
+
+	t.Run("rejects Owner (mixed case)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("Owner"))
+	})
+
+	t.Run("rejects CREATOR", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("CREATOR"))
+	})
+
+	t.Run("rejects creator (lowercase)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("creator"))
+	})
+
+	t.Run("rejects SEQ", func(t *testing.T) {
+		// SEQ is the sequential-run-number system token; reserving its name as a property
+		// field prevents a user-defined "SEQ" property from shadowing the template's
+		// system token in ChannelNameTemplate / ReminderMessageTemplate.
+		assert.Error(t, validateReservedFieldName("SEQ"))
+		assert.ErrorIs(t, validateReservedFieldName("SEQ"), ErrReservedPropertyFieldName)
+	})
+
+	t.Run("rejects seq (case-insensitive)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("seq"))
+		assert.Error(t, validateReservedFieldName("Seq"))
+	})
+
+	t.Run("rejects PROPERTY_USER", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("PROPERTY_USER"))
+	})
+
+	t.Run("rejects property_user (lowercase)", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("property_user"))
+	})
+
+	t.Run("rejects name with surrounding whitespace", func(t *testing.T) {
+		assert.Error(t, validateReservedFieldName("  owner  "))
+	})
+
+	t.Run("accepts name that contains but does not equal a reserved word", func(t *testing.T) {
+		assert.NoError(t, validateReservedFieldName("owner_backup"))
+		assert.NoError(t, validateReservedFieldName("my_creator"))
+		assert.NoError(t, validateReservedFieldName("run_owner"))
+	})
+
+	t.Run("accepts empty string", func(t *testing.T) {
+		assert.NoError(t, validateReservedFieldName(""))
+	})
+
+	t.Run("accepts arbitrary name", func(t *testing.T) {
+		assert.NoError(t, validateReservedFieldName("Manager"))
 	})
 }

@@ -4,8 +4,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -48,7 +51,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
@@ -63,7 +66,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  `{"post_id": "` + e.BasicPublicChannelPost.Id + `"}`,
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
@@ -78,7 +81,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.AdminUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "somerun",
 					},
@@ -92,7 +95,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: "noesnotexist",
 						app.DialogFieldNameKey:       "somerun",
 					},
@@ -106,7 +109,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  `{"post_id": "` + e.BasicPrivateChannelPost.Id + `"}`,
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "no permissions",
 					},
@@ -120,7 +123,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.PrivatePlaybookNoMembers.ID,
 						app.DialogFieldNameKey:       "not happening",
 					},
@@ -134,7 +137,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
@@ -152,7 +155,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.AdminUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
 						app.DialogFieldNameKey:       "bad userid",
 					},
@@ -167,7 +170,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: incompletePlaybookID,
 						app.DialogFieldNameKey:       "run number 1",
 					},
@@ -183,7 +186,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: "", // Empty playbook ID
 						app.DialogFieldNameKey:       "Standalone Run",
 					},
@@ -200,7 +203,7 @@ func TestRunCreation(t *testing.T) {
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
 					State:  "{}",
-					Submission: map[string]interface{}{
+					Submission: map[string]any{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID, // Valid playbook ID
 						app.DialogFieldNameKey:       "Playbook Run",
 					},
@@ -235,7 +238,7 @@ func TestRunCreation(t *testing.T) {
 					tc.permissionsPrep()
 				}
 
-				result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+				result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 				tc.expected(t, result, err)
 			})
 		}
@@ -468,7 +471,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 			TeamId: e.BasicTeam.Id,
 			UserId: e.RegularUser.Id,
 			State:  "{}",
-			Submission: map[string]interface{}{
+			Submission: map[string]any{
 				app.DialogFieldPlaybookIDKey: playbookID,
 				app.DialogFieldNameKey:       "run number 1",
 			},
@@ -476,7 +479,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		assert.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusCreated, result.StatusCode)
@@ -517,6 +520,46 @@ func TestCreateInvalidRuns(t *testing.T) {
 		})
 		t.Logf("Error: %v", err)
 		require.Error(t, err)
+	})
+}
+
+func TestCreateRunWithNewChannelOnlyPlaybook(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a playbook with NewChannelOnly=true
+	pbCreateOptions := client.PlaybookCreateOptions{
+		Public:         true,
+		Title:          "New Channel Only Playbook",
+		TeamID:         e.BasicTeam.Id,
+		ChannelMode:    client.PlaybookRunCreateNewChannel,
+		NewChannelOnly: true,
+	}
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), pbCreateOptions)
+	require.NoError(t, err)
+
+	t.Run("run creation without channel_id succeeds", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run without channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, run)
+		assert.NotEmpty(t, run.ChannelID)
+	})
+
+	t.Run("run creation with explicit channel_id fails", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run with channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   e.BasicPublicChannel.Id,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Nil(t, run)
 	})
 }
 
@@ -577,7 +620,7 @@ func TestRunRetrieval(t *testing.T) {
 	})
 
 	t.Run("checklist autocomplete", func(t *testing.T) {
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
@@ -654,7 +697,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 			TeamId: e.BasicTeam.Id,
 			UserId: e.RegularUser.Id,
 			State:  "{}",
-			Submission: map[string]interface{}{
+			Submission: map[string]any{
 				app.DialogFieldMessageKey:           "someupdate",
 				app.DialogFieldReminderInSecondsKey: "100000",
 				app.DialogFieldFinishRun:            false,
@@ -663,7 +706,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
@@ -676,7 +719,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 			TeamId: e.BasicTeam.Id,
 			UserId: e.RegularUser.Id,
 			State:  "{}",
-			Submission: map[string]interface{}{
+			Submission: map[string]any{
 				app.DialogFieldMessageKey:           "someupdate",
 				app.DialogFieldReminderInSecondsKey: "100000",
 				app.DialogFieldFinishRun:            false,
@@ -685,7 +728,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
@@ -1437,7 +1480,7 @@ func TestIgnoreKeywords(t *testing.T) {
 			ChannelId: e.BasicPrivateChannel.Id,
 			Message:   "test message",
 			Props: model.StringInterface{
-				"attachments": []*model.SlackAttachment{
+				"attachments": []*model.MessageAttachment{
 					{
 						Actions: []*model.PostAction{
 							{
@@ -1454,7 +1497,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		// Create post action request
 		req := &model.PostActionIntegrationRequest{
 			UserId: e.RegularUser.Id,
-			Context: map[string]interface{}{
+			Context: map[string]any{
 				"post_id": botPost.Id,
 			},
 			PostId: botPost.Id,
@@ -1465,7 +1508,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.Error(t, err)
 		require.Equal(t, http.StatusForbidden, result.StatusCode)
 	})
@@ -1481,7 +1524,7 @@ func TestIgnoreKeywords(t *testing.T) {
 			ChannelId: e.BasicPrivateChannel.Id,
 			Message:   "test message",
 			Props: model.StringInterface{
-				"attachments": []*model.SlackAttachment{
+				"attachments": []*model.MessageAttachment{
 					{
 						Actions: []*model.PostAction{
 							{
@@ -1498,7 +1541,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		// Create post action request
 		req := &model.PostActionIntegrationRequest{
 			UserId: e.RegularUser.Id,
-			Context: map[string]interface{}{
+			Context: map[string]any{
 				"post_id": botPost.Id,
 			},
 			PostId: botPost.Id,
@@ -1509,7 +1552,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})
@@ -1708,7 +1751,7 @@ func TestRequestUpdate(t *testing.T) {
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.CreatorUserID)
 		assert.NotZero(t, lastEvent.PostID)
-		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+		assert.Equal(t, fmt.Sprintf("@%s requested a status update", e.RegularUser2.Username), lastEvent.Summary)
 	})
 
 	t.Run("public - viewer access ", func(t *testing.T) {
@@ -1730,7 +1773,7 @@ func TestRequestUpdate(t *testing.T) {
 		lastEvent := publicRun.TimelineEvents[len(publicRun.TimelineEvents)-1]
 		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
-		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+		assert.Equal(t, fmt.Sprintf("@%s requested a status update", e.RegularUser2.Username), lastEvent.Summary)
 
 		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUserNotInTeam.Id)
 		assert.Error(t, err)
@@ -1893,6 +1936,408 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
 	})
+
+	t.Run("set role assignee dispatches to SetRoleAssignee", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// Pre-seed a specific assignee so we can verify role assignment overwrites it
+		// with the resolved role-user (the owner), not leaves the prior explicit value.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, app.AssigneeTypeOwner)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType)
+		// SetRoleAssignee resolves AssigneeID to the role's concrete user immediately
+		// (see playbook_run_service.go SetRoleAssignee), so AssigneeID is the owner,
+		// not empty and not the previously explicit RegularUser2.
+		require.Equal(t, run.OwnerUserID, run.Checklists[0].Items[0].AssigneeID)
+		require.NotEqual(t, e.RegularUser2.Id, run.Checklists[0].Items[0].AssigneeID)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("set property_user assignee dispatches to SetPropertyUserAssignee", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		// Create a playbook with a user-type property field so we have a valid field ID.
+		pbID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Dispatch Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		playbookField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Lead", Type: "user"},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// Resolve the run-level copy of the playbook field — its ID differs from playbookField.ID.
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runUserFieldID string
+		for _, f := range runFields {
+			if f.Name == "Lead" && f.Type == "user" {
+				runUserFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runUserFieldID, "run-level 'Lead' user field not found")
+		require.NotEqual(t, playbookField.ID, runUserFieldID, "run-level field ID must differ from playbook-level field ID")
+
+		// Happy path: valid run-level user field — dispatch must succeed and persist the run field ID.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runUserFieldID)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, runUserFieldID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+
+		// Passing the playbook-level field ID must also succeed and must store the
+		// run-level field ID (not the playbook-level one) on the item.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, playbookField.ID)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, runUserFieldID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+
+		// A non-existent property field must not silently succeed; if dispatch
+		// drops the field the handler would return 200 OK with no change.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, "nonexistent000000000000000")
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		// Field ID from the successful call must still be set (error did not reset it).
+		assert.Equal(t, runUserFieldID, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("invalid role assignee type rejected with 400", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		body, err := json.Marshal(map[string]string{
+			"assignee_type": "member",
+		})
+		require.NoError(t, err)
+
+		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
+		require.Error(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("property field of non-user type rejected", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		freshPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PropType Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		selectField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			freshPlaybookID,
+			client.PropertyFieldRequest{
+				Name: "Status",
+				Type: "select",
+				Attrs: &client.PropertyFieldAttrsInput{
+					Options: &[]client.PropertyOptionInput{{Name: "Active"}},
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  freshPlaybookID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, selectField.ID)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("SetRoleAssignee creates AssigneeChanged timeline event", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, app.AssigneeTypeOwner)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, run.TimelineEvents)
+		lastEvent := run.TimelineEvents[len(run.TimelineEvents)-1]
+		assert.Equal(t, client.AssigneeChanged, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("SetPropertyUserAssignee creates AssigneeChanged timeline event", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		freshPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PropUser Timeline Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			freshPlaybookID,
+			client.PropertyFieldRequest{
+				Name: "Manager",
+				Type: "user",
+			},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  freshPlaybookID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// Resolve the run-level copy of the "Manager" field.
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runManagerFieldID string
+		for _, f := range runFields {
+			if f.Name == "Manager" && f.Type == "user" {
+				runManagerFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runManagerFieldID, "run-level 'Manager' user field not found")
+
+		// Seed the Manager property so the assignee resolves to a known user.
+		managerValue, err := json.Marshal(e.RegularUser.Id)
+		require.NoError(t, err)
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(context.Background(), run.ID, runManagerFieldID,
+			client.PropertyValueRequest{Value: managerValue})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runManagerFieldID)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, run.TimelineEvents)
+		lastEvent := run.TimelineEvents[len(run.TimelineEvents)-1]
+		assert.Equal(t, client.AssigneeChanged, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("mutually exclusive fields rejected with 400", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		// Create a playbook with a user-type property field so we have a valid field ID to use.
+		mePbID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Mutual Exclusion Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		meField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			mePbID,
+			client.PropertyFieldRequest{Name: "Reviewer", Type: "user"},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  mePbID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+
+		// assignee_id + assignee_type together must be rejected.
+		body, err := json.Marshal(map[string]string{
+			"assignee_id":   e.RegularUser.Id,
+			"assignee_type": app.AssigneeTypeOwner,
+		})
+		require.NoError(t, err)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
+		require.Error(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+		// assignee_id + assignee_property_field_id together must also be rejected.
+		body2, err := json.Marshal(map[string]string{
+			"assignee_id":                e.RegularUser.Id,
+			"assignee_property_field_id": meField.ID,
+		})
+		require.NoError(t, err)
+		resp2, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body2), nil)
+		require.Error(t, err)
+		require.NotNil(t, resp2)
+		assert.Equal(t, http.StatusBadRequest, resp2.StatusCode)
+	})
+}
+
+// TestSetAssignee_ClearsRoleType verifies that calling SetItemAssignee with a concrete user ID
+// on an item that previously had a role-based assignee type (owner / creator / property_user)
+// clears AssigneeType and AssigneePropertyFieldID. Without this, the role badge would persist
+// in the UI even though the user explicitly switched to a specific person.
+func TestSetAssignee_ClearsRoleType(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRunWithRoleItem := func(t *testing.T, assigneeType string) (*client.PlaybookRun, string) {
+		t.Helper()
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Clear Role Type Playbook " + assigneeType,
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{Title: "Tasks", Items: []client.ChecklistItem{
+					{Title: "Role task", AssigneeType: assigneeType},
+				}},
+			},
+		})
+		require.NoError(t, err)
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Clear Role Type Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+		return run, pbID
+	}
+
+	t.Run("SetAssignee on owner-type item clears assignee_type", func(t *testing.T) {
+		run, _ := createRunWithRoleItem(t, app.AssigneeTypeOwner)
+		require.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "", run.Checklists[0].Items[0].AssigneeType,
+			"AssigneeType must be cleared when switching from role to specific user")
+		assert.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+	})
+
+	t.Run("SetAssignee on creator-type item clears assignee_type", func(t *testing.T) {
+		run, _ := createRunWithRoleItem(t, app.AssigneeTypeCreator)
+		require.Equal(t, app.AssigneeTypeCreator, run.Checklists[0].Items[0].AssigneeType)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "", run.Checklists[0].Items[0].AssigneeType,
+			"AssigneeType must be cleared when switching from creator role to specific user")
+		assert.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+	})
+}
+
+// TestSetAssignee_SiblingRoleTasksUnaffected verifies that editing one checklist item's
+// assignee does not wipe the role metadata (assignee_type / assignee_property_field_id)
+// from sibling items in the same checklist. This was a pre-existing bug: updating a single
+// item's assignee would rewrite the whole checklist, losing role fields on other items.
+func TestSetAssignee_SiblingRoleTasksUnaffected(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Sibling Role Preservation Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Checklists: []client.Checklist{
+			{Title: "Tasks", Items: []client.ChecklistItem{
+				{Title: "Owner task", AssigneeType: app.AssigneeTypeOwner},
+				{Title: "Creator task", AssigneeType: app.AssigneeTypeCreator},
+				{Title: "Plain task", AssigneeType: ""},
+			}},
+		},
+	})
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Sibling Preservation Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType)
+	require.Equal(t, app.AssigneeTypeCreator, run.Checklists[0].Items[1].AssigneeType)
+
+	// Edit the plain task (index 2) by assigning a specific user.
+	err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 2, e.RegularUser2.Id)
+	require.NoError(t, err)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+
+	assert.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType,
+		"owner-type sibling must keep its assignee_type after a different item is edited")
+	assert.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID,
+		"owner-type sibling must keep its resolved assignee_id")
+	assert.Equal(t, app.AssigneeTypeCreator, run.Checklists[0].Items[1].AssigneeType,
+		"creator-type sibling must keep its assignee_type after a different item is edited")
+	assert.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[1].AssigneeID,
+		"creator-type sibling must keep its resolved assignee_id")
+	assert.Equal(t, e.RegularUser2.Id, run.Checklists[0].Items[2].AssigneeID,
+		"edited item must have the new assignee_id")
 }
 
 func TestChecklisItem_SetCommand(t *testing.T) {
@@ -2183,7 +2628,9 @@ func TestGetByChannelID(t *testing.T) {
 }
 
 func TestGetOwners(t *testing.T) {
-	e := Setup(t)
+	// GetOwners returns owners across all runs on the server, so this test
+	// requires a globally-empty database.
+	e := SetupIsolated(t)
 	e.CreateBasic()
 
 	ownerFromUser := func(u *model.User) client.OwnerInfo {
@@ -2247,7 +2694,7 @@ func TestGetOwners(t *testing.T) {
 	} {
 		t.Run(tc.Name, func(t *testing.T) {
 			cfg := e.Srv.Config()
-			cfg.PrivacySettings.ShowFullName = model.NewPointer(tc.ShowFullName)
+			cfg.PrivacySettings.ShowFullName = testPtr(tc.ShowFullName)
 			_, _, err = e.ServerAdminClient.UpdateConfig(context.Background(), cfg)
 			require.NoError(t, err)
 
@@ -2514,6 +2961,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
 	})
+
 }
 
 func TestRunGetMetadata(t *testing.T) {
@@ -3023,6 +3471,1533 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
 }
 
+// playbookWithRetro is a minimal struct used to PUT a playbook body that includes
+// retrospective_enabled, which is not present in the exported client.Playbook type.
+type playbookWithRetro struct {
+	client.Playbook
+	RetrospectiveEnabled bool `json:"retrospective_enabled"`
+}
+
+// setRetrospectiveEnabledAsAdmin performs a raw PUT /plugins/playbooks/api/v0/playbooks/{id}
+// with the retrospective_enabled flag set. Always acts as the system admin user.
+func setRetrospectiveEnabledAsAdmin(t *testing.T, e *TestEnvironment, playbookID string, enabled bool) {
+	t.Helper()
+
+	pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+	require.NoError(t, err)
+
+	body := playbookWithRetro{
+		Playbook:             *pb,
+		RetrospectiveEnabled: enabled,
+	}
+	bodyBytes, err := json.Marshal(body)
+	require.NoError(t, err)
+
+	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
+	endpoint := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", siteURL, playbookID)
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, endpoint, bytes.NewReader(bodyBytes))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Mattermost-User-ID", e.AdminUser.Id)
+	req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("setRetrospectiveEnabledAsAdmin failed: status=%d body=%s", resp.StatusCode, string(body))
+	}
+}
+
+// toggleRunRetrospective performs a raw PUT /plugins/playbooks/api/v0/runs/{runID}/retrospective-enabled
+// as the given user, returning the HTTP status code.
+func toggleRunRetrospective(t *testing.T, e *TestEnvironment, runID, userID, authToken string, enabled bool) int {
+	t.Helper()
+
+	bodyBytes, err := json.Marshal(map[string]bool{"retrospective_enabled": enabled})
+	require.NoError(t, err)
+
+	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
+	endpoint := fmt.Sprintf("%s/plugins/playbooks/api/v0/runs/%s/retrospective-enabled", siteURL, runID)
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, endpoint, bytes.NewReader(bodyBytes))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Mattermost-User-ID", userID)
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	return resp.StatusCode
+}
+
+// TestRunFinish_OwnerGroupOnlyActions tests the OwnerGroupOnlyActions playbook flag that restricts
+// who is allowed to finish (end) a run.
+func TestOwnerGroupOnlyActions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("owner can finish when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "OwnerGroupOnlyActions Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		// RegularUser is the run owner
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Owner Finish Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Owner finishes the run — should succeed
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		finished, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusFinished), finished.CurrentStatus)
+	})
+
+	t.Run("non-owner gets 403 on finish when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "OwnerGroupOnlyActions Playbook Non-Owner",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			// Invite RegularUser2 so they become a run participant. Without this, the
+			// 403 below could come from the base participant check in
+			// runManagePropertiesWithPlaybookRun rather than from the
+			// OwnerGroupOnlyActions rule being tested.
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		// RegularUser is the run owner; RegularUser2 is a participant (via invite) but not the owner
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Non-Owner Finish Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a run participant so the 403 proves OwnerGroupOnlyActions enforcement")
+
+		// Non-owner (RegularUser2) tries to finish — should get 403
+		err = e.PlaybooksClient2.PlaybookRuns.Finish(context.Background(), run.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("any participant can finish when OwnerGroupOnlyActions false", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AnyFinish Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
+			OwnerGroupOnlyActions:                   false,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		// RegularUser is the owner; RegularUser2 will finish
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Any Participant Finish Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a run participant for this test to prove the flag-disabled path is correct")
+
+		// Non-owner participant can finish when OwnerGroupOnlyActions is false
+		err = e.PlaybooksClient2.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		finished, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusFinished), finished.CurrentStatus)
+	})
+
+	t.Run("admin can finish when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminFinish Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		// RegularUser is the owner
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Admin Finish Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Admin can always finish even when OwnerGroupOnlyActions is true
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		finished, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusFinished), finished.CurrentStatus)
+	})
+
+	t.Run("playbook admin who is not a participant gets 403 on finish", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PB Admin Not Participant Finish",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "PB Admin Not Participant Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Playbook admin (RegularUser2) who is NOT a participant is blocked by
+		// checkEditPermissions middleware (RunManageProperties) — gets 403.
+		err = e.PlaybooksClient2.PlaybookRuns.Finish(context.Background(), run.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin who is not a participant CAN change owner when OwnerGroupOnlyActions is set", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PB Admin Not Participant ChangeOwner",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "PB Admin Not Participant ChangeOwner Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotContains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must NOT be a participant so the success proves the playbook-admin bypass path, not the participant path")
+		require.NotContains(t, run.ParticipantIDs, e.AdminUser.Id, "AdminUser must NOT be a participant initially")
+
+		// Playbook admin (RegularUser2) with OwnerGroupOnlyActions enabled can reassign ownership
+		// to a different user as a handoff mechanism even when not a run participant.
+		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.AdminUser.Id)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, e.AdminUser.Id, updated.OwnerUserID)
+	})
+
+	t.Run("playbook admin who is not a participant gets 403 on restore", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "PB Admin Not Participant Restore",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "PB Admin Not Participant Restore Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Owner finishes first
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Playbook admin (RegularUser2) who is NOT a participant — blocked by middleware.
+		err = e.PlaybooksClient2.PlaybookRuns.Restore(context.Background(), run.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("owner can restore when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "OwnerOnlyRestore Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Owner Restore Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Owner finishes first
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Owner restores — should succeed
+		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		restored, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusInProgress), restored.CurrentStatus)
+	})
+
+	t.Run("non-owner gets 403 on restore when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "NonOwnerRestore Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			// Invite RegularUser2 so they become a run participant; without this the
+			// 403 could come from the base participant check rather than from the
+			// OwnerGroupOnlyActions restore gate.
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Non-Owner Restore Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a run participant so the 403 proves OwnerGroupOnlyActions enforcement")
+
+		// Admin finishes the run so we can test restore
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Non-owner tries to restore — should get 403
+		err = e.PlaybooksClient2.PlaybookRuns.Restore(context.Background(), run.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("admin can restore when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AdminRestore Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		// RegularUser is the owner
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Admin Restore Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Owner finishes first
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Admin can always restore even when OwnerGroupOnlyActions is true
+		err = e.PlaybooksAdminClient.PlaybookRuns.Restore(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		restored, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusInProgress), restored.CurrentStatus)
+	})
+
+	t.Run("owner can change owner when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "OwnerChangeOwner Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Change Owner by Owner",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Current owner changes owner to RegularUser2 — should succeed
+		err = e.PlaybooksClient.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, e.RegularUser2.Id, updated.OwnerUserID)
+	})
+
+	t.Run("non-owner gets 403 on change-owner when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "NonOwnerChangeOwner Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			// Invite RegularUser2 so they become a run participant; without this the
+			// 403 could come from the base participant check rather than from the
+			// OwnerGroupOnlyActions change-owner gate.
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Change Owner by Non-Owner",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a run participant so the 403 proves OwnerGroupOnlyActions enforcement")
+
+		// Non-owner (RegularUser2) tries to change the owner — should get 403
+		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("any participant can change owner when OwnerGroupOnlyActions false", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "AnyChangeOwner Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
+			OwnerGroupOnlyActions:                   false,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Any Participant Change Owner",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Non-owner (RegularUser2) can change the owner when OwnerGroupOnlyActions is false
+		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, e.RegularUser2.Id, updated.OwnerUserID)
+	})
+
+	t.Run("self-promotion blocked when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "SelfPromotion Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Self Promotion Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a run participant so the 403 proves OwnerGroupOnlyActions enforcement")
+
+		// Non-owner (RegularUser2) tries to make themselves owner — should get 403
+		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("ChangeOwner rejects new owner who is not a team member", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "NonTeamMember ChangeOwner Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "NonTeamMember ChangeOwner Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// RegularUserNotInTeam is a valid Mattermost account but has no team membership.
+		// Attempting to assign them as owner must be rejected — if it weren't, with
+		// OwnerGroupOnlyActions=true they could hold owner status without channel access,
+		// locking the run for all other participants.
+		err = e.PlaybooksAdminClient.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUserNotInTeam.Id)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		// Owner must be unchanged.
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, e.RegularUser.Id, updated.OwnerUserID)
+	})
+
+	t.Run("non-admin member cannot toggle OwnerGroupOnlyActions via playbook update", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "ToggleGate Non-Admin Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// RegularUser (non-admin member) tries to toggle the flag — should be blocked
+		pb.OwnerGroupOnlyActions = true
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin can toggle OwnerGroupOnlyActions via playbook update", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "ToggleGate Admin Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// Playbook admin (AdminUser via PlaybooksAdminClient) toggles the flag — should succeed
+		pb.OwnerGroupOnlyActions = true
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.True(t, updated.OwnerGroupOnlyActions)
+	})
+
+	t.Run("non-owner cannot finish via status update dialog when OwnerGroupOnlyActions true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "StatusDialogFinish Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
+			OwnerGroupOnlyActions:                   true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		// RegularUser is the owner; RegularUser2 is a participant but not the owner
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Status Dialog Finish Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a participant so the 403 proves OwnerGroupOnlyActions enforcement")
+
+		// Build an authenticated client for RegularUser2 to submit the dialog
+		serverClient2 := model.NewAPIv4Client(e.ServerClient.URL)
+		_, _, err = serverClient2.Login(context.Background(), e.RegularUser2.Email, testUserPassword)
+		require.NoError(t, err)
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: e.BasicTeam.Id,
+			UserId: e.RegularUser2.Id,
+			State:  "{}",
+			Submission: map[string]interface{}{
+				app.DialogFieldMessageKey:           "status update with finish",
+				app.DialogFieldReminderInSecondsKey: "100000",
+				app.DialogFieldFinishRun:            true,
+			},
+		}
+		dialogRequestBytes, err := json.Marshal(dialogRequest)
+		require.NoError(t, err)
+
+		// Non-owner submitting the dialog with FinishRun=true should get 403
+		result, err := e.doPluginRequest(serverClient2, context.Background(), "POST",
+			serverClient2.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/update-status-dialog",
+			string(dialogRequestBytes), nil)
+		require.Error(t, err)
+		assert.Equal(t, http.StatusForbidden, result.StatusCode)
+
+		// Run must remain active
+		still, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusInProgress), still.CurrentStatus)
+	})
+}
+
+// TestRetrospective verifies retrospective toggle, run-creation inheritance, and finish behavior.
+func TestRetrospective(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRunOwnedBy := func(t *testing.T, name, ownerID string) *client.PlaybookRun {
+		t.Helper()
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  name + " Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, true)
+
+		var creator *client.Client
+		if ownerID == e.AdminUser.Id {
+			creator = e.PlaybooksAdminClient
+		} else {
+			creator = e.PlaybooksClient
+		}
+		run, err := creator.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        name + " Run",
+			OwnerUserID: ownerID,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.True(t, run.RetrospectiveEnabled, "run should start with retro enabled")
+		return run
+	}
+
+	t.Run("owner can toggle retrospective off and it persists", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Owner Off", e.RegularUser.Id)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusOK, status)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.False(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("owner can toggle retrospective back on", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Owner On", e.RegularUser.Id)
+
+		// Disable first, then re-enable
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("sysadmin can toggle a run they don't own", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Sysadmin Toggle", e.RegularUser.Id)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.AdminUser.Id, e.ServerAdminClient.AuthToken, false)
+		assert.Equal(t, http.StatusOK, status)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.False(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("non-owner non-admin is forbidden", func(t *testing.T) {
+		// Run is owned by AdminUser; RegularUser tries to toggle.
+		run := createRunOwnedBy(t, "Non Owner Forbidden", e.AdminUser.Id)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusForbidden, status)
+
+		fetched, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "retro must remain enabled after forbidden toggle attempt")
+	})
+
+	t.Run("disabled state persists after the run is finished", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Persist After Finish", e.RegularUser.Id)
+
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusFinished, fetched.CurrentStatus)
+		assert.False(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("toggling off creates a RetrospectiveDisabled timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Timeline Disable", e.RegularUser.Id)
+
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveDisabled, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("toggling on creates a RetrospectiveEnabled timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Timeline Enable", e.RegularUser.Id)
+
+		// Disable first so we can test re-enable
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveEnabled, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("idempotent: same value returns 200 and creates no new timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Idempotent Same Value", e.RegularUser.Id)
+
+		// Run starts with retro enabled; count events before the no-op toggle
+		before, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		eventCountBefore := len(before.TimelineEvents)
+
+		// Toggle to the same value (enabled → enabled)
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true)
+		assert.Equal(t, http.StatusOK, status)
+
+		after, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, after.RetrospectiveEnabled)
+		assert.Equal(t, eventCountBefore, len(after.TimelineEvents), "no-op toggle must not create a timeline event")
+	})
+
+	t.Run("re-enabling on a finished unpublished run persists and creates timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Re-enable Finished", e.RegularUser.Id)
+
+		// Disable retro, then finish the run (retro is off so no reminder fires on finish)
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		// Re-enable retro on the finished, unpublished run — exercises the scheduler
+		// restart branch in ToggleRetrospectiveEnabled (playbook_run_service.go:1598-1608)
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusFinished, fetched.CurrentStatus)
+		assert.True(t, fetched.RetrospectiveEnabled)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveEnabled, lastEvent.EventType)
+	})
+
+	t.Run("owner removed from channel is forbidden", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Ex-member Owner", e.RegularUser.Id)
+
+		// Remove the owner from the run's channel; they remain OwnerUserID in the DB.
+		_, err := e.ServerAdminClient.RemoveUserFromChannel(context.Background(), run.ChannelID, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		status := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusForbidden, status)
+
+		fetched, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "retro must remain enabled after forbidden toggle attempt")
+	})
+
+	t.Run("toggle is blocked on an archived channel", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Archived Channel", e.RegularUser.Id)
+
+		// Archive the run's channel.
+		_, err := e.ServerAdminClient.DeleteChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+
+		// Non-admin owner is blocked by the archived-channel guard; sysadmins bypass it.
+		statusOwner := toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false)
+		assert.Equal(t, http.StatusBadRequest, statusOwner)
+
+		statusAdmin := toggleRunRetrospective(t, e, run.ID, e.AdminUser.Id, e.ServerAdminClient.AuthToken, false)
+		assert.Equal(t, http.StatusOK, statusAdmin)
+	})
+
+	t.Run("re-enabling on a finished published run does not post a new reminder", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Re-enable Published", e.RegularUser.Id)
+
+		// Finish the run with retro enabled — the initial reminder fires.
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		// Publish the retrospective.
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.PublishRetrospective(context.Background(), run.ID, e.RegularUser.Id, client.RetrospectiveUpdate{}))
+
+		// Confirm the retrospective is now published.
+		published, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotZero(t, published.RetrospectivePublishedAt, "retrospective must be published before this sub-test is meaningful")
+
+		// Disable retro on the published run.
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+
+		// Count retro reminder posts before re-enable.
+		countRetroRemPosts := func() int {
+			posts, _, err := e.ServerAdminClient.GetPostsForChannel(context.Background(), run.ChannelID, 0, 100, "", false, false)
+			require.NoError(t, err)
+			n := 0
+			for _, p := range posts.Posts {
+				if p.Type == "custom_retro_rem" || p.Type == "custom_retro_rem_first" {
+					n++
+				}
+			}
+			return n
+		}
+		countBefore := countRetroRemPosts()
+
+		// Re-enable on a PUBLISHED run — must NOT post a new reminder.
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		countAfter := countRetroRemPosts()
+		assert.Equal(t, countBefore, countAfter, "re-enabling on a published run must not post a new retrospective reminder")
+
+		fetched, err := e.PlaybooksAdminClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled)
+	})
+
+	t.Run("run inherits retrospective_enabled=false from playbook", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro Disabled Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, false)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Disabled Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.False(t, fetched.RetrospectiveEnabled, "run should inherit retrospective_enabled=false from playbook")
+	})
+
+	t.Run("run inherits retrospective_enabled=true from playbook", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro Enabled Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, true)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Enabled Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "run should inherit retrospective_enabled=true from playbook")
+	})
+
+	t.Run("finishing a run with retrospective disabled posts no retro reminder", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "No Retro Finish Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+		setRetrospectiveEnabledAsAdmin(t, e, playbookID, false)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No Retro Finish Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.False(t, run.RetrospectiveEnabled)
+
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		posts, _, err := e.ServerAdminClient.GetPostsForChannel(context.Background(), run.ChannelID, 0, 100, "", false, false)
+		require.NoError(t, err)
+		for _, p := range posts.Posts {
+			assert.NotEqual(t, "custom_retro_rem_first", p.Type,
+				"no retro reminder post expected when retrospective is disabled")
+		}
+	})
+}
+
+func TestAutoArchiveChannel(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("channel is archived after run finish when AutoArchiveChannel=true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotEmpty(t, run.ChannelID)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		assert.NotEqual(t, int64(0), channel.DeleteAt,
+			"channel must be archived (DeleteAt != 0) after finishing a run with AutoArchiveChannel=true")
+
+		assertHasTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelArchived)
+	})
+
+	t.Run("channel is not archived after run finish when AutoArchiveChannel=false", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "No Auto Archive Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      false,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No Auto Archive Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotEmpty(t, run.ChannelID)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"channel must not be archived after finishing a run with AutoArchiveChannel=false")
+
+		assertNoTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelArchived)
+	})
+
+	t.Run("linked channel is not archived after run finish even when AutoArchiveChannel=true", func(t *testing.T) {
+		// Create a pre-existing channel to link to the run.
+		existingChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      e.BasicTeam.Id,
+			Type:        model.ChannelTypeOpen,
+			Name:        "existing-channel-" + model.NewId(),
+			DisplayName: "Existing Channel",
+		})
+		require.NoError(t, err)
+
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Linked Channel Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun: true,
+			AutoArchiveChannel:      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Linked Channel Run",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   existingChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Equal(t, existingChannel.Id, run.ChannelID)
+
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), existingChannel.Id)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"pre-existing linked channel must not be archived even when AutoArchiveChannel=true")
+
+		assertNoTimelineEvent(t, e.PlaybooksAdminClient, run.ID, client.ChannelArchived)
+	})
+
+	t.Run("channel swapped via UpdateRun is not archived after run finish", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Swap Channel Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun: true,
+			AutoArchiveChannel:      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Swap Channel Run",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		originalChannelID := run.ChannelID
+
+		victimChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      e.BasicTeam.Id,
+			Type:        model.ChannelTypeOpen,
+			Name:        "victim-channel-" + model.NewId(),
+			DisplayName: "Victim Channel",
+		})
+		require.NoError(t, err)
+
+		resp, err := updateRun(e.PlaybooksAdminClient, run.ID, map[string]interface{}{
+			"channelID": victimChannel.Id,
+		})
+		require.NoError(t, err)
+		require.Empty(t, resp.Errors)
+
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// ChannelCreatedByRun was cleared when ChannelID was swapped, so auto-archive must not fire.
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), victimChannel.Id)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"victim channel must not be archived after ChannelID was swapped via UpdateRun")
+
+		origChannel, _, err := e.ServerAdminClient.GetChannel(context.Background(), originalChannelID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), origChannel.DeleteAt,
+			"original channel must not be archived after ChannelID was swapped away")
+
+		assertNoTimelineEvent(t, e.PlaybooksAdminClient, run.ID, client.ChannelArchived)
+	})
+
+	t.Run("channel is unarchived after run restore when AutoArchiveChannel=true", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Restore Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Restore Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotEmpty(t, run.ChannelID)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		require.NotEqual(t, int64(0), channel.DeleteAt,
+			"channel must be archived before restore")
+
+		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"channel must be unarchived (DeleteAt == 0) after restoring a run with AutoArchiveChannel=true")
+
+		assertHasTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelUnarchived)
+	})
+
+	t.Run("channel is not touched after run restore when AutoArchiveChannel=false", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "No Auto Archive Restore Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      false,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No Auto Archive Restore Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.NotEmpty(t, run.ChannelID)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"channel must remain unarchived after restoring a run that was not auto-archived")
+
+		assertNoTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelUnarchived)
+	})
+
+	t.Run("manual unarchive before restore clears AutoArchivedChannel so next finish re-archives", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Manual Unarchive Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+			AutoArchiveChannel:                      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Manual Unarchive Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, run.ChannelID)
+
+		// Finish the run — channel gets auto-archived.
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		require.NotEqual(t, int64(0), channel.DeleteAt, "channel must be archived before manual unarchive")
+
+		// Manually unarchive the channel (simulating an admin un-archiving outside of Playbooks).
+		_, _, err = e.ServerAdminClient.RestoreChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		require.Equal(t, int64(0), channel.DeleteAt, "channel must be unarchived after manual restore")
+
+		// Restore the run — even though the channel was already unarchived manually, the run
+		// must restore cleanly and clear AutoArchivedChannel so the next finish starts fresh.
+		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"channel must remain unarchived after run restore (it was already unarchived manually)")
+
+		// Finish the run a second time — auto-archive must trigger again.
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		assert.NotEqual(t, int64(0), channel.DeleteAt,
+			"channel must be archived again on second finish — AutoArchivedChannel flag was correctly cleared on restore")
+	})
+}
+
+// assertHasTimelineEvent fetches the run and asserts that at least one timeline event of the
+// given type exists.
+func assertHasTimelineEvent(t *testing.T, c *client.Client, runID string, eventType client.TimelineEventType) {
+	t.Helper()
+	run, err := c.PlaybookRuns.Get(context.Background(), runID)
+	require.NoError(t, err)
+	for _, ev := range run.TimelineEvents {
+		if ev.EventType == eventType {
+			return
+		}
+	}
+	assert.Failf(t, "missing timeline event", "expected a %q timeline event on run %s", eventType, runID)
+}
+
+// assertNoTimelineEvent fetches the run and asserts that no timeline event of the given type
+// exists.
+func assertNoTimelineEvent(t *testing.T, c *client.Client, runID string, eventType client.TimelineEventType) {
+	t.Helper()
+	run, err := c.PlaybookRuns.Get(context.Background(), runID)
+	require.NoError(t, err)
+	for _, ev := range run.TimelineEvents {
+		if ev.EventType == eventType {
+			assert.Failf(t, "unexpected timeline event", "did not expect a %q timeline event on run %s", eventType, runID)
+			return
+		}
+	}
+}
+
+// TestRunCreationFromPlaybook_AssigneeTypePropagation verifies that checklist items
+// with role-based AssigneeType (owner, creator) are copied from the playbook template
+// to the run, and that their AssigneeID is resolved to the concrete user at creation time.
+func TestRunCreationFromPlaybook_AssigneeTypePropagation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("assignee types propagated from template", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Role Assignee Template Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{
+				{
+					Title: "Tasks",
+					Items: []client.ChecklistItem{
+						{Title: "Explicit user task", AssigneeType: ""},
+						{Title: "Owner task", AssigneeType: app.AssigneeTypeOwner},
+						{Title: "Creator task", AssigneeType: app.AssigneeTypeCreator},
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create the run as RegularUser (creator) with AdminUser as the explicit owner,
+		// so owner and creator resolve to distinct IDs and both paths are independently verified.
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Role Assignee Run",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 1)
+		require.Len(t, run.Checklists[0].Items, 3)
+
+		explicit := run.Checklists[0].Items[0]
+		ownerItem := run.Checklists[0].Items[1]
+		creatorItem := run.Checklists[0].Items[2]
+
+		assert.Equal(t, "", explicit.AssigneeType)
+		assert.Empty(t, explicit.AssigneeID)
+
+		assert.Equal(t, app.AssigneeTypeOwner, ownerItem.AssigneeType)
+		assert.Equal(t, e.AdminUser.Id, ownerItem.AssigneeID,
+			"owner-type item must be resolved to the run owner at creation time")
+
+		assert.Equal(t, app.AssigneeTypeCreator, creatorItem.AssigneeType)
+		assert.Equal(t, e.RegularUser.Id, creatorItem.AssigneeID,
+			"creator-type item must be resolved to the run creator at creation time")
+	})
+
+	t.Run("owner falls back to creator when not provided", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Ownerless Run",
+			OwnerUserID: "", // intentionally empty — should fall back to creator
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, e.RegularUser.Id, run.OwnerUserID,
+			"owner must fall back to the creator when OwnerUserID is not provided")
+	})
+}
+
+// TestRunCreationFromPlaybook_PropertyUserAssigneeType verifies that a checklist item
+// with AssigneeType "property_user" is carried over from the playbook template to the
+// run, with AssigneePropertyFieldID remapped to the run-level field copy.
+// At creation time no property value exists yet, so AssigneeID starts empty.
+// It is resolved later when someone sets the property value via SetRunPropertyValue.
+func TestRunCreationFromPlaybook_PropertyUserAssigneeType(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	// Create a playbook with a user-type property field and a property_user checklist item.
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Property User Assignee Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	pbField, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+		context.Background(),
+		pbID,
+		client.PropertyFieldRequest{Name: "Reviewer", Type: "user"},
+	)
+	require.NoError(t, err)
+
+	// Update the playbook to add a checklist item that references the new field.
+	pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pbID)
+	require.NoError(t, err)
+	pb.Checklists = []client.Checklist{
+		{
+			Title: "Tasks",
+			Items: []client.ChecklistItem{
+				{
+					Title:                   "Review task",
+					AssigneeType:            app.AssigneeTypePropertyUser,
+					AssigneePropertyFieldID: pbField.ID,
+				},
+			},
+		},
+	}
+	err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Property User Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 1)
+	require.Len(t, run.Checklists[0].Items, 1)
+
+	item := run.Checklists[0].Items[0]
+	assert.Equal(t, app.AssigneeTypePropertyUser, item.AssigneeType,
+		"AssigneeType must be preserved from playbook template")
+	assert.NotEmpty(t, item.AssigneePropertyFieldID,
+		"AssigneePropertyFieldID must be remapped to the run-level field copy")
+	assert.NotEqual(t, pbField.ID, item.AssigneePropertyFieldID,
+		"run-level field ID must differ from the playbook-level field ID")
+	assert.Empty(t, item.AssigneeID,
+		"AssigneeID starts empty at creation — resolved later when a property value is set")
+}
+
 // TestDMGMChannelSupport verifies the gate that rejects playbook runs (PlaybookID != "")
 // in DM/GM channels while allowing plain checklists (PlaybookID == "") in the same channels.
 // MM-66962
@@ -3170,5 +5145,341 @@ func TestDMGMParticipants(t *testing.T) {
 			memberIDs[i] = m.UserId
 		}
 		assert.Contains(t, memberIDs, e.RegularUser2.Id, "DM membership should not be removed when leaving the run")
+	})
+}
+
+// TestChangeOwner_EmitsAssigneeChangedForOwnerRoleTasks verifies that changing the run owner
+// creates AssigneeChanged timeline events for every checklist item whose assignee type is
+// AssigneeTypeOwner (i.e., those that track the run owner automatically).
+func TestChangeOwner_EmitsAssigneeChangedForOwnerRoleTasks(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a playbook whose template has one owner-role task and one regular task.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Owner Role Task Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Checklists: []client.Checklist{
+			{
+				Title: "Tasks",
+				Items: []client.ChecklistItem{
+					{Title: "Owner task", AssigneeType: app.AssigneeTypeOwner},
+					{Title: "Regular task", AssigneeType: ""},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// Create the run as RegularUser with AdminUser as owner so they are distinct.
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Owner Change Run",
+		OwnerUserID: e.AdminUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  playbookID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, e.AdminUser.Id, run.OwnerUserID)
+
+	eventCountBefore := len(run.TimelineEvents)
+
+	// Change owner: RegularUser (actor) changes owner from AdminUser to RegularUser2 (new owner).
+	// Using three distinct users makes the SubjectUserID/CreatorUserID assertions discriminating.
+	err = e.PlaybooksClient.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
+	require.NoError(t, err)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.Equal(t, e.RegularUser2.Id, run.OwnerUserID)
+
+	// Expect one OwnerChanged event plus one AssigneeChanged event for the owner-role task.
+	newEvents := run.TimelineEvents[eventCountBefore:]
+	var ownerChangedCount, assigneeChangedCount int
+	var ownerChangedEvent client.TimelineEvent
+	for _, ev := range newEvents {
+		switch ev.EventType {
+		case client.OwnerChanged:
+			ownerChangedCount++
+			ownerChangedEvent = ev
+		case client.AssigneeChanged:
+			assigneeChangedCount++
+		}
+	}
+	assert.Equal(t, 1, ownerChangedCount, "expected exactly one OwnerChanged event")
+	assert.Equal(t, 1, assigneeChangedCount, "expected one AssigneeChanged event for the owner-role task")
+	// Regression: SubjectUserID must be the NEW owner; CreatorUserID must be the actor (distinct from new owner).
+	assert.Equal(t, e.RegularUser2.Id, ownerChangedEvent.SubjectUserID,
+		"OwnerChanged SubjectUserID must be the new owner")
+	assert.Equal(t, e.RegularUser.Id, ownerChangedEvent.CreatorUserID,
+		"OwnerChanged CreatorUserID must be the actor who triggered the change")
+
+	// The owner-role task must be re-assigned to the new owner.
+	ownerItem := run.Checklists[0].Items[0]
+	assert.Equal(t, e.RegularUser2.Id, ownerItem.AssigneeID,
+		"owner-role item must be re-assigned to the new owner")
+	// The regular task must be unaffected.
+	regularItem := run.Checklists[0].Items[1]
+	assert.Empty(t, regularItem.AssigneeID,
+		"non-owner-role item must be unaffected by the owner change")
+}
+
+// TestSetRunPropertyValue_UserField covers three related scenarios for user-type property
+// fields under a single server setup (enterprise license required for property fields).
+func TestSetRunPropertyValue_UserField(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	// re-resolves: verifies the wiring from SetRunPropertyValue →
+	// resolvePropertyUserAssignmentsFromRun → store update.
+	// Unit tests in task_assignment_test.go cover the helper in isolation; this
+	// integration test proves the full service path is connected.
+	t.Run("re-resolves property_user tasks on value change", func(t *testing.T) {
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Property Re-resolve Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		pbField, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Manager", Type: "user"},
+		)
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pbID)
+		require.NoError(t, err)
+		pb.Checklists = []client.Checklist{
+			{
+				Title: "Tasks",
+				Items: []client.ChecklistItem{
+					{
+						Title:                   "Manager task",
+						AssigneeType:            app.AssigneeTypePropertyUser,
+						AssigneePropertyFieldID: pbField.ID,
+					},
+				},
+			},
+		}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Property Re-resolve Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runManagerFieldID string
+		for _, f := range runFields {
+			if f.Name == "Manager" && f.Type == "user" {
+				runManagerFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runManagerFieldID, "run-level Manager field not found")
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Empty(t, run.Checklists[0].Items[0].AssigneeID, "AssigneeID starts empty before any property value is set")
+
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runManagerFieldID,
+			client.PropertyValueRequest{Value: []byte(`"` + e.AdminUser.Id + `"`)},
+		)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		item := run.Checklists[0].Items[0]
+		assert.Equal(t, e.AdminUser.Id, item.AssigneeID,
+			"AssigneeID must be resolved to AdminUser after setting Manager property")
+		assert.Equal(t, app.AssigneeTypePropertyUser, item.AssigneeType,
+			"AssigneeType must be preserved as property_user after resolution")
+
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runManagerFieldID,
+			client.PropertyValueRequest{Value: []byte(`"` + e.RegularUser2.Id + `"`)},
+		)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		item = run.Checklists[0].Items[0]
+		assert.Equal(t, e.RegularUser2.Id, item.AssigneeID,
+			"AssigneeID must re-resolve to RegularUser2 after Manager property change")
+		assert.Equal(t, app.AssigneeTypePropertyUser, item.AssigneeType,
+			"AssigneeType must remain property_user after re-resolution")
+	})
+
+	// rejects non-team-member: without this guard, an attacker with property-write access
+	// could add arbitrary users as run participants via addAssigneeParticipantAndDM.
+	t.Run("rejects non-team-member", func(t *testing.T) {
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Non-member Rejection Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Assignee", Type: "user"},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Non-member Rejection Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runFieldID string
+		for _, f := range runFields {
+			if f.Name == "Assignee" && f.Type == "user" {
+				runFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runFieldID, "run-level Assignee field not found")
+
+		outsider, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+			Email:    "outsider-" + model.NewId() + "@example.com",
+			Username: "outsider" + model.NewId(),
+			Password: testUserPassword,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runFieldID,
+			client.PropertyValueRequest{Value: []byte(`"` + outsider.Id + `"`)},
+		)
+		require.Error(t, err, "setting a user-type property to a non-team-member must be rejected")
+
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runFieldID,
+			client.PropertyValueRequest{Value: []byte(`"` + e.AdminUser.Id + `"`)},
+		)
+		require.NoError(t, err, "setting a user-type property to a team member must succeed")
+	})
+
+	// participant cannot add new member: setting a user-type field auto-adds the chosen user
+	// as a run participant, so only the run owner or a system admin may trigger that side effect.
+	t.Run("participant cannot add new member", func(t *testing.T) {
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Participant Cannot Add Member Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		pbField, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Assignee", Type: "user"},
+		)
+		require.NoError(t, err)
+
+		// addAssigneeParticipantAndDM is only triggered when a task's resolved assignee changes —
+		// without this item the property value update has no task to re-resolve and the auto-add
+		// side effect never fires.
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pbID)
+		require.NoError(t, err)
+		pb.Checklists = []client.Checklist{
+			{Title: "Tasks", Items: []client.ChecklistItem{
+				{
+					Title:                   "Assignee task",
+					AssigneeType:            app.AssigneeTypePropertyUser,
+					AssigneePropertyFieldID: pbField.ID,
+				},
+			}},
+		}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Participant Cannot Add Member Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		_, err = addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+
+		targetUser, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+			Email:    "target-" + model.NewId() + "@example.com",
+			Username: "target" + model.NewId(),
+			Password: testUserPassword,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, targetUser.Id)
+		require.NoError(t, err)
+
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runFieldID string
+		for _, f := range runFields {
+			if f.Name == "Assignee" && f.Type == "user" {
+				runFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runFieldID)
+
+		_, err = e.PlaybooksClient2.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runFieldID,
+			client.PropertyValueRequest{Value: []byte(`"` + targetUser.Id + `"`)},
+		)
+		require.NoError(t, err, "non-owner participant must be allowed to set a user-type property")
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotContains(t, run.ParticipantIDs, targetUser.Id,
+			"non-owner participant must not be able to add a new member to the run via property assignment")
+
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runFieldID,
+			client.PropertyValueRequest{Value: []byte(`""`)},
+		)
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runFieldID,
+			client.PropertyValueRequest{Value: []byte(`"` + targetUser.Id + `"`)},
+		)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Contains(t, run.ParticipantIDs, targetUser.Id,
+			"run owner must be able to add a new member to the run via property assignment")
 	})
 }

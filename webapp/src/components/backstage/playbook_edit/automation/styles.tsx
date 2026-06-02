@@ -33,3 +33,31 @@ export const SelectorWrapper = styled.div`
     min-height: 40px;
     margin: 0;
 `;
+
+export const AutomationCard = styled.div`
+    padding: 2rem;
+    padding-bottom: 0;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 8px;
+    margin: 0 0 20px;
+`;
+
+export const AutomationCardTitle = styled.div`
+    display: flex;
+    align-items: center;
+    margin: 0 0 24px;
+    font-size: 16px;
+    font-weight: 600;
+    gap: 8px;
+
+    svg {
+        color: rgba(var(--center-channel-color-rgb), 0.48);
+    }
+`;
+
+export const AutomationCardSetting = styled.div`
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+    gap: 8px;
+`;

@@ -235,6 +235,10 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 			return "", errors.Wrap(app.ErrNoPermissions, permissionMessage)
 		}
 		addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
+		// The new channel was not created by this run, so clear the flag to prevent
+		// auto-archive from archiving a channel that was not created for this run.
+		falseVal := false
+		addToSetmap(setmap, "ChannelCreatedByRun", &falseVal)
 	}
 
 	if args.Updates.Summary != nil {
@@ -325,10 +329,6 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 	return "", nil
 }
 
-func updatesOnlyRequesterMembership(requesterUserID string, userIDs []string) bool {
-	return len(userIDs) == 1 && userIDs[0] == requesterUserID
-}
-
 func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 	RunID   string
 	OwnerID string
@@ -339,7 +339,7 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 	}
 	requesterID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err := c.permissions.RunManageProperties(requesterID, args.RunID); err != nil {
+	if err := c.permissions.RunChangeOwner(requesterID, args.RunID); err != nil {
 		return "", errors.Wrap(err, "attempted to modify the run owner without permissions")
 	}
 
@@ -348,6 +348,10 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 	}
 
 	return "", nil
+}
+
+func updatesOnlyRequesterMembership(requesterUserID string, userIDs []string) bool {
+	return len(userIDs) == 1 && userIDs[0] == requesterUserID
 }
 
 func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct {

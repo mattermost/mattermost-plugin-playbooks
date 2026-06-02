@@ -27,7 +27,9 @@ import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
+import {isCurrentUserAdmin} from 'src/selectors';
 import {Playbook} from 'src/types/playbook';
+import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {
     DotMenuButton,
@@ -36,7 +38,6 @@ import DotMenu, {
     iconSplitStyling,
 } from 'src/components/dot_menu';
 import {createPlaybookRun, playbookExportProps} from 'src/client';
-import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
@@ -120,8 +121,13 @@ const PlaybookListRow = (props: Props) => {
     const team = useAppSelector((state) => getTeam(state, props.playbook.team_id || ''));
     const dispatch = useAppDispatch();
     const currentUser = useAppSelector(getCurrentUser);
+    const isSystemAdmin = useAppSelector(isCurrentUserAdmin);
     const currentUserPlaybookMember = useMemo(() => props.playbook?.members.find(({user_id}) => user_id === currentUser.id), [props.playbook?.members, currentUser.id]);
     const refreshLHS = useLHSRefresh();
+
+    const playbookAdminRole = props.playbook.default_playbook_admin_role || PlaybookRole.Admin;
+    const isPlaybookAdmin = currentUserPlaybookMember?.scheme_roles?.includes(playbookAdminRole) ?? false;
+    const canEdit = !props.playbook.admin_only_edit || isPlaybookAdmin || isSystemAdmin;
 
     const permissionForDuplicate = useHasTeamPermission(props.playbook.team_id, 'playbook_public_create');
     const {formatMessage} = useIntl();
@@ -177,6 +183,7 @@ const PlaybookListRow = (props: Props) => {
             key={props.playbook.id}
             onClick={props.onClick}
             data-testid='playbook-item'
+            data-playbook-id={props.playbook.id}
         >
             <PlaybookItemTitle data-testid='playbook-title'>
                 <TextWithTooltip
@@ -260,7 +267,7 @@ const PlaybookListRow = (props: Props) => {
                     )}
                     dotMenuButton={DotMenuButtonStyled}
                 >
-                    {currentUserPlaybookMember ? (
+                    {canEdit && (currentUserPlaybookMember || isSystemAdmin) ? (
                         <DropdownMenuItem
                             onClick={props.onEdit}
                         >
@@ -310,10 +317,16 @@ const PlaybookListRow = (props: Props) => {
                                 <CloseIcon size={18}/>
                                 <FormattedMessage defaultMessage='Leave'/>
                             </DropdownMenuItem>
+                        </>
+                    )}
+                    {(currentUserPlaybookMember || isSystemAdmin) && (
+                        <>
                             <div className='MenuGroup menu-divider'/>
                             {props.playbook.delete_at > 0 ? (
                                 <DropdownMenuItem
                                     onClick={props.onRestore}
+                                    disabled={!canEdit}
+                                    disabledAltText={formatMessage({defaultMessage: 'Only admins can restore this playbook.'})}
                                 >
                                     <RestoreIcon size={18}/>
                                     <FormattedMessage defaultMessage='Restore'/>
@@ -321,6 +334,8 @@ const PlaybookListRow = (props: Props) => {
                             ) : (
                                 <DropdownMenuItem
                                     onClick={props.onArchive}
+                                    disabled={!canEdit}
+                                    disabledAltText={formatMessage({defaultMessage: 'Only admins can archive this playbook.'})}
                                 >
                                     <RedText
                                         style={{

@@ -208,6 +208,8 @@ type PropertyService interface {
 	CopyPlaybookPropertiesToRun(playbookID, runID string) (*PropertyCopyResult, error)
 	CopyPlaybookPropertiesToPlaybook(sourcePlaybookID, targetPlaybookID string) (*PropertyCopyResult, error)
 	UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
+	UpsertRunPropertyValueWithField(runID string, field *PropertyField, value json.RawMessage) (*PropertyValue, error)
+	SanitizePropertyValue(fieldType model.PropertyFieldType, raw json.RawMessage) (json.RawMessage, error)
 
 	// Bulk methods for retrieving properties for multiple runs
 	GetRunsPropertyFields(runIDs []string) (map[string][]PropertyField, error)

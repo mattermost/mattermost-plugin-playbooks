@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
@@ -76,6 +78,17 @@ type Playbook struct {
 
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
+
+	RunNumberPrefix string `json:"run_number_prefix" export:"run_number_prefix"`
+	// NextRunNumber is a server-managed counter. It is write-ignored on API input and must never be set by callers.
+	NextRunNumber int64 `json:"-" export:"-"`
+	AdminOnlyEdit bool  `json:"admin_only_edit" export:"-"`
+
+	OwnerGroupOnlyActions bool `json:"owner_group_only_actions" export:"owner_group_only_actions"`
+
+	NewChannelOnly bool `json:"new_channel_only" export:"new_channel_only"`
+
+	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
 
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
@@ -301,6 +314,10 @@ type ChecklistItem struct {
 	// AssigneeModified is the timestamp, in milliseconds since epoch, of the last time the item's
 	// assignee was modified. 0 if it was never modified.
 	AssigneeModified int64 `json:"assignee_modified" export:"-"`
+	// AssigneeType determines how the assignee is resolved. Empty string means a specific user (AssigneeID).
+	AssigneeType string `json:"assignee_type" export:"assignee_type"`
+	// AssigneePropertyFieldID is the property field whose value is used when AssigneeType == AssigneeTypePropertyUser.
+	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"assignee_property_field_id"`
 
 	// Command, if not empty, is the slash command that can be run as part of this item.
 	Command string `json:"command" export:"command"`
@@ -448,6 +465,19 @@ type PlaybookService interface {
 
 	// ReorderPropertyFields reorders property fields for a playbook and bumps the playbook's updated_at
 	ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error)
+
+	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
+	IncrementRunNumber(playbookID string) (int64, error)
+
+	// UpdateChannelNameTemplateIfUnchanged updates the channel name template only if it still equals oldTemplate.
+	// Returns true if the row was updated, false if a concurrent edit changed the value first.
+	UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error)
+
+	// UpdateRunNumberPrefix updates only the run number prefix for a playbook.
+	UpdateRunNumberPrefix(playbookID, prefix, userID string) error
+
+	// UpdateChannelNameTemplate updates only the channel name template for a playbook.
+	UpdateChannelNameTemplate(playbookID, template, userID string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -528,6 +558,23 @@ type PlaybookStore interface {
 
 	// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
 	BumpPlaybookUpdatedAt(playbookID string) error
+
+	// IsRunNumberPrefixUsed returns true if another active playbook in teamID already uses prefix.
+	// Pass excludePlaybookID to skip the playbook being updated/restored.
+	IsRunNumberPrefixUsed(teamID, prefix, excludePlaybookID string) (bool, error)
+
+	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
+	IncrementRunNumber(playbookID string) (int64, error)
+
+	// UpdateChannelNameTemplateIfUnchanged updates the channel name template only if it still equals oldTemplate.
+	// Returns true if the row was updated, false if a concurrent edit changed the value first.
+	UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemplate, newTemplate string) (bool, error)
+
+	// UpdateRunNumberPrefix updates only the RunNumberPrefix column for the given playbook.
+	UpdateRunNumberPrefix(id, prefix string) error
+
+	// UpdateChannelNameTemplate updates only the ChannelNameTemplate column for the given playbook.
+	UpdateChannelNameTemplate(id, template string) error
 }
 
 const (
@@ -536,6 +583,66 @@ const (
 	ChecklistItemStateClosed     = "closed"
 	ChecklistItemStateSkipped    = "skipped"
 )
+
+const (
+	// MaxRunNumberPrefixLength is the maximum length for a RunNumberPrefix.
+	MaxRunNumberPrefixLength = 32
+
+	// MaxChannelNameTemplateLength is the maximum length for a ChannelNameTemplate.
+	MaxChannelNameTemplateLength = 1024
+)
+
+var runNumberPrefixRegex = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$`)
+
+// NormalizeRunNumberPrefix trims whitespace and leading/trailing hyphens from a prefix.
+// Callers should normalize before storing or validating.
+func NormalizeRunNumberPrefix(prefix string) string {
+	return strings.Trim(strings.TrimSpace(prefix), "-")
+}
+
+// ValidateRunNumberPrefix checks that a RunNumberPrefix is alphanumeric + hyphens, max 32 chars.
+// Empty string is valid (means no prefix).
+func ValidateRunNumberPrefix(prefix string) error {
+	prefix = strings.TrimSpace(prefix)
+	if prefix == "" {
+		return nil
+	}
+	if utf8.RuneCountInString(prefix) > MaxRunNumberPrefixLength {
+		return errors.Errorf("run_number_prefix must be at most %d characters", MaxRunNumberPrefixLength)
+	}
+	if !runNumberPrefixRegex.MatchString(prefix) {
+		return errors.New("run_number_prefix must start and end with an alphanumeric character and contain only alphanumeric characters and hyphens")
+	}
+	return nil
+}
+
+// ValidateChannelNameTemplate checks that a ChannelNameTemplate does not exceed the max length
+// and is not whitespace-only.
+func ValidateChannelNameTemplate(tmpl string) error {
+	if strings.TrimSpace(tmpl) == "" && tmpl != "" {
+		return errors.New("channel_name_template must not be whitespace-only")
+	}
+	if utf8.RuneCountInString(tmpl) > MaxChannelNameTemplateLength {
+		return errors.Errorf("channel_name_template must be at most %d characters", MaxChannelNameTemplateLength)
+	}
+	return nil
+}
+
+const (
+	AssigneeTypeSpecificUser = ""              // assigned to a specific user identified by AssigneeID
+	AssigneeTypeOwner        = "owner"         // resolved to the run owner at assignment time
+	AssigneeTypeCreator      = "creator"       // resolved to the run creator at assignment time
+	AssigneeTypePropertyUser = "property_user" // resolved via a User-type property field
+)
+
+// IsValidAssigneeType returns true for all recognised AssigneeType values:
+// AssigneeTypeSpecificUser, AssigneeTypeOwner, AssigneeTypeCreator, and AssigneeTypePropertyUser.
+func IsValidAssigneeType(assigneeType string) bool {
+	return assigneeType == AssigneeTypeSpecificUser ||
+		assigneeType == AssigneeTypeOwner ||
+		assigneeType == AssigneeTypeCreator ||
+		assigneeType == AssigneeTypePropertyUser
+}
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
@@ -616,6 +723,15 @@ func ValidateWebhookURLs(urls []string) error {
 		}
 	}
 
+	return nil
+}
+
+// ValidateNewChannelOnlyMode checks that NewChannelOnly is not enabled when ChannelMode
+// is set to link an existing channel.
+func ValidateNewChannelOnlyMode(newChannelOnly bool, channelMode ChannelPlaybookMode) error {
+	if newChannelOnly && channelMode == PlaybookRunLinkExistingChannel {
+		return errors.New("this playbook requires runs to create a new channel, but the channel mode is set to link an existing channel")
+	}
 	return nil
 }
 

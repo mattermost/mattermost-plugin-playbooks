@@ -25,14 +25,14 @@ func TestTrialLicences(t *testing.T) {
 		dialogRequest := model.PostActionIntegrationRequest{
 			UserId: e.RegularUser.Id,
 			PostId: e.BasicPublicChannelPost.Id,
-			Context: map[string]interface{}{
+			Context: map[string]any{
 				"users":                 10,
 				"termsAccepted":         true,
 				"receiveEmailsAccepted": true,
 			},
 		}
 		dialogRequestBytes, _ := json.Marshal(dialogRequest)
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
@@ -41,14 +41,14 @@ func TestTrialLicences(t *testing.T) {
 		dialogRequest := model.PostActionIntegrationRequest{
 			UserId: e.AdminUser.Id,
 			PostId: e.BasicPublicChannelPost.Id,
-			Context: map[string]interface{}{
+			Context: map[string]any{
 				"users":                 10,
 				"termsAccepted":         true,
 				"receiveEmailsAccepted": true,
 			},
 		}
 		dialogRequestBytes, _ := json.Marshal(dialogRequest)
-		resp, err := e.ServerAdminClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
+		resp, err := e.doPluginRequest(e.ServerAdminClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})

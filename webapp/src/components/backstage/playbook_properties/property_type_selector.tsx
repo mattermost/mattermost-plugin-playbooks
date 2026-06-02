@@ -5,6 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 import ReactSelect, {StylesConfig} from 'react-select';
 import {
+    AccountOutlineIcon,
     CheckIcon,
     ChevronDownCircleOutlineIcon,
     FormatListBulletedIcon,
@@ -29,7 +30,7 @@ interface Props {
     target: React.ReactElement;
 }
 
-type PropertyType = 'text' | 'select' | 'multiselect' | 'url';
+type PropertyType = 'text' | 'select' | 'multiselect' | 'url' | 'user';
 
 type TypeOption = {
     value: PropertyType;
@@ -61,6 +62,11 @@ const TYPE_OPTIONS: Array<{
         type: 'multiselect',
         icon: FormatListBulletedIcon,
         label: 'Multi-select',
+    },
+    {
+        type: 'user',
+        icon: AccountOutlineIcon,
+        label: 'User',
     },
 ]) as const;
 
@@ -95,6 +101,10 @@ const PropertyTypeSelector = ({
             break;
         case 'multiselect':
             actualType = 'multiselect';
+            valueType = '';
+            break;
+        case 'user':
+            actualType = 'user';
             valueType = '';
             break;
         }
