@@ -665,6 +665,18 @@
       "extends": "plugin:@typescript-eslint/recommended",
       "rules": {
         "@typescript-eslint/ban-ts-comment": 0,
+        "@typescript-eslint/no-restricted-imports": [
+          2,
+          {
+            "paths": [
+              {
+                "name": "react-bootstrap",
+                "importNames": ["OverlayTrigger", "Tooltip"],
+                "message": "Don't use React Bootstrap components any more. Instead of using OverlayTrigger/Tooltip, use WithTooltip from @mattermost/shared instead."
+              }
+            ]
+          }
+        ],
         "@typescript-eslint/no-unused-vars": [
           2,
           {
