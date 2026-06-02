@@ -127,11 +127,15 @@ describe('AssignTo', () => {
                         group_id: '',
                         name: 'Designer Baba',
                         type: 'user' as const,
+                        target_id: '',
                         target_type: 'run' as const,
+                        object_type: 'run',
                         attrs: {visibility: 'always' as const, sort_order: 0, options: null},
                         create_at: 0,
                         update_at: 0,
                         delete_at: 0,
+                        created_by: '',
+                        updated_by: '',
                     }]}
                     propertyValues={[{
                         id: 'v1',
@@ -143,6 +147,8 @@ describe('AssignTo', () => {
                         create_at: 0,
                         update_at: 0,
                         delete_at: 0,
+                        created_by: '',
+                        updated_by: '',
                     }]}
                 />,
             );
