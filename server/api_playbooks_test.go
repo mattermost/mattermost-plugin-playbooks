@@ -2725,7 +2725,7 @@ func TestPatchPlaybook(t *testing.T) {
 
 		// Create a fresh team member who is intentionally not a playbook member,
 		// then log in once to obtain an auth token for the PATCH attempt.
-		nonMemberPassword := "Password123!"
+		nonMemberPassword := testUserPassword
 		suffix := model.NewId()
 		nonMember, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 			Email:    "patch-nonmember-" + suffix + "@example.com",

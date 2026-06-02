@@ -5362,7 +5362,7 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		outsider, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 			Email:    "outsider-" + model.NewId() + "@example.com",
 			Username: "outsider" + model.NewId(),
-			Password: "Password123!",
+			Password: testUserPassword,
 		})
 		require.NoError(t, err)
 
@@ -5431,7 +5431,7 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		targetUser, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 			Email:    "target-" + model.NewId() + "@example.com",
 			Username: "target" + model.NewId(),
-			Password: "Password123!",
+			Password: testUserPassword,
 		})
 		require.NoError(t, err)
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, targetUser.Id)
