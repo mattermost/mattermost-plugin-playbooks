@@ -319,6 +319,28 @@ describe('RunPlaybookModal — template mode', () => {
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             expect(toJson(component)).toContain('"$readOnly":true');
         });
+
+        it('reinitializes same-id playbook refetches when template fields change', () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            let nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            expect(nameInput.props.value).toBe('{Severity} - Incident');
+
+            mockUsePlaybook.mockReturnValue([{
+                ...playbookWithTemplate,
+                channel_name_template: '{Severity} - Updated Incident',
+            }, {isFetching: false, error: undefined}]);
+
+            act(() => {
+                component!.update(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            expect(nameInput.props.value).toBe('{Severity} - Updated Incident');
+        });
     });
 
     describe('property field inputs', () => {

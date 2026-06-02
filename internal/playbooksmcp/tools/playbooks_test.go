@@ -110,7 +110,7 @@ func TestToolCreatePlaybookRejectsInvalidInput(t *testing.T) {
 		want string
 	}{
 		{"blank title", CreatePlaybookArgs{Title: " ", TeamID: "abcdefghijklmnopqrstuvwxyz"}, "title is required"},
-		{"invalid team", CreatePlaybookArgs{Title: "x", TeamID: "bad"}, "team_id must be exactly 26 characters"},
+		{"invalid team", CreatePlaybookArgs{Title: "x", TeamID: "bad"}, "team_id must be a valid Mattermost ID"},
 		{"blank checklist", CreatePlaybookArgs{Title: "x", TeamID: "abcdefghijklmnopqrstuvwxyz", Checklists: []CreatePlaybookChecklist{{Title: " "}}}, "checklists[0].title is required"},
 		{"blank item", CreatePlaybookArgs{Title: "x", TeamID: "abcdefghijklmnopqrstuvwxyz", Checklists: []CreatePlaybookChecklist{{Title: "ok", Items: []CreatePlaybookItem{{Title: " "}}}}}, "checklists[0].items[0].title is required"},
 		{"invalid webhook", CreatePlaybookArgs{Title: "x", TeamID: "abcdefghijklmnopqrstuvwxyz", WebhookOnCreationURLs: []string{"ftp://example.com"}}, "webhook_on_creation_urls[0] must be an http or https URL"},

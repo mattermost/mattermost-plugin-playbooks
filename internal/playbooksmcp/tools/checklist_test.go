@@ -23,6 +23,8 @@ type fakeAPIClient struct {
 
 	putEndpoint string
 	putBody     any
+
+	deleteEndpoint string
 }
 
 func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Values, result any) error {
@@ -62,8 +64,9 @@ func (f *fakeAPIClient) Put(_ context.Context, endpoint string, body any, _ any)
 	return nil
 }
 
-func (f *fakeAPIClient) Delete(context.Context, string) error {
-	return fmt.Errorf("unexpected Delete call")
+func (f *fakeAPIClient) Delete(_ context.Context, endpoint string) error {
+	f.deleteEndpoint = endpoint
+	return nil
 }
 
 func (f *fakeAPIClient) GetCurrentUserID(context.Context) (string, error) {
@@ -221,4 +224,143 @@ func TestToolCreateChecklistUsesCurrentUserAsOwner(t *testing.T) {
 	if got := body["playbook_id"]; got != "" {
 		t.Errorf("expected empty playbook_id, got %q", got)
 	}
+}
+
+func TestRunToolEndpointsAndBodies(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+	const ownerID = "bcdefghijklmnopqrstuvwxyza"
+
+	t.Run("get run", func(t *testing.T) {
+		client := &fakeAPIClient{run: playbookRunDetail{ID: runID, Name: "Run"}}
+		if _, err := toolGetRun(context.Background(), client, GetRunArgs{RunID: runID}); err != nil {
+			t.Fatalf("toolGetRun returned error: %v", err)
+		}
+		if client.getEndpoint != "runs/abcdefghijklmnopqrstuvwxyz" {
+			t.Fatalf("unexpected endpoint: %s", client.getEndpoint)
+		}
+	})
+
+	t.Run("update status", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		if _, err := toolUpdateRunStatus(context.Background(), client, UpdateRunStatusArgs{RunID: runID, Message: "Update", ReminderSeconds: 15}); err != nil {
+			t.Fatalf("toolUpdateRunStatus returned error: %v", err)
+		}
+		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/status" {
+			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+		}
+		body, ok := client.postBody.(map[string]any)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.postBody)
+		}
+		if body["message"] != "Update" || body["reminder"] != int64(15) || body["finish_run"] != false {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+
+	t.Run("finish run", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		if _, err := toolFinishRun(context.Background(), client, FinishRunArgs{RunID: runID}); err != nil {
+			t.Fatalf("toolFinishRun returned error: %v", err)
+		}
+		if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/finish" {
+			t.Fatalf("unexpected endpoint: %s", client.putEndpoint)
+		}
+		if client.putBody != nil {
+			t.Fatalf("expected nil body, got %#v", client.putBody)
+		}
+	})
+
+	t.Run("change owner", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		if _, err := toolChangeRunOwner(context.Background(), client, ChangeRunOwnerArgs{RunID: runID, OwnerID: ownerID}); err != nil {
+			t.Fatalf("toolChangeRunOwner returned error: %v", err)
+		}
+		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/owner" {
+			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+		}
+		body, ok := client.postBody.(map[string]string)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.postBody)
+		}
+		if body["owner_id"] != ownerID {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+}
+
+func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+	const assigneeID = "bcdefghijklmnopqrstuvwxyza"
+
+	t.Run("add checklist item", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item ", Description: "details", AssigneeID: assigneeID}
+		if _, err := toolAddChecklistItem(context.Background(), client, args); err != nil {
+			t.Fatalf("toolAddChecklistItem returned error: %v", err)
+		}
+		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/add" {
+			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+		}
+		body, ok := client.postBody.(map[string]string)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.postBody)
+		}
+		if body["title"] != "New item" || body["description"] != "details" || body["assignee_id"] != assigneeID {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+
+	t.Run("remove checklist item", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		if _, err := toolRemoveChecklistItem(context.Background(), client, RemoveChecklistItemArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2}); err != nil {
+			t.Fatalf("toolRemoveChecklistItem returned error: %v", err)
+		}
+		if client.deleteEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2" {
+			t.Fatalf("unexpected endpoint: %s", client.deleteEndpoint)
+		}
+	})
+
+	t.Run("add section", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		if _, err := toolAddSection(context.Background(), client, AddSectionArgs{RunID: runID, Title: " Section "}); err != nil {
+			t.Fatalf("toolAddSection returned error: %v", err)
+		}
+		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists" {
+			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+		}
+		body, ok := client.postBody.(map[string]string)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.postBody)
+		}
+		if body["title"] != "Section" {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+
+	t.Run("rename section", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		if _, err := toolRenameSection(context.Background(), client, RenameSectionArgs{RunID: runID, ChecklistNumber: 1, Title: " Renamed "}); err != nil {
+			t.Fatalf("toolRenameSection returned error: %v", err)
+		}
+		if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/rename" {
+			t.Fatalf("unexpected endpoint: %s", client.putEndpoint)
+		}
+		body, ok := client.putBody.(map[string]string)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.putBody)
+		}
+		if body["title"] != "Renamed" {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+
+	t.Run("remove section", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		if _, err := toolRemoveSection(context.Background(), client, RemoveSectionArgs{RunID: runID, ChecklistNumber: 1}); err != nil {
+			t.Fatalf("toolRemoveSection returned error: %v", err)
+		}
+		if client.deleteEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1" {
+			t.Fatalf("unexpected endpoint: %s", client.deleteEndpoint)
+		}
+	})
 }

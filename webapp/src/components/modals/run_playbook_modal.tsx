@@ -155,6 +155,17 @@ export const RunPlaybookModal = ({
 
     const isNewChannelOnly = Boolean(restPlaybook?.new_channel_only);
 
+    const playbookInitializationKey = playbook ? JSON.stringify({
+        id: playbook.id,
+        channelNameTemplate: playbook.channel_name_template ?? '',
+        runSummaryTemplateEnabled: playbook.run_summary_template_enabled,
+        runSummaryTemplate: playbook.run_summary_template ?? '',
+        channelMode: playbook.channel_mode,
+        channelId: playbook.channel_id,
+        createPublicPlaybookRun: playbook.create_public_playbook_run,
+        isNewChannelOnly,
+    }) : undefined;
+
     // Single effect for atomic init: prevents race conditions from independent effects exposing stale state.
     useEffect(() => {
         // Reset form state first; skip isSubmitting if a submission is already in flight
@@ -172,10 +183,10 @@ export const RunPlaybookModal = ({
             return;
         }
 
-        if (playbook.id === initializedPlaybookIdRef.current) {
+        if (playbookInitializationKey === initializedPlaybookIdRef.current) {
             return;
         }
-        initializedPlaybookIdRef.current = playbook.id;
+        initializedPlaybookIdRef.current = playbookInitializationKey;
 
         // Pre-fill with the channel_name_template so the user can see the raw template.
         // When a template is NOT set the input is required and starts empty.
@@ -185,7 +196,7 @@ export const RunPlaybookModal = ({
         setChannelMode(isNewChannelOnly ? 'create_new_channel' : playbook.channel_mode);
         setChannelId(playbook.channel_id);
         setCreatePublicRun(playbook.create_public_playbook_run);
-    }, [playbook?.id, selectedPlaybookId, isNewChannelOnly]);
+    }, [playbook?.id, selectedPlaybookId, playbookInitializationKey]);
 
     const templateFieldNames = useMemo(() => {
         const names = new Set<string>();

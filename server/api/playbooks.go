@@ -375,6 +375,8 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
+
 	var body struct {
 		RunNumberPrefix     *string `json:"run_number_prefix"`
 		ChannelNameTemplate *string `json:"channel_name_template"`
