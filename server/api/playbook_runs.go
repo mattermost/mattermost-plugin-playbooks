@@ -161,10 +161,14 @@ func isRunRestoreRequest(r *http.Request) bool {
 }
 
 func isRetrospectiveRequest(r *http.Request) bool {
-	if r.Method != http.MethodPost {
+	switch r.Method {
+	case http.MethodPost:
+		return strings.Contains(r.URL.Path, "/retrospective") || strings.HasSuffix(r.URL.Path, "/no-retrospective-button")
+	case http.MethodPut:
+		return strings.HasSuffix(r.URL.Path, "/retrospective-enabled")
+	default:
 		return false
 	}
-	return strings.Contains(r.URL.Path, "/retrospective") || strings.HasSuffix(r.URL.Path, "/no-retrospective-button")
 }
 
 func isExemptFromActiveRunCheck(r *http.Request) bool {

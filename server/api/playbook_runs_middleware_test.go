@@ -54,8 +54,18 @@ func TestIsRetrospectiveRequest(t *testing.T) {
 		require.True(t, isRetrospectiveRequest(req))
 	})
 
+	t.Run("toggle retrospective enabled", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPut, "/plugins/playbooks/api/v0/runs/runid/retrospective-enabled", nil)
+		require.True(t, isRetrospectiveRequest(req))
+	})
+
 	t.Run("unrelated POST is not retrospective", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/plugins/playbooks/api/v0/runs/runid/status", nil)
+		require.False(t, isRetrospectiveRequest(req))
+	})
+
+	t.Run("unrelated PUT is not retrospective", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPut, "/plugins/playbooks/api/v0/runs/runid/status-update-enabled", nil)
 		require.False(t, isRetrospectiveRequest(req))
 	})
 }
@@ -75,6 +85,11 @@ func TestIsExemptFromActiveRunCheck(t *testing.T) {
 
 	t.Run("retrospective update is exempt", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/plugins/playbooks/api/v0/runs/runid/retrospective", nil)
+		require.True(t, isExemptFromActiveRunCheck(req))
+	})
+
+	t.Run("retrospective toggle is exempt", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPut, "/plugins/playbooks/api/v0/runs/runid/retrospective-enabled", nil)
 		require.True(t, isExemptFromActiveRunCheck(req))
 	})
 
