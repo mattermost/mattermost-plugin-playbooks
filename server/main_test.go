@@ -145,7 +145,7 @@ func (e *TestEnvironment) DoPluginAPIRequestWithHeaders(ctx context.Context, cli
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
-	if client.AuthToken != "" {
+	if client.AuthToken != "" && req.Header.Get(model.HeaderAuth) == "" {
 		req.Header.Set(model.HeaderAuth, client.AuthType+" "+client.AuthToken)
 	}
 	for key, value := range client.HTTPHeader {

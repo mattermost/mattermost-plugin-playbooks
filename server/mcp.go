@@ -270,12 +270,13 @@ func (p *Plugin) serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool {
 		}
 
 		p.mcpMu.RLock()
-		defer p.mcpMu.RUnlock()
-		if p.mcpServer == nil {
+		srv := p.mcpServer
+		p.mcpMu.RUnlock()
+		if srv == nil {
 			http.Error(w, "MCP server unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		p.mcpServer.ServeHTTP(w, r)
+		srv.ServeHTTP(w, r)
 	}))
 	handler.ServeHTTP(w, r)
 	return true

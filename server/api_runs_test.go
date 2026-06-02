@@ -485,7 +485,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 
 		assert.NoError(t, err)
-		if err == nil && result != nil {
+		if result != nil && result.Body != nil {
 			defer result.Body.Close()
 		}
 		assert.Equal(t, http.StatusCreated, result.StatusCode)

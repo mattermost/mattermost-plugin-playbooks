@@ -143,6 +143,8 @@ func toolCheckItem(ctx context.Context, client APIClient, args CheckItemArgs) (s
 	apiState := state
 	switch state {
 	case "open":
+		// The Playbooks API uses an empty new_state to reopen an item. This is distinct
+		// from the omitted MCP argument above, which defaults the tool action to closed.
 		apiState = ""
 	case "closed", "skipped":
 	case "in_progress":
