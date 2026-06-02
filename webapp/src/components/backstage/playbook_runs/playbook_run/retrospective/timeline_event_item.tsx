@@ -404,7 +404,7 @@ const TimelineEventItem = (props: Props) => {
                             </>
                         )}
                     >
-                        <ClockOutlineIcon size={12}/>
+                        <span tabIndex={0}><ClockOutlineIcon size={12}/></span>
                     </WithTooltip>
                 </TimeStamp>
                 <SummaryTitle
