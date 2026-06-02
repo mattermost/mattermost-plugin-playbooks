@@ -34,18 +34,17 @@ const Backstage = () => {
 
     const currentTheme = useAppSelector(getTheme);
     useEffect(() => {
-        // This class, critical for all the styling to work, is added by ChannelController,
-        // which is not loaded when rendering this root component.
+        // Pre-11.8 servers need Playbooks to add this; do not remove on unmount.
         document.body.classList.add('app__body');
+
         const root = document.getElementById('root');
         if (root) {
-            root.className += ' channel-view';
+            root.classList.add('channel-view');
         }
+    }, []);
 
+    useEffect(() => {
         applyTheme(currentTheme);
-        return function cleanUp() {
-            document.body.classList.remove('app__body');
-        };
     }, [currentTheme]);
 
     useForceDocumentTitle('Playbooks');
