@@ -58,10 +58,6 @@ jest.mock('src/components/widgets/text_with_tooltip', () => ({
     __esModule: true,
     default: ({text}: {text: string}) => <span>{text}</span>,
 }));
-jest.mock('src/components/widgets/tooltip', () => ({
-    __esModule: true,
-    default: ({children}: {children: React.ReactNode}) => <>{children}</>,
-}));
 
 // Blanket mock so styled-components doesn't receive undefined for any icon
 jest.mock('@mattermost/compass-icons/components', () =>

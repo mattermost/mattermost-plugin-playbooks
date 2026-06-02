@@ -5,16 +5,10 @@
 
 import React from 'react';
 import renderer from 'react-test-renderer';
-import {OverlayTrigger} from 'react-bootstrap';
 
 import ProfileSelectorDefault from 'src/components/profile/profile_selector';
 
 import AssignTo from './assign_to';
-
-jest.mock('react-bootstrap', () => ({
-    OverlayTrigger: jest.fn(({children}: any) => children),
-    Tooltip: jest.fn(() => null),
-}));
 
 jest.mock('src/components/profile/profile_selector', () => ({
     __esModule: true,
@@ -39,12 +33,10 @@ jest.mock('src/components/rhs/rhs_shared', () => ({
 }));
 
 const MockProfileSelector = ProfileSelectorDefault as unknown as jest.Mock;
-const MockOverlayTrigger = OverlayTrigger as unknown as jest.Mock;
 
 describe('AssignTo', () => {
     beforeEach(() => {
         MockProfileSelector.mockClear();
-        MockOverlayTrigger.mockClear();
     });
 
     describe('roleOptions → extraSections', () => {
@@ -163,7 +155,7 @@ describe('AssignTo', () => {
 
     describe('edit-mode tooltip gating', () => {
         it('does not wrap with Assignee tooltip when role assignee_type is set', () => {
-            renderer.create(
+            const result = renderer.create(
                 <AssignTo
                     assignee_id=''
                     assignee_type='owner'
@@ -172,11 +164,11 @@ describe('AssignTo', () => {
                     isEditing={true}
                 />,
             );
-            expect(MockOverlayTrigger).not.toHaveBeenCalled();
+            expect(result.root.findAll((node) => 'aria-describedby' in node.props).length).toEqual(0);
         });
 
         it('wraps with Assignee tooltip when nothing is assigned in edit mode', () => {
-            renderer.create(
+            const result = renderer.create(
                 <AssignTo
                     assignee_id=''
                     assignee_type=''
@@ -185,7 +177,7 @@ describe('AssignTo', () => {
                     isEditing={true}
                 />,
             );
-            expect(MockOverlayTrigger).toHaveBeenCalled();
+            expect(result.root.findAll((node) => 'aria-describedby' in node.props).length).not.toEqual(0);
         });
     });
 

@@ -134,16 +134,6 @@ jest.mock('src/components/playbooks_selector', () => ({
     default: () => <div data-testid='playbooks-selector'/>,
 }));
 
-jest.mock('src/components/widgets/tooltip', () => ({
-    __esModule: true,
-    default: ({children, content}: {children: React.ReactNode; content: string}) => (
-        <div
-            data-testid='tooltip'
-            data-content={content}
-        >{children}</div>
-    ),
-}));
-
 jest.mock('src/components/backstage/playbook_edit/automation/channel_access', () => ({
     ButtonLabel: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
     StyledChannelSelector: () => <div data-testid='channel-selector'/>,

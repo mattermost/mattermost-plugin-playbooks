@@ -35,13 +35,6 @@ jest.mock('react-intl', () => {
     };
 });
 
-jest.mock('src/components/widgets/tooltip', () => ({
-    __esModule: true,
-    default: ({children, content}: any) => (
-        <div data-tooltip={content}>{children}</div>
-    ),
-}));
-
 const makeProps = (autoArchive: boolean, isLinkedChannel = false) => ({
     autoArchive,
     isLinkedChannel,
