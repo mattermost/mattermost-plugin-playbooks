@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -141,6 +142,43 @@ func getEnvWithDefault(name, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// doPluginRequest issues an authenticated request to an absolute URL using the
+// given client's credentials. Client4's Do* helpers now prefix the request with
+// the server's /api/v4 APIURL, which breaks calls to plugin endpoints (served
+// under /plugins/{id}/...), so we build the request directly here. The error
+// semantics mirror Client4.doAPIRequestReader: a >= 300 response yields the
+// parsed AppError alongside the raw response.
+func (e *TestEnvironment) doPluginRequest(c *model.Client4, ctx context.Context, method, url, data string, headers map[string]string) (*http.Response, error) {
+	rq, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range headers {
+		rq.Header.Set(k, v)
+	}
+
+	if c.AuthToken != "" {
+		rq.Header.Set(model.HeaderAuth, c.AuthType+" "+c.AuthToken)
+	}
+
+	rp, err := c.HTTPClient.Do(rq)
+	if err != nil {
+		return rp, err
+	}
+
+	if rp.StatusCode == http.StatusNotModified {
+		return rp, nil
+	}
+
+	if rp.StatusCode >= 300 {
+		defer rp.Body.Close()
+		return rp, model.AppErrorFromJSON(rp.Body)
+	}
+
+	return rp, nil
 }
 
 // createPluginBundleOnce creates the plugin bundle once and caches it for reuse

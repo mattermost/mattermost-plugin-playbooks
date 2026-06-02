@@ -238,7 +238,7 @@ func TestRunCreation(t *testing.T) {
 					tc.permissionsPrep()
 				}
 
-				result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+				result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 				tc.expected(t, result, err)
 			})
 		}
@@ -479,7 +479,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		assert.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusCreated, result.StatusCode)
@@ -620,7 +620,7 @@ func TestRunRetrieval(t *testing.T) {
 	})
 
 	t.Run("checklist autocomplete", func(t *testing.T) {
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
@@ -706,7 +706,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
@@ -728,7 +728,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
@@ -1480,7 +1480,7 @@ func TestIgnoreKeywords(t *testing.T) {
 			ChannelId: e.BasicPrivateChannel.Id,
 			Message:   "test message",
 			Props: model.StringInterface{
-				"attachments": []*model.SlackAttachment{
+				"attachments": []*model.MessageAttachment{
 					{
 						Actions: []*model.PostAction{
 							{
@@ -1508,7 +1508,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.Error(t, err)
 		require.Equal(t, http.StatusForbidden, result.StatusCode)
 	})
@@ -1524,7 +1524,7 @@ func TestIgnoreKeywords(t *testing.T) {
 			ChannelId: e.BasicPrivateChannel.Id,
 			Message:   "test message",
 			Props: model.StringInterface{
-				"attachments": []*model.SlackAttachment{
+				"attachments": []*model.MessageAttachment{
 					{
 						Actions: []*model.PostAction{
 							{
@@ -1552,7 +1552,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})
@@ -2050,7 +2050,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 
 		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
 		require.Error(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -2211,7 +2211,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			"assignee_type": app.AssigneeTypeOwner,
 		})
 		require.NoError(t, err)
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
 		require.Error(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -2222,7 +2222,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			"assignee_property_field_id": meField.ID,
 		})
 		require.NoError(t, err)
-		resp2, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body2), nil)
+		resp2, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body2), nil)
 		require.Error(t, err)
 		require.NotNil(t, resp2)
 		assert.Equal(t, http.StatusBadRequest, resp2.StatusCode)
@@ -4169,7 +4169,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		require.NoError(t, err)
 
 		// Non-owner submitting the dialog with FinishRun=true should get 403
-		result, err := serverClient2.DoAPIRequestWithHeaders(context.Background(), "POST",
+		result, err := e.doPluginRequest(serverClient2, context.Background(), "POST",
 			serverClient2.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/update-status-dialog",
 			string(dialogRequestBytes), nil)
 		require.Error(t, err)
@@ -4549,7 +4549,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.NotEqual(t, int64(0), channel.DeleteAt,
 			"channel must be archived (DeleteAt != 0) after finishing a run with AutoArchiveChannel=true")
@@ -4586,7 +4586,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must not be archived after finishing a run with AutoArchiveChannel=false")
@@ -4631,7 +4631,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), existingChannel.Id, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), existingChannel.Id)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"pre-existing linked channel must not be archived even when AutoArchiveChannel=true")
@@ -4680,12 +4680,12 @@ func TestAutoArchiveChannel(t *testing.T) {
 		require.NoError(t, err)
 
 		// ChannelCreatedByRun was cleared when ChannelID was swapped, so auto-archive must not fire.
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), victimChannel.Id, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), victimChannel.Id)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"victim channel must not be archived after ChannelID was swapped via UpdateRun")
 
-		origChannel, _, err := e.ServerAdminClient.GetChannel(context.Background(), originalChannelID, "")
+		origChannel, _, err := e.ServerAdminClient.GetChannel(context.Background(), originalChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), origChannel.DeleteAt,
 			"original channel must not be archived after ChannelID was swapped away")
@@ -4722,7 +4722,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		require.NotEqual(t, int64(0), channel.DeleteAt,
 			"channel must be archived before restore")
@@ -4730,7 +4730,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must be unarchived (DeleteAt == 0) after restoring a run with AutoArchiveChannel=true")
@@ -4770,7 +4770,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must remain unarchived after restoring a run that was not auto-archived")
@@ -4807,7 +4807,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		require.NotEqual(t, int64(0), channel.DeleteAt, "channel must be archived before manual unarchive")
 
@@ -4815,7 +4815,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		_, _, err = e.ServerAdminClient.RestoreChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 
-		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		require.Equal(t, int64(0), channel.DeleteAt, "channel must be unarchived after manual restore")
 
@@ -4824,7 +4824,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must remain unarchived after run restore (it was already unarchived manually)")
@@ -4833,7 +4833,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.NotEqual(t, int64(0), channel.DeleteAt,
 			"channel must be archived again on second finish — AutoArchivedChannel flag was correctly cleared on restore")
@@ -5362,7 +5362,7 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		outsider, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 			Email:    "outsider-" + model.NewId() + "@example.com",
 			Username: "outsider" + model.NewId(),
-			Password: "Password123!",
+			Password: testUserPassword,
 		})
 		require.NoError(t, err)
 
@@ -5431,7 +5431,7 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		targetUser, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 			Email:    "target-" + model.NewId() + "@example.com",
 			Username: "target" + model.NewId(),
-			Password: "Password123!",
+			Password: testUserPassword,
 		})
 		require.NoError(t, err)
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, targetUser.Id)

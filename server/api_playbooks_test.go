@@ -1835,7 +1835,7 @@ func TestAddPostToTimeline(t *testing.T) {
 	require.NoError(t, err)
 
 	// Post the request with the dialog payload and verify it is allowed
-	_, err = e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
+	_, err = e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
 	require.NoError(t, err)
 }
 
@@ -2725,7 +2725,7 @@ func TestPatchPlaybook(t *testing.T) {
 
 		// Create a fresh team member who is intentionally not a playbook member,
 		// then log in once to obtain an auth token for the PATCH attempt.
-		nonMemberPassword := "Password123!"
+		nonMemberPassword := testUserPassword
 		suffix := model.NewId()
 		nonMember, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 			Email:    "patch-nonmember-" + suffix + "@example.com",
