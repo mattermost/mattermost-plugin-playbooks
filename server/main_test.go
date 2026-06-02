@@ -150,7 +150,7 @@ func getEnvWithDefault(name, defaultValue string) string {
 // under /plugins/{id}/...), so we build the request directly here. The error
 // semantics mirror Client4.doAPIRequestReader: a >= 300 response yields the
 // parsed AppError alongside the raw response.
-func doPluginRequest(c *model.Client4, ctx context.Context, method, url, data string, headers map[string]string) (*http.Response, error) {
+func (e *TestEnvironment) doPluginRequest(c *model.Client4, ctx context.Context, method, url, data string, headers map[string]string) (*http.Response, error) {
 	rq, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(data))
 	if err != nil {
 		return nil, err

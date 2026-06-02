@@ -238,7 +238,7 @@ func TestRunCreation(t *testing.T) {
 					tc.permissionsPrep()
 				}
 
-				result, err := doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+				result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 				tc.expected(t, result, err)
 			})
 		}
@@ -479,7 +479,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		assert.NoError(t, err)
 
-		result, err := doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusCreated, result.StatusCode)
@@ -620,7 +620,7 @@ func TestRunRetrieval(t *testing.T) {
 	})
 
 	t.Run("checklist autocomplete", func(t *testing.T) {
-		resp, err := doPluginRequest(e.ServerClient, context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
@@ -706,7 +706,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
@@ -728,7 +728,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
@@ -1508,7 +1508,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.Error(t, err)
 		require.Equal(t, http.StatusForbidden, result.StatusCode)
 	})
@@ -1552,7 +1552,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})
@@ -2050,7 +2050,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 
 		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
-		resp, err := doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
 		require.Error(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -2211,7 +2211,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			"assignee_type": app.AssigneeTypeOwner,
 		})
 		require.NoError(t, err)
-		resp, err := doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
 		require.Error(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -2222,7 +2222,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			"assignee_property_field_id": meField.ID,
 		})
 		require.NoError(t, err)
-		resp2, err := doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body2), nil)
+		resp2, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body2), nil)
 		require.Error(t, err)
 		require.NotNil(t, resp2)
 		assert.Equal(t, http.StatusBadRequest, resp2.StatusCode)
@@ -4169,7 +4169,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		require.NoError(t, err)
 
 		// Non-owner submitting the dialog with FinishRun=true should get 403
-		result, err := doPluginRequest(serverClient2, context.Background(), "POST",
+		result, err := e.doPluginRequest(serverClient2, context.Background(), "POST",
 			serverClient2.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/update-status-dialog",
 			string(dialogRequestBytes), nil)
 		require.Error(t, err)
