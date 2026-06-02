@@ -713,8 +713,8 @@ func (r *Runner) actionInfo(args []string) {
 			tasks += icon + item.Title + timestamp + "\n"
 		}
 	}
-	attachment := &model.SlackAttachment{
-		Fields: []*model.SlackAttachmentField{
+	attachment := &model.MessageAttachment{
+		Fields: []*model.MessageAttachmentField{
 			{Title: "Name:", Value: fmt.Sprintf("**%s**", strings.Trim(playbookRun.Name, " "))},
 			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(playbookRun.CreateAt), time.Now())},
 			{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
@@ -724,7 +724,7 @@ func (r *Runner) actionInfo(args []string) {
 
 	post := &model.Post{
 		Props: map[string]interface{}{
-			"attachments": []*model.SlackAttachment{attachment},
+			"attachments": []*model.MessageAttachment{attachment},
 		},
 	}
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
