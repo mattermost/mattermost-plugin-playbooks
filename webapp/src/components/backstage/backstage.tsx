@@ -34,11 +34,11 @@ const Backstage = () => {
 
     const currentTheme = useAppSelector(getTheme);
     useEffect(() => {
-        // Note: previously this effect also toggled the `app__body` class on `document.body` and appended
-        // `channel-view` to `#root`. Both of those are now owned by the host webapp (`WithUserTheme` owns
-        // `app__body`; `LoggedIn` adds `channel-view` to `#root`). Duplicating them here caused a momentary
-        // white flash on Playbooks → Channels navigation because Playbooks' cleanup removed `app__body`
-        // before the deeply-nested ChannelController had a chance to re-add it (MM-67913).
+        // Pre-11.8 servers need Playbooks to add this; 11.8+ core also owns it. Do not remove on unmount.
+        document.body.classList.add('app__body');
+    }, []);
+
+    useEffect(() => {
         applyTheme(currentTheme);
     }, [currentTheme]);
 
