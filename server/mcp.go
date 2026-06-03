@@ -276,6 +276,7 @@ func (p *Plugin) serveMCPIfMatch(w http.ResponseWriter, r *http.Request) bool {
 			http.Error(w, "MCP server unavailable", http.StatusServiceUnavailable)
 			return
 		}
+		r.Body = http.MaxBytesReader(w, r.Body, api.MaxRequestSize)
 		srv.ServeHTTP(w, r)
 	}))
 	handler.ServeHTTP(w, r)

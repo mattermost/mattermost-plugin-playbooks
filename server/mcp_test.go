@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-agents/public/bridgeclient"
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
@@ -147,6 +149,40 @@ func TestConfigurationClonesExposeMCPExternal(t *testing.T) {
 	cfg := &config.Configuration{ExposeMCPExternal: true}
 	cloned := cfg.Clone()
 	assert.True(t, cloned.ExposeMCPExternal)
+}
+
+func TestServeMCPIfMatchAppliesRequestSizeLimit(t *testing.T) {
+	helperServer := mcphelper.NewServer(nil, mcphelper.PluginMCPServer{
+		PluginID: manifest.Id,
+		Name:     "Playbooks MCP",
+		Path:     playbooksMCPEndpoint,
+		Version:  manifest.Version,
+	})
+
+	p := &Plugin{mcpServer: helperServer}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Set("Mattermost-Plugin-ID", bridgeclient.AiPluginID)
+		r.Header.Set("Mattermost-User-Id", "user-id")
+		r.Header.Set("X-Mattermost-UserID", "user-id")
+		if !p.serveMCPIfMatch(w, r) {
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(ts.Close)
+
+	req, err := http.NewRequest(http.MethodPost, ts.URL+playbooksMCPEndpoint, bytes.NewReader(bytes.Repeat([]byte("x"), api.MaxRequestSize+1)))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Contains(t, string(data), "failed to read body")
 }
 
 func TestServeMCPIfMatchServesToolCall(t *testing.T) {
