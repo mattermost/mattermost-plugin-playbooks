@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // --- Argument structs ---
@@ -61,36 +60,6 @@ type RemoveSectionArgs struct {
 }
 
 // --- Tool registration ---
-
-func (p *PlaybooksToolProvider) addChecklistTools(server *mcp.Server) {
-	addTool(server, p.clientFactory, "check_item",
-		"Change the state of a checklist item in a playbook run. Use new_state='closed' to check it off or 'open' to uncheck it. Checklist and item numbers are zero-based indexes. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2, \"new_state\": \"closed\"}",
-		toolCheckItem)
-
-	addTool(server, p.clientFactory, "add_checklist_item",
-		"Add a new item to an existing checklist in a playbook run. The checklist_number is a zero-based index. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\"}",
-		toolAddChecklistItem)
-
-	addTool(server, p.clientFactory, "edit_checklist_item",
-		"Edit the title, description, or slash command of an existing checklist item. Only provided fields are updated. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\"}",
-		toolEditChecklistItem)
-
-	addTool(server, p.clientFactory, "remove_checklist_item",
-		"Remove a checklist item from a playbook run. This permanently deletes the item. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}",
-		toolRemoveChecklistItem)
-
-	addTool(server, p.clientFactory, "add_section",
-		"Add a new section (checklist group) to a playbook run. Sections organize tasks into logical groups. Example: {\"run_id\": \"abc123...\", \"title\": \"Post-incident review\"}",
-		toolAddSection)
-
-	addTool(server, p.clientFactory, "rename_section",
-		"Rename an existing section in a playbook run. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Updated section name\"}",
-		toolRenameSection)
-
-	addTool(server, p.clientFactory, "remove_section",
-		"Remove an entire section and all its items from a playbook run. This is permanent. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 1}",
-		toolRemoveSection)
-}
 
 func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Server) {
 	addMCPHelperTool(server, p.clientFactory, "check_item",

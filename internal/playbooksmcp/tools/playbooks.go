@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 const defaultReminderTimerSeconds int64 = 86400
@@ -67,10 +66,6 @@ type CreatePlaybookMetric struct {
 type createPlaybookResult struct {
 	PlaybookURL string `json:"playbook_url"`
 	Playbook    any    `json:"playbook"`
-}
-
-func (p *PlaybooksToolProvider) addPlaybookTools(server *mcp.Server) {
-	addTool(server, p.clientFactory, "create_playbook", "Create a Mattermost Playbook in a team with optional stages/checklists, tasks, members, invitations, default owner, broadcast settings, metrics, run channel options, and webhooks. Returns the created playbook and browser URL.", toolCreatePlaybook)
 }
 
 func (p *PlaybooksToolProvider) addMCPHelperPlaybookTools(server *mcphelper.Server) {

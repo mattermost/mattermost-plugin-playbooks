@@ -22,9 +22,7 @@ type APIClient interface {
 	GetPlaybookURL(playbookID string) string
 }
 
-// ClientFactory creates an APIClient for the current request context.
-// For STDIO transport, this returns the same static client every time.
-// For in-memory transport, this resolves the user's session token from context.
+// ClientFactory creates an APIClient for the current MCP request context.
 type ClientFactory func(ctx context.Context) (APIClient, error)
 
 // PlaybooksToolProvider manages and registers all Playbooks MCP tools.
@@ -40,26 +38,11 @@ func NewPlaybooksToolProvider(clientFactory ClientFactory) (*PlaybooksToolProvid
 	return &PlaybooksToolProvider{clientFactory: clientFactory}, nil
 }
 
-// ProvideTools registers all available tools with the MCP server.
-func (p *PlaybooksToolProvider) ProvideTools(mcpServer *mcp.Server) {
-	p.addRunTools(mcpServer)
-	p.addChecklistTools(mcpServer)
-	p.addPlaybookTools(mcpServer)
-}
-
-// ProvideMCPHelperTools registers all available tools with a cross-plugin MCP helper server.
+// ProvideMCPHelperTools registers all available tools with the Agents MCP helper server.
 func (p *PlaybooksToolProvider) ProvideMCPHelperTools(mcpServer *mcphelper.Server) {
 	p.addMCPHelperRunTools(mcpServer)
 	p.addMCPHelperChecklistTools(mcpServer)
 	p.addMCPHelperPlaybookTools(mcpServer)
-}
-
-// addTool registers a typed tool using the generic mcp.AddTool API.
-// The SDK infers the input schema from In, validates input, and wraps
-// errors as IsError tool results automatically.
-func addTool[In any](server *mcp.Server, factory ClientFactory, name, description string, handler func(context.Context, APIClient, In) (string, error)) {
-	tool := &mcp.Tool{Name: name, Description: description}
-	mcp.AddTool(server, tool, makeToolHandler(factory, handler))
 }
 
 func addMCPHelperTool[In any](server *mcphelper.Server, factory ClientFactory, name, description string, handler func(context.Context, APIClient, In) (string, error)) {

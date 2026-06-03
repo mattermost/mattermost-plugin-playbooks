@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // --- Argument structs ---
@@ -123,32 +122,6 @@ type playbookRunDetail struct {
 }
 
 // --- Tool registration ---
-
-func (p *PlaybooksToolProvider) addRunTools(server *mcp.Server) {
-	addTool(server, p.clientFactory, "list_runs",
-		"List playbook runs and channel checklists with optional filters. Returns a paginated list showing ID, name, type, status, owner, and timestamps. Use status='InProgress' to see active runs and type='channelChecklist' to list checklists. Example: {\"status\": \"InProgress\", \"type\": \"channelChecklist\", \"per_page\": 5}",
-		toolListRuns)
-
-	addTool(server, p.clientFactory, "create_checklist",
-		"Create a channel checklist (a playbook run without an associated playbook) in an existing Mattermost channel. The authenticated user is used as owner. Optionally include initial sections and items. Example: {\"name\": \"Release checklist\", \"channel_id\": \"abc123...\", \"sections\": [{\"title\": \"Pre-release\", \"items\": [{\"title\": \"Confirm changelog\"}]}]}",
-		toolCreateChecklist)
-
-	addTool(server, p.clientFactory, "get_run",
-		"Get full details of a specific playbook run, including checklists with item states, participants, and status. Use this to understand the current state of a run before taking action. Example: {\"run_id\": \"abc123...\"}",
-		toolGetRun)
-
-	addTool(server, p.clientFactory, "update_run_status",
-		"Post a status update to a playbook run. The message supports Markdown. Optionally set a reminder interval or finish the run. You must be a participant to post updates. Example: {\"run_id\": \"abc123...\", \"message\": \"Investigation complete, root cause identified.\", \"reminder_seconds\": 1800}",
-		toolUpdateRunStatus)
-
-	addTool(server, p.clientFactory, "finish_run",
-		"Finish (close) a playbook run. This marks the run as Finished. Example: {\"run_id\": \"abc123...\"}",
-		toolFinishRun)
-
-	addTool(server, p.clientFactory, "change_run_owner",
-		"Change the owner of a playbook run. The new owner must be a valid Mattermost user. Example: {\"run_id\": \"abc123...\", \"owner_id\": \"def456...\"}",
-		toolChangeRunOwner)
-}
 
 func (p *PlaybooksToolProvider) addMCPHelperRunTools(server *mcphelper.Server) {
 	addMCPHelperTool(server, p.clientFactory, "list_runs",
