@@ -448,10 +448,10 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             cy.findByTestId('dropdownmenu').findByText('Restart').should('exist');
 
             // # Hover to trigger the tooltip
-            cy.findByTestId('dropdownmenu').findByText('Restart').trigger('mouseover');
+            cy.findByTestId('dropdownmenu').findByText('Restart').trigger('mousemove');
 
             // * Tooltip confirms the owner-only restriction
-            cy.uiGetToolTip('Only the run owner can restart this run');
+            cy.uiGetToolTip('Only the run owner can restart this run', true);
         });
     });
 

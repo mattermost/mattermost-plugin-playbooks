@@ -20,11 +20,12 @@ declare namespace Cypress {
         /**
          * Get tooltip
          *
-         * @param {string} text of the tooltip
+         * @param {string} text - The text of the tooltip
+         * @param {boolean | undefined} hidden - Include tooltips rendered outside of the focused modal or menu
          *
          * @example
          *   cy.uiGetToolTip('text');
          */
-        uiGetToolTip(text: string): Chainable;
+        uiGetToolTip(text: string, hidden = false): Chainable;
     }
 }
