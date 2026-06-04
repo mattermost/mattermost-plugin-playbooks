@@ -51,7 +51,7 @@ const AutoArchiveToggle = ({autoArchive, isLinkedChannel, onChange, disabled}: P
                     id='auto-archive-channel-toggle-tooltip'
                     title={formatMessage({defaultMessage: 'The channel cannot be auto-archived when linking to an existing channel.'})}
                 >
-                    <span tabIndex={0}>{toggle}</span>
+                    {toggle}
                 </WithTooltip>
             ) : toggle}
             {!isLinkedChannel && autoArchive && (
