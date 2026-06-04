@@ -173,7 +173,7 @@ describe('playbooks > edit > auto archive', () => {
             cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('be.disabled');
 
             // * Assert a tooltip explains why it's disabled
-            cy.findByTestId('auto-archive-channel-toggle').find('span').first().trigger('mouseover');
+            cy.findByTestId('auto-archive-channel-toggle').trigger('mousemove');
             cy.findByRole('tooltip').should('be.visible').and('contain', TOOLTIP_DISABLED_TEXT);
 
             // * Assert via API that channel_mode is link_existing_channel
