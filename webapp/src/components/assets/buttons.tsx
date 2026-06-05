@@ -7,13 +7,21 @@ import styled from 'styled-components';
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 import {Button} from '@mattermost/shared/components/button';
 
-export const PrimaryButton = styled(Button).attrs({emphasis: 'primary'})``;
+export const PrimaryButton = styled(Button).attrs({emphasis: 'primary'})`
+    /* This allows this component to be styled by other components using styled-components */
+`;
 
-export const TertiaryButton = styled(Button).attrs({emphasis: 'tertiary'})``;
+export const TertiaryButton = styled(Button).attrs({emphasis: 'tertiary'})`
+    /* This allows this component to be styled by other components using styled-components */
+`;
 
-export const SecondaryButton = styled(Button).attrs({emphasis: 'secondary'})``;
+export const SecondaryButton = styled(Button).attrs({emphasis: 'secondary'})`
+    /* This allows this component to be styled by other components using styled-components */
+`;
 
-export const DestructiveButton = styled(Button).attrs({emphasis: 'primary', variant: 'destructive'})``;
+export const DestructiveButton = styled(Button).attrs({emphasis: 'primary', variant: 'destructive'})`
+    /* This allows this component to be styled by other components using styled-components */
+`;
 
 export type UpgradeButtonProps = React.ComponentProps<typeof TertiaryButton>;
 
