@@ -26,6 +26,6 @@ declare namespace Cypress {
          * @example
          *   cy.uiGetToolTip('text');
          */
-        uiGetToolTip(text: string, hidden = false): Chainable;
+        uiGetToolTip(text: string, hidden?: boolean): Chainable;
     }
 }
