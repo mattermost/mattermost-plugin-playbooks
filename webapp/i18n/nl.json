@@ -967,5 +967,16 @@
     "6qFGE1": "Checklists zijn niet beschikbaar voor directe- of groepsberichten",
     "Ri3yEX": "Open een kanaal om checklists te maken en uit te voeren.",
     "55HPp9": "Wijzigingen in voorwaarden bewaren",
-    "U7Ai5E": "Voorwaarde verwijderen"
+    "U7Ai5E": "Voorwaarde verwijderen",
+    "+8UeKB": "Weet je zeker dat je {count} geselecteerde {count, plural, one {taak} other {taken}} wil verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "0X/ezu": "{fields} zal verschijnen als letterlijke tekst - als dit onbedoeld is, controleer dan de veldnaam aan de hand van de beschikbare opties.",
+    "0cimup": "Naam maker",
+    "450Fty": "Geen",
+    "4F90TN": "Bevestig uitschakelen retrospectief",
+    "4hzY0/": "Er is een fout opgetreden tijdens het maken van de uitvoering.",
+    "4j2wKr": "Het was niet mogelijk om de uitvoering te beëindigen.",
+    "724CrE": "Selecteer...",
+    "8PDS6L": "Beheer uitvoeringen beperken tot eigenaar",
+    "8T9fet": "{count} {count, plural, one {taak} other {taken}} verwijderen?",
+    "8UDi5O": "Voorbeeld:"
 }
