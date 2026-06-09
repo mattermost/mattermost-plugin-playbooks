@@ -15,10 +15,10 @@ import {
     type SeededCreationData,
     type SeededRestrictedCreationData,
     loginAs,
+    loginAsAdmin,
     seedPlaybookCreationData,
     seedRestrictedCreationData,
 } from '../helpers/auth';
-import {LoginPage} from '../pages/login_page';
 import {PlaybookEditorPage} from '../pages/playbook_editor_page';
 import {PlaybooksPage} from '../pages/playbooks_page';
 
@@ -31,7 +31,7 @@ test.describe('playbooks creation', () => {
         const context = await browser.newContext({baseURL});
         const page = await context.newPage();
 
-        await new LoginPage(page).loginAsAdmin();
+        await loginAsAdmin(page);
         seededData = await seedPlaybookCreationData(page, 'playbooks-create');
 
         await context.close();
@@ -118,7 +118,7 @@ test.describe('playbooks creation without permission', () => {
         const context = await browser.newContext({baseURL});
         const page = await context.newPage();
 
-        await new LoginPage(page).loginAsAdmin();
+        await loginAsAdmin(page);
         try {
             seededData = await seedRestrictedCreationData(page, 'pb-create-restricted');
         } catch (err) {

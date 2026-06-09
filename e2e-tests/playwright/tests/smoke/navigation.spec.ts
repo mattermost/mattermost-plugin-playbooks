@@ -3,8 +3,7 @@
 
 import {test} from '@playwright/test';
 
-import {type SeededNavigationData, seedPlaybookNavigationData} from '../helpers/auth';
-import {LoginPage} from '../pages/login_page';
+import {type SeededNavigationData, loginAsAdmin, seedPlaybookNavigationData} from '../helpers/auth';
 import {PlaybooksPage} from '../pages/playbooks_page';
 
 const specTeamPrefix = 'playbooks-navigation';
@@ -17,9 +16,8 @@ test.describe('playbooks navigation', () => {
             baseURL: process.env.MM_SERVICESETTINGS_SITEURL || 'http://localhost:8065',
         });
         const page = await context.newPage();
-        const loginPage = new LoginPage(page);
 
-        await loginPage.loginAsAdmin();
+        await loginAsAdmin(page);
         seededData = await seedPlaybookNavigationData(page, specTeamPrefix);
 
         await context.close();
@@ -32,12 +30,11 @@ test.describe('playbooks navigation', () => {
      * A playbook and a run are seeded in the test team via the API.
      */
     test('opens the playbooks and runs views', {tag: '@playbooks'}, async ({page}) => {
-        const loginPage = new LoginPage(page);
         const playbooksPage = new PlaybooksPage(page);
         const {playbookTitle, runName, teamName} = seededData;
 
-        // # Log in and open the Playbooks product for the seeded team
-        await loginPage.loginAsAdmin();
+        // # Log in via API and open the Playbooks product for the seeded team
+        await loginAsAdmin(page);
         await playbooksPage.goto(teamName);
 
         // # Open the playbooks list
