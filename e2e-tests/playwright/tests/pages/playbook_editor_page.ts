@@ -43,6 +43,9 @@ export class PlaybookEditorPage {
         await this.page.getByRole('button', {name: 'Rename'}).click();
         await this.titleEditInput.fill(newTitle);
         await this.saveButton.click();
+
+        // The editor should reflect the new title once the rename is saved.
+        await this.expectTitle(newTitle);
     }
 
     async duplicate() {

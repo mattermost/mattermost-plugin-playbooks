@@ -51,11 +51,8 @@ test.describe('playbook editor header', () => {
         const playbook = await createPlaybook(page, seededData.teamId, `Rename Me ${Date.now()}`);
         await editor.goto(seededData.teamName, playbook.id);
 
-        // # Rename the playbook
+        // # Rename the playbook (rename() verifies the editor shows the new title)
         await editor.rename('renamed playbook');
-
-        // * The editor shows the updated name
-        await editor.expectTitle('renamed playbook');
 
         // * The new name persists across a reload
         await page.reload();
