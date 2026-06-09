@@ -54,6 +54,9 @@ test.describe('playbook editor header', () => {
         // # Rename the playbook
         await editor.rename('renamed playbook');
 
+        // * The editor shows the updated name
+        await editor.expectTitle('renamed playbook');
+
         // * The new name persists across a reload
         await page.reload();
         await editor.expectTitle('renamed playbook');
