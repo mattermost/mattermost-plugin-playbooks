@@ -194,7 +194,8 @@ test.describe('playbooks creation without permission', () => {
         // # Open the create-playbook dropdown
         await playbooksPage.openCreatePlaybookDropdown();
 
-        // * The "Create New Playbook" entry is absent
+        // * The dropdown opened, but the "Create New Playbook" entry is absent
+        await playbooksPage.expectCreatePlaybookDropdownOpen();
         await playbooksPage.expectCreatePlaybookEntryHidden();
     });
 

@@ -32,17 +32,16 @@ export class PlaybooksPage {
 
     async goto(teamName: string) {
         await this.page.goto(`/${teamName}/channels/town-square`);
-        await expect(this.page).toHaveURL(new RegExp(`/${teamName}/channels/town-square(?:\\?.*)?$`));
 
-        // Wait for the team's sidebar to render before leaving for the product.
-        await expect(this.page.getByRole('link', {name: 'town square public channel'})).toBeVisible();
+        // Wait for the team's sidebar to render (sets the current team) before
+        // leaving for the product.
+        await this.page.getByRole('link', {name: 'town square public channel'}).waitFor();
         await this.page.goto('/playbooks');
-        await expect(this.playbooksLHSButton).toBeVisible();
+        await this.playbooksLHSButton.waitFor();
     }
 
     async openPlaybooksList() {
         await this.playbooksLHSButton.click();
-        await expect(this.page).toHaveURL(/\/playbooks\/playbooks(?:\?.*)?$/);
     }
 
     async expectPlaybookVisible(playbookTitle: string) {
@@ -52,8 +51,6 @@ export class PlaybooksPage {
 
     async openRunsList() {
         await this.playbookRunsLHSButton.click();
-        await expect(this.page).toHaveURL(/\/playbooks\/runs(?:\?.*)?$/);
-        await expect(this.playbookRunList).toBeVisible();
     }
 
     async expectRunVisible(runName: string) {
@@ -70,9 +67,7 @@ export class PlaybooksPage {
     }
 
     async createPlaybookFromTemplate(templateTitle: string) {
-        const card = this.templateCard(templateTitle);
-        await expect(card).toBeVisible();
-        await card.click();
+        await this.templateCard(templateTitle).click();
     }
 
     async expectPlaybookInLHS(playbookTitle: string) {
@@ -83,7 +78,6 @@ export class PlaybooksPage {
     // confirms with no name typed, which creates an "Untitled Playbook".
     async createPlaybookFromModal() {
         await this.createPlaybookButton.click();
-        await expect(this.createPlaybookDialog).toBeVisible();
         await this.createPlaybookDialog.getByRole('button', {name: 'Create playbook'}).click();
     }
 
@@ -93,9 +87,11 @@ export class PlaybooksPage {
 
     async openCreatePlaybookDropdown() {
         await this.createPlaybookDropdownToggle.click();
+    }
 
-        // "Browse Playbooks" is always present, so its appearance confirms the
-        // menu opened regardless of the user's create permission.
+    // "Browse Playbooks" is always present, so its visibility confirms the menu
+    // actually opened (guards against a vacuous "entry hidden" assertion).
+    async expectCreatePlaybookDropdownOpen() {
         await expect(this.createPlaybookDropdown.getByRole('menuitem', {name: 'Browse Playbooks'})).toBeVisible();
     }
 

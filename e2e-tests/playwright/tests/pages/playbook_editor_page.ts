@@ -24,9 +24,9 @@ export class PlaybookEditorPage {
         // Visit the team first so the current team (and its LHS) is set before
         // entering the (team-agnostic) editor URL.
         await this.page.goto(`/${teamName}/channels/town-square`);
-        await expect(this.page.getByRole('link', {name: 'town square public channel'})).toBeVisible();
+        await this.page.getByRole('link', {name: 'town square public channel'}).waitFor();
         await this.page.goto(`/playbooks/playbooks/${playbookId}/outline`);
-        await expect(this.title).toBeVisible();
+        await this.title.waitFor();
     }
 
     async expectOutlineOpened(playbookTitle: string) {
