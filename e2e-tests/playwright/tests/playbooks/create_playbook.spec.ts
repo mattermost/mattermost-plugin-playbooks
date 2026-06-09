@@ -11,28 +11,45 @@
 
 import {test} from '@playwright/test';
 
-import {
-    type SeededCreationData,
-    type SeededRestrictedCreationData,
-    loginAs,
-    loginAsAdmin,
-    seedPlaybookCreationData,
-    seedRestrictedCreationData,
-} from '../helpers/auth';
+import {loginAs, loginAsAdmin} from '../helpers/auth';
+import {uniqueSuffix} from '../helpers/client';
+import {createPlaybook} from '../helpers/playbook';
+import {addUserToTeam, createTeam, createTeamScheme, getTeamMemberRole, setRolePermissions, setTeamScheme} from '../helpers/team';
+import {type SeededUser, createUser} from '../helpers/user';
 import {PlaybookEditorPage} from '../pages/playbook_editor_page';
 import {PlaybooksPage} from '../pages/playbooks_page';
 
 const baseURL = process.env.MM_SERVICESETTINGS_SITEURL || 'http://localhost:8065';
 
+interface CreationData {
+    teamName: string;
+    user: SeededUser;
+}
+
+interface RestrictedData {
+    emptyTeamName: string;
+    populatedTeamName: string;
+    populatedPlaybookTitle: string;
+    user: SeededUser;
+}
+
 test.describe('playbooks creation', () => {
-    let seededData: SeededCreationData;
+    let seededData: CreationData;
 
     test.beforeAll(async ({browser}) => {
         const context = await browser.newContext({baseURL});
         const page = await context.newPage();
 
+        // Seed (as admin) a user that belongs to two teams (so creation exercises
+        // the multi-team path) plus an existing playbook so the list view renders.
         await loginAsAdmin(page);
-        seededData = await seedPlaybookCreationData(page, 'playbooks-create');
+        const team = await createTeam(page, 'playbooks-create');
+        const secondTeam = await createTeam(page, 'playbooks-create-second');
+        const user = await createUser(page, 'playbooks-create-user');
+        await addUserToTeam(page, team.id, user.id);
+        await addUserToTeam(page, secondTeam.id, user.id);
+        await createPlaybook(page, team.id, `PW Existing Playbook ${uniqueSuffix()}`);
+        seededData = {teamName: team.name, user};
 
         await context.close();
     });
@@ -107,7 +124,7 @@ test.describe('playbooks creation', () => {
 });
 
 test.describe('playbooks creation without permission', () => {
-    let seededData: SeededRestrictedCreationData;
+    let seededData: RestrictedData;
 
     // Restricting playbook creation needs a custom team scheme, which requires
     // an enterprise license. CI provides one (MM_LICENSE); a plain local server
@@ -120,7 +137,31 @@ test.describe('playbooks creation without permission', () => {
 
         await loginAsAdmin(page);
         try {
-            seededData = await seedRestrictedCreationData(page, 'pb-create-restricted');
+            // A scheme whose team member role cannot create playbooks, applied to
+            // two teams: one empty and one already holding a playbook.
+            const scheme = await createTeamScheme(page, 'pb-create-restricted scheme');
+            const emptyTeam = await createTeam(page, 'pb-create-restricted-empty');
+            const populatedTeam = await createTeam(page, 'pb-create-restricted-populated');
+            await setTeamScheme(page, emptyTeam.id, scheme.id);
+            await setTeamScheme(page, populatedTeam.id, scheme.id);
+
+            const user = await createUser(page, 'pb-create-restricted-user');
+            await addUserToTeam(page, emptyTeam.id, user.id);
+            await addUserToTeam(page, populatedTeam.id, user.id);
+
+            const memberRole = await getTeamMemberRole(page, scheme);
+            const permissions = memberRole.permissions.filter((perm) => !(/playbook_(private|public)_create/).test(perm));
+            await setRolePermissions(page, memberRole.id, permissions);
+
+            const populatedPlaybookTitle = `PW Restricted Playbook ${uniqueSuffix()}`;
+            await createPlaybook(page, populatedTeam.id, populatedPlaybookTitle);
+
+            seededData = {
+                emptyTeamName: emptyTeam.name,
+                populatedTeamName: populatedTeam.name,
+                populatedPlaybookTitle,
+                user,
+            };
         } catch (err) {
             if (String(err).includes('does not support creating permissions schemes')) {
                 skipReason = 'Custom team schemes require an enterprise license (set MM_LICENSE).';

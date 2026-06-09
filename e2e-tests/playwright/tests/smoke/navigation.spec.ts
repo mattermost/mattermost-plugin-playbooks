@@ -3,22 +3,39 @@
 
 import {test} from '@playwright/test';
 
-import {type SeededNavigationData, loginAsAdmin, seedPlaybookNavigationData} from '../helpers/auth';
+import {loginAsAdmin} from '../helpers/auth';
+import {uniqueSuffix} from '../helpers/client';
+import {createPlaybook} from '../helpers/playbook';
+import {createRun} from '../helpers/run';
+import {createTeam} from '../helpers/team';
+import {getCurrentUser} from '../helpers/user';
 import {PlaybooksPage} from '../pages/playbooks_page';
 
-const specTeamPrefix = 'playbooks-navigation';
+const baseURL = process.env.MM_SERVICESETTINGS_SITEURL || 'http://localhost:8065';
+
+interface NavigationData {
+    teamName: string;
+    playbookTitle: string;
+    runName: string;
+}
 
 test.describe('playbooks navigation', () => {
-    let seededData: SeededNavigationData;
+    let seededData: NavigationData;
 
     test.beforeAll(async ({browser}) => {
-        const context = await browser.newContext({
-            baseURL: process.env.MM_SERVICESETTINGS_SITEURL || 'http://localhost:8065',
-        });
+        const context = await browser.newContext({baseURL});
         const page = await context.newPage();
 
         await loginAsAdmin(page);
-        seededData = await seedPlaybookNavigationData(page, specTeamPrefix);
+
+        const currentUser = await getCurrentUser(page);
+        const team = await createTeam(page, 'playbooks-navigation');
+        const playbookTitle = `PW Playbook ${uniqueSuffix()}`;
+        const runName = `PW Run ${uniqueSuffix()}`;
+        const playbook = await createPlaybook(page, team.id, playbookTitle);
+        await createRun(page, {name: runName, ownerUserId: currentUser.id, teamId: team.id, playbookId: playbook.id});
+
+        seededData = {teamName: team.name, playbookTitle, runName};
 
         await context.close();
     });
