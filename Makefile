@@ -10,6 +10,7 @@ MM_UTILITIES_DIR ?= ../mattermost-utilities
 DLV_DEBUG_PORT := 2346
 DEFAULT_GOOS ?= $(shell go env GOOS)
 DEFAULT_GOARCH ?= $(shell go env GOARCH)
+GO_PROJECT_PACKAGES = $(shell $(GO) list ./... | sed '/\/node_modules\//d')
 
 export GO111MODULE=on
 
@@ -108,13 +109,16 @@ install-go-tools:
 
 ## Runs webapp eslint, stylelint, tsc, and e2e-tests eslint
 .PHONY: check-style-web
-check-style-web: manifest-check apply webapp/node_modules e2e-tests/node_modules
+check-style-web: manifest-check apply webapp/node_modules e2e-tests/cypress/node_modules e2e-tests/playwright/node_modules
 	@echo Checking webapp style
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run lint
 	cd webapp && npm run check-types
 endif
-	cd e2e-tests && npm run check
+	cd e2e-tests/cypress && npm run check
+	cd e2e-tests/cypress && npm run check-types
+	cd e2e-tests/playwright && npm run check
+	cd e2e-tests/playwright && npm run check-types
 
 ## Runs go vet, golangci-lint, and the mattermost-govet license check
 .PHONY: check-style-server
@@ -125,9 +129,9 @@ check-style-server: manifest-check apply install-go-tools
 # weird reports at golangci-lint step
 ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
-	$(GO) vet ./...
+	$(GO) vet $(GO_PROJECT_PACKAGES)
 	$(GOBIN)/golangci-lint run ./...
-	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 -license.ignore=server/graphql/models.go ./...
+	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 -license.ignore=server/graphql/models.go $(GO_PROJECT_PACKAGES)
 endif
 
 ## Runs eslint and golangci-lint
@@ -136,13 +140,14 @@ check-style: check-style-web check-style-server
 
 ## Fix JS file ESLint issues
 .PHONY: fix-style
-fix-style: apply webapp/node_modules e2e-tests/node_modules
+fix-style: apply webapp/node_modules e2e-tests/cypress/node_modules e2e-tests/playwright/node_modules
 	@echo Fixing lint issues to follow style guide
 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run fix
 endif
-	cd e2e-tests && npm run fix
+	cd e2e-tests/cypress && npm run fix
+	cd e2e-tests/playwright && npm run fix
 
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
@@ -173,10 +178,17 @@ ifneq ($(HAS_WEBAPP),)
 	touch $@
 endif
 
-## Ensures NPM dependencies are installed without having to run this all the time.
-e2e-tests/node_modules: $(wildcard e2e-tests/package.json)
+## Ensures Cypress E2E NPM dependencies are installed without having to run this all the time.
+e2e-tests/cypress/node_modules: $(wildcard e2e-tests/cypress/package.json)
 ifneq ($(HAS_WEBAPP),)
-	cd e2e-tests && $(NPM) install
+	cd e2e-tests/cypress && $(NPM) install
+	touch $@
+endif
+
+## Ensures Playwright E2E NPM dependencies are installed without having to run this all the time.
+e2e-tests/playwright/node_modules: $(wildcard e2e-tests/playwright/package.json)
+ifneq ($(HAS_WEBAPP),)
+	cd e2e-tests/playwright && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 $(NPM) install
 	touch $@
 endif
 
