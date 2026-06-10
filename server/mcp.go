@@ -30,6 +30,11 @@ type pluginMCPClient struct {
 	siteURL string
 }
 
+type pluginMCPRegistrationAPI struct {
+	api      mcphelper.PluginAPI
+	pluginID string
+}
+
 type pluginMCPResponseRecorder struct {
 	header     http.Header
 	body       bytes.Buffer
@@ -61,6 +66,23 @@ func (r *pluginMCPResponseRecorder) Result() *http.Response {
 		Header:     r.header.Clone(),
 		Body:       io.NopCloser(bytes.NewReader(r.body.Bytes())),
 	}
+}
+
+func (a *pluginMCPRegistrationAPI) PluginHTTP(req *http.Request) *http.Response {
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
+	if req.Header.Get("Mattermost-Plugin-ID") == "" {
+		req.Header.Set("Mattermost-Plugin-ID", a.pluginID)
+	}
+	return a.api.PluginHTTP(req)
+}
+
+func newPluginMCPRegistrationAPI(api mcphelper.PluginAPI, pluginID string) mcphelper.PluginAPI {
+	if api == nil {
+		return nil
+	}
+	return &pluginMCPRegistrationAPI{api: api, pluginID: pluginID}
 }
 
 func (c *pluginMCPClient) Get(ctx context.Context, endpoint string, params url.Values, result any) error {
@@ -137,7 +159,7 @@ func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body 
 }
 
 func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, exposeExternal bool, siteURL string) (*mcphelper.Server, error) {
-	server := mcphelper.NewServer(api, mcphelper.PluginMCPServer{
+	server := mcphelper.NewServer(newPluginMCPRegistrationAPI(api, manifest.Id), mcphelper.PluginMCPServer{
 		PluginID:       manifest.Id,
 		Name:           "Playbooks MCP",
 		Path:           playbooksMCPEndpoint,

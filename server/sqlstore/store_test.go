@@ -105,6 +105,60 @@ func TestMigrations(t *testing.T) {
 		}
 	})
 
+	t.Run("repair sequential run ID schema when current version is 0.68.0", func(t *testing.T) {
+		db := setupTestDB(t)
+		sqlStore := setupTables(t, db)
+
+		migrateUpTo(t, sqlStore, semver.MustParse("0.68.0"))
+
+		_, err := db.Exec("DROP INDEX IF EXISTS IR_Playbook_TeamID_RunNumberPrefix")
+		require.NoError(t, err)
+		_, err = db.Exec("ALTER TABLE IR_Incident DROP COLUMN IF EXISTS RunNumber")
+		require.NoError(t, err)
+		_, err = db.Exec("ALTER TABLE IR_Incident DROP COLUMN IF EXISTS SequentialID")
+		require.NoError(t, err)
+		_, err = db.Exec("ALTER TABLE IR_Playbook DROP COLUMN IF EXISTS RunNumberPrefix")
+		require.NoError(t, err)
+		_, err = db.Exec("ALTER TABLE IR_Playbook DROP COLUMN IF EXISTS NextRunNumber")
+		require.NoError(t, err)
+
+		runNumberExists, err := columnExists(sqlStore, "IR_Incident", "RunNumber")
+		require.NoError(t, err)
+		require.False(t, runNumberExists)
+
+		err = sqlStore.RunMigrations()
+		require.NoError(t, err)
+
+		currentSchemaVersion, err := sqlStore.GetCurrentVersion()
+		require.NoError(t, err)
+		require.Equal(t, semver.MustParse("0.69.0"), currentSchemaVersion)
+
+		for _, tc := range []struct {
+			table  string
+			column string
+		}{
+			{table: "IR_Playbook", column: "RunNumberPrefix"},
+			{table: "IR_Playbook", column: "NextRunNumber"},
+			{table: "IR_Incident", column: "RunNumber"},
+			{table: "IR_Incident", column: "SequentialID"},
+		} {
+			exists, err := columnExists(sqlStore, tc.table, tc.column)
+			require.NoError(t, err)
+			require.Truef(t, exists, "%s.%s should exist", tc.table, tc.column)
+		}
+
+		var indexName string
+		err = db.Get(&indexName, `
+			SELECT indexname
+			FROM pg_indexes
+			WHERE schemaname = 'public'
+			AND tablename = 'ir_playbook'
+			AND indexname = 'ir_playbook_teamid_runnumberprefix'
+		`)
+		require.NoError(t, err)
+		require.Equal(t, "ir_playbook_teamid_runnumberprefix", indexName)
+	})
+
 	t.Run("force incidents to have a reminder set", func(t *testing.T) {
 		db := setupTestDB(t)
 		sqlStore := &SQLStore{

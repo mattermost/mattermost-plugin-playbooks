@@ -137,6 +137,7 @@ func TestNewPlaybooksMCPServerRegistersExposeExternal(t *testing.T) {
 
 	assert.Equal(t, http.MethodPost, req.Method)
 	assert.Equal(t, "/"+bridgeclient.AiPluginID+"/bridge/v1/mcp/register", req.URL.Path)
+	assert.Equal(t, manifest.Id, req.Header.Get("Mattermost-Plugin-ID"))
 
 	var payload map[string]any
 	require.NoError(t, json.Unmarshal(body, &payload))
