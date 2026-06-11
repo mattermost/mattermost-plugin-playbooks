@@ -496,4 +496,46 @@ func TestActionUpdate(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
+	t.Run("cross-channel update rejected", func(t *testing.T) {
+		privateActionID, err := e.PlaybooksAdminClient.Actions.Create(context.Background(), e.BasicPrivateChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPrivateChannel.Id,
+			Enabled:     true,
+			ActionType:  client.ActionTypeWelcomeMessage,
+			TriggerType: client.TriggerTypeNewMemberJoins,
+			Payload: client.WelcomeMessagePayload{
+				Message: "private channel welcome",
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotEmpty(t, privateActionID)
+
+		crossChannelUpdate := client.GenericChannelAction{
+			GenericChannelActionWithoutPayload: client.GenericChannelActionWithoutPayload{
+				ID:          privateActionID,
+				ChannelID:   e.BasicPublicChannel.Id,
+				Enabled:     true,
+				ActionType:  client.ActionTypeWelcomeMessage,
+				TriggerType: client.TriggerTypeNewMemberJoins,
+			},
+			Payload: client.WelcomeMessagePayload{
+				Message: "moved welcome message",
+			},
+		}
+
+		err = e.PlaybooksClient.Actions.Update(context.Background(), crossChannelUpdate)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		privateActions, err := e.PlaybooksAdminClient.Actions.List(context.Background(), e.BasicPrivateChannel.Id, client.ChannelActionListOptions{})
+		assert.NoError(t, err)
+		assert.Len(t, privateActions, 1)
+		assert.Equal(t, privateActionID, privateActions[0].ID)
+		assert.Equal(t, e.BasicPrivateChannel.Id, privateActions[0].ChannelID)
+
+		publicActions, err := e.PlaybooksClient.Actions.List(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionListOptions{})
+		assert.NoError(t, err)
+		for _, publicAction := range publicActions {
+			assert.NotEqual(t, privateActionID, publicAction.ID, "action must not appear in the public channel")
+		}
+	})
+
 }
