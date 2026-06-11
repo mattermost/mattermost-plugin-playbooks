@@ -466,6 +466,43 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		assert.Equal(t, privateChannel.Id, run.ChannelID)
 	})
 
+	t.Run("does not add different owner to existing private channel without channel member management", func(t *testing.T) {
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePrivateChannelMembers.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
+
+		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "different_owner_private",
+			Name:        e.resourceName("different-owner-private"),
+			Type:        model.ChannelTypePrivate,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), privateChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), privateChannel.Id, e.RegularUser2.Id, "")
+		require.Error(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run in existing private channel",
+			OwnerUserID: e.RegularUser2.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   privateChannel.Id,
+		})
+		if err != nil {
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+			assert.Nil(t, run)
+			return
+		}
+
+		require.NotNil(t, run)
+		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), privateChannel.Id, e.RegularUser2.Id, "")
+		require.Error(t, err, "expected different owner to remain outside the channel when run creation succeeds")
+	})
+
 	t.Run("create a run using dialog requests", func(t *testing.T) {
 		dialogRequest := model.SubmitDialogRequest{
 			TeamId: e.BasicTeam.Id,
