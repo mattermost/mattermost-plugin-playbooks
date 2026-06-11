@@ -290,6 +290,10 @@ func (a *ActionsHandler) updateChannelAction(c *Context, w http.ResponseWriter, 
 
 	err := a.channelActionsService.Update(newChannelAction, userID)
 	if err != nil {
+		if errors.Is(err, app.ErrMalformedChannelAction) {
+			a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid action", err)
+			return
+		}
 		a.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, fmt.Sprintf("unable to update action with ID %q", newChannelAction.ID), err)
 		return
 	}

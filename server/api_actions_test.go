@@ -423,6 +423,58 @@ func TestActionUpdate(t *testing.T) {
 		assert.Len(t, updatedPayload.Keywords, 0)
 	})
 
+	t.Run("invalid update - action channel mismatch", func(t *testing.T) {
+		otherChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "action-update-channel-mismatch",
+			Name:        "action-update-channel-mismatch",
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		assert.NoError(t, err)
+
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), otherChannel.Id, e.RegularUser.Id)
+		assert.NoError(t, err)
+
+		update := client.GenericChannelAction{
+			GenericChannelActionWithoutPayload: client.GenericChannelActionWithoutPayload{
+				ID:          action.ID,
+				ChannelID:   otherChannel.Id,
+				Enabled:     true,
+				ActionType:  client.ActionTypeWelcomeMessage,
+				TriggerType: client.TriggerTypeNewMemberJoins,
+			},
+			Payload: client.WelcomeMessagePayload{
+				Message: "updated",
+			},
+		}
+
+		err = e.PlaybooksClient.Actions.Update(context.Background(), update)
+		assert.Error(t, err)
+		if err != nil {
+			requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		}
+
+		sourceActions, err := e.PlaybooksClient.Actions.List(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionListOptions{
+			TriggerType: client.TriggerTypeNewMemberJoins,
+			ActionType:  client.ActionTypeWelcomeMessage,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, sourceActions, 1)
+		if assert.NotEmpty(t, sourceActions) {
+			assert.Equal(t, action.ID, sourceActions[0].ID)
+			assert.Equal(t, e.BasicPublicChannel.Id, sourceActions[0].ChannelID)
+
+			var payload client.WelcomeMessagePayload
+			err = safemapstructure.Decode(sourceActions[0].Payload, &payload)
+			assert.NoError(t, err)
+			assert.Equal(t, "msg", payload.Message)
+		}
+
+		otherActions, err := e.PlaybooksClient.Actions.List(context.Background(), otherChannel.Id, client.ChannelActionListOptions{})
+		assert.NoError(t, err)
+		assert.Empty(t, otherActions)
+	})
+
 	t.Run("invalid update - permissions", func(t *testing.T) {
 		actionOld := action
 		defer func() {

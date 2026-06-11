@@ -34,6 +34,9 @@ var ErrMalformedPlaybookRun = errors.New("malformed")
 // ErrMalformedCondition occurs when a condition is not valid.
 var ErrMalformedCondition = errors.New("malformed condition")
 
+// ErrMalformedChannelAction occurs when a channel action is not valid.
+var ErrMalformedChannelAction = errors.New("malformed channel action")
+
 // ErrDuplicateEntry occurs when failing to insert because the entry already existed.
 var ErrDuplicateEntry = errors.New("duplicate entry")
 

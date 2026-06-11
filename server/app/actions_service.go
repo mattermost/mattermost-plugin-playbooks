@@ -124,6 +124,10 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID st
 		return fmt.Errorf("unable to retrieve existing action with ID %q", action.ID)
 	}
 
+	if oldAction.ChannelID != action.ChannelID {
+		return errors.Wrap(ErrMalformedChannelAction, "channel action mismatch")
+	}
+
 	if action.ActionType == ActionTypeWelcomeMessage && !oldAction.Enabled && action.Enabled {
 		if err := a.setViewedChannelForEveryMember(action.ChannelID); err != nil {
 			return err
