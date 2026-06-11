@@ -484,6 +484,14 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	}
 
+	if !createdChannel && !channel.IsGroupOrDirect() && playbookRun.OwnerUserID != playbookRun.ReporterUserID {
+		if _, err = s.pluginAPI.Channel.GetMember(channel.Id, playbookRun.OwnerUserID); err != nil {
+			if err = s.permissions.ChannelManageMembers(userID, channel.Id); err != nil {
+				return nil, errors.Wrap(err, "unable to assign run owner")
+			}
+		}
+	}
+
 	if pb != nil && pb.MessageOnJoinEnabled && pb.MessageOnJoin != "" {
 		welcomeAction := GenericChannelAction{
 			GenericChannelActionWithoutPayload: GenericChannelActionWithoutPayload{
