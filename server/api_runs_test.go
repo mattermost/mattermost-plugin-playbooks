@@ -238,7 +238,10 @@ func TestRunCreation(t *testing.T) {
 					tc.permissionsPrep()
 				}
 
-				result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+				result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+				if result != nil && result.Body != nil {
+					defer result.Body.Close()
+				}
 				tc.expected(t, result, err)
 			})
 		}
@@ -479,9 +482,12 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		assert.NoError(t, err)
 
-		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 
 		assert.NoError(t, err)
+		if result != nil && result.Body != nil {
+			defer result.Body.Close()
+		}
 		assert.Equal(t, http.StatusCreated, result.StatusCode)
 
 		url, err := result.Location()
@@ -620,8 +626,12 @@ func TestRunRetrieval(t *testing.T) {
 	})
 
 	t.Run("checklist autocomplete", func(t *testing.T) {
-		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
+		resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "GET", "/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
+		if resp != nil && resp.Body != nil {
+			defer resp.Body.Close()
+		}
 		assert.Error(t, err)
+		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
@@ -706,8 +716,13 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.NoError(t, err)
+		defer func() {
+			if result != nil && result.Body != nil {
+				_ = result.Body.Close()
+			}
+		}()
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -728,8 +743,12 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		if result != nil && result.Body != nil {
+			defer result.Body.Close()
+		}
 		require.Error(t, err)
+		require.NotNil(t, result)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
@@ -1508,8 +1527,12 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		if result != nil && result.Body != nil {
+			defer result.Body.Close()
+		}
 		require.Error(t, err)
+		require.NotNil(t, result)
 		require.Equal(t, http.StatusForbidden, result.StatusCode)
 	})
 
@@ -1552,8 +1575,13 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.NoError(t, err)
+		defer func() {
+			if result != nil && result.Body != nil {
+				_ = result.Body.Close()
+			}
+		}()
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})
 }
@@ -2044,16 +2072,8 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		body, err := json.Marshal(map[string]string{
-			"assignee_type": "member",
-		})
-		require.NoError(t, err)
-
-		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
-		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
-		require.Error(t, err)
-		require.NotNil(t, resp)
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		err = e.PlaybooksClient.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, "member")
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("property field of non-user type rejected", func(t *testing.T) {
@@ -2203,7 +2223,20 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+		setItemAssigneeRaw := func(t *testing.T, body []byte) *http.Response {
+			t.Helper()
+
+			url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, url, bytes.NewReader(body))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set(model.HeaderAuth, e.ServerClient.AuthType+" "+e.ServerClient.AuthToken)
+
+			resp, err := e.ServerClient.HTTPClient.Do(req)
+			require.NoError(t, err)
+			t.Cleanup(func() { resp.Body.Close() })
+			return resp
+		}
 
 		// assignee_id + assignee_type together must be rejected.
 		body, err := json.Marshal(map[string]string{
@@ -2211,9 +2244,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			"assignee_type": app.AssigneeTypeOwner,
 		})
 		require.NoError(t, err)
-		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body), nil)
-		require.Error(t, err)
-		require.NotNil(t, resp)
+		resp := setItemAssigneeRaw(t, body)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		// assignee_id + assignee_property_field_id together must also be rejected.
@@ -2222,9 +2253,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			"assignee_property_field_id": meField.ID,
 		})
 		require.NoError(t, err)
-		resp2, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut, url, string(body2), nil)
-		require.Error(t, err)
-		require.NotNil(t, resp2)
+		resp2 := setItemAssigneeRaw(t, body2)
 		assert.Equal(t, http.StatusBadRequest, resp2.StatusCode)
 	})
 }
