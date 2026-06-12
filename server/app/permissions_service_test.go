@@ -406,7 +406,7 @@ func (s *stubRunService) GetPlaybookRun(playbookRunID string) (*PlaybookRun, err
 func (s *stubRunService) GetPlaybookRuns(RequesterInfo, PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
 	panic("stubRunService: GetPlaybookRuns not implemented")
 }
-func (s *stubRunService) CreatePlaybookRun(*PlaybookRun, *Playbook, string, bool) (*PlaybookRun, error) {
+func (s *stubRunService) CreatePlaybookRun(*PlaybookRun, *Playbook, string, bool, string, map[string]json.RawMessage) (*PlaybookRun, error) {
 	panic("stubRunService: CreatePlaybookRun not implemented")
 }
 func (s *stubRunService) OpenCreatePlaybookRunDialog(string, string, string, string, string, []Playbook) error {
@@ -619,7 +619,7 @@ func (s *stubRunService) GraphqlUpdate(string, map[string]interface{}) error {
 func (s *stubRunService) MessageHasBeenPosted(*model.Post) {
 	panic("stubRunService: MessageHasBeenPosted not implemented")
 }
-func (s *stubRunService) ResolveRunCreationParams(*PlaybookRun, *Playbook, map[string]json.RawMessage, string) (string, error) {
+func (s *stubRunService) ResolveRunCreationParams(*PlaybookRun, *Playbook, map[string]json.RawMessage, string) error {
 	panic("stubRunService: ResolveRunCreationParams not implemented")
 }
 func (s *stubRunService) ToggleRetrospectiveEnabled(string, string, bool) error {
@@ -719,6 +719,15 @@ func (s *stubPlaybookService) DeleteMetric(string) error {
 	panic("stubPlaybookService: DeleteMetric not implemented")
 }
 
+func (s *stubPlaybookService) UpdateChannelNameTemplate(string, string, string) error {
+	panic("stubPlaybookService: UpdateChannelNameTemplate not implemented")
+}
+func (s *stubPlaybookService) UpdateChannelNameTemplateIfUnchanged(string, string, string) (bool, error) {
+	panic("stubPlaybookService: UpdateChannelNameTemplateIfUnchanged not implemented")
+}
+func (s *stubPlaybookService) UpdateRunNumberPrefix(string, string, string) error {
+	panic("stubPlaybookService: UpdateRunNumberPrefix not implemented")
+}
 func (s *stubPlaybookService) UpdateChannelNameTemplateAtomically(string, func(string) string) error {
 	panic("stubPlaybookService: UpdateChannelNameTemplateAtomically not implemented")
 }

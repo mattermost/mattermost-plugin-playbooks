@@ -64,21 +64,6 @@ describe('NewChannelOnlyToggle', () => {
         jest.clearAllMocks();
     });
 
-    it('renders toggle', () => {
-        const onChange = jest.fn();
-        const playbook = makePlaybook(false);
-
-        const component = renderer.create(
-            <NewChannelOnlyToggle
-                playbook={playbook}
-                onChange={onChange}
-            />,
-        );
-        const tree = component.toJSON();
-
-        expect(tree).toBeTruthy();
-    });
-
     it('toggle is checked when new_channel_only is true', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(true);

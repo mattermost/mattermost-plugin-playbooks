@@ -120,17 +120,21 @@ func NewPlaybookRunHandler(
 	checklistRouter.HandleFunc("/restore", withContext(handler.checklistRestore)).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/duplicate", withContext(handler.duplicateChecklist)).Methods(http.MethodPost)
 
-	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
-	checklistItem.HandleFunc("", withContext(handler.itemDelete)).Methods(http.MethodDelete)
-	checklistItem.HandleFunc("", withContext(handler.itemEdit)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/skip", withContext(handler.itemSkip)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/restore", withContext(handler.itemRestore)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/state", withContext(handler.itemSetState)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
-	checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
-	checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
+	registerChecklistItemRoutes := func(checklistItem *mux.Router) {
+		checklistItem.HandleFunc("", withContext(handler.itemDelete)).Methods(http.MethodDelete)
+		checklistItem.HandleFunc("", withContext(handler.itemEdit)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/skip", withContext(handler.itemSkip)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/restore", withContext(handler.itemRestore)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/state", withContext(handler.itemSetState)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
+		checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
+		checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
+	}
+
+	registerChecklistItemRoutes(checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter())
+	registerChecklistItemRoutes(checklistRouter.PathPrefix("/items/{item:[0-9]+}").Subrouter())
 
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
 	retrospectiveRouter.HandleFunc("", withContext(handler.updateRetrospective)).Methods(http.MethodPost)
@@ -232,6 +236,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
 		app.RunSourcePost,
+		playbookRunCreateOptions.PropertyValues,
 	)
 	if errors.Is(err, app.ErrNoPermissions) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
@@ -360,6 +365,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		request.UserId,
 		nil,
 		app.RunSourceDialog,
+		nil,
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
@@ -486,7 +492,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string) (*app.PlaybookRun, error) {
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string, initialPropertyValues map[string]json.RawMessage) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -564,7 +570,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			public = pb.CreatePublicPlaybookRun
 		}
 
-		if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && pb.ChannelNameTemplate == "" {
+		// Playbook is now loaded; reject an empty name only when no ChannelNameTemplate will generate one
+		// and no existing channel is being linked (ChannelID != "" means no new channel is created).
+		if strings.TrimSpace(playbookRun.Name) == "" && pb.ChannelNameTemplate == "" && playbookRun.ChannelID == "" {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 		}
 
@@ -625,9 +633,20 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	// Set ReporterUserID before CreatePlaybookRun so the creator is known from the start.
-	playbookRun.ReporterUserID = userID
-	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+	if playbook != nil {
+		// Pre-set ReporterUserID so {CREATOR} resolves during template resolution.
+		// DefaultOwnerID fallback is applied inside ResolveRunCreationParams (only when playbook != nil).
+		playbookRun.ReporterUserID = userID
+		if err = h.playbookRunService.ResolveRunCreationParams(&playbookRun, playbook, initialPropertyValues, source); err != nil {
+			return nil, errors.Wrap(err, "failed to resolve run creation params")
+		}
+	}
+
+	if playbookRun.OwnerUserID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
+	}
+
+	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public, source, initialPropertyValues)
 	if err != nil {
 		return nil, err
 	}

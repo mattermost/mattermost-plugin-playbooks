@@ -1,17 +1,15 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-
-import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
+import {CodeBracketsIcon, SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
 import {
     AutomationHeader,
     AutomationLabel,
@@ -24,23 +22,29 @@ import {SecondaryButtonLarger} from 'src/components/backstage/playbook_editor/co
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
+import {TemplateInput} from 'src/components/backstage/playbook_edit/automation/template_input';
+import {BaseInput} from 'src/components/assets/inputs';
 
-type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'delete_at' | 'channel_mode' | 'channel_id'>;
+type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
 
 interface Props {
     playbook: PlaybookSubset;
     setPlaybook: React.Dispatch<React.SetStateAction<PlaybookSubset>>;
     setChangesMade?: (b: boolean) => void;
+    fieldNames?: string[];
     disabled?: boolean;
+    onRunNumberPrefixChange?: (prefix: string) => void;
+    onChannelNameTemplateChange?: (template: string) => void;
     newChannelOnly?: boolean;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, disabled: disabledProp, newChannelOnly = false}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange, newChannelOnly = false}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
-    const archived = playbook.delete_at !== 0;
-    const disabled = archived || (disabledProp ?? false);
+    const disabled = disabledProp || playbook.delete_at !== 0;
+    const [insertCounter, setInsertCounter] = useState(0);
+    const templateEnabled = !disabled && playbook.channel_mode === 'create_new_channel';
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -56,6 +60,16 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, disabled:
             channel_name_template: channelNameTemplate,
         });
         setChangesMade?.(true);
+        onChannelNameTemplateChange?.(channelNameTemplate);
+    };
+
+    const handleRunNumberPrefixChange = (runNumberPrefix: string) => {
+        setPlaybook({
+            ...playbook,
+            run_number_prefix: runNumberPrefix,
+        });
+        setChangesMade?.(true);
+        onRunNumberPrefixChange?.(runNumberPrefix);
     };
 
     const handleChannelModeChange = (mode: 'create_new_channel' | 'link_existing_channel') => {
@@ -150,15 +164,46 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, disabled:
                             <BigText>{formatMessage({defaultMessage: 'Private'})}</BigText>
                         </ButtonLabel>
                     </VerticalSplit>
-                    <PatternedInput
-                        enabled={!disabled && playbook.channel_mode === 'create_new_channel'}
-                        input={playbook.channel_name_template}
-                        onChange={handleChannelNameTemplateChange}
-                        pattern={'[\\S][\\s\\S]*[\\S]'} // at least two non-whitespace characters
-                        placeholderText={formatMessage({defaultMessage: 'Channel name template (optional)'})}
-                        type={'text'}
-                        errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
-                    />
+                    <RunNamingBlock>
+                        <InputLabel htmlFor='channel-access-run-number-prefix'>{formatMessage({defaultMessage: 'Run number prefix'})}</InputLabel>
+                        <BaseInput
+                            id='channel-access-run-number-prefix'
+                            data-testid='channel-access-run-number-prefix'
+                            type='text'
+                            disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
+                            value={playbook.run_number_prefix ?? ''}
+                            onChange={(e) => handleRunNumberPrefixChange(e.target.value)}
+                            placeholder={formatMessage({defaultMessage: 'e.g. INC-'})}
+                        />
+                        <LabelRow>
+                            <InputLabel as='div'>{formatMessage({defaultMessage: 'Run name template'})}</InputLabel>
+                            {templateEnabled && (
+                                <InsertVariableButton
+                                    type='button'
+                                    onClick={() => setInsertCounter((n) => n + 1)}
+                                    aria-label={formatMessage({defaultMessage: 'Insert variable'})}
+                                    title={formatMessage({defaultMessage: 'Insert variable'})}
+                                    data-testid='channel-access-run-name-template-insert-variable'
+                                >
+                                    <CodeBracketsIcon
+                                        size={14}
+                                        aria-hidden={true}
+                                    />
+                                </InsertVariableButton>
+                            )}
+                        </LabelRow>
+                        <TemplateInput
+                            enabled={templateEnabled}
+                            placeholderText={formatMessage({defaultMessage: 'Run name template (optional)'})}
+                            input={playbook.channel_name_template ?? ''}
+                            onChange={handleChannelNameTemplateChange}
+                            fieldNames={fieldNames ?? []}
+                            prefix={playbook.run_number_prefix ?? ''}
+                            maxLength={1024}
+                            testId='channel-access-run-name-template'
+                            openInsertToggle={insertCounter}
+                        />
+                    </RunNamingBlock>
                     <ChannelActionButton
                         disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                         data-testid='playbook-channel-actions-button'
@@ -241,5 +286,50 @@ export const StyledChannelSelector = styled(ChannelSelector)`
 export const ChannelModeRadio = styled(RadioInput)`
     && {
         margin: 0 8px;
+    }
+`;
+
+const RunNamingBlock = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+`;
+
+const InputLabel = styled.label`
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    margin-top: 8px;
+`;
+
+const LabelRow = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+`;
+
+const InsertVariableButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: var(--button-bg);
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    &.a11y--focused {
+        box-shadow: 0 0 0 2px var(--button-bg);
     }
 `;

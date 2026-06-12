@@ -17,7 +17,9 @@ import (
 )
 
 func TestGenerateSupportData(t *testing.T) {
-	e := Setup(t)
+	// The support packet aggregates server-wide data, so this test requires a
+	// globally-empty database.
+	e := SetupIsolated(t)
 	e.CreateBasic()
 
 	data, _, _, err := e.ServerAdminClient.GenerateSupportPacket(context.Background())

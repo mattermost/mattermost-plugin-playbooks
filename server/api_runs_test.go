@@ -238,7 +238,10 @@ func TestRunCreation(t *testing.T) {
 					tc.permissionsPrep()
 				}
 
-				result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+				result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+				if result != nil && result.Body != nil {
+					defer result.Body.Close()
+				}
 				tc.expected(t, result, err)
 			})
 		}
@@ -479,9 +482,12 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		assert.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/dialog", string(dialogRequestBytes), nil)
 
 		assert.NoError(t, err)
+		if result != nil && result.Body != nil {
+			defer result.Body.Close()
+		}
 		assert.Equal(t, http.StatusCreated, result.StatusCode)
 
 		url, err := result.Location()
@@ -620,8 +626,12 @@ func TestRunRetrieval(t *testing.T) {
 	})
 
 	t.Run("checklist autocomplete", func(t *testing.T) {
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
+		resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "GET", "/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", nil)
+		if resp != nil && resp.Body != nil {
+			defer resp.Body.Close()
+		}
 		assert.Error(t, err)
+		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
@@ -706,8 +716,13 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
 		require.NoError(t, err)
+		defer func() {
+			if result != nil && result.Body != nil {
+				_ = result.Body.Close()
+			}
+		}()
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -728,8 +743,12 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
+		if result != nil && result.Body != nil {
+			defer result.Body.Close()
+		}
 		require.Error(t, err)
+		require.NotNil(t, result)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
@@ -1479,7 +1498,7 @@ func TestIgnoreKeywords(t *testing.T) {
 			ChannelId: e.BasicPrivateChannel.Id,
 			Message:   "test message",
 			Props: model.StringInterface{
-				"attachments": []*model.SlackAttachment{
+				"attachments": []*model.MessageAttachment{
 					{
 						Actions: []*model.PostAction{
 							{
@@ -1507,8 +1526,12 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		if result != nil && result.Body != nil {
+			defer result.Body.Close()
+		}
 		require.Error(t, err)
+		require.NotNil(t, result)
 		require.Equal(t, http.StatusForbidden, result.StatusCode)
 	})
 
@@ -1523,7 +1546,7 @@ func TestIgnoreKeywords(t *testing.T) {
 			ChannelId: e.BasicPrivateChannel.Id,
 			Message:   "test message",
 			Props: model.StringInterface{
-				"attachments": []*model.SlackAttachment{
+				"attachments": []*model.MessageAttachment{
 					{
 						Actions: []*model.PostAction{
 							{
@@ -1551,8 +1574,13 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
+		result, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/signal/keywords/ignore-thread", string(reqBytes), nil)
 		require.NoError(t, err)
+		defer func() {
+			if result != nil && result.Body != nil {
+				_ = result.Body.Close()
+			}
+		}()
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})
 }
@@ -1750,7 +1778,7 @@ func TestRequestUpdate(t *testing.T) {
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.CreatorUserID)
 		assert.NotZero(t, lastEvent.PostID)
-		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+		assert.Equal(t, fmt.Sprintf("@%s requested a status update", e.RegularUser2.Username), lastEvent.Summary)
 	})
 
 	t.Run("public - viewer access ", func(t *testing.T) {
@@ -1772,7 +1800,7 @@ func TestRequestUpdate(t *testing.T) {
 		lastEvent := publicRun.TimelineEvents[len(publicRun.TimelineEvents)-1]
 		assert.Equal(t, client.StatusUpdateRequested, lastEvent.EventType)
 		assert.Equal(t, e.RegularUser2.Id, lastEvent.SubjectUserID)
-		assert.Equal(t, "@playbooksuser2 requested a status update", lastEvent.Summary)
+		assert.Equal(t, fmt.Sprintf("@%s requested a status update", e.RegularUser2.Username), lastEvent.Summary)
 
 		err = e.PlaybooksClientNotInTeam.PlaybookRuns.RequestUpdate(context.Background(), publicRun.ID, e.RegularUserNotInTeam.Id)
 		assert.Error(t, err)
@@ -2043,16 +2071,8 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		body, err := json.Marshal(map[string]string{
-			"assignee_type": "member",
-		})
-		require.NoError(t, err)
-
-		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
-		require.Error(t, err)
-		require.NotNil(t, resp)
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		err = e.PlaybooksClient.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, "member")
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("property field of non-user type rejected", func(t *testing.T) {
@@ -2202,7 +2222,20 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+		setItemAssigneeRaw := func(t *testing.T, body []byte) *http.Response {
+			t.Helper()
+
+			url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, url, bytes.NewReader(body))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set(model.HeaderAuth, e.ServerClient.AuthType+" "+e.ServerClient.AuthToken)
+
+			resp, err := e.ServerClient.HTTPClient.Do(req)
+			require.NoError(t, err)
+			t.Cleanup(func() { resp.Body.Close() })
+			return resp
+		}
 
 		// assignee_id + assignee_type together must be rejected.
 		body, err := json.Marshal(map[string]string{
@@ -2210,9 +2243,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			"assignee_type": app.AssigneeTypeOwner,
 		})
 		require.NoError(t, err)
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
-		require.Error(t, err)
-		require.NotNil(t, resp)
+		resp := setItemAssigneeRaw(t, body)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		// assignee_id + assignee_property_field_id together must also be rejected.
@@ -2221,9 +2252,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 			"assignee_property_field_id": meField.ID,
 		})
 		require.NoError(t, err)
-		resp2, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body2), nil)
-		require.Error(t, err)
-		require.NotNil(t, resp2)
+		resp2 := setItemAssigneeRaw(t, body2)
 		assert.Equal(t, http.StatusBadRequest, resp2.StatusCode)
 	})
 }
@@ -2627,7 +2656,9 @@ func TestGetByChannelID(t *testing.T) {
 }
 
 func TestGetOwners(t *testing.T) {
-	e := Setup(t)
+	// GetOwners returns owners across all runs on the server, so this test
+	// requires a globally-empty database.
+	e := SetupIsolated(t)
 	e.CreateBasic()
 
 	ownerFromUser := func(u *model.User) client.OwnerInfo {
@@ -4166,7 +4197,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		require.NoError(t, err)
 
 		// Non-owner submitting the dialog with FinishRun=true should get 403
-		result, err := serverClient2.DoAPIRequestWithHeaders(context.Background(), "POST",
+		result, err := e.doPluginRequest(serverClient2, context.Background(), "POST",
 			serverClient2.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/update-status-dialog",
 			string(dialogRequestBytes), nil)
 		require.Error(t, err)
@@ -4546,7 +4577,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.NotEqual(t, int64(0), channel.DeleteAt,
 			"channel must be archived (DeleteAt != 0) after finishing a run with AutoArchiveChannel=true")
@@ -4583,7 +4614,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must not be archived after finishing a run with AutoArchiveChannel=false")
@@ -4628,7 +4659,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), existingChannel.Id, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), existingChannel.Id)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"pre-existing linked channel must not be archived even when AutoArchiveChannel=true")
@@ -4677,12 +4708,12 @@ func TestAutoArchiveChannel(t *testing.T) {
 		require.NoError(t, err)
 
 		// ChannelCreatedByRun was cleared when ChannelID was swapped, so auto-archive must not fire.
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), victimChannel.Id, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), victimChannel.Id)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"victim channel must not be archived after ChannelID was swapped via UpdateRun")
 
-		origChannel, _, err := e.ServerAdminClient.GetChannel(context.Background(), originalChannelID, "")
+		origChannel, _, err := e.ServerAdminClient.GetChannel(context.Background(), originalChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), origChannel.DeleteAt,
 			"original channel must not be archived after ChannelID was swapped away")
@@ -4719,7 +4750,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		require.NotEqual(t, int64(0), channel.DeleteAt,
 			"channel must be archived before restore")
@@ -4727,7 +4758,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must be unarchived (DeleteAt == 0) after restoring a run with AutoArchiveChannel=true")
@@ -4767,7 +4798,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must remain unarchived after restoring a run that was not auto-archived")
@@ -4804,7 +4835,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		require.NotEqual(t, int64(0), channel.DeleteAt, "channel must be archived before manual unarchive")
 
@@ -4812,7 +4843,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		_, _, err = e.ServerAdminClient.RestoreChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 
-		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		require.Equal(t, int64(0), channel.DeleteAt, "channel must be unarchived after manual restore")
 
@@ -4821,7 +4852,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Restore(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must remain unarchived after run restore (it was already unarchived manually)")
@@ -4830,7 +4861,7 @@ func TestAutoArchiveChannel(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 
-		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
+		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
 		require.NoError(t, err)
 		assert.NotEqual(t, int64(0), channel.DeleteAt,
 			"channel must be archived again on second finish — AutoArchivedChannel flag was correctly cleared on restore")
@@ -5520,7 +5551,7 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		outsider, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 			Email:    "outsider-" + model.NewId() + "@example.com",
 			Username: "outsider" + model.NewId(),
-			Password: "Password123!",
+			Password: testUserPassword,
 		})
 		require.NoError(t, err)
 
@@ -5589,7 +5620,7 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		targetUser, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 			Email:    "target-" + model.NewId() + "@example.com",
 			Username: "target" + model.NewId(),
-			Password: "Password123!",
+			Password: testUserPassword,
 		})
 		require.NoError(t, err)
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, targetUser.Id)

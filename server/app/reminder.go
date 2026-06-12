@@ -87,7 +87,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 		originalRun = playbookRunToModify.Clone()
 	}
 
-	attachments := []*model.SlackAttachment{
+	attachments := []*model.MessageAttachment{
 		{
 			Actions: []*model.PostAction{
 				{
@@ -112,7 +112,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 			"playbookRunId":  playbookRunToModify.ID,
 		},
 	}
-	model.ParseSlackAttachment(post, attachments)
+	model.ParseMessageAttachment(post, attachments)
 
 	if err = s.poster.PostMessageToThread("", post); err != nil {
 		logger.WithError(err).Errorf("HandleReminder error posting reminder message")

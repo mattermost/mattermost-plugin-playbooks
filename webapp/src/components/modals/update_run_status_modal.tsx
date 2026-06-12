@@ -32,6 +32,7 @@ import {
 } from 'src/components/datetime_input';
 
 import {useFormattedUsernames, usePost} from 'src/hooks';
+import {useRun, useUserDisplayNameMap} from 'src/hooks/general';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
@@ -52,6 +53,9 @@ import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {getFragmentData, graphql} from 'src/graphql/generated';
 import {DefaultMessageFragment, ReminderTimerFragment} from 'src/graphql/generated/graphql';
+import {resolveTemplatePreview} from 'src/utils/template_utils';
+import {PropertyField} from 'src/types/properties';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -90,6 +94,67 @@ const runStatusModalQueryDocument = graphql(/* GraphQL */`
         }
     }
 `);
+
+function buildRunTemplateContext(run: PlaybookRun, userMap: Record<string, string>) {
+    const fields = (run.property_fields ?? []) as PropertyField[];
+    const values: Record<string, unknown> = {};
+    for (const pv of run.property_values ?? []) {
+        if (pv.field_id && pv.value !== undefined) {
+            values[pv.field_id] = pv.value;
+        }
+    }
+    return {
+        fields,
+        values,
+        seqValue: run.sequential_id || (run.run_number == null ? '' : String(run.run_number)),
+        ownerName: (run.owner_user_id && userMap[run.owner_user_id]) || run.owner_user_id || '',
+        creatorName: (run.reporter_user_id && userMap[run.reporter_user_id]) || run.reporter_user_id || '',
+    };
+}
+
+// Returns the resolved message, or '' when resolution produces no change (meaning no
+// known tokens were present, so showing a preview would add no value).
+export function computeStatusMessagePreview(
+    message: string,
+    run: PlaybookRun,
+    userMap: Record<string, string>,
+): string {
+    const ctx = buildRunTemplateContext(run, userMap);
+    const resolved = resolveTemplatePreview(message, ctx.fields, ctx.values, {
+        SEQ: ctx.seqValue,
+        OWNER: ctx.ownerName,
+        CREATOR: ctx.creatorName,
+    }, userMap);
+
+    // Only show preview when resolution actually changed something —
+    // if the message has {foo} that matches no known token or field,
+    // the resolved string equals the input and a preview adds no value.
+    return resolved === message ? '' : resolved;
+}
+
+function useStatusMessagePreview(playbookRunId: string, message: string | undefined): string {
+    const [run] = useRun(playbookRunId);
+    const userMap = useUserDisplayNameMap();
+
+    const derived = useMemo(() => {
+        if (!run) {
+            return null;
+        }
+        return buildRunTemplateContext(run, userMap);
+    }, [run, userMap]);
+
+    return useMemo(() => {
+        if (!message || !derived) {
+            return '';
+        }
+        const resolved = resolveTemplatePreview(message, derived.fields, derived.values, {
+            SEQ: derived.seqValue,
+            OWNER: derived.ownerName,
+            CREATOR: derived.creatorName,
+        }, userMap);
+        return resolved === message ? '' : resolved;
+    }, [message, derived, userMap]);
+}
 
 const UpdateRunStatusModal = ({
     playbookRunId,
@@ -155,6 +220,8 @@ const UpdateRunStatusModal = ({
             rest: total - names.length,
         }) : '';
     };
+
+    const messagePreview = useStatusMessagePreview(playbookRunId, message);
 
     const pendingChanges = !(providedMessage === message || message === defaultMessage || message === '');
 
@@ -268,6 +335,11 @@ const UpdateRunStatusModal = ({
                 setValue={setMessage}
                 channelId={channelId}
             />
+            {messagePreview && (
+                <MessagePreview data-testid='status-message-preview'>
+                    {formatMessage({id: 'playbooks.update_run_status_modal.message_preview', defaultMessage: 'Resolves to: {preview}'}, {preview: messagePreview})}
+                </MessagePreview>
+            )}
             <Label>
                 {formatMessage({defaultMessage: 'Timer for next update'})}
             </Label>
@@ -497,6 +569,16 @@ const WarningBlock = styled.div`
 const WarningLine = styled.p`
     margin-top: 0.6rem;
     color: var(--error-text);
+`;
+
+const MessagePreview = styled.div`
+    margin-top: 4px;
+    margin-bottom: 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    line-height: 16px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 `;
 
 const FooterContainer = styled.div`

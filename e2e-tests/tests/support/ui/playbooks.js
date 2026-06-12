@@ -90,9 +90,8 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.get('#playbook-name .editable-input').type(playbookName);
     cy.get('#playbook-name .editable-input').type('{enter}');
 
-    // # Save playbook
+    // # Save playbook — wait for button to re-enable after name autosave, then save
     cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('not.be.disabled').click();
-    cy.wait(TIMEOUTS.TWO_SEC);
     cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('not.be.disabled').click();
 });
 
@@ -101,7 +100,7 @@ Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
     cy.findByTestId('playbookID').should('exist').within(() => {
         cy.get('input').click().type(playbookName.toLowerCase(), {force: true});
     });
-    cy.document().its('body').find('#react-select-2-listbox').contains(playbookName).click({force: true});
+    cy.document().its('body').find('[id$=-listbox]').contains(playbookName).click({force: true});
 });
 
 Cypress.Commands.add('createPost', (message) => {
@@ -118,7 +117,7 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (playbookRunName, summary
         cy.findByTestId('playbookID').should('exist').within(() => {
             cy.get('input').click().type(playbookRunName);
         });
-        cy.document().its('body').find('#react-select-2-listbox').contains(playbookRunName).click({force: true});
+        cy.document().its('body').find('[id$=-listbox]').contains(playbookRunName).click({force: true});
 
         // # Type playbook run name
         cy.findByTestId('summaryinput').clear().type(summary, {force: true});
@@ -146,12 +145,6 @@ Cypress.Commands.add('selectOwner', (userName) => {
     });
 });
 
-Cypress.Commands.add('selectChannel', (channelName) => {
-    cy.get('#playbook-automation-broadcast .playbooks-rselect__menu').within(() => {
-        cy.findByText(channelName).click({force: true});
-    });
-});
-
 Cypress.Commands.add('openReminderSelector', () => {
     cy.get('#reminder_timer_datetime input').click({force: true});
 });
@@ -171,18 +164,16 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
 
     // # Get the interactive dialog modal.
     cy.getStatusUpdateDialog().within(() => {
-        cy.wait(3 * TIMEOUTS.ONE_HUNDRED_MILLIS);
-
         // # remove what's there if applicable, and type the new update in the textbox.
-        cy.findByTestId('update_run_status_textbox').clear().focus().realType(message);
-
-        cy.wait(TIMEOUTS.ONE_HUNDRED_MILLIS);
+        cy.findByTestId('update_run_status_textbox').should('be.visible').clear().type(message);
 
         if (reminderQuery) {
-            cy.get('#reminder_timer_datetime').within(() => {
-                cy.get('#react-select-2-input').focus().realType(reminderQuery).wait(TIMEOUTS.ONE_SEC);
-                cy.get('#react-select-2-input').focus().type('{enter}');
-            });
+            cy.get('#reminder_timer_datetime input').click({force: true}).realType(reminderQuery);
+
+            // Wait for the debounced option parsing (150ms debounce) to complete
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(500);
+            cy.get('#reminder_timer_datetime input').realType('{enter}');
         }
 
         // # Submit the dialog.
@@ -277,6 +268,72 @@ Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
 });
 
 /**
+ * Navigate directly to a playbook run details page by run ID.
+ * @param {String} runId - The run ID
+ */
+Cypress.Commands.add('playbooksVisitRun', (runId) => {
+    cy.visit(`/playbooks/runs/${runId}`);
+    cy.findByTestId('run-header-section').should('exist');
+});
+
+/**
+ * Register an intercept alias for a named GraphQL mutation on the Playbooks query endpoint.
+ * Does NOT mock the response — only tags the request so cy.wait('@operationName') can block
+ * until the server responds. This is the standard sync mechanism for debounced mutations.
+ *
+ * Usage:
+ *   cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+ *   // ... trigger UI action ...
+ *   cy.wait('@UpdatePlaybook');
+ *
+ * @param {String} operationName - The GraphQL operation name (used as the cy.wait alias)
+ */
+Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
+        if (req.body && req.body.operationName === operationName) {
+            req.alias = operationName;
+        }
+    });
+});
+
+/**
+ * Register an intercept alias for the REST PUT /playbooks/:id endpoint.
+ * Use when waiting for the debounced playbook save triggered by editor changes.
+ *
+ * Usage:
+ *   cy.playbooksInterceptUpdatePlaybook();
+ *   // ... trigger UI action ...
+ *   cy.wait('@UpdatePlaybook');
+ */
+Cypress.Commands.add('playbooksInterceptUpdatePlaybook', () => {
+    cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*').as('UpdatePlaybook');
+});
+
+/**
+ * Register an intercept alias for the REST PATCH /playbooks/:id endpoint.
+ * Use when waiting for the debounced channel_name_template save triggered by editor changes.
+ *
+ * Usage:
+ *   cy.playbooksInterceptPatchPlaybook();
+ *   // ... trigger UI action ...
+ *   cy.wait('@PatchPlaybook');
+ */
+Cypress.Commands.add('playbooksInterceptPatchPlaybook', () => {
+    cy.intercept('PATCH', '/plugins/playbooks/api/v0/playbooks/*').as('PatchPlaybook');
+});
+
+/**
+ * Assert the run finish confirmation modal is visible and confirm it.
+ * The modal h1 must contain "Confirm finish".
+ */
+Cypress.Commands.add('playbooksConfirmFinishModal', () => {
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+    cy.get('#confirmModal').should('not.exist');
+});
+
+/**
  * Intercept the REST PUT that saves a playbook (client.ts savePlaybook).
  * Alias: SavePlaybook
  */
@@ -320,20 +377,20 @@ Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
 });
 
 /**
+ * Assert that a run in the runs list shows the expected sequential ID badge.
+ * @param {String} runName - The run name to locate in the list
+ * @param {String} expectedIdFragment - Substring expected inside the sequential-id-badge
+ */
+Cypress.Commands.add('playbooksAssertSequentialIdInList', (runName, expectedIdFragment) => {
+    cy.playbooksGetRunListRow(runName).findByTestId('run-sequential-id').should('contain', expectedIdFragment);
+});
+
+/**
  * Find a run row in the runs list (#playbookRunList) by run name.
  * @param {String} runName - The run name to locate in the list
  */
 Cypress.Commands.add('playbooksGetRunListRow', (runName) => {
-    return cy.get('#playbookRunList').contains('[data-testid="run-list-item"]', runName);
-});
-
-/**
- * Navigate directly to a playbook run details page by run ID.
- * @param {String} runId - The run ID
- */
-Cypress.Commands.add('playbooksVisitRun', (runId) => {
-    cy.visit(`/playbooks/runs/${runId}`);
-    cy.findByTestId('run-header-section').should('be.visible');
+    return cy.findByTestId('playbookRunList').contains('[data-testid="run-list-item"]', runName);
 });
 
 /**
@@ -364,26 +421,24 @@ Cypress.Commands.add('playbooksCompleteTaskAtIndex', (index) => {
     cy.wait(`@${alias}`);
 });
 
-Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
-    const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
-
-    cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
-
-    cy.findByTestId(testId).within(() => {
-        cy.findByTestId('property-value').click();
-    });
-
-    cy.contains('.property-select__option', value).click();
-
-    cy.wait('@SetRunPropertyValue');
-});
-
 Cypress.Commands.add('playbooksConfirmModal', () => {
     cy.get('#confirmModal').should('be.visible');
     cy.get('#confirmModal').find('#confirmModalButton').click();
 
     // Wait for dismissal so callers don't race a still-open modal on the next action.
     cy.get('#confirmModal').should('not.exist');
+});
+
+Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').click();
+
+    // Profiles are loaded asynchronously via useProfilesInTeam. The dropdown
+    // options refresh once the API response arrives and Redux updates, so we
+    // wait up to HALF_MIN for the option to become available.
+    cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
+    cy.wait('@SetRunOwner').its('response.statusCode').should('be.oneOf', [200, 204]);
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('contain', newOwnerUsername);
 });
 
 Cypress.Commands.add('playbooksConfirmFinishModal', () => {
@@ -429,6 +484,11 @@ Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
     cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
 });
 
+/**
+ * Navigate to the playbook outline page and open the RunPlaybook modal.
+ * This is the common 2-step preamble used before filling in the run modal.
+ * @param {String} playbookId - The playbook ID
+ */
 Cypress.Commands.add('playbooksOpenRunModal', (playbookId) => {
     cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
     cy.findByTestId('run-playbook').should('be.visible').and('not.be.disabled').click();
@@ -445,6 +505,70 @@ Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName) => {
     cy.url().should('include', '/playbooks/runs/');
 });
 
+/**
+ * Finish a run via the RHS Finish button in the run's channel.
+ * Navigates to the run channel, clicks the Finish button in the RHS finish section,
+ * and confirms the modal.
+ * @param {String} teamName - The team name (slug) for the URL
+ * @param {Object} run - The run object (must have channel_id)
+ */
+Cypress.Commands.add('playbooksFinishRunViaRHS', (teamName, run) => {
+    cy.playbooksVisitRunChannel(teamName, run);
+    cy.findByTestId('run-finish-section').findByRole('button', {name: /finish/i}).click();
+    cy.get('#confirmModal').should('be.visible');
+    cy.get('#confirmModal').find('#confirmModalButton').click();
+    cy.get('#confirmModal').should('not.exist');
+});
+
+/**
+ * Set a run property value by property name via the complementary (RHS) sidebar
+ * on the run details page. Builds the testId from the property name, scopes to
+ * the RHS sidebar via findByRole('complementary'), and waits for the mutation.
+ *
+ * Use this on the /playbooks/runs/:id page where the sidebar is rendered as
+ * `role="complementary"`. For the channel-view RHS, use playbooksSetRunPropertyViaUI.
+ *
+ * @param {String} propertyName - The display name of the property (e.g. 'Priority')
+ * @param {String} value        - The option name to select
+ */
+Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value, {type = 'select'} = {}) => {
+    const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
+
+    cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
+
+    cy.findByTestId(testId).within(() => {
+        cy.findByTestId('property-value').click();
+    });
+
+    if (type === 'text') {
+        cy.focused().clear();
+        cy.focused().type(value);
+        cy.get('body').click(0, 0);
+    } else {
+        cy.contains('.property-select__option', value).click();
+    }
+
+    cy.wait('@SetRunPropertyValue');
+
+    // Confirm the UI reflects the saved value before returning. This ensures
+    // the re-render triggered by the mutation has settled, preventing DOM
+    // detachment when callers chain multiple property sets sequentially.
+    cy.findByTestId(testId).should('contain', value);
+});
+
+/**
+ * Extract the run ID from the current /playbooks/runs/:id URL.
+ * Asserts the current URL includes '/playbooks/runs/' before extracting.
+ * Returns a Cypress chain yielding the run ID string so callers can
+ * chain .then((runId) => { ... }) for API assertions.
+ *
+ * Usage:
+ *   cy.playbooksGetRunIdFromUrl().then((runId) => {
+ *       cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+ *           expect(run.name).to.include('Expected');
+ *       });
+ *   });
+ */
 Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
     cy.url().should('include', '/playbooks/runs/');
     return cy.url().then((url) => {
@@ -452,5 +576,35 @@ Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
         const [, afterRuns = ''] = urlObj.pathname.split('/playbooks/runs/');
         const runId = afterRuns.split('/')[0];
         return cy.wrap(runId);
+    });
+});
+
+// typeEscape escapes opening curly braces so cy.type() treats them as literal characters.
+const typeEscape = (str) => str.replace(/{/g, '{{}');
+
+Cypress.Commands.add('playbooksPostStatusUpdateViaUI', (teamName, run, message) => {
+    cy.playbooksVisitRunChannel(teamName, run);
+    cy.uiPostMessageQuickly('/playbook update');
+    cy.getStatusUpdateDialog().within(() => {
+        cy.findByTestId('update_run_status_textbox').clear().type(typeEscape(message));
+        cy.findByTestId('modal-confirm-button').click();
+    });
+    cy.getStatusUpdateDialog().should('not.exist');
+    return cy.getLastPostId().then((postId) => cy.apiGetPostMessage(postId));
+});
+
+// Post a status update from the run details page using the "Post update" button.
+// The browser must already be on the run details page.
+Cypress.Commands.add('playbooksPostStatusUpdateViaRunPage', (run, message) => {
+    cy.findByTestId('post-update-button').click();
+    cy.getStatusUpdateDialog().within(() => {
+        cy.findByTestId('update_run_status_textbox').clear().type(typeEscape(message));
+        cy.findByTestId('modal-confirm-button').click();
+    });
+    cy.getStatusUpdateDialog().should('not.exist');
+    return cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
+        const statusPosts = updatedRun.status_posts || [];
+        const lastPost = statusPosts[statusPosts.length - 1];
+        return cy.apiGetPostMessage(lastPost.id);
     });
 });

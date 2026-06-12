@@ -5,10 +5,152 @@ package app
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestValidateRunNumberPrefix(t *testing.T) {
+	t.Run("empty string is valid", func(t *testing.T) {
+		require.NoError(t, ValidateRunNumberPrefix(""))
+	})
+
+	t.Run("whitespace-only string is valid", func(t *testing.T) {
+		require.NoError(t, ValidateRunNumberPrefix("   "))
+	})
+
+	t.Run("simple alphanumeric prefix", func(t *testing.T) {
+		require.NoError(t, ValidateRunNumberPrefix("INC"))
+	})
+
+	t.Run("hyphenated prefix", func(t *testing.T) {
+		require.NoError(t, ValidateRunNumberPrefix("INC-PROD"))
+	})
+
+	t.Run("single character is valid", func(t *testing.T) {
+		require.NoError(t, ValidateRunNumberPrefix("A"))
+	})
+
+	t.Run("digits only", func(t *testing.T) {
+		require.NoError(t, ValidateRunNumberPrefix("123"))
+	})
+
+	t.Run("exactly 32 characters is valid", func(t *testing.T) {
+		require.NoError(t, ValidateRunNumberPrefix("ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"))
+	})
+
+	t.Run("33 characters exceeds maximum", func(t *testing.T) {
+		require.Error(t, ValidateRunNumberPrefix("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567"))
+	})
+
+	t.Run("leading hyphen is invalid", func(t *testing.T) {
+		require.Error(t, ValidateRunNumberPrefix("-INC"))
+	})
+
+	t.Run("trailing hyphen is invalid", func(t *testing.T) {
+		require.Error(t, ValidateRunNumberPrefix("INC-"))
+	})
+
+	t.Run("underscore is invalid", func(t *testing.T) {
+		require.Error(t, ValidateRunNumberPrefix("INC_A"))
+	})
+
+	t.Run("space in the middle is invalid", func(t *testing.T) {
+		require.Error(t, ValidateRunNumberPrefix("INC A"))
+	})
+
+	t.Run("unicode character ñ is invalid", func(t *testing.T) {
+		require.Error(t, ValidateRunNumberPrefix("INCñ"))
+	})
+
+	t.Run("unicode-only prefix counts runes not bytes for length", func(t *testing.T) {
+		// 32 × 'A' followed by 'B' = 33 runes; multi-byte chars should not slip under the limit
+		require.Error(t, ValidateRunNumberPrefix("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567"))
+	})
+}
+
+func TestValidateChannelNameTemplate(t *testing.T) {
+	t.Run("empty string is valid", func(t *testing.T) {
+		require.NoError(t, ValidateChannelNameTemplate(""))
+	})
+
+	t.Run("whitespace-only string is invalid", func(t *testing.T) {
+		require.Error(t, ValidateChannelNameTemplate("   "))
+	})
+
+	t.Run("normal template is valid", func(t *testing.T) {
+		require.NoError(t, ValidateChannelNameTemplate("Incident - {SEQ}"))
+	})
+
+	t.Run("exactly MaxChannelNameTemplateLength runes is valid", func(t *testing.T) {
+		tmpl := strings.Repeat("a", MaxChannelNameTemplateLength)
+		require.NoError(t, ValidateChannelNameTemplate(tmpl))
+	})
+
+	t.Run("exceeding MaxChannelNameTemplateLength runes is invalid", func(t *testing.T) {
+		tmpl := strings.Repeat("a", MaxChannelNameTemplateLength+1)
+		require.Error(t, ValidateChannelNameTemplate(tmpl))
+	})
+}
+
+func TestNormalizeRunNumberPrefix(t *testing.T) {
+	t.Run("no-op for clean prefix", func(t *testing.T) {
+		require.Equal(t, "INC", NormalizeRunNumberPrefix("INC"))
+	})
+
+	t.Run("trims leading whitespace", func(t *testing.T) {
+		require.Equal(t, "INC", NormalizeRunNumberPrefix("  INC"))
+	})
+
+	t.Run("trims trailing whitespace", func(t *testing.T) {
+		require.Equal(t, "INC", NormalizeRunNumberPrefix("INC  "))
+	})
+
+	t.Run("trims leading hyphen", func(t *testing.T) {
+		require.Equal(t, "INC", NormalizeRunNumberPrefix("-INC"))
+	})
+
+	t.Run("trims trailing hyphen", func(t *testing.T) {
+		require.Equal(t, "INC", NormalizeRunNumberPrefix("INC-"))
+	})
+
+	t.Run("trims leading and trailing hyphens", func(t *testing.T) {
+		require.Equal(t, "INC", NormalizeRunNumberPrefix("-INC-"))
+	})
+
+	t.Run("trims whitespace then hyphens", func(t *testing.T) {
+		require.Equal(t, "INC", NormalizeRunNumberPrefix("  -INC-  "))
+	})
+
+	t.Run("empty string stays empty", func(t *testing.T) {
+		require.Equal(t, "", NormalizeRunNumberPrefix(""))
+	})
+
+	t.Run("whitespace-only becomes empty", func(t *testing.T) {
+		require.Equal(t, "", NormalizeRunNumberPrefix("   "))
+	})
+
+	t.Run("interior hyphens are preserved", func(t *testing.T) {
+		require.Equal(t, "INC-PROD", NormalizeRunNumberPrefix("INC-PROD"))
+	})
+
+	t.Run("single hyphen becomes empty", func(t *testing.T) {
+		require.Equal(t, "", NormalizeRunNumberPrefix("-"))
+	})
+
+	t.Run("multiple hyphens become empty", func(t *testing.T) {
+		require.Equal(t, "", NormalizeRunNumberPrefix("---"))
+	})
+
+	t.Run("hyphen with surrounding whitespace becomes empty", func(t *testing.T) {
+		require.Equal(t, "", NormalizeRunNumberPrefix(" - "))
+	})
+
+	t.Run("hyphens around inner text are trimmed", func(t *testing.T) {
+		require.Equal(t, "abc", NormalizeRunNumberPrefix("-abc-"))
+	})
+}
 
 func TestPlaybook_MarshalJSON(t *testing.T) {
 	tests := []struct {

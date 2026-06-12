@@ -6,7 +6,7 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
 
-import {usePlaybook} from 'src/graphql/hooks';
+import {usePlaybook} from 'src/hooks';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 
 import {RunPlaybookModal} from './run_playbook_modal';
@@ -40,9 +40,11 @@ jest.mock('react-redux', () => {
         }
         return null;
     });
+    const storeFn = jest.fn(() => ({getState: () => ({}), subscribe: () => jest.fn(), dispatch: jest.fn()}));
     return {
         useSelector: Object.assign(selectorFn, {withTypes: () => selectorFn}),
         useDispatch: Object.assign(() => jest.fn(), {withTypes: () => () => jest.fn()}),
+        useStore: storeFn,
     };
 });
 
@@ -64,7 +66,12 @@ jest.mock('src/actions', () => ({
 
 jest.mock('src/hooks', () => ({
     useCanCreatePlaybooksInTeam: () => true,
+    usePlaybook: jest.fn(),
     usePlaybookAttributes: jest.fn(() => null),
+}));
+
+jest.mock('src/hooks/crud', () => ({
+    usePlaybook: jest.fn().mockReturnValue([undefined]),
 }));
 
 jest.mock('src/hooks/general', () => ({
@@ -75,6 +82,10 @@ jest.mock('src/hooks/general', () => ({
 jest.mock('mattermost-redux/selectors/entities/users', () => ({
     getCurrentUserId: () => 'user-1',
     getUser: jest.fn(),
+}));
+
+jest.mock('mattermost-redux/actions/users', () => ({
+    getProfilesByIds: jest.fn(() => ({type: 'MOCK_GET_PROFILES_BY_IDS'})),
 }));
 
 jest.mock('mattermost-redux/selectors/entities/channels', () => ({

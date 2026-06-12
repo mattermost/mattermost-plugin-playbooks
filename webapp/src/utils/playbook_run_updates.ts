@@ -65,9 +65,11 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
 function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['changed_fields']): PlaybookRun {
     const {timeline_events, checklists, status_posts, ...basicFields} = changedFields;
 
-    // Apply only valid basic fields with type safety
+    // Apply only valid basic fields with type safety. Null values are skipped — a null
+    // in changed_fields means the server didn't compute the field (e.g. store-level
+    // GetPlaybookRun returns nil property_values), so we preserve the existing value.
     const validBasicFields = Object.fromEntries(
-        Object.entries(basicFields).filter(([field]) => field in run)
+        Object.entries(basicFields).filter(([field, value]) => field in run && value !== null)
     );
 
     let updatedRun = {...run, ...validBasicFields};

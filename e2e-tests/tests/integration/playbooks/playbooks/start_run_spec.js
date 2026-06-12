@@ -39,11 +39,44 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
         });
     });
 
-    // This data is intentionally changed here instead of via api
     const fillPBE = ({name, summary, channelMode, channelNameToLink, defaultOwnerEnabled}) => {
-        // # fill channel name temaplte
-        if (name) {
-            cy.get('#create-new-channel input[type="text"]').clear().type('Channel template');
+        // # Set channel name template and/or channel mode via API to ensure changes are
+        // # persisted before the run modal opens (PBE auto-save uses a 500ms debounce which
+        // # can race with immediately opening the modal).
+        if (name || channelMode) {
+            if (channelNameToLink) {
+                // # Search for the channel by display name to get its ID
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/api/v4/teams/${testTeam.id}/channels/search`,
+                    method: 'POST',
+                    body: {term: channelNameToLink},
+                }).then((resp) => {
+                    expect(resp.body).to.have.length.greaterThan(0, `Channel "${channelNameToLink}" not found`);
+                    const channel = resp.body[0];
+                    cy.apiGetPlaybook(testPlaybook.id).then((fullPlaybook) => {
+                        if (name) {
+                            fullPlaybook.channel_name_template = name;
+                        }
+                        if (channelMode) {
+                            fullPlaybook.channel_mode = channelMode === 'link_to_existing_channel' ? 'link_existing_channel' : channelMode;
+                            fullPlaybook.channel_id = channel.id;
+                        }
+                        return cy.apiUpdatePlaybook(fullPlaybook);
+                    });
+                });
+            } else {
+                cy.apiGetPlaybook(testPlaybook.id).then((fullPlaybook) => {
+                    if (name) {
+                        fullPlaybook.channel_name_template = name;
+                    }
+                    if (channelMode) {
+                        fullPlaybook.channel_mode = channelMode === 'link_to_existing_channel' ? 'link_existing_channel' : channelMode;
+                    }
+                    return cy.apiUpdatePlaybook(fullPlaybook);
+                });
+            }
+            cy.reload();
         }
 
         // # fill summary template
@@ -52,27 +85,12 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
             cy.focused().type('run summary template');
             cy.findByRole('button', {name: /save/i}).click();
         }
-        if (channelMode === 'create_new_channel') {
-            cy.get('#create-new-channel input[type="radio"]').eq(0).click();
-        } else if (channelMode === 'link_to_existing_channel') {
-            cy.get('#link-existing-channel input[type="radio"]').click();
-        }
-
-        if (channelNameToLink) {
-            cy.get('#link-existing-channel').within(() => {
-                cy.findByText('Select a channel').click().type(`${channelNameToLink}{enter}`);
-            });
-        }
 
         if (defaultOwnerEnabled) {
             cy.get('#assign-owner').within(() => {
-                // * Verify that the toggle is unchecked
+                // TODO: add data-testid to Toggle's input in production code to avoid structural selector
                 cy.get('label input').should('not.be.checked');
-
-                // # Click on the toggle to enable the setting
                 cy.get('label input').click({force: true});
-
-                // * Verify that the toggle is checked
                 cy.get('label input').should('be.checked');
             });
         }
@@ -88,9 +106,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
             });
 
             cy.get('#root-portal.modal-open').within(() => {
-                // # Wait the modal to render
-                cy.wait(500);
-
                 // * Assert template name is filled
                 cy.findByTestId('run-name-input').clear().type('Run name');
 
@@ -120,9 +135,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # Wait the modal to render
-                    cy.wait(500);
-
                     // * Assert template name is filled
                     cy.findByTestId('run-name-input').should('have.value', 'Channel template');
 
@@ -148,18 +160,14 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                // # Fill default values
-                fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel'});
+                // # Fill default values (no channel_name_template so user-typed name is used)
+                fillPBE({summary: 'run summary template', channelMode: 'create_new_channel'});
 
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # Wait the modal to render
-                    cy.wait(500);
-
-                    // * Assert template are filled (and force wait to them)
-                    cy.findByTestId('run-name-input').should('have.value', 'Channel template');
+                    // * Assert summary is filled
                     cy.findByTestId('run-summary-input').should('have.value', 'run summary template');
 
                     // # Fill run name
@@ -194,9 +202,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # Wait the modal to render
-                    cy.wait(500);
-
                     // # Change to link to existing channel
                     cy.findByTestId('link-existing-channel-radio').click();
 
@@ -205,20 +210,42 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 });
             });
 
-            it('change to link to existing channel', () => {
-                // # Visit the selected playbook
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+            it('switching to link existing defaults to current channel when no channel is pre-configured', () => {
+                // # Visit a known channel first to set the current channel context in Redux
+                cy.visit(`/${testTeam.name}/channels/town-square`);
+                cy.get('#channelHeaderTitle').should('be.visible');
 
-                // # Fill default values
-                fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel', defaultOwnerEnabled: true});
+                // # Navigate to the playbook editor via client-side routing (no full page reload),
+                // # preserving the Redux currentChannelId set by visiting town-square above.
+                cy.window().then((win) => {
+                    win.WebappUtils.browserHistory.push(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+                });
+                cy.url().should('include', `/playbooks/playbooks/${testPlaybook.id}/outline`);
 
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # Wait the modal to render
-                    cy.wait(500);
+                    // # Switch to link existing channel mode
+                    cy.findByTestId('link-existing-channel-radio').click();
 
+                    // * Verify Town Square is pre-selected because it was the active channel
+                    cy.findByText('Town Square').should('be.visible');
+                    cy.findByText('Select a channel').should('not.exist');
+                });
+            });
+
+            it('change to link to existing channel', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+                // # Fill default values (no channel_name_template so user-typed name is used)
+                fillPBE({summary: 'run summary template', channelMode: 'create_new_channel', defaultOwnerEnabled: true});
+
+                // # Click start a run button
+                cy.findByTestId('run-playbook').click();
+
+                cy.get('#root-portal.modal-open').within(() => {
                     // # Change to link to existing channel
                     cy.findByTestId('link-existing-channel-radio').click();
 
@@ -262,9 +289,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # Wait the modal to render
-                    cy.wait(500);
-
                     // * Assert template name is empty
                     cy.findByTestId('run-name-input').should('be.empty');
 
@@ -309,9 +333,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # Wait the modal to render
-                    cy.wait(500);
-
                     // * Assert template name is empty
                     cy.findByTestId('run-name-input').should('be.empty');
 
@@ -352,16 +373,13 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-                // Fill default values
-                fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'link_to_existing_channel', channelNameToLink: 'Town'});
+                // # Fill default values (no channel_name_template so user-typed name is used)
+                fillPBE({summary: 'run summary template', channelMode: 'link_to_existing_channel', channelNameToLink: 'Town'});
 
                 // # Click start a run button
                 cy.findByTestId('run-playbook').click();
 
                 cy.get('#root-portal.modal-open').within(() => {
-                    // # Wait the modal to render
-                    cy.wait(500);
-
                     // * Change to create new channel
                     cy.findByTestId('create-channel-radio').click();
 
@@ -389,6 +407,54 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
     });
 
     describe('start run modal > invalid user input', () => {
+        it('modal resets form fields when cancelled and reopened', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Click start a run button
+            cy.findByTestId('run-playbook').click();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Fill in custom values
+                cy.findByTestId('run-name-input').type('Custom Run Name');
+                cy.findByTestId('run-summary-input').type('Custom Summary');
+
+                // # Cancel the modal
+                cy.findByRole('button', {name: 'Cancel'}).click();
+            });
+
+            // * Verify modal is closed
+            cy.get('#root-portal.modal-open').should('not.exist');
+
+            // # Reopen the modal
+            cy.findByTestId('run-playbook').click();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // * Verify fields are reset to defaults (empty — no template configured)
+                cy.findByTestId('run-name-input').should('have.value', '');
+                cy.findByTestId('run-summary-input').should('have.value', '');
+            });
+        });
+
+        it('exactly max length run name is accepted', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Click start a run button
+            cy.findByTestId('run-playbook').click();
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Type a run name of exactly the maximum allowed length
+                cy.findByTestId('run-name-input').type('a'.repeat(RUN_NAME_MAX_LENGTH));
+
+                // * Assert no validation error is shown
+                cy.findByTestId('run-name-error').should('not.exist');
+
+                // * Assert start button is enabled
+                cy.findByTestId('modal-confirm-button').should('not.have.attr', 'disabled');
+            });
+        });
+
         it('submit button is disabled when run name is empty', () => {
             // # Visit the selected playbook
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
@@ -397,9 +463,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
             cy.findByTestId('run-playbook').click();
 
             cy.get('#root-portal.modal-open').within(() => {
-                // # Wait the modal to render
-                cy.wait(500);
-
                 // * Assert template name is empty
                 cy.findByTestId('run-name-input').should('have.value', '');
 
@@ -416,9 +479,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
             cy.findByTestId('run-playbook').click();
 
             cy.get('#root-portal.modal-open').within(() => {
-                // # Wait the modal to render
-                cy.wait(500);
-
                 // * Assert template name is empty
                 cy.findByTestId('run-name-input').should('have.value', '');
 

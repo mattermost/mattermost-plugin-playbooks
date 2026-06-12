@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -17,6 +18,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -66,6 +68,11 @@ func TestMain(m *testing.M) {
 	// This actually runs the tests
 	status := m.Run()
 
+	// Tear down the shared server (if it was booted) now that all tests are done.
+	if sharedCleanup != nil {
+		sharedCleanup()
+	}
+
 	os.Exit(status)
 }
 
@@ -89,6 +96,10 @@ type TestEnvironment struct {
 
 	Permissions PermissionsHelper
 	logger      mlog.LoggerIFace
+
+	// id is a unique token per environment used to namespace fixture names on
+	// the shared server.
+	id int64
 
 	createClientsOnce sync.Once
 
@@ -120,6 +131,39 @@ type TestEnvironment struct {
 	GuestUser                *model.User
 }
 
+func (e *TestEnvironment) DoPluginAPIRequestWithHeaders(ctx context.Context, client *model.Client4, method, path, data string, headers map[string]string) (*http.Response, error) {
+	normalizedPath := path
+	if !strings.HasPrefix(normalizedPath, "/") {
+		normalizedPath = "/" + normalizedPath
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, client.URL+"/plugins/"+manifest.Id+normalizedPath, strings.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+	if client.AuthToken != "" && req.Header.Get(model.HeaderAuth) == "" {
+		req.Header.Set(model.HeaderAuth, client.AuthType+" "+client.AuthToken)
+	}
+	for key, value := range client.HTTPHeader {
+		req.Header.Set(key, value)
+	}
+
+	resp, err := client.HTTPClient.Do(req)
+	if err != nil {
+		return resp, err
+	}
+	if resp.StatusCode >= 300 {
+		parsedErr := model.AppErrorFromJSON(resp.Body)
+		_ = resp.Body.Close()
+		return resp, parsedErr
+	}
+	return resp, nil
+}
+
 // Global bundle cache to avoid recreating for every test
 var (
 	globalBundlePath string
@@ -131,6 +175,43 @@ func getEnvWithDefault(name, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// doPluginRequest issues an authenticated request to an absolute URL using the
+// given client's credentials. Client4's Do* helpers now prefix the request with
+// the server's /api/v4 APIURL, which breaks calls to plugin endpoints (served
+// under /plugins/{id}/...), so we build the request directly here. The error
+// semantics mirror Client4.doAPIRequestReader: a >= 300 response yields the
+// parsed AppError alongside the raw response.
+func (e *TestEnvironment) doPluginRequest(c *model.Client4, ctx context.Context, method, url, data string, headers map[string]string) (*http.Response, error) {
+	rq, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range headers {
+		rq.Header.Set(k, v)
+	}
+
+	if c.AuthToken != "" {
+		rq.Header.Set(model.HeaderAuth, c.AuthType+" "+c.AuthToken)
+	}
+
+	rp, err := c.HTTPClient.Do(rq)
+	if err != nil {
+		return rp, err
+	}
+
+	if rp.StatusCode == http.StatusNotModified {
+		return rp, nil
+	}
+
+	if rp.StatusCode >= 300 {
+		defer rp.Body.Close()
+		return rp, model.AppErrorFromJSON(rp.Body)
+	}
+
+	return rp, nil
 }
 
 // createPluginBundleOnce creates the plugin bundle once and caches it for reuse
@@ -196,60 +277,91 @@ func createPluginBundleOnce() string {
 	return globalBundlePath
 }
 
-func Setup(t *testing.T) *TestEnvironment {
-	setupStart := time.Now()
-	defer func() {
-		t.Logf("Total Setup() took: %v", time.Since(setupStart))
-	}()
+// serverInstance is a running Mattermost server with the playbooks plugin
+// deployed onto it. A single instance is shared across the whole test package
+// (see ensureSharedServer) to avoid paying the multi-second server boot cost for
+// every test.
+type serverInstance struct {
+	server *sapp.Server
+	app    *sapp.App
+	logger mlog.LoggerIFace
+}
+
+// Shared server reused across the entire test package. It is created lazily on
+// the first Setup call and torn down in TestMain after all tests have run.
+var (
+	sharedInstance     *serverInstance
+	sharedCleanup      func()
+	sharedInstanceOnce sync.Once
+
+	// envCounter yields a unique token per TestEnvironment so that fixtures
+	// (users, teams, channels) created on the shared server never collide.
+	envCounter atomic.Int64
+)
+
+// ensureSharedServer boots the shared server exactly once and returns it.
+func ensureSharedServer(t *testing.T) *serverInstance {
+	sharedInstanceOnce.Do(func() {
+		bootStart := time.Now()
+		sharedInstance, sharedCleanup = bootServer(t)
+		t.Logf("Shared server boot took: %v", time.Since(bootStart))
+	})
+	require.NotNil(t, sharedInstance, "shared server failed to boot")
+	return sharedInstance
+}
+
+// bootServer creates a brand-new Mattermost server on its own database and
+// deploys the playbooks plugin onto it. The returned cleanup function shuts the
+// server down and removes its temporary resources. It is used both for the
+// shared server and for the dedicated servers handed out by SetupIsolated.
+func bootServer(tb testing.TB) (*serverInstance, func()) {
+	tb.Helper()
+
 	// Ignore any locally defined SiteURL as we intend to host our own.
 	os.Unsetenv("MM_SERVICESETTINGS_SITEURL")
 	os.Unsetenv("MM_SERVICESETTINGS_LISTENADDRESS")
-
 	// Ignore developer mode and configure it ourselves during testing.
 	os.Unsetenv("MM_SERVICESETTINGS_ENABLEDEVELOPER")
 
 	// Environment Settings
 	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
-
 	sqlSettings := storetest.MakeSqlSettings(driverName)
 
-	// Directories for plugin stuff
-	dir := t.TempDir()
-	clientDir := t.TempDir()
+	// Directories for plugin stuff. We use MkdirTemp rather than tb.TempDir so
+	// the directories outlive the test that first triggers the shared boot;
+	// cleanup is handled by the returned function instead.
+	dir, err := os.MkdirTemp("", "pb-plugin-dir")
+	require.NoError(tb, err)
+	clientDir, err := os.MkdirTemp("", "pb-plugin-client")
+	require.NoError(tb, err)
 
 	// Get the cached plugin bundle (created once globally)
-	bundleStart := time.Now()
 	bundlePath := createPluginBundleOnce()
-	t.Logf("Bundle retrieval took: %v", time.Since(bundleStart))
 
 	// Create a test memory store and modify configuration appropriately
 	configStore := config.NewTestMemoryStore()
-	config := configStore.Get()
-	config.PluginSettings.Directory = &dir
-	config.PluginSettings.ClientDirectory = &clientDir
-	config.PluginSettings.Enable = testPtr(true)
-	config.PluginSettings.RequirePluginSignature = testPtr(false)
-	config.PluginSettings.EnableUploads = testPtr(true)
-	config.ServiceSettings.ListenAddress = testPtr("localhost:0")
-	config.TeamSettings.MaxUsersPerTeam = testPtr(10000)
-	config.LocalizationSettings.SetDefaults()
-	config.SqlSettings = *sqlSettings
-	config.ServiceSettings.SiteURL = testPtr("http://testsiteurlplaybooks.mattermost.com/")
-	config.LogSettings.EnableConsole = testPtr(true)
-	config.LogSettings.EnableFile = testPtr(false)
-	config.LogSettings.ConsoleLevel = testPtr("DEBUG")
+	cfg := configStore.Get()
+	cfg.PluginSettings.Directory = &dir
+	cfg.PluginSettings.ClientDirectory = &clientDir
+	cfg.PluginSettings.Enable = testPtr(true)
+	cfg.PluginSettings.RequirePluginSignature = testPtr(false)
+	cfg.PluginSettings.EnableUploads = testPtr(true)
+	cfg.ServiceSettings.ListenAddress = testPtr("localhost:0")
+	cfg.TeamSettings.MaxUsersPerTeam = testPtr(10000)
+	cfg.LocalizationSettings.SetDefaults()
+	cfg.SqlSettings = *sqlSettings
+	cfg.ServiceSettings.SiteURL = testPtr("http://testsiteurlplaybooks.mattermost.com/")
+	cfg.LogSettings.EnableConsole = testPtr(true)
+	cfg.LogSettings.EnableFile = testPtr(false)
+	cfg.LogSettings.ConsoleLevel = testPtr("DEBUG")
 
 	// override config with e2etest.config.json if it exists
-	textConfig, err := os.ReadFile("./e2etest.config.json")
-	if err == nil {
-		err = json.Unmarshal(textConfig, config)
-		if err != nil {
-			require.NoError(t, err)
-		}
+	if textConfig, rerr := os.ReadFile("./e2etest.config.json"); rerr == nil {
+		require.NoError(tb, json.Unmarshal(textConfig, cfg))
 	}
 
-	_, _, err = configStore.Set(config)
-	require.NoError(t, err)
+	_, _, err = configStore.Set(cfg)
+	require.NoError(tb, err)
 
 	// Get manifest for plugin ID
 	modifiedManifest := model.Manifest{}
@@ -258,12 +370,11 @@ func Setup(t *testing.T) *TestEnvironment {
 
 	// Create a logger to override
 	testLogger, err := mlog.NewLogger()
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	testLogger.LockConfiguration()
 
 	// Create a server with our specified options
-	err = utils.TranslationsPreInit()
-	require.NoError(t, err)
+	require.NoError(tb, utils.TranslationsPreInit())
 
 	license := model.NewTestLicense()
 	license.SkuShortName = model.LicenseShortSkuEnterpriseAdvanced
@@ -273,67 +384,108 @@ func Setup(t *testing.T) *TestEnvironment {
 		sapp.WithLicense(license),
 	}
 	server, err := sapp.NewServer(options...)
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	_, err = api4.Init(server)
-	require.NoError(t, err)
-	err = server.Start()
-	require.NoError(t, err)
-
-	// Cleanup to run after test is complete
-	t.Cleanup(func() {
-		server.Shutdown()
-	})
+	require.NoError(tb, err)
+	require.NoError(tb, server.Start())
 
 	ap := sapp.New(sapp.ServerConnector(server.Channels()))
 
+	// Create a dedicated system admin used only to deploy the plugin. Per-test
+	// admins are created separately (and uniquely) by CreateClients.
 	ctx := request.EmptyContext(testLogger)
-	env := &TestEnvironment{
-		T:       t,
-		Context: ctx,
-		Srv:     server,
-		A:       ap,
-		Permissions: &serverPermissionsWrapper{
-			TestHelper: api4.TestHelper{
-				Server:  server,
-				App:     ap,
-				Context: ctx,
-			},
-		},
-		logger: testLogger,
-	}
+	deployAdmin, appErr := ap.CreateUserAsAdmin(ctx, &model.User{
+		Email:    "pb-deploy-admin@example.com",
+		Username: "pb-deploy-admin",
+		Password: testUserPassword,
+	}, "")
+	require.Nil(tb, appErr)
 
-	// Create users first so we can authenticate for plugin deployment
-	env.CreateClients()
+	siteURL := fmt.Sprintf("http://localhost:%v", ap.Srv().ListenAddr.Port)
+	deployClient := model.NewAPIv4Client(siteURL)
+	_, _, err = deployClient.Login(context.Background(), deployAdmin.Email, testUserPassword)
+	require.NoError(tb, err)
 
 	// Deploy plugin using forced upload (like pluginctl does in development)
 	bundleFile, err := os.Open(bundlePath)
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	defer bundleFile.Close()
 
-	// Create API client for plugin deployment
-	// Get the actual server port (since we used localhost:0)
-	siteURL := fmt.Sprintf("http://localhost:%v", ap.Srv().ListenAddr.Port)
-	client := model.NewAPIv4Client(siteURL)
-
-	// Authenticate as admin user
-	authStart := time.Now()
-	_, _, err = client.Login(context.Background(), "playbooksadmin", testUserPassword)
-	require.NoError(t, err)
-	t.Logf("Authentication took: %v", time.Since(authStart))
-
 	// Upload plugin using forced upload (bypasses signature verification)
-	uploadStart := time.Now()
-	_, _, err = client.UploadPluginForced(context.Background(), bundleFile)
-	require.NoError(t, err)
-	t.Logf("Plugin upload took: %v", time.Since(uploadStart))
+	_, _, err = deployClient.UploadPluginForced(context.Background(), bundleFile)
+	require.NoError(tb, err)
 
 	// Enable the plugin
-	enableStart := time.Now()
-	_, err = client.EnablePlugin(context.Background(), modifiedManifest.Id)
-	require.NoError(t, err)
-	t.Logf("Plugin enable took: %v", time.Since(enableStart))
+	_, err = deployClient.EnablePlugin(context.Background(), modifiedManifest.Id)
+	require.NoError(tb, err)
 
+	instance := &serverInstance{server: server, app: ap, logger: testLogger}
+	cleanup := func() {
+		server.Shutdown()
+		storetest.CleanupSqlSettings(sqlSettings)
+		_ = os.RemoveAll(dir)
+		_ = os.RemoveAll(clientDir)
+	}
+	return instance, cleanup
+}
+
+// Setup returns a TestEnvironment backed by the shared package-wide server. The
+// returned environment owns a unique set of users/teams/channels so it stays
+// isolated from other tests despite sharing the same server and database. Use
+// SetupIsolated instead if a test genuinely requires a globally-empty server.
+func Setup(t *testing.T) *TestEnvironment {
+	t.Helper()
+	env := newEnv(t, ensureSharedServer(t))
+	// Reset the shared server's license to the default so license changes made
+	// by a previous test (e.g. RemoveLicence) do not leak into this one.
+	env.SetEnterpriseAdvancedLicence()
 	return env
+}
+
+// SetupIsolated boots a dedicated server on its own database for tests that
+// require a pristine, globally-empty environment. Prefer Setup unless a test
+// genuinely depends on global state being empty, as this pays the full server
+// boot cost.
+func SetupIsolated(t *testing.T) *TestEnvironment {
+	t.Helper()
+	instance, cleanup := bootServer(t)
+	t.Cleanup(cleanup)
+	return newEnv(t, instance)
+}
+
+// newEnv builds a TestEnvironment with a unique token bound to the given server.
+func newEnv(t *testing.T, instance *serverInstance) *TestEnvironment {
+	ctx := request.EmptyContext(instance.logger)
+	return &TestEnvironment{
+		T:       t,
+		Context: ctx,
+		Srv:     instance.server,
+		A:       instance.app,
+		id:      envCounter.Add(1),
+		Permissions: &serverPermissionsWrapper{
+			TestHelper: api4.TestHelper{
+				Server:  instance.server,
+				App:     instance.app,
+				Context: ctx,
+			},
+		},
+		logger: instance.logger,
+	}
+}
+
+// username, email and resourceName produce per-environment unique identifiers so
+// that fixtures created on the shared server never collide. base must be short
+// enough that the resulting username stays within Mattermost's 22-char limit.
+func (e *TestEnvironment) username(base string) string {
+	return fmt.Sprintf("pb-%s-%d", base, e.id)
+}
+
+func (e *TestEnvironment) email(base string) string {
+	return e.username(base) + "@example.com"
+}
+
+func (e *TestEnvironment) resourceName(base string) string {
+	return fmt.Sprintf("%s-%d", base, e.id)
 }
 
 func createTarGz(srcDir, dstFile string) error {
@@ -389,16 +541,21 @@ func (e *TestEnvironment) CreateClients() {
 
 	e.createClientsOnce.Do(func() {
 		admin, appErr := e.A.CreateUserAsAdmin(e.Context, &model.User{
-			Email:    "playbooksadmin@example.com",
-			Username: "playbooksadmin",
+			Email:    e.email("admin"),
+			Username: e.username("admin"),
 			Password: testUserPassword,
 		}, "")
+		require.Nil(e.T, appErr)
+		// Explicitly promote to system admin. On the shared server this user is
+		// not the first account, so it does not get auto-promoted the way it did
+		// when every test booted its own server.
+		admin, appErr = e.A.UpdateUserRoles(e.Context, admin.Id, model.SystemUserRoleId+" "+model.SystemAdminRoleId, false)
 		require.Nil(e.T, appErr)
 		e.AdminUser = admin
 
 		user, appErr := e.A.CreateUser(e.Context, &model.User{
-			Email:     "playbooksuser@example.com",
-			Username:  "playbooksuser",
+			Email:     e.email("user"),
+			Username:  e.username("user"),
 			Password:  testUserPassword,
 			FirstName: "First 1",
 			LastName:  "Last 1",
@@ -407,8 +564,8 @@ func (e *TestEnvironment) CreateClients() {
 		e.RegularUser = user
 
 		user2, appErr := e.A.CreateUser(e.Context, &model.User{
-			Email:     "playbooksuser2@example.com",
-			Username:  "playbooksuser2",
+			Email:     e.email("user2"),
+			Username:  e.username("user2"),
 			Password:  testUserPassword,
 			FirstName: "First 2",
 			LastName:  "Last 2",
@@ -417,8 +574,8 @@ func (e *TestEnvironment) CreateClients() {
 		e.RegularUser2 = user2
 
 		notInTeam, appErr := e.A.CreateUser(e.Context, &model.User{
-			Email:    "playbooksusernotinteam@example.com",
-			Username: "playbooksusenotinteam",
+			Email:    e.email("notinteam"),
+			Username: e.username("notinteam"),
 			Password: testUserPassword,
 		})
 		require.Nil(e.T, appErr)
@@ -474,7 +631,7 @@ func (e *TestEnvironment) CreateBasicServer() {
 
 	team, _, err := e.ServerAdminClient.CreateTeam(context.Background(), &model.Team{
 		DisplayName: "basic",
-		Name:        "basic",
+		Name:        e.resourceName("basic"),
 		Email:       "success+playbooks@simulator.amazonses.com",
 		Type:        model.TeamOpen,
 	})
@@ -487,7 +644,7 @@ func (e *TestEnvironment) CreateBasicServer() {
 
 	pubChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 		DisplayName: "testpublic1",
-		Name:        "testpublic1",
+		Name:        e.resourceName("testpublic1"),
 		Type:        model.ChannelTypeOpen,
 		TeamId:      team.Id,
 	})
@@ -505,7 +662,7 @@ func (e *TestEnvironment) CreateBasicServer() {
 
 	privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 		DisplayName: "testprivate1",
-		Name:        "testprivate1",
+		Name:        e.resourceName("testprivate1"),
 		Type:        model.ChannelTypePrivate,
 		TeamId:      team.Id,
 	})
@@ -527,7 +684,7 @@ func (e *TestEnvironment) CreateBasicServer() {
 	// Add a second team to test cross-team features
 	team2, _, err := e.ServerAdminClient.CreateTeam(context.Background(), &model.Team{
 		DisplayName: "second team",
-		Name:        "second-team",
+		Name:        e.resourceName("second-team"),
 		Email:       "success+playbooks@simulator.amazonses.com",
 		Type:        model.TeamOpen,
 	})
@@ -654,8 +811,8 @@ func (e *TestEnvironment) CreateGuest() {
 	require.NoError(e.T, err)
 
 	guest, appErr := e.A.CreateGuest(e.Context, &model.User{
-		Email:    "playbookguest@example.com",
-		Username: "playbookguest",
+		Email:    e.email("guest"),
+		Username: e.username("guest"),
 		Password: testUserPassword,
 	})
 	require.Nil(e.T, appErr)

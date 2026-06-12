@@ -42,6 +42,19 @@ var createUniquePGIndex = func(indexName, tableName, columns string) string {
 	`, indexName, indexName, tableName, columns)
 }
 
+var createPartialUniquePGIndex = func(indexName, tableName, columns, where string) string {
+	return fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			IF to_regclass('%s') IS NULL THEN
+				CREATE UNIQUE INDEX %s ON %s (%s) WHERE %s;
+			END IF;
+		END
+		$$;
+	`, indexName, indexName, tableName, columns, where)
+}
+
 var createPGGINIndex = func(indexName, tableName, column string) string {
 	return fmt.Sprintf(`
 		DO

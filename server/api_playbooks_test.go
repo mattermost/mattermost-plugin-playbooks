@@ -1835,8 +1835,10 @@ func TestAddPostToTimeline(t *testing.T) {
 	require.NoError(t, err)
 
 	// Post the request with the dialog payload and verify it is allowed
-	_, err = e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
+	resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/runs/add-to-timeline-dialog", string(dialogRequestBytes), nil)
 	require.NoError(t, err)
+	require.NotNil(t, resp)
+	defer resp.Body.Close()
 }
 
 func TestPlaybookStats(t *testing.T) {
@@ -2607,6 +2609,291 @@ func TestAdminOnlyEdit(t *testing.T) {
 			require.NoError(t, err)
 		})
 	})
+}
+
+func TestPatchPlaybook(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	patchPlaybook := func(serverClient *model.Client4, playbookID string, body map[string]any) *http.Response {
+		bodyBytes, err := json.Marshal(body)
+		require.NoError(t, err)
+		apiURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", serverClient.URL, playbookID)
+		req, err := http.NewRequest(http.MethodPatch, apiURL, bytes.NewReader(bodyBytes))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+serverClient.AuthToken)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		return resp
+	}
+
+	t.Run("run_number_prefix set and persisted", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Patch Prefix Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": "INC"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		assert.Equal(t, "INC", pb.RunNumberPrefix)
+	})
+
+	t.Run("channel_name_template set and persisted", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Patch Template Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"channel_name_template": "Incident {SEQ}"})
+		resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		// client.Playbook does not expose channel_name_template, so verify via raw GET.
+		getURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", e.ServerClient.URL, id)
+		getReq, err := http.NewRequest(http.MethodGet, getURL, nil)
+		require.NoError(t, err)
+		getReq.Header.Set("Authorization", "Bearer "+e.ServerClient.AuthToken)
+		getResp, err := http.DefaultClient.Do(getReq)
+		require.NoError(t, err)
+		defer getResp.Body.Close()
+		require.Equal(t, http.StatusOK, getResp.StatusCode)
+		var raw struct {
+			ChannelNameTemplate string `json:"channel_name_template"`
+		}
+		require.NoError(t, json.NewDecoder(getResp.Body).Decode(&raw))
+		assert.Equal(t, "Incident {SEQ}", raw.ChannelNameTemplate)
+	})
+
+	t.Run("duplicate prefix on same team returns 409", func(t *testing.T) {
+		id1, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Dupe A",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+		id2, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Dupe B",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id1, map[string]any{"run_number_prefix": "DUPE"})
+		resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		resp2 := patchPlaybook(e.ServerClient, id2, map[string]any{"run_number_prefix": "DUPE"})
+		defer resp2.Body.Close()
+		require.Equal(t, http.StatusConflict, resp2.StatusCode)
+	})
+
+	t.Run("invalid prefix format returns 400", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Invalid Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": "has spaces"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("unknown field in body returns 400", func(t *testing.T) {
+		resp := patchPlaybook(e.ServerClient, e.BasicPlaybook.ID, map[string]any{"unknown_field": "value"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("non-member returns 403", func(t *testing.T) {
+		// Private playbook: PermissionPrivatePlaybookManageProperties is NOT granted at
+		// team level, so only explicit playbook members can modify it.
+		id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Non-member PATCH Test",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+		})
+		require.NoError(t, err)
+
+		// Create a fresh team member who is intentionally not a playbook member,
+		// then log in once to obtain an auth token for the PATCH attempt.
+		nonMemberPassword := testUserPassword
+		suffix := model.NewId()
+		nonMember, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+			Email:    "patch-nonmember-" + suffix + "@example.com",
+			Username: "patchnonmember" + suffix,
+			Password: nonMemberPassword,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, nonMember.Id)
+		require.NoError(t, err)
+
+		nonMemberClient := model.NewAPIv4Client(e.ServerAdminClient.URL)
+		_, _, err = nonMemberClient.Login(context.Background(), nonMember.Email, nonMemberPassword)
+		require.NoError(t, err)
+
+		resp := patchPlaybook(nonMemberClient, id, map[string]any{"run_number_prefix": "NOPE"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("archived playbook returns 400", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Archived PATCH Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+		err = e.PlaybooksClient.Playbooks.Archive(context.Background(), id)
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": "INC"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("prefix at 32 chars accepted", func(t *testing.T) {
+		// Boundary: 32 alphanumeric chars must be accepted.
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Boundary 32 Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		max32 := strings.Repeat("A", 32)
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": max32})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode, "32-char prefix is on the inclusive boundary and must be accepted")
+	})
+
+	t.Run("prefix at 33 chars rejected", func(t *testing.T) {
+		// Boundary: 33 chars must be rejected (limit is 32, inclusive).
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Prefix Boundary 33 Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		over32 := strings.Repeat("A", 33)
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": over32})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode, "33-char prefix must exceed the 32-char limit")
+	})
+
+	t.Run("channel template at 1024 chars accepted", func(t *testing.T) {
+		// Boundary: a 1024-char template (no field references) is on the inclusive limit.
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Template Boundary 1024 Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		template := strings.Repeat("A", 1024)
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"channel_name_template": template})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode, "1024-char template is on the inclusive boundary and must be accepted")
+	})
+
+	t.Run("channel template over 1024 chars rejected", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Template Boundary 1025 Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		template := strings.Repeat("A", 1025)
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"channel_name_template": template})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode, "1025-char template must exceed the 1024-char limit")
+	})
+
+	t.Run("field deletion blocked when referenced in template", func(t *testing.T) {
+		// Create a playbook, add a property field, set the template to reference that field,
+		// then attempt to delete the field — the API guard must reject the delete.
+		id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Field Deletion Template Guard Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		field, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(context.Background(), id, client.PropertyFieldRequest{
+			Name: "Zone",
+			Type: "text",
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerAdminClient, id, map[string]any{"channel_name_template": "{Zone}"})
+		resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		// Attempt to delete the field that the template references.
+		delErr := e.PlaybooksAdminClient.Playbooks.DeletePropertyField(context.Background(), id, field.ID)
+		require.Error(t, delErr, "deleting a field referenced by the channel name template must fail")
+		requireErrorWithStatusCode(t, delErr, http.StatusBadRequest)
+	})
+}
+
+// TestSequentialIDFrozenAtCreation pins the contract that SequentialID is frozen at
+// run creation: changing the playbook's RunNumberPrefix afterwards must NOT alter
+// existing runs' stamped IDs. Only NEW runs see the new prefix.
+func TestSequentialIDFrozenAtCreation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:           "Sequential ID Frozen Test",
+		TeamID:          e.BasicTeam.Id,
+		Public:          true,
+		RunNumberPrefix: "OLD",
+	})
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Frozen-ID Run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  pbID,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, run.SequentialID, "new run must receive a sequential ID")
+	originalSeqID := run.SequentialID
+	require.True(t, strings.HasPrefix(originalSeqID, "OLD-"), "sequential ID must use the prefix in force at creation time")
+
+	// Change the prefix to NEW. Existing runs must NOT see the change.
+	patchResp := func() *http.Response {
+		bodyBytes, err := json.Marshal(map[string]any{"run_number_prefix": "NEW"})
+		require.NoError(t, err)
+		apiURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", e.ServerAdminClient.URL, pbID)
+		req, err := http.NewRequest(http.MethodPatch, apiURL, bytes.NewReader(bodyBytes))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		return resp
+	}()
+	patchResp.Body.Close()
+	require.Equal(t, http.StatusNoContent, patchResp.StatusCode)
+
+	// Re-fetch the original run and verify SequentialID is unchanged (frozen).
+	refetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.Equal(t, originalSeqID, refetched.SequentialID, "existing run's SequentialID must be frozen — changing the playbook prefix afterwards must NOT rewrite it")
 }
 
 func stringPtr(s string) *string {

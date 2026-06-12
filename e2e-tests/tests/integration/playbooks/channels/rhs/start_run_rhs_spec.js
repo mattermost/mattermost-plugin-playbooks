@@ -328,6 +328,50 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
         });
     });
 
+    describe('create new playbook from run modal', () => {
+        it('empty state has no dropdown — only the header does', () => {
+            // # Navigate to a channel with no runs
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Open playbooks RHS
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+            // * The empty-state widget has a "New checklist" button but no chevron/dropdown
+            cy.get('#rhsContainer').findByTestId('no-active-runs').within(() => {
+                cy.findByTestId('create-blank-checklist').should('exist');
+                cy.get('.icon-chevron-down').should('not.exist');
+            });
+
+            // * The header (outside the empty-state widget) does have the dropdown
+            cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').first().
+                parent().find('.icon-chevron-down').should('exist');
+        });
+
+        it('opens the playbook editor when clicking Create new playbook', () => {
+            // # Navigate to the channel
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Open playbooks RHS
+            cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+            // # Click the dropdown next to the "New checklist" header button
+            cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').first().parent().find('.icon-chevron-down').click();
+
+            // # Click "Run a playbook" from the dropdown
+            cy.findByTestId('create-from-playbook').click();
+
+            // # Click "Create new playbook" in the run modal header
+            cy.get('#root-portal.modal-open').within(() => {
+                cy.findByText('Create new playbook').should('be.visible').click();
+            });
+
+            // * Verify the playbook creation modal opened (unique to this flow)
+            cy.get('#root-portal.modal-open').within(() => {
+                cy.findByText('Create Playbook').should('be.visible');
+            });
+        });
+    });
+
     describe('DM/GM channel exclusion in run modal', () => {
         it('does not offer DM channels when linking an existing channel', () => {
             // # Setup: create a DM partner and ensure the DM exists
@@ -434,9 +478,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     });
 
                     // * The DM channel was NOT fetched repeatedly (regression cap: <4 calls).
-                    //   The fetch storm (when the bug exists) originates from
-                    //   BroadcastChannelSelector mount and resolves within ~1s; TWO_SEC
-                    //   leaves slack without inflating CI cost.
+                    //   cy.wait('@alias') is not usable here: we're asserting an upper-bound
+                    //   on the number of fetches (≤3), not waiting for a specific fetch.
+                    //   TWO_SEC is the observation window; the fetch storm (bug scenario)
+                    //   originates from BroadcastChannelSelector mount and resolves within ~1s.
                     cy.wait(TWO_SEC); // eslint-disable-line cypress/no-unnecessary-waiting
                     cy.get('@getDMChannel.all').should('have.length.lessThan', 4);
 

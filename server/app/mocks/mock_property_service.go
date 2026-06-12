@@ -10,6 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	model "github.com/mattermost/mattermost/server/public/model"
 )
 
 // MockPropertyService is a mock of PropertyService interface.
@@ -289,6 +290,21 @@ func (mr *MockPropertyServiceMockRecorder) UpdatePropertyField(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePropertyField", reflect.TypeOf((*MockPropertyService)(nil).UpdatePropertyField), arg0, arg1)
 }
 
+// SanitizePropertyValue mocks base method.
+func (m *MockPropertyService) SanitizePropertyValue(arg0 model.PropertyFieldType, arg1 json.RawMessage) (json.RawMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SanitizePropertyValue", arg0, arg1)
+	ret0, _ := ret[0].(json.RawMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SanitizePropertyValue indicates an expected call of SanitizePropertyValue.
+func (mr *MockPropertyServiceMockRecorder) SanitizePropertyValue(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SanitizePropertyValue", reflect.TypeOf((*MockPropertyService)(nil).SanitizePropertyValue), arg0, arg1)
+}
+
 // UpsertRunPropertyValue mocks base method.
 func (m *MockPropertyService) UpsertRunPropertyValue(arg0, arg1 string, arg2 json.RawMessage) (*app.PropertyValue, error) {
 	m.ctrl.T.Helper()
@@ -302,4 +318,19 @@ func (m *MockPropertyService) UpsertRunPropertyValue(arg0, arg1 string, arg2 jso
 func (mr *MockPropertyServiceMockRecorder) UpsertRunPropertyValue(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRunPropertyValue", reflect.TypeOf((*MockPropertyService)(nil).UpsertRunPropertyValue), arg0, arg1, arg2)
+}
+
+// UpsertRunPropertyValueWithField mocks base method.
+func (m *MockPropertyService) UpsertRunPropertyValueWithField(arg0 string, arg1 *app.PropertyField, arg2 json.RawMessage) (*app.PropertyValue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertRunPropertyValueWithField", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*app.PropertyValue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpsertRunPropertyValueWithField indicates an expected call of UpsertRunPropertyValueWithField.
+func (mr *MockPropertyServiceMockRecorder) UpsertRunPropertyValueWithField(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRunPropertyValueWithField", reflect.TypeOf((*MockPropertyService)(nil).UpsertRunPropertyValueWithField), arg0, arg1, arg2)
 }

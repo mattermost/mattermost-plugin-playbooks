@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {getRandomId} from '../../../utils';
+
 /* eslint-disable no-only-tests/no-only-tests */
 
 describe('runs > run details page > status update', {testIsolation: true}, () => {
@@ -288,5 +290,167 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
                 cy.getLastPost().should('not.contain', `${testUser.username} requested a status update for ${testPublicPlaybook.name}].`);
             });
         });
+    });
+});
+
+describe('runs > run details page > status update > template token preview', {testIsolation: true}, () => {
+    let testTeam;
+    let testUser;
+    let testPlaybook;
+    let testRun;
+
+    before(() => {
+        cy.apiAdminLogin();
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
+        });
+    });
+
+    beforeEach(() => {
+        cy.viewport('macbook-13');
+        cy.apiLogin(testUser);
+
+        // # Create a fresh playbook per test so testPlaybook is always valid on retry/reload
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Template Preview Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            makePublic: true,
+        }).then((playbook) => {
+            testPlaybook = playbook;
+
+            // # Set run_number_prefix so {SEQ} resolves to e.g. TPL-00001
+            cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'TPL'}).then(() => {
+                // # Add a Zone select field with two options
+                cy.apiAddPropertyField(testPlaybook.id, {
+                    name: 'Zone',
+                    type: 'select',
+                    attrs: {
+                        visibility: 'always',
+                        sortOrder: 0,
+                        options: [
+                            {name: 'Alpha'},
+                            {name: 'Bravo'},
+                        ],
+                    },
+                });
+            });
+        });
+
+        // # Start a fresh run for each test (depends on testPlaybook set above)
+        cy.then(() => cy.apiRunPlaybook({
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
+            playbookRunName: 'Template Preview Run ' + getRandomId(),
+            ownerUserId: testUser.id,
+        })).then((run) => {
+            testRun = run;
+            cy.visit(`/playbooks/runs/${run.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
+        });
+    });
+
+    afterEach(() => {
+        cy.apiLogin(testUser);
+        if (testPlaybook) {
+            cy.apiArchivePlaybook(testPlaybook.id);
+        }
+    });
+
+    const openStatusUpdateModal = () => {
+        cy.findByTestId('run-statusupdate-section').findByTestId('post-update-button').click();
+        cy.getStatusUpdateDialog().should('be.visible');
+    };
+
+    const typeMessage = (msg) => {
+        cy.findByTestId('update_run_status_textbox').clear().type(msg.replace(/{/g, '{{}'));
+    };
+
+    it('shows "Resolves to:" line when message contains {SEQ}', () => {
+        openStatusUpdateModal();
+        typeMessage('{SEQ} update');
+
+        cy.findByTestId('status-message-preview').
+            should('be.visible').
+            and('contain', testRun.sequential_id).
+            and('contain', ' update');
+    });
+
+    it('shows "Resolves to:" line when message contains {OWNER}', () => {
+        openStatusUpdateModal();
+
+        typeMessage('Owner is {OWNER}');
+
+        // Verify token was resolved (don't assume display name format — depends on server TeammateNameDisplay setting)
+        cy.findByTestId('status-message-preview').
+            should('be.visible').
+            and('contain', 'Owner is ').
+            and('not.contain', '{OWNER}');
+    });
+
+    it('shows "Resolves to:" line for mixed system + unknown tokens — unknown token passed through', () => {
+        openStatusUpdateModal();
+
+        typeMessage('{SEQ} and {unknownfoo}');
+
+        // * Preview shows: known token resolved, unknown token left as-is
+        cy.findByTestId('status-message-preview').
+            should('be.visible').
+            and('contain', testRun.sequential_id).
+            and('contain', '{unknownfoo}');
+    });
+
+    it('hides "Resolves to:" line when message has only unknown tokens', () => {
+        openStatusUpdateModal();
+        typeMessage('{unknownfoo}');
+
+        // * No preview — nothing was resolved
+        cy.findByTestId('status-message-preview').should('not.exist');
+    });
+
+    it('hides "Resolves to:" line for plain text with no tokens', () => {
+        openStatusUpdateModal();
+        typeMessage('just a plain update');
+
+        cy.findByTestId('status-message-preview').should('not.exist');
+    });
+
+    it('shows "Resolves to:" for property field token after value is set', () => {
+        // # Get the run-scoped Zone field id and set its value via GraphQL
+        cy.request({
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            url: `/plugins/playbooks/api/v0/runs/${testRun.id}/property_fields`,
+            method: 'GET',
+        }).then((response) => {
+            const zoneField = response.body.find((f) => f.name === 'Zone');
+            const alphaOptionId = zoneField.attrs.options.find((o) => o.name === 'Alpha').id;
+
+            // # Set Zone = Alpha via GraphQL mutation
+            const mutation = `mutation SetZone($runID: String!, $fieldID: String!, $value: JSON) {
+                setRunPropertyValue(runID: $runID, propertyFieldID: $fieldID, value: $value)
+            }`;
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json'},
+                url: '/plugins/playbooks/api/v0/query',
+                method: 'POST',
+                body: {
+                    operationName: 'SetZone',
+                    query: mutation,
+                    variables: {runID: testRun.id, fieldID: zoneField.id, value: alphaOptionId},
+                },
+            });
+        });
+
+        // # Reload the run page so the modal picks up the new value
+        cy.reload();
+        cy.assertRunDetailsPageRenderComplete(testUser.username);
+
+        openStatusUpdateModal();
+        typeMessage('Zone: {Zone}');
+
+        cy.findByTestId('status-message-preview').
+            should('be.visible').
+            and('contain', 'Zone: Alpha');
     });
 });

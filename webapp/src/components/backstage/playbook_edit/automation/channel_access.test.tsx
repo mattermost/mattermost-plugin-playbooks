@@ -50,6 +50,84 @@ const renderWithIntl = (children: React.ReactNode) => renderer.create(
     </IntlProvider>,
 );
 
+describe('CreateAChannel — run number prefix input', () => {
+    it('renders the prefix input with the value from the playbook', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '',
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: 'INC',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [prefixInput] = component.root.findAll(
+            (node) => node.props['data-testid'] === 'channel-access-run-number-prefix',
+        );
+        expect(prefixInput?.props.value).toBe('INC');
+    });
+
+    it('disables the prefix input when channel_mode is link_existing_channel', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '',
+            delete_at: 0,
+            channel_mode: 'link_existing_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [prefixInput] = component.root.findAll(
+            (node) => node.props['data-testid'] === 'channel-access-run-number-prefix',
+        );
+        expect(prefixInput?.props.disabled).toBe(true);
+    });
+
+    it('calls onRunNumberPrefixChange with the new value when input changes', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '',
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const onRunNumberPrefixChange = jest.fn();
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+                onRunNumberPrefixChange={onRunNumberPrefixChange}
+            />,
+        );
+
+        const [prefixInput] = component.root.findAll(
+            (node) => node.props['data-testid'] === 'channel-access-run-number-prefix',
+        );
+        prefixInput.props.onChange({target: {value: 'INC'}});
+
+        expect(onRunNumberPrefixChange).toHaveBeenCalledWith('INC');
+    });
+});
+
 describe('CreateAChannel — link-existing channel selector', () => {
     beforeEach(() => {
         capturedProps.length = 0;
@@ -62,6 +140,8 @@ describe('CreateAChannel — link-existing channel selector', () => {
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
         };
 
         const component = renderWithIntl(
@@ -88,6 +168,8 @@ describe('CreateAChannel — link-existing channel selector', () => {
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
         };
 
         renderWithIntl(

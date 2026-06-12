@@ -21,7 +21,9 @@ import (
 )
 
 func TestGraphQLPlaybooks(t *testing.T) {
-	e := Setup(t)
+	// The "list" subtest lists playbooks across the whole server, so this test
+	// requires a globally-empty database.
+	e := SetupIsolated(t)
 	e.CreateBasic()
 
 	t.Run("basic get", func(t *testing.T) {
@@ -706,7 +708,7 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 	})
 }
 
-func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string]interface{}) error {
+func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string]any) error {
 	const mutation = `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 		updatePlaybook(id: $id, updates: $updates)
 	}`
@@ -714,7 +716,7 @@ func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "UpdatePlaybook",
-		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
+		Variables:     map[string]any{"id": playbookID, "updates": updates},
 	}, &response)
 	if err != nil {
 		return errors.Wrapf(err, "gqlDoPlaybookUpdate graphql failure")

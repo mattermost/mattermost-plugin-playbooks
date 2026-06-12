@@ -62,36 +62,36 @@ func (b *Bot) PostMessageToThread(rootPostID string, post *model.Post) error {
 	return b.pluginAPI.Post.CreatePost(post)
 }
 
-// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
-// posting was successful. Often used to include post actions.
-func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error) {
+// PostMessageWithAttachments posts a formatted message with attachments []*model.MessageAttachment to channelID.
+// The message is formatted using format and args, and the created *model.Post is returned on success.
+func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error) {
 	post := &model.Post{
 		Message:   fmt.Sprintf(format, args...),
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 	}
-	model.ParseSlackAttachment(post, attachments)
+	model.ParseMessageAttachment(post, attachments)
 	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
 		return nil, err
 	}
 	return post, nil
 }
 
-func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, message string) (*model.Post, error) {
+func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string) (*model.Post, error) {
 	post := &model.Post{
 		Message:   message,
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 		Type:      customType,
 	}
-	model.ParseSlackAttachment(post, attachments)
+	model.ParseMessageAttachment(post, attachments)
 	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
 		return nil, err
 	}
 	return post, nil
 }
 
-func (b *Bot) PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error) {
+func (b *Bot) PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error) {
 	return b.PostCustomMessageWithAttachments(channelID, customType, attachments, fmt.Sprintf(format, args...))
 }
 
@@ -122,8 +122,8 @@ func (b *Bot) SystemEphemeralPost(userID, channelID string, post *model.Post) {
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
-// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
-func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.SlackAttachment, format string, args ...interface{}) {
+// EphemeralPostWithAttachments sends an ephemeral message to userID in channelID with message attachments.
+func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.MessageAttachment, format string, args ...interface{}) {
 	post := &model.Post{
 		Message:   fmt.Sprintf(format, args...),
 		UserId:    b.botUserID,
@@ -131,7 +131,7 @@ func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, att
 		RootId:    postID,
 	}
 
-	model.ParseSlackAttachment(post, attachments)
+	model.ParseMessageAttachment(post, attachments)
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
@@ -261,7 +261,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		actions = []*model.PostAction{}
 	}
 
-	attachments := []*model.SlackAttachment{
+	attachments := []*model.MessageAttachment{
 		{
 			Title:   title,
 			Text:    separator + text,
