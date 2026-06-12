@@ -5217,13 +5217,9 @@ func TestFinishedRunWriteOperationsBlocked(t *testing.T) {
 		body, err := json.Marshal(map[string]string{"owner_id": e.AdminUser.Id})
 		require.NoError(t, err)
 
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(
-			context.Background(),
-			http.MethodPost,
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPost,
 			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/owner",
-			string(body),
-			nil,
-		)
+			string(body), nil)
 		require.Error(t, err)
 		require.NotNil(t, resp)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -5280,13 +5276,9 @@ func TestFinishedRunWriteOperationsBlocked(t *testing.T) {
 	t.Run("request join channel fails", func(t *testing.T) {
 		run := createAndFinishRun(t)
 
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(
-			context.Background(),
-			http.MethodPost,
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPost,
 			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/request-join-channel",
-			"",
-			nil,
-		)
+			"", nil)
 		require.Error(t, err)
 		require.NotNil(t, resp)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -5295,13 +5287,9 @@ func TestFinishedRunWriteOperationsBlocked(t *testing.T) {
 	t.Run("restore succeeds", func(t *testing.T) {
 		run := createAndFinishRun(t)
 
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(
-			context.Background(),
-			http.MethodPut,
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut,
 			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/restore",
-			"",
-			nil,
-		)
+			"", nil)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
