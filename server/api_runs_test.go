@@ -5205,6 +5205,62 @@ func TestFinishedRunWriteOperationsBlocked(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("set property value fails", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Finished Run Property Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Priority", Type: "text"},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Finished Run Property Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, runFields)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runFields[0].ID,
+			client.PropertyValueRequest{Value: []byte(`"blocked"`)},
+		)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("request join channel fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		resp, err := e.ServerClient.DoAPIRequestWithHeaders(
+			context.Background(),
+			http.MethodPost,
+			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/request-join-channel",
+			"",
+			nil,
+		)
+		require.Error(t, err)
+		require.NotNil(t, resp)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
 	t.Run("restore succeeds", func(t *testing.T) {
 		run := createAndFinishRun(t)
 

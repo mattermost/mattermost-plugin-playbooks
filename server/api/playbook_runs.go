@@ -1033,6 +1033,16 @@ func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWrite
 		return
 	}
 
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+		return
+	}
+
 	if err := h.playbookRunService.RequestJoinChannel(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -2316,6 +2326,16 @@ func (h *PlaybookRunHandler) setRunPropertyValue(c *Context, w http.ResponseWrit
 
 	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
 		return
 	}
 
