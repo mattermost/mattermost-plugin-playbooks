@@ -1170,6 +1170,26 @@ func removeParticipants(c *client.Client, playbookRunID string, userIDs []string
 	return response, err
 }
 
+// ChangeRunOwner changes run owner
+func changeRunOwner(c *client.Client, playbookRunID string, newOwnerID string) (graphql.Response, error) {
+	mutation := `
+	mutation ChangeRunOwner($runID: String!, $ownerID: String!) {
+		changeRunOwner(runID: $runID, ownerID: $ownerID)
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "ChangeRunOwner",
+		Variables: map[string]any{
+			"runID":   playbookRunID,
+			"ownerID": newOwnerID,
+		},
+	}, &response)
+
+	return response, err
+}
+
 func setRunFavorite(c *client.Client, playbookRunID string, fav bool) (graphql.Response, error) {
 	mutation := `mutation SetRunFavorite($id: String!, $fav: Boolean!) {
 		setRunFavorite(id: $id, fav: $fav)
@@ -1646,6 +1666,128 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 	})
 }
 
+func TestFinishedRunGraphQLWriteOperationsBlocked(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createAndFinishRun := func(t *testing.T) *client.PlaybookRun {
+		t.Helper()
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run to finish",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		finishedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusFinished, finishedRun.CurrentStatus)
+
+		return finishedRun
+	}
+
+	t.Run("change owner fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		response, err := changeRunOwner(e.PlaybooksClient, run.ID, e.AdminUser.Id)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+
+	t.Run("add participant fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		response, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+
+	t.Run("update run settings fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		response, err := updateRun(e.PlaybooksClient, run.ID, map[string]any{
+			"statusUpdateBroadcastChannelsEnabled": true,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+
+	t.Run("update task actions fails", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with checklist",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		response, err := UpdateRunTaskActions(e.PlaybooksClient, run.ID, 0, 0, &[]app.TaskAction{
+			{
+				Trigger: app.Trigger{
+					Type:    app.KeywordsByUsersTriggerType,
+					Payload: `{"keywords":["test"], "user_ids":["abc"]}`,
+				},
+				Actions: []app.Action{{
+					Type:    app.MarkItemAsDoneActionType,
+					Payload: `{}`,
+				}},
+			},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+
+	t.Run("set property value fails", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Finished Run GraphQL Property Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Priority", Type: "text"},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Finished Run GraphQL Property Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, runFields)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		response, err := setRunPropertyValue(e.PlaybooksClient, run.ID, runFields[0].ID, `"blocked"`)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors)
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+}
+
 func UpdateRunTaskActions(c *client.Client, playbookRunID string, checklistNum float64, itemNum float64, taskActions *[]app.TaskAction) (graphql.Response, error) {
 	mutation := `
 		mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {
@@ -1661,6 +1803,26 @@ func UpdateRunTaskActions(c *client.Client, playbookRunID string, checklistNum f
 			"checklistNum": checklistNum,
 			"itemNum":      itemNum,
 			"taskActions":  taskActions,
+		},
+	}, &response)
+
+	return response, err
+}
+
+func setRunPropertyValue(c *client.Client, playbookRunID, propertyFieldID, value string) (graphql.Response, error) {
+	mutation := `
+		mutation SetRunPropertyValue($runID: String!, $propertyFieldID: String!, $value: JSON) {
+			setRunPropertyValue(runID: $runID, propertyFieldID: $propertyFieldID, value: $value)
+		}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "SetRunPropertyValue",
+		Variables: map[string]any{
+			"runID":           playbookRunID,
+			"propertyFieldID": propertyFieldID,
+			"value":           json.RawMessage(value),
 		},
 	}, &response)
 

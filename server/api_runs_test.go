@@ -992,8 +992,7 @@ func TestChecklistManagement(t *testing.T) {
 
 		// Try to rename the checklist in the finished run
 		err = e.PlaybooksClient.PlaybookRuns.RenameChecklist(context.Background(), run.ID, 0, newTitle)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "already ended")
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("checklist removal - success: result in no checklists", func(t *testing.T) {
@@ -5174,6 +5173,155 @@ func TestDMGMParticipants(t *testing.T) {
 			memberIDs[i] = m.UserId
 		}
 		assert.Contains(t, memberIDs, e.RegularUser2.Id, "DM membership should not be removed when leaving the run")
+	})
+}
+
+func TestFinishedRunWriteOperationsBlocked(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createAndFinishRun := func(t *testing.T) *client.PlaybookRun {
+		t.Helper()
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run to finish",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		finishedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusFinished, finishedRun.CurrentStatus)
+
+		return finishedRun
+	}
+
+	t.Run("add checklist fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "New checklist",
+			Items: []client.ChecklistItem{},
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("change owner fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		body, err := json.Marshal(map[string]string{"owner_id": e.AdminUser.Id})
+		require.NoError(t, err)
+
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPost,
+			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/owner",
+			string(body), nil)
+		require.Error(t, err)
+		require.NotNil(t, resp)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("update status fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "status update", 3000)
+		require.Error(t, err)
+	})
+
+	t.Run("set property value fails", func(t *testing.T) {
+		e.SetEnterpriseLicence()
+
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Finished Run Property Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Priority", Type: "text"},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Finished Run Property Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, runFields)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runFields[0].ID,
+			client.PropertyValueRequest{Value: []byte(`"blocked"`)},
+		)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("request join channel fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPost,
+			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/request-join-channel",
+			"", nil)
+		require.Error(t, err)
+		require.NotNil(t, resp)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("restore succeeds", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), http.MethodPut,
+			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/restore",
+			"", nil)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		restoredRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusInProgress, restoredRun.CurrentStatus)
+	})
+
+	t.Run("update retrospective on finished run succeeds", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.UpdateRetrospective(context.Background(), run.ID, e.RegularUser.Id, client.RetrospectiveUpdate{
+			Text: "retrospective text",
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("active run update succeeds", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Active run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		newName := "Updated active run"
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), run.ID, client.PlaybookRunUpdateOptions{
+			Name: &newName,
+		})
+		require.NoError(t, err)
+		require.Equal(t, newName, updatedRun.Name)
 	})
 }
 
