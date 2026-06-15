@@ -888,6 +888,27 @@ func TestChecklistManagement(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("checklist renaming - failure: run is finished", func(t *testing.T) {
+		run := createNewRunWithNoChecklists(t)
+		oldTitle := "Old Title"
+		newTitle := "New Title"
+
+		// Create a new checklist with a known title
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: oldTitle,
+			Items: []client.ChecklistItem{},
+		})
+		require.NoError(t, err)
+
+		// Finish the run
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Try to rename the checklist in the finished run
+		err = e.PlaybooksClient.PlaybookRuns.RenameChecklist(context.Background(), run.ID, 0, newTitle)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
 	t.Run("checklist removal - success: result in no checklists", func(t *testing.T) {
 		run := createNewRunWithNoChecklists(t)
 		require.Len(t, run.Checklists, 0)
@@ -2650,3 +2671,90 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 	require.NotNil(t, run)
 	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
 }
+
+func TestFinishedRunWriteOperationsBlocked(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createAndFinishRun := func(t *testing.T) *client.PlaybookRun {
+		t.Helper()
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run to finish",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		finishedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusFinished, finishedRun.CurrentStatus)
+
+		return finishedRun
+	}
+
+	t.Run("add checklist fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "New checklist",
+			Items: []client.ChecklistItem{},
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("change owner fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		body, err := json.Marshal(map[string]string{"owner_id": e.AdminUser.Id})
+		require.NoError(t, err)
+
+		_, err = e.ServerClient.DoAPIRequestBytes(context.Background(), http.MethodPost,
+			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/owner",
+			string(body), "")
+		require.Error(t, err)
+	})
+
+	t.Run("update status fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "status update", 3000)
+		require.Error(t, err)
+	})
+
+	t.Run("request join channel fails", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		_, err := e.ServerClient.DoAPIRequest(context.Background(), http.MethodPost,
+			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/request-join-channel",
+			"", "")
+		require.Error(t, err)
+	})
+
+	t.Run("restore succeeds", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		_, err := e.ServerClient.DoAPIRequest(context.Background(), http.MethodPut,
+			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/restore",
+			"", "")
+		require.NoError(t, err)
+
+		restoredRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusInProgress, restoredRun.CurrentStatus)
+	})
+
+	t.Run("update retrospective on finished run succeeds", func(t *testing.T) {
+		run := createAndFinishRun(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.UpdateRetrospective(context.Background(), run.ID, e.RegularUser.Id, client.RetrospectiveUpdate{
+			Text: "retrospective text",
+		})
+		require.NoError(t, err)
+	})
+}
+
