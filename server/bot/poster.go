@@ -62,8 +62,8 @@ func (b *Bot) PostMessageToThread(rootPostID string, post *model.Post) error {
 	return b.pluginAPI.Post.CreatePost(post)
 }
 
-// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
-// posting was successful. Often used to include post actions.
+// PostMessageWithAttachments posts a formatted message with attachments []*model.MessageAttachment to channelID.
+// The message is formatted using format and args, and the created *model.Post is returned on success.
 func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error) {
 	post := &model.Post{
 		Message:   fmt.Sprintf(format, args...),
@@ -122,7 +122,7 @@ func (b *Bot) SystemEphemeralPost(userID, channelID string, post *model.Post) {
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
-// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
+// EphemeralPostWithAttachments sends an ephemeral message to userID in channelID with message attachments.
 func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.MessageAttachment, format string, args ...interface{}) {
 	post := &model.Post{
 		Message:   fmt.Sprintf(format, args...),

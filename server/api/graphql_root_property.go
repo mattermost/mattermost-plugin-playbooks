@@ -234,6 +234,10 @@ func (r *PropertyRootResolver) SetRunPropertyValue(ctx context.Context, args str
 		return "", err
 	}
 
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+	}
+
 	// Verify the property field exists and belongs to the run
 	propertyField, err := c.propertyService.GetPropertyField(args.PropertyFieldID)
 	if err != nil {

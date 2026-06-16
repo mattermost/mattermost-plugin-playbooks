@@ -388,7 +388,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(post *model.Post) {
 	}
 
 	message := getPlaybookSuggestionsMessage(triggeredPlaybooks, presentTriggers)
-	attachment := getPlaybookSuggestionsSlackAttachment(triggeredPlaybooks, post.Id, a.configService.GetManifest().Id)
+	attachment := getPlaybookSuggestionsMessageAttachment(triggeredPlaybooks, post.Id, a.configService.GetManifest().Id)
 
 	rootID := post.RootId
 	if rootID == "" {
@@ -424,7 +424,7 @@ func getPlaybookSuggestionsMessage(suggestedPlaybooks []Playbook, triggers []str
 	return message
 }
 
-func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, triggeringPostID string, pluginID string) *model.MessageAttachment {
+func getPlaybookSuggestionsMessageAttachment(playbooks []Playbook, triggeringPostID string, pluginID string) *model.MessageAttachment {
 	ignoreButton := &model.PostAction{
 		Id:   "ignoreKeywordsButton",
 		Name: "No, ignore thread",
