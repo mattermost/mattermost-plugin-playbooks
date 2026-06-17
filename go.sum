@@ -322,10 +322,10 @@ github.com/mattermost/mattermost-plugin-agents v1.14.1-0.20260501175157-27e12955
 github.com/mattermost/mattermost-plugin-agents v1.14.1-0.20260501175157-27e12955f081/go.mod h1:3GvyTadvBgl0dlZbnchvB2FyS7xDzp3ycbDMgwsMRGE=
 github.com/mattermost/mattermost-plugin-ai v1.14.0 h1:Fba2ORHaMe0Dl0TfVtdC1eAQOkvgRzVz3v/B9V21d9w=
 github.com/mattermost/mattermost-plugin-ai v1.14.0/go.mod h1:L/I/IpdWNGbxRfUduCstCYbhyX59OEftxcpDHtCT4EI=
-github.com/mattermost/mattermost/server/public v0.4.3-0.20260615134642-c621c9f7e0ea h1:vSQRgYks4AFVaXNhYOX6JSdfPLu+6Uw+fqUhzaAN20s=
-github.com/mattermost/mattermost/server/public v0.4.3-0.20260615134642-c621c9f7e0ea/go.mod h1:2z08gasPXqIIbzl/xf2/2Sfn5ITFLGC6tplhOklyAAQ=
-github.com/mattermost/mattermost/server/v8 v8.0.0-20260615134642-c621c9f7e0ea h1:WCo57CBvrFVoyf/Q+2cJqduiLewuvHTbnJCNo3wMEsg=
-github.com/mattermost/mattermost/server/v8 v8.0.0-20260615134642-c621c9f7e0ea/go.mod h1:RBaqawSPsPB76XA4hfrIRFvLS0QWF1qJWHr2+w34+6s=
+github.com/mattermost/mattermost/server/public v0.4.3-0.20260617000939-56291ddd1d46 h1:xVt8uCsuIUBAct4j2DMxqeOsXnT7oOC+tT0TrfJOhnc=
+github.com/mattermost/mattermost/server/public v0.4.3-0.20260617000939-56291ddd1d46/go.mod h1:2z08gasPXqIIbzl/xf2/2Sfn5ITFLGC6tplhOklyAAQ=
+github.com/mattermost/mattermost/server/v8 v8.0.0-20260617000939-56291ddd1d46 h1:BTgzo4CbDanAKzlzYbPdWpXb7FIl3nwqpY1az92+r7o=
+github.com/mattermost/mattermost/server/v8 v8.0.0-20260617000939-56291ddd1d46/go.mod h1:RBaqawSPsPB76XA4hfrIRFvLS0QWF1qJWHr2+w34+6s=
 github.com/mattermost/morph v1.1.0 h1:Q9vrJbeM3s2jfweGheq12EFIzdNp9a/6IovcbvOQ6Cw=
 github.com/mattermost/morph v1.1.0/go.mod h1:gD+EaqX2UMyyuzmF4PFh4r33XneQ8Nzi+0E8nXjMa3A=
 github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0 h1:G9tL6JXRBMzjuD1kkBtcnd42kUiT6QDwxfFYu7adM6o=

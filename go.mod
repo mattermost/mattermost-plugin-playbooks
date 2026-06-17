@@ -28,8 +28,8 @@ require (
 	github.com/mattermost/mattermost-load-test-ng v1.31.1-0.20260126111505-259c9598ea05
 	github.com/mattermost/mattermost-plugin-agents v1.14.1-0.20260501175157-27e12955f081
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.8.0
-	github.com/mattermost/mattermost/server/public v0.4.3-0.20260615134642-c621c9f7e0ea
-	github.com/mattermost/mattermost/server/v8 v8.0.0-20260615134642-c621c9f7e0ea
+	github.com/mattermost/mattermost/server/public v0.4.3-0.20260617000939-56291ddd1d46
+	github.com/mattermost/mattermost/server/v8 v8.0.0-20260617000939-56291ddd1d46
 	github.com/mattermost/morph v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modelcontextprotocol/go-sdk v1.5.0
