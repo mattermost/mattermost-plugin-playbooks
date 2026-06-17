@@ -109,6 +109,11 @@ jest.mock('./condition_indicator', () => ({
     default: () => null,
 }));
 
+jest.mock('./checked_chip', () => ({
+    __esModule: true,
+    default: () => null,
+}));
+
 const MockHoverMenu = HoverMenuDefault as unknown as jest.Mock;
 
 const makeItem = (overrides = {}) => ({...emptyChecklistItem(), ...overrides});
