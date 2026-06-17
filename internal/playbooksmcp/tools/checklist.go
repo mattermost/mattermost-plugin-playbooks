@@ -46,9 +46,9 @@ type RemoveChecklistItemArgs struct {
 type MoveChecklistItemArgs struct {
 	RunID              string `json:"run_id" jsonschema:"The ID of the playbook run"`
 	SourceChecklistIdx int    `json:"source_checklist_idx" jsonschema:"The zero-based source checklist index"`
-	SourceItemIdx      int    `json:"source_item_idx" jsonschema:"The zero-based source item index within the source checklist"`
+	SourceItemIdx      int    `json:"source_item_idx" jsonschema:"The zero-based index of the existing item to move within the source checklist"`
 	DestChecklistIdx   int    `json:"dest_checklist_idx" jsonschema:"The zero-based destination checklist index"`
-	DestItemIdx        int    `json:"dest_item_idx" jsonschema:"The zero-based destination item index within the destination checklist"`
+	DestItemIdx        int    `json:"dest_item_idx" jsonschema:"The zero-based insertion position within the destination checklist (0 = prepend, destination item count = append when moving between checklists)"`
 }
 
 type AddSectionArgs struct {
