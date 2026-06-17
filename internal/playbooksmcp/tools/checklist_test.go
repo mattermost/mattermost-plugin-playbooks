@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"reflect"
 	"testing"
 )
 
@@ -339,7 +340,13 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 		if !ok {
 			t.Fatalf("unexpected body type %T", client.postBody)
 		}
-		if body["source_checklist_idx"] != 1 || body["source_item_idx"] != 2 || body["dest_checklist_idx"] != 3 || body["dest_item_idx"] != 4 {
+		expected := map[string]int{
+			"source_checklist_idx": 1,
+			"source_item_idx":      2,
+			"dest_checklist_idx":   3,
+			"dest_item_idx":        4,
+		}
+		if !reflect.DeepEqual(body, expected) {
 			t.Fatalf("unexpected body: %#v", body)
 		}
 	})
@@ -401,7 +408,11 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 		if !ok {
 			t.Fatalf("unexpected body type %T", client.postBody)
 		}
-		if body["source_checklist_idx"] != 2 || body["dest_checklist_idx"] != 0 {
+		expected := map[string]int{
+			"source_checklist_idx": 2,
+			"dest_checklist_idx":   0,
+		}
+		if !reflect.DeepEqual(body, expected) {
 			t.Fatalf("unexpected body: %#v", body)
 		}
 	})
