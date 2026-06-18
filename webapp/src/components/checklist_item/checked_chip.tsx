@@ -155,13 +155,12 @@ const parseDetails = (raw: string): TaskStateModifiedDetails | null => {
  * "uncheck"), or undefined when it can't be determined confidently. The link between a timeline
  * event and a checklist item is imperfect (the event stores only the action + the markdown-stripped
  * task title — no item id reaches the frontend), so we never guess:
- *   1. Prefer matching-action events whose event_at equals this item's state_modified (the backend
- *      sets both from the same clock read). A single such event is an unambiguous match.
+ *   1. The event's event_at MUST equal this item's state_modified — the backend sets both from the
+ *      same clock read, so this is the authoritative key. A single matching-action event is the match.
  *   2. If several share that millisecond (e.g. a bulk/API action), disambiguate by title; use it
  *      only when exactly one title matches.
- *   3. If no event_at matches (e.g. timestamps drifted), fall back to a title match, again only
- *      when it is unique.
- * Any remaining ambiguity returns undefined so the chip omits attribution rather than mis-attributing.
+ * Title is never used as a sole link — only as a tiebreaker among exact event_at matches. Any
+ * remaining ambiguity returns undefined so the chip omits attribution rather than mis-attributing.
  */
 function useStateEvent(events: TimelineEvent[] | undefined, item: ChecklistItem, show: boolean, action: 'check' | 'uncheck'): TimelineEvent | undefined {
     return useMemo(() => {
@@ -178,18 +177,18 @@ function useStateEvent(events: TimelineEvent[] | undefined, item: ChecklistItem,
 
         const titleMatches = (raw: string) => parseDetails(raw)?.task === item.title;
 
+        // event_at must always equal state_modified; title alone is never a sufficient link.
         const exact = matches.filter((e) => e.event_at === item.state_modified);
         if (exact.length === 1) {
             return exact[0];
         }
         if (exact.length > 1) {
+            // Same-millisecond collision (e.g. bulk/API action): disambiguate by title, and only
+            // when exactly one title matches.
             const byTitle = exact.filter((e) => titleMatches(e.details));
             return byTitle.length === 1 ? byTitle[0] : undefined;
         }
-
-        // No event_at match — last resort: a unique title match.
-        const byTitle = matches.filter((e) => titleMatches(e.details));
-        return byTitle.length === 1 ? byTitle[0] : undefined;
+        return undefined;
     }, [events, item.state_modified, item.title, show, action]);
 }
 

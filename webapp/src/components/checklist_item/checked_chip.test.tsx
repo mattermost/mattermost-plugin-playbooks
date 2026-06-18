@@ -144,11 +144,12 @@ describe('CheckedChip', () => {
             expect(text(component)).toContain('Checked off');
         });
 
-        it('falls back to a unique title match when no event_at matches', () => {
+        it('does not attribute when no event_at matches (title alone is never a sufficient link)', () => {
             const events = [stateEvent('check', {event_at: 999, subject_user_id: 'carol', details: JSON.stringify({action: 'check', task: 'Deploy'})})];
             const component = render(closedItem({title: 'Deploy'}), {timelineEvents: events});
 
-            expect(avatarUserIds(component)).toEqual(['carol']);
+            expect(avatarUserIds(component)).toHaveLength(0);
+            expect(text(component)).toContain('Checked off');
         });
 
         it('shows the check icon in compact mode', () => {
