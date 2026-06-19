@@ -332,6 +332,21 @@ describe('RunPlaybookModal — template mode', () => {
             expect(tooltip.props.content).toContain('channel name template');
         });
 
+        it('exposes the read-only reason to screen readers via aria-describedby', () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const tree = component!.toJSON();
+            const nameInput = findNodeByTestId(tree, 'run-name-input');
+            expect(nameInput.props['aria-describedby']).toBe('run-name-readonly-desc');
+
+            const description = findNodeByTestId(tree, 'run-name-readonly-desc');
+            expect(description.props.id).toBe('run-name-readonly-desc');
+            expect(JSON.stringify(description)).toContain('channel name template');
+        });
+
         it('reinitializes same-id playbook refetches when template fields change', () => {
             let component: renderer.ReactTestRenderer;
             act(() => {
@@ -860,5 +875,14 @@ describe('RunPlaybookModal — no template (free-text mode)', () => {
         });
 
         expect(component!.root.findAllByType(Tooltip)).toHaveLength(0);
+    });
+
+    it('does not set aria-describedby or a hidden description on the editable name field', () => {
+        const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+        const tree = component.toJSON();
+
+        const nameInput = findNodeByTestId(tree, 'run-name-input');
+        expect(nameInput.props['aria-describedby']).toBeUndefined();
+        expect(toJson(component)).not.toContain('run-name-readonly-desc');
     });
 });
