@@ -177,6 +177,7 @@ export const UpdateRunStatusModal = ({
     // server would reject.
     const [restRun] = useRun(playbookRunId);
     const [playbook] = usePlaybook(restRun?.playbook_id);
+
     // `usePlaybook(undefined)` resolves to null while the run is still loading, so treat both
     // null and undefined as "not yet known" — passing undefined keeps the checkbox hidden during
     // load (the hook blocks on undefined) and prevents a flash of the checkbox for a blocked user.
@@ -204,8 +205,13 @@ export const UpdateRunStatusModal = ({
     const [showUnsavedRoute, setShowUnsaveRoute] = useState(false);
     const [finishRun, setFinishRun] = useState(providedFinishRunChecked || false);
 
-    const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), finishRun, providedReminder);
-    const isReminderValid = finishRun || (reminder && reminder > 0);
+    // Enforce the owner-only gate at the logic level, not just by hiding the checkbox: a blocked
+    // user must never reach the finish path even if `finishRun` was seeded from props or the
+    // cancel-reopen round trip.
+    const effectiveFinishRun = !blockedByOwnerOnly && finishRun;
+
+    const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), effectiveFinishRun, providedReminder);
+    const isReminderValid = effectiveFinishRun || (reminder && reminder > 0);
     let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
     if (!reminder || reminder === 0) {
         warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
@@ -259,7 +265,7 @@ export const UpdateRunStatusModal = ({
         if (hasPermission && message?.trim() && currentUserId && channelId) {
             postStatusUpdate(
                 playbookRunId,
-                {message, reminder, finishRun},
+                {message, reminder, finishRun: effectiveFinishRun},
                 {user_id: currentUserId, channel_id: channelId, team_id: run?.teamID ?? ''}
             );
             onActualHide();
@@ -267,7 +273,7 @@ export const UpdateRunStatusModal = ({
     };
 
     const onSubmit = () => {
-        if (finishRun) {
+        if (effectiveFinishRun) {
             onActualHide();
 
             dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
@@ -277,7 +283,7 @@ export const UpdateRunStatusModal = ({
                 confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
                 onConfirm,
                 onCancel: () => {
-                    dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, finishRun));
+                    dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, effectiveFinishRun));
                     setShowModal(true);
                 },
             })));
