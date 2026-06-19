@@ -33,6 +33,8 @@ import {
 
 import {useFormattedUsernames, usePost} from 'src/hooks';
 import {useRun, useUserDisplayNameMap} from 'src/hooks/general';
+import {usePlaybook} from 'src/hooks/crud';
+import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
@@ -156,7 +158,7 @@ function useStatusMessagePreview(playbookRunId: string, message: string | undefi
     }, [message, derived, userMap]);
 }
 
-const UpdateRunStatusModal = ({
+export const UpdateRunStatusModal = ({
     playbookRunId,
     channelId,
     hasPermission,
@@ -168,6 +170,19 @@ const UpdateRunStatusModal = ({
     const dispatch = useAppDispatch();
     const {formatMessage, formatList} = useIntl();
     const currentUserId = useAppSelector(getCurrentUserId);
+
+    // Determine whether the OwnerGroupOnlyActions restriction blocks this user from finishing
+    // the run, mirroring the gating used by the standalone Finish controls. When blocked we hide
+    // the "Also mark the run as finished" checkbox so the user cannot trigger a finish that the
+    // server would reject.
+    const [restRun] = useRun(playbookRunId);
+    const [playbook] = usePlaybook(restRun?.playbook_id);
+    // `usePlaybook(undefined)` resolves to null while the run is still loading, so treat both
+    // null and undefined as "not yet known" — passing undefined keeps the checkbox hidden during
+    // load (the hook blocks on undefined) and prevents a flash of the checkbox for a blocked user.
+    const ownerGroupOnlyActions = playbook == null ? undefined : (playbook.owner_group_only_actions ?? false);
+    const isOwner = restRun?.owner_user_id === currentUserId;
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
     const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
@@ -392,7 +407,7 @@ const UpdateRunStatusModal = ({
                 autoCloseOnConfirmButton={false}
                 isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && isReminderValid)}
                 id={ID}
-                footer={footer}
+                footer={blockedByOwnerOnly ? undefined : footer}
                 components={{FooterContainer}}
             >
                 {hasPermission ? form : warning}
