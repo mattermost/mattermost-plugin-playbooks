@@ -222,6 +222,7 @@ import {createPlaybookRun} from 'src/client';
 import {useUserDisplayNameMap} from 'src/hooks/general';
 import {findNodeByTestId} from 'src/utils/test_helpers';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
+import Tooltip from 'src/components/widgets/tooltip';
 
 import {RunPlaybookModal} from './run_playbook_modal';
 
@@ -318,6 +319,17 @@ describe('RunPlaybookModal — template mode', () => {
         it('marks name field as read-only when template is set', () => {
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             expect(toJson(component)).toContain('"$readOnly":true');
+        });
+
+        it('wraps the read-only name field in an explanatory tooltip when template is set', () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const tooltip = component!.root.findByType(Tooltip);
+            expect(tooltip.props.id).toBe('run-name-readonly-tooltip');
+            expect(tooltip.props.content).toContain('channel name template');
         });
 
         it('reinitializes same-id playbook refetches when template fields change', () => {
@@ -839,5 +851,14 @@ describe('RunPlaybookModal — no template (free-text mode)', () => {
     it('does not mark name as optional', () => {
         const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
         expect(toJson(component)).not.toContain('optional');
+    });
+
+    it('does not wrap the editable name field in a tooltip', () => {
+        let component: renderer.ReactTestRenderer;
+        act(() => {
+            component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+        });
+
+        expect(component!.root.findAllByType(Tooltip)).toHaveLength(0);
     });
 });
