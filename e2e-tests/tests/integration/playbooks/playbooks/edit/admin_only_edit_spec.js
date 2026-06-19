@@ -160,6 +160,12 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         // * Retrospective toggle input is disabled
         cy.findByTestId('retrospective-toggle').find('input[type="checkbox"]').should('be.disabled');
 
+        // * "Require new channel for all runs" toggle input is disabled
+        cy.findByTestId('new-channel-only-toggle').find('input[type="checkbox"]').should('be.disabled');
+
+        // * "Auto-archive channel" toggle input is disabled
+        cy.findByTestId('auto-archive-channel-toggle').find('input[type="checkbox"]').should('be.disabled');
+
         // * Add-checklist button is not rendered (checklist is read-only)
         cy.get('#checklists').should('be.visible');
         cy.findByTestId('add-a-checklist-button').should('not.exist');
@@ -190,6 +196,12 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
         // * Status update toggle is not disabled
         cy.findByTestId('status-update-toggle').find('input[type="checkbox"]').should('not.be.disabled');
+
+        // * "Require new channel for all runs" toggle is not disabled
+        cy.findByTestId('new-channel-only-toggle').find('input[type="checkbox"]').should('not.be.disabled');
+
+        // * "Auto-archive channel" toggle is not disabled
+        cy.findByTestId('auto-archive-channel-toggle').find('input[type="checkbox"]').should('not.be.disabled');
 
         // * Add-checklist button is rendered
         cy.findByTestId('add-a-checklist-button').should('exist');
