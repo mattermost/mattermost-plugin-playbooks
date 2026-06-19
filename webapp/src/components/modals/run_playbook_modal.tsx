@@ -30,6 +30,7 @@ import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {useCanCreatePlaybooksInTeam, usePlaybook, usePlaybookAttributes} from 'src/hooks';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
+import Tooltip from 'src/components/widgets/tooltip';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
@@ -573,16 +574,7 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
         suffix = ' ' + formatMessage({defaultMessage: '(optional)'});
     }
 
-    return (<>
-        <RunNameLabel invalid={Boolean(error)}>
-            {formatMessage(
-                {
-                    id: 'playbooks.run_playbook_modal.run_name_label',
-                    defaultMessage: 'Run name{suffix}',
-                },
-                {suffix},
-            )}
-        </RunNameLabel>
+    const input = (
         <BaseInput
             $invalid={Boolean(error)}
             $readOnly={readOnly}
@@ -593,6 +585,26 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
             readOnly={readOnly}
             onChange={readOnly ? undefined : onRunNameChange}
         />
+    );
+
+    return (<>
+        <RunNameLabel invalid={Boolean(error)}>
+            {formatMessage(
+                {
+                    id: 'playbooks.run_playbook_modal.run_name_label',
+                    defaultMessage: 'Run name{suffix}',
+                },
+                {suffix},
+            )}
+        </RunNameLabel>
+        {readOnly ? (
+            <Tooltip
+                id={'run-name-readonly-tooltip'}
+                content={formatMessage({defaultMessage: 'The run name is set automatically from this playbook\'s channel name template and can\'t be edited here.'})}
+            >
+                {input}
+            </Tooltip>
+        ) : input}
         {error && <ErrorMessage data-testid={'run-name-error'}>{error}</ErrorMessage>}
     </>);
 };
