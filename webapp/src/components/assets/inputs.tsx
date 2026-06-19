@@ -22,10 +22,6 @@ export const BaseInput = styled.input<{$invalid?: boolean; $readOnly?: boolean}>
         background-color: rgba(var(--center-channel-color-rgb), 0.04);
         color: rgba(var(--center-channel-color-rgb), 0.56);
         cursor: not-allowed;
-
-        &:focus {
-            box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
-        }
     `}
 `;
 
