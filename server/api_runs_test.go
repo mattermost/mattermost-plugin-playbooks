@@ -466,7 +466,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		assert.Equal(t, privateChannel.Id, run.ChannelID)
 	})
 
-	t.Run("does not add different owner to existing private channel without channel member management", func(t *testing.T) {
+	t.Run("does not add different owner to existing private channel when requester lacks manage-members", func(t *testing.T) {
 		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePrivateChannelMembers.Id, model.TeamUserRoleId)
@@ -501,6 +501,112 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		require.NotNil(t, run)
 		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), privateChannel.Id, e.RegularUser2.Id, "")
 		require.Error(t, err, "expected different owner to remain outside the channel when run creation succeeds")
+	})
+
+	t.Run("does not add different owner to existing public channel when requester lacks manage-members", func(t *testing.T) {
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
+
+		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "different_owner_public",
+			Name:        e.resourceName("different-owner-public"),
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), publicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		require.Error(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run in existing public channel",
+			OwnerUserID: e.RegularUser2.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   publicChannel.Id,
+		})
+		if err != nil {
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+			assert.Nil(t, run)
+			return
+		}
+
+		require.NotNil(t, run)
+		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		require.Error(t, err, "expected different owner to remain outside the channel when run creation succeeds")
+	})
+
+	t.Run("does not add different owner to checklist run without playbook when requester lacks manage-members", func(t *testing.T) {
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
+
+		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "different_owner_checklist",
+			Name:        e.resourceName("different-owner-checklist"),
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), publicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		require.Error(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "checklist run in existing channel",
+			OwnerUserID: e.RegularUser2.Id,
+			TeamID:      e.BasicTeam.Id,
+			ChannelID:   publicChannel.Id,
+		})
+		if err != nil {
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+			assert.Nil(t, run)
+			return
+		}
+
+		require.NotNil(t, run)
+		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		require.Error(t, err, "expected different owner to remain outside the checklist run channel when run creation succeeds")
+	})
+
+	t.Run("adds different owner to existing channel when requester can manage members", func(t *testing.T) {
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+		e.Permissions.AddPermissionToRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+		e.Permissions.AddPermissionToRole(t, model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
+
+		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "managed_owner_public",
+			Name:        e.resourceName("managed-owner-public"),
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), publicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		require.Error(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run in managed existing channel",
+			OwnerUserID: e.RegularUser2.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   publicChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		require.NoError(t, err, "expected different owner to be added to the channel")
 	})
 
 	t.Run("create a run using dialog requests", func(t *testing.T) {
