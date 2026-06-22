@@ -277,7 +277,7 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                 <Setting id={'new-channel-only'}>
                     <NewChannelOnlyToggle
                         playbook={{new_channel_only: newChannelOnly}}
-                        disabled={archived || !onNewChannelOnlyChange}
+                        disabled={disabled || !onNewChannelOnlyChange}
                         onChange={onNewChannelOnlyChange}
                     />
                 </Setting>
@@ -388,7 +388,7 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                                 <AutoArchiveToggle
                                     autoArchive={autoArchiveChannel}
                                     isLinkedChannel={playbookForCreateChannel.channel_mode === 'link_existing_channel'}
-                                    disabled={archived}
+                                    disabled={disabled}
                                     onChange={onAutoArchiveChange}
                                 />
                             </div>

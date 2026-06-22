@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"reflect"
 	"testing"
 )
 
@@ -320,6 +321,36 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 		}
 	})
 
+	t.Run("move checklist item", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := MoveChecklistItemArgs{
+			RunID:              runID,
+			SourceChecklistIdx: 1,
+			SourceItemIdx:      2,
+			DestChecklistIdx:   3,
+			DestItemIdx:        4,
+		}
+		if _, err := toolMoveChecklistItem(context.Background(), client, args); err != nil {
+			t.Fatalf("toolMoveChecklistItem returned error: %v", err)
+		}
+		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/move-item" {
+			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+		}
+		body, ok := client.postBody.(map[string]int)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.postBody)
+		}
+		expected := map[string]int{
+			"source_checklist_idx": 1,
+			"source_item_idx":      2,
+			"dest_checklist_idx":   3,
+			"dest_item_idx":        4,
+		}
+		if !reflect.DeepEqual(body, expected) {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+
 	t.Run("add section", func(t *testing.T) {
 		client := &fakeAPIClient{}
 		if _, err := toolAddSection(context.Background(), client, AddSectionArgs{RunID: runID, Title: " Section "}); err != nil {
@@ -363,4 +394,106 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 			t.Fatalf("unexpected endpoint: %s", client.deleteEndpoint)
 		}
 	})
+
+	t.Run("move section", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := MoveSectionArgs{RunID: runID, SourceChecklistIdx: 2, DestChecklistIdx: 0}
+		if _, err := toolMoveSection(context.Background(), client, args); err != nil {
+			t.Fatalf("toolMoveSection returned error: %v", err)
+		}
+		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/move" {
+			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+		}
+		body, ok := client.postBody.(map[string]int)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.postBody)
+		}
+		expected := map[string]int{
+			"source_checklist_idx": 2,
+			"dest_checklist_idx":   0,
+		}
+		if !reflect.DeepEqual(body, expected) {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+}
+
+func TestMoveChecklistToolsValidation(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+
+	tests := []struct {
+		name    string
+		runTool func(context.Context, APIClient) (string, error)
+		wantErr string
+	}{
+		{
+			name: "move section rejects invalid run id",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveSection(ctx, client, MoveSectionArgs{RunID: "invalid", SourceChecklistIdx: 0, DestChecklistIdx: 1})
+			},
+			wantErr: "run_id must be a valid Mattermost ID",
+		},
+		{
+			name: "move section rejects negative source checklist index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveSection(ctx, client, MoveSectionArgs{RunID: runID, SourceChecklistIdx: -1, DestChecklistIdx: 1})
+			},
+			wantErr: "source_checklist_idx must be a non-negative integer, got -1",
+		},
+		{
+			name: "move section rejects negative destination checklist index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveSection(ctx, client, MoveSectionArgs{RunID: runID, SourceChecklistIdx: 0, DestChecklistIdx: -1})
+			},
+			wantErr: "dest_checklist_idx must be a non-negative integer, got -1",
+		},
+		{
+			name: "move checklist item rejects invalid run id",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveChecklistItem(ctx, client, MoveChecklistItemArgs{RunID: "invalid", SourceChecklistIdx: 0, SourceItemIdx: 1, DestChecklistIdx: 2, DestItemIdx: 3})
+			},
+			wantErr: "run_id must be a valid Mattermost ID",
+		},
+		{
+			name: "move checklist item rejects negative source checklist index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveChecklistItem(ctx, client, MoveChecklistItemArgs{RunID: runID, SourceChecklistIdx: -1, SourceItemIdx: 1, DestChecklistIdx: 2, DestItemIdx: 3})
+			},
+			wantErr: "source_checklist_idx must be a non-negative integer, got -1",
+		},
+		{
+			name: "move checklist item rejects negative source item index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveChecklistItem(ctx, client, MoveChecklistItemArgs{RunID: runID, SourceChecklistIdx: 0, SourceItemIdx: -1, DestChecklistIdx: 2, DestItemIdx: 3})
+			},
+			wantErr: "source_item_idx must be a non-negative integer, got -1",
+		},
+		{
+			name: "move checklist item rejects negative destination checklist index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveChecklistItem(ctx, client, MoveChecklistItemArgs{RunID: runID, SourceChecklistIdx: 0, SourceItemIdx: 1, DestChecklistIdx: -1, DestItemIdx: 3})
+			},
+			wantErr: "dest_checklist_idx must be a non-negative integer, got -1",
+		},
+		{
+			name: "move checklist item rejects negative destination item index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveChecklistItem(ctx, client, MoveChecklistItemArgs{RunID: runID, SourceChecklistIdx: 0, SourceItemIdx: 1, DestChecklistIdx: 2, DestItemIdx: -1})
+			},
+			wantErr: "dest_item_idx must be a non-negative integer, got -1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := tt.runTool(context.Background(), client)
+			if err == nil || err.Error() != tt.wantErr {
+				t.Fatalf("expected error %q, got %v", tt.wantErr, err)
+			}
+			if client.postEndpoint != "" {
+				t.Fatalf("expected validation to fail before API call, got endpoint %q", client.postEndpoint)
+			}
+		})
+	}
 }
