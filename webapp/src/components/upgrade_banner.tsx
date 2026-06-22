@@ -273,7 +273,10 @@ const Button = (props: ButtonProps) => {
     }
 
     return (
-        <MmButton onClick={handleClick}>
+        <MmButton
+            emphasis={emphasis}
+            onClick={handleClick}
+        >
             {buttonText}
         </MmButton>
     );

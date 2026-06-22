@@ -176,8 +176,8 @@ const RightWrapper = styled.div`
     justify-content: flex-end;
 `;
 
-const FinishRunButton = styled(TertiaryButton)`
-    /* Increase the specificity to override the default padding */
+const FinishRunButton = styled(TertiaryButton).attrs({size: 'sm'})`
+    /* Increase the specificity to override the default btn-sm padding */
     && {
         padding: 0 48px;
     }

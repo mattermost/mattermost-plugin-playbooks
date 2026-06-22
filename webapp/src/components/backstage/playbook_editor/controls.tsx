@@ -555,18 +555,18 @@ const SecondaryButtonLargerCheckbox = styled(SecondaryButtonLarger) <{checked: b
         &:hover:enabled {
             background-color: rgba(var(--center-channel-color-rgb), 0.08);
         }
+
+        ${({checked}) => checked && css`
+            border: 1px solid var(--button-bg);
+            color: var(--button-bg);
+
+            &:hover:enabled {
+                background-color: rgba(var(--button-bg-rgb), 0.12);
+            }
+        `}
     }
 
     padding: 0;
-
-    ${({checked}) => checked && css`
-    border: 1px solid var(--button-bg);
-        color: var(--button-bg);
-
-        &:hover:enabled {
-            background-color: rgba(var(--button-bg-rgb), 0.12);
-        }
-    `}
 `;
 
 const ButtonIconStyled = styled(ButtonIcon)`

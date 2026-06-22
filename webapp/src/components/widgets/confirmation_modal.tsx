@@ -5,8 +5,6 @@ import React, {useCallback, useState} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
-import type {ButtonVariant} from '@mattermost/shared/components/button';
-
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -35,11 +33,6 @@ type Props = {
      * Message to display in the body of the modal
      */
     message?: React.ReactNode;
-
-    /*
-     * The variant to use for the confirm button
-     */
-    confirmButtonVariant?: ButtonVariant;
 
     /*
      * The CSS class to apply to the modal
@@ -278,7 +271,6 @@ export default class ConfirmModal extends React.Component<Props, State> {
                                 <PrimaryButton
                                     autoFocus={true}
                                     type='button'
-                                    variant={this.props.confirmButtonVariant}
                                     onClick={(e) => {
                                         if (this.props.stopPropagationOnClick) {
                                             e.stopPropagation();
@@ -303,7 +295,6 @@ interface ConfirmModalOptions {
     message: React.ReactNode;
     confirmButtonText?: React.ReactNode;
     cancelButtonText?: React.ReactNode;
-    confirmButtonVariant?: ButtonVariant;
     onConfirm: (checked: boolean) => void;
     onCancel?: (checked: boolean) => void;
     showCheckbox?: boolean;
@@ -340,7 +331,6 @@ export const useConfirmModal = () => {
             message: options.message,
             confirmButtonText: options.confirmButtonText,
             cancelButtonText: options.cancelButtonText,
-            confirmButtonVariant: options.confirmButtonVariant,
             onConfirm: options.onConfirm,
             onCancel: options.onCancel,
             showCheckbox: options.showCheckbox,
