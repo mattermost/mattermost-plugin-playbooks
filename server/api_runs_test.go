@@ -539,6 +539,115 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		_, _, memberErr := e.ServerAdminClient.GetChannelMember(context.Background(), privateChannel.Id, e.RegularUser2.Id, "")
 		assert.Error(t, memberErr, "RegularUser2 must not be added to the private channel via run creation")
 	})
+
+	t.Run("does not add a different owner to an existing public channel when requester lacks manage-members", func(t *testing.T) {
+		// Remove the ability to manage public channel members so the requester genuinely
+		// cannot add other users to the public channel through normal means.
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+
+		// Create a public channel and add ONLY the requester (RegularUser) to it.
+		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "public existing channel",
+			Name:        e.resourceName("public-existing-channel"),
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), publicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// RegularUser2 is a team member but NOT a member of the public channel.
+		// Designating them as owner must not be used to add them to the channel
+		// when the requester cannot manage its members.
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run with a different owner in existing public channel",
+			OwnerUserID: e.RegularUser2.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   publicChannel.Id,
+		})
+
+		// Secure outcome A: the request is rejected outright.
+		if err != nil {
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+			assert.Nil(t, run)
+			return
+		}
+
+		// Secure outcome B: the run is created, but RegularUser2 was NOT added.
+		_, _, memberErr := e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		assert.Error(t, memberErr, "RegularUser2 must not be added to the public channel via run creation")
+	})
+
+	t.Run("does not add a different owner to an existing channel via a checklist run when requester lacks manage-members", func(t *testing.T) {
+		// Same protection must hold for runs created without a playbook (channel checklist runs).
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+
+		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "public checklist channel",
+			Name:        e.resourceName("public-checklist-channel"),
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), publicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// No playbook ID -> channel checklist run. The requester can post in the channel
+		// but cannot manage its members, so a non-member owner must not be added.
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "checklist run with a different owner",
+			OwnerUserID: e.RegularUser2.Id,
+			TeamID:      e.BasicTeam.Id,
+			ChannelID:   publicChannel.Id,
+		})
+
+		// Secure outcome A: the request is rejected outright.
+		if err != nil {
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+			assert.Nil(t, run)
+			return
+		}
+
+		// Secure outcome B: the run is created, but RegularUser2 was NOT added.
+		_, _, memberErr := e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		assert.Error(t, memberErr, "RegularUser2 must not be added to the channel via a checklist run")
+	})
+
+	t.Run("adds a different owner to an existing channel when requester can manage members", func(t *testing.T) {
+		// Confirms the guard does not over-block: a requester who legitimately can manage
+		// channel members may designate a different owner who is then added to the channel.
+		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "public manageable channel",
+			Name:        e.resourceName("public-manageable-channel"),
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), publicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// RegularUser keeps the default permission to manage public channel members, so
+		// adding RegularUser2 (a team member, not yet a channel member) must succeed.
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run with a different owner the requester can add",
+			OwnerUserID: e.RegularUser2.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   publicChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		_, _, memberErr := e.ServerAdminClient.GetChannelMember(context.Background(), publicChannel.Id, e.RegularUser2.Id, "")
+		assert.NoError(t, memberErr, "RegularUser2 should be added to the channel when the requester can manage members")
+	})
 }
 
 func TestCreateInvalidRuns(t *testing.T) {
