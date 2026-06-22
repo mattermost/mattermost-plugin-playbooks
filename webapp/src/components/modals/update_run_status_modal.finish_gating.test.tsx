@@ -102,7 +102,6 @@ jest.mock('src/components/markdown_textbox', () => () => null);
 jest.mock('src/components/assets/icons/warning_icon', () => () => null);
 jest.mock('src/components/widgets/unsaved_changes_modal', () => () => null);
 jest.mock('src/components/backstage/route_leaving_guard', () => () => null);
-jest.mock('src/components/widgets/tooltip', () => () => null);
 
 jest.mock('src/components/backstage/runs_list/checkbox_input', () => ({testId}: {testId: string}) => (
     <div data-testid={testId}/>
