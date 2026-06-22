@@ -177,7 +177,7 @@ const RightWrapper = styled.div`
 `;
 
 const FinishRunButton = styled(TertiaryButton)`
-    /* Increase the specificity to override the default btn-sm padding */
+    /* Increase the specificity to override the default padding */
     && {
         padding: 0 48px;
     }
