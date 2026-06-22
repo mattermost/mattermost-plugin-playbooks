@@ -497,6 +497,48 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, e.BasicPublicChannel.Id, run.ChannelID)
 	})
+
+	t.Run("does not add a different owner to an existing private channel when requester lacks manage-members", func(t *testing.T) {
+		// The requester must genuinely lack the ability to manage private channel members.
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePrivateChannelMembers.Id, model.TeamUserRoleId)
+
+		// Create a private channel and add ONLY the requester (RegularUser) to it.
+		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "private existing channel",
+			Name:        e.resourceName("private-existing-channel"),
+			Type:        model.ChannelTypePrivate,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), privateChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// RegularUser2 is a team member but NOT a member of the private channel.
+		// Creating a run that designates RegularUser2 as the owner must not be used to
+		// add them into the restricted private channel.
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "run with a different owner in existing private channel",
+			OwnerUserID: e.RegularUser2.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   privateChannel.Id,
+		})
+
+		// Secure outcome A: the request is rejected outright.
+		if err != nil {
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+			assert.Nil(t, run)
+			return
+		}
+
+		// Secure outcome B: the run is created, but RegularUser2 was NOT added to the
+		// restricted private channel. GetChannelMember must therefore return an error.
+		_, _, memberErr := e.ServerAdminClient.GetChannelMember(context.Background(), privateChannel.Id, e.RegularUser2.Id, "")
+		assert.Error(t, memberErr, "RegularUser2 must not be added to the private channel via run creation")
+	})
 }
 
 func TestCreateInvalidRuns(t *testing.T) {

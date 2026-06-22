@@ -484,6 +484,22 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	}
 
+	// Adding a different owner to an existing channel must respect channel member-management
+	// permissions. For a brand-new channel or a DM/GM this does not apply.
+	if !createdChannel && !channel.IsGroupOrDirect() && playbookRun.OwnerUserID != playbookRun.ReporterUserID {
+		if _, memberErr := s.pluginAPI.Channel.GetMember(channel.Id, playbookRun.OwnerUserID); memberErr != nil {
+			if !errors.Is(memberErr, pluginapi.ErrNotFound) {
+				return nil, errors.Wrap(memberErr, "failed to check owner channel membership")
+			}
+
+			// The owner is not yet a member, so adding them later requires the requester
+			// to be allowed to manage members of this channel.
+			if permErr := s.permissions.ChannelManageMembers(userID, channel.Id); permErr != nil {
+				return nil, errors.Wrap(permErr, "requester cannot add the requested owner to the channel")
+			}
+		}
+	}
+
 	if pb != nil && pb.MessageOnJoinEnabled && pb.MessageOnJoin != "" {
 		welcomeAction := GenericChannelAction{
 			GenericChannelActionWithoutPayload: GenericChannelActionWithoutPayload{
