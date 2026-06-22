@@ -5,7 +5,7 @@ import React from 'react';
 
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {BookOutlineIcon} from '@mattermost/compass-icons/components';
@@ -23,7 +23,6 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {usePlaybookName} from 'src/hooks';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {OVERLAY_DELAY} from 'src/constants';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -57,17 +56,12 @@ const RHSAboutTitle = (props: Props) => {
         <>
             {showPlaybookChip && (
                 <PlaybookChipContainer>
-                    <OverlayTrigger
-                        placement='top'
-                        delay={OVERLAY_DELAY}
-                        overlay={
-                            <Tooltip id={`playbook-chip-${props.playbookRun.id}`}>
-                                {formatMessage(
-                                    {defaultMessage: 'Created from {playbook} playbook'},
-                                    {playbook: playbookName}
-                                )}
-                            </Tooltip>
-                        }
+                    <WithTooltip
+                        id={`playbook-chip-${props.playbookRun.id}`}
+                        title={formatMessage(
+                            {defaultMessage: 'Created from {playbook} playbook'},
+                            {playbook: playbookName}
+                        )}
                     >
                         <PlaybookChip
                             onClick={handlePlaybookChipClick}
@@ -76,7 +70,7 @@ const RHSAboutTitle = (props: Props) => {
                             <StyledBookOutlineIcon size={11}/>
                             <PlaybookChipText>{playbookName}</PlaybookChipText>
                         </PlaybookChip>
-                    </OverlayTrigger>
+                    </WithTooltip>
                     {props.playbookRun.sequential_id && (
                         <>
                             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
