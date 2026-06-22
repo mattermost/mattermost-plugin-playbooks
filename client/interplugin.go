@@ -69,5 +69,12 @@ func (t *interPluginTransport) RoundTrip(req *http.Request) (*http.Response, err
 		return nil, errors.Errorf("no response from the %s plugin; is it installed and enabled?", manifestID)
 	}
 
+	// PluginHTTP does not populate Response.Request, but the client dereferences it when building
+	// error responses for non-2xx replies. Set it as net/http's Transport does for real network
+	// requests, so a non-2xx response yields an error rather than a nil-pointer panic.
+	if resp.Request == nil {
+		resp.Request = req
+	}
+
 	return resp, nil
 }

@@ -53,6 +53,24 @@ func TestNewInterPluginClient(t *testing.T) {
 		require.Equal(t, "user_abc", gotReq.Header.Get("Mattermost-Plugin-Acting-User-Id"))
 	})
 
+	t.Run("non-2xx response is returned as an error, not a panic", func(t *testing.T) {
+		// PluginHTTP leaves Response.Request nil; the transport must set it so checkResponse
+		// does not dereference a nil pointer when building the error for a non-2xx reply.
+		do := func(*http.Request) *http.Response {
+			return &http.Response{
+				StatusCode: http.StatusForbidden,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body:       io.NopCloser(strings.NewReader(`{"error":"forbidden"}`)),
+			}
+		}
+
+		c, err := client.NewInterPluginClient(do, "user_abc")
+		require.NoError(t, err)
+
+		_, err = c.PlaybookRuns.Get(context.Background(), "run123")
+		require.Error(t, err)
+	})
+
 	t.Run("surfaces a nil response as an error", func(t *testing.T) {
 		c, err := client.NewInterPluginClient(noopDo, "user_abc")
 		require.NoError(t, err)
