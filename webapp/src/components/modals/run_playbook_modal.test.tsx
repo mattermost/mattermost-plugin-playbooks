@@ -222,7 +222,7 @@ import {createPlaybookRun} from 'src/client';
 import {useUserDisplayNameMap} from 'src/hooks/general';
 import {findNodeByTestId} from 'src/utils/test_helpers';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
-import Tooltip from 'src/components/widgets/tooltip';
+import ConditionalTooltip from 'src/components/widgets/conditional_tooltip';
 
 import {RunPlaybookModal} from './run_playbook_modal';
 
@@ -327,7 +327,8 @@ describe('RunPlaybookModal — template mode', () => {
                 component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             });
 
-            const tooltip = component!.root.findByType(Tooltip);
+            const tooltip = component!.root.findByType(ConditionalTooltip);
+            expect(tooltip.props.show).toBe(true);
             expect(tooltip.props.id).toBe('run-name-readonly-tooltip');
             expect(tooltip.props.content).toContain('channel name template');
         });
@@ -874,7 +875,8 @@ describe('RunPlaybookModal — no template (free-text mode)', () => {
             component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
         });
 
-        expect(component!.root.findAllByType(Tooltip)).toHaveLength(0);
+        const tooltip = component!.root.findByType(ConditionalTooltip);
+        expect(tooltip.props.show).toBe(false);
     });
 
     it('does not set aria-describedby or a hidden description on the editable name field', () => {
