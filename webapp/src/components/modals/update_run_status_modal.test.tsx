@@ -1,9 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Duration} from 'luxon';
+
 import {formatSequentialID} from 'src/utils/template_utils';
 
-import {computeStatusMessagePreview} from './update_run_status_modal';
+import {computeStatusMessagePreview, isNeverOptionSelected} from './update_run_status_modal';
 
 const SEQ_3 = formatSequentialID('INC', 3);
 
@@ -109,5 +111,23 @@ describe('computeStatusMessagePreview', () => {
     it('token matching is case-insensitive for system tokens', () => {
         expect(computeStatusMessagePreview('By {owner}', makeRun(), userMap)).toBe('By Alice');
         expect(computeStatusMessagePreview('By {Owner}', makeRun(), userMap)).toBe('By Alice');
+    });
+});
+
+describe('isNeverOptionSelected', () => {
+    it('is false when nothing is selected (undefined)', () => {
+        expect(isNeverOptionSelected(undefined)).toBe(false);
+    });
+
+    it('is false when the selection was cleared (null)', () => {
+        expect(isNeverOptionSelected(null)).toBe(false);
+    });
+
+    it('is true when the "Never" option (value null) is selected', () => {
+        expect(isNeverOptionSelected({value: null, label: 'Never'})).toBe(true);
+    });
+
+    it('is false when a real duration option is selected', () => {
+        expect(isNeverOptionSelected({value: Duration.fromObject({days: 1})})).toBe(false);
     });
 });

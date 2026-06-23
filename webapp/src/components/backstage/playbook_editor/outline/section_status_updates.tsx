@@ -40,88 +40,86 @@ const StatusUpdates = ({playbook, canEdit = true}: Props) => {
 
     const noReminder = playbook.reminder_timer_default_seconds === 0;
 
-    const messageValues = {
-        duration: () => {
-            if (disabled) {
-                if (noReminder) {
-                    return formatMessage({defaultMessage: 'never'});
-                }
-                return formatDuration(Duration.fromDurationLike({seconds: playbook.reminder_timer_default_seconds}), 'long');
+    const durationValue = () => {
+        if (disabled) {
+            if (noReminder) {
+                return formatMessage({defaultMessage: 'never'});
             }
-            return (
-                <Picker>
-                    <UpdateTimer
-                        seconds={playbook.reminder_timer_default_seconds}
-                        setSeconds={(seconds: number) => {
-                            if (
-                                seconds !== playbook.reminder_timer_default_seconds &&
-                                seconds >= 0
-                            ) {
-                                updatePlaybook({
-                                    reminderTimerDefaultSeconds: seconds,
-                                });
-                            }
-                        }}
-                    />
-                </Picker>
-            );
-        },
-
-        // if the broadcast is disabled, we broadcast update to zero channel
-        channelCount: playbook.broadcast_enabled ? playbook.broadcast_channel_ids?.length ?? 0 : 0,
-        channels: (channelCount: ReactNode) => {
-            if (disabled) {
-                return channelCount;
-            }
-            return (
-                <Picker data-testid={'status-update-broadcast-channels'}>
-                    <BroadcastChannels
-                        id='playbook-automation-broadcast'
-                        onChannelsSelected={(channelIds: string[]) => {
-                            if (
-                                channelIds.length !== playbook.broadcast_channel_ids.length ||
-                                channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))
-                            ) {
-                                updatePlaybook({
-                                    broadcastChannelIDs: channelIds,
-
-                                    // We need this to handle cases when StatusUpdate is enabled, but broadcast is disabled. On edit of the channels list, we should enable broadcast.
-                                    broadcastEnabled: true,
-                                });
-                            }
-                        }}
-                        channelIds={playbook.broadcast_channel_ids}
-                        broadcastEnabled={playbook.broadcast_enabled}
-                    >
-                        <Placeholder label={channelCount}/>
-                    </BroadcastChannels>
-                </Picker>
-            );
-        },
-
-        // if the broadcast is disabled, we make zero webhook call
-        webhookCount: playbook.webhook_on_status_update_enabled ? playbook.webhook_on_status_update_urls?.length ?? 0 : 0,
-        webhooks: (webhookCount: ReactNode) => {
-            if (disabled) {
-                return webhookCount;
-            }
-            return (
-                <Picker data-testid={'status-update-webhooks'}>
-                    <WebhooksInput
-                        urls={playbook.webhook_on_status_update_urls}
-                        onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
-                            return updatePlaybook({
-                                webhookOnStatusUpdateEnabled: true,
-                                webhookOnStatusUpdateURLs: newWebhookOnStatusUpdateURLs,
+            return formatDuration(Duration.fromDurationLike({seconds: playbook.reminder_timer_default_seconds}), 'long');
+        }
+        return (
+            <Picker data-testid={'status-update-timer'}>
+                <UpdateTimer
+                    seconds={playbook.reminder_timer_default_seconds}
+                    setSeconds={(seconds: number) => {
+                        if (
+                            seconds !== playbook.reminder_timer_default_seconds &&
+                            seconds >= 0
+                        ) {
+                            updatePlaybook({
+                                reminderTimerDefaultSeconds: seconds,
                             });
-                        }}
-                        webhooksDisabled={!playbook.webhook_on_status_update_enabled}
-                    >
-                        <Placeholder label={webhookCount}/>
-                    </WebhooksInput>
-                </Picker>
-            );
-        },
+                        }
+                    }}
+                />
+            </Picker>
+        );
+    };
+
+    // if the broadcast is disabled, we broadcast update to zero channel
+    const channelCount = playbook.broadcast_enabled ? playbook.broadcast_channel_ids?.length ?? 0 : 0;
+    const channelsValue = (count: ReactNode) => {
+        if (disabled) {
+            return count;
+        }
+        return (
+            <Picker data-testid={'status-update-broadcast-channels'}>
+                <BroadcastChannels
+                    id='playbook-automation-broadcast'
+                    onChannelsSelected={(channelIds: string[]) => {
+                        if (
+                            channelIds.length !== playbook.broadcast_channel_ids.length ||
+                            channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))
+                        ) {
+                            updatePlaybook({
+                                broadcastChannelIDs: channelIds,
+
+                                // We need this to handle cases when StatusUpdate is enabled, but broadcast is disabled. On edit of the channels list, we should enable broadcast.
+                                broadcastEnabled: true,
+                            });
+                        }
+                    }}
+                    channelIds={playbook.broadcast_channel_ids}
+                    broadcastEnabled={playbook.broadcast_enabled}
+                >
+                    <Placeholder label={count}/>
+                </BroadcastChannels>
+            </Picker>
+        );
+    };
+
+    // if the broadcast is disabled, we make zero webhook call
+    const webhookCount = playbook.webhook_on_status_update_enabled ? playbook.webhook_on_status_update_urls?.length ?? 0 : 0;
+    const webhooksValue = (count: ReactNode) => {
+        if (disabled) {
+            return count;
+        }
+        return (
+            <Picker data-testid={'status-update-webhooks'}>
+                <WebhooksInput
+                    urls={playbook.webhook_on_status_update_urls}
+                    onChange={(newWebhookOnStatusUpdateURLs: string[]) => {
+                        return updatePlaybook({
+                            webhookOnStatusUpdateEnabled: true,
+                            webhookOnStatusUpdateURLs: newWebhookOnStatusUpdateURLs,
+                        });
+                    }}
+                    webhooksDisabled={!playbook.webhook_on_status_update_enabled}
+                >
+                    <Placeholder label={count}/>
+                </WebhooksInput>
+            </Picker>
+        );
     };
 
     return (
@@ -130,12 +128,24 @@ const StatusUpdates = ({playbook, canEdit = true}: Props) => {
                 {noReminder ? (
                     <FormattedMessage
                         defaultMessage='A status update is <duration></duration> expected. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>.'
-                        values={messageValues}
+                        values={{
+                            duration: durationValue,
+                            channelCount,
+                            channels: channelsValue,
+                            webhookCount,
+                            webhooks: webhooksValue,
+                        }}
                     />
                 ) : (
                     <FormattedMessage
                         defaultMessage='A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>.'
-                        values={messageValues}
+                        values={{
+                            duration: durationValue,
+                            channelCount,
+                            channels: channelsValue,
+                            webhookCount,
+                            webhooks: webhooksValue,
+                        }}
                     />
                 )}
             </StatusUpdatesTextContainer>
