@@ -23,7 +23,7 @@ import {useAllowRequestUpdate, useNow} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
 import {TertiaryButton, UpgradeTertiaryButton} from 'src/components/assets/buttons';
 import {FUTURE_TIME_SPEC, PAST_TIME_SPEC} from 'src/components/time_spec';
-import {requestUpdate} from 'src/client';
+import {requestUpdate, resetReminder} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
@@ -123,6 +123,43 @@ const useRequestUpdate = (playbookRunId: string) => {
     };
 };
 
+const useClearReminder = (playbookRunId: string) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+    const [showClearReminderConfirm, setShowClearReminderConfirm] = useState(false);
+    const clearReminder = async () => {
+        try {
+            await resetReminder(playbookRunId, 0);
+            addToast({
+                content: formatMessage({defaultMessage: 'Status update reminder removed.'}),
+                toastStyle: ToastStyle.Success,
+            });
+        } catch {
+            addToast({
+                content: formatMessage({defaultMessage: 'The reminder could not be removed.'}),
+                toastStyle: ToastStyle.Failure,
+            });
+        }
+    };
+    const ClearReminderConfirmModal = (
+        <ConfirmModal
+            show={showClearReminderConfirm}
+            title={formatMessage({defaultMessage: 'Remove reminder'})}
+            message={formatMessage({defaultMessage: 'Remove the scheduled status update reminder? You can set a new one when posting an update.'})}
+            confirmButtonText={formatMessage({defaultMessage: 'Remove reminder'})}
+            onConfirm={() => {
+                clearReminder();
+                setShowClearReminderConfirm(false);
+            }}
+            onCancel={() => setShowClearReminderConfirm(false)}
+        />
+    );
+    return {
+        ClearReminderConfirmModal,
+        showClearReminderConfirm: () => setShowClearReminderConfirm(true),
+    };
+};
+
 export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}: ViewerProps) => {
     const {formatMessage} = useIntl();
     const fiveSeconds = 5000;
@@ -205,6 +242,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
+    const {ClearReminderConfirmModal, showClearReminderConfirm} = useClearReminder(playbookRun.id);
     const {RequestUpdateButton, UpgradeLicenseModal} = useRequestUpdateButton({
         onClick: playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : showRequestUpdateConfirm,
         disabled: playbookRun.current_status === PlaybookRunStatus.Finished,
@@ -218,6 +256,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
     }
 
     const dueInfo = getDueInfo(playbookRun, now);
+    const isReminderScheduled = playbookRun.previous_reminder !== 0 && playbookRun.current_status === PlaybookRunStatus.InProgress;
 
     // We assume that user permissions have been checked before
     const postUpdate = () => dispatch(openUpdateRunStatusModal(playbookRun.id, playbookRun.channel_id, true));
@@ -270,6 +309,14 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                                 {openRHSText}
                             </DropdownItem>
                             {RequestUpdateButton}
+                            {isReminderScheduled ? (
+                                <DropdownItem
+                                    onClick={showClearReminderConfirm}
+                                    disabled={false}
+                                >
+                                    {formatMessage({defaultMessage: 'Remove reminder'})}
+                                </DropdownItem>
+                            ) : null}
                         </DotMenu>
                     </Kebab>
                 </RightWrapper>
@@ -278,6 +325,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                 {formatMessage({defaultMessage: 'View all updates'})}
             </ViewAllUpdates> : null}
             {RequestUpdateConfirmModal}
+            {ClearReminderConfirmModal}
             {UpgradeLicenseModal}
         </Container>
     );

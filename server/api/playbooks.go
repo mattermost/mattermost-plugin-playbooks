@@ -191,8 +191,8 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 
 	playbook.NextRunNumber = 0
 
-	if playbook.ReminderTimerDefaultSeconds <= 0 {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
+	if playbook.ReminderTimerDefaultSeconds < 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be >= 0", nil)
 		return
 	}
 
