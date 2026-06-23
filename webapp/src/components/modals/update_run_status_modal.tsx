@@ -492,6 +492,11 @@ const ReminderTimer = graphql(/* GraphQL */`
     }
 `);
 
+// Distinguishes an explicit "Never" choice (an Option whose value is null) from no selection at
+// all (null/undefined). The former is a valid submission with reminder 0; the latter is not.
+export const isNeverOptionSelected = (value: Option | null | undefined): boolean =>
+    value != null && value.value === null;
+
 const useReminderTimerOption = (
     run: Maybe<ReminderTimerFragment>,
     disabled?: boolean,
@@ -564,9 +569,7 @@ const useReminderTimerOption = (
         reminder = (Duration.isDuration(value.value) ? value.value : value.value.diff(DateTime.now())).as('seconds');
     }
 
-    // Distinguish an explicit "Never" choice (Option with a null value) from no selection at all
-    // (value null/undefined): the former is a valid submission with reminder 0, the latter is not.
-    const isNeverSelected = value != null && value.value === null;
+    const isNeverSelected = isNeverOptionSelected(value);
 
     return {input, reminder, isNeverSelected};
 };
