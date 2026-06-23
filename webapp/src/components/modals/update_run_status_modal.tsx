@@ -214,7 +214,7 @@ export const UpdateRunStatusModal = ({
     const {input: reminderInput, reminder, isNeverSelected} = useReminderTimerOption(getFragmentData(ReminderTimer, run), effectiveFinishRun, providedReminder);
     const isReminderValid = effectiveFinishRun || reminder > 0 || isNeverSelected;
     let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
-    if (!reminder || reminder === 0) {
+    if (!isNeverSelected && (!reminder || reminder === 0)) {
         warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
     }
 

@@ -310,10 +310,7 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
                             </DropdownItem>
                             {RequestUpdateButton}
                             {isReminderScheduled ? (
-                                <DropdownItem
-                                    onClick={showClearReminderConfirm}
-                                    disabled={false}
-                                >
+                                <DropdownItem onClick={showClearReminderConfirm}>
                                     {formatMessage({defaultMessage: 'Remove reminder'})}
                                 </DropdownItem>
                             ) : null}
@@ -369,7 +366,7 @@ const ThreeDotsIcon = styled(HamburgerButton)`
     font-size: 18px;
 `;
 
-const DropdownItem = styled(DropdownMenuItemStyled)<{disabled: boolean}>`
+const DropdownItem = styled(DropdownMenuItemStyled)<{disabled?: boolean}>`
     cursor: ${({disabled}) => (disabled ? 'not-allowed' : 'pointer')};
     opacity: ${({disabled}) => (disabled ? '0.50' : '1')};
 `;
