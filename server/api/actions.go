@@ -282,13 +282,24 @@ func (a *ActionsHandler) updateChannelAction(c *Context, w http.ResponseWriter, 
 		return
 	}
 
+	existingAction, err := a.channelActionsService.Get(vars["action_id"])
+	if err != nil {
+		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get action", err)
+		return
+	}
+
+	if existingAction.ChannelID != channelID {
+		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel ID mismatch", nil)
+		return
+	}
+
 	// Validate the new action type and payload
 	if err := a.ValidateChannelAction(c, w, &newChannelAction, userID); err != nil {
 		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid action", err)
 		return
 	}
 
-	err := a.channelActionsService.Update(newChannelAction, userID)
+	err = a.channelActionsService.Update(newChannelAction, userID)
 	if err != nil {
 		a.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, fmt.Sprintf("unable to update action with ID %q", newChannelAction.ID), err)
 		return

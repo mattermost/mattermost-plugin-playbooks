@@ -497,3 +497,57 @@ func TestActionUpdate(t *testing.T) {
 	})
 
 }
+
+func TestActionUpdatePreservesChannelOwnership(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	const originalMessage = "private welcome"
+	privateActionID, err := e.PlaybooksAdminClient.Actions.Create(context.Background(), e.BasicPrivateChannel.Id, client.ChannelActionCreateOptions{
+		ChannelID:   e.BasicPrivateChannel.Id,
+		Enabled:     true,
+		ActionType:  client.ActionTypeWelcomeMessage,
+		TriggerType: client.TriggerTypeNewMemberJoins,
+		Payload: client.WelcomeMessagePayload{
+			Message: originalMessage,
+		},
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, privateActionID)
+
+	const modifiedMessage = "public welcome"
+	err = e.PlaybooksClient.Actions.Update(context.Background(), client.GenericChannelAction{
+		GenericChannelActionWithoutPayload: client.GenericChannelActionWithoutPayload{
+			ID:          privateActionID,
+			ChannelID:   e.BasicPublicChannel.Id,
+			Enabled:     false,
+			ActionType:  client.ActionTypeWelcomeMessage,
+			TriggerType: client.TriggerTypeNewMemberJoins,
+		},
+		Payload: client.WelcomeMessagePayload{
+			Message: modifiedMessage,
+		},
+	})
+	requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+	privateActions, err := e.PlaybooksAdminClient.Actions.List(context.Background(), e.BasicPrivateChannel.Id, client.ChannelActionListOptions{
+		TriggerType: client.TriggerTypeNewMemberJoins,
+		ActionType:  client.ActionTypeWelcomeMessage,
+	})
+	assert.NoError(t, err)
+	assert.Len(t, privateActions, 1)
+	assert.Equal(t, privateActionID, privateActions[0].ID)
+	assert.True(t, privateActions[0].Enabled)
+
+	var privatePayload client.WelcomeMessagePayload
+	err = safemapstructure.Decode(privateActions[0].Payload, &privatePayload)
+	assert.NoError(t, err)
+	assert.Equal(t, originalMessage, privatePayload.Message)
+
+	publicActions, err := e.PlaybooksAdminClient.Actions.List(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionListOptions{
+		TriggerType: client.TriggerTypeNewMemberJoins,
+		ActionType:  client.ActionTypeWelcomeMessage,
+	})
+	assert.NoError(t, err)
+	assert.Empty(t, publicActions)
+}
