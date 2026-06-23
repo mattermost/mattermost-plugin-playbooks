@@ -59,8 +59,16 @@ type Poster interface {
 	// PublishWebsocketEventToChannel sends a websocket event with payload to channelID.
 	PublishWebsocketEventToChannel(event string, payload interface{}, channelID string)
 
+	// PublishWebsocketEventToChannelReliable sends a websocket event with payload to channelID over
+	// the reliable, TCP-backed cluster channel. Use for large or essential events.
+	PublishWebsocketEventToChannelReliable(event string, payload interface{}, channelID string)
+
 	// PublishWebsocketEventToUser sends a websocket event with payload to userID.
 	PublishWebsocketEventToUser(event string, payload interface{}, userID string)
+
+	// PublishWebsocketEventToUserReliable sends a websocket event with payload to userID over the
+	// reliable, TCP-backed cluster channel. Use for large or essential events.
+	PublishWebsocketEventToUserReliable(event string, payload interface{}, userID string)
 
 	// PublishWebsocketEventGlobal sends a websocket event with payload to all connected users.
 	PublishWebsocketEventGlobal(event string, payload interface{})

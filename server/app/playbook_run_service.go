@@ -139,10 +139,10 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	}
 
 	// Send the incremental update
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
+	s.poster.PublishWebsocketEventToChannelReliable(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
 	if len(nonMembers) > 0 {
 		for _, nonMember := range nonMembers {
-			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
+			s.poster.PublishWebsocketEventToUserReliable(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
 		}
 	}
 
@@ -4119,12 +4119,12 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 		}
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
+	s.poster.PublishWebsocketEventToChannelReliable(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
 
 	nonMembers := s.getNonMembersIDs(playbookRun.ChannelID, sendWSOptions.AdditionalUserIDs)
 	if len(nonMembers) > 0 {
 		for _, nonMember := range nonMembers {
-			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRun, nonMember)
+			s.poster.PublishWebsocketEventToUserReliable(playbookRunUpdatedWSEvent, playbookRun, nonMember)
 		}
 	}
 }

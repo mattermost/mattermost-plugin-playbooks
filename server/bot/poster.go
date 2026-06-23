@@ -135,34 +135,55 @@ func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, att
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
+// publishWebsocketEvent marshals payload and dispatches the event with the given broadcast scope.
+func (b *Bot) publishWebsocketEvent(event string, payload interface{}, broadcast *model.WebsocketBroadcast) {
+	payloadMap := b.makePayloadMap(payload)
+	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, broadcast)
+}
+
 // PublishWebsocketEventToTeam sends a websocket event with payload to teamID
 func (b *Bot) PublishWebsocketEventToTeam(event string, payload interface{}, teamID string) {
-	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
 		TeamId: teamID,
 	})
 }
 
 // PublishWebsocketEventToChannel sends a websocket event with payload to channelID
 func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, channelID string) {
-	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
 		ChannelId: channelID,
+	})
+}
+
+// PublishWebsocketEventToChannelReliable sends a websocket event with payload to channelID over the
+// reliable, TCP-backed cluster channel. Use for large or essential events that must not be dropped
+// or truncated by the best-effort UDP path (which caps the marshalled event at ~49KB).
+func (b *Bot) PublishWebsocketEventToChannelReliable(event string, payload interface{}, channelID string) {
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
+		ChannelId:           channelID,
+		ReliableClusterSend: true,
 	})
 }
 
 // PublishWebsocketEventToUser sends a websocket event with payload to userID
 func (b *Bot) PublishWebsocketEventToUser(event string, payload interface{}, userID string) {
-	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
 		UserId: userID,
+	})
+}
+
+// PublishWebsocketEventToUserReliable sends a websocket event with payload to userID over the
+// reliable, TCP-backed cluster channel. See PublishWebsocketEventToChannelReliable.
+func (b *Bot) PublishWebsocketEventToUserReliable(event string, payload interface{}, userID string) {
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
+		UserId:              userID,
+		ReliableClusterSend: true,
 	})
 }
 
 // PublishWebsocketEventGlobal sends a websocket event with payload to all connected users
 func (b *Bot) PublishWebsocketEventGlobal(event string, payload interface{}) {
-	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{})
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{})
 }
 
 func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool) error {

@@ -253,7 +253,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
-	h.poster.PublishWebsocketEventToChannel(app.PlaybookRunCreatedWSEvent, map[string]interface{}{"playbook_run": playbookRun}, playbookRun.ChannelID)
+	h.poster.PublishWebsocketEventToChannelReliable(app.PlaybookRunCreatedWSEvent, map[string]interface{}{"playbook_run": playbookRun}, playbookRun.ChannelID)
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
 	ReturnJSON(w, &playbookRun, http.StatusCreated)
@@ -411,7 +411,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	go func() {
 		time.Sleep(1 * time.Second) // arbitrary 1 second magic number
 
-		h.poster.PublishWebsocketEventToChannel(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
+		h.poster.PublishWebsocketEventToChannelReliable(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
 			"client_id":    state.ClientID,
 			"playbook_run": playbookRun,
 			"channel_name": channel.Name,
