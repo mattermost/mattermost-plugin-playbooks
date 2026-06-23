@@ -130,4 +130,8 @@ describe('isNeverOptionSelected', () => {
     it('is false when a real duration option is selected', () => {
         expect(isNeverOptionSelected({value: Duration.fromObject({days: 1})})).toBe(false);
     });
+
+    it('is false when the option value is undefined (no value field)', () => {
+        expect(isNeverOptionSelected({value: undefined} as any)).toBe(false);
+    });
 });
