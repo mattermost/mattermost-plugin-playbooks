@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useMemo} from 'react';
+import {useIntl} from 'react-intl';
 
 import DateTimeSelector from 'src/components/datetime_selector';
 
@@ -20,16 +21,18 @@ interface Props {
 }
 
 const UpdateTimer = (props: Props) => {
+    const {formatMessage} = useIntl();
     const makeOption = useMakeOption(Mode.DurationValue);
 
     const defaults = useMemo(() => {
+        const neverOption: Option = {value: null, label: formatMessage({defaultMessage: 'Never'})};
         const options = [
             makeOption({hours: 1}),
             makeOption({days: 1}),
             makeOption({days: 7}),
         ];
 
-        let value: Option | undefined;
+        let value: Option | undefined = neverOption;
         if (props.seconds) {
             value = makeOption({seconds: props.seconds});
 
@@ -42,8 +45,12 @@ const UpdateTimer = (props: Props) => {
             options.sort((a, b) => ms(a.value) - ms(b.value));
         }
 
+        // "Never" leads the list as the "no reminder" choice; it is kept out of the
+        // duration sort above so a null value (ms 0) does not interleave with real durations.
+        options.unshift(neverOption);
+
         return {options, value};
-    }, [props.seconds]);
+    }, [props.seconds, formatMessage]);
 
     return (
         <DateTimeSelector
