@@ -295,18 +295,54 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 
 	t.Run("add checklist item", func(t *testing.T) {
 		client := &fakeAPIClient{}
-		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item ", Description: "details", AssigneeID: assigneeID}
+		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item ", Description: "details", AssigneeID: assigneeID, DueDate: 1717200000000}
 		if _, err := toolAddChecklistItem(context.Background(), client, args); err != nil {
 			t.Fatalf("toolAddChecklistItem returned error: %v", err)
 		}
 		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/add" {
 			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
 		}
-		body, ok := client.postBody.(map[string]string)
+		body, ok := client.postBody.(map[string]any)
 		if !ok {
 			t.Fatalf("unexpected body type %T", client.postBody)
 		}
-		if body["title"] != "New item" || body["description"] != "details" || body["assignee_id"] != assigneeID {
+		if body["title"] != "New item" || body["description"] != "details" || body["assignee_id"] != assigneeID || body["due_date"] != int64(1717200000000) {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+
+	t.Run("set checklist item due date", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 1717200000000}
+		if _, err := toolSetChecklistItemDueDate(context.Background(), client, args); err != nil {
+			t.Fatalf("toolSetChecklistItemDueDate returned error: %v", err)
+		}
+		if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/duedate" {
+			t.Fatalf("unexpected endpoint: %s", client.putEndpoint)
+		}
+		body, ok := client.putBody.(map[string]int64)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.putBody)
+		}
+		if body["due_date"] != 1717200000000 {
+			t.Fatalf("unexpected body: %#v", body)
+		}
+	})
+
+	t.Run("clear checklist item due date", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 0}
+		if _, err := toolSetChecklistItemDueDate(context.Background(), client, args); err != nil {
+			t.Fatalf("toolSetChecklistItemDueDate returned error: %v", err)
+		}
+		if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/duedate" {
+			t.Fatalf("unexpected endpoint: %s", client.putEndpoint)
+		}
+		body, ok := client.putBody.(map[string]int64)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.putBody)
+		}
+		if body["due_date"] != 0 {
 			t.Fatalf("unexpected body: %#v", body)
 		}
 	})
@@ -482,6 +518,27 @@ func TestMoveChecklistToolsValidation(t *testing.T) {
 			},
 			wantErr: "dest_item_idx must be a non-negative integer, got -1",
 		},
+		{
+			name: "set checklist item due date rejects invalid run id",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemDueDate(ctx, client, SetChecklistItemDueDateArgs{RunID: "invalid", ChecklistNumber: 0, ItemNumber: 1, DueDate: 1717200000000})
+			},
+			wantErr: "run_id must be a valid Mattermost ID",
+		},
+		{
+			name: "set checklist item due date rejects negative checklist index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemDueDate(ctx, client, SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: -1, ItemNumber: 1, DueDate: 1717200000000})
+			},
+			wantErr: "checklist_number must be a non-negative integer, got -1",
+		},
+		{
+			name: "set checklist item due date rejects negative item index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemDueDate(ctx, client, SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: -1, DueDate: 1717200000000})
+			},
+			wantErr: "item_number must be a non-negative integer, got -1",
+		},
 	}
 
 	for _, tt := range tests {
@@ -493,6 +550,9 @@ func TestMoveChecklistToolsValidation(t *testing.T) {
 			}
 			if client.postEndpoint != "" {
 				t.Fatalf("expected validation to fail before API call, got endpoint %q", client.postEndpoint)
+			}
+			if client.putEndpoint != "" {
+				t.Fatalf("expected validation to fail before API call, got endpoint %q", client.putEndpoint)
 			}
 		})
 	}

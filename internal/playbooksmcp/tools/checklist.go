@@ -26,6 +26,14 @@ type AddChecklistItemArgs struct {
 	Title           string `json:"title" jsonschema:"Title of the new checklist item"`
 	Description     string `json:"description,omitempty" jsonschema:"Optional description for the item (supports Markdown)"`
 	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"Optional user ID to assign the item to"`
+	DueDate         int64  `json:"due_date,omitempty" jsonschema:"Optional due date as Unix timestamp in milliseconds"`
+}
+
+type SetChecklistItemDueDateArgs struct {
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist"`
+	ItemNumber      int    `json:"item_number" jsonschema:"The zero-based index of the item within the checklist"`
+	DueDate         int64  `json:"due_date" jsonschema:"Due date as Unix timestamp in milliseconds; use 0 to clear"`
 }
 
 type EditChecklistItemArgs struct {
@@ -81,8 +89,12 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolCheckItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_checklist_item",
-		"Add a new item to an existing checklist in a playbook run. The checklist_number is a zero-based index. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\"}",
+		"Add a new item to an existing checklist in a playbook run. The checklist_number is a zero-based index. due_date is an optional Unix timestamp in milliseconds. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\", \"due_date\": 1717200000000}",
 		toolAddChecklistItem)
+
+	addMCPHelperTool(server, p.clientFactory, "set_checklist_item_due_date",
+		"Set or clear the due date for an existing checklist item in a playbook run. due_date is a Unix timestamp in milliseconds; use 0 to clear. Checklist and item numbers are zero-based indexes. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"due_date\": 1717200000000}",
+		toolSetChecklistItemDueDate)
 
 	addMCPHelperTool(server, p.clientFactory, "edit_checklist_item",
 		"Edit the title, description, or slash command of an existing checklist item. Only provided fields are updated. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\"}",
@@ -168,7 +180,7 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 		return "", fmt.Errorf("title is required")
 	}
 
-	body := map[string]string{
+	body := map[string]any{
 		"title": title,
 	}
 	if args.Description != "" {
@@ -180,6 +192,9 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 		}
 		body["assignee_id"] = args.AssigneeID
 	}
+	if args.DueDate != 0 {
+		body["due_date"] = args.DueDate
+	}
 
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d/add", args.RunID, args.ChecklistNumber)
 	if err := client.Post(ctx, endpoint, body, nil); err != nil {
@@ -187,6 +202,32 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 	}
 
 	return fmt.Sprintf("Added item '%s' to checklist %d in run %s.", title, args.ChecklistNumber, args.RunID), nil
+}
+
+func toolSetChecklistItemDueDate(ctx context.Context, client APIClient, args SetChecklistItemDueDateArgs) (string, error) {
+	if err := validateID(args.RunID, "run_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.ChecklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.ItemNumber, "item_number"); err != nil {
+		return "", err
+	}
+
+	body := map[string]int64{
+		"due_date": args.DueDate,
+	}
+
+	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d/duedate", args.RunID, args.ChecklistNumber, args.ItemNumber)
+	if err := client.Put(ctx, endpoint, body, nil); err != nil {
+		return "", fmt.Errorf("failed to set checklist item due date: %w", err)
+	}
+
+	if args.DueDate == 0 {
+		return fmt.Sprintf("Cleared due date for checklist item [%d][%d] in run %s.", args.ChecklistNumber, args.ItemNumber, args.RunID), nil
+	}
+	return fmt.Sprintf("Set due date for checklist item [%d][%d] in run %s to %d.", args.ChecklistNumber, args.ItemNumber, args.RunID, args.DueDate), nil
 }
 
 func toolEditChecklistItem(ctx context.Context, client APIClient, args EditChecklistItemArgs) (string, error) {
