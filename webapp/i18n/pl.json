@@ -1063,5 +1063,6 @@
     "wz7PIL": "Wybierz rolę dla osoby przypisanej",
     "xAoYB/": "Tylko właściciel uruchomienia może zakończyć to uruchomienie",
     "xB/R5b": "Czy na pewno chcesz włączyć retrospektywę dla tego uruchomienia?",
-    "yVKYcF": "Czy na pewno chcesz wyłączyć retrospektywę dla tego uruchomienia? Żadne przypomnienie o retrospektywie nie zostanie wysłane."
+    "yVKYcF": "Czy na pewno chcesz wyłączyć retrospektywę dla tego uruchomienia? Żadne przypomnienie o retrospektywie nie zostanie wysłane.",
+    "nGnueQ": "Nazwa uruchomienia jest ustawiana automatycznie na podstawie szablonu nazwy kanału tego playboka i nie można jej tutaj edytować."
 }
