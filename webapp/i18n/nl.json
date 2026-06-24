@@ -978,5 +978,17 @@
     "724CrE": "Selecteer...",
     "8PDS6L": "Beheer uitvoeringen beperken tot eigenaar",
     "8T9fet": "{count} {count, plural, one {taak} other {taken}} verwijderen?",
-    "8UDi5O": "Voorbeeld:"
+    "8UDi5O": "Voorbeeld:",
+    "9Wq55e": "Het is niet gelukt om {count} van {total} taken toe te wijzen",
+    "A42NVB": "Het laden van de Playbook-details is mislukt. Sluit het venster en probeer het opnieuw.",
+    "Ab0NkQ": "Voer {name} uit",
+    "B6S87C": "Niet beschikbaar voor directe berichten en groepsberichtkanalen",
+    "BbnCBV": "Nieuw kanaal vereisen voor alle uitvoeringen",
+    "CAME2M": "Kies een kenmerk...",
+    "CmVz3f": "Alleen de eigenaar van de uitvoering kan deze uitvoering herstellen",
+    "CywktV": "Verplaats naar conditie",
+    "D7jYUm": "Als je dit inschakelt, kunnen alleen de eigenaar van de run deze nog afsluiten en herstellen. Ook het toewijzen van een nieuwe eigenaar is dan niet meer mogelijk voor mensen die geen beheerder zijn. Dit geldt voor alle actieve runs van dit Playbook. Systeembeheerders behouden hun toegang, en Playbook-beheerders kunnen nog steeds een nieuwe eigenaar toewijzen. Doorgaan?",
+    "Da8Mnx": "Bulk bewerken",
+    "DvRKGH": "Alleen beheerders kunnen dit playbook herstellen.",
+    "EYIw2M": "Selectie wissen"
 }
