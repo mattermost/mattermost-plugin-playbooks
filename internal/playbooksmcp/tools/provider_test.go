@@ -26,9 +26,10 @@ func TestNewPlaybooksToolProviderRejectsNilClientFactory(t *testing.T) {
 
 func TestProvideMCPHelperToolsRegistersChecklistAssigneeTool(t *testing.T) {
 	ctx := context.Background()
+	fakeClient := &fakeAPIClient{}
 
 	provider, err := NewPlaybooksToolProvider(func(context.Context) (APIClient, error) {
-		return &fakeAPIClient{}, nil
+		return fakeClient, nil
 	})
 	if err != nil {
 		t.Fatalf("NewPlaybooksToolProvider returned error: %v", err)
@@ -49,8 +50,8 @@ func TestProvideMCPHelperToolsRegistersChecklistAssigneeTool(t *testing.T) {
 	}))
 	t.Cleanup(ts.Close)
 
-	client := mcp.NewClient(&mcp.Implementation{Name: "playbooks-test-client", Version: "0.0.1"}, nil)
-	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{Endpoint: ts.URL}, nil)
+	mcpClient := mcp.NewClient(&mcp.Implementation{Name: "playbooks-test-client", Version: "0.0.1"}, nil)
+	session, err := mcpClient.Connect(ctx, &mcp.StreamableClientTransport{Endpoint: ts.URL}, nil)
 	if err != nil {
 		t.Fatalf("client.Connect returned error: %v", err)
 	}
@@ -63,10 +64,38 @@ func TestProvideMCPHelperToolsRegistersChecklistAssigneeTool(t *testing.T) {
 		t.Fatalf("ListTools returned error: %v", err)
 	}
 
+	found := false
 	for _, tool := range tools.Tools {
 		if tool.Name == "playbooks__set_checklist_item_assignee" {
-			return
+			found = true
+			break
 		}
 	}
-	t.Fatalf("expected set_checklist_item_assignee to be registered, got tools %#v", tools.Tools)
+	if !found {
+		t.Fatalf("expected set_checklist_item_assignee to be registered, got tools %#v", tools.Tools)
+	}
+
+	_, err = session.CallTool(ctx, &mcp.CallToolParams{
+		Name: "playbooks__set_checklist_item_assignee",
+		Arguments: map[string]any{
+			"run_id":           "abcdefghijklmnopqrstuvwxyz",
+			"checklist_number": 1,
+			"item_number":      2,
+			"assignee_id":      "bcdefghijklmnopqrstuvwxyza",
+		},
+	})
+	if err != nil {
+		t.Fatalf("CallTool returned error: %v", err)
+	}
+
+	if fakeClient.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/assignee" {
+		t.Fatalf("unexpected endpoint: %s", fakeClient.putEndpoint)
+	}
+	body, ok := fakeClient.putBody.(map[string]string)
+	if !ok {
+		t.Fatalf("unexpected body type %T", fakeClient.putBody)
+	}
+	if body["assignee_id"] != "bcdefghijklmnopqrstuvwxyza" {
+		t.Fatalf("unexpected body: %#v", body)
+	}
 }

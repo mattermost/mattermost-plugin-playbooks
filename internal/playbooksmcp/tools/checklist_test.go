@@ -174,6 +174,24 @@ func TestToolEditChecklistItemRejectsBlankTitle(t *testing.T) {
 	}
 }
 
+func TestToolAddChecklistItemRejectsInvalidAssignee(t *testing.T) {
+	client := &fakeAPIClient{}
+	args := AddChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		Title:           "New item",
+		AssigneeID:      "invalid",
+	}
+
+	if _, err := toolAddChecklistItem(context.Background(), client, args); err == nil || err.Error() != "assignee_id must be a valid Mattermost ID" {
+		t.Fatalf("expected assignee validation error, got %v", err)
+	}
+
+	if client.postEndpoint != "" {
+		t.Fatalf("expected validation to fail before API call, got endpoint %q", client.postEndpoint)
+	}
+}
+
 func TestToolListRunsAddsTypeFilter(t *testing.T) {
 	client := &fakeAPIClient{}
 	args := ListRunsArgs{Type: "channelChecklist", Types: []string{"playbook"}}
