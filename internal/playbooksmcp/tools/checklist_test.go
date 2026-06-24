@@ -311,6 +311,24 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 		}
 	})
 
+	t.Run("add checklist item without due date omits due date", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item "}
+		if _, err := toolAddChecklistItem(context.Background(), client, args); err != nil {
+			t.Fatalf("toolAddChecklistItem returned error: %v", err)
+		}
+		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/add" {
+			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+		}
+		body, ok := client.postBody.(map[string]any)
+		if !ok {
+			t.Fatalf("unexpected body type %T", client.postBody)
+		}
+		if _, ok := body["due_date"]; ok {
+			t.Fatalf("expected due_date to be omitted, got body: %#v", body)
+		}
+	})
+
 	t.Run("set checklist item due date", func(t *testing.T) {
 		client := &fakeAPIClient{}
 		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 1717200000000}
