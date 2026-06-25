@@ -167,7 +167,7 @@ func (p *Plugin) OnActivate() error {
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
 	conditionStore := sqlstore.NewConditionStore(apiClient, sqlStore)
 
-	auditorService := app.NewAuditorService(p.API)
+	auditorService := app.NewAuditorService(pluginAPIClient)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, auditorService)
 

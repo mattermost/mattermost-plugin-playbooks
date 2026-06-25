@@ -11,11 +11,11 @@ import (
 
 // AuditorService implements the Auditor interface
 type AuditorService struct {
-	pluginAPI pluginapi.Client
+	pluginAPI *pluginapi.Client
 }
 
 // NewAuditorService creates a new auditor service
-func NewAuditorService(api pluginapi.Client) Auditor {
+func NewAuditorService(api *pluginapi.Client) Auditor {
 	return &AuditorService{
 		pluginAPI: api,
 	}
