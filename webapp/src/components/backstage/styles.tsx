@@ -51,8 +51,8 @@ export const StyledTextarea = styled.textarea`
     }
 `;
 
-export const GlobalSelectStyle = createGlobalStyle`
-    .playbooks-rselect__control.playbooks-rselect__control {
+const selectGlobalStyles = (classNamePrefix: string) => css`
+    .${classNamePrefix}__control.${classNamePrefix}__control {
         width: 100%;
         border: none;
         border-radius: 4px;
@@ -67,58 +67,67 @@ export const GlobalSelectStyle = createGlobalStyle`
         }
     }
 
-    .playbooks-rselect--is-disabled {
+    .${classNamePrefix}--is-disabled {
         opacity: 0.56;
     }
 
-    .playbooks-rselect__control,
-    .playbooks-rselect__menu {
-        .playbooks-rselect__menu-list {
+    .${classNamePrefix}__control,
+    .${classNamePrefix}__menu {
+        .${classNamePrefix}__menu-list {
             border: none;
             border-radius: var(--radius-s);
             background-color: var(--center-channel-bg);
         }
 
-        .playbooks-rselect__input {
+        .${classNamePrefix}__input {
             color: var(--center-channel-color);
         }
 
-        .playbooks-rselect__option--is-selected {
+        .${classNamePrefix}__option {
+            color: var(--center-channel-color);
+        }
+
+        .${classNamePrefix}__option--is-selected {
             background-color: rgba(var(--center-channel-color-rgb), 0.08);
             color: inherit;
         }
 
-        .playbooks-rselect__option--is-focused {
+        .${classNamePrefix}__option--is-focused {
             background-color: rgba(var(--center-channel-color-rgb), 0.16);
         }
 
-        .playbooks-rselect__option {
+        .${classNamePrefix}__option {
             &:active {
                 background-color: rgba(var(--center-channel-color-rgb), 0.08);
             }
         }
 
-        .playbooks-rselect__single-value {
+        .${classNamePrefix}__single-value {
             color: var(--center-channel-color);
         }
 
-        .playbooks-rselect__multi-value {
+        .${classNamePrefix}__multi-value {
             height: 20px;
             padding-left: 8px;
             border-radius: 10px;
             background-color: rgba(var(--center-channel-color-rgb), 0.08);
             line-height: 19px;
 
-            .playbooks-rselect__multi-value__label {
+            .${classNamePrefix}__multi-value__label {
                 padding: 0;
                 color: var(--center-channel-color);
             }
 
-            .playbooks-rselect__multi-value__remove {
+            .${classNamePrefix}__multi-value__remove {
                 color: rgba(var(--center-channel-bg-rgb), 0.80);
             }
         }
     }
+`;
+
+export const GlobalSelectStyle = createGlobalStyle`
+    ${selectGlobalStyles('playbooks-rselect')}
+    ${selectGlobalStyles('property-select')}
 `;
 
 const commonSelectStyle = css`
