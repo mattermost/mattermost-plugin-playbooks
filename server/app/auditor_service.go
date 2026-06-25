@@ -6,17 +6,18 @@ package app
 import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
 // AuditorService implements the Auditor interface
 type AuditorService struct {
-	pluginAPI plugin.API
+	pluginAPI pluginapi.Client
 }
 
 // NewAuditorService creates a new auditor service
-func NewAuditorService(pluginAPI plugin.API) Auditor {
+func NewAuditorService(api pluginapi.Client) Auditor {
 	return &AuditorService{
-		pluginAPI: pluginAPI,
+		pluginAPI: api,
 	}
 }
 
@@ -27,5 +28,5 @@ func (a *AuditorService) MakeAuditRecord(event string, initialStatus string) *mo
 
 // LogAuditRec logs an audit record
 func (a *AuditorService) LogAuditRec(auditRec *model.AuditRecord) {
-	a.pluginAPI.LogAuditRec(auditRec)
+	a.pluginAPI.Audit.Record(auditRec)
 }
