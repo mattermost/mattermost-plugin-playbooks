@@ -149,7 +149,8 @@ func (h *Handler) MattermostAuthorizationRequired(next http.Handler) http.Handle
 			model.AddEventParameterToAuditRec(auditRec, "caller_plugin_id", r.Header.Get(pluginIDHeader))
 			model.AddEventParameterToAuditRec(auditRec, "acting_user_id", actingUserID)
 			model.AddEventParameterToAuditRec(auditRec, "method", r.Method)
-			model.AddEventParameterToAuditRec(auditRec, "url", r.URL.String())
+			// Path only. The query string is caller-controlled and may carry sensitive values.
+			model.AddEventParameterToAuditRec(auditRec, "url", r.URL.EscapedPath())
 			h.auditor.LogAuditRec(auditRec)
 
 			r.Header.Set(userIDHeader, actingUserID)
