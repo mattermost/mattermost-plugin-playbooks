@@ -67,7 +67,7 @@ const selectGlobalStyles = (classNamePrefix: string) => css`
         }
     }
 
-    .${classNamePrefix}--is-disabled {
+    .${classNamePrefix}__control--is-disabled {
         opacity: 0.56;
     }
 
