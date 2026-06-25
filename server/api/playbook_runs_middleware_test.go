@@ -8,8 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
+
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 func TestMattermostAuthorizationRequired(t *testing.T) {
@@ -25,6 +29,7 @@ func TestMattermostAuthorizationRequired(t *testing.T) {
 		actingUserHeader string
 		expectStatus     int
 		expectUserID     string // the Mattermost-User-Id the downstream handler should observe
+		expectAudit      bool   // whether the acting-as-user grant should be recorded
 	}{
 		{
 			name:         "authenticated user request passes unchanged",
@@ -50,6 +55,7 @@ func TestMattermostAuthorizationRequired(t *testing.T) {
 			actingUserHeader: userID,
 			expectStatus:     http.StatusOK,
 			expectUserID:     userID,
+			expectAudit:      true,
 		},
 		{
 			name:             "inter-plugin call without an acting user is rejected",
@@ -65,6 +71,22 @@ func TestMattermostAuthorizationRequired(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// gomock fails the test on any unexpected call, so paths that must NOT audit
+			// (normal user requests, rejections) are verified by setting no expectations.
+			mockAuditor := mock_app.NewMockAuditor(ctrl)
+			if tc.expectAudit {
+				auditRec := &model.AuditRecord{}
+				mockAuditor.EXPECT().
+					MakeAuditRecord("interPluginActAsUser", model.AuditStatusSuccess).
+					Return(auditRec)
+				mockAuditor.EXPECT().LogAuditRec(auditRec)
+			}
+
+			h := &Handler{auditor: mockAuditor}
+
 			var observedUserID string
 			handlerCalled := false
 			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +107,7 @@ func TestMattermostAuthorizationRequired(t *testing.T) {
 			}
 
 			rec := httptest.NewRecorder()
-			MattermostAuthorizationRequired(next).ServeHTTP(rec, req)
+			h.MattermostAuthorizationRequired(next).ServeHTTP(rec, req)
 
 			require.Equal(t, tc.expectStatus, rec.Code)
 			if tc.expectStatus == http.StatusOK {

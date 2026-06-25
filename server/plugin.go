@@ -167,7 +167,9 @@ func (p *Plugin) OnActivate() error {
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
 	conditionStore := sqlstore.NewConditionStore(apiClient, sqlStore)
 
-	p.handler = api.NewHandler(pluginAPIClient, p.config)
+	auditorService := app.NewAuditorService(p.API)
+
+	p.handler = api.NewHandler(pluginAPIClient, p.config, auditorService)
 
 	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
 	propertyService, err := app.NewPropertyService(pluginAPIClient, conditionStore)
@@ -176,7 +178,6 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.propertyService = propertyService
 
-	auditorService := app.NewAuditorService(p.API)
 	p.conditionService = app.NewConditionService(conditionStore, propertyService, p.bot, auditorService)
 
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, auditorService, p.metricsService, propertyService, p.conditionService)

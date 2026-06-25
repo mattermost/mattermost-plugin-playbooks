@@ -10,8 +10,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
@@ -33,20 +35,22 @@ type Handler struct {
 	APIRouter *mux.Router
 	root      *mux.Router
 	config    config.Service
+	auditor   app.Auditor
 }
 
 // NewHandler constructs a new handler.
-func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
+func NewHandler(pluginAPI *pluginapi.Client, config config.Service, auditor app.Auditor) *Handler {
 	handler := &Handler{
 		ErrorHandler: &ErrorHandler{},
 		pluginAPI:    pluginAPI,
 		config:       config,
+		auditor:      auditor,
 	}
 
 	root := mux.NewRouter()
 	root.Use(LogRequest)
 	api := root.PathPrefix("/api/v0").Subrouter()
-	api.Use(MattermostAuthorizationRequired)
+	api.Use(handler.MattermostAuthorizationRequired)
 
 	api.Handle("{anything:.*}", http.NotFoundHandler())
 	api.NotFoundHandler = http.NotFoundHandler()
@@ -126,7 +130,7 @@ const (
 // user it is acting on behalf of via the Mattermost-Plugin-Acting-User-Id header; that user is then
 // promoted into Mattermost-User-Id so every downstream per-user permission check applies to the
 // asserted user unchanged.
-func MattermostAuthorizationRequired(next http.Handler) http.Handler {
+func (h *Handler) MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Normal authenticated user request -- unchanged behavior.
 		if r.Header.Get(userIDHeader) != "" {
@@ -136,15 +140,17 @@ func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 
 		// Trusted inter-plugin request asserting an acting user.
 		if actingUserID := resolveInterPluginUser(r); actingUserID != "" {
-			// Record the privileged acting-as-user grant for auditing: the upstream LogRequest
-			// middleware runs before promotion, so it would otherwise log a blank user and never
-			// the calling plugin.
-			logrus.WithFields(logrus.Fields{
-				"caller_plugin_id": r.Header.Get(pluginIDHeader),
-				"acting_user_id":   actingUserID,
-				"method":           r.Method,
-				"url":              r.URL.String(),
-			}).Info("Authorized inter-plugin API request on behalf of user")
+			// Record the privileged acting-as-user grant in the audit log. The upstream
+			// LogRequest middleware runs before promotion, so the application log would
+			// otherwise record a blank user and never the calling plugin. The record
+			// documents the grant itself, not the eventual request outcome.
+			auditRec := h.auditor.MakeAuditRecord("interPluginActAsUser", model.AuditStatusSuccess)
+			auditRec.Actor.UserId = actingUserID
+			model.AddEventParameterToAuditRec(auditRec, "caller_plugin_id", r.Header.Get(pluginIDHeader))
+			model.AddEventParameterToAuditRec(auditRec, "acting_user_id", actingUserID)
+			model.AddEventParameterToAuditRec(auditRec, "method", r.Method)
+			model.AddEventParameterToAuditRec(auditRec, "url", r.URL.String())
+			h.auditor.LogAuditRec(auditRec)
 
 			r.Header.Set(userIDHeader, actingUserID)
 			next.ServeHTTP(w, r)
