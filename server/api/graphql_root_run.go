@@ -181,9 +181,8 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		return "", err
 	}
 
-	// Prevent renaming finished runs
-	if args.Updates.Name != nil && playbookRun.CurrentStatus == app.StatusFinished {
-		return "", newGraphQLError(errors.Wrap(app.ErrPlaybookRunNotActive, "cannot rename a finished run"))
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
 	}
 
 	now := model.GetMillis()
@@ -286,6 +285,14 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
 			return "", errors.Wrap(err, "attempted to modify participants without permissions")
 		}
+
+		playbookRun, err := c.playbookRunService.GetPlaybookRun(args.RunID)
+		if err != nil {
+			return "", err
+		}
+		if err := app.EnsureRunIsActive(playbookRun); err != nil {
+			return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+		}
 	}
 
 	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, args.ForceAddToChannel, true); err != nil {
@@ -313,6 +320,14 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 	} else {
 		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
 			return "", errors.Wrap(err, "attempted to modify participants without permissions")
+		}
+
+		playbookRun, err := c.playbookRunService.GetPlaybookRun(args.RunID)
+		if err != nil {
+			return "", err
+		}
+		if err := app.EnsureRunIsActive(playbookRun); err != nil {
+			return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
 		}
 	}
 
@@ -343,6 +358,14 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 		return "", errors.Wrap(err, "attempted to modify the run owner without permissions")
 	}
 
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+	}
+
 	if err := c.playbookRunService.ChangeOwner(args.RunID, requesterID, args.OwnerID); err != nil {
 		return "", errors.Wrap(err, "failed to change the run owner")
 	}
@@ -371,6 +394,14 @@ func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct 
 
 	if err = c.permissions.RunManageProperties(userID, args.RunID); err != nil {
 		return "", err
+	}
+
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
 	}
 
 	if err := validateTaskActions(*args.TaskActions); err != nil {

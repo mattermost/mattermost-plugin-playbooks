@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/MicahParks/keyfunc/v3"
+	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -57,6 +58,9 @@ type Plugin struct {
 	userInfoStore        app.UserInfoStore
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
+	mcpServer            *mcphelper.Server
+	mcpExposeExternal    bool
+	mcpMu                sync.RWMutex
 
 	cancelRunning     context.CancelFunc
 	cancelRunningLock sync.Mutex
@@ -75,6 +79,9 @@ func (r *StatusRecorder) WriteHeader(status int) {
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	if p.serveMCPIfMatch(w, r) {
+		return
+	}
 	p.handler.ServeHTTP(w, r)
 }
 
@@ -160,7 +167,9 @@ func (p *Plugin) OnActivate() error {
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
 	conditionStore := sqlstore.NewConditionStore(apiClient, sqlStore)
 
-	p.handler = api.NewHandler(pluginAPIClient, p.config)
+	auditorService := app.NewAuditorService(pluginAPIClient)
+
+	p.handler = api.NewHandler(pluginAPIClient, p.config, auditorService)
 
 	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
 	propertyService, err := app.NewPropertyService(pluginAPIClient, conditionStore)
@@ -169,7 +178,6 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.propertyService = propertyService
 
-	auditorService := app.NewAuditorService(p.API)
 	p.conditionService = app.NewConditionService(conditionStore, propertyService, p.bot, auditorService)
 
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, auditorService, p.metricsService, propertyService, p.conditionService)
@@ -284,6 +292,13 @@ func (p *Plugin) OnActivate() error {
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-management")
 	}()
 
+	if p.isMCPEnabled() {
+		if err := p.ensureMCPServer(); err != nil {
+			return errors.Wrap(err, "failed to initialize MCP server")
+		}
+		p.registerMCPServerBestEffort()
+	}
+
 	return nil
 }
 
@@ -293,7 +308,21 @@ func (p *Plugin) OnConfigurationChange() error {
 		return nil
 	}
 
-	return p.config.OnConfigurationChange()
+	if err := p.config.OnConfigurationChange(); err != nil {
+		return err
+	}
+
+	if !p.isMCPEnabled() {
+		p.clearMCPServer()
+		return nil
+	}
+
+	if err := p.ensureMCPServer(); err != nil {
+		return errors.Wrap(err, "failed to initialize MCP server")
+	}
+	p.registerMCPServerBestEffort()
+
+	return nil
 }
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
@@ -388,6 +417,8 @@ func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
 }
 
 func (p *Plugin) OnDeactivate() error {
+	p.unregisterMCPServerBestEffort()
+
 	p.cancelRunningLock.Lock()
 	if p.cancelRunning != nil {
 		p.cancelRunning()

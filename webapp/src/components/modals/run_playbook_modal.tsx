@@ -30,6 +30,7 @@ import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {useCanCreatePlaybooksInTeam, usePlaybook, usePlaybookAttributes} from 'src/hooks';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
+import ConditionalTooltip from 'src/components/widgets/conditional_tooltip';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
 import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
@@ -155,6 +156,17 @@ export const RunPlaybookModal = ({
 
     const isNewChannelOnly = Boolean(restPlaybook?.new_channel_only);
 
+    const playbookInitializationKey = playbook ? JSON.stringify({
+        id: playbook.id,
+        channelNameTemplate: playbook.channel_name_template ?? '',
+        runSummaryTemplateEnabled: playbook.run_summary_template_enabled,
+        runSummaryTemplate: playbook.run_summary_template ?? '',
+        channelMode: playbook.channel_mode,
+        channelId: playbook.channel_id,
+        createPublicPlaybookRun: playbook.create_public_playbook_run,
+        isNewChannelOnly,
+    }) : undefined;
+
     // Single effect for atomic init: prevents race conditions from independent effects exposing stale state.
     useEffect(() => {
         // Reset form state first; skip isSubmitting if a submission is already in flight
@@ -172,10 +184,10 @@ export const RunPlaybookModal = ({
             return;
         }
 
-        if (playbook.id === initializedPlaybookIdRef.current) {
+        if (playbookInitializationKey === initializedPlaybookIdRef.current) {
             return;
         }
-        initializedPlaybookIdRef.current = playbook.id;
+        initializedPlaybookIdRef.current = playbookInitializationKey;
 
         // Pre-fill with the channel_name_template so the user can see the raw template.
         // When a template is NOT set the input is required and starts empty.
@@ -185,7 +197,7 @@ export const RunPlaybookModal = ({
         setChannelMode(isNewChannelOnly ? 'create_new_channel' : playbook.channel_mode);
         setChannelId(playbook.channel_id);
         setCreatePublicRun(playbook.create_public_playbook_run);
-    }, [playbook?.id, selectedPlaybookId, isNewChannelOnly]);
+    }, [playbook?.id, selectedPlaybookId, playbookInitializationKey]);
 
     const templateFieldNames = useMemo(() => {
         const names = new Set<string>();
@@ -562,6 +574,8 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
         suffix = ' ' + formatMessage({defaultMessage: '(optional)'});
     }
 
+    const readOnlyExplanation = formatMessage({defaultMessage: 'The run name is set automatically from this playbook\'s channel name template and can\'t be edited here.'});
+
     return (<>
         <RunNameLabel invalid={Boolean(error)}>
             {formatMessage(
@@ -572,16 +586,31 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
                 {suffix},
             )}
         </RunNameLabel>
-        <BaseInput
-            $invalid={Boolean(error)}
-            $readOnly={readOnly}
-            data-testid={'run-name-input'}
-            autoFocus={!readOnly}
-            type={'text'}
-            value={runName}
-            readOnly={readOnly}
-            onChange={readOnly ? undefined : onRunNameChange}
-        />
+        <ConditionalTooltip
+            show={Boolean(readOnly)}
+            id={'run-name-readonly-tooltip'}
+            content={readOnlyExplanation}
+        >
+            <BaseInput
+                $invalid={Boolean(error)}
+                $readOnly={readOnly}
+                data-testid={'run-name-input'}
+                autoFocus={!readOnly}
+                type={'text'}
+                value={runName}
+                readOnly={readOnly}
+                aria-describedby={readOnly ? 'run-name-readonly-desc' : undefined}
+                onChange={readOnly ? undefined : onRunNameChange}
+            />
+        </ConditionalTooltip>
+        {readOnly && (
+            <VisuallyHidden
+                id={'run-name-readonly-desc'}
+                data-testid={'run-name-readonly-desc'}
+            >
+                {readOnlyExplanation}
+            </VisuallyHidden>
+        )}
         {error && <ErrorMessage data-testid={'run-name-error'}>{error}</ErrorMessage>}
     </>);
 };
@@ -824,6 +853,20 @@ const CreatePlaybookButton = styled.button`
 
 const RunNameLabel = styled(InlineLabel)<{invalid?: boolean}>`
     color: ${(props) => (props.invalid ? 'var(--error-text)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};
+`;
+
+// Visually hidden but available to screen readers, so the reason a field is
+// read-only (otherwise only shown in the hover tooltip) is in the a11y tree.
+const VisuallyHidden = styled.span`
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 `;
 
 const ErrorMessage = styled.div`

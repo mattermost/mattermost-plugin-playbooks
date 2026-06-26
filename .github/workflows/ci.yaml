@@ -45,6 +45,11 @@ jobs:
       - name: ci/configure-git-safe-directory
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
+      - name: ci/setup-node
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
+
       - name: ci/cache-node-modules
         id: cache-node-modules
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -186,6 +191,10 @@ jobs:
           fetch-depth: "0"
       - name: ci/configure-git-safe-directory
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
+      - name: ci/setup-node
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
       - name: ci/get-short-sha
         id: short-sha
         run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
@@ -325,6 +334,11 @@ jobs:
       - name: ci/configure-git-safe-directory
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
+      - name: ci/setup-node
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
+
       - name: ci/test-with-db
         uses: ./.github/actions/test-with-db
 
@@ -362,6 +376,11 @@ jobs:
 
       - name: ci/configure-git-safe-directory
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: ci/setup-node
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
 
       - name: ci/test-with-db
         uses: ./.github/actions/test-with-db
