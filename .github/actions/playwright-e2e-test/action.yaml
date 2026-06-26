@@ -34,7 +34,9 @@ runs:
           webapp/node_modules
           e2e-tests/playwright/node_modules
         key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/playwright/package-lock.json') }}
-        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/playwright/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-
+          ${{ runner.os }}-node-modules-
 
     - name: ci/restore-postresql
       uses: docker://postgres:14
