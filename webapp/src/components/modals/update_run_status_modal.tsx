@@ -211,10 +211,10 @@ export const UpdateRunStatusModal = ({
     // cancel-reopen round trip.
     const effectiveFinishRun = !blockedByOwnerOnly && finishRun;
 
-    const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), effectiveFinishRun, providedReminder);
-    const isReminderValid = effectiveFinishRun || (reminder && reminder > 0);
+    const {input: reminderInput, reminder, isNeverSelected} = useReminderTimerOption(getFragmentData(ReminderTimer, run), effectiveFinishRun, providedReminder);
+    const isReminderValid = effectiveFinishRun || reminder > 0 || isNeverSelected;
     let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
-    if (!reminder || reminder === 0) {
+    if (!isNeverSelected && (!reminder || reminder === 0)) {
         warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
     }
 
@@ -492,16 +492,23 @@ const ReminderTimer = graphql(/* GraphQL */`
     }
 `);
 
+// Distinguishes an explicit "Never" choice (an Option whose value is null) from no selection at
+// all (null/undefined). The former is a valid submission with reminder 0; the latter is not.
+export const isNeverOptionSelected = (value: Option | null | undefined): boolean =>
+    value != null && value.value === null;
+
 const useReminderTimerOption = (
     run: Maybe<ReminderTimerFragment>,
     disabled?: boolean,
     preselectedValue?: number,
 ) => {
-    const {locale} = useIntl();
+    const {locale, formatMessage} = useIntl();
     const makeOption = useMakeOption(Mode.DurationValue);
 
     const defaults = useMemo(() => {
-        const options = [
+        const neverOption: Option = {value: null, label: formatMessage({defaultMessage: 'Never'})};
+        const options: Option[] = [
+            neverOption,
             makeOption({hours: 1}),
             makeOption({days: 1}),
             makeOption({days: 7}),
@@ -516,6 +523,7 @@ const useReminderTimerOption = (
                 value = makeOption({seconds: nearest(run.previousReminder * 1e-9, 60)});
             }
 
+            const hasActivePost = run.statusPosts.some(({deleteAt}) => !deleteAt);
             if (run.reminderTimerDefaultSeconds) {
                 const defaultReminderOption = makeOption({seconds: run.reminderTimerDefaultSeconds});
                 if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
@@ -523,12 +531,15 @@ const useReminderTimerOption = (
                     options.push(defaultReminderOption);
                 }
 
-                if (!value && !run?.statusPosts.some(({deleteAt}) => !deleteAt)) {
+                if (!value && !hasActivePost) {
                     // set preselected-default if it was not set previously
                     // and there are no previous status posts (excluding deleted)
                     // (the previous reminder timer specified take precedence)
                     value = defaultReminderOption;
                 }
+            } else if (!value && !hasActivePost) {
+                // playbook default is "Never" (0): preselect it when no update was posted yet
+                value = neverOption;
             }
         }
 
@@ -542,7 +553,7 @@ const useReminderTimerOption = (
         options.sort((a, b) => ms(a.value) - ms(b.value));
 
         return {options, value};
-    }, [run, preselectedValue, locale]);
+    }, [run, preselectedValue, locale, formatMessage]);
 
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,
@@ -558,7 +569,9 @@ const useReminderTimerOption = (
         reminder = (Duration.isDuration(value.value) ? value.value : value.value.diff(DateTime.now())).as('seconds');
     }
 
-    return {input, reminder};
+    const isNeverSelected = isNeverOptionSelected(value);
+
+    return {input, reminder, isNeverSelected};
 };
 
 const FormContainer = styled.div`

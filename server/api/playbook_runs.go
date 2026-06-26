@@ -923,8 +923,8 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 		return "message must not be empty", errors.New("message field empty")
 	}
 
-	if options.Reminder <= 0 && !options.FinishRun {
-		return "the reminder must be set and not 0", errors.New("reminder was 0")
+	if options.Reminder < 0 && !options.FinishRun {
+		return "the reminder must not be negative", errors.New("reminder was negative")
 	}
 	if options.Reminder < 0 || options.FinishRun {
 		options.Reminder = 0
@@ -1247,8 +1247,8 @@ func (h *PlaybookRunHandler) reminderReset(c *Context, w http.ResponseWriter, r 
 		return
 	}
 
-	if payload.NewReminderSeconds <= 0 {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "new_reminder_seconds must be > 0", errors.New("new_reminder_seconds was <= 0"))
+	if payload.NewReminderSeconds < 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "new_reminder_seconds must be >= 0", errors.New("new_reminder_seconds was negative"))
 		return
 	}
 

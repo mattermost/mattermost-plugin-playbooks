@@ -3923,6 +3923,10 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 
 	reminderOptions := []*model.PostActionOptions{
 		{
+			Text:  "Never",
+			Value: "0",
+		},
+		{
 			Text:  "15min",
 			Value: "900",
 		},
