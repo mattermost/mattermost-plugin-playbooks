@@ -32,7 +32,7 @@ func TestTrialLicences(t *testing.T) {
 			},
 		}
 		dialogRequestBytes, _ := json.Marshal(dialogRequest)
-		resp, err := e.doPluginRequest(e.ServerClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
+		resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, "POST", "/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
@@ -48,7 +48,7 @@ func TestTrialLicences(t *testing.T) {
 			},
 		}
 		dialogRequestBytes, _ := json.Marshal(dialogRequest)
-		resp, err := e.doPluginRequest(e.ServerAdminClient, context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
+		resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerAdminClient, "POST", "/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})

@@ -12,23 +12,25 @@ interface ToggleProps {
     onChange: () => void;
 }
 
-export const Toggle = (props: ToggleProps) => {
+export const Toggle = React.forwardRef<HTMLLabelElement, ToggleProps>(({children, disabled, isChecked, onChange, ...otherProps}, ref) => {
     return (
         <Label
-            disabled={props.disabled}
+            ref={ref}
+            disabled={disabled}
             tabIndex={0}
+            {...otherProps}
         >
             <InvisibleInput
                 type='checkbox'
-                onChange={props.onChange}
-                checked={props.isChecked}
-                disabled={props.disabled}
+                onChange={onChange}
+                checked={isChecked}
+                disabled={disabled}
             />
-            <RoundSwitch disabled={props.disabled}/>
-            {props.children}
+            <RoundSwitch disabled={disabled}/>
+            {children}
         </Label>
     );
-};
+});
 
 interface DisabledProps {
     disabled?: boolean;

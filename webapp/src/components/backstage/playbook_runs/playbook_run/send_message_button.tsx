@@ -16,7 +16,7 @@ interface Props {
     teamName: string | null;
 }
 
-export const SendMessageButton = (props: Props) => {
+export const SendMessageButton = React.forwardRef<HTMLButtonElement, Props>((props, ref) => {
     const dispatch = useAppDispatch();
     const user = useAppSelector((state) => getUser(state, props.userId));
 
@@ -35,9 +35,11 @@ export const SendMessageButton = (props: Props) => {
 
     return (
         <ButtonIcon
+            ref={ref}
             style={{margin: 'auto 0'}}
             className={'icon-send'}
             onClick={onClick}
         />
     );
-};
+});
+SendMessageButton.displayName = 'SendMessageButton';

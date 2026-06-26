@@ -22,6 +22,17 @@ const (
 	StatusFinished   = "Finished"
 )
 
+// EnsureRunIsActive returns ErrPlaybookRunNotActive when the run has finished.
+func EnsureRunIsActive(playbookRun *PlaybookRun) error {
+	if playbookRun == nil {
+		return ErrNotFound
+	}
+	if playbookRun.CurrentStatus == StatusFinished {
+		return ErrPlaybookRunNotActive
+	}
+	return nil
+}
+
 const (
 	RunRoleMember = "run_member"
 	RunRoleAdmin  = "run_admin"

@@ -24,7 +24,7 @@ func TestTabAppGetRuns(t *testing.T) {
 	do := func(t *testing.T, method string, headers map[string]string) (*http.Response, error) {
 		t.Helper()
 
-		return e.doPluginRequest(e.ServerClient, context.Background(), method, e.ServerClient.URL+"/plugins/playbooks/tabapp/runs", "", headers)
+		return e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, method, "/tabapp/runs", "", headers)
 	}
 
 	setTabApp := func(t *testing.T, enable bool) {

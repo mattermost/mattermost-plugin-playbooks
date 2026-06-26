@@ -4,14 +4,9 @@
 import styled, {css} from 'styled-components';
 import React from 'react';
 
-import Tooltip from 'src/components/widgets/tooltip';
-import {CompassIcon} from 'src/types/compass';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
-declare module 'react-bootstrap/esm/OverlayTrigger' {
-    interface OverlayTriggerProps {
-        shouldUpdatePosition?: boolean;
-    }
-}
+import {CompassIcon} from 'src/types/compass';
 
 interface HeaderButtonProps {
     tooltipId: string;
@@ -28,11 +23,10 @@ interface HeaderButtonProps {
 
 const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, isActive, clicked, size, iconSize, 'aria-label': ariaLabel, 'data-testid': dataTestId}: HeaderButtonProps) => {
     return (
-        <Tooltip
+        <WithTooltip
             id={tooltipId}
-            placement={'bottom'}
-            shouldUpdatePosition={true}
-            content={tooltipMessage}
+
+            title={tooltipMessage}
         >
             <StyledHeaderIcon
                 data-testid={dataTestId}
@@ -48,7 +42,7 @@ const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, isActive, click
                     color={isActive ? 'var(--button-bg)' : 'rgb(var(--center-channel-color-rgb), 0.56)'}
                 />
             </StyledHeaderIcon>
-        </Tooltip>
+        </WithTooltip>
     );
 };
 

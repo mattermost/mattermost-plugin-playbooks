@@ -5,8 +5,9 @@ import React, {useCallback, useEffect, useRef} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import Tooltip from 'src/components/widgets/tooltip';
 
 interface Props {
     autoArchive: boolean;
@@ -46,13 +47,12 @@ const AutoArchiveToggle = ({autoArchive, isLinkedChannel, onChange, disabled}: P
     return (
         <>
             {isLinkedChannel ? (
-                <Tooltip
+                <WithTooltip
                     id='auto-archive-channel-toggle-tooltip'
-                    content={formatMessage({defaultMessage: 'The channel cannot be auto-archived when linking to an existing channel.'})}
-                    placement='top'
+                    title={formatMessage({defaultMessage: 'The channel cannot be auto-archived when linking to an existing channel.'})}
                 >
-                    <span tabIndex={0}>{toggle}</span>
-                </Tooltip>
+                    {toggle}
+                </WithTooltip>
             ) : toggle}
             {!isLinkedChannel && autoArchive && (
                 <ToggleBanner
