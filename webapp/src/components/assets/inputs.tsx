@@ -17,6 +17,12 @@ export const BaseInput = styled.input<{$invalid?: boolean; $readOnly?: boolean}>
     &:focus {
         box-shadow: ${(props) => (props.$invalid ? 'inset 0 0 0 2px var(--error-text)' : 'inset 0 0 0 2px var(--button-bg)')};
     }
+
+    ${(props) => props.$readOnly && `
+        background-color: rgba(var(--center-channel-color-rgb), 0.04);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        cursor: not-allowed;
+    `}
 `;
 
 export const BaseTextArea = styled.textarea`

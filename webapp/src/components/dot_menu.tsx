@@ -6,7 +6,8 @@ import styled, {css} from 'styled-components';
 
 import {useUpdateEffect} from 'react-use';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useUniqueId} from 'src/utils';
 
 import Dropdown from './dropdown';
@@ -185,9 +186,9 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
 
     if (props.disabled) {
         return (
-            <Tooltip
+            <WithTooltip
                 id={tooltipId}
-                content={props.disabledAltText}
+                title={props.disabledAltText}
             >
                 <DisabledDropdownMenuItemStyled
                     className={props.className}
@@ -195,7 +196,7 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
                 >
                     {props.children}
                 </DisabledDropdownMenuItemStyled>
-            </Tooltip>
+            </WithTooltip>
         );
     }
 

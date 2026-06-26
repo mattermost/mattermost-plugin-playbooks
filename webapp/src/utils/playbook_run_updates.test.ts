@@ -123,7 +123,7 @@ describe('playbook_run_updates utilities', () => {
                     {id: 'field1', name: 'Oncall', type: 'user', attrs: {}} as any,
                 ],
                 property_values: [
-                    {id: 'val1', field_id: 'field1', value: 'user-abc', target_id: 'run_123', target_type: 'run', group_id: '', create_at: 0, update_at: 0, delete_at: 0},
+                    {id: 'val1', field_id: 'field1', value: 'user-abc', target_id: 'run_123', target_type: 'run', group_id: '', create_at: 0, update_at: 0, delete_at: 0, created_by: '', updated_by: ''},
                 ],
             };
 
@@ -323,7 +323,7 @@ describe('playbook_run_updates utilities', () => {
                     {id: 'field1', name: 'Oncall', type: 'user', attrs: {}} as any,
                 ],
                 property_values: [
-                    {id: 'val1', field_id: 'field1', value: 'user-abc', target_id: 'run_123', target_type: 'run', group_id: '', create_at: 0, update_at: 0, delete_at: 0},
+                    {id: 'val1', field_id: 'field1', value: 'user-abc', target_id: 'run_123', target_type: 'run', group_id: '', create_at: 0, update_at: 0, delete_at: 0, created_by: '', updated_by: ''},
                 ],
             };
 

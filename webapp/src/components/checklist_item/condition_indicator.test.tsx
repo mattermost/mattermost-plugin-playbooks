@@ -17,13 +17,6 @@ jest.mock('react-intl', () => {
     };
 });
 
-jest.mock('src/components/widgets/tooltip', () => ({
-    __esModule: true,
-    default: ({children, content}: any) => (
-        <div data-tooltip={content}>{children}</div>
-    ),
-}));
-
 jest.mock('@mattermost/compass-icons/components', () => ({
     SourceBranchIcon: ({size, color}: any) => (
         <svg
@@ -63,13 +56,12 @@ describe('ConditionIndicator', () => {
 
         expect(tree).toBeTruthy();
         expect(Array.isArray(tree)).toBe(false);
-        if (tree && !Array.isArray(tree) && tree.children) {
-            expect(tree.props['data-tooltip']).toBe('Shown because "Priority" is "High"');
-            const child = tree.children[0] as ReactTestRendererJSON;
-            if (child.children) {
-                const grandchild = child.children[0] as ReactTestRendererJSON;
-                expect(grandchild.props['data-color']).toBe('rgba(var(--center-channel-color-rgb), 0.56)');
-                expect(grandchild.props['data-size']).toBe(14);
+        if (tree && !Array.isArray(tree)) {
+            expect(tree.props['data-testid']).toBe('condition-indicator');
+            const icon = tree.children?.[0] as ReactTestRendererJSON;
+            if (icon) {
+                expect(icon.props['data-color']).toBe('rgba(var(--center-channel-color-rgb), 0.56)');
+                expect(icon.props['data-size']).toBe(14);
             }
         }
     });
@@ -92,13 +84,12 @@ describe('ConditionIndicator', () => {
 
         expect(tree).toBeTruthy();
         expect(Array.isArray(tree)).toBe(false);
-        if (tree && !Array.isArray(tree) && tree.children) {
-            expect(tree.props['data-tooltip']).toBe('Condition no longer met, but task shown because it was modified');
-            const child = tree.children[0] as ReactTestRendererJSON;
-            if (child.children) {
-                const grandchild = child.children[0] as ReactTestRendererJSON;
-                expect(grandchild.props['data-color']).toBe('var(--error-text)');
-                expect(grandchild.props['data-size']).toBe(14);
+        if (tree && !Array.isArray(tree)) {
+            expect(tree.props['data-testid']).toBe('condition-indicator-error');
+            const icon = tree.children?.[0] as ReactTestRendererJSON;
+            if (icon) {
+                expect(icon.props['data-color']).toBe('var(--error-text)');
+                expect(icon.props['data-size']).toBe(14);
             }
         }
     });

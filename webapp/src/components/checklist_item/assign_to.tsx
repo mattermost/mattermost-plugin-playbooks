@@ -6,16 +6,13 @@ import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
-
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {Placement} from '@floating-ui/react';
 
 import {AccountOutlineIcon} from '@mattermost/compass-icons/components';
 
-import {OVERLAY_DELAY} from 'src/constants';
-
-import ProfileSelector, {ExtraSection, Option} from 'src/components/profile/profile_selector';
 import Profile from 'src/components/profile/profile';
+import ProfileSelector, {type ExtraSection, Option} from 'src/components/profile/profile_selector';
 import {useProfilesForRun} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {AssigneeTypeOwner, AssigneeTypePropertyUser, isRoleBasedAssigneeType} from 'src/types/playbook';
@@ -123,9 +120,7 @@ const AssignTo = (props: AssignedToProps) => {
 
         if (assigneeType === AssigneeTypePropertyUser) {
             const field = props.propertyFields?.find((f) => f.id === props.assignee_property_field_id);
-            label = field ?
-                formatMessage({defaultMessage: 'Run {name}'}, {name: field.name}) :
-                formatMessage({defaultMessage: 'Run User'});
+            label = field ? formatMessage({defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({defaultMessage: 'Run User'});
             badgeTestId = 'property-user-indicator-badge';
             if (props.mode === 'run') {
                 const propertyValue = props.propertyValues?.find((v) => v.field_id === props.assignee_property_field_id);
@@ -136,9 +131,7 @@ const AssignTo = (props: AssignedToProps) => {
                 }
             }
         } else {
-            label = assigneeType === AssigneeTypeOwner ?
-                formatMessage({defaultMessage: 'Run Owner'}) :
-                formatMessage({defaultMessage: 'Run Creator'});
+            label = assigneeType === AssigneeTypeOwner ? formatMessage({defaultMessage: 'Run Owner'}) : formatMessage({defaultMessage: 'Run Creator'});
             badgeTestId = 'role-indicator-badge';
             if (props.mode === 'run') {
                 resolvedUserId = props.assignee_id || (assigneeType === AssigneeTypeOwner ? props.runOwnerUserId : props.runCreatorUserId);
@@ -278,17 +271,12 @@ const AssignTo = (props: AssignedToProps) => {
 
     if (props.isEditing && !props.assignee_id && !props.assignee_type) {
         assignToButton = (
-            <OverlayTrigger
-                placement='top'
-                delay={OVERLAY_DELAY}
-                overlay={(
-                    <Tooltip id='assignee-tooltip'>
-                        {formatMessage({defaultMessage: 'Assignee'})}
-                    </Tooltip>
-                )}
+            <WithTooltip
+                id='assignee-tooltip'
+                title={formatMessage({defaultMessage: 'Assignee'})}
             >
                 {assignToButton}
-            </OverlayTrigger>
+            </WithTooltip>
         );
     }
 
