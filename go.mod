@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-playbooks
 
-go 1.26.3
+go 1.26.4
 
 replace github.com/mattermost/mattermost-plugin-playbooks/client => ./client
 
@@ -13,7 +13,7 @@ replace github.com/ledongthuc/pdf => github.com/ledongthuc/pdf v0.0.0-2024020113
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/MicahParks/jwkset v0.5.18
+	github.com/MicahParks/jwkset v0.11.0
 	github.com/MicahParks/keyfunc/v3 v3.3.3
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -203,10 +203,10 @@ require (
 	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a // indirect
 	golang.org/x/image v0.40.0 // indirect
 	golang.org/x/mod v0.36.0 // indirect
-	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
