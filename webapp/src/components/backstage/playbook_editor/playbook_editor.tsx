@@ -239,7 +239,7 @@ const PlaybookEditor = () => {
                         </Heading>
                     )}
                 </TextEdit>
-                <Description>
+                <Description data-testid={'playbook-editor-description'}>
                     <MarkdownEdit
                         disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
