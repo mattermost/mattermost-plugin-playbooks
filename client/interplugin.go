@@ -62,9 +62,20 @@ type interPluginTransport struct {
 }
 
 func (t *interPluginTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set(actingUserIDHeader, t.actingUserID)
+	// RoundTrip must not modify the original request, so operate on a clone. The clone shares the
+	// original's Body, so closing it below also discharges RoundTrip's duty to close req.Body.
+	outReq := req.Clone(req.Context())
+	outReq.Header.Set(actingUserIDHeader, t.actingUserID)
 
-	resp := t.do(req)
+	// RoundTrip must always close the request body. PluginHTTP's buffered path closes and nils the
+	// body itself, but its streaming path does not, so close whatever remains once the call returns.
+	defer func() {
+		if outReq.Body != nil {
+			outReq.Body.Close()
+		}
+	}()
+
+	resp := t.do(outReq)
 	if resp == nil {
 		return nil, errors.Errorf("no response from the %s plugin; is it installed and enabled?", manifestID)
 	}
@@ -73,7 +84,7 @@ func (t *interPluginTransport) RoundTrip(req *http.Request) (*http.Response, err
 	// error responses for non-2xx replies. Set it as net/http's Transport does for real network
 	// requests, so a non-2xx response yields an error rather than a nil-pointer panic.
 	if resp.Request == nil {
-		resp.Request = req
+		resp.Request = outReq
 	}
 
 	return resp, nil
