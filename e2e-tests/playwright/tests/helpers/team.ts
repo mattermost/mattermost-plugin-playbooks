@@ -3,7 +3,7 @@
 
 import type {Page} from '@playwright/test';
 
-import {readJsonOrThrow, requestedWith, slugify, uniqueSuffix} from './client';
+import {readJsonOrThrow, requestedWith, slugify, throwApiError, uniqueSuffix} from './client';
 
 export interface Team {
     id: string;
@@ -62,7 +62,7 @@ export async function createTeamScheme(page: Page, namePrefix: string): Promise<
     });
 
     if (response.status() !== 201) {
-        throw new Error(`Unable to create team scheme: ${response.status()} ${await response.text()}`);
+        await throwApiError(response, 'Unable to create team scheme');
     }
 
     return await response.json() as Scheme;

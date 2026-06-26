@@ -1,7 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {request, type APIRequestContext, type APIResponse, type FullConfig} from '@playwright/test';
+import {request, type APIRequestContext, type FullConfig} from '@playwright/test';
+
+import {readJsonOrThrow, requestedWith} from './client';
 
 interface CurrentUser {
     id: string;
@@ -20,16 +22,6 @@ const defaultTeam = {
     name: 'ad-1',
     displayName: 'eligendi',
 };
-
-const requestedWith = {headers: {'X-Requested-With': 'XMLHttpRequest'}};
-
-async function readJsonOrThrow<T>(response: APIResponse, message: string): Promise<T> {
-    if (!response.ok()) {
-        throw new Error(`${message}: ${response.status()} ${await response.text()}`);
-    }
-
-    return await response.json() as T;
-}
 
 async function loginAsAdmin(apiContext: APIRequestContext) {
     const response = await apiContext.post('/api/v4/users/login', {

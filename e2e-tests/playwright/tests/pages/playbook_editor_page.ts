@@ -7,6 +7,7 @@ export class PlaybookEditorPage {
     readonly page: Page;
     readonly title: Locator;
     readonly header: Locator;
+    readonly description: Locator;
     readonly titleEditInput: Locator;
     readonly descriptionEditInput: Locator;
     readonly saveButton: Locator;
@@ -15,6 +16,7 @@ export class PlaybookEditorPage {
         this.page = page;
         this.title = page.getByTestId('playbook-editor-title');
         this.header = page.getByTestId('playbook-editor-header');
+        this.description = page.getByTestId('playbook-editor-description');
         this.titleEditInput = page.getByTestId('rendered-editable-text');
         this.descriptionEditInput = page.getByRole('textbox', {name: /Add a description/});
         this.saveButton = page.getByRole('button', {name: 'Save'});
@@ -52,7 +54,7 @@ export class PlaybookEditorPage {
 
     async editDescription(currentText: string, newText: string) {
         // The description renders as markdown; double-clicking it opens the editor.
-        await this.page.getByText(currentText).dblclick();
+        await this.description.getByText(currentText).dblclick();
         await this.descriptionEditInput.fill(newText);
         await this.saveButton.click();
     }
@@ -62,6 +64,6 @@ export class PlaybookEditorPage {
     }
 
     async expectDescription(description: string) {
-        await expect(this.page.getByText(description)).toBeVisible();
+        await expect(this.description.getByText(description)).toBeVisible();
     }
 }

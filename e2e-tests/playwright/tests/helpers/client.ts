@@ -6,9 +6,25 @@ import type {APIResponse} from '@playwright/test';
 // Mattermost rejects API calls without this header as potential CSRF.
 export const requestedWith = {headers: {'X-Requested-With': 'XMLHttpRequest'}};
 
+// Carries the HTTP status so callers can branch on it (e.g. a 501 license gate)
+// instead of matching against the response body text.
+export class ApiError extends Error {
+    readonly status: number;
+
+    constructor(status: number, message: string) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+    }
+}
+
+export async function throwApiError(response: APIResponse, message: string): Promise<never> {
+    throw new ApiError(response.status(), `${message}: ${response.status()} ${await response.text()}`);
+}
+
 export async function readJsonOrThrow<T>(response: APIResponse, message: string): Promise<T> {
     if (!response.ok()) {
-        throw new Error(`${message}: ${response.status()} ${await response.text()}`);
+        await throwApiError(response, message);
     }
 
     return await response.json() as T;

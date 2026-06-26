@@ -12,7 +12,7 @@
 import {test} from '@playwright/test';
 
 import {loginAs, loginAsAdmin} from '../helpers/auth';
-import {uniqueSuffix} from '../helpers/client';
+import {ApiError, uniqueSuffix} from '../helpers/client';
 import {createPlaybook} from '../helpers/playbook';
 import {addUserToTeam, createTeam, createTeamScheme, getTeamMemberRole, setRolePermissions, setTeamScheme} from '../helpers/team';
 import {type SeededUser, createUser} from '../helpers/user';
@@ -163,7 +163,9 @@ test.describe('playbooks creation without permission', () => {
                 user,
             };
         } catch (err) {
-            if (String(err).includes('does not support creating permissions schemes')) {
+            // The scheme endpoint returns 501 Not Implemented when the license
+            // doesn't allow custom permission schemes.
+            if (err instanceof ApiError && err.status === 501) {
                 skipReason = 'Custom team schemes require an enterprise license (set MM_LICENSE).';
             } else {
                 await context.close();
