@@ -114,7 +114,7 @@ func (p *Plugin) OnActivate() error {
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 
-	configurePluginLogrus(logrus.StandardLogger(), pluginAPIClient)
+	pluginapi.ConfigureLogrus(logrus.StandardLogger(), pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "playbooks",
