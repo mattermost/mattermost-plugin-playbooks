@@ -105,7 +105,7 @@ const NoContentPage = () => {
                     className='mt-6'
                     onClick={handleClick}
                 >
-                    <i className='icon-plus mr-2'/>
+                    <i className='icon-plus'/>
                     {playbookExist ? <FormattedMessage defaultMessage='Run playbook'/> : <FormattedMessage defaultMessage='Create playbook'/>}
                 </PrimaryButton>
                 }

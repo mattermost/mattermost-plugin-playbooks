@@ -226,9 +226,7 @@ const SelectWrapper = styled(StyledSelect)`
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)`
     flex: 1;
-    justify-content: center;
     margin: 4px;
-    white-space: nowrap;
 `;
 
 const Container = styled(CustomPostContainer)`
