@@ -7,7 +7,7 @@ import {FormattedMessage} from 'react-intl';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
-import {PrimaryButton, PrimaryButtonDestructive, TertiaryButton} from 'src/components/assets/buttons';
+import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {modals} from 'src/webapp_globals';
 
 import {
@@ -33,11 +33,6 @@ type Props = {
      * Message to display in the body of the modal
      */
     message?: React.ReactNode;
-
-    /*
-     * The CSS class to apply to the confirm button
-     */
-    confirmButtonClass?: string;
 
     /*
      * The CSS class to apply to the modal
@@ -125,7 +120,6 @@ export default class ConfirmModal extends React.Component<Props, State> {
     static defaultProps = {
         title: '',
         message: '',
-        confirmButtonClass: 'btn btn-primary',
         confirmButtonText: '',
         modalClass: '',
     };
@@ -260,10 +254,9 @@ export default class ConfirmModal extends React.Component<Props, State> {
                         <Buttons>
                             {cancelButton}
                             {this.props.isDestructive ? (
-                                <PrimaryButtonDestructive
+                                <DestructiveButton
                                     autoFocus={true}
                                     type='button'
-                                    className={this.props.confirmButtonClass}
                                     onClick={(e) => {
                                         if (this.props.stopPropagationOnClick) {
                                             e.stopPropagation();
@@ -273,12 +266,11 @@ export default class ConfirmModal extends React.Component<Props, State> {
                                     id='confirmModalButton'
                                 >
                                     {this.props.confirmButtonText}
-                                </PrimaryButtonDestructive>
+                                </DestructiveButton>
                             ) : (
                                 <PrimaryButton
                                     autoFocus={true}
                                     type='button'
-                                    className={this.props.confirmButtonClass}
                                     onClick={(e) => {
                                         if (this.props.stopPropagationOnClick) {
                                             e.stopPropagation();
@@ -303,7 +295,6 @@ interface ConfirmModalOptions {
     message: React.ReactNode;
     confirmButtonText?: React.ReactNode;
     cancelButtonText?: React.ReactNode;
-    confirmButtonClass?: string;
     onConfirm: (checked: boolean) => void;
     onCancel?: (checked: boolean) => void;
     showCheckbox?: boolean;
@@ -340,7 +331,6 @@ export const useConfirmModal = () => {
             message: options.message,
             confirmButtonText: options.confirmButtonText,
             cancelButtonText: options.cancelButtonText,
-            confirmButtonClass: options.confirmButtonClass,
             onConfirm: options.onConfirm,
             onCancel: options.onCancel,
             showCheckbox: options.showCheckbox,

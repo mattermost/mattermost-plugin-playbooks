@@ -29,7 +29,7 @@ runs:
         cache: "npm"
         cache-dependency-path: |
           webapp/package-lock.json
-          e2e-tests/package-lock.json
+          e2e-tests/cypress/package-lock.json
 
     - name: ci/cache-node-modules
       id: cache-node-modules
@@ -37,9 +37,9 @@ runs:
       with:
         path: |
           webapp/node_modules
-          e2e-tests/node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
-        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
+          e2e-tests/cypress/node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/cypress/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/cypress/package-lock.json') }}
 
     - name: ci/disable-ALSA
       run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
@@ -49,6 +49,7 @@ runs:
       uses: docker://postgres:14
       env:
         TEST_DATABASE_URL: postgres://mmuser:mostest@postgres:5432/mattermost_test
+        DB_SETUP_SQL_PATH: e2e-tests/cypress/db-setup/mattermost.sql
       with:
         entrypoint: ./.github/actions/e2e-test/generate-test-data.sh
 
@@ -60,7 +61,7 @@ runs:
       run: |
         cd webapp
         npm install --ignore-scripts --no-save --legacy-peer-deps
-        cd ../e2e-tests
+        cd ../e2e-tests/cypress
         npm install --ignore-scripts --no-save --legacy-peer-deps
 
     - name: ci/installing-cypress-deps
@@ -69,7 +70,7 @@ runs:
         NODE_ENV: development
       run: |
         sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
-        cd e2e-tests/
+        cd e2e-tests/cypress
         npx cypress install
 
     - name: ci/install-playbooks
@@ -96,7 +97,7 @@ runs:
         MM_SERVICESETTINGS_STRICTCSRFENFORCEMENT: "false"
         TERM: xterm
       run: |
-        cd e2e-tests
+        cd e2e-tests/cypress
         npm run test -- --spec "${{ inputs.SPECS }}"
       shell: bash
 
@@ -106,6 +107,6 @@ runs:
       with:
         name: cypress-test-results-${{ matrix.runId }}${{ inputs.ARTIFACT_SUFFIX }}
         path: |
-          e2e-tests/results/junit
-          e2e-tests/tests/screenshots
+          e2e-tests/cypress/results/junit
+          e2e-tests/cypress/tests/screenshots
         retention-days: 14 ## No need to keep test results more than 14 days
