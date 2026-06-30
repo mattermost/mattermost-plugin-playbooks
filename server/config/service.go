@@ -17,12 +17,12 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
-// legacyConfigKeyAliases maps a canonical settings_schema key to the differently
-// cased key older plugin versions wrote via serialize(). See reconcileLegacyConfigKeys.
+// legacyConfigKeyAliases maps a legacy key older plugin versions wrote via
+// serialize() to its canonical settings_schema key. See reconcileLegacyConfigKeys.
 var legacyConfigKeyAliases = map[string]string{
-	"enableTeamsTabApp":        "EnableTeamsTabApp",
-	"teamsTabAppTenantIDs":     "TeamsTabAppTenantIDs",
-	"enableincrementalupdates": "EnableIncrementalUpdates",
+	"EnableTeamsTabApp":        "enableTeamsTabApp",
+	"TeamsTabAppTenantIDs":     "teamsTabAppTenantIDs",
+	"EnableIncrementalUpdates": "enableincrementalupdates",
 }
 
 // WebsocketPublisher defines interface for publishing websocket events
@@ -90,7 +90,7 @@ func (c *ServiceImpl) reconcileLegacyConfigKeys() error {
 	maps.Copy(cleaned, raw)
 
 	dirty := false
-	for canonical, legacy := range legacyConfigKeyAliases {
+	for legacy, canonical := range legacyConfigKeyAliases {
 		legacyVal, hasLegacy := cleaned[legacy]
 		if !hasLegacy {
 			continue
