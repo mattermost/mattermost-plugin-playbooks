@@ -140,7 +140,7 @@ func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
 	if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0" {
 		t.Fatalf("unexpected put endpoint: %s", client.putEndpoint)
 	}
-	body, ok := client.putBody.(map[string]string)
+	body, ok := client.putBody.(map[string]any)
 	if !ok {
 		t.Fatalf("unexpected body type %T", client.putBody)
 	}
@@ -152,6 +152,9 @@ func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
 	}
 	if got := body["description"]; got != "old description" {
 		t.Errorf("expected existing description to be preserved, got %q", got)
+	}
+	if _, ok := body["due_date"]; ok {
+		t.Errorf("expected omitted due_date to be excluded, got %#v", body["due_date"])
 	}
 }
 
@@ -175,6 +178,91 @@ func TestToolEditChecklistItemRejectsBlankTitle(t *testing.T) {
 	if client.putEndpoint != "" {
 		t.Fatalf("expected no update call, got endpoint %q", client.putEndpoint)
 	}
+}
+
+func TestToolEditChecklistItemRejectsNoEditedFields(t *testing.T) {
+	client := &fakeAPIClient{}
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+	}
+
+	_, err := toolEditChecklistItem(context.Background(), client, args)
+	require.EqualError(t, err, "at least one field (title, description, command, or due_date) must be provided")
+	assert.Empty(t, client.getEndpoint)
+	assert.Empty(t, client.putEndpoint)
+}
+
+func TestToolEditChecklistItemSetsDueDate(t *testing.T) {
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			Checklists: []checklist{
+				{
+					Items: []checklistItem{
+						{
+							Title:       "old title",
+							Command:     "/old-command",
+							Description: "old description",
+							DueDate:     1717100000000,
+						},
+					},
+				},
+			},
+		},
+	}
+	dueDate := int64(1717200000000)
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+		DueDate:         &dueDate,
+	}
+
+	_, err := toolEditChecklistItem(context.Background(), client, args)
+	require.NoError(t, err)
+
+	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0", client.putEndpoint)
+	require.IsType(t, map[string]any{}, client.putBody)
+	body := client.putBody.(map[string]any)
+	assert.Equal(t, "old title", body["title"])
+	assert.Equal(t, "old description", body["description"])
+	assert.Equal(t, "/old-command", body["command"])
+	assert.Equal(t, int64(1717200000000), body["due_date"])
+}
+
+func TestToolEditChecklistItemClearsDueDate(t *testing.T) {
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			Checklists: []checklist{
+				{
+					Items: []checklistItem{
+						{
+							Title:       "old title",
+							Command:     "/old-command",
+							Description: "old description",
+							DueDate:     1717100000000,
+						},
+					},
+				},
+			},
+		},
+	}
+	dueDate := int64(0)
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+		DueDate:         &dueDate,
+	}
+
+	_, err := toolEditChecklistItem(context.Background(), client, args)
+	require.NoError(t, err)
+
+	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0", client.putEndpoint)
+	require.IsType(t, map[string]any{}, client.putBody)
+	body := client.putBody.(map[string]any)
+	assert.Equal(t, int64(0), body["due_date"])
 }
 
 func TestToolListRunsAddsTypeFilter(t *testing.T) {

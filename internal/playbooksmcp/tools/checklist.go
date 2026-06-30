@@ -43,6 +43,7 @@ type EditChecklistItemArgs struct {
 	Title           *string `json:"title,omitempty" jsonschema:"New title for the item"`
 	Description     *string `json:"description,omitempty" jsonschema:"New description for the item (supports Markdown)"`
 	Command         *string `json:"command,omitempty" jsonschema:"Slash command to associate with the item"`
+	DueDate         *int64  `json:"due_date,omitempty" jsonschema:"Due date as Unix timestamp in milliseconds; use 0 to clear"`
 }
 
 type RemoveChecklistItemArgs struct {
@@ -97,7 +98,7 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolSetChecklistItemDueDate)
 
 	addMCPHelperTool(server, p.clientFactory, "edit_checklist_item",
-		"Edit the title, description, or slash command of an existing checklist item. Only provided fields are updated. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\"}",
+		"Edit the title, description, slash command, or due date of an existing checklist item. Only provided fields are updated. due_date is a Unix timestamp in milliseconds; use 0 to clear. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\", \"due_date\": 1717200000000}",
 		toolEditChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "remove_checklist_item",
@@ -241,8 +242,8 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 		return "", err
 	}
 
-	if args.Title == nil && args.Description == nil && args.Command == nil {
-		return "", fmt.Errorf("at least one field (title, description, or command) must be provided")
+	if args.Title == nil && args.Description == nil && args.Command == nil && args.DueDate == nil {
+		return "", fmt.Errorf("at least one field (title, description, command, or due_date) must be provided")
 	}
 	var title string
 	if args.Title != nil {
@@ -264,7 +265,7 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 	}
 
 	currentItem := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber]
-	body := map[string]string{
+	body := map[string]any{
 		"title":       currentItem.Title,
 		"description": currentItem.Description,
 		"command":     currentItem.Command,
@@ -277,6 +278,9 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 	}
 	if args.Command != nil {
 		body["command"] = *args.Command
+	}
+	if args.DueDate != nil {
+		body["due_date"] = *args.DueDate
 	}
 
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d", args.RunID, args.ChecklistNumber, args.ItemNumber)
