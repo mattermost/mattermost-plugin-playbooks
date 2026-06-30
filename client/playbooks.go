@@ -180,7 +180,7 @@ func (s *PlaybooksService) Duplicate(ctx context.Context, playbookID string) (st
 // Imports a playbook. Returns the id of the newly created playbook
 func (s *PlaybooksService) Import(ctx context.Context, toImport []byte, team string) (string, error) {
 	url := "playbooks/import?team_id=" + team
-	u, err := s.client.BaseURL.Parse(buildAPIURL(url))
+	u, err := s.client.BaseURL.Parse(s.client.buildAPIURL(url))
 	if err != nil {
 		return "", errors.Wrapf(err, "invalid endpoint %s", url)
 	}

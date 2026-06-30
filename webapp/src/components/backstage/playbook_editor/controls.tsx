@@ -519,7 +519,6 @@ export const TitleMenu = styled(TitleMenuImpl)``;
 const buttonCommon = css`
     height: 36px;
     padding: 0 16px;
-    gap: 8px;
 
     i::before {
         margin-right: 0;
@@ -528,6 +527,7 @@ const buttonCommon = css`
     }
 `;
 
+// These are actually between a medium and small sized button
 const PrimaryButtonLarger = styled(PrimaryButton)`
     ${buttonCommon};
 `;
@@ -547,22 +547,26 @@ const CheckboxInputStyled = styled(CheckboxInput)`
 `;
 
 const SecondaryButtonLargerCheckbox = styled(SecondaryButtonLarger) <{checked: boolean}>`
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    padding: 0;
-
-    &:hover:enabled {
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
-    }
-
-    ${({checked}) => checked && css`
-    border: 1px solid var(--button-bg);
-        color: var(--button-bg);
+    /* Increase the specificity to override the default btn-secondary colors */
+    && {
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
 
         &:hover:enabled {
-            background-color: rgba(var(--button-bg-rgb), 0.12);
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
         }
-    `}
+
+        ${({checked}) => checked && css`
+            border: 1px solid var(--button-bg);
+            color: var(--button-bg);
+
+            &:hover:enabled {
+                background-color: rgba(var(--button-bg-rgb), 0.12);
+            }
+        `}
+    }
+
+    padding: 0;
 `;
 
 const ButtonIconStyled = styled(ButtonIcon)`

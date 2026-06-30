@@ -21,13 +21,13 @@ const NoMetricsPlaceholder = ({canEdit = true}: {canEdit?: boolean}) => {
                 <Title>{formatMessage({defaultMessage: 'Track key metrics and measure value'})}</Title>
                 <Text>{formatMessage({defaultMessage: 'Use metrics to understand patterns and progress across runs, and track performance.'})}</Text>
                 {canEdit && (
-                    <StyledButton
+                    <SecondaryButton
                         onClick={() => {
                             navigateToUrl(match.url.replace('/reports', '/outline#retrospective'));
                         }}
                     >
                         {formatMessage({defaultMessage: 'Configure metrics in Retrospective'})}
-                    </StyledButton>
+                    </SecondaryButton>
                 )}
             </InnerContainer>
         </Container>
@@ -60,13 +60,6 @@ const Text = styled.div`
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-`;
-
-const StyledButton = styled(SecondaryButton)`
-    height: 40px;
-    padding: 0 20px;
-    font-size: 14px;
-    font-weight: 600;
 `;
 
 export default NoMetricsPlaceholder;

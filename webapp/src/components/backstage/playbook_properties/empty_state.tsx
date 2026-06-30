@@ -28,9 +28,9 @@ const EmptyState = ({
                 <Title>{title}</Title>
                 <Description>{description}</Description>
                 {buttonText && (
-                    <StyledButton onClick={onButtonClick}>
+                    <SecondaryButton onClick={onButtonClick}>
                         {buttonText}
-                    </StyledButton>
+                    </SecondaryButton>
                 )}
             </InnerContainer>
         </Container>
@@ -67,18 +67,6 @@ const Description = styled.div`
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-`;
-
-const StyledButton = styled(SecondaryButton)`
-    height: 40px;
-    padding: 0 20px;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 0 auto;
 `;
 
 export default EmptyState;
