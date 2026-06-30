@@ -25,8 +25,10 @@ type fakeAPIClient struct {
 	postBody     any
 	postResult   any
 
-	putEndpoint string
-	putBody     any
+	putEndpoint  string
+	putBody      any
+	putEndpoints []string
+	putBodies    []any
 
 	deleteEndpoint string
 }
@@ -65,6 +67,8 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 func (f *fakeAPIClient) Put(_ context.Context, endpoint string, body any, _ any) error {
 	f.putEndpoint = endpoint
 	f.putBody = body
+	f.putEndpoints = append(f.putEndpoints, endpoint)
+	f.putBodies = append(f.putBodies, body)
 	return nil
 }
 
@@ -140,7 +144,7 @@ func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
 	if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0" {
 		t.Fatalf("unexpected put endpoint: %s", client.putEndpoint)
 	}
-	body, ok := client.putBody.(map[string]any)
+	body, ok := client.putBody.(map[string]string)
 	if !ok {
 		t.Fatalf("unexpected body type %T", client.putBody)
 	}
@@ -152,9 +156,6 @@ func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
 	}
 	if got := body["description"]; got != "old description" {
 		t.Errorf("expected existing description to be preserved, got %q", got)
-	}
-	if _, ok := body["due_date"]; ok {
-		t.Errorf("expected omitted due_date to be excluded, got %#v", body["due_date"])
 	}
 }
 
@@ -222,12 +223,10 @@ func TestToolEditChecklistItemSetsDueDate(t *testing.T) {
 	_, err := toolEditChecklistItem(context.Background(), client, args)
 	require.NoError(t, err)
 
-	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0", client.putEndpoint)
-	require.IsType(t, map[string]any{}, client.putBody)
-	body := client.putBody.(map[string]any)
-	assert.Equal(t, "old title", body["title"])
-	assert.Equal(t, "old description", body["description"])
-	assert.Equal(t, "/old-command", body["command"])
+	assert.Empty(t, client.getEndpoint)
+	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate", client.putEndpoint)
+	require.IsType(t, map[string]int64{}, client.putBody)
+	body := client.putBody.(map[string]int64)
 	assert.Equal(t, int64(1717200000000), body["due_date"])
 }
 
@@ -259,10 +258,55 @@ func TestToolEditChecklistItemClearsDueDate(t *testing.T) {
 	_, err := toolEditChecklistItem(context.Background(), client, args)
 	require.NoError(t, err)
 
-	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0", client.putEndpoint)
-	require.IsType(t, map[string]any{}, client.putBody)
-	body := client.putBody.(map[string]any)
+	assert.Empty(t, client.getEndpoint)
+	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate", client.putEndpoint)
+	require.IsType(t, map[string]int64{}, client.putBody)
+	body := client.putBody.(map[string]int64)
 	assert.Equal(t, int64(0), body["due_date"])
+}
+
+func TestToolEditChecklistItemUpdatesFieldsAndDueDate(t *testing.T) {
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			Checklists: []checklist{
+				{
+					Items: []checklistItem{
+						{
+							Title:       "old title",
+							Command:     "/old-command",
+							Description: "old description",
+						},
+					},
+				},
+			},
+		},
+	}
+	newTitle := "new title"
+	dueDate := int64(1717200000000)
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+		Title:           &newTitle,
+		DueDate:         &dueDate,
+	}
+
+	_, err := toolEditChecklistItem(context.Background(), client, args)
+	require.NoError(t, err)
+
+	require.Equal(t, []string{
+		"runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0",
+		"runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate",
+	}, client.putEndpoints)
+	require.Len(t, client.putBodies, 2)
+	editBody, ok := client.putBodies[0].(map[string]string)
+	require.True(t, ok)
+	assert.Equal(t, "new title", editBody["title"])
+	assert.Equal(t, "old description", editBody["description"])
+	assert.Equal(t, "/old-command", editBody["command"])
+	dueDateBody, ok := client.putBodies[1].(map[string]int64)
+	require.True(t, ok)
+	assert.Equal(t, int64(1717200000000), dueDateBody["due_date"])
 }
 
 func TestToolListRunsAddsTypeFilter(t *testing.T) {

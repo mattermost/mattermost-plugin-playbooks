@@ -216,12 +216,7 @@ func toolSetChecklistItemDueDate(ctx context.Context, client APIClient, args Set
 		return "", err
 	}
 
-	body := map[string]int64{
-		"due_date": args.DueDate,
-	}
-
-	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d/duedate", args.RunID, args.ChecklistNumber, args.ItemNumber)
-	if err := client.Put(ctx, endpoint, body, nil); err != nil {
+	if err := setChecklistItemDueDate(ctx, client, args.RunID, args.ChecklistNumber, args.ItemNumber, args.DueDate); err != nil {
 		return "", fmt.Errorf("failed to set checklist item due date: %w", err)
 	}
 
@@ -229,6 +224,15 @@ func toolSetChecklistItemDueDate(ctx context.Context, client APIClient, args Set
 		return fmt.Sprintf("Cleared due date for checklist item [%d][%d] in run %s.", args.ChecklistNumber, args.ItemNumber, args.RunID), nil
 	}
 	return fmt.Sprintf("Set due date for checklist item [%d][%d] in run %s to %d.", args.ChecklistNumber, args.ItemNumber, args.RunID, args.DueDate), nil
+}
+
+func setChecklistItemDueDate(ctx context.Context, client APIClient, runID string, checklistNumber, itemNumber int, dueDate int64) error {
+	body := map[string]int64{
+		"due_date": dueDate,
+	}
+
+	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d/duedate", runID, checklistNumber, itemNumber)
+	return client.Put(ctx, endpoint, body, nil)
 }
 
 func toolEditChecklistItem(ctx context.Context, client APIClient, args EditChecklistItemArgs) (string, error) {
@@ -253,39 +257,44 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 		}
 	}
 
-	var run playbookRunDetail
-	if err := client.Get(ctx, fmt.Sprintf("runs/%s", args.RunID), nil, &run); err != nil {
-		return "", fmt.Errorf("failed to get current checklist item: %w", err)
-	}
-	if args.ChecklistNumber >= len(run.Checklists) {
-		return "", fmt.Errorf("checklist_number %d is out of range", args.ChecklistNumber)
-	}
-	if args.ItemNumber >= len(run.Checklists[args.ChecklistNumber].Items) {
-		return "", fmt.Errorf("item_number %d is out of range", args.ItemNumber)
+	if args.Title != nil || args.Description != nil || args.Command != nil {
+		var run playbookRunDetail
+		if err := client.Get(ctx, fmt.Sprintf("runs/%s", args.RunID), nil, &run); err != nil {
+			return "", fmt.Errorf("failed to get current checklist item: %w", err)
+		}
+		if args.ChecklistNumber >= len(run.Checklists) {
+			return "", fmt.Errorf("checklist_number %d is out of range", args.ChecklistNumber)
+		}
+		if args.ItemNumber >= len(run.Checklists[args.ChecklistNumber].Items) {
+			return "", fmt.Errorf("item_number %d is out of range", args.ItemNumber)
+		}
+
+		currentItem := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber]
+		body := map[string]string{
+			"title":       currentItem.Title,
+			"description": currentItem.Description,
+			"command":     currentItem.Command,
+		}
+		if args.Title != nil {
+			body["title"] = title
+		}
+		if args.Description != nil {
+			body["description"] = *args.Description
+		}
+		if args.Command != nil {
+			body["command"] = *args.Command
+		}
+
+		endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d", args.RunID, args.ChecklistNumber, args.ItemNumber)
+		if err := client.Put(ctx, endpoint, body, nil); err != nil {
+			return "", fmt.Errorf("failed to edit checklist item: %w", err)
+		}
 	}
 
-	currentItem := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber]
-	body := map[string]any{
-		"title":       currentItem.Title,
-		"description": currentItem.Description,
-		"command":     currentItem.Command,
-	}
-	if args.Title != nil {
-		body["title"] = title
-	}
-	if args.Description != nil {
-		body["description"] = *args.Description
-	}
-	if args.Command != nil {
-		body["command"] = *args.Command
-	}
 	if args.DueDate != nil {
-		body["due_date"] = *args.DueDate
-	}
-
-	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d", args.RunID, args.ChecklistNumber, args.ItemNumber)
-	if err := client.Put(ctx, endpoint, body, nil); err != nil {
-		return "", fmt.Errorf("failed to edit checklist item: %w", err)
+		if err := setChecklistItemDueDate(ctx, client, args.RunID, args.ChecklistNumber, args.ItemNumber, *args.DueDate); err != nil {
+			return "", fmt.Errorf("failed to set checklist item due date: %w", err)
+		}
 	}
 
 	return fmt.Sprintf("Updated checklist item [%d][%d] in run %s.", args.ChecklistNumber, args.ItemNumber, args.RunID), nil
