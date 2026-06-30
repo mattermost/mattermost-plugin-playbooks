@@ -9,6 +9,9 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type fakeAPIClient struct {
@@ -332,37 +335,25 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	t.Run("set checklist item assignee", func(t *testing.T) {
 		client := &fakeAPIClient{}
 		args := SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, AssigneeID: assigneeID}
-		if _, err := toolSetChecklistItemAssignee(context.Background(), client, args); err != nil {
-			t.Fatalf("toolSetChecklistItemAssignee returned error: %v", err)
-		}
-		if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/assignee" {
-			t.Fatalf("unexpected endpoint: %s", client.putEndpoint)
-		}
-		body, ok := client.putBody.(map[string]string)
-		if !ok {
-			t.Fatalf("unexpected body type %T", client.putBody)
-		}
-		if body["assignee_id"] != assigneeID {
-			t.Fatalf("unexpected body: %#v", body)
-		}
+		_, err := toolSetChecklistItemAssignee(context.Background(), client, args)
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/assignee", client.putEndpoint)
+		require.IsTypef(t, map[string]string{}, client.putBody, "unexpected body type %T", client.putBody)
+
+		body := client.putBody.(map[string]string)
+		assert.Equal(t, assigneeID, body["assignee_id"])
 	})
 
 	t.Run("clear checklist item assignee", func(t *testing.T) {
 		client := &fakeAPIClient{}
 		args := SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2}
-		if _, err := toolSetChecklistItemAssignee(context.Background(), client, args); err != nil {
-			t.Fatalf("toolSetChecklistItemAssignee returned error: %v", err)
-		}
-		if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/assignee" {
-			t.Fatalf("unexpected endpoint: %s", client.putEndpoint)
-		}
-		body, ok := client.putBody.(map[string]string)
-		if !ok {
-			t.Fatalf("unexpected body type %T", client.putBody)
-		}
-		if body["assignee_id"] != "" {
-			t.Fatalf("unexpected body: %#v", body)
-		}
+		_, err := toolSetChecklistItemAssignee(context.Background(), client, args)
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/assignee", client.putEndpoint)
+		require.IsTypef(t, map[string]string{}, client.putBody, "unexpected body type %T", client.putBody)
+
+		body := client.putBody.(map[string]string)
+		assert.Equal(t, "", body["assignee_id"])
 	})
 
 	t.Run("remove checklist item", func(t *testing.T) {
