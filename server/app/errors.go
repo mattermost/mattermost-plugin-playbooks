@@ -29,6 +29,9 @@ var ErrDuplicateEntry = errors.New("duplicate entry")
 // ErrPropertyFieldInUse occurs when trying to delete a property field that is referenced by conditions.
 var ErrPropertyFieldInUse = errors.New("property field is in use")
 
+// ErrPropertyFieldNotOnRun occurs when a property field does not belong to the specified run.
+var ErrPropertyFieldNotOnRun = errors.New("property field does not belong to run")
+
 // ErrPropertyOptionsInUse occurs when trying to remove property options that are referenced by conditions.
 var ErrPropertyOptionsInUse = errors.New("property options are in use")
 
