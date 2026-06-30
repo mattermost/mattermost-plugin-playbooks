@@ -17,7 +17,7 @@ import (
 
 // WebsocketPublisher defines interface for publishing websocket events
 type WebsocketPublisher interface {
-	PublishWebsocketEventGlobal(event string, payload interface{})
+	PublishWebsocketEventGlobalReliable(event string, payload interface{})
 }
 
 const (
@@ -155,7 +155,7 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	}
 
 	if c.websocketPublisher != nil && len(settingsPayload) > 0 {
-		c.websocketPublisher.PublishWebsocketEventGlobal(SettingsChangedWSEvent, settingsPayload)
+		c.websocketPublisher.PublishWebsocketEventGlobalReliable(SettingsChangedWSEvent, settingsPayload)
 	}
 
 	c.setConfiguration(configuration)

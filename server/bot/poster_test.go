@@ -87,6 +87,28 @@ func TestPublishWebsocketEventBroadcastScope(t *testing.T) {
 				assert.False(t, wb.ReliableClusterSend)
 			},
 		},
+		{
+			name: "ToTeamReliable sets ReliableClusterSend",
+			call: func(b *Bot) { b.PublishWebsocketEventToTeamReliable(event, payload, teamID) },
+			assertWB: func(t *testing.T, wb *model.WebsocketBroadcast) {
+				assert.Equal(t, teamID, wb.TeamId)
+				assert.True(t, wb.ReliableClusterSend)
+			},
+		},
+		{
+			name: "Global is best-effort",
+			call: func(b *Bot) { b.PublishWebsocketEventGlobal(event, payload) },
+			assertWB: func(t *testing.T, wb *model.WebsocketBroadcast) {
+				assert.False(t, wb.ReliableClusterSend)
+			},
+		},
+		{
+			name: "GlobalReliable sets ReliableClusterSend",
+			call: func(b *Bot) { b.PublishWebsocketEventGlobalReliable(event, payload) },
+			assertWB: func(t *testing.T, wb *model.WebsocketBroadcast) {
+				assert.True(t, wb.ReliableClusterSend)
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			b, api := newPosterForTest(t)

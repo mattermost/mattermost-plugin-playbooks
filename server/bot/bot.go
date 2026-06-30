@@ -56,6 +56,10 @@ type Poster interface {
 	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID.
 	PublishWebsocketEventToTeam(event string, payload interface{}, teamID string)
 
+	// PublishWebsocketEventToTeamReliable sends a websocket event with payload to teamID over
+	// the reliable, TCP-backed cluster channel. Use for essential, low-frequency events.
+	PublishWebsocketEventToTeamReliable(event string, payload interface{}, teamID string)
+
 	// PublishWebsocketEventToChannel sends a websocket event with payload to channelID.
 	PublishWebsocketEventToChannel(event string, payload interface{}, channelID string)
 
@@ -72,6 +76,10 @@ type Poster interface {
 
 	// PublishWebsocketEventGlobal sends a websocket event with payload to all connected users.
 	PublishWebsocketEventGlobal(event string, payload interface{})
+
+	// PublishWebsocketEventGlobalReliable sends a websocket event with payload to all connected
+	// users over the reliable, TCP-backed cluster channel. Use for essential, low-frequency events.
+	PublishWebsocketEventGlobalReliable(event string, payload interface{})
 
 	// NotifyAdmins sends a DM with the message to each admins
 	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error

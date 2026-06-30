@@ -148,6 +148,15 @@ func (b *Bot) PublishWebsocketEventToTeam(event string, payload interface{}, tea
 	})
 }
 
+// PublishWebsocketEventToTeamReliable sends a websocket event with payload to teamID over the
+// reliable, TCP-backed cluster channel. See PublishWebsocketEventToChannelReliable.
+func (b *Bot) PublishWebsocketEventToTeamReliable(event string, payload interface{}, teamID string) {
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
+		TeamId:              teamID,
+		ReliableClusterSend: true,
+	})
+}
+
 // PublishWebsocketEventToChannel sends a websocket event with payload to channelID
 func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, channelID string) {
 	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
@@ -156,8 +165,10 @@ func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, 
 }
 
 // PublishWebsocketEventToChannelReliable sends a websocket event with payload to channelID over the
-// reliable, TCP-backed cluster channel. Use for large or essential events that must not be dropped
-// or truncated by the best-effort UDP path (which caps the marshalled event at ~49KB).
+// reliable, TCP-backed cluster channel. Use for essential, low-frequency events that must not be
+// dropped or truncated by the best-effort UDP path (which can drop packets and caps the marshalled
+// event at ~49KB). Keep high-frequency events on the best-effort path so they don't saturate the
+// shared reliable channel.
 func (b *Bot) PublishWebsocketEventToChannelReliable(event string, payload interface{}, channelID string) {
 	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
 		ChannelId:           channelID,
@@ -184,6 +195,14 @@ func (b *Bot) PublishWebsocketEventToUserReliable(event string, payload interfac
 // PublishWebsocketEventGlobal sends a websocket event with payload to all connected users
 func (b *Bot) PublishWebsocketEventGlobal(event string, payload interface{}) {
 	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{})
+}
+
+// PublishWebsocketEventGlobalReliable sends a websocket event with payload to all connected users
+// over the reliable, TCP-backed cluster channel. See PublishWebsocketEventToChannelReliable.
+func (b *Bot) PublishWebsocketEventGlobalReliable(event string, payload interface{}) {
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
+		ReliableClusterSend: true,
+	})
 }
 
 func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool) error {

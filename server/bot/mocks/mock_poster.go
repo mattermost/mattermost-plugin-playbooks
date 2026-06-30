@@ -220,6 +220,18 @@ func (mr *MockPosterMockRecorder) PublishWebsocketEventGlobal(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventGlobal", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventGlobal), arg0, arg1)
 }
 
+// PublishWebsocketEventGlobalReliable mocks base method.
+func (m *MockPoster) PublishWebsocketEventGlobalReliable(arg0 string, arg1 interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventGlobalReliable", arg0, arg1)
+}
+
+// PublishWebsocketEventGlobalReliable indicates an expected call of PublishWebsocketEventGlobalReliable.
+func (mr *MockPosterMockRecorder) PublishWebsocketEventGlobalReliable(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventGlobalReliable", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventGlobalReliable), arg0, arg1)
+}
+
 // PublishWebsocketEventToChannel mocks base method.
 func (m *MockPoster) PublishWebsocketEventToChannel(arg0 string, arg1 interface{}, arg2 string) {
 	m.ctrl.T.Helper()
@@ -254,6 +266,18 @@ func (m *MockPoster) PublishWebsocketEventToTeam(arg0 string, arg1 interface{}, 
 func (mr *MockPosterMockRecorder) PublishWebsocketEventToTeam(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToTeam", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToTeam), arg0, arg1, arg2)
+}
+
+// PublishWebsocketEventToTeamReliable mocks base method.
+func (m *MockPoster) PublishWebsocketEventToTeamReliable(arg0 string, arg1 interface{}, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventToTeamReliable", arg0, arg1, arg2)
+}
+
+// PublishWebsocketEventToTeamReliable indicates an expected call of PublishWebsocketEventToTeamReliable.
+func (mr *MockPosterMockRecorder) PublishWebsocketEventToTeamReliable(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToTeamReliable", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToTeamReliable), arg0, arg1, arg2)
 }
 
 // PublishWebsocketEventToUser mocks base method.
