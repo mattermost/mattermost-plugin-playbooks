@@ -5,14 +5,13 @@ import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import styled, {css} from 'styled-components';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {haveAtleastOneEnabledAction} from 'src/components/checklist_item/task_actions_modal';
 import {TaskAction as TaskActionType} from 'src/types/playbook';
 import {openTaskActionsModal} from 'src/actions';
-import {OVERLAY_DELAY} from 'src/constants';
 
 interface TaskActionsProps {
     taskActions?: TaskActionType[] | null
@@ -59,13 +58,12 @@ const TaskActions = (props: TaskActionsProps) => {
     // when no actions, add tooltip
     if (!hasEnabledActions) {
         taskActionsButton = (
-            <OverlayTrigger
-                placement='top'
-                delay={OVERLAY_DELAY}
-                overlay={<Tooltip id='task-actions-tooltip'>{tooltipText}</Tooltip>}
+            <WithTooltip
+                id='task-actions-tooltip'
+                title={tooltipText}
             >
                 {taskActionsButton}
-            </OverlayTrigger>
+            </WithTooltip>
         );
     }
 

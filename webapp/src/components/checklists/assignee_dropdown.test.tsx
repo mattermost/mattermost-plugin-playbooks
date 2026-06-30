@@ -312,11 +312,15 @@ describe('AssigneeDropdown', () => {
         group_id: '',
         name,
         type: PropertyFieldType.User,
+        target_id: '',
         target_type: 'run' as const,
+        object_type: 'run',
         attrs: {visibility: 'always' as const, sort_order: 0, options: null},
         create_at: 0,
         update_at: 0,
         delete_at: 0,
+        created_by: '',
+        updated_by: '',
     });
 
     it('shows Run User option when user-type property fields are available', () => {
@@ -571,7 +575,7 @@ describe('AssigneeDropdown', () => {
             assignee_id: 'user-1',
         });
         const fields = [makeUserField('f1', 'Manager')];
-        const values = [{id: 'v1', field_id: 'f1', target_id: '', target_type: 'run', group_id: '', value: 'user-1', create_at: 0, update_at: 0, delete_at: 0}];
+        const values = [{id: 'v1', field_id: 'f1', target_id: '', target_type: 'run', group_id: '', value: 'user-1', create_at: 0, update_at: 0, delete_at: 0, created_by: '', updated_by: ''}];
 
         const component = renderer.create(
             <AssigneeDropdown
@@ -625,7 +629,7 @@ describe('AssigneeDropdown', () => {
         const item = makeChecklistItem({assignee_type: 'property_user', assignee_property_field_id: ''});
         const fields = [
             makeUserField('f1', 'Manager'),
-            {id: 'f2', group_id: '', name: 'Priority', type: PropertyFieldType.Select, target_type: 'run' as const, attrs: {visibility: 'always' as const, sort_order: 0, options: null}, create_at: 0, update_at: 0, delete_at: 0},
+            {id: 'f2', group_id: '', name: 'Priority', type: PropertyFieldType.Select, target_id: '', target_type: 'run' as const, object_type: 'run', attrs: {visibility: 'always' as const, sort_order: 0, options: null}, create_at: 0, update_at: 0, delete_at: 0, created_by: '', updated_by: ''},
         ];
 
         const component = renderer.create(

@@ -11,10 +11,11 @@ import {UserProfile} from '@mattermost/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import Profile from 'src/components/profile/profile';
-import Tooltip from 'src/components/widgets/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
 
 import SearchInput from 'src/components/backstage/search_input';
@@ -77,25 +78,32 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
     const manageParticipantsSection = () => {
         if (manageMode) {
             return (
-                <StyledPrimaryButton onClick={() => setManageMode(false)}>
+                <PrimaryButton
+                    size='sm'
+                    onClick={() => setManageMode(false)}
+                >
                     {formatMessage({defaultMessage: 'Done'})}
-                </StyledPrimaryButton>
+                </PrimaryButton>
             );
         }
 
         return (
             <>
-                <StyledSecondaryButton
+                <TertiaryButton
+                    size='sm'
                     onClick={() => setManageMode(true)}
                     data-testid='participants-manage-btn'
                 >
                     {formatMessage({defaultMessage: 'Manage'})}
-                </StyledSecondaryButton>
+                </TertiaryButton>
 
-                <StyledPrimaryButton onClick={() => setShowAddParticipantsModal(true)}>
+                <PrimaryButton
+                    size='sm'
+                    onClick={() => setShowAddParticipantsModal(true)}
+                >
                     <AddParticipantIcon color={'var(--button-color)'}/>
                     {formatMessage({defaultMessage: 'Add'})}
-                </StyledPrimaryButton>
+                </PrimaryButton>
 
                 <AddParticipantsModal
                     playbookRun={playbookRun}
@@ -191,16 +199,15 @@ const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, ch
         if (!manageMode) {
             return (
                 <HoverButtonContainer>
-                    <Tooltip
+                    <WithTooltip
                         id={`${id}-tooltip`}
-                        shouldUpdatePosition={true}
-                        content={formatMessage({defaultMessage: 'Send message'})}
+                        title={formatMessage({defaultMessage: 'Send message'})}
                     >
                         <SendMessageButton
                             userId={id}
                             teamName={teamName ?? null}
                         />
-                    </Tooltip>
+                    </WithTooltip>
                 </HoverButtonContainer>
             );
         }
@@ -327,23 +334,6 @@ const HeaderSection = styled.div`
     align-items: center;
     padding: 20px 20px 0;
     color: var(--center-channel-color);
-`;
-
-const StyledSecondaryButton = styled(TertiaryButton)`
-    display: flex;
-    height: 32px;
-    align-items: center;
-    margin-right: 8px;
-    font-size: 12px;
-    line-height: 10px;
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    display: flex;
-    height: 32px;
-    align-items: center;
-    font-size: 12px;
-    line-height: 10px;
 `;
 
 const AddParticipantIcon = styled(AccountPlusOutlineIcon)`

@@ -5,14 +5,14 @@ import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 
 import styled, {css} from 'styled-components';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {clientRunChecklistItemSlashCommand} from 'src/client';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import CommandInput from 'src/components/command_input';
-import {CallsSlashCommandPrefix, OVERLAY_DELAY} from 'src/constants';
+import {CallsSlashCommandPrefix} from 'src/constants';
 import {runCallsSlashCommand} from 'src/utils';
 
 import Dropdown from 'src/components/dropdown';
@@ -138,13 +138,12 @@ const Command = (props: CommandProps) => {
     if (props.isEditing && props.command === '') {
         commandButton = (
             <div>
-                <OverlayTrigger
-                    placement='top'
-                    delay={OVERLAY_DELAY}
-                    overlay={<Tooltip id='command-tooltip'>{tooltipText}</Tooltip>}
+                <WithTooltip
+                    id='command-tooltip'
+                    title={tooltipText}
                 >
                     {commandButton}
-                </OverlayTrigger>
+                </WithTooltip>
             </div>
         );
     }

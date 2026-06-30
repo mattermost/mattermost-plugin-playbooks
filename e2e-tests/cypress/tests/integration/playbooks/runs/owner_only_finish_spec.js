@@ -366,6 +366,41 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
                 });
             });
         });
+
+        // --- Post update modal: "Also mark the run as finished" checkbox ---
+
+        it('hides the "mark as finished" checkbox in the post update modal from a non-owner participant', () => {
+            // # Login as the non-owner participant and visit the run channel
+            cy.apiLogin(testParticipant);
+            cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
+
+            // # Open the post update modal (non-owners are allowed to post updates)
+            cy.uiPostMessageQuickly('/playbook update');
+
+            cy.getStatusUpdateDialog().within(() => {
+                // * The modal has rendered (textbox is present)
+                cy.findByTestId('update_run_status_textbox').should('be.visible');
+
+                // * The "Also mark the run as finished" checkbox is hidden — owner-only
+                // actions restrict finish to the run owner + system admin, so a non-owner
+                // cannot trigger a finish that the server would reject.
+                cy.findByTestId('mark-run-as-finished').should('not.exist');
+            });
+        });
+
+        it('shows the "mark as finished" checkbox in the post update modal to the run owner', () => {
+            // # Login as the run owner and visit the run channel
+            cy.apiLogin(testOwner);
+            cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
+
+            // # Open the post update modal
+            cy.uiPostMessageQuickly('/playbook update');
+
+            cy.getStatusUpdateDialog().within(() => {
+                // * The run owner can finish, so the checkbox is offered
+                cy.findByTestId('mark-run-as-finished').should('exist');
+            });
+        });
     });
 
     describe('restore is owner-restricted', () => {
@@ -448,10 +483,10 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             cy.findByTestId('dropdownmenu').findByText('Restart').should('exist');
 
             // # Hover to trigger the tooltip
-            cy.findByTestId('dropdownmenu').findByText('Restart').trigger('mouseover');
+            cy.findByTestId('dropdownmenu').findByText('Restart').trigger('mousemove');
 
             // * Tooltip confirms the owner-only restriction
-            cy.uiGetToolTip('Only the run owner can restart this run');
+            cy.uiGetToolTip('Only the run owner can restart this run', true);
         });
     });
 

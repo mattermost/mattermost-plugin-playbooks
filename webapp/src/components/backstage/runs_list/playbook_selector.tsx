@@ -123,7 +123,7 @@ export default function PlaybookSelector(props: Props) {
                 }}
             >
                 {selected === null ? props.placeholder : selected.label}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                {<i className='icon-chevron-down icon--small'/>}
             </FilterButton>
         );
     }

@@ -66,22 +66,22 @@ describe('channels > rhs > title', {testIsolation: true}, () => {
     });
 
     it('has following button', () => {
-        // * Verify the following button  is displayed
-        getHeaderTitle().find('button.unfollowButton').contains('Following');
+        // * Verify the following button is displayed
+        getHeaderTitle().find('button').contains('Following').should('be.visible');
 
         // * Verify the follow button is not displayed
-        getHeaderTitle().find('button.followButton').should('not.exist');
+        getHeaderTitle().findAllByRole('button', {name: 'Follow'}).should('have.length', 0);
     });
 
     it('can stop following', () => {
         // # Click the following button
-        getHeaderTitle().find('button.unfollowButton').click();
+        getHeaderTitle().find('button').contains('Following').click();
 
         // * Verify the following button is not displayed
-        getHeaderTitle().find('button.unfollowButton').should('not.exist');
+        getHeaderTitle().findAllByRole('button', {name: 'Following'}).should('have.length', 0);
 
         // * Verify the follow button is displayed
-        getHeaderTitle().find('button.followButton').contains('Follow');
+        getHeaderTitle().find('button').contains('Follow').should('be.visible');
     });
 
     it('can navigate to RDP', () => {

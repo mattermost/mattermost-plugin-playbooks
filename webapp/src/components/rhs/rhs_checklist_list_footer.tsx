@@ -4,8 +4,8 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import styled from 'styled-components';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {DateTime} from 'luxon';
 
 import {
@@ -20,7 +20,6 @@ import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {useOnFinishRun} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
-import {OVERLAY_DELAY} from 'src/constants';
 import {useIsBlockedByOwnerOnlyForFinishRestore, useIsSystemAdmin} from 'src/hooks/permissions';
 
 import {ChecklistParent} from './rhs_checklist_list';
@@ -71,20 +70,18 @@ const RHSFooter = ({
                 <ParticipateContent>
                     <ParticipateText>{formatMessage({defaultMessage: 'Join to make changes or interact'})}</ParticipateText>
                     <ParticipateRightWrapper>
-                        <OverlayTrigger
-                            placement='top'
-                            delay={OVERLAY_DELAY}
-                            overlay={
-                                <Tooltip id='participate-tooltip'>
-                                    {formatMessage({defaultMessage: 'Join as a participant'})}
-                                </Tooltip>
-                            }
+                        <WithTooltip
+                            id='participate-tooltip'
+                            title={formatMessage({defaultMessage: 'Join as a participant'})}
                         >
-                            <ParticipateButton onClick={showParticipateConfirm}>
+                            <PrimaryButton
+                                size='sm'
+                                onClick={showParticipateConfirm}
+                            >
                                 <AccountPlusOutlineIcon size={16}/>
                                 {formatMessage({defaultMessage: 'Join'})}
-                            </ParticipateButton>
-                        </OverlayTrigger>
+                            </PrimaryButton>
+                        </WithTooltip>
                     </ParticipateRightWrapper>
                 </ParticipateContent>
             </ParticipatePrompt>
@@ -100,10 +97,13 @@ const RHSFooter = ({
                     </FinishIconWrapper>
                     <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
                     <FinishRightWrapper>
-                        <FinishButton onClick={onFinishRun}>
+                        <TertiaryButton
+                            size='sm'
+                            onClick={onFinishRun}
+                        >
                             <CheckIcon size={16}/>
                             {formatMessage({defaultMessage: 'Finish'})}
-                        </FinishButton>
+                        </TertiaryButton>
                     </FinishRightWrapper>
                 </FinishContent>
             </FinishPrompt>
@@ -146,38 +146,35 @@ const RHSFooter = ({
                     </FinishedNotice>
                     <FinishedRightWrapper>
                         {(canRestore || isSystemAdmin) && !blockedByOwnerOnly ? (
-                            <ResumeButton
+                            <TertiaryButton
+                                size='sm'
                                 onClick={handleResume}
                                 disabled={false}
                             >
                                 {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
                                 }
-                            </ResumeButton>
+                            </TertiaryButton>
                         ) : (
-                            <OverlayTrigger
-                                placement='top'
-                                delay={OVERLAY_DELAY}
-                                overlay={
-                                    <Tooltip id='resume-disabled-tooltip'>
-                                        {resumeTooltipMsg}
-                                    </Tooltip>
-                                }
+                            <WithTooltip
+                                id='resume-disabled-tooltip'
+                                title={resumeTooltipMsg}
                             >
                                 <ResumeButtonWrapper>
-                                    <ResumeButton
+                                    <TertiaryButton
+                                        size='sm'
                                         onClick={handleResume}
                                         disabled={true}
                                     >
                                         {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
                                         }
-                                    </ResumeButton>
+                                    </TertiaryButton>
                                 </ResumeButtonWrapper>
-                            </OverlayTrigger>
+                            </WithTooltip>
                         )}
                     </FinishedRightWrapper>
                 </FinishedIndicator>
                 <DoneButtonContainer>
-                    <StyledPrimaryButton
+                    <PrimaryButton
                         onClick={() => {
                             if (onBackClick) {
                                 onBackClick();
@@ -185,7 +182,7 @@ const RHSFooter = ({
                         }}
                     >
                         {formatMessage({defaultMessage: 'Done'})}
-                    </StyledPrimaryButton>
+                    </PrimaryButton>
                 </DoneButtonContainer>
             </FinishedFooter>
         );
@@ -260,12 +257,6 @@ const FinishedRightWrapper = styled.div`
     align-items: center;
 `;
 
-const ResumeButton = styled(TertiaryButton)`
-    height: 32px;
-    padding: 0 20px;
-    font-size: 12px;
-`;
-
 const ResumeButtonWrapper = styled.div`
     display: inline-block;
 `;
@@ -277,10 +268,6 @@ const DoneButtonContainer = styled.div`
     button {
         width: 100%;
     }
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    padding: 10px 20px;
 `;
 
 const FinishPrompt = styled.div`
@@ -320,15 +307,6 @@ const FinishRightWrapper = styled.div`
     justify-content: flex-end;
 `;
 
-const FinishButton = styled(TertiaryButton)`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 16px;
-    font-size: 12px;
-`;
-
 const ParticipatePrompt = styled.div`
     display: flex;
     flex-direction: column;
@@ -359,15 +337,6 @@ const ParticipateRightWrapper = styled.div`
     display: flex;
     flex: 1;
     justify-content: flex-end;
-`;
-
-const ParticipateButton = styled(PrimaryButton)`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    font-size: 12px;
-    padding: 0 16px;
 `;
 
 export default RHSFooter;

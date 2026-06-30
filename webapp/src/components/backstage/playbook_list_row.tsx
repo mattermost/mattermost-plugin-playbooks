@@ -22,6 +22,8 @@ import {
 import {Client4} from 'mattermost-redux/client';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
@@ -35,7 +37,6 @@ import DotMenu, {
     DropdownMenuItemStyled,
     iconSplitStyling,
 } from 'src/components/dot_menu';
-import Tooltip from 'src/components/widgets/tooltip';
 import {createPlaybookRun, playbookExportProps} from 'src/client';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
@@ -167,13 +168,12 @@ const PlaybookListRow = (props: Props) => {
     const infos: JSX.Element[] = [];
     if (props.playbook.delete_at > 0) {
         infos.push((
-            <Tooltip
-                delay={{show: 0, hide: 1000}}
+            <WithTooltip
                 id={`archive-${props.playbook.id}`}
-                content={formatMessage({defaultMessage: 'This playbook is archived.'})}
+                title={formatMessage({defaultMessage: 'This playbook is archived.'})}
             >
                 <ArchiveIcon className='icon icon-archive-outline'/>
-            </Tooltip>
+            </WithTooltip>
         ));
     }
 
@@ -230,10 +230,6 @@ const PlaybookListRow = (props: Props) => {
                         data-testid='run-playbook'
                         style={{
                             height: '32px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '2px',
-                            padding: '0 20px',
                         }}
                     >
                         <PlayOutlineIcon size={22}/>
@@ -249,10 +245,6 @@ const PlaybookListRow = (props: Props) => {
                         data-testid='join-playbook'
                         style={{
                             height: '32px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '7px',
-                            padding: '0 20px',
                         }}
                     >
                         <AccountPlusOutlineIcon size={16}/>

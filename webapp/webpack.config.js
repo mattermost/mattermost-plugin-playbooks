@@ -9,6 +9,8 @@ const webpack = require('webpack');
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
+const webAppExternals = require('@mattermost/shared/build/webpack-web-app-externals');
+
 const PLUGIN_ID = require('../plugin.json').id;
 
 const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env
@@ -111,17 +113,7 @@ let config = {
             },
         ],
     },
-    externals: {
-        react: 'React',
-        'react-dom': 'ReactDOM',
-        redux: 'Redux',
-        luxon: 'Luxon',
-        'react-redux': 'ReactRedux',
-        'prop-types': 'PropTypes',
-        'react-bootstrap': 'ReactBootstrap',
-        'react-router-dom': 'ReactRouterDom',
-        'react-intl': 'ReactIntl',
-    },
+    externals: webAppExternals(),
     output: {
         devtoolNamespace: PLUGIN_ID,
         path: path.join(__dirname, '/dist'),

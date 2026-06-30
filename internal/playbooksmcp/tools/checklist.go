@@ -43,6 +43,14 @@ type RemoveChecklistItemArgs struct {
 	ItemNumber      int    `json:"item_number" jsonschema:"The zero-based index of the item to remove"`
 }
 
+type MoveChecklistItemArgs struct {
+	RunID              string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	SourceChecklistIdx int    `json:"source_checklist_idx" jsonschema:"The zero-based source checklist index"`
+	SourceItemIdx      int    `json:"source_item_idx" jsonschema:"The zero-based index of the existing item to move within the source checklist"`
+	DestChecklistIdx   int    `json:"dest_checklist_idx" jsonschema:"The zero-based destination checklist index"`
+	DestItemIdx        int    `json:"dest_item_idx" jsonschema:"The zero-based insertion position within the destination checklist (0 = prepend, destination item count = append when moving between checklists)"`
+}
+
 type AddSectionArgs struct {
 	RunID string `json:"run_id" jsonschema:"The ID of the playbook run"`
 	Title string `json:"title" jsonschema:"Title of the new section"`
@@ -57,6 +65,12 @@ type RenameSectionArgs struct {
 type RemoveSectionArgs struct {
 	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
 	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the section to remove"`
+}
+
+type MoveSectionArgs struct {
+	RunID              string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	SourceChecklistIdx int    `json:"source_checklist_idx" jsonschema:"The zero-based source section index"`
+	DestChecklistIdx   int    `json:"dest_checklist_idx" jsonschema:"The zero-based destination section index"`
 }
 
 // --- Tool registration ---
@@ -78,6 +92,10 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		"Remove a checklist item from a playbook run. This permanently deletes the item. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}",
 		toolRemoveChecklistItem)
 
+	addMCPHelperTool(server, p.clientFactory, "move_checklist_item",
+		"Move a checklist item within or between sections in a playbook run. Source and destination indexes are zero-based. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 0, \"source_item_idx\": 2, \"dest_checklist_idx\": 1, \"dest_item_idx\": 0}",
+		toolMoveChecklistItem)
+
 	addMCPHelperTool(server, p.clientFactory, "add_section",
 		"Add a new section (checklist group) to a playbook run. Sections organize tasks into logical groups. Example: {\"run_id\": \"abc123...\", \"title\": \"Post-incident review\"}",
 		toolAddSection)
@@ -89,6 +107,10 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 	addMCPHelperTool(server, p.clientFactory, "remove_section",
 		"Remove an entire section and all its items from a playbook run. This is permanent. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 1}",
 		toolRemoveSection)
+
+	addMCPHelperTool(server, p.clientFactory, "move_section",
+		"Move a section within a playbook run. Source and destination indexes are zero-based. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}",
+		toolMoveSection)
 }
 
 // --- Tool implementations ---
@@ -243,6 +265,38 @@ func toolRemoveChecklistItem(ctx context.Context, client APIClient, args RemoveC
 	return fmt.Sprintf("Removed checklist item [%d][%d] from run %s.", args.ChecklistNumber, args.ItemNumber, args.RunID), nil
 }
 
+func toolMoveChecklistItem(ctx context.Context, client APIClient, args MoveChecklistItemArgs) (string, error) {
+	if err := validateID(args.RunID, "run_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.SourceChecklistIdx, "source_checklist_idx"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.SourceItemIdx, "source_item_idx"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.DestChecklistIdx, "dest_checklist_idx"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.DestItemIdx, "dest_item_idx"); err != nil {
+		return "", err
+	}
+
+	body := map[string]int{
+		"source_checklist_idx": args.SourceChecklistIdx,
+		"source_item_idx":      args.SourceItemIdx,
+		"dest_checklist_idx":   args.DestChecklistIdx,
+		"dest_item_idx":        args.DestItemIdx,
+	}
+
+	endpoint := fmt.Sprintf("runs/%s/checklists/move-item", args.RunID)
+	if err := client.Post(ctx, endpoint, body, nil); err != nil {
+		return "", fmt.Errorf("failed to move checklist item: %w", err)
+	}
+
+	return fmt.Sprintf("Moved checklist item [%d][%d] to [%d][%d] in run %s.", args.SourceChecklistIdx, args.SourceItemIdx, args.DestChecklistIdx, args.DestItemIdx, args.RunID), nil
+}
+
 func toolAddSection(ctx context.Context, client APIClient, args AddSectionArgs) (string, error) {
 	if err := validateID(args.RunID, "run_id"); err != nil {
 		return "", err
@@ -302,4 +356,28 @@ func toolRemoveSection(ctx context.Context, client APIClient, args RemoveSection
 	}
 
 	return fmt.Sprintf("Removed section %d from run %s.", args.ChecklistNumber, args.RunID), nil
+}
+
+func toolMoveSection(ctx context.Context, client APIClient, args MoveSectionArgs) (string, error) {
+	if err := validateID(args.RunID, "run_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.SourceChecklistIdx, "source_checklist_idx"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.DestChecklistIdx, "dest_checklist_idx"); err != nil {
+		return "", err
+	}
+
+	body := map[string]int{
+		"source_checklist_idx": args.SourceChecklistIdx,
+		"dest_checklist_idx":   args.DestChecklistIdx,
+	}
+
+	endpoint := fmt.Sprintf("runs/%s/checklists/move", args.RunID)
+	if err := client.Post(ctx, endpoint, body, nil); err != nil {
+		return "", fmt.Errorf("failed to move section: %w", err)
+	}
+
+	return fmt.Sprintf("Moved section %d to %d in run %s.", args.SourceChecklistIdx, args.DestChecklistIdx, args.RunID), nil
 }
