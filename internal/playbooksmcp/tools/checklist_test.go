@@ -9,6 +9,9 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type fakeAPIClient struct {
@@ -22,8 +25,10 @@ type fakeAPIClient struct {
 	postBody     any
 	postResult   any
 
-	putEndpoint string
-	putBody     any
+	putEndpoint  string
+	putBody      any
+	putEndpoints []string
+	putBodies    []any
 
 	deleteEndpoint string
 }
@@ -62,6 +67,8 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 func (f *fakeAPIClient) Put(_ context.Context, endpoint string, body any, _ any) error {
 	f.putEndpoint = endpoint
 	f.putBody = body
+	f.putEndpoints = append(f.putEndpoints, endpoint)
+	f.putBodies = append(f.putBodies, body)
 	return nil
 }
 
@@ -172,6 +179,134 @@ func TestToolEditChecklistItemRejectsBlankTitle(t *testing.T) {
 	if client.putEndpoint != "" {
 		t.Fatalf("expected no update call, got endpoint %q", client.putEndpoint)
 	}
+}
+
+func TestToolEditChecklistItemRejectsNoEditedFields(t *testing.T) {
+	client := &fakeAPIClient{}
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+	}
+
+	_, err := toolEditChecklistItem(context.Background(), client, args)
+	require.EqualError(t, err, "at least one field (title, description, command, or due_date) must be provided")
+	assert.Empty(t, client.getEndpoint)
+	assert.Empty(t, client.putEndpoint)
+}
+
+func TestToolEditChecklistItemSetsDueDate(t *testing.T) {
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			Checklists: []checklist{
+				{
+					Items: []checklistItem{
+						{
+							Title:       "old title",
+							Command:     "/old-command",
+							Description: "old description",
+							DueDate:     1717100000000,
+						},
+					},
+				},
+			},
+		},
+	}
+	dueDate := int64(1717200000000)
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+		DueDate:         &dueDate,
+	}
+
+	_, err := toolEditChecklistItem(context.Background(), client, args)
+	require.NoError(t, err)
+
+	assert.Empty(t, client.getEndpoint)
+	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate", client.putEndpoint)
+	require.IsType(t, map[string]int64{}, client.putBody)
+	body := client.putBody.(map[string]int64)
+	assert.Equal(t, int64(1717200000000), body["due_date"])
+}
+
+func TestToolEditChecklistItemClearsDueDate(t *testing.T) {
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			Checklists: []checklist{
+				{
+					Items: []checklistItem{
+						{
+							Title:       "old title",
+							Command:     "/old-command",
+							Description: "old description",
+							DueDate:     1717100000000,
+						},
+					},
+				},
+			},
+		},
+	}
+	dueDate := int64(0)
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+		DueDate:         &dueDate,
+	}
+
+	_, err := toolEditChecklistItem(context.Background(), client, args)
+	require.NoError(t, err)
+
+	assert.Empty(t, client.getEndpoint)
+	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate", client.putEndpoint)
+	require.IsType(t, map[string]int64{}, client.putBody)
+	body := client.putBody.(map[string]int64)
+	assert.Equal(t, int64(0), body["due_date"])
+}
+
+func TestToolEditChecklistItemUpdatesFieldsAndDueDate(t *testing.T) {
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			Checklists: []checklist{
+				{
+					Items: []checklistItem{
+						{
+							Title:       "old title",
+							Command:     "/old-command",
+							Description: "old description",
+						},
+					},
+				},
+			},
+		},
+	}
+	newTitle := "new title"
+	dueDate := int64(1717200000000)
+	args := EditChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+		Title:           &newTitle,
+		DueDate:         &dueDate,
+	}
+
+	_, err := toolEditChecklistItem(context.Background(), client, args)
+	require.NoError(t, err)
+
+	require.Equal(t, []string{
+		"runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0",
+		"runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate",
+	}, client.putEndpoints)
+	require.Len(t, client.putBodies, 2)
+	editBody, ok := client.putBodies[0].(map[string]string)
+	require.True(t, ok)
+	assert.Equal(t, "new title", editBody["title"])
+	assert.Equal(t, "old description", editBody["description"])
+	assert.Equal(t, "/old-command", editBody["command"])
+	dueDateBody, ok := client.putBodies[1].(map[string]int64)
+	require.True(t, ok)
+	assert.Equal(t, int64(1717200000000), dueDateBody["due_date"])
 }
 
 func TestToolListRunsAddsTypeFilter(t *testing.T) {
@@ -295,20 +430,49 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 
 	t.Run("add checklist item", func(t *testing.T) {
 		client := &fakeAPIClient{}
-		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item ", Description: "details", AssigneeID: assigneeID}
-		if _, err := toolAddChecklistItem(context.Background(), client, args); err != nil {
-			t.Fatalf("toolAddChecklistItem returned error: %v", err)
-		}
-		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/add" {
-			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
-		}
-		body, ok := client.postBody.(map[string]string)
-		if !ok {
-			t.Fatalf("unexpected body type %T", client.postBody)
-		}
-		if body["title"] != "New item" || body["description"] != "details" || body["assignee_id"] != assigneeID {
-			t.Fatalf("unexpected body: %#v", body)
-		}
+		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item ", Description: "details", AssigneeID: assigneeID, DueDate: 1717200000000}
+		_, err := toolAddChecklistItem(context.Background(), client, args)
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/add", client.postEndpoint)
+		require.IsType(t, map[string]any{}, client.postBody)
+		body := client.postBody.(map[string]any)
+		assert.Equal(t, "New item", body["title"])
+		assert.Equal(t, "details", body["description"])
+		assert.Equal(t, assigneeID, body["assignee_id"])
+		assert.Equal(t, int64(1717200000000), body["due_date"])
+	})
+
+	t.Run("add checklist item without due date omits due date", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item "}
+		_, err := toolAddChecklistItem(context.Background(), client, args)
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/add", client.postEndpoint)
+		require.IsType(t, map[string]any{}, client.postBody)
+		body := client.postBody.(map[string]any)
+		assert.NotContains(t, body, "due_date")
+	})
+
+	t.Run("set checklist item due date", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 1717200000000}
+		_, err := toolSetChecklistItemDueDate(context.Background(), client, args)
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/duedate", client.putEndpoint)
+		require.IsType(t, map[string]int64{}, client.putBody)
+		body := client.putBody.(map[string]int64)
+		assert.Equal(t, int64(1717200000000), body["due_date"])
+	})
+
+	t.Run("clear checklist item due date", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 0}
+		_, err := toolSetChecklistItemDueDate(context.Background(), client, args)
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/duedate", client.putEndpoint)
+		require.IsType(t, map[string]int64{}, client.putBody)
+		body := client.putBody.(map[string]int64)
+		assert.Equal(t, int64(0), body["due_date"])
 	})
 
 	t.Run("remove checklist item", func(t *testing.T) {
@@ -482,18 +646,36 @@ func TestMoveChecklistToolsValidation(t *testing.T) {
 			},
 			wantErr: "dest_item_idx must be a non-negative integer, got -1",
 		},
+		{
+			name: "set checklist item due date rejects invalid run id",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemDueDate(ctx, client, SetChecklistItemDueDateArgs{RunID: "invalid", ChecklistNumber: 0, ItemNumber: 1, DueDate: 1717200000000})
+			},
+			wantErr: "run_id must be a valid Mattermost ID",
+		},
+		{
+			name: "set checklist item due date rejects negative checklist index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemDueDate(ctx, client, SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: -1, ItemNumber: 1, DueDate: 1717200000000})
+			},
+			wantErr: "checklist_number must be a non-negative integer, got -1",
+		},
+		{
+			name: "set checklist item due date rejects negative item index",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemDueDate(ctx, client, SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: -1, DueDate: 1717200000000})
+			},
+			wantErr: "item_number must be a non-negative integer, got -1",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client := &fakeAPIClient{}
 			_, err := tt.runTool(context.Background(), client)
-			if err == nil || err.Error() != tt.wantErr {
-				t.Fatalf("expected error %q, got %v", tt.wantErr, err)
-			}
-			if client.postEndpoint != "" {
-				t.Fatalf("expected validation to fail before API call, got endpoint %q", client.postEndpoint)
-			}
+			require.EqualError(t, err, tt.wantErr)
+			require.Equal(t, "", client.postEndpoint)
+			require.Equal(t, "", client.putEndpoint)
 		})
 	}
 }
