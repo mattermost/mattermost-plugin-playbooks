@@ -258,6 +258,41 @@ func TestResolveAndAllocate_IncrementNotFoundWrapsMalformedRun(t *testing.T) {
 //
 // This test deliberately exercises the licensed path because dry-run only validates
 // property-field placeholders when PlaybookAttributesAllowed() is true.
+func TestResolveAndAllocate_UserSuppliedNameOverridesLiteralTemplate(t *testing.T) {
+	pb := Playbook{
+		ID:                  "pb_1",
+		RunNumberPrefix:     "INC",
+		ChannelNameTemplate: "JIRA_ID: TITLE",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	callerName := "MM-69439: OAuth token can revoke..."
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: callerName}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, callerName, run.Name, "caller-supplied name must override literal channel_name_template")
+	assert.Equal(t, callerName, channelName)
+}
+
+func TestResolveAndAllocate_LiteralTemplateUsedWhenNoUserName(t *testing.T) {
+	pb := Playbook{
+		ID:                  "pb_1",
+		RunNumberPrefix:     "INC",
+		ChannelNameTemplate: "JIRA_ID: TITLE",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: ""}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "JIRA_ID: TITLE", run.Name)
+	assert.Equal(t, "JIRA_ID: TITLE", channelName)
+}
+
 func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 	zoneField := PropertyField{
 		PropertyField: model.PropertyField{
