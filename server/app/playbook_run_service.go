@@ -6219,6 +6219,13 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 	seqID := FormatSequentialID(pb.RunNumberPrefix, runNumber)
 	playbookRun.SequentialID = seqID
 
+	if userSuppliedName != "" {
+		resolvedRunName := strings.TrimSpace(truncateRunes(userSuppliedName, MaxRunNameLength))
+		playbookRun.Name = resolvedRunName
+		resolvedChannelName := strings.Join(strings.Fields(truncateRunes(resolvedRunName, model.ChannelDisplayNameMaxRunes)), " ")
+		return resolvedChannelName, nil
+	}
+
 	if formatFunc == nil {
 		formatFunc = s.makeRunNameFormatFunc()
 	}
@@ -6247,8 +6254,6 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 
 	if resolvedRunName == "" {
 		switch {
-		case userSuppliedName != "":
-			resolvedRunName = userSuppliedName
 		case seqID != "":
 			resolvedRunName = seqID + " - Untitled"
 		default:
