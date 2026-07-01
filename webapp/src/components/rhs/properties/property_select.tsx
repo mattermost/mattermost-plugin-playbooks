@@ -5,17 +5,14 @@ import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
-import {PropertyField, PropertyValue} from 'src/types/properties';
+import {PropertyComponentProps} from 'src/types/properties';
 
 import PropertySelectInput from './property_select_input';
 
 import PropertyChip from './property_chip';
 import EmptyState from './empty_state';
 
-interface Props {
-    field: PropertyField;
-    value?: PropertyValue;
-    runID: string;
+interface Props extends PropertyComponentProps {
     onValueChange: (value: string | null) => void;
 }
 
@@ -36,6 +33,9 @@ const SelectProperty = (props: Props) => {
     };
 
     const handleStartEdit = () => {
+        if (props.readOnly) {
+            return;
+        }
         setIsEditing(true);
     };
 
@@ -72,7 +72,8 @@ const SelectProperty = (props: Props) => {
     if (!displayLabel) {
         return (
             <EmptySelectDisplay
-                onClick={handleStartEdit}
+                onClick={props.readOnly ? undefined : handleStartEdit}
+                $readOnly={props.readOnly}
                 data-testid='property-value'
             >
                 <EmptyState/>
@@ -83,23 +84,25 @@ const SelectProperty = (props: Props) => {
     return (
         <PropertyChip
             label={displayLabel}
-            onClick={handleStartEdit}
+            onClick={props.readOnly ? undefined : handleStartEdit}
             data-testid='property-value'
         />
     );
 };
 
-const EmptySelectDisplay = styled.div`
+const EmptySelectDisplay = styled.div<{$readOnly?: boolean}>`
     flex: 1;
-    cursor: pointer;
+    cursor: ${({$readOnly}) => ($readOnly ? 'default' : 'pointer')};
     padding: 4px 0;
     min-height: 20px;
 
     &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        border-radius: 4px;
-        margin: 0 -4px;
-        padding: 4px;
+        ${({$readOnly}) => !$readOnly && `
+            background-color: rgba(var(--center-channel-color-rgb), 0.04);
+            border-radius: 4px;
+            margin: 0 -4px;
+            padding: 4px;
+        `}
     }
 `;
 

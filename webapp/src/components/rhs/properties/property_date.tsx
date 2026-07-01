@@ -88,11 +88,14 @@ const DateProperty = (props: Props) => {
     }, [props.value?.value]);
 
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
+        if (props.readOnly) {
+            return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsEditing(true);
         }
-    }, []);
+    }, [props.readOnly]);
 
     const handleSelectedChange = useCallback((option: DateTimeOption | undefined | null) => {
         const seq = ++callSeqRef.current;
@@ -145,8 +148,9 @@ const DateProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
-            onClick={() => setIsEditing(true)}
-            onKeyDown={handleActivateKey}
+            $readOnly={props.readOnly}
+            onClick={props.readOnly ? undefined : () => setIsEditing(true)}
+            onKeyDown={props.readOnly ? undefined : handleActivateKey}
             data-testid='property-value'
         >
             {formatted ?? <EmptyState/>}

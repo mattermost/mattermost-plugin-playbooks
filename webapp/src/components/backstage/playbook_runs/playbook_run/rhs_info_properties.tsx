@@ -37,6 +37,7 @@ const RHSInfoProperties = (props: Props) => {
                 propertyFields={props.run.property_fields}
                 propertyValues={props.run.property_values}
                 runID={props.run.id}
+                readOnly={!props.editable}
             />
         </Section>
     );
