@@ -76,9 +76,8 @@ describe('runs > RHS > checked/unchecked chip', {testIsolation: true}, () => {
             });
 
             // * Hovering the chip reveals the activity-style tooltip with the verb "checked off".
-            //   Tooltip renders in a body-level portal, so assert at document scope.
             cy.get('@taskRow').findByTestId('checklist-item-checked-chip').realHover();
-            cy.contains(/checked off/i).should('be.visible');
+            cy.uiGetToolTip('checked off');
 
             // # Uncheck the task
             cy.get('@taskRow').within(() => {
@@ -91,7 +90,7 @@ describe('runs > RHS > checked/unchecked chip', {testIsolation: true}, () => {
 
             // * Tooltip now reads "unchecked"
             cy.get('@taskRow').findByTestId('checklist-item-checked-chip').realHover();
-            cy.contains(/unchecked/i).should('be.visible');
+            cy.uiGetToolTip('unchecked');
         });
     });
 

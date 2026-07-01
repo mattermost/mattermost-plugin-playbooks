@@ -10,15 +10,14 @@ import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 
 import CheckedChip from './checked_chip';
 
-jest.mock('src/components/widgets/tooltip', () => ({
-    __esModule: true,
-    default: ({children, content}: any) => (
+jest.mock('@mattermost/shared/components/tooltip', () => ({
+    WithTooltip: ({children, title}: any) => (
         <div data-testid='tooltip'>
-            <span data-testid='tooltip-content'>{content}</span>
+            <span data-testid='tooltip-content'>{title}</span>
             {children}
         </div>
     ),
-}));
+}), {virtual: true});
 
 jest.mock('src/components/profile/profile', () => ({
     __esModule: true,

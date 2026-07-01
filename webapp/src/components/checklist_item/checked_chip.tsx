@@ -6,14 +6,14 @@ import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 import {DateTime} from 'luxon';
 import {CheckIcon, CheckboxBlankOutlineIcon} from '@mattermost/compass-icons/components';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
-import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import {TaskStateModifiedDetails, TimelineEvent, TimelineEventType} from 'src/types/rhs';
-import Tooltip from 'src/components/widgets/tooltip';
 import Profile from 'src/components/profile/profile';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
-import {Timestamp} from 'src/webapp_globals';
 import {useFormattedUsernameByID} from 'src/hooks';
+import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {TaskStateModifiedDetails, TimelineEvent, TimelineEventType} from 'src/types/rhs';
+import {Timestamp} from 'src/webapp_globals';
 
 interface Props {
     item: ChecklistItem;
@@ -125,9 +125,9 @@ const CheckedChip = ({item, timelineEvents, compact = false}: Props) => {
     }
 
     return (
-        <Tooltip
+        <WithTooltip
             id={`checked-chip-tooltip-${item.id ?? ''}-${item.state_modified}`}
-            content={tooltipContent}
+            title={tooltipContent}
         >
             <Chip data-testid='checklist-item-checked-chip'>
                 {subjectUserId ? (
@@ -138,7 +138,7 @@ const CheckedChip = ({item, timelineEvents, compact = false}: Props) => {
                 ) : null}
                 {label}
             </Chip>
-        </Tooltip>
+        </WithTooltip>
     );
 };
 
