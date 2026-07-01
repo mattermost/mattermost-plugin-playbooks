@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -109,16 +110,27 @@ func findManifest() (*model.Manifest, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find manifest in current working directory")
 	}
-	manifestFile, err := os.Open(manifestFilePath)
+	return readManifest(manifestFilePath)
+}
+
+func readManifest(manifestFilePath string) (*model.Manifest, error) {
+	manifestBytes, err := os.ReadFile(manifestFilePath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open %s", manifestFilePath)
+		return nil, errors.Wrapf(err, "failed to read %s", manifestFilePath)
 	}
-	defer manifestFile.Close()
+
+	var rawManifest map[string]json.RawMessage
+	if err = json.Unmarshal(manifestBytes, &rawManifest); err != nil {
+		return nil, errors.Wrap(err, "failed to parse manifest")
+	}
+	if _, ok := rawManifest["version"]; ok {
+		return nil, errors.New("plugin.json must not contain a hardcoded version; build tooling derives it from git tags and commits")
+	}
 
 	// Re-decode the manifest, disallowing unknown fields. When we write the manifest back out,
 	// we don't want to accidentally clobber anything we won't preserve.
 	var manifest model.Manifest
-	decoder := json.NewDecoder(manifestFile)
+	decoder := json.NewDecoder(bytes.NewReader(manifestBytes))
 	decoder.DisallowUnknownFields()
 	if err = decoder.Decode(&manifest); err != nil {
 		return nil, errors.Wrap(err, "failed to parse manifest")
