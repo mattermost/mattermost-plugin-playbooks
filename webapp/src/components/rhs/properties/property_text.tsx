@@ -5,15 +5,12 @@ import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
-import {PropertyField, PropertyValue} from 'src/types/properties';
+import {PropertyComponentProps} from 'src/types/properties';
 
 import PropertyTextInput from './property_text_input';
 import EmptyState from './empty_state';
 
-interface Props {
-    field: PropertyField;
-    value?: PropertyValue;
-    runID: string;
+interface Props extends PropertyComponentProps {
     onValueChange: (value: string | null) => void;
 }
 
@@ -34,6 +31,9 @@ const TextProperty = (props: Props) => {
     };
 
     const handleStartEdit = () => {
+        if (props.readOnly) {
+            return;
+        }
         setIsEditing(true);
     };
 
@@ -72,7 +72,8 @@ const TextProperty = (props: Props) => {
 
     return (
         <TextDisplay
-            onClick={handleStartEdit}
+            onClick={props.readOnly ? undefined : handleStartEdit}
+            $readOnly={props.readOnly}
             data-testid='property-value'
         >
             {content}
@@ -80,20 +81,22 @@ const TextProperty = (props: Props) => {
     );
 };
 
-const TextDisplay = styled.div`
+const TextDisplay = styled.div<{$readOnly?: boolean}>`
     flex: 1;
     color: var(--center-channel-color);
     font-size: 14px;
     line-height: 20px;
-    cursor: pointer;
+    cursor: ${({$readOnly}) => ($readOnly ? 'default' : 'pointer')};
     padding: 4px 0;
     min-height: 20px;
 
     &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        border-radius: 4px;
-        margin: 0 -4px;
-        padding: 4px;
+        ${({$readOnly}) => !$readOnly && `
+            background-color: rgba(var(--center-channel-color-rgb), 0.04);
+            border-radius: 4px;
+            margin: 0 -4px;
+            padding: 4px;
+        `}
     }
 `;
 

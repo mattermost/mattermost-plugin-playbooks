@@ -49,11 +49,14 @@ const UserProperty = (props: Props) => {
     const fetchUsersInTeam = useCallback(async () => profilesInTeam, [profilesInTeam]);
 
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
+        if (props.readOnly) {
+            return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsEditing(true);
         }
-    }, []);
+    }, [props.readOnly]);
 
     const handleSelectedChange = useCallback((user?: UserProfile) => {
         const newValue = user?.id ?? null;
@@ -96,8 +99,9 @@ const UserProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
-            onClick={() => setIsEditing(true)}
-            onKeyDown={handleActivateKey}
+            $readOnly={props.readOnly}
+            onClick={props.readOnly ? undefined : () => setIsEditing(true)}
+            onKeyDown={props.readOnly ? undefined : handleActivateKey}
             data-testid='property-value'
         >
             {displayValue ? <Profile userId={displayValue}/> : <EmptyState/>}
@@ -132,11 +136,14 @@ export const MultiuserProperty = (props: Props) => {
     const fetchUsersInTeam = useCallback(async () => profilesInTeam, [profilesInTeam]);
 
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
+        if (props.readOnly) {
+            return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsEditing(true);
         }
-    }, []);
+    }, [props.readOnly]);
 
     const applyNewValues = useCallback((newValues: string[]) => {
         const seq = ++callSeqRef.current;
@@ -209,8 +216,9 @@ export const MultiuserProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
-            onClick={() => setIsEditing(true)}
-            onKeyDown={handleActivateKey}
+            $readOnly={props.readOnly}
+            onClick={props.readOnly ? undefined : () => setIsEditing(true)}
+            onKeyDown={props.readOnly ? undefined : handleActivateKey}
             data-testid='property-value'
         >
             {displayValues.length === 0 ? <EmptyState/> : (
