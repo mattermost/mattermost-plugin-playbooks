@@ -60,7 +60,8 @@ func main() {
 
 	manifest, err := findManifest()
 	if err != nil {
-		panic("failed to find manifest: " + err.Error())
+		fmt.Fprintln(os.Stderr, "manifest:", err)
+		os.Exit(1)
 	}
 
 	cmd := os.Args[1]
