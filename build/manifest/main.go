@@ -123,8 +123,10 @@ func readManifest(manifestFilePath string) (*model.Manifest, error) {
 	if err = json.Unmarshal(manifestBytes, &rawManifest); err != nil {
 		return nil, errors.Wrap(err, "failed to parse manifest")
 	}
-	if _, ok := rawManifest["version"]; ok {
-		return nil, errors.New("plugin.json must not contain a hardcoded version; build tooling derives it from git tags and commits")
+	for key := range rawManifest {
+		if strings.EqualFold(key, "version") {
+			return nil, errors.New("plugin.json must not contain a hardcoded version; build tooling derives it from git tags and commits")
+		}
 	}
 
 	// Re-decode the manifest, disallowing unknown fields. When we write the manifest back out,

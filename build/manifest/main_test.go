@@ -50,6 +50,10 @@ func TestReadManifestRejectsHardcodedVersion(t *testing.T) {
 			name:     "version null",
 			manifest: strings.Replace(validSourceManifest, "{", `{"version": null,`, 1),
 		},
+		{
+			name:     "version key case variant",
+			manifest: strings.Replace(validSourceManifest, "{", `{"Version": "9.9.9",`, 1),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := readManifest(writeManifest(t, tc.manifest))
