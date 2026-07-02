@@ -293,6 +293,23 @@ func TestResolveAndAllocate_LiteralTemplateUsedWhenNoUserName(t *testing.T) {
 	assert.Equal(t, "JIRA_ID: TITLE", channelName)
 }
 
+func TestResolveAndAllocate_UserSuppliedNameDoesNotOverrideTokenTemplate(t *testing.T) {
+	pb := Playbook{
+		ID:                  "pb_1",
+		RunNumberPrefix:     "INC",
+		ChannelNameTemplate: "Incident {SEQ}",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 42}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "Caller Override Attempt"}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Incident INC-00042", run.Name)
+	assert.Equal(t, "Incident INC-00042", channelName)
+}
+
 func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 	zoneField := PropertyField{
 		PropertyField: model.PropertyField{
