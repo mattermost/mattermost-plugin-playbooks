@@ -220,6 +220,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         let seqTemplatePlaybook;
         let plainPlaybook;
         let fieldTemplatePlaybook;
+        let priorityFieldId;
 
         beforeEach(() => {
             // # Playbook with a system-token-only template (no property fields required)
@@ -259,6 +260,8 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                     name: 'Priority',
                     type: 'text',
                     attrs: {visibility: 'always', sortOrder: 0},
+                }).then((fieldId) => {
+                    priorityFieldId = fieldId;
                 });
                 cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{Priority} incident'});
             });
@@ -389,6 +392,39 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
             cy.playbooksGetRunIdFromUrl().then((runId) => {
                 cy.apiGetPlaybookRun(runId).then(({body: run}) => {
                     expect(run.name).to.equal(overrideName);
+                });
+            });
+        });
+
+        it('does not persist attribute values typed before enabling override', () => {
+            const overrideName = 'Override drops fields ' + getRandomId();
+            const typedPriority = 'P1-' + getRandomId();
+
+            // # Open the modal for a playbook whose template references a property field
+            cy.playbooksOpenRunModal(fieldTemplatePlaybook.id);
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Fill the Priority attribute BEFORE enabling override
+                cy.findByTestId(`property-field-${priorityFieldId}`).clear().type(typedPriority);
+
+                // # Enable override (hides the Attributes section) and type a manual name
+                cy.findByTestId('override-run-name-checkbox').check({force: true});
+                cy.findByText('Attributes').should('not.exist');
+                cy.findByTestId('run-name-input').clear().type(overrideName);
+
+                // # Start the run
+                cy.findByTestId('modal-confirm-button').should('not.be.disabled').click();
+            });
+
+            // * Run is created with the overridden name
+            cy.url().should('include', '/playbooks/runs/');
+            cy.get('h1').contains(overrideName);
+
+            // * The value typed before overriding must NOT be persisted to the run
+            cy.playbooksGetRunIdFromUrl().then((runId) => {
+                cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+                    expect(run.name).to.equal(overrideName);
+                    expect(JSON.stringify(run.property_values || []), 'attribute value entered before override must not be persisted').to.not.contain(typedPriority);
                 });
             });
         });

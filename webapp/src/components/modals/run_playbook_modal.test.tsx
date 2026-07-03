@@ -719,6 +719,42 @@ describe('RunPlaybookModal — template mode', () => {
             expect(args[8]).toBe(true);
         });
 
+        it('does not send property values that were typed before enabling override', async () => {
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+            mockCreatePlaybookRun.mockResolvedValue({id: 'run-1', channel_id: 'ch-1'});
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            // Fill the template's property field first
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'property-field-field-sev').props.onChange({target: {value: 'Critical'}});
+            });
+
+            // Then enable override (hides the Attributes section) and type a manual name
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'override-run-name-checkbox').props.onChange({target: {checked: true}});
+            });
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'run-name-input').props.onChange({target: {value: 'Manual title'}});
+            });
+
+            await act(async () => {
+                findNodeByTestId(component!.toJSON(), 'confirm-button').props.onClick();
+            });
+
+            expect(mockCreatePlaybookRun).toHaveBeenCalledTimes(1);
+            const args = mockCreatePlaybookRun.mock.calls[0];
+
+            // args: playbookId, userId, teamId, name, summary, channelId, createPublicRun, propertyValues, nameTemplateOverride
+            // Property values must not be persisted when overriding.
+            expect(args[7]).toBeUndefined();
+            expect(args[8]).toBe(true);
+        });
+
         it('restores the template into the name field when override is toggled back off', () => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);

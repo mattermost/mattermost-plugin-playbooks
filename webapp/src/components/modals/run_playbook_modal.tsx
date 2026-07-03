@@ -374,7 +374,10 @@ export const RunPlaybookModal = ({
         isSubmittingRef.current = true;
         setSubmitError('');
         setIsSubmitting(true);
-        const pvToSend = Object.keys(propertyValues).length > 0 ? propertyValues : undefined;
+        // Property fields are only shown (and only relevant) while resolving the template. When
+        // overriding the name manually, the Attributes section is hidden, so any values typed
+        // before enabling override must not be silently persisted to the run.
+        const pvToSend = usingTemplate && Object.keys(propertyValues).length > 0 ? propertyValues : undefined;
         let runPromise: ReturnType<typeof createPlaybookRun>;
         try {
             runPromise = createPlaybookRun(
@@ -411,7 +414,7 @@ export const RunPlaybookModal = ({
                 resetSubmitting();
                 setSubmitError(formatMessage({defaultMessage: 'An error occurred while creating the run.'}));
             });
-    }, [playbook, selectedPlaybookId, isFormValid, propertyValues, userId, runName, runSummary, channelId, createPublicRun, channelMode, playbookId, hasTemplate, overrideName, onHide, onRunCreated, formatMessage, resetSubmitting, buildStatsData]);
+    }, [playbook, selectedPlaybookId, isFormValid, propertyValues, userId, runName, runSummary, channelId, createPublicRun, channelMode, playbookId, hasTemplate, overrideName, usingTemplate, onHide, onRunCreated, formatMessage, resetSubmitting, buildStatsData]);
 
     // Start a run tab
     if (step === 'run-details') {
