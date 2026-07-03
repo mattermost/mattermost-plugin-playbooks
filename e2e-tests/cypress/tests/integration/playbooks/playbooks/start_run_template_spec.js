@@ -297,7 +297,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 cy.findByTestId('override-run-name-checkbox').should('exist').and('not.be.checked');
 
                 // # Check the override option
-                cy.findByTestId('override-run-name-checkbox').check({force: true});
+                cy.findByTestId('override-run-name-checkbox').check();
 
                 // * Name input is now editable (no readonly attr) and cleared
                 cy.findByTestId('run-name-input').should('have.value', '');
@@ -307,7 +307,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 cy.findByTestId('run-name-preview').should('not.exist');
 
                 // # Uncheck the override option
-                cy.findByTestId('override-run-name-checkbox').uncheck({force: true});
+                cy.findByTestId('override-run-name-checkbox').uncheck();
 
                 // * The template is restored and the field is read-only again
                 cy.findByTestId('run-name-input').should('have.value', '{OWNER}').and('have.attr', 'readonly');
@@ -320,7 +320,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
 
             cy.get('#root-portal.modal-open').within(() => {
                 // # Enable override
-                cy.findByTestId('override-run-name-checkbox').check({force: true});
+                cy.findByTestId('override-run-name-checkbox').check();
 
                 // # Type only whitespace into the (now editable) name field
                 cy.findByTestId('run-name-input').clear().type('   ');
@@ -340,7 +340,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
 
             cy.get('#root-portal.modal-open').within(() => {
                 // # Enable override and type a manual name
-                cy.findByTestId('override-run-name-checkbox').check({force: true});
+                cy.findByTestId('override-run-name-checkbox').check();
                 cy.findByTestId('run-name-input').clear().type(overrideName);
 
                 // * Submit is enabled and start the run
@@ -374,7 +374,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 cy.findByTestId('modal-confirm-button').should('be.disabled');
 
                 // # Enable override
-                cy.findByTestId('override-run-name-checkbox').check({force: true});
+                cy.findByTestId('override-run-name-checkbox').check();
 
                 // * The Attributes section disappears — the template is no longer used
                 cy.findByText('Attributes').should('not.exist');
@@ -408,7 +408,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 cy.findByTestId(`property-field-${priorityFieldId}`).clear().type(typedPriority);
 
                 // # Enable override (hides the Attributes section) and type a manual name
-                cy.findByTestId('override-run-name-checkbox').check({force: true});
+                cy.findByTestId('override-run-name-checkbox').check();
                 cy.findByText('Attributes').should('not.exist');
                 cy.findByTestId('run-name-input').clear().type(overrideName);
 
