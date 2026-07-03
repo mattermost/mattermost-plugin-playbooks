@@ -194,6 +194,10 @@ paths:
                   type: string
                   description: The identifier of the playbook with from which this playbook run was created.
                   example: 0y4a0ntte97cxvfont8y84wa7x
+                name_template_override:
+                  type: boolean
+                  description: When true and the playbook has a channel name template, the template is ignored for this run and the supplied name is used verbatim. Ignored when the name is blank.
+                  example: false
       x-codeSamples:
         - lang: curl
           source: |
