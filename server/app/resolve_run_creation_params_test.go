@@ -286,6 +286,43 @@ func TestResolveRunCreationParams_SetsPlaybookIDFromPlaybook(t *testing.T) {
 	assert.Equal(t, pbID, run.PlaybookID)
 }
 
+func TestResolveRunCreationParams_OverrideSkipsTemplateValidation(t *testing.T) {
+	pbID := mm_model.NewId()
+
+	// Template references a property field with no supplied value. Without override this would
+	// fail dry-run validation; with override + a manual name, validation is skipped entirely.
+	svc := &PlaybookRunServiceImpl{
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{{PropertyField: mm_model.PropertyField{ID: "fld_zone", Name: "Zone", Type: mm_model.PropertyFieldTypeText}}}},
+	}
+
+	run := &PlaybookRun{PlaybookID: pbID, Name: "Manual title", NameTemplateOverride: true}
+	pb := &Playbook{ID: pbID, ChannelNameTemplate: "{Zone}"}
+
+	err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
+
+	require.NoError(t, err, "override with a manual name must skip template validation")
+}
+
+func TestResolveRunCreationParams_OverrideWithEmptyNameStillValidates(t *testing.T) {
+	pbID := mm_model.NewId()
+
+	svc := &PlaybookRunServiceImpl{
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{{PropertyField: mm_model.PropertyField{ID: "fld_zone", Name: "Zone", Type: mm_model.PropertyFieldTypeText}}}},
+	}
+
+	// Override requested but no manual name provided — validation should still run and fail.
+	// No ReporterUserID/OwnerUserID is set so the {Zone} dry-run does not resolve user tokens.
+	run := &PlaybookRun{PlaybookID: pbID, Name: "  ", NameTemplateOverride: true}
+	pb := &Playbook{ID: pbID, ChannelNameTemplate: "{Zone}"}
+
+	err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
+
+	require.Error(t, err, "empty name must not bypass template validation even when override is set")
+	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+}
+
 func TestResolveRunCreationParams_DoesNotAllocateRunNumber(t *testing.T) {
 	pbID := mm_model.NewId()
 

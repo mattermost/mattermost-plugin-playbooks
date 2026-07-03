@@ -258,6 +258,10 @@ type PlaybookRun struct {
 	// excluded; Skipped items count as completed. See ComputeTaskProgress.
 	TaskTotal     int `json:"task_total"`
 	TaskCompleted int `json:"task_completed"`
+
+	// NameTemplateOverride is a transient, non-persisted flag set at creation time. When true and
+	// Name is non-empty, the playbook's channel name template is ignored and Name is used verbatim.
+	NameTemplateOverride bool `json:"-"`
 }
 
 func (r *PlaybookRun) ComputeTaskProgress() {

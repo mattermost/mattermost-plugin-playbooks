@@ -288,3 +288,56 @@ func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 	assert.Equal(t, int64(0), run.RunNumber)
 	assert.Equal(t, "", run.SequentialID)
 }
+
+// TestResolveAndAllocate_OverrideBypassesTemplate pins that when the user opts to override the
+// template with a manually-supplied name, the playbook's template is ignored: the run name is the
+// user-supplied value, the template's required property fields are NOT validated, and a sequential
+// ID is still allocated.
+func TestResolveAndAllocate_OverrideBypassesTemplate(t *testing.T) {
+	zoneField := PropertyField{
+		PropertyField: model.PropertyField{
+			ID:   "fld_zone",
+			Name: "Zone",
+			Type: model.PropertyFieldTypeText,
+		},
+	}
+	pb := Playbook{
+		ID:                  "pb_1",
+		RunNumberPrefix:     "INC",
+		ChannelNameTemplate: "{Zone}",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 7}
+	svc := &PlaybookRunServiceImpl{
+		playbookService: pbStub,
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+	}
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My manual title", NameTemplateOverride: true}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err, "override must skip template field validation entirely")
+	assert.Equal(t, "My manual title", run.Name, "run name must be the user-supplied value")
+	assert.Equal(t, "My manual title", channelName, "channel name must be derived from the user-supplied name")
+	assert.Equal(t, int64(7), run.RunNumber, "sequential ID must still be allocated when overriding")
+	assert.Equal(t, "INC-00007", run.SequentialID)
+	assert.Equal(t, 1, pbStub.incrementCalled, "counter consumed exactly once")
+}
+
+// TestResolveAndAllocate_OverrideIgnoredWhenNameEmpty pins that the override flag has no effect
+// when no manual name is supplied — the template is still used to resolve the run name.
+func TestResolveAndAllocate_OverrideIgnoredWhenNameEmpty(t *testing.T) {
+	pb := Playbook{
+		ID:                  "pb_1",
+		RunNumberPrefix:     "INC",
+		ChannelNameTemplate: "Static Name",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 3}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "   ", NameTemplateOverride: true}
+	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Static Name", run.Name, "template must still drive the name when no manual name is supplied")
+}

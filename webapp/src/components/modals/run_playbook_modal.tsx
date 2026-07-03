@@ -86,6 +86,7 @@ export const RunPlaybookModal = ({
     const playbookAttributes = usePlaybookAttributes(selectedPlaybookId || '');
     const [restPlaybook] = useRestPlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
+    const [overrideName, setOverrideName] = useState(false);
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
     const [channelId, setChannelId] = useState('');
@@ -174,6 +175,7 @@ export const RunPlaybookModal = ({
         // to avoid a split-brain where the button looks clickable but isSubmittingRef blocks clicks.
         setPropertyValues({});
         setSubmitError('');
+        setOverrideName(false);
         if (!isSubmittingRef.current) {
             setIsSubmitting(false);
         }
@@ -240,6 +242,18 @@ export const RunPlaybookModal = ({
 
     const hasTemplate = Boolean(playbook?.channel_name_template);
 
+    // When the playbook has a template, the user may opt to override it and type a name manually.
+    // In that mode we behave like a template-less playbook: free-text name, no preview, no fields.
+    const usingTemplate = hasTemplate && !overrideName;
+
+    const handleToggleOverrideName = useCallback((next: boolean) => {
+        setOverrideName(next);
+
+        // Clear the raw template string when switching to manual entry, and restore it when
+        // switching back so the preview reflects the playbook's template again.
+        setRunName(next ? '' : (playbook?.channel_name_template ?? ''));
+    }, [playbook?.channel_name_template]);
+
     // Preview the resolved name (client-side approximation)
     const namePreview = useMemo(() => {
         const tpl = playbook?.channel_name_template;
@@ -269,9 +283,9 @@ export const RunPlaybookModal = ({
     // accepts it; the raw template string itself is not validated against the limit.
     const templateNameValid = namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH;
     const freeNameValid = runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
-    const nameValid = hasTemplate ? templateNameValid : freeNameValid;
+    const nameValid = usingTemplate ? templateNameValid : freeNameValid;
 
-    const namePreviewTooLong = hasTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
+    const namePreviewTooLong = usingTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
 
     const requiredFieldsFilled = useMemo(() => templateFields.every((field) => {
         const val = propertyValues[field.id];
@@ -284,7 +298,10 @@ export const RunPlaybookModal = ({
         return true;
     }), [templateFields, propertyValues]);
 
-    const isFormValid = !attributesLoading && nameValid && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
+    // Template-only concerns (loading attributes, required fields, unmatched fields) are ignored
+    // when overriding the template with a manually-supplied name.
+    const templateConstraintsValid = !usingTemplate || (!attributesLoading && requiredFieldsFilled && unmatchedTemplateNames.length === 0);
+    const isFormValid = nameValid && templateConstraintsValid && (createNewChannel || channelId !== '');
 
     const handleSetChannelMode = useCallback((mode: 'link_existing_channel' | 'create_new_channel') => {
         if (isNewChannelOnly && mode === 'link_existing_channel') {
@@ -316,12 +333,12 @@ export const RunPlaybookModal = ({
         channelMode,
         public: isNewChannel ? createPublicRun : undefined,
         hasPlaybookChanged: playbookId !== selectedPlaybookId,
-        hasNameChanged: playbook!.channel_name_template ? false : runName !== '',
+        hasNameChanged: usingTemplate ? false : runName !== '',
         hasSummaryChanged: runSummary !== (playbook!.run_summary_template_enabled ? playbook!.run_summary_template : ''),
         hasChannelModeChanged: channelMode !== playbook!.channel_mode,
         hasChannelIdChanged: channelId !== playbook!.channel_id,
         hasPublicChanged: !isLinkedChannel && createPublicRun !== playbook!.create_public_playbook_run,
-    }), [selectedPlaybookId, channelMode, createPublicRun, playbookId, runName, runSummary, channelId, playbook]);
+    }), [selectedPlaybookId, channelMode, createPublicRun, playbookId, runName, runSummary, channelId, playbook, usingTemplate]);
 
     const resetSubmitting = useCallback(() => {
         isSubmittingRef.current = false;
@@ -366,6 +383,7 @@ export const RunPlaybookModal = ({
                 isLinkedChannel ? channelId : undefined,
                 isNewChannel ? createPublicRun : undefined,
                 pvToSend,
+                hasTemplate && overrideName,
             );
         } catch {
             resetSubmitting();
@@ -390,7 +408,7 @@ export const RunPlaybookModal = ({
                 resetSubmitting();
                 setSubmitError(formatMessage({defaultMessage: 'An error occurred while creating the run.'}));
             });
-    }, [playbook, selectedPlaybookId, isFormValid, propertyValues, userId, runName, runSummary, channelId, createPublicRun, channelMode, playbookId, onHide, onRunCreated, formatMessage, resetSubmitting, buildStatsData]);
+    }, [playbook, selectedPlaybookId, isFormValid, propertyValues, userId, runName, runSummary, channelId, createPublicRun, channelMode, playbookId, hasTemplate, overrideName, onHide, onRunCreated, formatMessage, resetSubmitting, buildStatsData]);
 
     // Start a run tab
     if (step === 'run-details') {
@@ -463,9 +481,20 @@ export const RunPlaybookModal = ({
                     <RunNameSection
                         runName={runName}
                         onSetRunName={setRunName}
-                        readOnly={hasTemplate}
+                        readOnly={usingTemplate}
                     />
-                    {hasTemplate && namePreview && (
+                    {hasTemplate && (
+                        <OverrideNameToggle>
+                            <StyledRadioInput
+                                type='checkbox'
+                                data-testid={'override-run-name-checkbox'}
+                                checked={overrideName}
+                                onChange={(e) => handleToggleOverrideName(e.target.checked)}
+                            />
+                            <FormattedMessage defaultMessage='Override the name generated from the template'/>
+                        </OverrideNameToggle>
+                    )}
+                    {usingTemplate && namePreview && (
                         <NamePreview data-testid='run-name-preview'>
                             {formatMessage({defaultMessage: 'Preview: {preview}'}, {preview: namePreview})}
                         </NamePreview>
@@ -475,7 +504,7 @@ export const RunPlaybookModal = ({
                             {formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Edit the playbook template to use fewer or shorter fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
                         </ErrorMessage>
                     )}
-                    {templateFields.length > 0 && (
+                    {usingTemplate && templateFields.length > 0 && (
                         <PropertyFieldsSection
                             fields={templateFields}
                             values={propertyValues}
@@ -884,6 +913,20 @@ const NamePreview = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 12px;
     line-height: 16px;
+`;
+
+const OverrideNameToggle = styled.label`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    align-self: flex-start;
+    margin-top: -4px;
+    margin-bottom: 12px;
+    column-gap: 8px;
+    cursor: pointer;
+    font-weight: 400;
+    font-size: 12px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 type PropertyFieldsSectionProps = {

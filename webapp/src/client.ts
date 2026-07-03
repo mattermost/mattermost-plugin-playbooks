@@ -95,7 +95,8 @@ export async function createPlaybookRun(
     summary: string,
     channel_id?: string,
     create_public_run?: boolean,
-    property_values?: Record<string, string | number | boolean | null | string[]>
+    property_values?: Record<string, string | number | boolean | null | string[]>,
+    name_template_override?: boolean,
 ) {
     const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
         owner_user_id,
@@ -106,6 +107,7 @@ export async function createPlaybookRun(
         channel_id,
         create_public_run,
         property_values,
+        name_template_override,
     }));
     return run as PlaybookRun;
 }

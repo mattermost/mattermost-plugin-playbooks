@@ -6000,12 +6000,18 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 		playbookRun.PlaybookID = pb.ID
 	}
 
+	s.resolveOwner(playbookRun, logger)
+
+	// When the user opts to override the template with a manually-supplied name, the template is
+	// not used for this run, so skip template preparation and validation entirely.
+	if playbookRun.NameTemplateOverride && strings.TrimSpace(playbookRun.Name) != "" {
+		return nil
+	}
+
 	fields, attributesLicensed, err := s.loadTemplateFields(pb)
 	if err != nil {
 		return err
 	}
-
-	s.resolveOwner(playbookRun, logger)
 
 	template, err := s.prepareTemplate(pb, source, fields, attributesLicensed, logger)
 	if err != nil {
@@ -6038,14 +6044,24 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 	}
 	pb = &latestPb
 
-	fields, attributesLicensed, err := s.loadTemplateFields(pb)
-	if err != nil {
-		return "", err
-	}
+	// When the user opts to override the template with a manually-supplied name, ignore the
+	// playbook's channel name template for this run so the user-supplied name is used verbatim.
+	// A sequential ID is still allocated below.
+	overrideTemplate := playbookRun.NameTemplateOverride && userSuppliedName != ""
 
-	template, err := s.prepareTemplate(pb, source, fields, attributesLicensed, logger)
-	if err != nil {
-		return "", err
+	var fields []PropertyField
+	var template string
+	if !overrideTemplate {
+		var attributesLicensed bool
+		fields, attributesLicensed, err = s.loadTemplateFields(pb)
+		if err != nil {
+			return "", err
+		}
+
+		template, err = s.prepareTemplate(pb, source, fields, attributesLicensed, logger)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	sanitizedValues := s.sanitizePropertyValues(fields, initialValues, logger)

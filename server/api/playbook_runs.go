@@ -232,6 +232,8 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
 			Type:        runType,
+
+			NameTemplateOverride: playbookRunCreateOptions.NameTemplateOverride,
 		},
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,

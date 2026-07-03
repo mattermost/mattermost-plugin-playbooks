@@ -616,8 +616,107 @@ describe('RunPlaybookModal — template mode', () => {
             });
 
             expect(mockCreatePlaybookRun).toHaveBeenCalledWith(
-                'playbook-1', 'mock-user-id', 'team-1', 'My Run', '', undefined, false, undefined,
+                'playbook-1', 'mock-user-id', 'team-1', 'My Run', '', undefined, false, undefined, false,
             );
+        });
+    });
+
+    describe('override name', () => {
+        it('does not show the override checkbox when no template is set', () => {
+            mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            expect(findNodeByTestId(component.toJSON(), 'override-run-name-checkbox')).toBeNull();
+        });
+
+        it('shows the override checkbox when a template is set', () => {
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            expect(findNodeByTestId(component.toJSON(), 'override-run-name-checkbox')).not.toBeNull();
+        });
+
+        it('makes the name editable, hides the preview and fields, and requires a name when overriding', () => {
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            // Toggle override on
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'override-run-name-checkbox').props.onChange({target: {checked: true}});
+            });
+
+            let tree = component!.toJSON();
+
+            // Preview and property fields are hidden while overriding
+            expect(findNodeByTestId(tree, 'run-name-preview')).toBeNull();
+            expect(findNodeByTestId(tree, 'property-field-field-sev')).toBeNull();
+
+            // Name input is now editable (not read-only) and cleared
+            const nameInput = findNodeByTestId(tree, 'run-name-input');
+            expect(nameInput.props.readOnly).toBeFalsy();
+            expect(nameInput.props.value).toBe('');
+
+            // With an empty name, submit is disabled
+            expect(findNodeByTestId(tree, 'confirm-button').props.disabled).toBe(true);
+
+            // Type a manual name, submit becomes enabled
+            act(() => {
+                nameInput.props.onChange({target: {value: 'Manual title'}});
+            });
+            tree = component!.toJSON();
+            expect(findNodeByTestId(tree, 'confirm-button').props.disabled).toBe(false);
+        });
+
+        it('sends name_template_override=true and the manual name on submit', async () => {
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+            mockCreatePlaybookRun.mockResolvedValue({id: 'run-1', channel_id: 'ch-1'});
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'override-run-name-checkbox').props.onChange({target: {checked: true}});
+            });
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'run-name-input').props.onChange({target: {value: 'Manual title'}});
+            });
+
+            await act(async () => {
+                findNodeByTestId(component!.toJSON(), 'confirm-button').props.onClick();
+            });
+
+            expect(mockCreatePlaybookRun).toHaveBeenCalledTimes(1);
+            const args = mockCreatePlaybookRun.mock.calls[0];
+            expect(args[3]).toBe('Manual title');
+            expect(args[8]).toBe(true);
+        });
+
+        it('restores the template into the name field when override is toggled back off', () => {
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'override-run-name-checkbox').props.onChange({target: {checked: true}});
+            });
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'override-run-name-checkbox').props.onChange({target: {checked: false}});
+            });
+
+            const nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            expect(nameInput.props.value).toBe('{Severity} - Incident');
+            expect(nameInput.props.readOnly).toBe(true);
         });
     });
 

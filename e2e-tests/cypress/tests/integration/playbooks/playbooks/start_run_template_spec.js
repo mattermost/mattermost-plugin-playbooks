@@ -216,6 +216,165 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         });
     });
 
+    describe('override the template-generated name', () => {
+        let seqTemplatePlaybook;
+        let plainPlaybook;
+        let fieldTemplatePlaybook;
+
+        beforeEach(() => {
+            // # Playbook with a system-token-only template (no property fields required)
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Override SeqTemplate PB ' + getRandomId(),
+                makePublic: true,
+                memberIDs: [testUser.id],
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{OWNER}'}).then(() => {
+                    seqTemplatePlaybook = playbook;
+                });
+            });
+
+            // # Playbook WITHOUT a template (free-text mode)
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Override Plain PB ' + getRandomId(),
+                makePublic: true,
+                memberIDs: [testUser.id],
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                plainPlaybook = playbook;
+            });
+
+            // # Playbook with a template referencing a required property field
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Override FieldTemplate PB ' + getRandomId(),
+                makePublic: true,
+                memberIDs: [testUser.id],
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                fieldTemplatePlaybook = playbook;
+                cy.apiAddPropertyField(playbook.id, {
+                    name: 'Priority',
+                    type: 'text',
+                    attrs: {visibility: 'always', sortOrder: 0},
+                });
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{Priority} incident'});
+            });
+        });
+
+        afterEach(() => {
+            [seqTemplatePlaybook, plainPlaybook, fieldTemplatePlaybook].forEach((pb) => {
+                if (pb) {
+                    cy.apiArchivePlaybook(pb.id);
+                }
+            });
+        });
+
+        it('does not show the override checkbox when no template is set', () => {
+            // # Open the modal for a template-less playbook
+            cy.playbooksOpenRunModal(plainPlaybook.id);
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // * The override checkbox is not rendered without a template
+                cy.findByTestId('override-run-name-checkbox').should('not.exist');
+            });
+        });
+
+        it('shows the override checkbox and toggles the name field editability', () => {
+            // # Open the modal for a template playbook
+            cy.playbooksOpenRunModal(seqTemplatePlaybook.id);
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // * Name input is pre-filled with the template and read-only
+                cy.findByTestId('run-name-input').should('have.value', '{OWNER}').and('have.attr', 'readonly');
+
+                // * The override checkbox exists and starts unchecked
+                cy.findByTestId('override-run-name-checkbox').should('exist').and('not.be.checked');
+
+                // # Check the override option
+                cy.findByTestId('override-run-name-checkbox').check({force: true});
+
+                // * Name input is now editable (no readonly attr) and cleared
+                cy.findByTestId('run-name-input').should('not.have.attr', 'readonly').and('have.value', '');
+
+                // * The template preview is hidden while overriding
+                cy.findByTestId('run-name-preview').should('not.exist');
+
+                // # Uncheck the override option
+                cy.findByTestId('override-run-name-checkbox').uncheck({force: true});
+
+                // * The template is restored and the field is read-only again
+                cy.findByTestId('run-name-input').should('have.value', '{OWNER}').and('have.attr', 'readonly');
+            });
+        });
+
+        it('creates a run with the manually-entered name when overriding a template', () => {
+            const overrideName = 'Manually named run ' + getRandomId();
+
+            // # Open the modal for a template playbook
+            cy.playbooksOpenRunModal(seqTemplatePlaybook.id);
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Enable override and type a manual name
+                cy.findByTestId('override-run-name-checkbox').check({force: true});
+                cy.findByTestId('run-name-input').clear().type(overrideName);
+
+                // * Submit is enabled and start the run
+                cy.findByTestId('modal-confirm-button').should('not.be.disabled').click();
+            });
+
+            // * Landed on the run details page
+            cy.url().should('include', '/playbooks/runs/');
+
+            // * The run title matches the manually-entered name (not the {OWNER} template)
+            cy.get('h1').contains(overrideName);
+
+            // * Backend stored the overridden name verbatim and still assigned a sequential ID
+            cy.playbooksGetRunIdFromUrl().then((runId) => {
+                cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+                    expect(run.name, 'run name should be the overridden value').to.equal(overrideName);
+                    expect(run.sequential_id, 'a sequential ID is still assigned').to.not.equal('');
+                });
+            });
+        });
+
+        it('bypasses required template property fields when overriding', () => {
+            const overrideName = 'Override skips fields ' + getRandomId();
+
+            // # Open the modal for a playbook whose template requires a property field
+            cy.playbooksOpenRunModal(fieldTemplatePlaybook.id);
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // * The Attributes section (required field) is shown and submit is disabled
+                cy.findByText('Attributes').should('be.visible');
+                cy.findByTestId('modal-confirm-button').should('be.disabled');
+
+                // # Enable override
+                cy.findByTestId('override-run-name-checkbox').check({force: true});
+
+                // * The Attributes section disappears — the template is no longer used
+                cy.findByText('Attributes').should('not.exist');
+
+                // # Type a manual name
+                cy.findByTestId('run-name-input').clear().type(overrideName);
+
+                // * Submit is enabled even though the required property field was never filled
+                cy.findByTestId('modal-confirm-button').should('not.be.disabled').click();
+            });
+
+            // * Run is created with the overridden name
+            cy.url().should('include', '/playbooks/runs/');
+            cy.get('h1').contains(overrideName);
+            cy.playbooksGetRunIdFromUrl().then((runId) => {
+                cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+                    expect(run.name).to.equal(overrideName);
+                });
+            });
+        });
+    });
+
     describe('template name too long', () => {
         let longTemplatePlaybook;
 

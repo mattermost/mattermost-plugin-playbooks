@@ -149,6 +149,11 @@ type PlaybookRunCreateOptions struct {
 	CreatePublicRun *bool                      `json:"create_public_run"`
 	Type            string                     `json:"type"`
 	PropertyValues  map[string]json.RawMessage `json:"property_values,omitempty"`
+
+	// NameTemplateOverride indicates the user chose to override the playbook's channel name
+	// template and supply Name manually. When true and Name is non-empty, the template is
+	// ignored for this run and Name is used verbatim.
+	NameTemplateOverride bool `json:"name_template_override,omitempty"`
 }
 
 // RunAction represents the run action settings. Frontend passes this struct to update settings.
