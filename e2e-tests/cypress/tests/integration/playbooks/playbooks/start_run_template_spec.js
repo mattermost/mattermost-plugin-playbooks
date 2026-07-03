@@ -311,6 +311,24 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
             });
         });
 
+        it('keeps the Start run button disabled when the override name is only whitespace', () => {
+            // # Open the modal for a template playbook
+            cy.playbooksOpenRunModal(seqTemplatePlaybook.id);
+
+            cy.get('#root-portal.modal-open').within(() => {
+                // # Enable override
+                cy.findByTestId('override-run-name-checkbox').check({force: true});
+
+                // # Type only whitespace into the (now editable) name field
+                cy.findByTestId('run-name-input').clear().type('   ');
+
+                // * Start run stays disabled — a whitespace-only name is not a valid override.
+                // The server trims the name and would otherwise fall back to the template, so the
+                // client must not enable submission for whitespace-only input.
+                cy.findByTestId('modal-confirm-button').should('be.disabled');
+            });
+        });
+
         it('creates a run with the manually-entered name when overriding a template', () => {
             const overrideName = 'Manually named run ' + getRandomId();
 

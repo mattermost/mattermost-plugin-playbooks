@@ -671,6 +671,27 @@ describe('RunPlaybookModal — template mode', () => {
             expect(findNodeByTestId(tree, 'confirm-button').props.disabled).toBe(false);
         });
 
+        it('keeps submit disabled when the override name is only whitespace', () => {
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'override-run-name-checkbox').props.onChange({target: {checked: true}});
+            });
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'run-name-input').props.onChange({target: {value: '   '}});
+            });
+
+            // A whitespace-only name must not enable submit: the server trims it and would fall
+            // back to the template, which is not what the user intended when overriding.
+            expect(findNodeByTestId(component!.toJSON(), 'confirm-button').props.disabled).toBe(true);
+        });
+
         it('sends name_template_override=true and the manual name on submit', async () => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);

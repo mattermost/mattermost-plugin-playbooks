@@ -282,7 +282,10 @@ export const RunPlaybookModal = ({
     // In template mode the resolved preview must also fit within the limit so the backend
     // accepts it; the raw template string itself is not validated against the limit.
     const templateNameValid = namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH;
-    const freeNameValid = runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
+
+    // Trim before checking emptiness so a whitespace-only name does not enable submission: the
+    // server trims the name too, and would otherwise fall back to the template (or reject the run).
+    const freeNameValid = runName.trim() !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
     const nameValid = usingTemplate ? templateNameValid : freeNameValid;
 
     const namePreviewTooLong = usingTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
