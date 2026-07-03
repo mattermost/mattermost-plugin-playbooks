@@ -297,7 +297,8 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 cy.findByTestId('override-run-name-checkbox').check({force: true});
 
                 // * Name input is now editable (no readonly attr) and cleared
-                cy.findByTestId('run-name-input').should('not.have.attr', 'readonly').and('have.value', '');
+                cy.findByTestId('run-name-input').should('have.value', '');
+                cy.findByTestId('run-name-input').should('not.have.attr', 'readonly');
 
                 // * The template preview is hidden while overriding
                 cy.findByTestId('run-name-preview').should('not.exist');
