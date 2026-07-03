@@ -366,6 +366,7 @@ export const RunPlaybookModal = ({
         isSubmittingRef.current = true;
         setSubmitError('');
         setIsSubmitting(true);
+
         // Don't persist attribute values typed before overriding: the Attributes section is hidden in override mode.
         const pvToSend = usingTemplate && Object.keys(propertyValues).length > 0 ? propertyValues : undefined;
         let runPromise: ReturnType<typeof createPlaybookRun>;
