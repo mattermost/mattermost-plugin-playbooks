@@ -264,6 +264,13 @@ type PlaybookRun struct {
 	NameTemplateOverride bool `json:"-"`
 }
 
+// HasNameOverride reports whether the run should ignore the playbook's channel name template and
+// use the user-supplied Name verbatim. The name must be non-blank after trimming; a whitespace-only
+// name is treated as no override so the template still drives naming.
+func (r *PlaybookRun) HasNameOverride() bool {
+	return r.NameTemplateOverride && strings.TrimSpace(r.Name) != ""
+}
+
 func (r *PlaybookRun) ComputeTaskProgress() {
 	total, completed := 0, 0
 	for _, cl := range r.Checklists {

@@ -50,6 +50,33 @@ func TestFormatSequentialID(t *testing.T) {
 	})
 }
 
+func TestPlaybookRun_HasNameOverride(t *testing.T) {
+	t.Run("flag set with a real name overrides", func(t *testing.T) {
+		r := &PlaybookRun{NameTemplateOverride: true, Name: "My title"}
+		require.True(t, r.HasNameOverride())
+	})
+
+	t.Run("flag set with leading/trailing whitespace still overrides", func(t *testing.T) {
+		r := &PlaybookRun{NameTemplateOverride: true, Name: "  My title  "}
+		require.True(t, r.HasNameOverride())
+	})
+
+	t.Run("flag set with whitespace-only name does not override", func(t *testing.T) {
+		r := &PlaybookRun{NameTemplateOverride: true, Name: "   "}
+		require.False(t, r.HasNameOverride())
+	})
+
+	t.Run("flag set with empty name does not override", func(t *testing.T) {
+		r := &PlaybookRun{NameTemplateOverride: true, Name: ""}
+		require.False(t, r.HasNameOverride())
+	})
+
+	t.Run("flag unset never overrides", func(t *testing.T) {
+		r := &PlaybookRun{NameTemplateOverride: false, Name: "My title"}
+		require.False(t, r.HasNameOverride())
+	})
+}
+
 func TestPlaybookRun_MarshalJSON(t *testing.T) {
 	t.Run("marshal pointer", func(t *testing.T) {
 		testPlaybookRun := &PlaybookRun{}
