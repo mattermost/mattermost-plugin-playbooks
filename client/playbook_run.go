@@ -150,9 +150,8 @@ type PlaybookRunCreateOptions struct {
 	Type            string                     `json:"type"`
 	PropertyValues  map[string]json.RawMessage `json:"property_values,omitempty"`
 
-	// NameTemplateOverride indicates the user chose to override the playbook's channel name
-	// template and supply Name manually. When true and Name is non-empty, the template is
-	// ignored for this run and Name is used verbatim.
+	// NameTemplateOverride, when true and Name is non-empty, ignores the playbook's channel name
+	// template and uses Name verbatim.
 	NameTemplateOverride bool `json:"name_template_override,omitempty"`
 }
 

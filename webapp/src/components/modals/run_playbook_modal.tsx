@@ -242,15 +242,10 @@ export const RunPlaybookModal = ({
 
     const hasTemplate = Boolean(playbook?.channel_name_template);
 
-    // When the playbook has a template, the user may opt to override it and type a name manually.
-    // In that mode we behave like a template-less playbook: free-text name, no preview, no fields.
     const usingTemplate = hasTemplate && !overrideName;
 
     const handleToggleOverrideName = useCallback((next: boolean) => {
         setOverrideName(next);
-
-        // Clear the raw template string when switching to manual entry, and restore it when
-        // switching back so the preview reflects the playbook's template again.
         setRunName(next ? '' : (playbook?.channel_name_template ?? ''));
     }, [playbook?.channel_name_template]);
 
@@ -283,8 +278,7 @@ export const RunPlaybookModal = ({
     // accepts it; the raw template string itself is not validated against the limit.
     const templateNameValid = namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH;
 
-    // Trim before checking emptiness so a whitespace-only name does not enable submission: the
-    // server trims the name too, and would otherwise fall back to the template (or reject the run).
+    // Trim to reject whitespace-only names: the server trims too and would fall back to the template.
     const freeNameValid = runName.trim() !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
     const nameValid = usingTemplate ? templateNameValid : freeNameValid;
 
@@ -301,8 +295,6 @@ export const RunPlaybookModal = ({
         return true;
     }), [templateFields, propertyValues]);
 
-    // Template-only concerns (loading attributes, required fields, unmatched fields) are ignored
-    // when overriding the template with a manually-supplied name.
     const templateConstraintsValid = !usingTemplate || (!attributesLoading && requiredFieldsFilled && unmatchedTemplateNames.length === 0);
     const isFormValid = nameValid && templateConstraintsValid && (createNewChannel || channelId !== '');
 
@@ -374,9 +366,7 @@ export const RunPlaybookModal = ({
         isSubmittingRef.current = true;
         setSubmitError('');
         setIsSubmitting(true);
-        // Property fields are only shown (and only relevant) while resolving the template. When
-        // overriding the name manually, the Attributes section is hidden, so any values typed
-        // before enabling override must not be silently persisted to the run.
+        // Don't persist attribute values typed before overriding: the Attributes section is hidden in override mode.
         const pvToSend = usingTemplate && Object.keys(propertyValues).length > 0 ? propertyValues : undefined;
         let runPromise: ReturnType<typeof createPlaybookRun>;
         try {

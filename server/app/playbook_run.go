@@ -259,8 +259,7 @@ type PlaybookRun struct {
 	TaskTotal     int `json:"task_total"`
 	TaskCompleted int `json:"task_completed"`
 
-	// NameTemplateOverride is a transient, non-persisted flag set at creation time. When true and
-	// Name is non-empty, the playbook's channel name template is ignored and Name is used verbatim.
+	// NameTemplateOverride is a transient (non-persisted) creation flag; see HasNameOverride.
 	NameTemplateOverride bool `json:"-"`
 }
 

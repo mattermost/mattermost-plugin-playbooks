@@ -6002,8 +6002,7 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 
 	s.resolveOwner(playbookRun, logger)
 
-	// When the user opts to override the template with a manually-supplied name, the template is
-	// not used for this run, so skip template preparation and validation entirely.
+	// The template is unused when overriding, so skip its validation.
 	if playbookRun.HasNameOverride() {
 		return nil
 	}
@@ -6044,9 +6043,7 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 	}
 	pb = &latestPb
 
-	// When the user opts to override the template with a manually-supplied name, ignore the
-	// playbook's channel name template for this run so the user-supplied name is used verbatim.
-	// A sequential ID is still allocated below.
+	// When overriding, ignore the template; a sequential ID is still allocated below.
 	overrideTemplate := playbookRun.HasNameOverride()
 
 	var fields []PropertyField
