@@ -178,6 +178,31 @@ func newAllocService(pbStub *allocPlaybookServiceStub) *PlaybookRunServiceImpl {
 	}
 }
 
+// newAllocServiceWithZoneTemplate builds a service whose playbook uses the "{Zone}" channel-name
+// template (with the "Zone" property field defined) and the attributes license enabled. It returns
+// the service, the playbook stub (to assert allocation side effects), and the playbook to pass in.
+func newAllocServiceWithZoneTemplate(incrementResult int64) (*PlaybookRunServiceImpl, *allocPlaybookServiceStub, Playbook) {
+	zoneField := PropertyField{
+		PropertyField: model.PropertyField{
+			ID:   "fld_zone",
+			Name: "Zone",
+			Type: model.PropertyFieldTypeText,
+		},
+	}
+	pb := Playbook{
+		ID:                  "pb_1",
+		RunNumberPrefix:     "INC",
+		ChannelNameTemplate: "{Zone}",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: incrementResult}
+	svc := &PlaybookRunServiceImpl{
+		playbookService: pbStub,
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+	}
+	return svc, pbStub, pb
+}
+
 func TestResolveAndAllocate_HappyPathPrefixed(t *testing.T) {
 	pb := Playbook{ID: "pb_1", RunNumberPrefix: "INC"}
 	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 42}
@@ -259,24 +284,7 @@ func TestResolveAndAllocate_IncrementNotFoundWrapsMalformedRun(t *testing.T) {
 // This test deliberately exercises the licensed path because dry-run only validates
 // property-field placeholders when PlaybookAttributesAllowed() is true.
 func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
-	zoneField := PropertyField{
-		PropertyField: model.PropertyField{
-			ID:   "fld_zone",
-			Name: "Zone",
-			Type: model.PropertyFieldTypeText,
-		},
-	}
-	pb := Playbook{
-		ID:                  "pb_1",
-		RunNumberPrefix:     "INC",
-		ChannelNameTemplate: "{Zone}",
-	}
-	pbStub := &allocPlaybookServiceStub{getResult: pb}
-	svc := &PlaybookRunServiceImpl{
-		playbookService: pbStub,
-		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
-		licenseChecker:  &allocLicenseCheckerWithAttributes{},
-	}
+	svc, pbStub, pb := newAllocServiceWithZoneTemplate(0)
 
 	run := &PlaybookRun{PlaybookID: pb.ID, Name: "test"}
 	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
@@ -294,24 +302,7 @@ func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 // user-supplied value, the template's required property fields are NOT validated, and a sequential
 // ID is still allocated.
 func TestResolveAndAllocate_OverrideBypassesTemplate(t *testing.T) {
-	zoneField := PropertyField{
-		PropertyField: model.PropertyField{
-			ID:   "fld_zone",
-			Name: "Zone",
-			Type: model.PropertyFieldTypeText,
-		},
-	}
-	pb := Playbook{
-		ID:                  "pb_1",
-		RunNumberPrefix:     "INC",
-		ChannelNameTemplate: "{Zone}",
-	}
-	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 7}
-	svc := &PlaybookRunServiceImpl{
-		playbookService: pbStub,
-		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
-		licenseChecker:  &allocLicenseCheckerWithAttributes{},
-	}
+	svc, pbStub, pb := newAllocServiceWithZoneTemplate(7)
 
 	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My manual title", NameTemplateOverride: true}
 	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
@@ -328,24 +319,7 @@ func TestResolveAndAllocate_OverrideBypassesTemplate(t *testing.T) {
 // whitespace is trimmed before allocation, so the stored run name and derived channel name use the
 // trimmed value — matching HasNameOverride() which also trims when deciding to override.
 func TestResolveAndAllocate_OverrideTrimsPaddedName(t *testing.T) {
-	zoneField := PropertyField{
-		PropertyField: model.PropertyField{
-			ID:   "fld_zone",
-			Name: "Zone",
-			Type: model.PropertyFieldTypeText,
-		},
-	}
-	pb := Playbook{
-		ID:                  "pb_1",
-		RunNumberPrefix:     "INC",
-		ChannelNameTemplate: "{Zone}",
-	}
-	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 7}
-	svc := &PlaybookRunServiceImpl{
-		playbookService: pbStub,
-		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
-		licenseChecker:  &allocLicenseCheckerWithAttributes{},
-	}
+	svc, pbStub, pb := newAllocServiceWithZoneTemplate(7)
 
 	run := &PlaybookRun{PlaybookID: pb.ID, Name: "   My manual title   ", NameTemplateOverride: true}
 	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
