@@ -324,6 +324,40 @@ func TestResolveAndAllocate_OverrideBypassesTemplate(t *testing.T) {
 	assert.Equal(t, 1, pbStub.incrementCalled, "counter consumed exactly once")
 }
 
+// TestResolveAndAllocate_OverrideTrimsPaddedName pins that a manual override name with surrounding
+// whitespace is trimmed before allocation, so the stored run name and derived channel name use the
+// trimmed value — matching HasNameOverride() which also trims when deciding to override.
+func TestResolveAndAllocate_OverrideTrimsPaddedName(t *testing.T) {
+	zoneField := PropertyField{
+		PropertyField: model.PropertyField{
+			ID:   "fld_zone",
+			Name: "Zone",
+			Type: model.PropertyFieldTypeText,
+		},
+	}
+	pb := Playbook{
+		ID:                  "pb_1",
+		RunNumberPrefix:     "INC",
+		ChannelNameTemplate: "{Zone}",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 7}
+	svc := &PlaybookRunServiceImpl{
+		playbookService: pbStub,
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+	}
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "   My manual title   ", NameTemplateOverride: true}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err, "override must skip template field validation entirely")
+	assert.Equal(t, "My manual title", run.Name, "run name must be the trimmed user-supplied value")
+	assert.Equal(t, "My manual title", channelName, "channel name must be derived from the trimmed name")
+	assert.Equal(t, int64(7), run.RunNumber, "sequential ID must still be allocated when overriding")
+	assert.Equal(t, "INC-00007", run.SequentialID)
+	assert.Equal(t, 1, pbStub.incrementCalled, "counter consumed exactly once")
+}
+
 // TestResolveAndAllocate_OverrideIgnoredWhenNameEmpty pins that the override flag has no effect
 // when no manual name is supplied — the template is still used to resolve the run name.
 func TestResolveAndAllocate_OverrideIgnoredWhenNameEmpty(t *testing.T) {
