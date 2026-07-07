@@ -269,13 +269,14 @@ const FormatButton = styled.button<{selected: boolean}>`
     gap: 6px;
     padding: 8px 12px;
     border-radius: 4px;
-    border: 1.5px solid ${({selected}) => selected ? 'var(--button-bg, #1c58d9)' : 'rgba(var(--center-channel-color-rgb, 63, 67, 80), 0.16)'};
-    background: ${({selected}) => selected ? 'rgba(var(--button-bg-rgb, 28, 88, 217), 0.08)' : 'transparent'};
-    color: ${({selected}) => selected ? 'var(--button-bg, #1c58d9)' : 'var(--center-channel-color, #3f4350)'};
+    border: 1.5px solid ${({selected}) => (selected ? 'var(--button-bg, #1c58d9)' : 'rgba(var(--center-channel-color-rgb, 63, 67, 80), 0.16)')};
+    background: ${({selected}) => (selected ? 'rgba(var(--button-bg-rgb, 28, 88, 217), 0.08)' : 'transparent')};
+    color: ${({selected}) => (selected ? 'var(--button-bg, #1c58d9)' : 'var(--center-channel-color, #3f4350)')};
     font-size: 14px;
-    font-weight: ${({selected}) => selected ? 600 : 400};
+    font-weight: ${({selected}) => (selected ? 600 : 400)};
     cursor: pointer;
     transition: all 0.1s;
+
     &:hover { background: rgba(var(--button-bg-rgb, 28, 88, 217), 0.08); }
 `;
 

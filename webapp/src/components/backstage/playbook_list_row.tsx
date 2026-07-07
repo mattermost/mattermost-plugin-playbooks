@@ -31,6 +31,7 @@ import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {isCurrentUserAdmin} from 'src/selectors';
 import {Playbook} from 'src/types/playbook';
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {
     DotMenuButton,
@@ -164,6 +165,7 @@ const PlaybookListRow = (props: Props) => {
                 triggerPDFDownload(result);
                 return;
             }
+
             // format === 'pdf'
             try {
                 const result = await exportPlaybookPDF(props.playbook.id, sections);

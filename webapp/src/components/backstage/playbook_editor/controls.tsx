@@ -406,6 +406,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEd
                 triggerPDFDownload(result);
                 return;
             }
+
             // format === 'pdf'
             try {
                 const result = await exportPlaybookPDF(playbook.id, sections);
