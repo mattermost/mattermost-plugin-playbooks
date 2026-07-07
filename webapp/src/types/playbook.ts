@@ -1,6 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {MetricType} from 'src/graphql/generated/graphql';
+import {PropertyField} from 'src/types/properties';
+
+export {MetricType};
+
 export interface Playbook {
     id: string;
     title: string;
@@ -21,7 +26,9 @@ export interface Playbook {
     last_run_at: number;
     members: PlaybookMember[];
     default_playbook_member_role: string;
+    default_playbook_admin_role?: string;
     active_runs: number;
+    admin_only_edit: boolean;
 }
 
 export interface PlaybookMember {
@@ -62,6 +69,12 @@ export interface PlaybookWithChecklist extends Playbook {
 
     channel_mode: string;
     channel_id: string;
+    new_channel_only: boolean;
+    auto_archive_channel: boolean;
+
+    run_number_prefix: string;
+    next_run_number: number;
+    owner_group_only_actions: boolean;
 
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
@@ -70,10 +83,6 @@ export interface PlaybookWithChecklist extends Playbook {
     // Property fields from GraphQL
     propertyFields: PropertyField[];
 }
-
-import {MetricType, PropertyField} from 'src/graphql/generated/graphql';
-
-export {MetricType};
 
 export interface Metric {
     id: string;
@@ -115,6 +124,13 @@ export enum ChecklistItemState {
     Skip = 'skipped',
 }
 
+export const AssigneeTypeOwner = 'owner';
+export const AssigneeTypeCreator = 'creator';
+export const AssigneeTypePropertyUser = 'property_user';
+
+export const isRoleBasedAssigneeType = (type: string): boolean =>
+    type === AssigneeTypeOwner || type === AssigneeTypeCreator || type === AssigneeTypePropertyUser;
+
 export interface ChecklistItem {
     id?: string;
     title: string;
@@ -122,6 +138,7 @@ export interface ChecklistItem {
     state: ChecklistItemState | string;
     state_modified: number;
     assignee_id: string;
+    assignee_type: string;
     assignee_modified: number;
     command: string;
     command_last_run: number;
@@ -131,6 +148,7 @@ export interface ChecklistItem {
     condition_id: string;
     condition_action: string;
     condition_reason: string;
+    assignee_property_field_id?: string;
 }
 
 export interface TaskAction {
@@ -155,6 +173,7 @@ export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 
 // setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
 export const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     ...playbook,
+    auto_archive_channel: playbook.auto_archive_channel ?? false,
     title: playbook.title.trim() || 'Untitled playbook',
     checklists: playbook.checklists.map((checklist) => ({
         ...checklist,
@@ -215,6 +234,12 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
+        run_number_prefix: '',
+        next_run_number: 1,
+        admin_only_edit: false,
+        owner_group_only_actions: false,
+        new_channel_only: false,
+        auto_archive_channel: false,
         propertyFields: [],
     };
 }
@@ -238,9 +263,11 @@ export function emptyChecklistItem(): ChecklistItem {
         state_modified: 0,
         assignee_modified: 0,
         assignee_id: '',
+        assignee_type: '',
         condition_id: '',
         condition_action: '',
         condition_reason: '',
+        assignee_property_field_id: '',
     };
 }
 
@@ -255,9 +282,11 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state_modified: 0,
     assignee_modified: 0,
     assignee_id: '',
+    assignee_type: '',
     condition_id: '',
     condition_action: '',
     condition_reason: '',
+    assignee_property_field_id: '',
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

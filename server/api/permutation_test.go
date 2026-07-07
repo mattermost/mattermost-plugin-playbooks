@@ -18,11 +18,12 @@ func runPermutations[T any](t *testing.T, params T, f func(t *testing.T, params 
 
 	paramsV := reflect.ValueOf(params)
 	paramsT := reflect.TypeOf(params)
-	if paramsV.Kind() == reflect.Ptr {
+	if paramsV.Kind() == reflect.Pointer {
 		if paramsV.Elem().Kind() != reflect.Struct {
 			t.Fatal("params should be a struct or a pointer to a struct")
 		}
 		paramsV = paramsV.Elem()
+		paramsT = paramsT.Elem()
 	} else if paramsV.Kind() != reflect.Struct {
 		t.Fatal("params should be a struct or a pointer to a struct")
 	}
@@ -49,6 +50,10 @@ func runPermutations[T any](t *testing.T, params T, f func(t *testing.T, params 
 		var description string
 		var params T
 		paramsValue := reflect.ValueOf(&params).Elem()
+		if paramsValue.Kind() == reflect.Pointer {
+			paramsValue.Set(reflect.New(paramsValue.Type().Elem()))
+			paramsValue = paramsValue.Elem()
+		}
 
 		// Track which bit of i we're using to decide the value of the field. We don't use
 		// the iterator j directly, since we sometimes skip fields if they have a value tag

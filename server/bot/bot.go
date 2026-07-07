@@ -33,13 +33,13 @@ type Poster interface {
 
 	// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
 	// posting was successful. Often used to include post actions.
-	PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
+	PostMessageWithAttachments(channelID string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error)
 
 	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
-	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, message string) (*model.Post, error)
+	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string) (*model.Post, error)
 
 	// PostCustomMessageWithAttachmentsf posts a custom message with the specified type using format string. Falling back to attachments for mobile.
-	PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
+	PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error)
 
 	// DM posts a DM from the plugin bot to the specified user
 	DM(userID string, post *model.Post) error
@@ -51,7 +51,7 @@ type Poster interface {
 	SystemEphemeralPost(userID, channelID string, post *model.Post)
 
 	// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
-	EphemeralPostWithAttachments(userID, channelID, rootPostID string, attachments []*model.SlackAttachment, format string, args ...interface{})
+	EphemeralPostWithAttachments(userID, channelID, rootPostID string, attachments []*model.MessageAttachment, format string, args ...interface{})
 
 	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID.
 	PublishWebsocketEventToTeam(event string, payload interface{}, teamID string)

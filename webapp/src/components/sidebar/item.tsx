@@ -7,7 +7,7 @@ import classNames from 'classnames';
 
 import styled, {css} from 'styled-components';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {DotMenuButton} from 'src/components/dot_menu';
 
@@ -35,9 +35,9 @@ const Item = (props: ItemProps) => {
                     aria-label={props.areaLabel}
                     to={props.link}
                 >
-                    <Tooltip
+                    <WithTooltip
                         id={`sidebarTooltip_${props.id}`}
-                        content={props.display_name}
+                        title={props.display_name}
                     >
                         <NameIconContainer
                             id={`sidebarItem_${props.id}`}
@@ -47,7 +47,7 @@ const Item = (props: ItemProps) => {
                                 {props.display_name}
                             </ItemDisplayLabel>
                         </NameIconContainer>
-                    </Tooltip>
+                    </WithTooltip>
                     {<HoverMenu>{props.itemMenu}</HoverMenu>}
                 </StyledNavLink>
             }

@@ -29,9 +29,22 @@ export const ApolloWrapper = (props: ApolloWrapperProps) => {
     );
 };
 
+// Lowercase header names so case-variant duplicates collapse into one. Header names are
+// case-insensitive, so this is wire-equivalent.
+function dedupeHeaders(headers: Record<string, string>): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]),
+    );
+}
+
+export function buildQueryFetchOptions(options: any) {
+    const result = Client4.getOptions(options);
+    return {...result, headers: dedupeHeaders(result.headers)};
+}
+
 export function makeGraphqlClient(isDevelopment: boolean) {
     const graphqlFetch = (_: RequestInfo, options: any) => {
-        return fetch(`${getApiUrl()}/query`, Client4.getOptions(options));
+        return fetch(`${getApiUrl()}/query`, buildQueryFetchOptions(options));
     };
     const graphqlClient = new ApolloClient({
         link: new HttpLink({fetch: graphqlFetch}),

@@ -1,0 +1,97 @@
+# Copyright 2026 Mattermost, Inc.
+name: "playwright-e2e-test"
+description: This action runs Playwright e2e integration tests
+
+inputs:
+  ARTIFACT_SUFFIX:
+    description: Optional suffix for artifact names to avoid conflicts
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: ci/setup-go
+      uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+      with:
+        go-version: "${{ env.GO_VERSION }}"
+        cache: false
+
+    - name: ci/setup-node
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      with:
+        node-version-file: ".nvmrc"
+        cache: "npm"
+        cache-dependency-path: |
+          webapp/package-lock.json
+          e2e-tests/playwright/package-lock.json
+
+    - name: ci/cache-node-modules
+      id: cache-node-modules
+      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      with:
+        path: |
+          webapp/node_modules
+          e2e-tests/playwright/node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/playwright/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-
+          ${{ runner.os }}-node-modules-
+
+    - name: ci/restore-postresql
+      uses: docker://postgres:14
+      env:
+        TEST_DATABASE_URL: postgres://mmuser:mostest@postgres:5432/mattermost_test
+        DB_SETUP_SQL_PATH: e2e-tests/playwright/db-setup/mattermost.sql
+      with:
+        entrypoint: ./.github/actions/e2e-test/generate-test-data.sh
+
+    - name: ci/installing-deps
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        NODE_ENV: development
+      run: |
+        cd webapp
+        npm install --ignore-scripts --no-save --legacy-peer-deps
+        cd ../e2e-tests/playwright
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --ignore-scripts --no-save --legacy-peer-deps
+
+    - name: ci/installing-playwright-deps
+      shell: bash
+      env:
+        NODE_ENV: development
+      run: |
+        cd e2e-tests/playwright
+        npx playwright install --with-deps chromium
+
+    - name: ci/install-playbooks
+      env:
+        MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+        MM_ADMIN_USERNAME: sysadmin
+        MM_ADMIN_PASSWORD: Sys@dmin-sample1
+      run: make upload-to-server
+      shell: bash
+
+    - name: ci/run-playwright-tests
+      env:
+        MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+        MM_ADMIN_USERNAME: sysadmin
+        MM_ADMIN_PASSWORD: Sys@dmin-sample1
+        MM_SERVICESETTINGS_EXPERIMENTALSTRICTCSRFENFORCEMENT: "false"
+        MM_SERVICESETTINGS_STRICTCSRFENFORCEMENT: "false"
+        TERM: xterm
+      run: |
+        cd e2e-tests/playwright
+        npm run test
+      shell: bash
+
+    - name: ci/upload-playwright-test-results
+      if: always()
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: playwright-test-results${{ inputs.ARTIFACT_SUFFIX }}
+        path: |
+          e2e-tests/playwright/results/junit
+          e2e-tests/playwright/test-results
+        retention-days: 14 ## No need to keep test results more than 14 days

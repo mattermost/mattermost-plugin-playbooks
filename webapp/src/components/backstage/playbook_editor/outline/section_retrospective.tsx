@@ -43,15 +43,17 @@ const convertToPlaybookWithChecklist = (playbook: FullPlaybook, propertyFields: 
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
+    canEdit?: boolean;
 }
 
-const SectionRetrospective = ({playbook, refetch}: Props) => {
+const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
     const {formatMessage} = useIntl();
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const propertyFields = usePlaybookAttributes(playbook.id);
     const archived = playbook.delete_at !== 0;
+    const inputsDisabled = !playbook.retrospective_enabled || archived || !canEdit;
 
     if (!retrospectiveAccess) {
         return null;
@@ -79,7 +81,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                             retrospectiveReminderIntervalSeconds: seconds,
                         });
                     }}
-                    disabled={!playbook.retrospective_enabled || archived}
+                    disabled={inputsDisabled}
                 />
             </SidebarBlock>
             <SidebarBlock id={'retrospective-metrics'}>
@@ -98,7 +100,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
-                    disabled={!playbook.retrospective_enabled || archived}
+                    disabled={inputsDisabled}
                 />
             </SidebarBlock>
             <SidebarBlock>
@@ -117,7 +119,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                             retrospectiveTemplate: value,
                         });
                     }}
-                    disabled={!playbook.retrospective_enabled || archived}
+                    disabled={inputsDisabled}
                 />
             </SidebarBlock>
         </Card>

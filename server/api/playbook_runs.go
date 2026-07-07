@@ -83,20 +83,25 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
+	// These routes perform their own per-handler permission check (RunFinish / RunChangeOwner)
+	// which is stricter than the checkEditPermissions middleware (RunManageProperties).
+	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
+	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
+
+	playbookRunRouter.HandleFunc("/finish-dialog", withContext(handler.finishDialog)).Methods(http.MethodPost)
+
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
-	playbookRunRouterAuthorized.HandleFunc("", withContext(handler.updatePlaybookRun)).Methods(http.MethodPatch)
-	playbookRunRouterAuthorized.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
-	playbookRunRouterAuthorized.HandleFunc("/status", withContext(handler.status)).Methods(http.MethodPost)
-	playbookRunRouterAuthorized.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
-	playbookRunRouterAuthorized.HandleFunc("/finish-dialog", withContext(handler.finishDialog)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/update-status-dialog", withContext(handler.updateStatusDialog)).Methods(http.MethodPost)
+	playbookRunRouterAuthorized.HandleFunc("", withContext(handler.updatePlaybookRun)).Methods(http.MethodPatch)
+	playbookRunRouterAuthorized.HandleFunc("/status", withContext(handler.status)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", withContext(handler.reminderButtonUpdate)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder", withContext(handler.reminderReset)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", withContext(handler.noRetrospectiveButton)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
-	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/retrospective-enabled", withContext(handler.toggleRetrospective)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel/{channel_id:[A-Za-z0-9]+}").Subrouter()
 	channelRouter.HandleFunc("", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -116,17 +121,21 @@ func NewPlaybookRunHandler(
 	checklistRouter.HandleFunc("/restore", withContext(handler.checklistRestore)).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/duplicate", withContext(handler.duplicateChecklist)).Methods(http.MethodPost)
 
-	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
-	checklistItem.HandleFunc("", withContext(handler.itemDelete)).Methods(http.MethodDelete)
-	checklistItem.HandleFunc("", withContext(handler.itemEdit)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/skip", withContext(handler.itemSkip)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/restore", withContext(handler.itemRestore)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/state", withContext(handler.itemSetState)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
-	checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
-	checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
+	registerChecklistItemRoutes := func(checklistItem *mux.Router) {
+		checklistItem.HandleFunc("", withContext(handler.itemDelete)).Methods(http.MethodDelete)
+		checklistItem.HandleFunc("", withContext(handler.itemEdit)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/skip", withContext(handler.itemSkip)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/restore", withContext(handler.itemRestore)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/state", withContext(handler.itemSetState)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
+		checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
+		checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
+	}
+
+	registerChecklistItemRoutes(checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter())
+	registerChecklistItemRoutes(checklistRouter.PathPrefix("/items/{item:[0-9]+}").Subrouter())
 
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
 	retrospectiveRouter.HandleFunc("", withContext(handler.updateRetrospective)).Methods(http.MethodPost)
@@ -147,6 +156,30 @@ func NewPlaybookRunHandler(
 	return handler
 }
 
+func isRunRestoreRequest(r *http.Request) bool {
+	if r.Method != http.MethodPut {
+		return false
+	}
+	vars := mux.Vars(r)
+	_, hasChecklist := vars["checklist"]
+	return !hasChecklist && strings.HasSuffix(r.URL.Path, "/restore")
+}
+
+func isRetrospectiveRequest(r *http.Request) bool {
+	switch r.Method {
+	case http.MethodPost:
+		return strings.Contains(r.URL.Path, "/retrospective") || strings.HasSuffix(r.URL.Path, "/no-retrospective-button")
+	case http.MethodPut:
+		return strings.HasSuffix(r.URL.Path, "/retrospective-enabled")
+	default:
+		return false
+	}
+}
+
+func isExemptFromActiveRunCheck(r *http.Request) bool {
+	return isRunRestoreRequest(r) || isRetrospectiveRequest(r)
+}
+
 func (h *PlaybookRunHandler) checkEditPermissions(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := getLogger(r)
@@ -161,6 +194,13 @@ func (h *PlaybookRunHandler) checkEditPermissions(next http.Handler) http.Handle
 
 		if !h.PermissionsCheck(w, logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
 			return
+		}
+
+		if !isExemptFromActiveRunCheck(r) {
+			if err := app.EnsureRunIsActive(playbookRun); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "cannot modify a finished run", err)
+				return
+			}
 		}
 
 		next.ServeHTTP(w, r)
@@ -197,6 +237,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
 		app.RunSourcePost,
+		playbookRunCreateOptions.PropertyValues,
 	)
 	if errors.Is(err, app.ErrNoPermissions) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
@@ -225,25 +266,13 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	userID := r.Header.Get("Mattermost-User-ID")
 	fieldsToUpdate := map[string]interface{}{}
 
-	oldPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
 		return
 	}
 
 	var updates client.PlaybookRunUpdateOptions
-	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
-		return
-	}
-
-	// Prevent updates on finished runs
-	if oldPlaybookRun.CurrentStatus == app.StatusFinished && (updates.Name != nil || updates.Summary != nil) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", app.ErrPlaybookRunNotActive)
 		return
 	}
 
@@ -327,17 +356,17 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
-			OwnerUserID: request.UserId,
-			TeamID:      request.TeamId,
-			ChannelID:   channelID,
-			Name:        name,
-			PostID:      state.PostID,
-			PlaybookID:  playbookID,
-			Type:        runType,
+			TeamID:     request.TeamId,
+			ChannelID:  channelID,
+			Name:       name,
+			PostID:     state.PostID,
+			PlaybookID: playbookID,
+			Type:       runType,
 		},
 		request.UserId,
 		nil,
 		app.RunSourceDialog,
+		nil,
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
@@ -464,7 +493,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string) (*app.PlaybookRun, error) {
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string, initialPropertyValues map[string]json.RawMessage) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -478,11 +507,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "must provide team or channel to create playbook run")
 	}
 
-	if playbookRun.OwnerUserID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
-	}
-
-	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
+	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && playbookRun.PlaybookID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
@@ -531,7 +556,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbook = &pb
 
 		if playbook.DeleteAt != 0 {
-			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook is archived, cannot create a new run using an archived playbook")
 		}
 
 		if err = h.permissions.RunCreate(userID, *playbook, playbookRun.TeamID); err != nil {
@@ -544,6 +569,12 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		if createPublicRun == nil {
 			public = pb.CreatePublicPlaybookRun
+		}
+
+		// Playbook is now loaded; reject an empty name only when no ChannelNameTemplate will generate one
+		// and no existing channel is being linked (ChannelID != "" means no new channel is created).
+		if strings.TrimSpace(playbookRun.Name) == "" && pb.ChannelNameTemplate == "" && playbookRun.ChannelID == "" {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 		}
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
@@ -603,7 +634,20 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+	if playbook != nil {
+		// Pre-set ReporterUserID so {CREATOR} resolves during template resolution.
+		// DefaultOwnerID fallback is applied inside ResolveRunCreationParams (only when playbook != nil).
+		playbookRun.ReporterUserID = userID
+		if err = h.playbookRunService.ResolveRunCreationParams(&playbookRun, playbook, initialPropertyValues, source); err != nil {
+			return nil, errors.Wrap(err, "failed to resolve run creation params")
+		}
+	}
+
+	if playbookRun.OwnerUserID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
+	}
+
+	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public, source, initialPropertyValues)
 	if err != nil {
 		return nil, err
 	}
@@ -806,6 +850,20 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunChangeOwner(userID, vars["id"])) {
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(vars["id"])
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+		return
+	}
+
 	var params struct {
 		OwnerID string `json:"owner_id"`
 	}
@@ -815,6 +873,10 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 	}
 
 	if err := h.playbookRunService.ChangeOwner(vars["id"], userID, params.OwnerID); err != nil {
+		if errors.Is(err, app.ErrInvalidOwner) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -849,8 +911,11 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 // updateStatus returns a publicMessage and an internal error
 func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
 
-	// user must be a participant to be able to post an update
-	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
+	if options.FinishRun {
+		if err := h.permissions.RunFinish(userID, playbookRunID); err != nil {
+			return "Not authorized to finish this run", err
+		}
+	} else if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
 		return "Not authorized", err
 	}
 
@@ -880,10 +945,14 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 	return "", nil
 }
 
-// updateStatusD handles the POST /runs/{id}/finish endpoint, user has edit permissions
+// finish handles the PUT /runs/{id}/finish endpoint
 func (h *PlaybookRunHandler) finish(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunFinish(userID, playbookRunID)) {
+		return
+	}
 
 	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
@@ -944,6 +1013,10 @@ func (h *PlaybookRunHandler) restore(c *Context, w http.ResponseWriter, r *http.
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunRestore(userID, playbookRunID)) {
+		return
+	}
+
 	if err := h.playbookRunService.RestorePlaybookRun(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -980,25 +1053,36 @@ func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWrite
 		return
 	}
 
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+		return
+	}
+
 	if err := h.playbookRunService.RequestJoinChannel(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 }
 
-// updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
+// finishDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
 // user submits the Finish Run dialog.
 func (h *PlaybookRunHandler) finishDialog(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRun, incErr := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if incErr != nil {
-		h.HandleError(w, c.logger, incErr)
-		return
-	}
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
+	if err := h.permissions.RunFinish(userID, playbookRunID); err != nil {
+		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
+			ReturnJSON(w, &model.SubmitDialogResponse{
+				Error: "You don't have permission to finish this run.",
+			}, http.StatusOK)
+		} else {
+			h.HandleError(w, c.logger, err)
+		}
 		return
 	}
 
@@ -1028,6 +1112,40 @@ func (h *PlaybookRunHandler) toggleStatusUpdates(c *Context, w http.ResponseWrit
 
 	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
 
+}
+
+func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var payload struct {
+		RetrospectiveEnabled *bool `json:"retrospective_enabled"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	if payload.RetrospectiveEnabled == nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "retrospective_enabled is required", errors.New("missing retrospective_enabled"))
+		return
+	}
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunToggleRetrospective(userID, playbookRunID)) {
+		return
+	}
+
+	if err := h.playbookRunService.ToggleRetrospectiveEnabled(playbookRunID, userID, *payload.RetrospectiveEnabled); err != nil {
+		if errors.Is(err, app.ErrChannelArchived) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot toggle retrospective for an archived channel", err)
+			return
+		}
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a
@@ -1076,7 +1194,18 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	}
 
 	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
+		if options.FinishRun && (errors.Is(internalErr, app.ErrNoPermissions) || errors.Is(internalErr, app.ErrNotFound)) {
+			// FinishRun permission failures must return 403 so clients can enforce OwnerGroupOnlyActions.
+			// ErrNotFound also returns 403 to avoid disclosing run existence to unauthorized callers.
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
+		} else if errors.Is(internalErr, app.ErrNoPermissions) || errors.Is(internalErr, app.ErrNotFound) {
+			// Dialog handlers return HTTP 200 with SubmitDialogResponse so the dialog can show errors.
+			ReturnJSON(w, &model.SubmitDialogResponse{
+				Error: publicMsg,
+			}, http.StatusOK)
+		} else {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
+		}
 		return
 	}
 
@@ -1370,16 +1499,64 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		AssigneeID string `json:"assignee_id"`
+		AssigneeID              string `json:"assignee_id"`
+		AssigneeType            string `json:"assignee_type"`
+		AssigneePropertyFieldID string `json:"assignee_property_field_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
 		return
 	}
 
-	if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
-		h.HandleError(w, c.logger, err)
+	params.AssigneeID = strings.TrimSpace(params.AssigneeID)
+	params.AssigneeType = strings.TrimSpace(params.AssigneeType)
+	params.AssigneePropertyFieldID = strings.TrimSpace(params.AssigneePropertyFieldID)
+
+	// At most one of the three assignment modes may be set in a single request.
+	modes := 0
+	if params.AssigneeID != "" {
+		modes++
+	}
+	if params.AssigneeType != "" {
+		modes++
+	}
+	if params.AssigneePropertyFieldID != "" {
+		modes++
+	}
+	if modes > 1 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assignee_id, assignee_type, and assignee_property_field_id are mutually exclusive", errors.New("multiple assignee fields set"))
 		return
+	}
+
+	switch {
+	case params.AssigneePropertyFieldID != "":
+		if !model.IsValidId(params.AssigneePropertyFieldID) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_property_field_id", errors.New("invalid id format"))
+			return
+		}
+		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
+			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
+			return
+		}
+	case params.AssigneeType != "":
+		if err := h.playbookRunService.SetRoleAssignee(id, userID, params.AssigneeType, checklistNum, itemNum); err != nil {
+			if errors.Is(err, app.ErrMalformedPlaybookRun) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
+			return
+		}
+	default:
+		// Empty body / empty assignee_id keeps the existing "clear assignee" semantics.
+		if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
 	}
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
@@ -2169,6 +2346,16 @@ func (h *PlaybookRunHandler) setRunPropertyValue(c *Context, w http.ResponseWrit
 
 	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
 		return
 	}
 

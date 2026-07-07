@@ -29,6 +29,7 @@ interface Props {
     playbookID: string
     playbookMetrics: Metric[]
     stats: PlaybookStats;
+    canEdit?: boolean;
 }
 
 type Attrs = HTMLAttributes<HTMLElement>;
@@ -37,6 +38,7 @@ const PlaybookKeyMetrics = ({
     playbookID,
     playbookMetrics,
     stats,
+    canEdit = true,
     ...attrs
 }: Props & Attrs) => {
     const allowStatsView = useAllowPlaybookAndRunMetrics();
@@ -57,7 +59,7 @@ const PlaybookKeyMetrics = ({
             </PlaceholderRow>
         );
     } else if (playbookMetrics.length === 0) {
-        content = <NoMetricsPlaceholder/>;
+        content = <NoMetricsPlaceholder canEdit={canEdit}/>;
     } else {
         content = (
             <>

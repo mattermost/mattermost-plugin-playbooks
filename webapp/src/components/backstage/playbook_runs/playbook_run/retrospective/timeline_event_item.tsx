@@ -11,6 +11,8 @@ import {DateTime} from 'luxon';
 
 import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {
@@ -28,7 +30,6 @@ import {browserHistory, formatText, messageHtmlToComponent} from 'src/webapp_glo
 import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import Tooltip from 'src/components/widgets/tooltip';
 
 const Circle = styled.div`
     position: absolute;
@@ -279,6 +280,10 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdatesDisabled:
             return formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.RetrospectiveEnabled:
+            return formatMessage({defaultMessage: 'Retrospective enabled by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.RetrospectiveDisabled:
+            return formatMessage({defaultMessage: 'Retrospective disabled by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.PropertyChanged: {
             const details = parsedDetails as PropertyChangedDetails;
             if (details.old_value_display === null && details.new_value_display !== null) {
@@ -331,6 +336,8 @@ const TimelineEventItem = (props: Props) => {
             return 'icon-cancel';
         case TimelineEventType.StatusUpdatesEnabled:
         case TimelineEventType.StatusUpdatesDisabled:
+        case TimelineEventType.RetrospectiveEnabled:
+        case TimelineEventType.RetrospectiveDisabled:
             return 'icon-clock-outline';
         case TimelineEventType.PropertyChanged:
             return 'icon-pencil-outline';
@@ -387,9 +394,9 @@ const TimelineEventItem = (props: Props) => {
             <SummaryContainer>
                 <TimeStamp dateTime={eventTime.setZone('Etc/UTC').toISO() ?? undefined}>
                     {eventTime.setZone('Etc/UTC').toLocaleString(DATETIME_FORMAT)}
-                    <Tooltip
+                    <WithTooltip
                         id={`timeline-${props.event.id}`}
-                        content={(
+                        title={(
                             <>
                                 {eventTime.toLocaleString(DATETIME_FORMAT)}
                                 <br/>
@@ -397,8 +404,8 @@ const TimelineEventItem = (props: Props) => {
                             </>
                         )}
                     >
-                        <ClockOutlineIcon size={12}/>
-                    </Tooltip>
+                        <span tabIndex={0}><ClockOutlineIcon size={12}/></span>
+                    </WithTooltip>
                 </TimeStamp>
                 <SummaryTitle
                     onClick={(e) => props.editable && !statusPostDeleted && goToPost(e, props.event.post_id)}

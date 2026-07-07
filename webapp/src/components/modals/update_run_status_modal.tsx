@@ -18,6 +18,8 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {ApolloProvider, useQuery} from '@apollo/client';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
@@ -32,13 +34,15 @@ import {
 } from 'src/components/datetime_input';
 
 import {useFormattedUsernames, usePost} from 'src/hooks';
+import {useRun, useUserDisplayNameMap} from 'src/hooks/general';
+import {usePlaybook} from 'src/hooks/crud';
+import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
 import {nearest} from 'src/utils';
-import Tooltip from 'src/components/widgets/tooltip';
 
 import WarningIcon from 'src/components/assets/icons/warning_icon';
 
@@ -52,6 +56,9 @@ import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {getFragmentData, graphql} from 'src/graphql/generated';
 import {DefaultMessageFragment, ReminderTimerFragment} from 'src/graphql/generated/graphql';
+import {resolveTemplatePreview} from 'src/utils/template_utils';
+import {PropertyField} from 'src/types/properties';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -91,7 +98,68 @@ const runStatusModalQueryDocument = graphql(/* GraphQL */`
     }
 `);
 
-const UpdateRunStatusModal = ({
+function buildRunTemplateContext(run: PlaybookRun, userMap: Record<string, string>) {
+    const fields = (run.property_fields ?? []) as PropertyField[];
+    const values: Record<string, unknown> = {};
+    for (const pv of run.property_values ?? []) {
+        if (pv.field_id && pv.value !== undefined) {
+            values[pv.field_id] = pv.value;
+        }
+    }
+    return {
+        fields,
+        values,
+        seqValue: run.sequential_id || (run.run_number == null ? '' : String(run.run_number)),
+        ownerName: (run.owner_user_id && userMap[run.owner_user_id]) || run.owner_user_id || '',
+        creatorName: (run.reporter_user_id && userMap[run.reporter_user_id]) || run.reporter_user_id || '',
+    };
+}
+
+// Returns the resolved message, or '' when resolution produces no change (meaning no
+// known tokens were present, so showing a preview would add no value).
+export function computeStatusMessagePreview(
+    message: string,
+    run: PlaybookRun,
+    userMap: Record<string, string>,
+): string {
+    const ctx = buildRunTemplateContext(run, userMap);
+    const resolved = resolveTemplatePreview(message, ctx.fields, ctx.values, {
+        SEQ: ctx.seqValue,
+        OWNER: ctx.ownerName,
+        CREATOR: ctx.creatorName,
+    }, userMap);
+
+    // Only show preview when resolution actually changed something —
+    // if the message has {foo} that matches no known token or field,
+    // the resolved string equals the input and a preview adds no value.
+    return resolved === message ? '' : resolved;
+}
+
+function useStatusMessagePreview(playbookRunId: string, message: string | undefined): string {
+    const [run] = useRun(playbookRunId);
+    const userMap = useUserDisplayNameMap();
+
+    const derived = useMemo(() => {
+        if (!run) {
+            return null;
+        }
+        return buildRunTemplateContext(run, userMap);
+    }, [run, userMap]);
+
+    return useMemo(() => {
+        if (!message || !derived) {
+            return '';
+        }
+        const resolved = resolveTemplatePreview(message, derived.fields, derived.values, {
+            SEQ: derived.seqValue,
+            OWNER: derived.ownerName,
+            CREATOR: derived.creatorName,
+        }, userMap);
+        return resolved === message ? '' : resolved;
+    }, [message, derived, userMap]);
+}
+
+export const UpdateRunStatusModal = ({
     playbookRunId,
     channelId,
     hasPermission,
@@ -103,6 +171,20 @@ const UpdateRunStatusModal = ({
     const dispatch = useAppDispatch();
     const {formatMessage, formatList} = useIntl();
     const currentUserId = useAppSelector(getCurrentUserId);
+
+    // Determine whether the OwnerGroupOnlyActions restriction blocks this user from finishing
+    // the run, mirroring the gating used by the standalone Finish controls. When blocked we hide
+    // the "Also mark the run as finished" checkbox so the user cannot trigger a finish that the
+    // server would reject.
+    const [restRun] = useRun(playbookRunId);
+    const [playbook] = usePlaybook(restRun?.playbook_id);
+
+    // `usePlaybook(undefined)` resolves to null while the run is still loading, so treat both
+    // null and undefined as "not yet known" — passing undefined keeps the checkbox hidden during
+    // load (the hook blocks on undefined) and prevents a flash of the checkbox for a blocked user.
+    const ownerGroupOnlyActions = playbook == null ? undefined : (playbook.owner_group_only_actions ?? false);
+    const isOwner = restRun?.owner_user_id === currentUserId;
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
     const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
@@ -124,8 +206,13 @@ const UpdateRunStatusModal = ({
     const [showUnsavedRoute, setShowUnsaveRoute] = useState(false);
     const [finishRun, setFinishRun] = useState(providedFinishRunChecked || false);
 
-    const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), finishRun, providedReminder);
-    const isReminderValid = finishRun || (reminder && reminder > 0);
+    // Enforce the owner-only gate at the logic level, not just by hiding the checkbox: a blocked
+    // user must never reach the finish path even if `finishRun` was seeded from props or the
+    // cancel-reopen round trip.
+    const effectiveFinishRun = !blockedByOwnerOnly && finishRun;
+
+    const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), effectiveFinishRun, providedReminder);
+    const isReminderValid = effectiveFinishRun || (reminder && reminder > 0);
     let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
     if (!reminder || reminder === 0) {
         warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
@@ -156,6 +243,8 @@ const UpdateRunStatusModal = ({
         }) : '';
     };
 
+    const messagePreview = useStatusMessagePreview(playbookRunId, message);
+
     const pendingChanges = !(providedMessage === message || message === defaultMessage || message === '');
 
     const onTentativeHide = () => {
@@ -177,7 +266,7 @@ const UpdateRunStatusModal = ({
         if (hasPermission && message?.trim() && currentUserId && channelId) {
             postStatusUpdate(
                 playbookRunId,
-                {message, reminder, finishRun},
+                {message, reminder, finishRun: effectiveFinishRun},
                 {user_id: currentUserId, channel_id: channelId, team_id: run?.teamID ?? ''}
             );
             onActualHide();
@@ -185,7 +274,7 @@ const UpdateRunStatusModal = ({
     };
 
     const onSubmit = () => {
-        if (finishRun) {
+        if (effectiveFinishRun) {
             onActualHide();
 
             dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
@@ -195,7 +284,7 @@ const UpdateRunStatusModal = ({
                 confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
                 onConfirm,
                 onCancel: () => {
-                    dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, finishRun));
+                    dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, effectiveFinishRun));
                     setShowModal(true);
                 },
             })));
@@ -231,20 +320,20 @@ const UpdateRunStatusModal = ({
         }, {
             OverviewLink,
             ChannelsTooltip: (chunks: React.ReactNode) => (
-                <Tooltip
+                <WithTooltip
                     id={`${ID}_broadcast_channels_tooltip`}
-                    content={generateTooltipText(broadcastChannelNames, broadcastChannelCount)}
+                    title={generateTooltipText(broadcastChannelNames, broadcastChannelCount)}
                 >
                     <TooltipContent tabIndex={0}>{chunks}</TooltipContent>
-                </Tooltip>
+                </WithTooltip>
             ),
             FollowersTooltip: (chunks: React.ReactNode) => (
-                <Tooltip
+                <WithTooltip
                     id={`${ID}_broadcast_followers_tooltip`}
-                    content={generateTooltipText(followerNames, followersChannelCount)}
+                    title={generateTooltipText(followerNames, followersChannelCount)}
                 >
                     <TooltipContent tabIndex={1}>{chunks}</TooltipContent>
-                </Tooltip>
+                </WithTooltip>
             ),
             i: (x: React.ReactNode) => <i>{x}</i>,
             runName: run?.name || '',
@@ -268,6 +357,11 @@ const UpdateRunStatusModal = ({
                 setValue={setMessage}
                 channelId={channelId}
             />
+            {messagePreview && (
+                <MessagePreview data-testid='status-message-preview'>
+                    {formatMessage({id: 'playbooks.update_run_status_modal.message_preview', defaultMessage: 'Resolves to: {preview}'}, {preview: messagePreview})}
+                </MessagePreview>
+            )}
             <Label>
                 {formatMessage({defaultMessage: 'Timer for next update'})}
             </Label>
@@ -320,7 +414,7 @@ const UpdateRunStatusModal = ({
                 autoCloseOnConfirmButton={false}
                 isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && isReminderValid)}
                 id={ID}
-                footer={footer}
+                footer={blockedByOwnerOnly ? undefined : footer}
                 components={{FooterContainer}}
             >
                 {hasPermission ? form : warning}
@@ -497,6 +591,16 @@ const WarningBlock = styled.div`
 const WarningLine = styled.p`
     margin-top: 0.6rem;
     color: var(--error-text);
+`;
+
+const MessagePreview = styled.div`
+    margin-top: 4px;
+    margin-bottom: 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    line-height: 16px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 `;
 
 const FooterContainer = styled.div`

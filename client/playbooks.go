@@ -180,7 +180,7 @@ func (s *PlaybooksService) Duplicate(ctx context.Context, playbookID string) (st
 // Imports a playbook. Returns the id of the newly created playbook
 func (s *PlaybooksService) Import(ctx context.Context, toImport []byte, team string) (string, error) {
 	url := "playbooks/import?team_id=" + team
-	u, err := s.client.BaseURL.Parse(buildAPIURL(url))
+	u, err := s.client.BaseURL.Parse(s.client.buildAPIURL(url))
 	if err != nil {
 		return "", errors.Wrapf(err, "invalid endpoint %s", url)
 	}
@@ -346,4 +346,28 @@ func (s *PlaybooksService) DeletePropertyField(ctx context.Context, playbookID, 
 	resp.Body.Close()
 
 	return nil
+}
+
+// ReorderPropertyFieldsRequest is the body for the reorder endpoint.
+type ReorderPropertyFieldsRequest struct {
+	FieldID        string `json:"field_id"`
+	TargetPosition int    `json:"target_position"`
+}
+
+// ReorderPropertyFields moves a property field to a new position.
+func (s *PlaybooksService) ReorderPropertyFields(ctx context.Context, playbookID string, req ReorderPropertyFieldsRequest) ([]PropertyField, error) {
+	reorderURL := fmt.Sprintf("playbooks/%s/property_fields/reorder", playbookID)
+	httpReq, err := s.client.newAPIRequest(http.MethodPost, reorderURL, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var fields []PropertyField
+	resp, err := s.client.do(ctx, httpReq, &fields)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return fields, nil
 }

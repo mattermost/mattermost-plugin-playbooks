@@ -9,11 +9,12 @@ import {useIntl} from 'react-intl';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {CheckAllIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useTextOverflow} from 'src/hooks';
 import {useCanModifyRun} from 'src/hooks/run_permissions';
-import Tooltip from 'src/components/widgets/tooltip';
 import Dropdown from 'src/components/dropdown';
 import {DropdownMenu, TitleButton} from 'src/components/dot_menu';
 
@@ -46,6 +47,7 @@ import {
     RestoreRunMenuItem,
     RunActionsMenuItem,
     SaveAsPlaybookMenuItem,
+    ToggleRunRetrospectiveMenuItem,
     ToggleRunStatusUpdateMenuItem,
 } from './controls';
 
@@ -65,9 +67,10 @@ interface Props {
     toggleFavorite: () => void;
     onRenameClick: () => void;
     location?: ContextMenuLocation;
+    ownerGroupOnlyActions?: boolean;
 }
 
-export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick, location = CONTEXT_MENU_LOCATION.BACKSTAGE}: Props) => {
+export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick, location = CONTEXT_MENU_LOCATION.BACKSTAGE, ownerGroupOnlyActions}: Props) => {
     const dispatch = useAppDispatch();
     const currentUserId = useAppSelector(getCurrentUserId);
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
@@ -116,12 +119,12 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const menuButton = (
         <MenuButtonWrapper>
             {isTitleOverflowing ? (
-                <Tooltip
+                <WithTooltip
                     id={`run-title-tooltip-${playbookRun.id}`}
-                    content={playbookRun.name}
+                    title={playbookRun.name}
                 >
                     {titleButton}
-                </Tooltip>
+                </WithTooltip>
             ) : titleButton}
         </MenuButtonWrapper>
     );
@@ -173,16 +176,25 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                         playbookRun={playbookRun}
                         role={role}
                         location={location}
+                        ownerGroupOnlyActions={ownerGroupOnlyActions}
+                        isOwner={playbookRun.owner_user_id === currentUserId}
                     />
                     <RestoreRunMenuItem
                         playbookRun={playbookRun}
                         role={role}
                         location={location}
+                        ownerGroupOnlyActions={ownerGroupOnlyActions}
+                        isOwner={playbookRun.owner_user_id === currentUserId}
                     />
                     <ToggleRunStatusUpdateMenuItem
                         playbookRun={playbookRun}
                         role={role}
                     />
+                    {location !== CONTEXT_MENU_LOCATION.RHS && (
+                        <ToggleRunRetrospectiveMenuItem
+                            playbookRun={playbookRun}
+                        />
+                    )}
                     <LeaveRunMenuItem
                         isFollowing={isFollowing}
                         role={role}

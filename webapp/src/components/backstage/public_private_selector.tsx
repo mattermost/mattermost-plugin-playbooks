@@ -8,8 +8,9 @@ import styled from 'styled-components';
 
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAllowPrivatePlaybooks} from 'src/hooks';
-import Tooltip from 'src/components/widgets/tooltip';
 
 type Props = {
     public: boolean
@@ -173,12 +174,12 @@ const PrivateButton = (props: {public: boolean, publicButtonDisabled: boolean, p
     }
 
     return (
-        <Tooltip
+        <WithTooltip
             id={'private-playbooks-upgrade-badge'}
-            content={formatMessage({defaultMessage: 'Private playbooks are only available in Mattermost Enterprise'})}
+            title={formatMessage({defaultMessage: 'Private playbooks are only available in Mattermost Enterprise'})}
         >
             {button}
-        </Tooltip>
+        </WithTooltip>
     );
 };
 

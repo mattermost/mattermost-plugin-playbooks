@@ -4,8 +4,8 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import styled from 'styled-components';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {DateTime} from 'luxon';
 
 import {
@@ -15,14 +15,12 @@ import {
     FlagOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
-import {useAppDispatch} from 'src/hooks/redux';
-
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
-import {finishRun} from 'src/actions';
+import {useOnFinishRun} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
-import {OVERLAY_DELAY} from 'src/constants';
+import {useIsBlockedByOwnerOnlyForFinishRestore, useIsSystemAdmin} from 'src/hooks/permissions';
 
 import {ChecklistParent} from './rhs_checklist_list';
 
@@ -37,6 +35,8 @@ interface RHSFooterProps {
     showParticipateConfirm: () => void;
     handleResume: () => void;
     onBackClick?: () => void;
+    ownerGroupOnlyActions?: boolean;
+    isOwner?: boolean;
 }
 
 const RHSFooter = ({
@@ -50,67 +50,74 @@ const RHSFooter = ({
     showParticipateConfirm,
     handleResume,
     onBackClick,
+    ownerGroupOnlyActions,
+    isOwner,
 }: RHSFooterProps) => {
     const {formatMessage} = useIntl();
-    const dispatch = useAppDispatch();
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
+    const isSystemAdmin = useIsSystemAdmin();
+    const onFinishRun = useOnFinishRun(playbookRun, 'rhs');
 
     // Only show footers in RHS
     if (parentContainer !== ChecklistParent.RHS || !playbookRun) {
         return null;
     }
 
-    // Priority 1: Show ParticipatePrompt if active and not a participant
-    if (active && !isParticipant) {
+    // System admins bypass the participate gate — they should see action controls directly.
+    if (active && !isParticipant && !isSystemAdmin) {
         return (
             <ParticipatePrompt>
                 <ParticipateContent>
                     <ParticipateText>{formatMessage({defaultMessage: 'Join to make changes or interact'})}</ParticipateText>
                     <ParticipateRightWrapper>
-                        <OverlayTrigger
-                            placement='top'
-                            delay={OVERLAY_DELAY}
-                            overlay={
-                                <Tooltip id='participate-tooltip'>
-                                    {formatMessage({defaultMessage: 'Join as a participant'})}
-                                </Tooltip>
-                            }
+                        <WithTooltip
+                            id='participate-tooltip'
+                            title={formatMessage({defaultMessage: 'Join as a participant'})}
                         >
-                            <ParticipateButton onClick={showParticipateConfirm}>
+                            <PrimaryButton
+                                size='sm'
+                                onClick={showParticipateConfirm}
+                            >
                                 <AccountPlusOutlineIcon size={16}/>
                                 {formatMessage({defaultMessage: 'Join'})}
-                            </ParticipateButton>
-                        </OverlayTrigger>
+                            </PrimaryButton>
+                        </WithTooltip>
                     </ParticipateRightWrapper>
                 </ParticipateContent>
             </ParticipatePrompt>
         );
     }
 
-    // Priority 2: Show FinishPrompt if active and can modify
-    if (active && canModify) {
+    if (active && (canModify || isSystemAdmin) && !blockedByOwnerOnly) {
         return (
-            <FinishPrompt>
+            <FinishPrompt data-testid='rhs-finish-section'>
                 <FinishContent>
                     <FinishIconWrapper>
                         <FlagOutlineIcon size={24}/>
                     </FinishIconWrapper>
                     <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
                     <FinishRightWrapper>
-                        <FinishButton
-                            onClick={() => {
-                                dispatch(finishRun(playbookRun.team_id, playbookRun.id));
-                            }}
+                        <TertiaryButton
+                            size='sm'
+                            onClick={onFinishRun}
                         >
                             <CheckIcon size={16}/>
                             {formatMessage({defaultMessage: 'Finish'})}
-                        </FinishButton>
+                        </TertiaryButton>
                     </FinishRightWrapper>
                 </FinishContent>
             </FinishPrompt>
         );
     }
 
-    // Priority 3: Show FinishedFooter if finished
+    let resumeTooltipMsg: string;
+    if (blockedByOwnerOnly) {
+        resumeTooltipMsg = formatMessage({defaultMessage: 'Only the run owner can restore this run'});
+    } else if (playbookRun.type === PlaybookRunType.ChannelChecklist) {
+        resumeTooltipMsg = formatMessage({defaultMessage: 'Join as a participant to resume'});
+    } else {
+        resumeTooltipMsg = formatMessage({defaultMessage: 'Join as a participant to restart'});
+    }
     if (finished) {
         return (
             <FinishedFooter>
@@ -138,40 +145,36 @@ const RHSFooter = ({
                         </FinishedTime>
                     </FinishedNotice>
                     <FinishedRightWrapper>
-                        {canRestore ? (
-                            <ResumeButton
+                        {(canRestore || isSystemAdmin) && !blockedByOwnerOnly ? (
+                            <TertiaryButton
+                                size='sm'
                                 onClick={handleResume}
                                 disabled={false}
                             >
                                 {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
                                 }
-                            </ResumeButton>
+                            </TertiaryButton>
                         ) : (
-                            <OverlayTrigger
-                                placement='top'
-                                delay={OVERLAY_DELAY}
-                                overlay={
-                                    <Tooltip id='resume-disabled-tooltip'>
-                                        {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to restart'})
-                                        }
-                                    </Tooltip>
-                                }
+                            <WithTooltip
+                                id='resume-disabled-tooltip'
+                                title={resumeTooltipMsg}
                             >
                                 <ResumeButtonWrapper>
-                                    <ResumeButton
+                                    <TertiaryButton
+                                        size='sm'
                                         onClick={handleResume}
                                         disabled={true}
                                     >
                                         {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
                                         }
-                                    </ResumeButton>
+                                    </TertiaryButton>
                                 </ResumeButtonWrapper>
-                            </OverlayTrigger>
+                            </WithTooltip>
                         )}
                     </FinishedRightWrapper>
                 </FinishedIndicator>
                 <DoneButtonContainer>
-                    <StyledPrimaryButton
+                    <PrimaryButton
                         onClick={() => {
                             if (onBackClick) {
                                 onBackClick();
@@ -179,7 +182,7 @@ const RHSFooter = ({
                         }}
                     >
                         {formatMessage({defaultMessage: 'Done'})}
-                    </StyledPrimaryButton>
+                    </PrimaryButton>
                 </DoneButtonContainer>
             </FinishedFooter>
         );
@@ -254,12 +257,6 @@ const FinishedRightWrapper = styled.div`
     align-items: center;
 `;
 
-const ResumeButton = styled(TertiaryButton)`
-    height: 32px;
-    padding: 0 20px;
-    font-size: 12px;
-`;
-
 const ResumeButtonWrapper = styled.div`
     display: inline-block;
 `;
@@ -271,10 +268,6 @@ const DoneButtonContainer = styled.div`
     button {
         width: 100%;
     }
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    padding: 10px 20px;
 `;
 
 const FinishPrompt = styled.div`
@@ -314,15 +307,6 @@ const FinishRightWrapper = styled.div`
     justify-content: flex-end;
 `;
 
-const FinishButton = styled(TertiaryButton)`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 16px;
-    font-size: 12px;
-`;
-
 const ParticipatePrompt = styled.div`
     display: flex;
     flex-direction: column;
@@ -353,15 +337,6 @@ const ParticipateRightWrapper = styled.div`
     display: flex;
     flex: 1;
     justify-content: flex-end;
-`;
-
-const ParticipateButton = styled(PrimaryButton)`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    font-size: 12px;
-    padding: 0 16px;
 `;
 
 export default RHSFooter;

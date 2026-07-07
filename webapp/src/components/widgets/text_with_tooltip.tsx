@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {
-    ComponentProps,
     useCallback,
     useEffect,
     useMemo,
@@ -11,14 +10,12 @@ import React, {
 } from 'react';
 
 import {debounce} from 'debounce';
-
-import Tooltip from './tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 interface Props {
     id: string;
     text: string;
     className?: string;
-    placement?: ComponentProps<typeof Tooltip>['placement'];
 }
 
 const TextWithTooltip = (props: Props) => {
@@ -62,13 +59,12 @@ const TextWithTooltip = (props: Props) => {
 
     if (showTooltip) {
         return (
-            <Tooltip
+            <WithTooltip
                 id={`${props.id}_name`}
-                placement={props.placement}
-                content={props.text}
+                title={props.text}
             >
                 {text}
-            </Tooltip>
+            </WithTooltip>
         );
     }
 

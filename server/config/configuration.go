@@ -56,6 +56,10 @@ type Configuration struct {
 	// EnableReports is the master kill-switch for the /report.* surface.
 	// Falls back to EnablePDFReports for one release.
 	EnableReports bool `json:"enablereports"`
+
+	// ExposeMCPExternal controls whether the Playbooks MCP tools may be exposed
+	// through the Agents plugin's external MCP endpoint.
+	ExposeMCPExternal bool `json:"exposemcpexternal"`
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -65,13 +69,16 @@ func (c *Configuration) Clone() *Configuration {
 	return &clone
 }
 
-func (c *Configuration) serialize() map[string]interface{} {
-	ret := make(map[string]interface{})
+func (c *Configuration) serialize() map[string]any {
+	ret := make(map[string]any)
+	// Keys with a plugin.json settings_schema entry MUST match that key exactly,
+	// or the console's copy and this one become duplicate keys. See
+	// reconcileLegacyConfigKeys. BotUserID/TeamsTabAppBotUserID have no schema entry.
 	ret["BotUserID"] = c.BotUserID
-	ret["EnableTeamsTabApp"] = c.EnableTeamsTabApp
-	ret["TeamsTabAppTenantIDs"] = c.TeamsTabAppTenantIDs
+	ret["enableTeamsTabApp"] = c.EnableTeamsTabApp
+	ret["teamsTabAppTenantIDs"] = c.TeamsTabAppTenantIDs
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
-	ret["EnableIncrementalUpdates"] = c.EnableIncrementalUpdates
+	ret["enableincrementalupdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
 	ret["EnablePDFReports"] = c.EnablePDFReports
 	ret["MaxRunReportPosts"] = c.MaxRunReportPosts
@@ -88,5 +95,6 @@ func (c *Configuration) serialize() map[string]interface{} {
 	ret["MaxGotenbergResponseBytes"] = c.MaxGotenbergResponseBytes
 	ret["PdfAFlavor"] = c.PdfAFlavor
 	ret["EnableReports"] = c.EnableReports
+	ret["ExposeMCPExternal"] = c.ExposeMCPExternal
 	return ret
 }

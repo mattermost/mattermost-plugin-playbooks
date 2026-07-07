@@ -26,6 +26,8 @@ import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
+import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
+import TaskProgress from 'src/components/backstage/runs_list/task_progress';
 import {ToastStyle} from 'src/components/backstage/toast';
 
 const SmallText = styled.div`
@@ -60,7 +62,19 @@ const SmallStatusBadge = styled(StatusBadge)`
     line-height: 16px;
 `;
 
+const NameRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+`;
+
 const RunName = styled.div`
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 14px;
     font-weight: 600;
     line-height: 16px;
@@ -111,10 +125,18 @@ const Row = (props: Props) => {
         <PlaybookRunItem
             className='row'
             key={props.playbookRun.id}
+            data-testid='run-list-item'
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
-            <div className='col-sm-4'>
-                <RunName>{props.playbookRun.name}</RunName>
+            <div className='col-sm-3'>
+                <NameRow>
+                    {props.playbookRun.sequential_id && (
+                        <SequentialIdDisplay
+                            sequentialId={props.playbookRun.sequential_id}
+                        />
+                    )}
+                    <RunName>{props.playbookRun.name}</RunName>
+                </NameRow>
                 {infoLine}
             </div>
             <div className='col-sm-2'>
@@ -139,6 +161,12 @@ const Row = (props: Props) => {
                 </SmallText>
             </div>
             <div className='col-sm-2'>
+                <TaskProgress
+                    taskTotal={props.playbookRun.task_total}
+                    taskCompleted={props.playbookRun.task_completed}
+                />
+            </div>
+            <div className='col-sm-2'>
                 <SmallProfile userId={props.playbookRun.owner_user_id}/>
                 <SmallText>
                     <FormattedMessage
@@ -147,7 +175,7 @@ const Row = (props: Props) => {
                     />
                 </SmallText>
             </div>
-            <div className='col-sm-2'>
+            <div className='col-sm-1'>
                 <FollowPlaybookRun id={props.playbookRun.id}/>
             </div>
         </PlaybookRunItem>
@@ -202,22 +230,19 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 
     if (isFollowing) {
         return (
-            <FollowingButton
+            <TertiaryButton
                 onClick={(e) => {
                     e.stopPropagation();
                     toggleFollow();
                 }}
                 data-testid='unfollow-playbook'
                 style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
                     height: '32px',
                     padding: '0 18px',
                 }}
             >
                 {formatMessage({defaultMessage: 'Following'})}
-            </FollowingButton>
+            </TertiaryButton>
         );
     }
 
@@ -229,9 +254,6 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
             }}
             data-testid='follow-playbook'
             style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
                 height: '32px',
                 padding: '0 16px',
             }}
@@ -243,10 +265,9 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 };
 
 const FollowButton = styled(SecondaryButton)`
-    border: 1px solid var(--center-channel-color-08);
-    color: var(--center-channel-color-64);
-`;
-
-const FollowingButton = styled(TertiaryButton)`
-    color: var(--button-bg);
+    /* Increase the specificity to override the default btn-secondary colors */
+    && {
+        border: 1px solid var(--center-channel-color-08);
+        color: var(--center-channel-color-64);
+    }
 `;

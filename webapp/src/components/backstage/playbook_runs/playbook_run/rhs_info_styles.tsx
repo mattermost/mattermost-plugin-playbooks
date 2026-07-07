@@ -20,11 +20,13 @@ function isLinkURL(link: LinkURL | LinkHandler): link is LinkURL {
 interface SectionHeaderProps {
     title: string;
     link?: LinkURL | LinkHandler;
+    children?: React.ReactNode;
 }
 
-export const SectionHeader = ({title, link}: SectionHeaderProps) => (
+export const SectionHeader = ({title, link, children}: SectionHeaderProps) => (
     <SectionHeaderContainer>
         <SectionTitle>{title}</SectionTitle>
+        {children}
         {link && <SectionLink link={link}/>}
     </SectionHeaderContainer>
 );

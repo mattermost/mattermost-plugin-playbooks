@@ -7,11 +7,12 @@ import {useIntl} from 'react-intl';
 
 import {useUpdateEffect} from 'react-use';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {resolve, useUniqueId} from 'src/utils';
 
 import {CancelSaveButtons, CancelSaveContainer} from './checklist_item/inputs';
 import {ButtonIcon} from './assets/buttons';
-import Tooltip from './widgets/tooltip';
 
 interface TextEditProps {
     value: string;
@@ -96,17 +97,16 @@ const TextEdit = (props: TextEditProps) => {
         >
             {!isEditing && !props.children && (
                 <HoverMenuContainer>
-                    <Tooltip
+                    <WithTooltip
                         id={`${id}-tooltip`}
-                        shouldUpdatePosition={true}
-                        content={formatMessage({defaultMessage: 'Edit'})}
+                        title={formatMessage({defaultMessage: 'Edit'})}
                     >
                         <ButtonIcon
                             data-testid='hover-menu-edit-button'
                             className={'icon-pencil-outline icon-16 btn-icon'}
                             onClick={() => setIsEditing(true)}
                         />
-                    </Tooltip>
+                    </WithTooltip>
                 </HoverMenuContainer>
             )}
             {resolve(props.children, () => setIsEditing(true)) ?? (

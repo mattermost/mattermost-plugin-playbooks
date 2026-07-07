@@ -22,11 +22,16 @@ import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
+import {isCurrentUserAdmin} from 'src/selectors';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
 import {useAllowPlaybookAttributes} from 'src/hooks/license';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
+import {PlaybookRole} from 'src/types/permissions';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
@@ -39,7 +44,6 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
-import Tooltip from 'src/components/widgets/tooltip';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 
 import Outline, {ScrollNav, Sections} from './outline/outline';
@@ -51,11 +55,13 @@ const PlaybookEditor = () => {
     const {path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
+    const [restPlaybook] = useRestPlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
     const currentUserId = useAppSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
+    const isSystemAdmin = useAppSelector(isCurrentUserAdmin);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -76,6 +82,12 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
+    const playbookAdminRole = restPlaybook?.default_playbook_admin_role || PlaybookRole.Admin;
+    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(playbookAdminRole) ?? false;
+    const showAdminSettings = isSystemAdmin || isPlaybookAdmin;
+
+    const adminOnlyEdit = restPlaybook?.admin_only_edit ?? false;
+    const canEdit = restPlaybook != null && (!adminOnlyEdit || isPlaybookAdmin || isSystemAdmin);
 
     if (error) {
         // not found
@@ -90,23 +102,21 @@ const PlaybookEditor = () => {
     const archived = playbook.delete_at !== 0;
 
     const archivedTooltip = archived && (
-        <Tooltip
-            delay={{show: 0, hide: 1000}}
+        <WithTooltip
             id={`archive-${playbook.id}`}
-            content={formatMessage({defaultMessage: 'This playbook is archived.'})}
+            title={formatMessage({defaultMessage: 'This playbook is archived.'})}
         >
             <i className='indicator icon-archive-outline'/>
-        </Tooltip>
+        </WithTooltip>
     );
 
     const privateTooltip = !playbook.public && (
-        <Tooltip
-            delay={{show: 0, hide: 1000}}
+        <WithTooltip
             id={`private-${playbook.id}`}
-            content={formatMessage({defaultMessage: 'This playbook is private.'})}
+            title={formatMessage({defaultMessage: 'This playbook is private.'})}
         >
             <i className='indicator icon-lock-outline'/>
-        </Tooltip>
+        </WithTooltip>
     );
 
     // Favorite Button State
@@ -129,7 +139,7 @@ const PlaybookEditor = () => {
                         />
                     </StarButton>
                     <TextEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                         value={playbook.title}
                         onSave={(title) => updatePlaybook({title})}
@@ -153,6 +163,7 @@ const PlaybookEditor = () => {
                                     playbook={playbook}
                                     editTitle={edit}
                                     refetch={refetch}
+                                    canEdit={canEdit}
                                 >
                                     <Title>
                                         {playbook.title}
@@ -186,6 +197,7 @@ const PlaybookEditor = () => {
             </TitleBar>
             <Header ref={headingRef}>
                 <TextEdit
+                    disabled={archived || !canEdit}
                     placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                     value={playbook.title}
                     onSave={(title) => updatePlaybook({title})}
@@ -216,6 +228,7 @@ const PlaybookEditor = () => {
                                 playbook={playbook}
                                 editTitle={edit}
                                 refetch={refetch}
+                                canEdit={canEdit}
                             >
                                 <span data-testid={'playbook-editor-title'}>
                                     {playbook.title}
@@ -226,9 +239,9 @@ const PlaybookEditor = () => {
                         </Heading>
                     )}
                 </TextEdit>
-                <Description>
+                <Description data-testid={'playbook-editor-description'}>
                     <MarkdownEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
                         value={playbook.description}
                         onSave={(description) => updatePlaybook({description})}
@@ -278,6 +291,7 @@ const PlaybookEditor = () => {
                     >
                         <PlaybookProperties
                             playbookID={playbook.id}
+                            canEdit={canEdit}
                         />
                     </Route>
                 )}
@@ -288,6 +302,10 @@ const PlaybookEditor = () => {
                     <Outline
                         playbook={playbook}
                         refetch={refetch}
+                        canEdit={canEdit}
+                        adminOnlyEdit={adminOnlyEdit}
+                        showAdminSettings={showAdminSettings}
+                        restPlaybook={restPlaybook ?? undefined}
                     />
                 </Route>
                 <Route
@@ -298,6 +316,7 @@ const PlaybookEditor = () => {
                         playbookID={playbook.id}
                         playbookMetrics={playbook.metrics}
                         stats={stats}
+                        canEdit={canEdit}
                     />
                 </Route>
             </Switch>
@@ -330,6 +349,11 @@ const TitleBar = styled.div`
         display: flex;
         align-items: center;
         gap: 8px;
+    }
+
+    /* This element uses gap to space buttons out instead of the margin-left defined by the web app */
+    .btn + .btn {
+        margin-left: unset;
     }
 
     ${Controls.TitleButton} {

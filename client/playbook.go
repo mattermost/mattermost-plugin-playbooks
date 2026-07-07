@@ -39,6 +39,11 @@ type Playbook struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant"`
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
+	RunNumberPrefix                         string                 `json:"run_number_prefix"`
+	AdminOnlyEdit                           bool                   `json:"admin_only_edit"`
+	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
+	NewChannelOnly                          bool                   `json:"new_channel_only"`
+	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 }
 
 type PlaybookMember struct {
@@ -63,22 +68,24 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	ID               string       `json:"id"`
-	Title            string       `json:"title"`
-	State            string       `json:"state"`
-	StateModified    int64        `json:"state_modified"`
-	AssigneeID       string       `json:"assignee_id"`
-	AssigneeModified int64        `json:"assignee_modified"`
-	Command          string       `json:"command"`
-	CommandLastRun   int64        `json:"command_last_run"`
-	Description      string       `json:"description"`
-	LastSkipped      int64        `json:"delete_at"`
-	DueDate          int64        `json:"due_date"`
-	TaskActions      []TaskAction `json:"task_actions"`
-	ConditionID      string       `json:"condition_id"`
-	ConditionAction  string       `json:"condition_action"`
-	ConditionReason  string       `json:"condition_reason"`
-	UpdateAt         int64        `json:"update_at"`
+	ID                      string       `json:"id"`
+	Title                   string       `json:"title"`
+	State                   string       `json:"state"`
+	StateModified           int64        `json:"state_modified"`
+	AssigneeID              string       `json:"assignee_id"`
+	AssigneeModified        int64        `json:"assignee_modified"`
+	AssigneeType            string       `json:"assignee_type"`
+	AssigneePropertyFieldID string       `json:"assignee_property_field_id"`
+	Command                 string       `json:"command"`
+	CommandLastRun          int64        `json:"command_last_run"`
+	Description             string       `json:"description"`
+	LastSkipped             int64        `json:"delete_at"`
+	DueDate                 int64        `json:"due_date"`
+	TaskActions             []TaskAction `json:"task_actions"`
+	ConditionID             string       `json:"condition_id"`
+	ConditionAction         string       `json:"condition_action"`
+	ConditionReason         string       `json:"condition_reason"`
+	UpdateAt                int64        `json:"update_at"`
 }
 
 // TaskAction represents a task action in an item
@@ -117,6 +124,11 @@ type PlaybookCreateOptions struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant"`
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
+	RunNumberPrefix                         string                 `json:"run_number_prefix"`
+	AdminOnlyEdit                           bool                   `json:"admin_only_edit"`
+	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
+	NewChannelOnly                          bool                   `json:"new_channel_only"`
+	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 }
 
 type PlaybookMetricConfig struct {

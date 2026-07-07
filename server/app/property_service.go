@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
@@ -45,6 +47,10 @@ func NewPropertyService(api *pluginapi.Client, conditionStore ConditionStore) (P
 }
 
 func (s *propertyService) CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
+
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrap(err, "invalid property field")
 	}
@@ -153,6 +159,10 @@ func (s *propertyService) GetRunPropertyFieldsSince(runID string, updatedSince i
 }
 
 func (s *propertyService) UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
+
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrap(err, "invalid property field")
 	}
@@ -162,7 +172,6 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing property field")
 	}
-
 	// Check if the type is changing and validate it's allowed
 	if existingField.Type != propertyField.Type {
 		if err := s.validatePropertyFieldTypeChange(existingField, propertyField, playbookID); err != nil {
@@ -522,6 +531,9 @@ func (s *propertyService) copyPropertyFieldForPlaybook(sourceProperty *model.Pro
 		}
 	}
 
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrapf(err, "failed to validate playbook property field for %s", sourceProperty.Name)
 	}
@@ -536,6 +548,7 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 	}
 
 	propertyField.ID = ""
+	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypeRun
 	propertyField.TargetID = runID
 	propertyField.Attrs.ParentID = playbookProperty.ID
@@ -546,6 +559,9 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 		}
 	}
 
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrapf(err, "failed to validate run property field for %s", playbookProperty.Name)
 	}
@@ -593,14 +609,41 @@ func (s *propertyService) GetRunPropertyValueByFieldID(runID, propertyFieldID st
 }
 
 func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
-	// Get the property field to validate against
-	propertyField, err := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get property field")
+	// Get the property field to validate against.
+	// GetPropertyField filters by the playbook group scope, so run-level fields (targettype=run)
+	// may return "no rows". When that happens, fall back to searching the run's property fields
+	// directly to find the matching field.
+	mmPropertyField, getErr := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
+	var propertyField *model.PropertyField
+	if getErr != nil {
+		if getErr != pluginapi.ErrNotFound {
+			return nil, errors.Wrapf(getErr, "failed to get property field %s", propertyFieldID)
+		}
+		runFields, rfErr := s.GetRunPropertyFields(runID)
+		if rfErr != nil {
+			return nil, errors.Wrapf(rfErr, "failed to get run property fields while resolving property field %s for run %s", propertyFieldID, runID)
+		}
+		for _, rf := range runFields {
+			if rf.ID == propertyFieldID {
+				propertyField = rf.ToMattermostPropertyField()
+				break
+			}
+		}
+		if propertyField == nil {
+			return nil, errors.Wrapf(getErr, "property field %s not found on run %s", propertyFieldID, runID)
+		}
+	} else if mmPropertyField == nil {
+		return nil, ErrNotFound
+	} else {
+		propertyField = mmPropertyField
+	}
+
+	if propertyField.TargetType != PropertyTargetTypeRun || propertyField.TargetID != runID {
+		return nil, ErrPropertyFieldNotOnRun
 	}
 
 	// Sanitize and validate the value based on field type
-	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(propertyField, value)
+	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(propertyField, value, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to sanitize and validate property value")
 	}
@@ -624,7 +667,34 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 	return (*PropertyValue)(upsertedValue), nil
 }
 
-func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.PropertyField, value json.RawMessage) (json.RawMessage, error) {
+// UpsertRunPropertyValueWithField skips the GetPropertyField DB round-trip (fails for run-scoped fields right after creation).
+func (s *propertyService) UpsertRunPropertyValueWithField(runID string, field *PropertyField, value json.RawMessage) (*PropertyValue, error) {
+	if field == nil {
+		return nil, errors.Wrap(ErrInternalPrecondition, "field must not be nil")
+	}
+	if field.TargetType != PropertyTargetTypeRun || field.TargetID != runID {
+		return nil, ErrPropertyFieldNotOnRun
+	}
+	mmField := field.ToMattermostPropertyField()
+	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(mmField, value, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to sanitize and validate property value")
+	}
+	propertyValue := &model.PropertyValue{
+		GroupID:    s.groupID,
+		TargetType: PropertyTargetTypeRun,
+		TargetID:   runID,
+		FieldID:    field.ID,
+		Value:      sanitizedValue,
+	}
+	upsertedValue, err := s.api.Property.UpsertPropertyValue(propertyValue)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upsert property value")
+	}
+	return (*PropertyValue)(upsertedValue), nil
+}
+
+func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.PropertyField, value json.RawMessage, validateOptions bool) (json.RawMessage, error) {
 	if len(value) == 0 || string(value) == "null" {
 		return value, nil
 	}
@@ -645,16 +715,86 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 		if err := json.Unmarshal(value, &stringValue); err != nil {
 			return nil, errors.New("select field value must be a string")
 		}
-		return value, s.validateSelectValue(propertyField, stringValue)
+		if validateOptions {
+			return value, s.validateSelectValue(propertyField, stringValue)
+		}
+		return value, nil
 	case model.PropertyFieldTypeMultiselect:
 		var arrayValue []string
 		if err := json.Unmarshal(value, &arrayValue); err != nil {
 			return nil, errors.New("multiselect field value must be an array of strings")
 		}
+		if !validateOptions {
+			return value, nil
+		}
 		return value, s.validateMultiselectValue(propertyField, arrayValue)
+	case model.PropertyFieldTypeDate:
+		normalized, err := normalizeDateValue(value)
+		if err != nil {
+			return nil, err
+		}
+		return normalized, nil
+	case model.PropertyFieldTypeUser:
+		var userID string
+		if err := json.Unmarshal(value, &userID); err != nil {
+			return nil, errors.New("user field value must be a string")
+		}
+		if userID != "" && !model.IsValidId(userID) {
+			return nil, errors.New("user field value must be a valid 26-character ID")
+		}
+		return value, nil
+	case model.PropertyFieldTypeMultiuser:
+		var arrayValue []string
+		if err := json.Unmarshal(value, &arrayValue); err != nil {
+			return nil, errors.New("multiuser field value must be an array of strings")
+		}
+		for _, userID := range arrayValue {
+			if !model.IsValidId(userID) {
+				return nil, errors.New("multiuser field value must contain valid 26-character user IDs")
+			}
+		}
+		return value, nil
 	default:
 		return nil, errors.Errorf("property field type '%s' is not supported", propertyField.Type)
 	}
+}
+
+// SanitizePropertyValue sanitizes without validating option membership (use for template pre-sanitization).
+func (s *propertyService) SanitizePropertyValue(fieldType model.PropertyFieldType, raw json.RawMessage) (json.RawMessage, error) {
+	field := &model.PropertyField{Type: fieldType}
+	return s.sanitizeAndValidatePropertyValue(field, raw, false)
+}
+
+// normalizeDateValue normalizes RFC3339 strings, numeric-string millis, and JSON-number millis to RFC3339.
+func normalizeDateValue(value json.RawMessage) (json.RawMessage, error) {
+	// Try JSON number first (e.g. 1710000000000)
+	var millis int64
+	if err := json.Unmarshal(value, &millis); err == nil {
+		t := time.UnixMilli(millis).UTC()
+		return json.Marshal(t.Format(time.RFC3339))
+	}
+
+	// Must be a string — try RFC3339 then numeric string
+	var stringValue string
+	if err := json.Unmarshal(value, &stringValue); err != nil {
+		return nil, errors.New("date field value must be a string or a millisecond timestamp")
+	}
+
+	if _, err := time.Parse(time.RFC3339, stringValue); err == nil {
+		return value, nil
+	}
+
+	if t, err := time.Parse("2006-01-02", stringValue); err == nil {
+		// Bare YYYY-MM-DD — treat as UTC midnight and store as RFC3339
+		return json.Marshal(t.UTC().Format(time.RFC3339))
+	}
+
+	if ms, err := strconv.ParseInt(stringValue, 10, 64); err == nil {
+		t := time.UnixMilli(ms).UTC()
+		return json.Marshal(t.Format(time.RFC3339))
+	}
+
+	return nil, errors.New("date field value must be a valid RFC3339 date string, a YYYY-MM-DD date, or a millisecond timestamp")
 }
 
 func (s *propertyService) sanitizeTextValue(value string) (string, error) {

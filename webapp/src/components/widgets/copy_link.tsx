@@ -1,14 +1,19 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {HTMLAttributes, useState} from 'react';
+import {debounce} from 'debounce';
+import React, {
+    HTMLAttributes,
+    useCallback,
+    useMemo,
+    useState,
+} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {copyToClipboard} from 'src/utils';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
-import {OVERLAY_DELAY} from 'src/constants';
-import Tooltip from 'src/components/widgets/tooltip';
+import {copyToClipboard} from 'src/utils';
 
 type Props = {
     id: string;
@@ -23,6 +28,9 @@ type Props = {
 
 type Attrs = HTMLAttributes<HTMLElement>;
 
+// This value matches the CopyButton in the web app
+const copyLinkResetTimer = 2000;
+
 const CopyLink = ({
     id,
     to,
@@ -33,20 +41,24 @@ const CopyLink = ({
     const {formatMessage} = useIntl();
     const [wasCopied, setWasCopied] = useState(false);
 
-    const copyLink = (e: React.MouseEvent) => {
+    const startResetCopiedTimer = useMemo(() => {
+        return debounce(() => {
+            setWasCopied(false);
+        }, copyLinkResetTimer);
+    }, []);
+
+    const copyLink = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         copyToClipboard(to);
         setWasCopied(true);
-    };
+
+        startResetCopiedTimer();
+    }, [startResetCopiedTimer, to]);
 
     return (
-        <Tooltip
+        <WithTooltip
             id={id}
-            placement='bottom'
-            delay={OVERLAY_DELAY}
-            onExited={() => setWasCopied(false)}
-            shouldUpdatePosition={true}
-            content={wasCopied ? formatMessage({defaultMessage: 'Copied!'}) : (tooltipMessage ?? formatMessage({defaultMessage: "Copy link to ''{name}''"}, {name}))}
+            title={wasCopied ? formatMessage({defaultMessage: 'Copied!'}) : (tooltipMessage ?? formatMessage({defaultMessage: "Copy link to ''{name}''"}, {name}))}
         >
             <AutoSizeCopyIcon
                 onClick={copyLink}
@@ -54,7 +66,7 @@ const CopyLink = ({
                 {...attrs}
                 className={'icon-link-variant ' + attrs.className}
             />
-        </Tooltip>
+        </WithTooltip>
     );
 };
 

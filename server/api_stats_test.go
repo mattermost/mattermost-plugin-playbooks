@@ -16,7 +16,8 @@ import (
 )
 
 func TestGetSiteStats(t *testing.T) {
-	e := Setup(t)
+	// Site stats are server-wide, so this test requires a globally-empty database.
+	e := SetupIsolated(t)
 	e.CreateBasic()
 
 	t.Run("get sites stats", func(t *testing.T) {

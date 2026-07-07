@@ -10,7 +10,7 @@ import NoMetricsSvg from 'src/components/assets/no_metrics_svg';
 import {SecondaryButton} from 'src/components/assets/buttons';
 import {navigateToUrl} from 'src/browser_routing';
 
-const NoMetricsPlaceholder = () => {
+const NoMetricsPlaceholder = ({canEdit = true}: {canEdit?: boolean}) => {
     const match = useRouteMatch();
     const {formatMessage} = useIntl();
 
@@ -20,13 +20,15 @@ const NoMetricsPlaceholder = () => {
                 <NoMetricsSvg/>
                 <Title>{formatMessage({defaultMessage: 'Track key metrics and measure value'})}</Title>
                 <Text>{formatMessage({defaultMessage: 'Use metrics to understand patterns and progress across runs, and track performance.'})}</Text>
-                <StyledButton
-                    onClick={() => {
-                        navigateToUrl(match.url.replace('/reports', '/outline#retrospective'));
-                    }}
-                >
-                    {formatMessage({defaultMessage: 'Configure metrics in Retrospective'})}
-                </StyledButton>
+                {canEdit && (
+                    <SecondaryButton
+                        onClick={() => {
+                            navigateToUrl(match.url.replace('/reports', '/outline#retrospective'));
+                        }}
+                    >
+                        {formatMessage({defaultMessage: 'Configure metrics in Retrospective'})}
+                    </SecondaryButton>
+                )}
             </InnerContainer>
         </Container>
     );
@@ -58,13 +60,6 @@ const Text = styled.div`
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-`;
-
-const StyledButton = styled(SecondaryButton)`
-    height: 40px;
-    padding: 0 20px;
-    font-size: 14px;
-    font-weight: 600;
 `;
 
 export default NoMetricsPlaceholder;

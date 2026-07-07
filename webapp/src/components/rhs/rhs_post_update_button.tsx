@@ -5,6 +5,8 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import styled, {css} from 'styled-components';
 
+import type {ButtonProps} from '@mattermost/shared/components/button';
+
 import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 interface Props {
@@ -17,12 +19,14 @@ interface Props {
 }
 
 const RHSPostUpdateButton = (props: Props) => {
-    let ButtonComponent = PostUpdatePrimaryButton;
+    let ButtonComponent: React.ComponentType<ButtonProps & CollapsedProps>;
 
     if (props.isDue) {
         ButtonComponent = PostUpdateDestructiveButton;
     } else if (!props.isNextUpdateScheduled && props.updatesExist) {
         ButtonComponent = PostUpdateTertiaryButton;
+    } else {
+        ButtonComponent = PostUpdatePrimaryButton;
     }
 
     return (

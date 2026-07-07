@@ -16,7 +16,12 @@ import {DateTime} from 'luxon';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
-import {getUser, makeGetProfilesInChannel, getProfilesInTeam as selectProfilesInTeam} from 'mattermost-redux/selectors/entities/users';
+import {
+    getProfilesInCurrentTeam,
+    getUser,
+    makeGetProfilesInChannel,
+    getProfilesInTeam as selectProfilesInTeam,
+} from 'mattermost-redux/selectors/entities/users';
 import {getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
@@ -242,6 +247,43 @@ export function useProfilesForRun(teamId?: string, channelId?: string) {
         return channelProfiles;
     }
     return profilesInRunTeam;
+}
+
+// useUserDisplayNameMap builds a userId→displayName map for all profiles in the current team.
+// Shared by components that need to resolve user IDs to display names for template previews.
+//
+// Reads via getProfilesInCurrentTeam (a stable, no-arg memoized selector) instead of routing
+// through useProfilesInTeam, whose inline closure breaks useSyncExternalStoreWithSelector
+// memoization in this codepath and triggers a re-render loop. The fetch+lock cycle is inlined
+// here so callers still get auto-population of the team-profiles slice on first mount.
+export function useUserDisplayNameMap(): Record<string, string> {
+    const dispatch = useAppDispatch();
+    const profilesInTeam = useAppSelector(getProfilesInCurrentTeam);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
+    const teammateNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
+
+    useEffect(() => {
+        if (!currentTeamId) {
+            return;
+        }
+        if (profilesInTeam.length > 0) {
+            lockProfilesInTeamFetch.delete(currentTeamId);
+            return;
+        }
+        if (lockProfilesInTeamFetch.has(currentTeamId)) {
+            return;
+        }
+        lockProfilesInTeamFetch.add(currentTeamId);
+        dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
+    }, [currentTeamId, profilesInTeam, dispatch]);
+
+    return useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const profile of profilesInTeam) {
+            map[profile.id] = displayUsername(profile, teammateNameDisplaySetting);
+        }
+        return map;
+    }, [profilesInTeam, teammateNameDisplaySetting]);
 }
 
 /**

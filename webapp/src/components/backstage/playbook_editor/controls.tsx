@@ -28,8 +28,7 @@ import {
     StarOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
-
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
@@ -219,21 +218,14 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
         toolTipText = formatMessage({defaultMessage: 'You automatically receive updates when this playbook is run.'});
     }
 
-    const tooltip = (
-        <Tooltip id={`auto-follow-tooltip-${isFollowing}`}>
-            {toolTipText}
-        </Tooltip>
-    );
-
     return (
         <SecondaryButtonLargerCheckbox
             checked={isFollowing}
             disabled={archived}
         >
-            <OverlayTrigger
-                placement={'bottom'}
-                delay={OVERLAY_DELAY}
-                overlay={tooltip}
+            <WithTooltip
+                id={`auto-follow-tooltip-${isFollowing}`}
+                title={toolTipText}
             >
                 <div>
                     <CheckboxInputStyled
@@ -244,7 +236,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
                         onChange={setFollowing}
                     />
                 </div>
-            </OverlayTrigger>
+            </WithTooltip>
         </SecondaryButtonLargerCheckbox>
     );
 };
@@ -372,8 +364,9 @@ type TitleMenuProps = {
     className?: string;
     editTitle: () => void;
     refetch: () => void;
+    canEdit?: boolean;
 } & PropsWithChildren<ControlProps>;
-const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: TitleMenuProps) => {
+const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEdit = true}: TitleMenuProps) => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const [exportHref, exportFilename] = playbookExportProps(playbook);
@@ -472,8 +465,8 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         <div className='MenuGroup menu-divider'/>
                         <DropdownMenuItem
                             onClick={editTitle}
-                            disabled={archived}
-                            disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'})}
+                            disabled={archived || !canEdit}
+                            disabledAltText={archived ? formatMessage({defaultMessage: 'This archived playbook cannot be renamed.'}) : formatMessage({defaultMessage: 'Only admins can rename this playbook.'})}
                         >
                             <PencilOutlineIcon size={18}/>
                             <FormattedMessage defaultMessage='Rename'/>
@@ -545,6 +538,8 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         {archived ? (
                             <DropdownMenuItem
                                 onClick={() => openConfirmRestoreModal(playbook, () => refetch())}
+                                disabled={!canEdit}
+                                disabledAltText={formatMessage({defaultMessage: 'Only admins can restore this playbook.'})}
                             >
                                 <RestoreIcon size={18}/>
                                 <FormattedMessage defaultMessage='Restore'/>
@@ -552,6 +547,8 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         ) : (
                             <DropdownMenuItem
                                 onClick={() => openDeletePlaybookModal(playbook)}
+                                disabled={!canEdit}
+                                disabledAltText={formatMessage({defaultMessage: 'Only admins can archive this playbook.'})}
                             >
                                 <RedText
                                     style={{
@@ -593,7 +590,6 @@ export const TitleMenu = styled(TitleMenuImpl)``;
 const buttonCommon = css`
     height: 36px;
     padding: 0 16px;
-    gap: 8px;
 
     i::before {
         margin-right: 0;
@@ -602,6 +598,7 @@ const buttonCommon = css`
     }
 `;
 
+// These are actually between a medium and small sized button
 const PrimaryButtonLarger = styled(PrimaryButton)`
     ${buttonCommon};
 `;
@@ -621,22 +618,26 @@ const CheckboxInputStyled = styled(CheckboxInput)`
 `;
 
 const SecondaryButtonLargerCheckbox = styled(SecondaryButtonLarger) <{checked: boolean}>`
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    padding: 0;
-
-    &:hover:enabled {
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
-    }
-
-    ${({checked}) => checked && css`
-    border: 1px solid var(--button-bg);
-        color: var(--button-bg);
+    /* Increase the specificity to override the default btn-secondary colors */
+    && {
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
 
         &:hover:enabled {
-            background-color: rgba(var(--button-bg-rgb), 0.12);
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
         }
-    `}
+
+        ${({checked}) => checked && css`
+            border: 1px solid var(--button-bg);
+            color: var(--button-bg);
+
+            &:hover:enabled {
+                background-color: rgba(var(--button-bg-rgb), 0.12);
+            }
+        `}
+    }
+
+    padding: 0;
 `;
 
 const ButtonIconStyled = styled(ButtonIcon)`

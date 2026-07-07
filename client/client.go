@@ -26,6 +26,13 @@ const (
 	apiVersion = "v0"
 	manifestID = "playbooks"
 	userAgent  = "go-client/" + apiVersion
+
+	// externalAPIURLPrefix is the API path prefix for requests made over regular HTTP, where the
+	// Mattermost server routes /plugins/<id>/* to the plugin.
+	externalAPIURLPrefix = "plugins/" + manifestID + "/api/" + apiVersion + "/"
+	// interPluginAPIURLPrefix is the API path prefix for inter-plugin requests, where PluginHTTP
+	// routes by the first path segment (/<id>/*) instead.
+	interPluginAPIURLPrefix = manifestID + "/api/" + apiVersion + "/"
 )
 
 // Client manages communication with the Playbooks API.
@@ -36,6 +43,9 @@ type Client struct {
 	BaseURL *url.URL
 	// User agent used when communicating with the Playbooks API.
 	UserAgent string
+	// apiURLPrefix is the path prefix prepended to API endpoints. It differs between regular HTTP
+	// and inter-plugin requests; see externalAPIURLPrefix and interPluginAPIURLPrefix.
+	apiURLPrefix string
 
 	// PlaybookRuns is a collection of methods used to interact with playbook runs.
 	PlaybookRuns *PlaybookRunService
@@ -78,7 +88,7 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 		return nil, err
 	}
 
-	c := &Client{client: httpClient, BaseURL: siteURL, UserAgent: userAgent}
+	c := &Client{client: httpClient, BaseURL: siteURL, UserAgent: userAgent, apiURLPrefix: externalAPIURLPrefix}
 	c.PlaybookRuns = &PlaybookRunService{c}
 	c.Playbooks = &PlaybooksService{c}
 	c.Settings = &SettingsService{c}
@@ -127,12 +137,12 @@ func (c *Client) newRequest(method, endpoint string, body interface{}) (*http.Re
 
 // newAPIRequest creates an API request, JSON-encoding any given body parameter.
 func (c *Client) newAPIRequest(method, endpoint string, body interface{}) (*http.Request, error) {
-	return c.newRequest(method, buildAPIURL(endpoint), body)
+	return c.newRequest(method, c.buildAPIURL(endpoint), body)
 }
 
 // buildAPIURL constructs the path to the given endpoint.
-func buildAPIURL(endpoint string) string {
-	return fmt.Sprintf("plugins/%s/api/%s/%s", manifestID, apiVersion, endpoint)
+func (c *Client) buildAPIURL(endpoint string) string {
+	return c.apiURLPrefix + endpoint
 }
 
 // do sends an API request and returns the API response.

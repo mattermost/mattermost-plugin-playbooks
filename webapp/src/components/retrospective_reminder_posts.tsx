@@ -21,6 +21,8 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {noRetrospective} from 'src/client';
 
+import {PlaybookRunIDs} from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
+
 import {
     CustomPostButtonRow,
     CustomPostContainer,
@@ -45,10 +47,6 @@ const ReminderText = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 14px;
     line-height: 20px;
-`;
-
-const StyledTertiaryButton = styled(TertiaryButton)`
-    margin-left: 10px;
 `;
 
 const IllustrationContainer = styled.div`
@@ -101,17 +99,17 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                 </CustomPostHeader>
                 <CustomPostButtonRow>
                     <PrimaryButton
-                        onClick={() => playbookRun && navigateToPluginUrl(`/runs/${playbookRun.id}/retrospective`)}
+                        onClick={() => playbookRun && navigateToPluginUrl(`/runs/${playbookRun.id}#${PlaybookRunIDs.SectionRetrospective}`)}
                         disabled={disableButtons}
                     >
                         {props.primary}
                     </PrimaryButton>
-                    <StyledTertiaryButton
+                    <TertiaryButton
                         onClick={() => playbookRun && noRetrospective(playbookRun.id)}
                         disabled={disableButtons}
                     >
                         {props.secondary}
-                    </StyledTertiaryButton>
+                    </TertiaryButton>
                 </CustomPostButtonRow>
                 <Divider/>
                 <ReminderText>

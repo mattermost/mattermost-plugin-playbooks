@@ -502,10 +502,8 @@ export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
     });
 
     try {
-        // Make API call
         const result = await updatePlaybookPropertyField(playbookId, fieldId, propertyField);
         if (result) {
-            // Update with server response
             dispatch({
                 type: UPDATED_PLAYBOOK_PROPERTY_FIELD,
                 playbookId,
@@ -513,7 +511,6 @@ export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
             });
         }
     } catch (error) {
-        // Rollback to original field on error
         dispatch({
             type: UPDATED_PLAYBOOK_PROPERTY_FIELD,
             playbookId,

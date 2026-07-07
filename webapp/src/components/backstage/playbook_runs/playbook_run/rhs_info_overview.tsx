@@ -28,6 +28,8 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {TertiaryButton} from 'src/components/assets/buttons';
 import FollowButton from 'src/components/backstage/follow_button';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
@@ -37,6 +39,7 @@ import Following from 'src/components/backstage/playbook_runs/playbook_run/follo
 import AssignTo from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {setOwner as clientSetOwner, requestJoinChannel} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
@@ -46,7 +49,6 @@ import {CompassIcon} from 'src/types/compass';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {useEnsureProfiles, useTextOverflow} from 'src/hooks';
-import Tooltip from 'src/components/widgets/tooltip';
 
 import {FollowState} from './rhs_info';
 
@@ -147,7 +149,13 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
 
     return (
         <Section>
-            <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
+            <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}>
+                {(run.run_number ?? 0) > 0 && run.sequential_id && (
+                    <SequentialIdDisplay
+                        sequentialId={run.sequential_id}
+                    />
+                )}
+            </SectionHeader>
             {run.playbook_id && playbook && (
                 <Item
                     id='runinfo-playbook'
@@ -315,9 +323,7 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
         // so the link actually navigates.
         let channelPath: string;
         if (channel.type === General.DM_CHANNEL) {
-            channelPath = teammate ?
-                `/${teamName}/messages/@${teammate.username}` :
-                `/${teamName}/messages/${channel.name}`;
+            channelPath = teammate ? `/${teamName}/messages/@${teammate.username}` : `/${teamName}/messages/${channel.name}`;
         } else if (channel.type === General.GM_CHANNEL) {
             channelPath = `/${teamName}/messages/${channel.name}`;
         } else {
@@ -341,12 +347,12 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
 
         if (isChannelNameOverflowing) {
             return (
-                <Tooltip
+                <WithTooltip
                     id={`channel-name-tooltip-${channel.id}`}
-                    content={displayName}
+                    title={displayName}
                 >
                     {linkContent}
-                </Tooltip>
+                </WithTooltip>
             );
         }
 
@@ -404,11 +410,10 @@ const FollowersWrapper = styled.div`
     align-items: center;
 `;
 
-const RequestJoinButton = styled(TertiaryButton)`
-    height: 24px;
-    padding: 0 10px;
+const RequestJoinButton = styled(TertiaryButton).attrs({
+    size: 'xs',
+})`
     margin-right: 10px;
-    font-size: 12px;
 `;
 
 const ParticipantsContainer = styled.div`

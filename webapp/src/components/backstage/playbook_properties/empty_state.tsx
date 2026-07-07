@@ -9,8 +9,8 @@ import {SecondaryButton} from 'src/components/assets/buttons';
 interface Props {
     title: React.ReactNode;
     description: React.ReactNode;
-    buttonText: React.ReactNode;
-    onButtonClick: () => void;
+    buttonText?: React.ReactNode;
+    onButtonClick?: () => void;
     icon?: React.ReactNode;
 }
 
@@ -27,9 +27,11 @@ const EmptyState = ({
                 {icon && <IconContainer>{icon}</IconContainer>}
                 <Title>{title}</Title>
                 <Description>{description}</Description>
-                <StyledButton onClick={onButtonClick}>
-                    {buttonText}
-                </StyledButton>
+                {buttonText && (
+                    <SecondaryButton onClick={onButtonClick}>
+                        {buttonText}
+                    </SecondaryButton>
+                )}
             </InnerContainer>
         </Container>
     );
@@ -65,18 +67,6 @@ const Description = styled.div`
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-`;
-
-const StyledButton = styled(SecondaryButton)`
-    height: 40px;
-    padding: 0 20px;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 0 auto;
 `;
 
 export default EmptyState;

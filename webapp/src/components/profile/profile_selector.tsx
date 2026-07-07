@@ -15,7 +15,7 @@ import {Placement} from '@floating-ui/react';
 
 import {useUpdateEffect} from 'react-use';
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {useAppSelector} from 'src/hooks/redux';
 
@@ -31,6 +31,19 @@ export interface Option {
     label: JSX.Element | string;
     user: UserProfile;
 }
+
+export interface ExtraOption {
+    value: string;
+    label: JSX.Element | string;
+    isExtraOption: true;
+}
+
+export interface ExtraSection {
+    label: string;
+    options: ExtraOption[];
+}
+
+type AnyOption = Option | ExtraOption;
 
 interface ActionObj {
     action: ActionTypes;
@@ -75,6 +88,10 @@ interface Props {
      * - one with defaultLabel and the rest of the users
      */
     userGroups?: UserGroup;
+    extraSections?: ExtraSection[];
+    onExtraOptionSelected?: (value: string) => void;
+    assignedDisplay?: React.ReactNode;
+    dropdownContainerStyles?: ReturnType<typeof css>;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -173,16 +190,21 @@ export default function ProfileSelector(props: Props) {
         }
     }, [userInSubsetOptions, props.selectedUserId]);
 
-    const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
+    const onSelectedChange = async (value: AnyOption | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
             return;
         }
         toggleOpen();
-        if (value?.user.id === selected?.user.id) {
+        if (value && 'isExtraOption' in value && value.isExtraOption) {
+            props.onExtraOptionSelected?.(value.value);
+            return;
+        }
+        const userOption = value as Option | undefined;
+        if (userOption?.user.id === selected?.user.id) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.user);
+            props.onSelectedChange(userOption?.user);
         }
     };
 
@@ -191,7 +213,23 @@ export default function ProfileSelector(props: Props) {
     );
 
     let target;
-    if (props.selectedUserId) {
+    if (props.assignedDisplay) {
+        target = (
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
+                disabled={!props.enableEdit}
+                className={props.profileButtonClass || 'Assigned-button'}
+            >
+                {props.assignedDisplay}
+                {props.enableEdit && dropdownArrow}
+            </button>
+        );
+    } else if (props.selectedUserId) {
         target = (
             <ProfileButton
                 enableEdit={props.enableEdit}
@@ -257,16 +295,31 @@ export default function ProfileSelector(props: Props) {
     } : noDropdown;
 
     const getSelectOptions = () => {
-        if (!props.userGroups) {
-            return userNotInSubsetOptions;
+        const getUserOptions = () => {
+            if (!props.userGroups) {
+                return userNotInSubsetOptions;
+            }
+            if (userNotInSubsetOptions.length === 0) {
+                return userInSubsetOptions;
+            }
+            return [
+                {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
+                {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
+            ];
+        };
+
+        if (!props.extraSections || props.extraSections.length === 0) {
+            return getUserOptions();
         }
-        if (userNotInSubsetOptions.length === 0) {
-            return userInSubsetOptions;
-        }
-        return [
-            {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
-            {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
-        ];
+
+        // getUserOptions returns grouped sections only when props.userGroups is set AND
+        // both subset and non-subset lists are non-empty. Normalize to grouped for merging.
+        const userOptions = getUserOptions();
+        const isGrouped = props.userGroups && userNotInSubsetOptions.length > 0;
+        const userSections = isGrouped ?
+            userOptions as Array<{label: string; options: Option[]}> :
+            [{label: '', options: userOptions as Option[]}];
+        return [...props.extraSections, ...userSections];
     };
 
     return (
@@ -275,6 +328,7 @@ export default function ProfileSelector(props: Props) {
             placement={props.placement}
             isOpen={isOpen}
             onOpenChange={setOpen}
+            containerStyles={props.dropdownContainerStyles}
         >
             <ReactSelect
                 autoFocus={true}
@@ -289,7 +343,7 @@ export default function ProfileSelector(props: Props) {
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
-                onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
+                onChange={(option, action) => onSelectedChange(option as AnyOption, action as ActionObj)}
                 classNamePrefix='playbook-react-select'
                 className='playbook-react-select'
                 {...props.customControlProps}

@@ -74,12 +74,12 @@ func TestGraphQLPropertyFields(t *testing.T) {
 		fieldID := result.AddPlaybookPropertyField
 
 		// Get the playbooks property group using app service
-		playbooksGroup, err := e.A.PropertyService().GetPropertyGroup("playbooks")
+		playbooksGroup, err := e.Srv.PropertyService().GetPropertyGroup("playbooks")
 		require.NoError(t, err)
 		require.NotNil(t, playbooksGroup)
 
 		// Get the created property field using app service
-		mmCreatedField, err := e.A.PropertyService().GetPropertyField(playbooksGroup.ID, fieldID)
+		mmCreatedField, err := e.Srv.PropertyService().GetPropertyField(e.Context, playbooksGroup.ID, fieldID)
 		require.NoError(t, err)
 		require.NotNil(t, mmCreatedField)
 		require.Equal(t, "Priority", mmCreatedField.Name)
@@ -823,11 +823,11 @@ func TestPropertyFieldDeletionWithConditions(t *testing.T) {
 
 	fieldID := createResponse.Data.AddPlaybookPropertyField
 
-	playbooksGroup, err := e.A.PropertyService().GetPropertyGroup("playbooks")
+	playbooksGroup, err := e.Srv.PropertyService().GetPropertyGroup("playbooks")
 	require.NoError(t, err)
 	require.NotNil(t, playbooksGroup)
 
-	mmCreatedField, err := e.A.PropertyService().GetPropertyField(playbooksGroup.ID, fieldID)
+	mmCreatedField, err := e.Srv.PropertyService().GetPropertyField(e.Context, playbooksGroup.ID, fieldID)
 	require.NoError(t, err)
 	require.NotNil(t, mmCreatedField)
 
@@ -999,10 +999,10 @@ func gqlCreateSelectPropertyField(t *testing.T, e *TestEnvironment, playbookID, 
 
 	fieldID = response.Data.AddPlaybookPropertyField
 
-	playbooksGroup, err := e.A.PropertyService().GetPropertyGroup("playbooks")
+	playbooksGroup, err := e.Srv.PropertyService().GetPropertyGroup("playbooks")
 	require.NoError(t, err)
 
-	mmField, err := e.A.PropertyService().GetPropertyField(playbooksGroup.ID, fieldID)
+	mmField, err := e.Srv.PropertyService().GetPropertyField(e.Context, playbooksGroup.ID, fieldID)
 	require.NoError(t, err)
 
 	appField, err := app.NewPropertyFieldFromMattermostPropertyField(mmField)

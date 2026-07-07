@@ -7,14 +7,16 @@ import styled from 'styled-components';
 
 import {PlusIcon, TrashCanOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import type {PropertyField} from 'src/types/properties';
 import Dropdown from 'src/components/dropdown';
 import {DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
-import Tooltip from 'src/components/widgets/tooltip';
 
 type Props = {
     field: PropertyField;
     updateField: (field: PropertyField) => void;
+    disabled?: boolean;
 };
 
 type Option = {label: string; id: string; value: string};
@@ -22,6 +24,7 @@ type Option = {label: string; id: string; value: string};
 const PropertyValuesInput = ({
     field,
     updateField,
+    disabled,
 }: Props) => {
     const {formatMessage} = useIntl();
 
@@ -86,20 +89,23 @@ const PropertyValuesInput = ({
                         field={field}
                         setFieldOptions={setFieldOptions}
                         formatMessage={formatMessage}
+                        disabled={disabled}
                     />
                 ))}
-                <Tooltip
-                    id='add_value_tooltip'
-                    content={formatMessage({defaultMessage: 'Add value'})}
-                >
-                    <AddButton
-                        onClick={addNewValue}
+                {!disabled && (
+                    <WithTooltip
+                        id='add_value_tooltip'
                         title={formatMessage({defaultMessage: 'Add value'})}
-                        aria-label={formatMessage({defaultMessage: 'Add value'})}
                     >
-                        <PlusIcon size={16}/>
-                    </AddButton>
-                </Tooltip>
+                        <AddButton
+                            onClick={addNewValue}
+                            title={formatMessage({defaultMessage: 'Add value'})}
+                            aria-label={formatMessage({defaultMessage: 'Add value'})}
+                        >
+                            <PlusIcon size={16}/>
+                        </AddButton>
+                    </WithTooltip>
+                )}
             </ValuesContainer>
         </Container>
     );
@@ -111,6 +117,7 @@ const ClickableMultiValue = (props: {
     field: PropertyField;
     setFieldOptions: (options: Array<{id: string; name: string; color?: string}>) => void;
     formatMessage: (descriptor: {defaultMessage: string}) => string;
+    disabled?: boolean;
 }) => {
     const [editValue, setEditValue] = useState(props.data.label);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -170,6 +177,14 @@ const ClickableMultiValue = (props: {
     const handleBlur = () => {
         handleRename();
     };
+
+    if (props.disabled) {
+        return (
+            <MultiValueContainer>
+                <MultiValueLabel>{props.data.label}</MultiValueLabel>
+            </MultiValueContainer>
+        );
+    }
 
     return (
         <Dropdown

@@ -388,7 +388,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(post *model.Post) {
 	}
 
 	message := getPlaybookSuggestionsMessage(triggeredPlaybooks, presentTriggers)
-	attachment := getPlaybookSuggestionsSlackAttachment(triggeredPlaybooks, post.Id, a.configService.GetManifest().Id)
+	attachment := getPlaybookSuggestionsMessageAttachment(triggeredPlaybooks, post.Id, a.configService.GetManifest().Id)
 
 	rootID := post.RootId
 	if rootID == "" {
@@ -399,7 +399,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(post *model.Post) {
 		Message:   message,
 		ChannelId: post.ChannelId,
 	}
-	model.ParseSlackAttachment(newPost, []*model.SlackAttachment{attachment})
+	model.ParseMessageAttachment(newPost, []*model.MessageAttachment{attachment})
 	if err := a.poster.PostMessageToThread(rootID, newPost); err != nil {
 		logrus.WithError(err).Error("unable to post message with suggestions to run playbooks")
 	}
@@ -424,7 +424,7 @@ func getPlaybookSuggestionsMessage(suggestedPlaybooks []Playbook, triggers []str
 	return message
 }
 
-func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, triggeringPostID string, pluginID string) *model.SlackAttachment {
+func getPlaybookSuggestionsMessageAttachment(playbooks []Playbook, triggeringPostID string, pluginID string) *model.MessageAttachment {
 	ignoreButton := &model.PostAction{
 		Id:   "ignoreKeywordsButton",
 		Name: "No, ignore thread",
@@ -452,7 +452,7 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, triggeringPostI
 			Style: "primary",
 		}
 
-		attachment := &model.SlackAttachment{
+		attachment := &model.MessageAttachment{
 			Actions: []*model.PostAction{yesButton, ignoreButton},
 			Text:    "Open Channel Actions in the channel header to view and edit keywords.",
 		}
@@ -481,13 +481,13 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, triggeringPostI
 		Style:   "primary",
 	}
 
-	attachment := &model.SlackAttachment{
+	attachment := &model.MessageAttachment{
 		Actions: []*model.PostAction{playbookChooser, ignoreButton},
 	}
 	return attachment
 }
 
-func containsAttachments(attachments []*model.SlackAttachment, trigger string) bool {
+func containsAttachments(attachments []*model.MessageAttachment, trigger string) bool {
 	// Check PreText, Title, Text and Footer SlackAttachments fields for trigger.
 	for _, attachment := range attachments {
 		switch {

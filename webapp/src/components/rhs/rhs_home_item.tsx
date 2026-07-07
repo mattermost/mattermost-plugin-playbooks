@@ -8,7 +8,7 @@ import {Link} from 'react-router-dom';
 import {CheckAllIcon, OpenInNewIcon, SyncIcon} from '@mattermost/compass-icons/components';
 
 import {DraftPlaybookWithChecklist} from 'src/types/playbook';
-import {SubtlePrimaryButton} from 'src/components/assets/buttons';
+import {TertiaryButton} from 'src/components/assets/buttons';
 import {PillBox} from 'src/components/widgets/pill';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 
@@ -121,17 +121,13 @@ export const MetaItem = styled(PillBox)`
     }
 `;
 
-const RunButton = styled(SubtlePrimaryButton)`
+const RunButton = styled(TertiaryButton)`
     min-width: 7.25rem;
     max-width: 10rem;
     height: 7.25rem;
     flex-direction: column;
     flex-shrink: 0;
     justify-content: center;
-
-    svg {
-        margin-bottom: 0.5rem;
-    }
 `;
 
 type RHSHomeTemplateProps = {

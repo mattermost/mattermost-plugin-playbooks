@@ -10,6 +10,8 @@ import General from 'mattermost-redux/constants/general';
 
 import {FormattedMessage} from 'react-intl';
 
+import {Button as MmButton} from '@mattermost/shared/components/button';
+
 import {useAppSelector} from 'src/hooks/redux';
 
 import LoadingSpinner from 'src/components/assets/loading_spinner';
@@ -24,7 +26,6 @@ import {useOpenContactSales, useOpenStartTrialFormModal} from 'src/hooks';
 import SuccessSvg from './assets/success_svg';
 import ErrorSvg from './assets/error_svg';
 import UpgradeIllustrationSvg from './assets/upgrade_illustration_svg';
-import {PrimaryButton, SecondaryButton} from './assets/buttons';
 
 enum ActionState {
     Uninitialized,
@@ -243,16 +244,17 @@ const Button = (props: ButtonProps) => {
         return null;
     }
 
-    const ButtonSC = props.secondaryButton ? SecondaryButton : PrimaryButton;
+    const emphasis = props.secondaryButton ? 'secondary' : 'primary';
 
     if (props.actionState === ActionState.Error) {
         if (props.isCurrentUserAdmin) {
             return (
-                <ButtonSC
+                <MmButton
+                    emphasis={emphasis}
                     onClick={() => window.open('https://mattermost.com/support/')}
                 >
                     <FormattedMessage defaultMessage='Contact support'/>
-                </ButtonSC>
+                </MmButton>
             );
         }
         return null;
@@ -271,9 +273,12 @@ const Button = (props: ButtonProps) => {
     }
 
     return (
-        <ButtonSC onClick={handleClick}>
+        <MmButton
+            emphasis={emphasis}
+            onClick={handleClick}
+        >
             {buttonText}
-        </ButtonSC>
+        </MmButton>
     );
 };
 

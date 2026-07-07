@@ -53,3 +53,9 @@ export type PropertyFieldInput = {
     type: PropertyField['type'];
     attrs?: PropertyFieldAttrsInput;
 };
+
+export interface PropertyComponentProps {
+    field: PropertyField;
+    value?: PropertyValue;
+    runID: string;
+}

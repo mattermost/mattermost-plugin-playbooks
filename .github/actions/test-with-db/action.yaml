@@ -11,9 +11,10 @@ runs:
       with:
         path: |
           webapp/node_modules
-          e2e-tests/node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
-        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
+          e2e-tests/cypress/node_modules
+          e2e-tests/playwright/node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/cypress/package-lock.json') }}-${{ hashFiles('e2e-tests/playwright/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/cypress/package-lock.json') }}-${{ hashFiles('e2e-tests/playwright/package-lock.json') }}
 
     - name: ci/setup-webapp-npm-deps
       if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -23,6 +24,24 @@ runs:
       run: |
         cd webapp
         npm install --ignore-scripts --no-save --legacy-peer-deps
+
+    - name: ci/setup-cypress-e2e-npm-deps
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        NODE_ENV: development
+      run: |
+        cd e2e-tests/cypress
+        npm install --ignore-scripts --no-save --legacy-peer-deps
+
+    - name: ci/setup-playwright-e2e-npm-deps
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        NODE_ENV: development
+      run: |
+        cd e2e-tests/playwright
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --ignore-scripts --no-save --legacy-peer-deps
 
     - name: ci/test-db-integration
       shell: bash

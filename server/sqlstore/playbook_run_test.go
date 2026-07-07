@@ -2044,6 +2044,99 @@ func TestBumpRunUpdatedAt(t *testing.T) {
 	require.Greater(t, updatedRun.UpdateAt, int64(1))
 }
 
+func TestRunNumberAndSequentialIDRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupSQLStore(t, db)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	t.Run("non-zero values round-trip", func(t *testing.T) {
+		run := NewBuilder(t).WithName("Numbered Run").ToPlaybookRun()
+		run.RunNumber = 5
+		run.SequentialID = "INC-00005"
+
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		fetched, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		require.Equal(t, int64(5), fetched.RunNumber)
+		require.Equal(t, "INC-00005", fetched.SequentialID)
+	})
+
+	t.Run("zero values round-trip", func(t *testing.T) {
+		run := NewBuilder(t).WithName("Unnumbered Run").ToPlaybookRun()
+
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		fetched, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		require.Equal(t, int64(0), fetched.RunNumber)
+		require.Equal(t, "", fetched.SequentialID)
+	})
+}
+
+func TestRunChannelFieldsRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupSQLStore(t, db)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	t.Run("ChannelCreatedByRun persists through Create", func(t *testing.T) {
+		// ChannelCreatedByRun is set-once at creation and is intentionally excluded from
+		// UpdatePlaybookRun, so only the Create→Get roundtrip is tested here.
+		run := NewBuilder(t).ToPlaybookRun()
+		run.ChannelCreatedByRun = true
+
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		got, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		assert.True(t, got.ChannelCreatedByRun)
+	})
+
+	t.Run("AutoArchiveChannel persists through Create", func(t *testing.T) {
+		run := NewBuilder(t).ToPlaybookRun()
+		run.AutoArchiveChannel = true
+
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		got, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		assert.True(t, got.AutoArchiveChannel)
+	})
+
+	t.Run("AutoArchivedChannel persists through Create and Update", func(t *testing.T) {
+		run := NewBuilder(t).ToPlaybookRun()
+		run.AutoArchivedChannel = true
+
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		got, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		assert.True(t, got.AutoArchivedChannel)
+
+		got.AutoArchivedChannel = false
+		_, err = playbookRunStore.UpdatePlaybookRun(got)
+		require.NoError(t, err)
+
+		updated, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		assert.False(t, updated.AutoArchivedChannel)
+	})
+}
+
 func TestGetOrderByClause(t *testing.T) {
 	tests := []struct {
 		column    string

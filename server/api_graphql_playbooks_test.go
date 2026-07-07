@@ -21,7 +21,9 @@ import (
 )
 
 func TestGraphQLPlaybooks(t *testing.T) {
-	e := Setup(t)
+	// The "list" subtest lists playbooks across the whole server, so this test
+	// requires a globally-empty database.
+	e := SetupIsolated(t)
 	e.CreateBasic()
 
 	t.Run("basic get", func(t *testing.T) {
@@ -44,7 +46,7 @@ func TestGraphQLPlaybooks(t *testing.T) {
 		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testPlaybookQuery,
 			OperationName: "Playbook",
-			Variables:     map[string]interface{}{"id": e.BasicPlaybook.ID},
+			Variables:     map[string]any{"id": e.BasicPlaybook.ID},
 		}, &pbResultTest)
 		require.NoError(t, err)
 
@@ -81,7 +83,7 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	t.Run("playbook mutate", func(t *testing.T) {
 		newUpdatedTitle := "graphqlmutatetitle"
 
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"title": newUpdatedTitle})
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{"title": newUpdatedTitle})
 		require.NoError(t, err)
 
 		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
@@ -91,7 +93,7 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	})
 
 	t.Run("update playbook no permissions to broadcast", func(t *testing.T) {
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"broadcastChannelIDs": []string{e.BasicPrivateChannel.Id}})
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{"broadcastChannelIDs": []string{e.BasicPrivateChannel.Id}})
 		require.Error(t, err)
 	})
 
@@ -100,16 +102,16 @@ func TestGraphQLPlaybooks(t *testing.T) {
 		err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)
 
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"description": "unrelatedupdate"})
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{"description": "unrelatedupdate"})
 		require.NoError(t, err)
 	})
 
 	t.Run("update playbook with too many webhoooks", func(t *testing.T) {
 		urls := []string{}
-		for i := 0; i < 65; i++ {
+		for i := range 65 {
 			urls = append(urls, "http://localhost/"+strconv.Itoa(i))
 		}
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
 			"webhookOnCreationEnabled": true,
 			"webhookOnCreationURLs":    urls,
 		})
@@ -117,35 +119,37 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	})
 
 	t.Run("change default owner", func(t *testing.T) {
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
 			"defaultOwnerID": e.RegularUser.Id,
 		})
 		require.NoError(t, err)
 
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
 			"defaultOwnerID": e.RegularUserNotInTeam.Id,
 		})
 		require.Error(t, err)
 	})
 	t.Run("checklist with preset values that need to be cleared", func(t *testing.T) {
-		items := []map[string]interface{}{
+		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       "",
-				"assigneeModified": 101,
-				"state":            "Closed",
-				"stateModified":    102,
-				"command":          "",
-				"commandLastRun":   103,
-				"lastSkipped":      104,
-				"dueDate":          100,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              "",
+				"assigneeModified":        101,
+				"state":                   "Closed",
+				"stateModified":           102,
+				"command":                 "",
+				"commandLastRun":          103,
+				"lastSkipped":             104,
+				"dueDate":                 100,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
-			"checklists": map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
+			"checklists": map[string]any{
 				"title": "A",
 				"items": items,
 			},
@@ -183,23 +187,25 @@ func TestGraphQLPlaybooks(t *testing.T) {
 	})
 
 	t.Run("update playbook with pre-assigned task, valid invite user list, and invitations enabled", func(t *testing.T) {
-		items := []map[string]interface{}{
+		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
-			"checklists": map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
+			"checklists": map[string]any{
 				"title": "A",
 				"items": items,
 			},
@@ -217,7 +223,7 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	t.Run("update playbook fails because size constraints.", func(t *testing.T) {
 		e.BasicPlaybook.BroadcastChannelIDs = []string{e.BasicPrivateChannel.Id}
 
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
 			"checklists": []api.UpdateChecklist{
 				{
 					Title: strings.Repeat("A", (256*1024)+1),
@@ -227,31 +233,33 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 		})
 		require.Error(t, err)
 
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"title": strings.Repeat("A", 1025)})
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{"title": strings.Repeat("A", 1025)})
 		require.Error(t, err)
 
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{"description": strings.Repeat("A", 4097)})
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{"description": strings.Repeat("A", 4097)})
 		require.Error(t, err)
 	})
 
 	t.Run("update playbook with pre-assigned task fails due to disabled invitations", func(t *testing.T) {
-		items := []map[string]interface{}{
+		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
-			"checklists": map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
+			"checklists": map[string]any{
 				"title": "A",
 				"items": items,
 			},
@@ -261,23 +269,25 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	})
 
 	t.Run("update playbook with pre-assigned task fails due to missing assignee in existing invite user list", func(t *testing.T) {
-		items := []map[string]interface{}{
+		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
-			"checklists": map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
+			"checklists": map[string]any{
 				"title": "A",
 				"items": items,
 			},
@@ -287,23 +297,25 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	})
 
 	t.Run("update playbook with pre-assigned task fails due to assignee missing in new invite user list", func(t *testing.T) {
-		items := []map[string]interface{}{
+		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
-			"checklists": map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
+			"checklists": map[string]any{
 				"title": "A",
 				"items": items,
 			},
@@ -314,23 +326,25 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	})
 
 	t.Run("update playbook with invite user list fails due to missing a pre-assignee", func(t *testing.T) {
-		items := []map[string]interface{}{
+		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
-			"checklists": map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
+			"checklists": map[string]any{
 				"title": "A",
 				"items": items,
 			},
@@ -339,30 +353,32 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
 			"invitedUserIDs": []string{e.RegularUser2.Id},
 		})
 		require.Error(t, err)
 	})
 
 	t.Run("update playbook fails if invitations are getting disabled but there are pre-assigned users", func(t *testing.T) {
-		items := []map[string]interface{}{
+		items := []map[string]any{
 			{
-				"title":            "title1",
-				"description":      "description1",
-				"assigneeID":       e.RegularUser.Id,
-				"assigneeModified": 0,
-				"state":            "",
-				"stateModified":    0,
-				"command":          "",
-				"commandLastRun":   0,
-				"lastSkipped":      0,
-				"dueDate":          0,
-				"conditionID":      "",
+				"title":                   "title1",
+				"description":             "description1",
+				"assigneeID":              e.RegularUser.Id,
+				"assigneeModified":        0,
+				"state":                   "",
+				"stateModified":           0,
+				"command":                 "",
+				"commandLastRun":          0,
+				"lastSkipped":             0,
+				"dueDate":                 0,
+				"conditionID":             "",
+				"assigneeType":            "",
+				"assigneePropertyFieldID": "",
 			},
 		}
-		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
-			"checklists": map[string]interface{}{
+		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
+			"checklists": map[string]any{
 				"title": "A",
 				"items": items,
 			},
@@ -371,7 +387,7 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
+		err = gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]any{
 			"inviteUsersEnabled": false,
 		})
 		require.Error(t, err)
@@ -431,7 +447,7 @@ func updatePlaybookFavorite(c *client.Client, playbookID string, favorite bool) 
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "UpdatePlaybookFavorite",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"id":       playbookID,
 			"favorite": favorite,
 		},
@@ -452,7 +468,7 @@ func getPlaybookFavorite(c *client.Client, playbookID string) (bool, error) {
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         query,
 		OperationName: "GetPlaybookFavorite",
-		Variables: map[string]interface{}{
+		Variables: map[string]any{
 			"id": playbookID,
 		},
 	}, &response)
@@ -475,7 +491,7 @@ func getPlaybookFavorite(c *client.Client, playbookID string) (bool, error) {
 	return favoriteResponse.Playbook.IsFavorite, nil
 }
 
-func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
+func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]any) error {
 	testPlaybookMutateQuery := `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 		updatePlaybook(id: $id, updates: $updates)
 	}`
@@ -483,7 +499,7 @@ func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, 
 	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         testPlaybookMutateQuery,
 		OperationName: "UpdatePlaybook",
-		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
+		Variables:     map[string]any{"id": playbookID, "updates": updates},
 	}, &response)
 	if err != nil {
 		return errors.Wrapf(err, "gqlTestPlaybookUpdate graphql failure")
@@ -527,7 +543,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 		err := e.PlaybooksAdminClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testPlaybookQuery,
 			OperationName: "Playbook",
-			Variables:     map[string]interface{}{"id": e.BasicPlaybook.ID},
+			Variables:     map[string]any{"id": e.BasicPlaybook.ID},
 		}, &pbResultTest)
 		require.NoError(t, err)
 
@@ -547,7 +563,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testAddMetricQuery,
 			OperationName: "AddMetric",
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"playbookID":  e.BasicPlaybook.ID,
 				"title":       "New Metric",
 				"description": "the description",
@@ -575,7 +591,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testUpdateMetricQuery,
 			OperationName: "UpdateMetric",
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"id":    e.BasicPlaybook.Metrics[0].ID,
 				"title": "Updated Title",
 			},
@@ -600,7 +616,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testDeleteMetricQuery,
 			OperationName: "DeleteMetric",
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"id": e.BasicPlaybook.Metrics[0].ID,
 			},
 		}, &response)
@@ -614,7 +630,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 	})
 }
 
-func gqlTestPlaybookUpdateGuest(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
+func gqlTestPlaybookUpdateGuest(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]any) error {
 	testPlaybookMutateQuery := `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
 		updatePlaybook(id: $id, updates: $updates)
 	}`
@@ -622,7 +638,7 @@ func gqlTestPlaybookUpdateGuest(e *TestEnvironment, t *testing.T, playbookID str
 	err := e.PlaybooksClientGuest.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         testPlaybookMutateQuery,
 		OperationName: "UpdatePlaybook",
-		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
+		Variables:     map[string]any{"id": playbookID, "updates": updates},
 	}, &response)
 	if err != nil {
 		return errors.Wrapf(err, "gqlTestPlaybookUpdate graphql failure")
@@ -642,7 +658,7 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 	e.CreateGuest()
 
 	t.Run("update playbook guest not member", func(t *testing.T) {
-		err := gqlTestPlaybookUpdateGuest(e, t, e.BasicPlaybook.ID, map[string]interface{}{"title": "mutated"})
+		err := gqlTestPlaybookUpdateGuest(e, t, e.BasicPlaybook.ID, map[string]any{"title": "mutated"})
 		require.Error(t, err)
 	})
 
@@ -659,7 +675,7 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 		err := e.PlaybooksClientGuest.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         testPlaybookQuery,
 			OperationName: "Playbook",
-			Variables:     map[string]interface{}{"id": e.BasicPlaybook.ID},
+			Variables:     map[string]any{"id": e.BasicPlaybook.ID},
 		}, &response)
 		require.NoError(t, err)
 		require.NotZero(t, len(response.Errors))
@@ -689,5 +705,190 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Len(t, pbResultTest.Data.Playbooks, 0)
+	})
+}
+
+func gqlDoPlaybookUpdate(c *client.Client, playbookID string, updates map[string]any) error {
+	const mutation = `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
+		updatePlaybook(id: $id, updates: $updates)
+	}`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "UpdatePlaybook",
+		Variables:     map[string]any{"id": playbookID, "updates": updates},
+	}, &response)
+	if err != nil {
+		return errors.Wrapf(err, "gqlDoPlaybookUpdate graphql failure")
+	}
+	if len(response.Errors) != 0 {
+		return errors.Errorf("gqlDoPlaybookUpdate graphql errors: %+v", response.Errors)
+	}
+	return nil
+}
+
+// TestAdminOnlyEdit_GraphQL verifies that GraphQL playbook mutations honor AdminOnlyEdit.
+func TestAdminOnlyEdit_GraphQL(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	updatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit GraphQL Test Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit:                           true,
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("non-admin member GraphQL update is rejected", func(t *testing.T) {
+		err := gqlDoPlaybookUpdate(e.PlaybooksClient, updatePlaybookID, map[string]interface{}{"title": "Non-Admin GraphQL Edit"})
+		require.Error(t, err)
+	})
+
+	t.Run("playbook admin (non-sysadmin) GraphQL update succeeds", func(t *testing.T) {
+		err := gqlDoPlaybookUpdate(e.PlaybooksClient2, updatePlaybookID, map[string]interface{}{"title": "Admin GraphQL Edit"})
+		require.NoError(t, err)
+	})
+
+	t.Run("system admin GraphQL update succeeds", func(t *testing.T) {
+		err := gqlDoPlaybookUpdate(e.PlaybooksAdminClient, updatePlaybookID, map[string]interface{}{"title": "SysAdmin GraphQL Edit"})
+		require.NoError(t, err)
+	})
+
+	propFieldsPlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit GQL PropertyFields Test",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	const addMutation = `mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+		addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+	}`
+	const updateMutation = `mutation UpdatePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!, $propertyField: PropertyFieldInput!) {
+		updatePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID, propertyField: $propertyField)
+	}`
+	const deleteMutation = `mutation DeletePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!) {
+		deletePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID)
+	}`
+
+	baseField := map[string]interface{}{
+		"name": "TestField",
+		"type": "text",
+		"attrs": map[string]interface{}{
+			"visibility": "always",
+			"sortOrder":  1.0,
+		},
+	}
+	updateField := map[string]interface{}{
+		"name": "UpdatedField",
+		"type": "text",
+		"attrs": map[string]interface{}{
+			"visibility": "always",
+			"sortOrder":  2.0,
+		},
+	}
+
+	doAdd := func(c *client.Client) error {
+		var resp graphql.Response
+		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         addMutation,
+			OperationName: "AddPlaybookPropertyField",
+			Variables:     map[string]interface{}{"playbookID": propFieldsPlaybookID, "propertyField": baseField},
+		}, &resp); err != nil {
+			return err
+		}
+		if len(resp.Errors) > 0 {
+			return resp.Errors[0]
+		}
+		return nil
+	}
+
+	t.Run("non-admin member AddPlaybookPropertyField is rejected", func(t *testing.T) {
+		err := doAdd(e.PlaybooksClient)
+		require.Error(t, err)
+	})
+
+	// Seed a field as the playbook admin so update/delete have a target.
+	seededFieldID, err := e.PlaybooksClient2.Playbooks.CreatePropertyField(context.Background(), propFieldsPlaybookID, client.PropertyFieldRequest{
+		Name: "Seeded",
+		Type: "text",
+		Attrs: &client.PropertyFieldAttrsInput{
+			Visibility: stringPtr("always"),
+			SortOrder:  float64Ptr(1.0),
+		},
+	})
+	require.NoError(t, err)
+
+	doUpdate := func(c *client.Client) error {
+		var resp graphql.Response
+		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         updateMutation,
+			OperationName: "UpdatePlaybookPropertyField",
+			Variables: map[string]interface{}{
+				"playbookID":      propFieldsPlaybookID,
+				"propertyFieldID": seededFieldID.ID,
+				"propertyField":   updateField,
+			},
+		}, &resp); err != nil {
+			return err
+		}
+		if len(resp.Errors) > 0 {
+			return resp.Errors[0]
+		}
+		return nil
+	}
+
+	doDelete := func(c *client.Client) error {
+		var resp graphql.Response
+		if err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         deleteMutation,
+			OperationName: "DeletePlaybookPropertyField",
+			Variables:     map[string]interface{}{"playbookID": propFieldsPlaybookID, "propertyFieldID": seededFieldID.ID},
+		}, &resp); err != nil {
+			return err
+		}
+		if len(resp.Errors) > 0 {
+			return resp.Errors[0]
+		}
+		return nil
+	}
+
+	t.Run("non-admin member UpdatePlaybookPropertyField is rejected", func(t *testing.T) {
+		require.Error(t, doUpdate(e.PlaybooksClient))
+	})
+
+	t.Run("non-admin member DeletePlaybookPropertyField is rejected", func(t *testing.T) {
+		require.Error(t, doDelete(e.PlaybooksClient))
+	})
+
+	t.Run("playbook admin (non-sysadmin) AddPlaybookPropertyField succeeds", func(t *testing.T) {
+		require.NoError(t, doAdd(e.PlaybooksClient2))
+	})
+
+	t.Run("playbook admin (non-sysadmin) UpdatePlaybookPropertyField succeeds", func(t *testing.T) {
+		require.NoError(t, doUpdate(e.PlaybooksClient2))
+	})
+
+	t.Run("system admin UpdatePlaybookPropertyField succeeds", func(t *testing.T) {
+		require.NoError(t, doUpdate(e.PlaybooksAdminClient))
+	})
+
+	t.Run("system admin DeletePlaybookPropertyField succeeds", func(t *testing.T) {
+		require.NoError(t, doDelete(e.PlaybooksAdminClient))
 	})
 }

@@ -604,11 +604,6 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 
 	targetOwnerUsername := strings.TrimLeft(args[index], "@")
 
-	if err := r.permissions.RunManageProperties(r.args.UserId, playbookRuns[run].ID); err != nil {
-		r.postCommandResponse("Become a participant to interact with this run.")
-		return
-	}
-
 	currentPlaybookRun := playbookRuns[run]
 
 	targetOwnerUser, err := r.pluginAPI.User.GetByUsername(targetOwnerUsername)
@@ -622,6 +617,20 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 
 	if currentPlaybookRun.OwnerUserID == targetOwnerUser.Id {
 		r.postCommandResponse(fmt.Sprintf("User @%s is already owner of this playbook run.", targetOwnerUsername))
+		return
+	}
+
+	if err := r.permissions.RunChangeOwner(r.args.UserId, currentPlaybookRun.ID); err != nil {
+		if errors.Is(err, app.ErrOwnerGroupOnlyAction) {
+			r.postCommandResponse("You do not have permission to change the owner of this run.")
+			return
+		}
+		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
+		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
+			r.postCommandResponse("Become a participant to interact with this run.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error checking change owner permission: %v", err)
 		return
 	}
 
@@ -704,8 +713,8 @@ func (r *Runner) actionInfo(args []string) {
 			tasks += icon + item.Title + timestamp + "\n"
 		}
 	}
-	attachment := &model.SlackAttachment{
-		Fields: []*model.SlackAttachmentField{
+	attachment := &model.MessageAttachment{
+		Fields: []*model.MessageAttachmentField{
 			{Title: "Name:", Value: fmt.Sprintf("**%s**", strings.Trim(playbookRun.Name, " "))},
 			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(playbookRun.CreateAt), time.Now())},
 			{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
@@ -715,7 +724,7 @@ func (r *Runner) actionInfo(args []string) {
 
 	post := &model.Post{
 		Props: map[string]interface{}{
-			"attachments": []*model.SlackAttachment{attachment},
+			"attachments": []*model.MessageAttachment{attachment},
 		},
 	}
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
@@ -760,12 +769,16 @@ func (r *Runner) actionFinishByID(args []string) {
 		return
 	}
 
-	if err := r.permissions.RunManageProperties(r.args.UserId, args[0]); err != nil {
-		if errors.Is(err, app.ErrNoPermissions) {
-			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
-			return
+	if err := r.permissions.RunFinish(r.args.UserId, args[0]); err != nil {
+		// Fold ErrNotFound/ErrOwnerGroupOnlyAction into the same user-facing message to avoid leaking run existence.
+		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrOwnerGroupOnlyAction) {
+			r.postCommandResponse("You do not have permission to finish this run.")
+			if errors.Is(err, app.ErrNotFound) {
+				logrus.Errorf("Run not found during finish permission check: %v", err)
+			}
+		} else {
+			r.warnUserAndLogErrorf("Error checking finish permissions: %v", err)
 		}
-		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
 		return
 	}
 
@@ -1222,15 +1235,21 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	playbookRun, err := r.playbookRunService.CreatePlaybookRun(&app.PlaybookRun{
+	newRun := &app.PlaybookRun{
 		Name:                "Cloud Incident 4739",
 		TeamID:              r.args.TeamId,
 		OwnerUserID:         r.args.UserId,
+		ReporterUserID:      r.args.UserId,
 		PlaybookID:          gotplaybook.ID,
 		Checklists:          gotplaybook.Checklists,
 		BroadcastChannelIDs: gotplaybook.BroadcastChannelIDs,
 		Type:                app.RunTypePlaybook,
-	}, &gotplaybook, r.args.UserId, true)
+	}
+	if err := r.playbookRunService.ResolveRunCreationParams(newRun, &gotplaybook, nil, app.RunSourceCommand); err != nil {
+		r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
+		return
+	}
+	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &gotplaybook, r.args.UserId, true, app.RunSourceCommand, nil)
 	if err != nil {
 		r.postCommandResponse("Unable to create test playbook run: " + err.Error())
 		return
@@ -1402,19 +1421,21 @@ func (r *Runner) actionTestCreate(params []string) {
 
 	playbookRunName := strings.Join(params[2:], " ")
 
-	playbookRun, err := r.playbookRunService.CreatePlaybookRun(
-		&app.PlaybookRun{
-			Name:        playbookRunName,
-			OwnerUserID: r.args.UserId,
-			TeamID:      r.args.TeamId,
-			PlaybookID:  playbookID,
-			Checklists:  playbook.Checklists,
-			Type:        app.RunTypePlaybook,
-		},
-		&playbook,
-		r.args.UserId,
-		true,
-	)
+	newRun := &app.PlaybookRun{
+		Name:           playbookRunName,
+		OwnerUserID:    r.args.UserId,
+		ReporterUserID: r.args.UserId,
+		TeamID:         r.args.TeamId,
+		PlaybookID:     playbookID,
+		Checklists:     playbook.Checklists,
+		Type:           app.RunTypePlaybook,
+		CreateAt:       creationTimestamp.UnixMilli(),
+	}
+	if err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand); err != nil {
+		r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
+		return
+	}
+	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, app.RunSourceCommand, nil)
 
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create playbook run: %v", err)
@@ -1939,28 +1960,29 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			playbookRunName = fmt.Sprintf("[%s] %s", companyName, playbookRunName)
 		}
 
-		playbookRun, err := r.playbookRunService.CreatePlaybookRun(
-			&app.PlaybookRun{
-				Name:                 playbookRunName,
-				OwnerUserID:          r.args.UserId,
-				TeamID:               r.args.TeamId,
-				PlaybookID:           playbook.ID,
-				Checklists:           playbook.Checklists,
-				RetrospectiveEnabled: playbook.RetrospectiveEnabled,
-				StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
-				Type:                 app.RunTypePlaybook,
-			},
-			&playbook,
-			r.args.UserId,
-			true,
-		)
+		createAt := timeutils.GetTimeForMillis(timestamps[i])
+		newRun := &app.PlaybookRun{
+			Name:                 playbookRunName,
+			OwnerUserID:          r.args.UserId,
+			ReporterUserID:       r.args.UserId,
+			TeamID:               r.args.TeamId,
+			PlaybookID:           playbook.ID,
+			Checklists:           playbook.Checklists,
+			RetrospectiveEnabled: playbook.RetrospectiveEnabled,
+			StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
+			Type:                 app.RunTypePlaybook,
+			CreateAt:             createAt.UnixMilli(),
+		}
+		if err := r.playbookRunService.ResolveRunCreationParams(newRun, &playbook, nil, app.RunSourceCommand); err != nil {
+			r.warnUserAndLogErrorf("Error resolving run creation params: %v", err)
+			return
+		}
+		playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, app.RunSourceCommand, nil)
 
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating playbook run: %v", err)
 			return
 		}
-
-		createAt := timeutils.GetTimeForMillis(timestamps[i])
 		err = r.playbookRunService.ChangeCreationDate(playbookRun.ID, createAt)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error changing creation date: %v", err)

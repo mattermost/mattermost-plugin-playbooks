@@ -69,7 +69,7 @@ func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, arg
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
@@ -110,7 +110,7 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
@@ -168,7 +168,7 @@ func (r *PropertyRootResolver) DeletePlaybookPropertyField(ctx context.Context, 
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
 		return "", err
 	}
 
@@ -232,6 +232,10 @@ func (r *PropertyRootResolver) SetRunPropertyValue(ctx context.Context, args str
 	// Check permissions to modify the run
 	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
 		return "", err
+	}
+
+	if err := app.EnsureRunIsActive(playbookRun); err != nil {
+		return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
 	}
 
 	// Verify the property field exists and belongs to the run

@@ -18,6 +18,8 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo",
     "experimentalDecorators": true,
     "jsx": "react",
     "baseUrl": ".",
