@@ -6,7 +6,7 @@
 //
 // This package is the source of truth for the `.md` export path. The HTML
 // and PDF stages render this markdown — they never re-walk the context.
-package markdown_writer
+package markdown_writer //nolint:staticcheck
 
 import (
 	"bytes"
@@ -41,20 +41,6 @@ func resolveUser(rt report.ResolverTable, id string) string {
 		}
 	}
 	return redactedUser
-}
-
-// resolveChannel returns "~<name>" for a known channel, or the redacted
-// sentinel when the ID is empty or absent from the resolver table.
-func resolveChannel(rt report.ResolverTable, id string) string {
-	if id == "" {
-		return redactedChannel
-	}
-	if c, ok := rt.Channels[id]; ok {
-		if c.Name != "" {
-			return "~" + c.Name
-		}
-	}
-	return redactedChannel
 }
 
 // formatDate formats a Unix-millis timestamp as "YYYY-MM-DD HH:MM" UTC.
@@ -136,7 +122,7 @@ func writeMetaStrip(b *bytes.Buffer, items []metaItem) {
 // writeHeading writes a heading line ("# ", "## ", "### ") followed by a
 // blank line.
 func writeHeading(b *bytes.Buffer, level int, text string) {
-	for i := 0; i < level; i++ {
+	for range level {
 		b.WriteByte('#')
 	}
 	b.WriteByte(' ')
@@ -229,7 +215,7 @@ func writeChecklist(b *bytes.Buffer, cl report.RenderChecklist, rt report.Resolv
 		}
 		if desc := strings.TrimSpace(it.Description); desc != "" {
 			b.WriteString("\n")
-			for _, ln := range strings.Split(desc, "\n") {
+			for ln := range strings.SplitSeq(desc, "\n") {
 				b.WriteString("    ")
 				b.WriteString(ln)
 				b.WriteString("\n")
@@ -316,7 +302,7 @@ func writeTranscriptChronological(b *bytes.Buffer, posts []report.RenderPost, rt
 		}
 		body := strings.TrimSpace(p.Message)
 		if body != "" {
-			for _, ln := range strings.Split(body, "\n") {
+			for ln := range strings.SplitSeq(body, "\n") {
 				b.WriteString("> ")
 				b.WriteString(ln)
 				b.WriteString("\n")
@@ -346,7 +332,7 @@ func writeTranscriptPost(b *bytes.Buffer, p report.RenderPost, rt report.Resolve
 	if body == "" {
 		return
 	}
-	for _, ln := range strings.Split(body, "\n") {
+	for ln := range strings.SplitSeq(body, "\n") {
 		if isReply {
 			b.WriteString(">   ")
 		} else {

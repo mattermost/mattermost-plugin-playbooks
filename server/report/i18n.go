@@ -139,9 +139,9 @@ func (l *Labels) Members() string { return "Members" }
 func (l *Labels) Roles() string { return "Roles" }
 
 // Assignee / DueDate / Command are checklist item labels.
-func (l *Labels) Assignee() string  { return "Assignee" }
-func (l *Labels) DueDate() string   { return "Due" }
-func (l *Labels) Command() string   { return "Command" }
+func (l *Labels) Assignee() string   { return "Assignee" }
+func (l *Labels) DueDate() string    { return "Due" }
+func (l *Labels) Command() string    { return "Command" }
 func (l *Labels) Unassigned() string { return "Unassigned" }
 
 // StatusUpdateSettings / RetrospectiveSettings / BroadcastChannels /

@@ -450,7 +450,7 @@ func isASCIIAlphaNumScheme(s string) bool {
 	if s == "" {
 		return false
 	}
-	if !((s[0] >= 'a' && s[0] <= 'z') || (s[0] >= 'A' && s[0] <= 'Z')) {
+	if (s[0] < 'a' || s[0] > 'z') && (s[0] < 'A' || s[0] > 'Z') {
 		return false
 	}
 	for i := 1; i < len(s); i++ {

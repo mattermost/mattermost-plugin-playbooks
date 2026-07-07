@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-package html_writer
+package html_writer //nolint:staticcheck
 
 import (
 	"strings"

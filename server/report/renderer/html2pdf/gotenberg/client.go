@@ -10,6 +10,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -70,13 +71,7 @@ func (c *Client) Render(ctx context.Context, html []byte, opts html2pdf.Options)
 	// Validate PDF/A against Capabilities before making any HTTP call.
 	if opts.PdfAFlavor != "" {
 		supported := c.Capabilities().SupportsPDFA
-		ok := false
-		for _, f := range supported {
-			if f == opts.PdfAFlavor {
-				ok = true
-				break
-			}
-		}
+		ok := slices.Contains(supported, opts.PdfAFlavor)
 		if !ok {
 			return nil, fmt.Errorf("gotenberg: unsupported PDF/A flavor %q", opts.PdfAFlavor)
 		}

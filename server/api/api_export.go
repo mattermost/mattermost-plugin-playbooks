@@ -441,7 +441,7 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 
 func (h *ExportHandler) renderRunMarkdown(rc report.RenderContext, runID, userID string, sections report.SectionFlags) []byte {
 	key := exportKey("run", "md", runID, userID, sections)
-	v, _, _ := h.sf.Do(key, func() (interface{}, error) {
+	v, _, _ := h.sf.Do(key, func() (any, error) {
 		return markdown_writer.RenderRunMarkdown(rc), nil
 	})
 	b, _ := v.([]byte)
@@ -450,7 +450,7 @@ func (h *ExportHandler) renderRunMarkdown(rc report.RenderContext, runID, userID
 
 func (h *ExportHandler) renderPlaybookMarkdown(pc report.PlaybookRenderContext, playbookID, userID string, sections report.SectionFlags) []byte {
 	key := exportKey("playbook", "md", playbookID, userID, sections)
-	v, _, _ := h.sf.Do(key, func() (interface{}, error) {
+	v, _, _ := h.sf.Do(key, func() (any, error) {
 		return markdown_writer.RenderPlaybookMarkdown(pc), nil
 	})
 	b, _ := v.([]byte)
@@ -459,7 +459,7 @@ func (h *ExportHandler) renderPlaybookMarkdown(pc report.PlaybookRenderContext, 
 
 func (h *ExportHandler) renderRunHTML(rc report.RenderContext, opts html_writer.Options, runID, userID string, sections report.SectionFlags) ([]byte, error) {
 	key := exportKey("run", "html", runID, userID, sections)
-	v, err, _ := h.sf.Do(key, func() (interface{}, error) {
+	v, err, _ := h.sf.Do(key, func() (any, error) {
 		return html_writer.RenderRunHTML(rc, opts)
 	})
 	if err != nil {
@@ -471,7 +471,7 @@ func (h *ExportHandler) renderRunHTML(rc report.RenderContext, opts html_writer.
 
 func (h *ExportHandler) renderPlaybookHTML(pc report.PlaybookRenderContext, opts html_writer.Options, playbookID, userID string, sections report.SectionFlags) ([]byte, error) {
 	key := exportKey("playbook", "html", playbookID, userID, sections)
-	v, err, _ := h.sf.Do(key, func() (interface{}, error) {
+	v, err, _ := h.sf.Do(key, func() (any, error) {
 		return html_writer.RenderPlaybookHTML(pc, opts)
 	})
 	if err != nil {
@@ -483,7 +483,7 @@ func (h *ExportHandler) renderPlaybookHTML(pc report.PlaybookRenderContext, opts
 
 func (h *ExportHandler) renderRunPDF(ctx context.Context, renderer html2pdf.HTMLPdfRenderer, htmlData []byte, opts html2pdf.Options, runID, userID string, sections report.SectionFlags) ([]byte, error) {
 	key := exportKey("run", "pdf", runID, userID, sections)
-	v, err, _ := h.sf.Do(key, func() (interface{}, error) {
+	v, err, _ := h.sf.Do(key, func() (any, error) {
 		return renderer.Render(ctx, htmlData, opts)
 	})
 	if err != nil {
@@ -498,7 +498,7 @@ func (h *ExportHandler) renderRunPDF(ctx context.Context, renderer html2pdf.HTML
 
 func (h *ExportHandler) renderPlaybookPDF(ctx context.Context, renderer html2pdf.HTMLPdfRenderer, htmlData []byte, opts html2pdf.Options, playbookID, userID string, sections report.SectionFlags) ([]byte, error) {
 	key := exportKey("playbook", "pdf", playbookID, userID, sections)
-	v, err, _ := h.sf.Do(key, func() (interface{}, error) {
+	v, err, _ := h.sf.Do(key, func() (any, error) {
 		return renderer.Render(ctx, htmlData, opts)
 	})
 	if err != nil {
@@ -575,7 +575,7 @@ func (h *ExportHandler) writeHTMLResponse(w http.ResponseWriter, data []byte, as
 		}
 	}
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
+	_, _ = w.Write(data) //nolint:gosec
 }
 
 // writePDFResponse emits a PDF byte slice atomically with the full RFC 6266
@@ -594,7 +594,7 @@ func (h *ExportHandler) writePDFResponse(w http.ResponseWriter, data []byte, asc
 		}
 	}
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
+	_, _ = w.Write(data) //nolint:gosec
 }
 
 // ---- gating helpers ----
@@ -624,7 +624,7 @@ func (h *ExportHandler) checkAcceptPDF(r *http.Request) error {
 	if accept == "" {
 		return nil
 	}
-	for _, part := range strings.Split(accept, ",") {
+	for part := range strings.SplitSeq(accept, ",") {
 		mime := strings.TrimSpace(strings.SplitN(part, ";", 2)[0])
 		switch mime {
 		case "*/*", "application/*", "application/pdf":
@@ -695,8 +695,8 @@ func readSessionToken(r *http.Request) string {
 		return c.Value
 	}
 	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		return strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
+	if after, ok := strings.CutPrefix(auth, "Bearer "); ok {
+		return strings.TrimSpace(after)
 	}
 	return ""
 }
@@ -816,7 +816,7 @@ func parseSectionsQuery(raw string, catalog map[string]func(*report.SectionFlags
 		return report.DefaultPlaybookSections(), nil
 	}
 	var s report.SectionFlags
-	for _, tok := range strings.Split(raw, ",") {
+	for tok := range strings.SplitSeq(raw, ",") {
 		tok = strings.TrimSpace(strings.ToLower(tok))
 		if tok == "" {
 			continue

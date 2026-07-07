@@ -160,7 +160,6 @@ func TestRenderUnsupportedPdfAFlavor(t *testing.T) {
 	require.Zero(t, atomic.LoadInt32(&hits), "no HTTP request should have been made")
 }
 
-
 func TestHealthCheckMissingBaseURL(t *testing.T) {
 	c := New(Config{})
 	err := c.HealthCheck(context.Background())

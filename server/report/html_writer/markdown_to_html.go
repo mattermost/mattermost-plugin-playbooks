@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-package html_writer
+package html_writer //nolint:staticcheck
 
 import (
 	"bytes"
@@ -63,12 +63,12 @@ func markdownToHTML(md string, rt report.ResolverTable) template.HTML {
 		// Goldmark conversion errors are exceedingly rare for in-memory
 		// input. Fall back to escaped plain text rather than propagating
 		// the error to the caller — the report should still render.
-		return template.HTML(template.HTMLEscapeString(src))
+		return template.HTML(template.HTMLEscapeString(src)) //nolint:gosec
 	}
 
 	policy := htmlSanitizerPolicy()
 	clean := policy.SanitizeBytes(buf.Bytes())
-	return template.HTML(clean)
+	return template.HTML(clean) //nolint:gosec
 }
 
 // htmlSanitizerPolicy returns the bluemonday policy used to scrub goldmark

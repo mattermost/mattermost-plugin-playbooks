@@ -331,13 +331,13 @@ func requireNoRawModelTypes(t *testing.T, v reflect.Value) {
 			t.Fatalf("forbidden raw model type %q found in render context", typeName)
 		}
 		switch v.Kind() {
-		case reflect.Ptr, reflect.Interface:
+		case reflect.Pointer, reflect.Interface:
 			if !v.IsNil() {
 				visit(v.Elem())
 			}
 		case reflect.Struct:
-			for i := 0; i < v.NumField(); i++ {
-				visit(v.Field(i))
+			for _, field := range v.Fields() {
+				visit(field)
 			}
 		case reflect.Slice, reflect.Array:
 			for i := 0; i < v.Len(); i++ {

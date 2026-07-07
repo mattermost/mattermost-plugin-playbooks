@@ -11,9 +11,9 @@ import "sort"
 // thread relation); CreateAt is used ONLY for display order, never for
 // grouping:
 //
-//   * Threads in the returned slice are sorted by their root's CreateAt
+//   - Threads in the returned slice are sorted by their root's CreateAt
 //     ascending — readers scan threads in the order conversations started.
-//   * Replies within a thread are sorted by their own CreateAt ascending —
+//   - Replies within a thread are sorted by their own CreateAt ascending —
 //     conversation order within the thread.
 //
 // Posts whose RootID points at a root not in this slice (orphans — the

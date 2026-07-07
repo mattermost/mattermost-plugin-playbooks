@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-package markdown_writer
+package markdown_writer //nolint:staticcheck
 
 import (
 	"bytes"
@@ -133,7 +133,7 @@ func writePlaybookRetrospective(b *bytes.Buffer, pc report.PlaybookRenderContext
 	for _, m := range cfg.Metrics {
 		fmt.Fprintf(b, "- **%s** (%s, target %s)\n", m.Title, m.Type, formatMetricTarget(m))
 		if d := strings.TrimSpace(m.Description); d != "" {
-			for _, ln := range strings.Split(d, "\n") {
+			for ln := range strings.SplitSeq(d, "\n") {
 				b.WriteString("  ")
 				b.WriteString(ln)
 				b.WriteString("\n")
