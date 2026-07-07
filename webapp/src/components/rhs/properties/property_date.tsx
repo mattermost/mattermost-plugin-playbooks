@@ -87,6 +87,13 @@ const DateProperty = (props: Props) => {
         setDisplayMillis(newMillis);
     }, [props.value?.value]);
 
+    const handleClick = useCallback(() => {
+        if (props.readOnly) {
+            return;
+        }
+        setIsEditing(true);
+    }, [props.readOnly]);
+
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
         if (props.readOnly) {
             return;
@@ -149,8 +156,8 @@ const DateProperty = (props: Props) => {
     return (
         <PropertyDisplayContainer
             $readOnly={props.readOnly}
-            onClick={props.readOnly ? undefined : () => setIsEditing(true)}
-            onKeyDown={props.readOnly ? undefined : handleActivateKey}
+            onClick={handleClick}
+            onKeyDown={handleActivateKey}
             data-testid='property-value'
         >
             {formatted ?? <EmptyState/>}

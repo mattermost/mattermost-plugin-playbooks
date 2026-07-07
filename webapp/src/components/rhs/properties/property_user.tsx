@@ -48,6 +48,13 @@ const UserProperty = (props: Props) => {
 
     const fetchUsersInTeam = useCallback(async () => profilesInTeam, [profilesInTeam]);
 
+    const handleClick = useCallback(() => {
+        if (props.readOnly) {
+            return;
+        }
+        setIsEditing(true);
+    }, [props.readOnly]);
+
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
         if (props.readOnly) {
             return;
@@ -100,8 +107,8 @@ const UserProperty = (props: Props) => {
     return (
         <PropertyDisplayContainer
             $readOnly={props.readOnly}
-            onClick={props.readOnly ? undefined : () => setIsEditing(true)}
-            onKeyDown={props.readOnly ? undefined : handleActivateKey}
+            onClick={handleClick}
+            onKeyDown={handleActivateKey}
             data-testid='property-value'
         >
             {displayValue ? <Profile userId={displayValue}/> : <EmptyState/>}
@@ -134,6 +141,13 @@ export const MultiuserProperty = (props: Props) => {
     }, [props.value?.value]);
 
     const fetchUsersInTeam = useCallback(async () => profilesInTeam, [profilesInTeam]);
+
+    const handleClick = useCallback(() => {
+        if (props.readOnly) {
+            return;
+        }
+        setIsEditing(true);
+    }, [props.readOnly]);
 
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
         if (props.readOnly) {
@@ -217,8 +231,8 @@ export const MultiuserProperty = (props: Props) => {
     return (
         <PropertyDisplayContainer
             $readOnly={props.readOnly}
-            onClick={props.readOnly ? undefined : () => setIsEditing(true)}
-            onKeyDown={props.readOnly ? undefined : handleActivateKey}
+            onClick={handleClick}
+            onKeyDown={handleActivateKey}
             data-testid='property-value'
         >
             {displayValues.length === 0 ? <EmptyState/> : (

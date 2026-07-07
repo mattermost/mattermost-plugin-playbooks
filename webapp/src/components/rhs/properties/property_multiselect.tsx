@@ -11,6 +11,7 @@ import PropertySelectInput from './property_select_input';
 
 import PropertyChip from './property_chip';
 import EmptyState from './empty_state';
+import {readOnlyInteractiveStyles} from './property_styles';
 
 interface Props extends PropertyComponentProps {
     onValueChange: (value: string[] | null) => void;
@@ -71,7 +72,7 @@ const MultiselectProperty = (props: Props) => {
     if (!displayValue || !Array.isArray(displayValue) || displayValue.length === 0) {
         return (
             <EmptyMultiselectDisplay
-                onClick={props.readOnly ? undefined : handleStartEdit}
+                onClick={handleStartEdit}
                 $readOnly={props.readOnly}
                 data-testid='property-value'
             >
@@ -105,18 +106,10 @@ const ChipsContainer = styled.div`
 
 const EmptyMultiselectDisplay = styled.div<{$readOnly?: boolean}>`
     flex: 1;
-    cursor: ${({$readOnly}) => ($readOnly ? 'default' : 'pointer')};
     padding: 4px 0;
     min-height: 20px;
 
-    &:hover {
-        ${({$readOnly}) => !$readOnly && `
-            background-color: rgba(var(--center-channel-color-rgb), 0.04);
-            border-radius: 4px;
-            margin: 0 -4px;
-            padding: 4px;
-        `}
-    }
+    ${readOnlyInteractiveStyles}
 `;
 
 export default MultiselectProperty;
