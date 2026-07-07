@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-package markdown_writer
+package markdown_writer //nolint:staticcheck
 
 import (
 	"bytes"
@@ -79,7 +79,7 @@ func writeRunTimeline(b *bytes.Buffer, rc report.RenderContext) {
 		when := formatDate(ev.CreateAt)
 		fmt.Fprintf(b, "- **%s** · _%s_ — %s\n", when, f.TypeLabel, f.Headline)
 		if f.Detail != "" {
-			for _, ln := range strings.Split(f.Detail, "\n") {
+			for ln := range strings.SplitSeq(f.Detail, "\n") {
 				b.WriteString("  ")
 				b.WriteString(ln)
 				b.WriteString("\n")
@@ -135,7 +135,7 @@ func writeRunRetrospective(b *bytes.Buffer, rc report.RenderContext) {
 	for _, m := range rc.Retrospective.Metrics {
 		fmt.Fprintf(b, "- **%s** — %s\n", m.Title, formatMetricValue(m))
 		if d := strings.TrimSpace(m.Description); d != "" {
-			for _, ln := range strings.Split(d, "\n") {
+			for ln := range strings.SplitSeq(d, "\n") {
 				b.WriteString("  ")
 				b.WriteString(ln)
 				b.WriteString("\n")

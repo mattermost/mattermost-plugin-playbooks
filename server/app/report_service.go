@@ -190,8 +190,8 @@ func (s *ReportService) AssembleRunReportContext(
 	}
 
 	if sections.Transcript {
-		switch {
-		case run.ChannelID == "":
+		switch run.ChannelID {
+		case "":
 			rc.TranscriptOmittedReason = coretypes.TranscriptOmittedNoChannel
 		default:
 			if _, mErr := s.pluginAPI.Channel.GetMember(run.ChannelID, userID); mErr != nil {
@@ -428,10 +428,8 @@ func (s *ReportService) channelPostsIterator(channelID string, startMs, endMs in
 				continue
 			}
 
-			author, ok := usersCache[post.UserId]
-			if !ok && post.UserId != "" {
-				author = s.resolveUser(post.UserId)
-				usersCache[post.UserId] = author
+			if _, ok := usersCache[post.UserId]; !ok && post.UserId != "" {
+				usersCache[post.UserId] = s.resolveUser(post.UserId)
 			}
 
 			out = append(out, report.RenderPost{
@@ -595,7 +593,6 @@ func (s *ReportService) buildResolverTable(
 	eg.SetLimit(4)
 
 	for _, id := range uniqUsers {
-		id := id
 		eg.Go(func() error {
 			lookupCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
@@ -609,7 +606,6 @@ func (s *ReportService) buildResolverTable(
 	}
 
 	for _, name := range uniqChannels {
-		name := name
 		eg.Go(func() error {
 			lookupCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
@@ -623,7 +619,6 @@ func (s *ReportService) buildResolverTable(
 	}
 
 	for _, fid := range uniqFiles {
-		fid := fid
 		eg.Go(func() error {
 			lookupCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()

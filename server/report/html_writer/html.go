@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-package html_writer
+package html_writer //nolint:staticcheck
 
 import (
 	"bytes"
@@ -45,17 +45,17 @@ type runReportData struct {
 	FontCSS   template.CSS
 	StylesCSS template.CSS
 
-	Run            report.RenderRun
-	Owner          report.RenderUser
-	Participants   []report.RenderUser
-	StatusUpdates  []statusUpdateData
-	TimelineEvents []timelineEventData
-	Checklists     []checklistData
-	Retrospective  retroData
-	Transcript               []threadData
-	TranscriptOrphans        []replyData // populated in threaded mode when parent posts are missing
-	TranscriptChronological  bool        // true → render TranscriptChronoPosts instead of Transcript
-	TranscriptChronoPosts    []chronoPost
+	Run                     report.RenderRun
+	Owner                   report.RenderUser
+	Participants            []report.RenderUser
+	StatusUpdates           []statusUpdateData
+	TimelineEvents          []timelineEventData
+	Checklists              []checklistData
+	Retrospective           retroData
+	Transcript              []threadData
+	TranscriptOrphans       []replyData // populated in threaded mode when parent posts are missing
+	TranscriptChronological bool        // true → render TranscriptChronoPosts instead of Transcript
+	TranscriptChronoPosts   []chronoPost
 	// TranscriptEmptyMessage is shown when the transcript section produces
 	// no rendered posts. Set per the data-layer's TranscriptOmittedReason
 	// so we don't blame channel membership when the real cause is "no
@@ -65,16 +65,16 @@ type runReportData struct {
 	TranscriptTruncation report.Truncation
 
 	// Computed
-	OwnerDisplay   string
-	StartedAt      string
-	EndedAt        string
-	Duration       string
-	SummaryHTML    template.HTML
-	TasksDone      int
-	TasksTotal     int
-	TasksPct       int
-	IsInProgress   bool
-	IsFinished     bool
+	OwnerDisplay string
+	StartedAt    string
+	EndedAt      string
+	Duration     string
+	SummaryHTML  template.HTML
+	TasksDone    int
+	TasksTotal   int
+	TasksPct     int
+	IsInProgress bool
+	IsFinished   bool
 
 	GeneratedAt string
 	Resolvers   report.ResolverTable
@@ -285,7 +285,7 @@ func buildRunData(rc report.RenderContext, opts Options) runReportData {
 	data := runReportData{
 		Title:                title,
 		PageSize:             pageSize(opts.PageSize),
-		FontCSS:              template.CSS(systemFontCSS()),
+		FontCSS:              template.CSS(systemFontCSS()), //nolint:gosec
 		Run:                  rc.Run,
 		Owner:                rc.Owner,
 		Participants:         rc.Participants,
@@ -442,7 +442,7 @@ func buildPlaybookData(pc report.PlaybookRenderContext, opts Options) playbookRe
 	data := playbookReportData{
 		Title:             title,
 		PageSize:          pageSize(opts.PageSize),
-		FontCSS:           template.CSS(systemFontCSS()),
+		FontCSS:           template.CSS(systemFontCSS()), //nolint:gosec
 		Playbook:          pc.Playbook,
 		BroadcastChannels: pc.BroadcastChannels,
 		SignalKeywords:    pc.SignalKeywords,
@@ -575,7 +575,7 @@ func markdownInlineToHTML(md string, rt report.ResolverTable) template.HTML {
 	full = strings.TrimSpace(full)
 	full = strings.TrimPrefix(full, "<p>")
 	full = strings.TrimSuffix(full, "</p>")
-	return template.HTML(full)
+	return template.HTML(full) //nolint:gosec
 }
 
 func countClosed(items []report.RenderChecklistItem) (int, int) {
@@ -741,4 +741,3 @@ func filterSystemPosts(posts []report.RenderPost) []report.RenderPost {
 	}
 	return out
 }
-

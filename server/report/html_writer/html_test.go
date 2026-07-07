@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-package html_writer
+package html_writer //nolint:staticcheck
 
 import (
 	"strings"
@@ -136,32 +136,32 @@ func TestRenderRunHTML_Smoke(t *testing.T) {
 		"<!doctype html>",
 		"<html",
 		"Content-Security-Policy",
-		"Run Alpha Report",      // title
-		"Run Alpha",             // h1
-		"In Progress",           // status pill
-		"@alice",                // owner and participants
-		"@bob",                  // participants
-		"Summary",               // section heading
-		"Brief outage",          // summary body
+		"Run Alpha Report",           // title
+		"Run Alpha",                  // h1
+		"In Progress",                // status pill
+		"@alice",                     // owner and participants
+		"@bob",                       // participants
+		"Summary",                    // section heading
+		"Brief outage",               // summary body
 		"<strong>Resolved.</strong>", // markdown rendered
-		"Timeline",              // section
-		"Run created",           // timeline summary
-		"timeline-event__label", // per-event type label chip
-		"Status Updates",        // section
-		"Investigating.",        // status body
-		"Tasks",                 // section
-		"Initial response",      // checklist
-		"Page on-call",          // task title
-		"Postmortem doc",        // task
-		"/postmortem create",    // command
-		"Retrospective",         // section
-		"What went well",        // retro body heading
-		"Time to detect",        // metric
-		"Transcript",            // section
-		"Looking into it.",      // transcript body
-		"Same here.",            // transcript reply
-		`@page`,                 // CSS includes @page
-		"size: A4",              // page size hint applied
+		"Timeline",                   // section
+		"Run created",                // timeline summary
+		"timeline-event__label",      // per-event type label chip
+		"Status Updates",             // section
+		"Investigating.",             // status body
+		"Tasks",                      // section
+		"Initial response",           // checklist
+		"Page on-call",               // task title
+		"Postmortem doc",             // task
+		"/postmortem create",         // command
+		"Retrospective",              // section
+		"What went well",             // retro body heading
+		"Time to detect",             // metric
+		"Transcript",                 // section
+		"Looking into it.",           // transcript body
+		"Same here.",                 // transcript reply
+		`@page`,                      // CSS includes @page
+		"size: A4",                   // page size hint applied
 	})
 	mustNotContain(t, s, []string{"<script", "javascript:", "onerror"})
 }
@@ -220,29 +220,29 @@ func TestRenderPlaybookHTML_Smoke(t *testing.T) {
 	mustContain(t, s, []string{
 		"<!doctype html>",
 		"Content-Security-Policy",
-		"PB Report",                            // title
-		"Sev1 Incident Response",               // h1
-		"Public",                               // visibility pill
-		"Standard response",                    // description body
-		"<strong>playbook</strong>",            // markdown survives
-		"Members",                              // section
-		"@alice",                               // member display
-		"playbook_admin",                       // role
-		"Checklist Templates",                  // section
-		"Triage",                               // checklist title
-		"Acknowledge alert",                    // task
-		"/dash open",                           // command
-		"Status Updates",                       // section
-		"Every 30 minutes",                     // cadence
-		"What&#39;s the latest?",               // template markdown (apostrophe gets HTML-escaped by goldmark)
-		"Retrospective",                        // section
-		"After resolution",                     // retro cadence
-		"TTD",                                  // metric
-		"Automations",                          // section
-		"~incidents",                           // broadcast channel
-		"https://hooks.example.com/abc",        // unmasked webhook (caller is admin)
-		"https://hooks.example.com/****",       // masked webhook
-		"sev1",                                 // signal keyword
+		"PB Report",                      // title
+		"Sev1 Incident Response",         // h1
+		"Public",                         // visibility pill
+		"Standard response",              // description body
+		"<strong>playbook</strong>",      // markdown survives
+		"Members",                        // section
+		"@alice",                         // member display
+		"playbook_admin",                 // role
+		"Checklist Templates",            // section
+		"Triage",                         // checklist title
+		"Acknowledge alert",              // task
+		"/dash open",                     // command
+		"Status Updates",                 // section
+		"Every 30 minutes",               // cadence
+		"What&#39;s the latest?",         // template markdown (apostrophe gets HTML-escaped by goldmark)
+		"Retrospective",                  // section
+		"After resolution",               // retro cadence
+		"TTD",                            // metric
+		"Automations",                    // section
+		"~incidents",                     // broadcast channel
+		"https://hooks.example.com/abc",  // unmasked webhook (caller is admin)
+		"https://hooks.example.com/****", // masked webhook
+		"sev1",                           // signal keyword
 		"outage",
 	})
 	mustNotContain(t, s, []string{"<script", "javascript:", "onerror"})
