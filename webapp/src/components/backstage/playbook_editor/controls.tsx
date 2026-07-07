@@ -58,7 +58,6 @@ import {
 } from 'src/client';
 import ExportOptionsModal, {ExportFormat, SectionFlags} from 'src/components/export_options_modal';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
@@ -407,6 +406,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEd
                 triggerPDFDownload(result);
                 return;
             }
+
             // format === 'pdf'
             try {
                 const result = await exportPlaybookPDF(playbook.id, sections);

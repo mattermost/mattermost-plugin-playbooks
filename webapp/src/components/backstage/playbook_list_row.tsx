@@ -31,6 +31,7 @@ import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {isCurrentUserAdmin} from 'src/selectors';
 import {Playbook} from 'src/types/playbook';
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {
     DotMenuButton,
@@ -38,7 +39,6 @@ import DotMenu, {
     DropdownMenuItemStyled,
     iconSplitStyling,
 } from 'src/components/dot_menu';
-import Tooltip from 'src/components/widgets/tooltip';
 import {
     PDFExportError,
     createPlaybookRun,
@@ -52,7 +52,6 @@ import {
 import ExportOptionsModal, {ExportFormat, SectionFlags} from 'src/components/export_options_modal';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
@@ -166,6 +165,7 @@ const PlaybookListRow = (props: Props) => {
                 triggerPDFDownload(result);
                 return;
             }
+
             // format === 'pdf'
             try {
                 const result = await exportPlaybookPDF(props.playbook.id, sections);

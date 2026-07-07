@@ -1028,10 +1028,12 @@ export function triggerBrowserPrint(blob: Blob): void {
         printed = true;
         popup.focus();
         popup.print();
+
         // Revoke the blob URL after a delay to allow the print dialog to open.
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
     };
     popup.addEventListener('load', doPrint, {once: true});
+
     // Backstop: some browsers (Safari, older Firefox) don't fire load on blob URLs
     setTimeout(doPrint, 500);
 }
