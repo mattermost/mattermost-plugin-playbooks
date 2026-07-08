@@ -58,4 +58,5 @@ export interface PropertyComponentProps {
     field: PropertyField;
     value?: PropertyValue;
     runID: string;
+    readOnly?: boolean;
 }
