@@ -9,11 +9,13 @@ import {PropertyField, PropertyValue} from 'src/types/properties';
 
 import PropertyTextInput from './property_text_input';
 import EmptyState from './empty_state';
+import {readOnlyInteractiveStyles} from './property_styles';
 
 interface Props {
     field: PropertyField;
     value?: PropertyValue;
     runID: string;
+    readOnly?: boolean;
     onValueChange: (value: string | null) => void;
 }
 
@@ -34,6 +36,9 @@ const TextProperty = (props: Props) => {
     };
 
     const handleStartEdit = () => {
+        if (props.readOnly) {
+            return;
+        }
         setIsEditing(true);
     };
 
@@ -73,6 +78,7 @@ const TextProperty = (props: Props) => {
     return (
         <TextDisplay
             onClick={handleStartEdit}
+            $readOnly={props.readOnly}
             data-testid='property-value'
         >
             {content}
@@ -80,21 +86,15 @@ const TextProperty = (props: Props) => {
     );
 };
 
-const TextDisplay = styled.div`
+const TextDisplay = styled.div<{$readOnly?: boolean}>`
     flex: 1;
     color: var(--center-channel-color);
     font-size: 14px;
     line-height: 20px;
-    cursor: pointer;
     padding: 4px 0;
     min-height: 20px;
 
-    &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        border-radius: 4px;
-        margin: 0 -4px;
-        padding: 4px;
-    }
+    ${readOnlyInteractiveStyles}
 `;
 
 const URLLink = styled.a`
