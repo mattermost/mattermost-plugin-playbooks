@@ -93,7 +93,7 @@ type MoveSectionArgs struct {
 
 func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Server) {
 	addMCPHelperTool(server, p.clientFactory, "check_item",
-		"Change the state of a checklist item in a playbook run. Use new_state='closed' to check it off or 'open' to uncheck it. Checklist and item numbers are zero-based indexes. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2, \"new_state\": \"closed\"}",
+		"Change the state of a checklist item in a playbook run. Use new_state='closed' to check it off or 'open' to uncheck it. Checklist and item numbers are zero-based indexes. If you do not already know the run_id and the exact indexes, do NOT guess them: first call resolve_channel_context (passing the channel the agent is operating in) or find_checklist_item to look them up. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2, \"new_state\": \"closed\"}",
 		toolCheckItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_checklist_item",
@@ -168,6 +168,24 @@ func toolCheckItem(ctx context.Context, client APIClient, args CheckItemArgs) (s
 		return "", fmt.Errorf("new_state must be one of open, closed, or skipped")
 	}
 
+	// Fetch the run first so we can give an actionable error (listing the real
+	// items) instead of an opaque API failure when the caller guessed indexes.
+	var run playbookRunDetail
+	if err := client.Get(ctx, fmt.Sprintf("runs/%s", args.RunID), nil, &run); err != nil {
+		return "", fmt.Errorf("failed to get run: %w", err)
+	}
+	if args.ChecklistNumber >= len(run.Checklists) {
+		return "", outOfRangeError("checklist_number", args.ChecklistNumber, run)
+	}
+	if args.ItemNumber >= len(run.Checklists[args.ChecklistNumber].Items) {
+		return "", outOfRangeError("item_number", args.ItemNumber, run)
+	}
+
+	current := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber]
+	if current.State == apiState {
+		return fmt.Sprintf("Checklist item [%d][%d] (%q) in run %s is already '%s'; no change made.", args.ChecklistNumber, args.ItemNumber, current.Title, args.RunID, state), nil
+	}
+
 	body := map[string]string{
 		"new_state": apiState,
 	}
@@ -177,7 +195,16 @@ func toolCheckItem(ctx context.Context, client APIClient, args CheckItemArgs) (s
 		return "", fmt.Errorf("failed to update item state: %w", err)
 	}
 
-	return fmt.Sprintf("Checklist item [%d][%d] in run %s set to '%s'.", args.ChecklistNumber, args.ItemNumber, args.RunID, state), nil
+	return fmt.Sprintf("Checklist item [%d][%d] (%q) in run %s set to '%s'.", args.ChecklistNumber, args.ItemNumber, current.Title, args.RunID, state), nil
+}
+
+// outOfRangeError builds an error that lists the run's actual checklist items so
+// the caller can correct the indexes rather than guessing again.
+func outOfRangeError(field string, value int, run playbookRunDetail) error {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "%s %d is out of range for run %s. Available items:\n", field, value, run.ID)
+	writeRunChecklists(&sb, run)
+	return fmt.Errorf("%s", sb.String())
 }
 
 func toolAddChecklistItem(ctx context.Context, client APIClient, args AddChecklistItemArgs) (string, error) {

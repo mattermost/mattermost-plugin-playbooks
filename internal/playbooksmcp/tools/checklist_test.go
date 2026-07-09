@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,8 +19,14 @@ type fakeAPIClient struct {
 	run      playbookRunDetail
 	listRuns listRunsResponse
 
-	getEndpoint string
-	getParams   url.Values
+	// runsByID, when set, lets Get resolve a specific run by the ID in the
+	// "runs/{id}" endpoint. Falls back to run when the ID is not present.
+	runsByID map[string]playbookRunDetail
+
+	getEndpoint  string
+	getParams    url.Values
+	getEndpoints []string
+	listParams   url.Values
 
 	postEndpoint string
 	postBody     any
@@ -36,11 +43,19 @@ type fakeAPIClient struct {
 func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Values, result any) error {
 	f.getEndpoint = endpoint
 	f.getParams = params
+	f.getEndpoints = append(f.getEndpoints, endpoint)
 	switch v := result.(type) {
 	case *playbookRunDetail:
 		*v = f.run
+		if f.runsByID != nil {
+			id := strings.TrimPrefix(endpoint, "runs/")
+			if run, ok := f.runsByID[id]; ok {
+				*v = run
+			}
+		}
 	case *listRunsResponse:
 		*v = f.listRuns
+		f.listParams = params
 	case *map[string]any:
 		*v = map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Created playbook"}
 	default:
@@ -86,7 +101,15 @@ func (f *fakeAPIClient) GetPlaybookURL(playbookID string) string {
 }
 
 func TestToolCheckItemOpenTranslatesToEmptyAPIState(t *testing.T) {
-	client := &fakeAPIClient{}
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			ID: "abcdefghijklmnopqrstuvwxyz",
+			Checklists: []checklist{
+				{Items: []checklistItem{{}}},
+				{Items: []checklistItem{{}, {}, {Title: "Deploy", State: "closed"}}},
+			},
+		},
+	}
 	args := CheckItemArgs{
 		RunID:           "abcdefghijklmnopqrstuvwxyz",
 		ChecklistNumber: 1,
