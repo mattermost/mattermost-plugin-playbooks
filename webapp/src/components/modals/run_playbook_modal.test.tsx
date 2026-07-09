@@ -945,6 +945,38 @@ describe('RunPlaybookModal — template mode', () => {
             expect(btn).not.toBeNull();
             expect(btn.props.disabled).toBe(true);
         });
+
+        it('disables confirm when override is allowed and a short typed name resolves to a name over 64 chars', () => {
+            // The raw typed name is short (freeNameValid would pass on its own), but the property
+            // value it references is long enough that the resolved preview exceeds the limit —
+            // this must still block submission, since the channel display name is silently
+            // truncated to 64 runes server-side while the run's stored name is not, and that
+            // divergence is exactly what the "exceeds" warning is telling the user about.
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+            mockUseRestPlaybook.mockReturnValue([{channel_name_template_override_allowed: true}]);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const fieldInput = findNodeByTestId(component!.toJSON(), 'property-field-field-sev');
+            act(() => {
+                fieldInput.props.onChange({target: {value: 'A'.repeat(RUN_NAME_MAX_LENGTH + 1)}});
+            });
+
+            const nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            act(() => {
+                nameInput.props.onChange({target: {value: '{Severity}'}});
+            });
+
+            const json = toJson(component!);
+            expect(json).toContain('exceeds');
+
+            const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
+            expect(btn.props.disabled).toBe(true);
+        });
     });
 
     describe('handleSelectPlaybook callback', () => {

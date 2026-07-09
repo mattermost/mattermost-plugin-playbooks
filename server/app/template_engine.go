@@ -181,14 +181,32 @@ func TemplateUsesSeqToken(tmpl string) bool {
 	return seqTokenRegex.MatchString(tmpl)
 }
 
+// resolvableSystemTokens are the system tokens buildSystemTokens actually supplies values for
+// during run-name resolution. PROPERTY_USER is reserved as a field name (see
+// validateReservedFieldName) to avoid colliding with the assignee-type keyword, but it is not a
+// template placeholder token and is never resolved by ResolveTemplate — it must be excluded here
+// (KEEP IN SYNC with webapp SYSTEM_TOKENS in template_utils.ts) so a template that references only
+// {PROPERTY_USER} is never treated as lockable; locking it would make every run creation fail,
+// since resolution would report it as an unresolved placeholder.
+var resolvableSystemTokens = []string{"SEQ", "OWNER", "CREATOR"}
+
+func isResolvableSystemToken(name string) bool {
+	for _, tok := range resolvableSystemTokens {
+		if strings.EqualFold(name, tok) {
+			return true
+		}
+	}
+	return false
+}
+
 // templateHasValidVariable reports whether template contains at least one placeholder that
-// resolves to a real value: a system token (SEQ, OWNER, CREATOR, PROPERTY_USER) or the name of a
-// field in fields. An unrecognized placeholder (a typo, or a reference to a deleted field) does
-// not count — it can never resolve, so it must not be able to "lock" the template.
+// resolves to a real value: a system token (SEQ, OWNER, CREATOR) or the name of a field in
+// fields. An unrecognized placeholder (a typo, a reference to a deleted field, or PROPERTY_USER)
+// does not count — it can never resolve, so it must not be able to "lock" the template.
 func templateHasValidVariable(template string, fields []PropertyField) bool {
 	for _, match := range placeholderRegex.FindAllStringSubmatch(template, -1) {
 		name := strings.TrimSpace(match[1])
-		if isSystemToken(name) {
+		if isResolvableSystemToken(name) {
 			return true
 		}
 		for i := range fields {

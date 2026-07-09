@@ -66,11 +66,12 @@ interface Props {
 const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange}: Props) => {
     const [restPlaybookLocal] = useRestPlaybook(playbook.id);
     const restPlaybook = restPlaybookProp ?? restPlaybookLocal;
-    const [fieldNames, setFieldNames] = useState<string[]>([]);
+    const [fieldNames, setFieldNames] = useState<string[] | undefined>(undefined);
     useEffect(() => {
+        setFieldNames(undefined);
         fetchPlaybookPropertyFields(playbook.id)
             .then((fields) => setFieldNames(fields.map((f) => f.name)))
-            .catch(() => { /* ignore fetch errors — fieldNames stays empty */ });
+            .catch(() => setFieldNames([]));
     }, [playbook.id]);
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();

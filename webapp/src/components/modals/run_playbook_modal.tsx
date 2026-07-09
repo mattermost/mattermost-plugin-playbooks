@@ -294,7 +294,7 @@ export const RunPlaybookModal = ({
         return true;
     }), [templateFields, propertyValues]);
 
-    const isFormValid = !attributesLoading && nameValid && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
+    const isFormValid = !attributesLoading && nameValid && !namePreviewTooLong && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
 
     const handleSetChannelMode = useCallback((mode: 'link_existing_channel' | 'create_new_channel') => {
         if (isNewChannelOnly && mode === 'link_existing_channel') {

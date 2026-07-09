@@ -316,6 +316,42 @@ describe('CreateAChannel — run name template override allowed checkbox', () =>
         expect(checkbox?.props.checked).toBe(false);
     });
 
+    it('does not self-heal a locked, field-based template while fieldNames is still loading', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '{Zone} Incident',
+            channel_name_template_override_allowed: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const onChannelNameTemplateOverrideAllowedChange = jest.fn();
+
+        // fieldNames omitted entirely — mirrors the parent's loading state before
+        // fetchPlaybookPropertyFields resolves (section_actions.tsx).
+        let component: ReturnType<typeof renderWithIntl>;
+        act(() => {
+            component = renderWithIntl(
+                <CreateAChannel
+                    playbook={playbook}
+                    setPlaybook={jest.fn()}
+                    onChannelNameTemplateOverrideAllowedChange={onChannelNameTemplateOverrideAllowedChange}
+                />,
+            );
+        });
+
+        expect(onChannelNameTemplateOverrideAllowedChange).not.toHaveBeenCalled();
+
+        const [checkbox] = component!.root.findAll(
+            (node) => node.props.testId === 'channel-access-run-name-template-override-allowed',
+        );
+        expect(checkbox?.props.disabled).toBe(false);
+        expect(checkbox?.props.checked).toBe(false);
+    });
+
     it('self-heals a stale stored false by persisting true when the template has no valid variable', () => {
         const playbook = {
             create_public_playbook_run: true,

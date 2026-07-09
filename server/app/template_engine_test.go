@@ -358,6 +358,15 @@ func TestTemplateOverrideAllowed(t *testing.T) {
 		require.True(t, TemplateOverrideAllowed(pb, "Incident-{SEQ}", nil))
 	})
 
+	// PROPERTY_USER is reserved as a field name (see validateReservedFieldName) but is not a
+	// resolvable template token — buildSystemTokens never supplies it. Treating it as valid here
+	// would let a template that only references {PROPERTY_USER} be locked, and every run creation
+	// would then fail because the placeholder can never resolve.
+	t.Run("PROPERTY_USER is not a valid variable, even though it is a reserved field name", func(t *testing.T) {
+		pb := &Playbook{ChannelNameTemplateOverrideAllowed: false}
+		require.True(t, TemplateOverrideAllowed(pb, "{PROPERTY_USER}", nil))
+	})
+
 	t.Run("a known property field is a valid variable and honors the flag", func(t *testing.T) {
 		pb := &Playbook{ChannelNameTemplateOverrideAllowed: false}
 		require.False(t, TemplateOverrideAllowed(pb, "{Zone} Incident", []PropertyField{zone}))

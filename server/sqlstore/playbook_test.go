@@ -1765,23 +1765,24 @@ func NewPBBuilder() *PlaybookBuilder {
 	timeNow := model.GetMillis()
 	return &PlaybookBuilder{
 		&app.Playbook{
-			Title:                     "base playbook",
-			TeamID:                    model.NewId(),
-			CreatePublicPlaybookRun:   false,
-			CreateAt:                  model.GetMillis(),
-			UpdateAt:                  timeNow,
-			DeleteAt:                  0,
-			Checklists:                []app.Checklist(nil),
-			Members:                   []app.PlaybookMember(nil),
-			InvitedUserIDs:            []string(nil),
-			InvitedGroupIDs:           []string(nil),
-			NumActions:                1, // Channel creation is always on
-			DefaultPlaybookAdminRole:  app.PlaybookRoleAdmin,
-			DefaultPlaybookMemberRole: app.PlaybookRoleMember,
-			DefaultRunAdminRole:       app.RunRoleAdmin,
-			DefaultRunMemberRole:      app.RunRoleMember,
-			NextRunNumber:             1,
-			RetrospectiveEnabled:      true,
+			Title:                              "base playbook",
+			TeamID:                             model.NewId(),
+			CreatePublicPlaybookRun:            false,
+			CreateAt:                           model.GetMillis(),
+			UpdateAt:                           timeNow,
+			DeleteAt:                           0,
+			Checklists:                         []app.Checklist(nil),
+			Members:                            []app.PlaybookMember(nil),
+			InvitedUserIDs:                     []string(nil),
+			InvitedGroupIDs:                    []string(nil),
+			NumActions:                         1, // Channel creation is always on
+			DefaultPlaybookAdminRole:           app.PlaybookRoleAdmin,
+			DefaultPlaybookMemberRole:          app.PlaybookRoleMember,
+			DefaultRunAdminRole:                app.RunRoleAdmin,
+			DefaultRunMemberRole:               app.RunRoleMember,
+			NextRunNumber:                      1,
+			RetrospectiveEnabled:               true,
+			ChannelNameTemplateOverrideAllowed: true,
 		},
 	}
 }
