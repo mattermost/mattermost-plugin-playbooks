@@ -5,8 +5,10 @@ package tools
 
 import (
 	"context"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -37,55 +39,37 @@ func TestToolResolveChannelContextListsItemsWithIndexes(t *testing.T) {
 	}
 
 	out, err := toolResolveChannelContext(context.Background(), client, ResolveChannelContextArgs{ChannelID: testChannelID})
-	if err != nil {
-		t.Fatalf("toolResolveChannelContext returned error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if client.listParams.Get("channel_id") != testChannelID {
-		t.Fatalf("expected channel_id filter %q, got %q", testChannelID, client.listParams.Get("channel_id"))
-	}
-	if client.listParams.Get("statuses") != "InProgress" {
-		t.Fatalf("expected InProgress status filter, got %q", client.listParams.Get("statuses"))
-	}
+	assert.Equal(t, testChannelID, client.listParams.Get("channel_id"))
+	assert.Equal(t, "InProgress", client.listParams.Get("statuses"))
 	for _, want := range []string{"Incident 42", testRunID1, "[0][0] Acknowledge (closed)", "[0][1] Deploy fix (open)"} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("expected output to contain %q, got:\n%s", want, out)
-		}
+		assert.Contains(t, out, want)
 	}
 }
 
 func TestToolResolveChannelContextIncludeFinished(t *testing.T) {
 	client := &fakeAPIClient{}
-	if _, err := toolResolveChannelContext(context.Background(), client, ResolveChannelContextArgs{
+	_, err := toolResolveChannelContext(context.Background(), client, ResolveChannelContextArgs{
 		ChannelID:       testChannelID,
 		IncludeFinished: true,
-	}); err != nil {
-		t.Fatalf("toolResolveChannelContext returned error: %v", err)
-	}
-	if client.listParams.Get("statuses") != "" {
-		t.Fatalf("expected no status filter when include_finished, got %q", client.listParams.Get("statuses"))
-	}
+	})
+	require.NoError(t, err)
+	assert.Empty(t, client.listParams.Get("statuses"))
 }
 
 func TestToolResolveChannelContextNoRuns(t *testing.T) {
 	client := &fakeAPIClient{}
 	out, err := toolResolveChannelContext(context.Background(), client, ResolveChannelContextArgs{ChannelID: testChannelID})
-	if err != nil {
-		t.Fatalf("toolResolveChannelContext returned error: %v", err)
-	}
-	if !strings.Contains(out, "No in-progress runs found") {
-		t.Fatalf("unexpected output: %s", out)
-	}
+	require.NoError(t, err)
+	assert.Contains(t, out, "No in-progress runs found")
 }
 
 func TestToolResolveChannelContextRejectsBadChannel(t *testing.T) {
 	client := &fakeAPIClient{}
-	if _, err := toolResolveChannelContext(context.Background(), client, ResolveChannelContextArgs{ChannelID: "bad"}); err == nil {
-		t.Fatal("expected channel_id validation error")
-	}
-	if len(client.getEndpoints) != 0 {
-		t.Fatalf("expected no API calls on validation failure, got %v", client.getEndpoints)
-	}
+	_, err := toolResolveChannelContext(context.Background(), client, ResolveChannelContextArgs{ChannelID: "bad"})
+	require.Error(t, err)
+	assert.Empty(t, client.getEndpoints, "expected no API calls on validation failure")
 }
 
 func TestToolFindChecklistItemSingleMatch(t *testing.T) {
@@ -109,15 +93,9 @@ func TestToolFindChecklistItemSingleMatch(t *testing.T) {
 		Query:     "deploy to staging",
 		ChannelID: testChannelID,
 	})
-	if err != nil {
-		t.Fatalf("toolFindChecklistItem returned error: %v", err)
-	}
-	if !strings.Contains(out, "Found 1 matching item") {
-		t.Fatalf("expected single match, got:\n%s", out)
-	}
-	if !strings.Contains(out, "checklist_number: 0, item_number: 1") {
-		t.Fatalf("expected indexes for matched item, got:\n%s", out)
-	}
+	require.NoError(t, err)
+	assert.Contains(t, out, "Found 1 matching item")
+	assert.Contains(t, out, "checklist_number: 0, item_number: 1")
 }
 
 func TestToolFindChecklistItemMultipleMatches(t *testing.T) {
@@ -137,12 +115,8 @@ func TestToolFindChecklistItemMultipleMatches(t *testing.T) {
 		Query:     "deploy",
 		ChannelID: testChannelID,
 	})
-	if err != nil {
-		t.Fatalf("toolFindChecklistItem returned error: %v", err)
-	}
-	if !strings.Contains(out, "Found 2 matching items") {
-		t.Fatalf("expected multiple matches, got:\n%s", out)
-	}
+	require.NoError(t, err)
+	assert.Contains(t, out, "Found 2 matching items")
 }
 
 func TestToolFindChecklistItemSkipsClosedByDefault(t *testing.T) {
@@ -159,24 +133,16 @@ func TestToolFindChecklistItemSkipsClosedByDefault(t *testing.T) {
 		Query:     "deploy",
 		ChannelID: testChannelID,
 	})
-	if err != nil {
-		t.Fatalf("toolFindChecklistItem returned error: %v", err)
-	}
-	if !strings.Contains(out, "No open checklist item matching") {
-		t.Fatalf("expected no open match, got:\n%s", out)
-	}
+	require.NoError(t, err)
+	assert.Contains(t, out, "No open checklist item matching")
 
 	out, err = toolFindChecklistItem(context.Background(), client, FindChecklistItemArgs{
 		Query:         "deploy",
 		ChannelID:     testChannelID,
 		IncludeClosed: true,
 	})
-	if err != nil {
-		t.Fatalf("toolFindChecklistItem returned error: %v", err)
-	}
-	if !strings.Contains(out, "Found 1 matching item") {
-		t.Fatalf("expected match when include_closed, got:\n%s", out)
-	}
+	require.NoError(t, err)
+	assert.Contains(t, out, "Found 1 matching item")
 }
 
 func TestToolFindChecklistItemByRunID(t *testing.T) {
@@ -194,25 +160,16 @@ func TestToolFindChecklistItemByRunID(t *testing.T) {
 		Query: "rotate",
 		RunID: testRunID1,
 	})
-	if err != nil {
-		t.Fatalf("toolFindChecklistItem returned error: %v", err)
-	}
-	if !strings.Contains(out, "Found 1 matching item") {
-		t.Fatalf("expected single match, got:\n%s", out)
-	}
+	require.NoError(t, err)
+	assert.Contains(t, out, "Found 1 matching item")
 	// Should fetch only the single run, never list.
-	for _, ep := range client.getEndpoints {
-		if ep == "runs" {
-			t.Fatalf("expected no list_runs call when run_id given, got endpoints %v", client.getEndpoints)
-		}
-	}
+	assert.NotContains(t, client.getEndpoints, "runs", "expected no list_runs call when run_id given")
 }
 
 func TestToolFindChecklistItemRequiresQuery(t *testing.T) {
 	client := &fakeAPIClient{}
-	if _, err := toolFindChecklistItem(context.Background(), client, FindChecklistItemArgs{Query: "  "}); err == nil {
-		t.Fatal("expected query validation error")
-	}
+	_, err := toolFindChecklistItem(context.Background(), client, FindChecklistItemArgs{Query: "  "})
+	require.Error(t, err)
 }
 
 func TestToolCheckItemOutOfRangeListsItems(t *testing.T) {
@@ -231,15 +188,10 @@ func TestToolCheckItemOutOfRangeListsItems(t *testing.T) {
 		ItemNumber:      5,
 		NewState:        "closed",
 	})
-	if err == nil {
-		t.Fatal("expected out-of-range error")
-	}
-	if !strings.Contains(err.Error(), "item_number 5 is out of range") || !strings.Contains(err.Error(), "[0][0] First") {
-		t.Fatalf("expected actionable out-of-range error, got: %v", err)
-	}
-	if client.putEndpoint != "" {
-		t.Fatalf("expected no state update on out-of-range, got %q", client.putEndpoint)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "item_number 5 is out of range")
+	assert.Contains(t, err.Error(), "[0][0] First")
+	assert.Empty(t, client.putEndpoint, "expected no state update on out-of-range")
 }
 
 func TestToolRemoveSectionOutOfRangeDoesNotDelete(t *testing.T) {
@@ -249,15 +201,9 @@ func TestToolRemoveSectionOutOfRangeDoesNotDelete(t *testing.T) {
 		RunID:           testRunID1,
 		ChecklistNumber: 5,
 	})
-	if err == nil {
-		t.Fatal("expected out-of-range error")
-	}
-	if !strings.Contains(err.Error(), "checklist_number 5 is out of range") {
-		t.Fatalf("expected actionable error, got: %v", err)
-	}
-	if client.deleteEndpoint != "" {
-		t.Fatalf("expected no delete on out-of-range, got %q", client.deleteEndpoint)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "checklist_number 5 is out of range")
+	assert.Empty(t, client.deleteEndpoint, "expected no delete on out-of-range")
 }
 
 func TestToolMoveChecklistItemAllowsAppendPosition(t *testing.T) {
@@ -271,12 +217,8 @@ func TestToolMoveChecklistItemAllowsAppendPosition(t *testing.T) {
 		DestChecklistIdx:   1,
 		DestItemIdx:        3, // == item count of dest checklist
 	})
-	if err != nil {
-		t.Fatalf("expected append position to be accepted, got: %v", err)
-	}
-	if client.postEndpoint != "runs/"+testRunID1+"/checklists/move-item" {
-		t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
-	}
+	require.NoError(t, err, "expected append position to be accepted")
+	assert.Equal(t, "runs/"+testRunID1+"/checklists/move-item", client.postEndpoint)
 }
 
 func TestToolMoveChecklistItemRejectsPositionBeyondAppend(t *testing.T) {
@@ -289,12 +231,8 @@ func TestToolMoveChecklistItemRejectsPositionBeyondAppend(t *testing.T) {
 		DestChecklistIdx:   1,
 		DestItemIdx:        4, // > item count, invalid even cross-checklist
 	})
-	if err == nil {
-		t.Fatal("expected out-of-range error for dest_item_idx")
-	}
-	if client.postEndpoint != "" {
-		t.Fatalf("expected no move on invalid position, got %q", client.postEndpoint)
-	}
+	require.Error(t, err)
+	assert.Empty(t, client.postEndpoint, "expected no move on invalid position")
 }
 
 func TestToolMoveChecklistItemSameChecklistRejectsItemCount(t *testing.T) {
@@ -309,12 +247,8 @@ func TestToolMoveChecklistItemSameChecklistRejectsItemCount(t *testing.T) {
 		DestChecklistIdx:   0,
 		DestItemIdx:        3, // == item count, invalid for same-checklist move
 	})
-	if err == nil {
-		t.Fatal("expected out-of-range error for same-checklist dest_item_idx == count")
-	}
-	if client.postEndpoint != "" {
-		t.Fatalf("expected no move on invalid position, got %q", client.postEndpoint)
-	}
+	require.Error(t, err, "expected out-of-range error for same-checklist dest_item_idx == count")
+	assert.Empty(t, client.postEndpoint, "expected no move on invalid position")
 }
 
 func TestToolMoveChecklistItemSameChecklistAllowsLastIndex(t *testing.T) {
@@ -327,12 +261,8 @@ func TestToolMoveChecklistItemSameChecklistAllowsLastIndex(t *testing.T) {
 		DestChecklistIdx:   0,
 		DestItemIdx:        2, // == count-1, the last valid slot for same-checklist
 	})
-	if err != nil {
-		t.Fatalf("expected count-1 to be accepted for same-checklist move, got: %v", err)
-	}
-	if client.postEndpoint != "runs/"+testRunID1+"/checklists/move-item" {
-		t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
-	}
+	require.NoError(t, err, "expected count-1 to be accepted for same-checklist move")
+	assert.Equal(t, "runs/"+testRunID1+"/checklists/move-item", client.postEndpoint)
 }
 
 func TestToolMoveSectionRejectsSectionCount(t *testing.T) {
@@ -344,12 +274,8 @@ func TestToolMoveSectionRejectsSectionCount(t *testing.T) {
 		SourceChecklistIdx: 0,
 		DestChecklistIdx:   2, // == section count, invalid
 	})
-	if err == nil {
-		t.Fatal("expected out-of-range error for dest_checklist_idx == section count")
-	}
-	if client.postEndpoint != "" {
-		t.Fatalf("expected no move on invalid position, got %q", client.postEndpoint)
-	}
+	require.Error(t, err, "expected out-of-range error for dest_checklist_idx == section count")
+	assert.Empty(t, client.postEndpoint, "expected no move on invalid position")
 }
 
 func TestToolCheckItemAlreadyInStateIsNoOp(t *testing.T) {
@@ -368,13 +294,7 @@ func TestToolCheckItemAlreadyInStateIsNoOp(t *testing.T) {
 		ItemNumber:      0,
 		NewState:        "closed",
 	})
-	if err != nil {
-		t.Fatalf("toolCheckItem returned error: %v", err)
-	}
-	if !strings.Contains(out, "already 'closed'") {
-		t.Fatalf("expected no-op message, got: %s", out)
-	}
-	if client.putEndpoint != "" {
-		t.Fatalf("expected no PUT on no-op, got %q", client.putEndpoint)
-	}
+	require.NoError(t, err)
+	assert.Contains(t, out, "already 'closed'")
+	assert.Empty(t, client.putEndpoint, "expected no PUT on no-op")
 }

@@ -131,20 +131,13 @@ func TestToolCheckItemOpenTranslatesToEmptyAPIState(t *testing.T) {
 		NewState:        "open",
 	}
 
-	if _, err := toolCheckItem(context.Background(), client, args); err != nil {
-		t.Fatalf("toolCheckItem returned error: %v", err)
-	}
+	_, err := toolCheckItem(context.Background(), client, args)
+	require.NoError(t, err)
 
-	if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/state" {
-		t.Fatalf("unexpected endpoint: %s", client.putEndpoint)
-	}
+	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/state", client.putEndpoint)
 	body, ok := client.putBody.(map[string]string)
-	if !ok {
-		t.Fatalf("unexpected body type %T", client.putBody)
-	}
-	if got := body["new_state"]; got != "" {
-		t.Fatalf("expected open state to be sent as empty string, got %q", got)
-	}
+	require.Truef(t, ok, "unexpected body type %T", client.putBody)
+	assert.Empty(t, body["new_state"], "expected open state to be sent as empty string")
 }
 
 func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
