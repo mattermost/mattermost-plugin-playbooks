@@ -135,6 +135,11 @@ jobs:
       - name: ci/configure-git-safe-directory
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
+      - name: ci/check-source-plugin-manifest-version
+        run: |
+          # plugin.json must omit "version"; build tooling derives it from git tags/commits for release bundles.
+          make manifest-check
+
       - name: ci/cache-go-tools
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
