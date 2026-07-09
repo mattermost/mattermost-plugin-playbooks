@@ -26,7 +26,7 @@ func TestNewPlaybooksToolProviderRejectsNilClientFactory(t *testing.T) {
 
 func TestProvideMCPHelperToolsRegistersChecklistAssigneeTool(t *testing.T) {
 	ctx := context.Background()
-	fakeClient := &fakeAPIClient{}
+	fakeClient := &fakeAPIClient{run: fixtureRun("abcdefghijklmnopqrstuvwxyz", 3, 3)}
 
 	provider, err := NewPlaybooksToolProvider(func(context.Context) (APIClient, error) {
 		return fakeClient, nil

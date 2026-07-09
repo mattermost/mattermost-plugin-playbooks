@@ -242,6 +242,61 @@ func TestToolCheckItemOutOfRangeListsItems(t *testing.T) {
 	}
 }
 
+func TestToolRemoveSectionOutOfRangeDoesNotDelete(t *testing.T) {
+	client := &fakeAPIClient{run: fixtureRun(testRunID1, 2, 1)}
+
+	_, err := toolRemoveSection(context.Background(), client, RemoveSectionArgs{
+		RunID:           testRunID1,
+		ChecklistNumber: 5,
+	})
+	if err == nil {
+		t.Fatal("expected out-of-range error")
+	}
+	if !strings.Contains(err.Error(), "checklist_number 5 is out of range") {
+		t.Fatalf("expected actionable error, got: %v", err)
+	}
+	if client.deleteEndpoint != "" {
+		t.Fatalf("expected no delete on out-of-range, got %q", client.deleteEndpoint)
+	}
+}
+
+func TestToolMoveChecklistItemAllowsAppendPosition(t *testing.T) {
+	// A destination item index equal to the item count is a valid append.
+	client := &fakeAPIClient{run: fixtureRun(testRunID1, 2, 3)}
+
+	_, err := toolMoveChecklistItem(context.Background(), client, MoveChecklistItemArgs{
+		RunID:              testRunID1,
+		SourceChecklistIdx: 0,
+		SourceItemIdx:      0,
+		DestChecklistIdx:   1,
+		DestItemIdx:        3, // == item count of dest checklist
+	})
+	if err != nil {
+		t.Fatalf("expected append position to be accepted, got: %v", err)
+	}
+	if client.postEndpoint != "runs/"+testRunID1+"/checklists/move-item" {
+		t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+	}
+}
+
+func TestToolMoveChecklistItemRejectsPositionBeyondAppend(t *testing.T) {
+	client := &fakeAPIClient{run: fixtureRun(testRunID1, 2, 3)}
+
+	_, err := toolMoveChecklistItem(context.Background(), client, MoveChecklistItemArgs{
+		RunID:              testRunID1,
+		SourceChecklistIdx: 0,
+		SourceItemIdx:      0,
+		DestChecklistIdx:   1,
+		DestItemIdx:        4, // > item count, invalid
+	})
+	if err == nil {
+		t.Fatal("expected out-of-range error for dest_item_idx")
+	}
+	if client.postEndpoint != "" {
+		t.Fatalf("expected no move on invalid position, got %q", client.postEndpoint)
+	}
+}
+
 func TestToolCheckItemAlreadyInStateIsNoOp(t *testing.T) {
 	client := &fakeAPIClient{
 		run: playbookRunDetail{

@@ -100,6 +100,20 @@ func (f *fakeAPIClient) GetPlaybookURL(playbookID string) string {
 	return "https://mattermost.example.com/playbooks/playbooks/" + playbookID
 }
 
+// fixtureRun builds a run with the given number of sections and items per
+// section, so tests can exercise index-based tools that bounds-check.
+func fixtureRun(runID string, checklists, items int) playbookRunDetail {
+	run := playbookRunDetail{ID: runID}
+	for c := 0; c < checklists; c++ {
+		cl := checklist{Title: fmt.Sprintf("Section %d", c)}
+		for i := 0; i < items; i++ {
+			cl.Items = append(cl.Items, checklistItem{Title: fmt.Sprintf("Item %d-%d", c, i)})
+		}
+		run.Checklists = append(run.Checklists, cl)
+	}
+	return run
+}
+
 func TestToolCheckItemOpenTranslatesToEmptyAPIState(t *testing.T) {
 	client := &fakeAPIClient{
 		run: playbookRunDetail{
@@ -246,7 +260,7 @@ func TestToolEditChecklistItemSetsDueDate(t *testing.T) {
 	_, err := toolEditChecklistItem(context.Background(), client, args)
 	require.NoError(t, err)
 
-	assert.Empty(t, client.getEndpoint)
+	assert.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz", client.getEndpoint)
 	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate", client.putEndpoint)
 	require.IsType(t, map[string]int64{}, client.putBody)
 	body := client.putBody.(map[string]int64)
@@ -281,7 +295,7 @@ func TestToolEditChecklistItemClearsDueDate(t *testing.T) {
 	_, err := toolEditChecklistItem(context.Background(), client, args)
 	require.NoError(t, err)
 
-	assert.Empty(t, client.getEndpoint)
+	assert.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz", client.getEndpoint)
 	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate", client.putEndpoint)
 	require.IsType(t, map[string]int64{}, client.putBody)
 	body := client.putBody.(map[string]int64)
@@ -469,8 +483,13 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	const runID = "abcdefghijklmnopqrstuvwxyz"
 	const assigneeID = "bcdefghijklmnopqrstuvwxyza"
 
+	// The mutating tools now bounds-check indexes against the run, so provide a
+	// run large enough for every index used below (checklists 0-3, items 0-4).
+	fixture := fixtureRun(runID, 4, 5)
+	newClient := func() *fakeAPIClient { return &fakeAPIClient{run: fixture} }
+
 	t.Run("add checklist item", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item ", Description: "details", AssigneeID: assigneeID, DueDate: 1717200000000}
 		_, err := toolAddChecklistItem(context.Background(), client, args)
 		require.NoError(t, err)
@@ -484,7 +503,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("add checklist item without due date omits due date", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item "}
 		_, err := toolAddChecklistItem(context.Background(), client, args)
 		require.NoError(t, err)
@@ -495,7 +514,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("set checklist item due date", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 1717200000000}
 		_, err := toolSetChecklistItemDueDate(context.Background(), client, args)
 		require.NoError(t, err)
@@ -506,7 +525,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("clear checklist item due date", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 0}
 		_, err := toolSetChecklistItemDueDate(context.Background(), client, args)
 		require.NoError(t, err)
@@ -517,7 +536,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("set checklist item assignee", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, AssigneeID: assigneeID}
 		_, err := toolSetChecklistItemAssignee(context.Background(), client, args)
 		require.NoError(t, err)
@@ -529,7 +548,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("clear checklist item assignee", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2}
 		_, err := toolSetChecklistItemAssignee(context.Background(), client, args)
 		require.NoError(t, err)
@@ -541,7 +560,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("remove checklist item", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		if _, err := toolRemoveChecklistItem(context.Background(), client, RemoveChecklistItemArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2}); err != nil {
 			t.Fatalf("toolRemoveChecklistItem returned error: %v", err)
 		}
@@ -551,7 +570,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("move checklist item", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := MoveChecklistItemArgs{
 			RunID:              runID,
 			SourceChecklistIdx: 1,
@@ -581,7 +600,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("add section", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		if _, err := toolAddSection(context.Background(), client, AddSectionArgs{RunID: runID, Title: " Section "}); err != nil {
 			t.Fatalf("toolAddSection returned error: %v", err)
 		}
@@ -598,7 +617,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("rename section", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		if _, err := toolRenameSection(context.Background(), client, RenameSectionArgs{RunID: runID, ChecklistNumber: 1, Title: " Renamed "}); err != nil {
 			t.Fatalf("toolRenameSection returned error: %v", err)
 		}
@@ -615,7 +634,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("remove section", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		if _, err := toolRemoveSection(context.Background(), client, RemoveSectionArgs{RunID: runID, ChecklistNumber: 1}); err != nil {
 			t.Fatalf("toolRemoveSection returned error: %v", err)
 		}
@@ -625,7 +644,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("move section", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := MoveSectionArgs{RunID: runID, SourceChecklistIdx: 2, DestChecklistIdx: 0}
 		if _, err := toolMoveSection(context.Background(), client, args); err != nil {
 			t.Fatalf("toolMoveSection returned error: %v", err)

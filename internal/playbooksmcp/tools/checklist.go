@@ -97,27 +97,27 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolCheckItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_checklist_item",
-		"Add a new item to an existing checklist in a playbook run. The checklist_number is a zero-based index. due_date is an optional Unix timestamp in milliseconds. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\", \"due_date\": 1717200000000}",
+		"Add a new item to an existing checklist in a playbook run. The checklist_number is a zero-based index; if you don't know it, call resolve_channel_context first. due_date is an optional Unix timestamp in milliseconds. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\", \"due_date\": 1717200000000}",
 		toolAddChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "set_checklist_item_due_date",
-		"Set or clear the due date for an existing checklist item in a playbook run. due_date is a Unix timestamp in milliseconds; use 0 to clear. Checklist and item numbers are zero-based indexes. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"due_date\": 1717200000000}",
+		"Set or clear the due date for an existing checklist item in a playbook run. due_date is a Unix timestamp in milliseconds; use 0 to clear. Checklist and item numbers are zero-based indexes; if you don't know them, call resolve_channel_context or find_checklist_item first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"due_date\": 1717200000000}",
 		toolSetChecklistItemDueDate)
 
 	addMCPHelperTool(server, p.clientFactory, "edit_checklist_item",
-		"Edit the title, description, slash command, or due date of an existing checklist item. Only provided fields are updated. due_date is a Unix timestamp in milliseconds; use 0 to clear. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\", \"due_date\": 1717200000000}",
+		"Edit the title, description, slash command, or due date of an existing checklist item. Only provided fields are updated. due_date is a Unix timestamp in milliseconds; use 0 to clear. If you don't know the indexes, call resolve_channel_context or find_checklist_item first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\", \"due_date\": 1717200000000}",
 		toolEditChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "set_checklist_item_assignee",
-		"Assign or clear the assignee for an existing checklist item. Omit assignee_id or set it to an empty string to clear the assignee. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"assignee_id\": \"user123...\"}",
+		"Assign or clear the assignee for an existing checklist item. Omit assignee_id or set it to an empty string to clear the assignee. If you don't know the indexes, call resolve_channel_context or find_checklist_item first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"assignee_id\": \"user123...\"}",
 		toolSetChecklistItemAssignee)
 
 	addMCPHelperTool(server, p.clientFactory, "remove_checklist_item",
-		"Remove a checklist item from a playbook run. This permanently deletes the item. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}",
+		"Remove a checklist item from a playbook run. This permanently deletes the item, so confirm the indexes first — if unsure, call resolve_channel_context or find_checklist_item. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}",
 		toolRemoveChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "move_checklist_item",
-		"Move a checklist item within or between sections in a playbook run. Source and destination indexes are zero-based. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 0, \"source_item_idx\": 2, \"dest_checklist_idx\": 1, \"dest_item_idx\": 0}",
+		"Move a checklist item within or between sections in a playbook run. Source and destination indexes are zero-based; the destination item index is an insertion position (0 = prepend, item count = append). If you don't know the indexes, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 0, \"source_item_idx\": 2, \"dest_checklist_idx\": 1, \"dest_item_idx\": 0}",
 		toolMoveChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_section",
@@ -125,15 +125,15 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolAddSection)
 
 	addMCPHelperTool(server, p.clientFactory, "rename_section",
-		"Rename an existing section in a playbook run. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Updated section name\"}",
+		"Rename an existing section in a playbook run. The checklist_number is a zero-based index; if you don't know it, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Updated section name\"}",
 		toolRenameSection)
 
 	addMCPHelperTool(server, p.clientFactory, "remove_section",
-		"Remove an entire section and all its items from a playbook run. This is permanent. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 1}",
+		"Remove an entire section and all its items from a playbook run. This is permanent, so confirm the index first — if unsure, call resolve_channel_context. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 1}",
 		toolRemoveSection)
 
 	addMCPHelperTool(server, p.clientFactory, "move_section",
-		"Move a section within a playbook run. Source and destination indexes are zero-based. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}",
+		"Move a section within a playbook run. Source and destination indexes are zero-based; the destination is an insertion position (0 = first, section count = last). If you don't know the indexes, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}",
 		toolMoveSection)
 }
 
@@ -170,15 +170,12 @@ func toolCheckItem(ctx context.Context, client APIClient, args CheckItemArgs) (s
 
 	// Fetch the run first so we can give an actionable error (listing the real
 	// items) instead of an opaque API failure when the caller guessed indexes.
-	var run playbookRunDetail
-	if err := client.Get(ctx, fmt.Sprintf("runs/%s", args.RunID), nil, &run); err != nil {
-		return "", fmt.Errorf("failed to get run: %w", err)
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
 	}
-	if args.ChecklistNumber >= len(run.Checklists) {
-		return "", outOfRangeError("checklist_number", args.ChecklistNumber, run)
-	}
-	if args.ItemNumber >= len(run.Checklists[args.ChecklistNumber].Items) {
-		return "", outOfRangeError("item_number", args.ItemNumber, run)
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+		return "", err
 	}
 
 	current := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber]
@@ -207,6 +204,47 @@ func outOfRangeError(field string, value int, run playbookRunDetail) error {
 	return fmt.Errorf("%s", sb.String())
 }
 
+// fetchRunForBounds retrieves the run so callers can validate indexes against
+// its real checklists before mutating, giving actionable errors on a miss.
+func fetchRunForBounds(ctx context.Context, client APIClient, runID string) (playbookRunDetail, error) {
+	var run playbookRunDetail
+	if err := client.Get(ctx, fmt.Sprintf("runs/%s", runID), nil, &run); err != nil {
+		return playbookRunDetail{}, fmt.Errorf("failed to get run: %w", err)
+	}
+	return run, nil
+}
+
+// checkChecklistIndex verifies a checklist (section) index exists in the run.
+func checkChecklistIndex(run playbookRunDetail, idx int, field string) error {
+	if idx >= len(run.Checklists) {
+		return outOfRangeError(field, idx, run)
+	}
+	return nil
+}
+
+// checkItemIndex verifies an item index exists within an existing checklist.
+func checkItemIndex(run playbookRunDetail, checklistIdx, itemIdx int, field string) error {
+	if err := checkChecklistIndex(run, checklistIdx, "checklist_number"); err != nil {
+		return err
+	}
+	if itemIdx >= len(run.Checklists[checklistIdx].Items) {
+		return outOfRangeError(field, itemIdx, run)
+	}
+	return nil
+}
+
+// checkInsertPosition verifies a destination position for a move; unlike an item
+// index, a position may equal the item count (append).
+func checkInsertPosition(run playbookRunDetail, checklistIdx, pos int, field string) error {
+	if err := checkChecklistIndex(run, checklistIdx, "dest_checklist_idx"); err != nil {
+		return err
+	}
+	if pos > len(run.Checklists[checklistIdx].Items) {
+		return outOfRangeError(field, pos, run)
+	}
+	return nil
+}
+
 func toolAddChecklistItem(ctx context.Context, client APIClient, args AddChecklistItemArgs) (string, error) {
 	if err := validateID(args.RunID, "run_id"); err != nil {
 		return "", err
@@ -218,6 +256,19 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 	if title == "" {
 		return "", fmt.Errorf("title is required")
 	}
+	if args.AssigneeID != "" {
+		if err := validateID(args.AssigneeID, "assignee_id"); err != nil {
+			return "", err
+		}
+	}
+
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkChecklistIndex(run, args.ChecklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
 
 	body := map[string]any{
 		"title": title,
@@ -226,9 +277,6 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 		body["description"] = args.Description
 	}
 	if args.AssigneeID != "" {
-		if err := validateID(args.AssigneeID, "assignee_id"); err != nil {
-			return "", err
-		}
 		body["assignee_id"] = args.AssigneeID
 	}
 	if args.DueDate != 0 {
@@ -251,6 +299,14 @@ func toolSetChecklistItemDueDate(ctx context.Context, client APIClient, args Set
 		return "", err
 	}
 	if err := validateIndex(args.ItemNumber, "item_number"); err != nil {
+		return "", err
+	}
+
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
 		return "", err
 	}
 
@@ -295,18 +351,15 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 		}
 	}
 
-	if args.Title != nil || args.Description != nil || args.Command != nil {
-		var run playbookRunDetail
-		if err := client.Get(ctx, fmt.Sprintf("runs/%s", args.RunID), nil, &run); err != nil {
-			return "", fmt.Errorf("failed to get current checklist item: %w", err)
-		}
-		if args.ChecklistNumber >= len(run.Checklists) {
-			return "", fmt.Errorf("checklist_number %d is out of range", args.ChecklistNumber)
-		}
-		if args.ItemNumber >= len(run.Checklists[args.ChecklistNumber].Items) {
-			return "", fmt.Errorf("item_number %d is out of range", args.ItemNumber)
-		}
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+		return "", err
+	}
 
+	if args.Title != nil || args.Description != nil || args.Command != nil {
 		currentItem := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber]
 		body := map[string]string{
 			"title":       currentItem.Title,
@@ -354,6 +407,14 @@ func toolSetChecklistItemAssignee(ctx context.Context, client APIClient, args Se
 		}
 	}
 
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+		return "", err
+	}
+
 	body := map[string]string{
 		"assignee_id": args.AssigneeID,
 	}
@@ -380,12 +441,21 @@ func toolRemoveChecklistItem(ctx context.Context, client APIClient, args RemoveC
 		return "", err
 	}
 
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+		return "", err
+	}
+	removed := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber].Title
+
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d", args.RunID, args.ChecklistNumber, args.ItemNumber)
 	if err := client.Delete(ctx, endpoint); err != nil {
 		return "", fmt.Errorf("failed to remove checklist item: %w", err)
 	}
 
-	return fmt.Sprintf("Removed checklist item [%d][%d] from run %s.", args.ChecklistNumber, args.ItemNumber, args.RunID), nil
+	return fmt.Sprintf("Removed checklist item [%d][%d] (%q) from run %s.", args.ChecklistNumber, args.ItemNumber, removed, args.RunID), nil
 }
 
 func toolMoveChecklistItem(ctx context.Context, client APIClient, args MoveChecklistItemArgs) (string, error) {
@@ -402,6 +472,17 @@ func toolMoveChecklistItem(ctx context.Context, client APIClient, args MoveCheck
 		return "", err
 	}
 	if err := validateIndex(args.DestItemIdx, "dest_item_idx"); err != nil {
+		return "", err
+	}
+
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkItemIndex(run, args.SourceChecklistIdx, args.SourceItemIdx, "source_item_idx"); err != nil {
+		return "", err
+	}
+	if err := checkInsertPosition(run, args.DestChecklistIdx, args.DestItemIdx, "dest_item_idx"); err != nil {
 		return "", err
 	}
 
@@ -453,6 +534,14 @@ func toolRenameSection(ctx context.Context, client APIClient, args RenameSection
 		return "", fmt.Errorf("title is required")
 	}
 
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkChecklistIndex(run, args.ChecklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
+
 	body := map[string]string{
 		"title": title,
 	}
@@ -473,12 +562,21 @@ func toolRemoveSection(ctx context.Context, client APIClient, args RemoveSection
 		return "", err
 	}
 
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkChecklistIndex(run, args.ChecklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
+	removed := run.Checklists[args.ChecklistNumber].Title
+
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d", args.RunID, args.ChecklistNumber)
 	if err := client.Delete(ctx, endpoint); err != nil {
 		return "", fmt.Errorf("failed to remove section: %w", err)
 	}
 
-	return fmt.Sprintf("Removed section %d from run %s.", args.ChecklistNumber, args.RunID), nil
+	return fmt.Sprintf("Removed section %d (%q) from run %s.", args.ChecklistNumber, removed, args.RunID), nil
 }
 
 func toolMoveSection(ctx context.Context, client APIClient, args MoveSectionArgs) (string, error) {
@@ -490,6 +588,18 @@ func toolMoveSection(ctx context.Context, client APIClient, args MoveSectionArgs
 	}
 	if err := validateIndex(args.DestChecklistIdx, "dest_checklist_idx"); err != nil {
 		return "", err
+	}
+
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkChecklistIndex(run, args.SourceChecklistIdx, "source_checklist_idx"); err != nil {
+		return "", err
+	}
+	// The destination is an insertion position, so it may equal the section count.
+	if args.DestChecklistIdx > len(run.Checklists) {
+		return "", outOfRangeError("dest_checklist_idx", args.DestChecklistIdx, run)
 	}
 
 	body := map[string]int{
