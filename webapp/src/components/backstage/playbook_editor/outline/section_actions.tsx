@@ -68,10 +68,22 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
     const restPlaybook = restPlaybookProp ?? restPlaybookLocal;
     const [fieldNames, setFieldNames] = useState<string[] | undefined>(undefined);
     useEffect(() => {
+        let cancelled = false;
         setFieldNames(undefined);
         fetchPlaybookPropertyFields(playbook.id)
-            .then((fields) => setFieldNames(fields.map((f) => f.name)))
-            .catch(() => setFieldNames([]));
+            .then((fields) => {
+                if (!cancelled) {
+                    setFieldNames(fields.map((f) => f.name));
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setFieldNames([]);
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [playbook.id]);
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
@@ -180,17 +192,27 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
         return () => handleChannelNameTemplateSave.flush();
     }, [handleChannelNameTemplateSave]);
 
+    // Not debounced (unlike the prefix/template inputs above) since this is a checkbox toggle,
+    // not free text — but rapid clicks still fire overlapping requests that can resolve out of
+    // order. Track the latest request so a slower, superseded one can't apply its own
+    // success/failure over a newer toggle's outcome.
+    const overrideAllowedRequestIDRef = useRef(0);
     const handleChannelNameTemplateOverrideAllowedSave = useCallback((overrideAllowed: boolean) => {
+        const requestID = ++overrideAllowedRequestIDRef.current;
         updatePlaybookChannelNameTemplateOverrideAllowed(playbook.id, overrideAllowed)
             .then(() => {
-                setSavedOverrideAllowed(overrideAllowed);
+                if (requestID === overrideAllowedRequestIDRef.current) {
+                    setSavedOverrideAllowed(overrideAllowed);
+                }
             })
             .catch((err) => {
-                setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template_override_allowed: savedOverrideAllowedRef.current}));
-                addToastRef.current({
-                    content: formatMessage({defaultMessage: 'Failed to save this setting. Please try again.'}),
-                    toastStyle: ToastStyle.Failure,
-                });
+                if (requestID === overrideAllowedRequestIDRef.current) {
+                    setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template_override_allowed: savedOverrideAllowedRef.current}));
+                    addToastRef.current({
+                        content: formatMessage({defaultMessage: 'Failed to save this setting. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                }
                 // eslint-disable-next-line no-console
                 console.error('Failed to save channel name template override allowed', err);
             });
