@@ -106,24 +106,6 @@ const FollowingWrapper = styled.div`
     display: flex;
     flex: 1;
     justify-content: flex-end;
-
-    /* override default styles */
-    .unfollowButton {
-        border: 0;
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-    }
-
-    .followButton {
-        border: 0;
-        background: transparent;
-        color: rgba(var(--center-channel-color-rgb), 0.56);
-
-        &:hover {
-            background: rgba(var(--center-channel-color-rgb), 0.08);
-            color: rgba(var(--center-channel-color-rgb), 0.72);
-        }
-    }
 `;
 
 export default RHSRunDetailsTitle;

@@ -5,7 +5,6 @@ import React from 'react';
 import {useIntl} from 'react-intl';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import styled from 'styled-components';
 
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
@@ -27,20 +26,6 @@ interface Props {
     runID: string;
     followState?: FollowState;
 }
-
-const FollowButton = styled(TertiaryButton)`
-    height: 24px;
-    padding: 0 10px;
-    font-family: 'Open Sans';
-    font-size: 12px;
-`;
-
-const UnfollowButton = styled(SecondaryButton)`
-    height: 24px;
-    padding: 0 10px;
-    font-family: 'Open Sans';
-    font-size: 12px;
-`;
 
 export const FollowUnfollowButton = ({runID, followState}: Props) => {
     const {formatMessage} = useIntl();
@@ -71,12 +56,12 @@ export const FollowUnfollowButton = ({runID, followState}: Props) => {
 
     if (isFollowing) {
         return (
-            <UnfollowButton
-                className={'unfollowButton'}
+            <SecondaryButton
+                size='xs'
                 onClick={toggleFollow}
             >
                 {formatMessage({defaultMessage: 'Following'})}
-            </UnfollowButton>
+            </SecondaryButton>
         );
     }
 
@@ -86,12 +71,12 @@ export const FollowUnfollowButton = ({runID, followState}: Props) => {
 
             title={formatMessage({defaultMessage: 'Get run status update notifications'})}
         >
-            <FollowButton
-                className={'followButton'}
+            <TertiaryButton
+                size='xs'
                 onClick={toggleFollow}
             >
                 {formatMessage({defaultMessage: 'Follow'})}
-            </FollowButton>
+            </TertiaryButton>
         </WithTooltip>
     );
 };

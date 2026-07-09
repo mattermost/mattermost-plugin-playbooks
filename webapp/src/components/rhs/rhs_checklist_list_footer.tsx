@@ -74,10 +74,13 @@ const RHSFooter = ({
                             id='participate-tooltip'
                             title={formatMessage({defaultMessage: 'Join as a participant'})}
                         >
-                            <ParticipateButton onClick={showParticipateConfirm}>
+                            <PrimaryButton
+                                size='sm'
+                                onClick={showParticipateConfirm}
+                            >
                                 <AccountPlusOutlineIcon size={16}/>
                                 {formatMessage({defaultMessage: 'Join'})}
-                            </ParticipateButton>
+                            </PrimaryButton>
                         </WithTooltip>
                     </ParticipateRightWrapper>
                 </ParticipateContent>
@@ -94,10 +97,13 @@ const RHSFooter = ({
                     </FinishIconWrapper>
                     <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
                     <FinishRightWrapper>
-                        <FinishButton onClick={onFinishRun}>
+                        <TertiaryButton
+                            size='sm'
+                            onClick={onFinishRun}
+                        >
                             <CheckIcon size={16}/>
                             {formatMessage({defaultMessage: 'Finish'})}
-                        </FinishButton>
+                        </TertiaryButton>
                     </FinishRightWrapper>
                 </FinishContent>
             </FinishPrompt>
@@ -140,33 +146,35 @@ const RHSFooter = ({
                     </FinishedNotice>
                     <FinishedRightWrapper>
                         {(canRestore || isSystemAdmin) && !blockedByOwnerOnly ? (
-                            <ResumeButton
+                            <TertiaryButton
+                                size='sm'
                                 onClick={handleResume}
                                 disabled={false}
                             >
                                 {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
                                 }
-                            </ResumeButton>
+                            </TertiaryButton>
                         ) : (
                             <WithTooltip
                                 id='resume-disabled-tooltip'
                                 title={resumeTooltipMsg}
                             >
                                 <ResumeButtonWrapper>
-                                    <ResumeButton
+                                    <TertiaryButton
+                                        size='sm'
                                         onClick={handleResume}
                                         disabled={true}
                                     >
                                         {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
                                         }
-                                    </ResumeButton>
+                                    </TertiaryButton>
                                 </ResumeButtonWrapper>
                             </WithTooltip>
                         )}
                     </FinishedRightWrapper>
                 </FinishedIndicator>
                 <DoneButtonContainer>
-                    <StyledPrimaryButton
+                    <PrimaryButton
                         onClick={() => {
                             if (onBackClick) {
                                 onBackClick();
@@ -174,7 +182,7 @@ const RHSFooter = ({
                         }}
                     >
                         {formatMessage({defaultMessage: 'Done'})}
-                    </StyledPrimaryButton>
+                    </PrimaryButton>
                 </DoneButtonContainer>
             </FinishedFooter>
         );
@@ -249,12 +257,6 @@ const FinishedRightWrapper = styled.div`
     align-items: center;
 `;
 
-const ResumeButton = styled(TertiaryButton)`
-    height: 32px;
-    padding: 0 20px;
-    font-size: 12px;
-`;
-
 const ResumeButtonWrapper = styled.div`
     display: inline-block;
 `;
@@ -266,10 +268,6 @@ const DoneButtonContainer = styled.div`
     button {
         width: 100%;
     }
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    padding: 10px 20px;
 `;
 
 const FinishPrompt = styled.div`
@@ -309,15 +307,6 @@ const FinishRightWrapper = styled.div`
     justify-content: flex-end;
 `;
 
-const FinishButton = styled(TertiaryButton)`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 16px;
-    font-size: 12px;
-`;
-
 const ParticipatePrompt = styled.div`
     display: flex;
     flex-direction: column;
@@ -348,15 +337,6 @@ const ParticipateRightWrapper = styled.div`
     display: flex;
     flex: 1;
     justify-content: flex-end;
-`;
-
-const ParticipateButton = styled(PrimaryButton)`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    font-size: 12px;
-    padding: 0 16px;
 `;
 
 export default RHSFooter;

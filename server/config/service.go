@@ -5,19 +5,29 @@ package config
 
 import (
 	"fmt"
+	"maps"
 	"reflect"
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
+// legacyConfigKeyAliases maps a legacy key older plugin versions wrote via
+// serialize() to its canonical settings_schema key. See reconcileLegacyConfigKeys.
+var legacyConfigKeyAliases = map[string]string{
+	"EnableTeamsTabApp":        "enableTeamsTabApp",
+	"TeamsTabAppTenantIDs":     "teamsTabAppTenantIDs",
+	"EnableIncrementalUpdates": "enableincrementalupdates",
+}
+
 // WebsocketPublisher defines interface for publishing websocket events
 type WebsocketPublisher interface {
-	PublishWebsocketEventGlobal(event string, payload interface{})
+	PublishWebsocketEventGlobal(event string, payload any)
 }
 
 const (
@@ -57,10 +67,47 @@ func NewConfigService(api *pluginapi.Client, manifest *model.Manifest) *ServiceI
 	c.configuration = new(Configuration)
 	c.configChangeListeners = make(map[string]func())
 
+	if err := c.reconcileLegacyConfigKeys(); err != nil {
+		logrus.WithError(err).Warn("failed to reconcile legacy plugin config keys")
+	}
+
 	// api.LoadPluginConfiguration never returns an error, so ignore it.
 	_ = api.Configuration.LoadPluginConfiguration(c.configuration)
 
 	return c
+}
+
+// reconcileLegacyConfigKeys reads the raw stored config (where case-duplicate
+// keys are still distinct, before LoadPluginConfiguration lowercases them) and
+// folds each legacy key into its canonical key, preferring the canonical (console)
+// value, then drops the legacy key. It only persists when something changed.
+// Idempotent, and runs before p.config is set, so it is safe under concurrent
+// cluster activation and does not recurse via OnConfigurationChange.
+func (c *ServiceImpl) reconcileLegacyConfigKeys() error {
+	raw := c.api.Configuration.GetPluginConfig()
+
+	cleaned := make(map[string]any, len(raw))
+	maps.Copy(cleaned, raw)
+
+	dirty := false
+	for legacy, canonical := range legacyConfigKeyAliases {
+		legacyVal, hasLegacy := cleaned[legacy]
+		if !hasLegacy {
+			continue
+		}
+
+		if _, hasCanonical := cleaned[canonical]; !hasCanonical {
+			cleaned[canonical] = legacyVal
+		}
+		delete(cleaned, legacy)
+		dirty = true
+	}
+
+	if !dirty {
+		return nil
+	}
+
+	return c.api.Configuration.SavePluginConfig(cleaned)
 }
 
 // SetWebsocketPublisher sets the websocket publisher for broadcasting config changes
@@ -146,7 +193,7 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	configuration.TeamsTabAppBotUserID = c.configuration.TeamsTabAppBotUserID
 
 	oldConfig := c.configuration
-	settingsPayload := make(map[string]interface{})
+	settingsPayload := make(map[string]any)
 
 	if oldConfig != nil {
 		if oldConfig.EnableExperimentalFeatures != configuration.EnableExperimentalFeatures {

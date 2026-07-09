@@ -19,11 +19,13 @@ interface Props {
     userIds: string[];
     onParticipate?: () => void;
     setShowParticipants: React.Dispatch<React.SetStateAction<boolean>>
+    canAddParticipants?: boolean;
 }
 
 const RHSParticipants = (props: Props) => {
     const {formatMessage} = useIntl();
     const openMembersModal = useOpenMembersModalIfPresent();
+    const canAddParticipants = props.canAddParticipants ?? true;
 
     const showParticipants = () => {
         props.setShowParticipants(true);
@@ -45,6 +47,29 @@ const RHSParticipants = (props: Props) => {
         </WithTooltip>
     );
 
+    const addParticipantControl = (() => {
+        if (props.onParticipate) {
+            return becomeParticipant;
+        }
+        if (!canAddParticipants) {
+            return null;
+        }
+        return (
+            <WithTooltip
+                id={'rhs-add-participant'}
+                title={formatMessage({defaultMessage: 'Add participant'})}
+            >
+                <AddParticipantIconButton
+                    onClick={showParticipants}
+                    data-testid={'rhs-add-participant-icon'}
+                    $format={'icon'}
+                >
+                    <AccountMultiplePlusOutlineIcon size={20}/>
+                </AddParticipantIconButton>
+            </WithTooltip>
+        );
+    })();
+
     if (props.userIds.length === 0) {
         return (
             <Container>
@@ -52,7 +77,7 @@ const RHSParticipants = (props: Props) => {
                     <FormattedMessage defaultMessage='Nobody yet.'/>
                     {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                     {' '}
-                    {props.onParticipate ? null : (
+                    {canAddParticipants && !props.onParticipate ? (
                         <LinkAddParticipants
                             to={'#'}
                             onClick={showParticipants}
@@ -60,7 +85,7 @@ const RHSParticipants = (props: Props) => {
                             {formatMessage({defaultMessage: 'Add participant'})}
                             <OpenInNewIcon size={11}/>
                         </LinkAddParticipants>
-                    )}
+                    ) : null}
                 </NoParticipants>
                 {props.onParticipate ? becomeParticipant : null}
             </Container>
@@ -87,20 +112,7 @@ const RHSParticipants = (props: Props) => {
                     sizeInPx={height}
                 />
             </UserRow>
-            {props.onParticipate ? becomeParticipant : (
-                <WithTooltip
-                    id={'rhs-add-participant'}
-                    title={formatMessage({defaultMessage: 'Add participant'})}
-                >
-                    <AddParticipantIconButton
-                        onClick={showParticipants}
-                        data-testid={'rhs-add-participant-icon'}
-                        $format={'icon'}
-                    >
-                        <AccountMultiplePlusOutlineIcon size={20}/>
-                    </AddParticipantIconButton>
-                </WithTooltip>
-            )}
+            {addParticipantControl}
         </Container>
     );
 };

@@ -29,7 +29,7 @@ func TestTabAppGetRuns(t *testing.T) {
 
 	setTabApp := func(t *testing.T, enable bool) {
 		cfg := e.Srv.Config()
-		cfg.PluginSettings.Plugins["playbooks"]["EnableTeamsTabApp"] = enable
+		cfg.PluginSettings.Plugins["playbooks"]["enableTeamsTabApp"] = enable
 
 		var patchedConfig model.Config
 

@@ -239,7 +239,7 @@ const PlaybookEditor = () => {
                         </Heading>
                     )}
                 </TextEdit>
-                <Description>
+                <Description data-testid={'playbook-editor-description'}>
                     <MarkdownEdit
                         disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
@@ -349,6 +349,11 @@ const TitleBar = styled.div`
         display: flex;
         align-items: center;
         gap: 8px;
+    }
+
+    /* This element uses gap to space buttons out instead of the margin-left defined by the web app */
+    .btn + .btn {
+        margin-left: unset;
     }
 
     ${Controls.TitleButton} {

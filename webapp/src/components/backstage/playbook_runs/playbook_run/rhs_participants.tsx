@@ -26,7 +26,7 @@ import {useManageRunMembership} from 'src/graphql/hooks';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
 import {SendMessageButton} from './send_message_button';
 import AddParticipantsModal from './add_participant_modal';
@@ -75,28 +75,37 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
         return true;
     };
 
+    const isFinished = playbookRun.current_status === PlaybookRunStatus.Finished;
+
     const manageParticipantsSection = () => {
         if (manageMode) {
             return (
-                <StyledPrimaryButton onClick={() => setManageMode(false)}>
+                <PrimaryButton
+                    size='sm'
+                    onClick={() => setManageMode(false)}
+                >
                     {formatMessage({defaultMessage: 'Done'})}
-                </StyledPrimaryButton>
+                </PrimaryButton>
             );
         }
 
         return (
             <>
-                <StyledSecondaryButton
+                <TertiaryButton
+                    size='sm'
                     onClick={() => setManageMode(true)}
                     data-testid='participants-manage-btn'
                 >
                     {formatMessage({defaultMessage: 'Manage'})}
-                </StyledSecondaryButton>
+                </TertiaryButton>
 
-                <StyledPrimaryButton onClick={() => setShowAddParticipantsModal(true)}>
+                <PrimaryButton
+                    size='sm'
+                    onClick={() => setShowAddParticipantsModal(true)}
+                >
                     <AddParticipantIcon color={'var(--button-color)'}/>
                     {formatMessage({defaultMessage: 'Add'})}
-                </StyledPrimaryButton>
+                </PrimaryButton>
 
                 <AddParticipantsModal
                     playbookRun={playbookRun}
@@ -119,7 +128,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                     )}
                 </ParticipantsNumber>
 
-                {role === Role.Participant && manageParticipantsSection()}
+                {role === Role.Participant && !isFinished && manageParticipantsSection()}
 
             </HeaderSection>
 
@@ -327,23 +336,6 @@ const HeaderSection = styled.div`
     align-items: center;
     padding: 20px 20px 0;
     color: var(--center-channel-color);
-`;
-
-const StyledSecondaryButton = styled(TertiaryButton)`
-    display: flex;
-    height: 32px;
-    align-items: center;
-    margin-right: 8px;
-    font-size: 12px;
-    line-height: 10px;
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    display: flex;
-    height: 32px;
-    align-items: center;
-    font-size: 12px;
-    line-height: 10px;
 `;
 
 const AddParticipantIcon = styled(AccountPlusOutlineIcon)`

@@ -87,12 +87,22 @@ const DateProperty = (props: Props) => {
         setDisplayMillis(newMillis);
     }, [props.value?.value]);
 
+    const handleClick = useCallback(() => {
+        if (props.readOnly) {
+            return;
+        }
+        setIsEditing(true);
+    }, [props.readOnly]);
+
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
+        if (props.readOnly) {
+            return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsEditing(true);
         }
-    }, []);
+    }, [props.readOnly]);
 
     const handleSelectedChange = useCallback((option: DateTimeOption | undefined | null) => {
         const seq = ++callSeqRef.current;
@@ -145,7 +155,8 @@ const DateProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
-            onClick={() => setIsEditing(true)}
+            $readOnly={props.readOnly}
+            onClick={handleClick}
             onKeyDown={handleActivateKey}
             data-testid='property-value'
         >

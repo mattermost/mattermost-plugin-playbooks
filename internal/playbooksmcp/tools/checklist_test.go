@@ -307,6 +307,22 @@ func TestToolEditChecklistItemUpdatesFieldsAndDueDate(t *testing.T) {
 	dueDateBody, ok := client.putBodies[1].(map[string]int64)
 	require.True(t, ok)
 	assert.Equal(t, int64(1717200000000), dueDateBody["due_date"])
+func TestToolAddChecklistItemRejectsInvalidAssignee(t *testing.T) {
+	client := &fakeAPIClient{}
+	args := AddChecklistItemArgs{
+		RunID:           "abcdefghijklmnopqrstuvwxyz",
+		ChecklistNumber: 0,
+		Title:           "New item",
+		AssigneeID:      "invalid",
+	}
+
+	if _, err := toolAddChecklistItem(context.Background(), client, args); err == nil || err.Error() != "assignee_id must be a valid Mattermost ID" {
+		t.Fatalf("expected assignee validation error, got %v", err)
+	}
+
+	if client.postEndpoint != "" {
+		t.Fatalf("expected validation to fail before API call, got endpoint %q", client.postEndpoint)
+	}
 }
 
 func TestToolListRunsAddsTypeFilter(t *testing.T) {
@@ -473,6 +489,30 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 		require.IsType(t, map[string]int64{}, client.putBody)
 		body := client.putBody.(map[string]int64)
 		assert.Equal(t, int64(0), body["due_date"])
+	})
+
+	t.Run("set checklist item assignee", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, AssigneeID: assigneeID}
+		_, err := toolSetChecklistItemAssignee(context.Background(), client, args)
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/assignee", client.putEndpoint)
+		require.IsTypef(t, map[string]string{}, client.putBody, "unexpected body type %T", client.putBody)
+
+		body := client.putBody.(map[string]string)
+		assert.Equal(t, assigneeID, body["assignee_id"])
+	})
+
+	t.Run("clear checklist item assignee", func(t *testing.T) {
+		client := &fakeAPIClient{}
+		args := SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2}
+		_, err := toolSetChecklistItemAssignee(context.Background(), client, args)
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/assignee", client.putEndpoint)
+		require.IsTypef(t, map[string]string{}, client.putBody, "unexpected body type %T", client.putBody)
+
+		body := client.putBody.(map[string]string)
+		assert.Equal(t, "", body["assignee_id"])
 	})
 
 	t.Run("remove checklist item", func(t *testing.T) {
@@ -676,6 +716,51 @@ func TestMoveChecklistToolsValidation(t *testing.T) {
 			require.EqualError(t, err, tt.wantErr)
 			require.Equal(t, "", client.postEndpoint)
 			require.Equal(t, "", client.putEndpoint)
+		})
+	}
+}
+
+func TestToolSetChecklistItemAssigneeValidation(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+	const assigneeID = "bcdefghijklmnopqrstuvwxyza"
+
+	tests := []struct {
+		name    string
+		args    SetChecklistItemAssigneeArgs
+		wantErr string
+	}{
+		{
+			name:    "rejects invalid run id",
+			args:    SetChecklistItemAssigneeArgs{RunID: "invalid", ChecklistNumber: 0, ItemNumber: 1, AssigneeID: assigneeID},
+			wantErr: "run_id must be a valid Mattermost ID",
+		},
+		{
+			name:    "rejects negative checklist index",
+			args:    SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: -1, ItemNumber: 1, AssigneeID: assigneeID},
+			wantErr: "checklist_number must be a non-negative integer, got -1",
+		},
+		{
+			name:    "rejects negative item index",
+			args:    SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: -1, AssigneeID: assigneeID},
+			wantErr: "item_number must be a non-negative integer, got -1",
+		},
+		{
+			name:    "rejects invalid assignee id",
+			args:    SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 1, AssigneeID: "invalid"},
+			wantErr: "assignee_id must be a valid Mattermost ID",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolSetChecklistItemAssignee(context.Background(), client, tt.args)
+			if err == nil || err.Error() != tt.wantErr {
+				t.Fatalf("expected error %q, got %v", tt.wantErr, err)
+			}
+			if client.putEndpoint != "" {
+				t.Fatalf("expected validation to fail before API call, got endpoint %q", client.putEndpoint)
+			}
 		})
 	}
 }

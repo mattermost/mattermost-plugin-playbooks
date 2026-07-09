@@ -124,12 +124,13 @@ const Retrospective = ({
                         {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
                     </TimestampContainer>
                 }
-                <PublishButton
+                <TertiaryButton
+                    size='sm'
                     onClick={onPublishClick}
                     disabled={isPublished}
                 >
                     {formatMessage({defaultMessage: 'Publish'})}
-                </PublishButton>
+                </TertiaryButton>
             </>
         );
     };
@@ -224,10 +225,4 @@ const BannerWrapper = styled.div`
     padding: 30px 0;
     margin-top: 8px;
     box-shadow: rgba(0 0 0 / 0.05) 0 0 0 1px;
-`;
-
-const PublishButton = styled(TertiaryButton)`
-    height: 32px;
-    padding: 0 16px;
-    font-size: 12px;
 `;

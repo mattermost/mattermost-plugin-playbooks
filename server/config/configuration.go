@@ -44,13 +44,16 @@ func (c *Configuration) Clone() *Configuration {
 	return &clone
 }
 
-func (c *Configuration) serialize() map[string]interface{} {
-	ret := make(map[string]interface{})
+func (c *Configuration) serialize() map[string]any {
+	ret := make(map[string]any)
+	// Keys with a plugin.json settings_schema entry MUST match that key exactly,
+	// or the console's copy and this one become duplicate keys. See
+	// reconcileLegacyConfigKeys. BotUserID/TeamsTabAppBotUserID have no schema entry.
 	ret["BotUserID"] = c.BotUserID
-	ret["EnableTeamsTabApp"] = c.EnableTeamsTabApp
-	ret["TeamsTabAppTenantIDs"] = c.TeamsTabAppTenantIDs
+	ret["enableTeamsTabApp"] = c.EnableTeamsTabApp
+	ret["teamsTabAppTenantIDs"] = c.TeamsTabAppTenantIDs
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
-	ret["EnableIncrementalUpdates"] = c.EnableIncrementalUpdates
+	ret["enableincrementalupdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
 	ret["ExposeMCPExternal"] = c.ExposeMCPExternal
 	return ret

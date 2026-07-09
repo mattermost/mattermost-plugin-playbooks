@@ -46,6 +46,13 @@ type EditChecklistItemArgs struct {
 	DueDate         *int64  `json:"due_date,omitempty" jsonschema:"Due date as Unix timestamp in milliseconds; use 0 to clear"`
 }
 
+type SetChecklistItemAssigneeArgs struct {
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist"`
+	ItemNumber      int    `json:"item_number" jsonschema:"The zero-based index of the item within the checklist"`
+	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"Optional user ID to assign the item to; omit or send an empty string to clear the assignee"`
+}
+
 type RemoveChecklistItemArgs struct {
 	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
 	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist"`
@@ -100,6 +107,10 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 	addMCPHelperTool(server, p.clientFactory, "edit_checklist_item",
 		"Edit the title, description, slash command, or due date of an existing checklist item. Only provided fields are updated. due_date is a Unix timestamp in milliseconds; use 0 to clear. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\", \"due_date\": 1717200000000}",
 		toolEditChecklistItem)
+
+	addMCPHelperTool(server, p.clientFactory, "set_checklist_item_assignee",
+		"Assign or clear the assignee for an existing checklist item. Omit assignee_id or set it to an empty string to clear the assignee. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"assignee_id\": \"user123...\"}",
+		toolSetChecklistItemAssignee)
 
 	addMCPHelperTool(server, p.clientFactory, "remove_checklist_item",
 		"Remove a checklist item from a playbook run. This permanently deletes the item. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}",
@@ -298,6 +309,37 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 	}
 
 	return fmt.Sprintf("Updated checklist item [%d][%d] in run %s.", args.ChecklistNumber, args.ItemNumber, args.RunID), nil
+}
+
+func toolSetChecklistItemAssignee(ctx context.Context, client APIClient, args SetChecklistItemAssigneeArgs) (string, error) {
+	if err := validateID(args.RunID, "run_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.ChecklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.ItemNumber, "item_number"); err != nil {
+		return "", err
+	}
+	if args.AssigneeID != "" {
+		if err := validateID(args.AssigneeID, "assignee_id"); err != nil {
+			return "", err
+		}
+	}
+
+	body := map[string]string{
+		"assignee_id": args.AssigneeID,
+	}
+
+	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", args.RunID, args.ChecklistNumber, args.ItemNumber)
+	if err := client.Put(ctx, endpoint, body, nil); err != nil {
+		return "", fmt.Errorf("failed to set checklist item assignee: %w", err)
+	}
+
+	if args.AssigneeID == "" {
+		return fmt.Sprintf("Cleared assignee for checklist item [%d][%d] in run %s.", args.ChecklistNumber, args.ItemNumber, args.RunID), nil
+	}
+	return fmt.Sprintf("Set assignee for checklist item [%d][%d] in run %s to user %s.", args.ChecklistNumber, args.ItemNumber, args.RunID, args.AssigneeID), nil
 }
 
 func toolRemoveChecklistItem(ctx context.Context, client APIClient, args RemoveChecklistItemArgs) (string, error) {
