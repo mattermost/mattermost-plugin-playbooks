@@ -287,10 +287,65 @@ func TestToolMoveChecklistItemRejectsPositionBeyondAppend(t *testing.T) {
 		SourceChecklistIdx: 0,
 		SourceItemIdx:      0,
 		DestChecklistIdx:   1,
-		DestItemIdx:        4, // > item count, invalid
+		DestItemIdx:        4, // > item count, invalid even cross-checklist
 	})
 	if err == nil {
 		t.Fatal("expected out-of-range error for dest_item_idx")
+	}
+	if client.postEndpoint != "" {
+		t.Fatalf("expected no move on invalid position, got %q", client.postEndpoint)
+	}
+}
+
+func TestToolMoveChecklistItemSameChecklistRejectsItemCount(t *testing.T) {
+	// Within the same section the backend caps the destination at count-1, so
+	// dest_item_idx == item count must be rejected (not treated as append).
+	client := &fakeAPIClient{run: fixtureRun(testRunID1, 1, 3)}
+
+	_, err := toolMoveChecklistItem(context.Background(), client, MoveChecklistItemArgs{
+		RunID:              testRunID1,
+		SourceChecklistIdx: 0,
+		SourceItemIdx:      0,
+		DestChecklistIdx:   0,
+		DestItemIdx:        3, // == item count, invalid for same-checklist move
+	})
+	if err == nil {
+		t.Fatal("expected out-of-range error for same-checklist dest_item_idx == count")
+	}
+	if client.postEndpoint != "" {
+		t.Fatalf("expected no move on invalid position, got %q", client.postEndpoint)
+	}
+}
+
+func TestToolMoveChecklistItemSameChecklistAllowsLastIndex(t *testing.T) {
+	client := &fakeAPIClient{run: fixtureRun(testRunID1, 1, 3)}
+
+	_, err := toolMoveChecklistItem(context.Background(), client, MoveChecklistItemArgs{
+		RunID:              testRunID1,
+		SourceChecklistIdx: 0,
+		SourceItemIdx:      0,
+		DestChecklistIdx:   0,
+		DestItemIdx:        2, // == count-1, the last valid slot for same-checklist
+	})
+	if err != nil {
+		t.Fatalf("expected count-1 to be accepted for same-checklist move, got: %v", err)
+	}
+	if client.postEndpoint != "runs/"+testRunID1+"/checklists/move-item" {
+		t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
+	}
+}
+
+func TestToolMoveSectionRejectsSectionCount(t *testing.T) {
+	// MoveChecklist rejects a destination >= section count; count itself is invalid.
+	client := &fakeAPIClient{run: fixtureRun(testRunID1, 2, 1)}
+
+	_, err := toolMoveSection(context.Background(), client, MoveSectionArgs{
+		RunID:              testRunID1,
+		SourceChecklistIdx: 0,
+		DestChecklistIdx:   2, // == section count, invalid
+	})
+	if err == nil {
+		t.Fatal("expected out-of-range error for dest_checklist_idx == section count")
 	}
 	if client.postEndpoint != "" {
 		t.Fatalf("expected no move on invalid position, got %q", client.postEndpoint)

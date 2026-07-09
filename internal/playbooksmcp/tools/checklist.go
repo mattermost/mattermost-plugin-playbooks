@@ -117,7 +117,7 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolRemoveChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "move_checklist_item",
-		"Move a checklist item within or between sections in a playbook run. Source and destination indexes are zero-based; the destination item index is an insertion position (0 = prepend, item count = append). If you don't know the indexes, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 0, \"source_item_idx\": 2, \"dest_checklist_idx\": 1, \"dest_item_idx\": 0}",
+		"Move a checklist item within or between sections in a playbook run. Source and destination indexes are zero-based. The destination item index is an insertion position: within the same section it must be an existing item index (0..item count-1); when moving to a different section you may also use the item count itself to append. If you don't know the indexes, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 0, \"source_item_idx\": 2, \"dest_checklist_idx\": 1, \"dest_item_idx\": 0}",
 		toolMoveChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_section",
@@ -133,7 +133,7 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolRemoveSection)
 
 	addMCPHelperTool(server, p.clientFactory, "move_section",
-		"Move a section within a playbook run. Source and destination indexes are zero-based; the destination is an insertion position (0 = first, section count = last). If you don't know the indexes, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}",
+		"Move a section within a playbook run. Source and destination indexes are zero-based existing section indexes (0 = first, section count-1 = last). If you don't know the indexes, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}",
 		toolMoveSection)
 }
 
@@ -233,14 +233,23 @@ func checkItemIndex(run playbookRunDetail, checklistIdx, itemIdx int, field stri
 	return nil
 }
 
-// checkInsertPosition verifies a destination position for a move; unlike an item
-// index, a position may equal the item count (append).
-func checkInsertPosition(run playbookRunDetail, checklistIdx, pos int, field string) error {
-	if err := checkChecklistIndex(run, checklistIdx, "dest_checklist_idx"); err != nil {
+// checkMoveItemDest validates a move destination item index against the same
+// bounds the backend enforces (MoveChecklistItem): within the same section the
+// position must be an existing item index (0..count-1), while moving to a
+// different section also allows the item count itself (append).
+func checkMoveItemDest(run playbookRunDetail, sourceChecklistIdx, destChecklistIdx, destItemIdx int) error {
+	if err := checkChecklistIndex(run, destChecklistIdx, "dest_checklist_idx"); err != nil {
 		return err
 	}
-	if pos > len(run.Checklists[checklistIdx].Items) {
-		return outOfRangeError(field, pos, run)
+	lenDest := len(run.Checklists[destChecklistIdx].Items)
+	if sourceChecklistIdx == destChecklistIdx {
+		if destItemIdx >= lenDest {
+			return outOfRangeError("dest_item_idx", destItemIdx, run)
+		}
+		return nil
+	}
+	if destItemIdx > lenDest {
+		return outOfRangeError("dest_item_idx", destItemIdx, run)
 	}
 	return nil
 }
@@ -482,7 +491,7 @@ func toolMoveChecklistItem(ctx context.Context, client APIClient, args MoveCheck
 	if err := checkItemIndex(run, args.SourceChecklistIdx, args.SourceItemIdx, "source_item_idx"); err != nil {
 		return "", err
 	}
-	if err := checkInsertPosition(run, args.DestChecklistIdx, args.DestItemIdx, "dest_item_idx"); err != nil {
+	if err := checkMoveItemDest(run, args.SourceChecklistIdx, args.DestChecklistIdx, args.DestItemIdx); err != nil {
 		return "", err
 	}
 
@@ -597,9 +606,10 @@ func toolMoveSection(ctx context.Context, client APIClient, args MoveSectionArgs
 	if err := checkChecklistIndex(run, args.SourceChecklistIdx, "source_checklist_idx"); err != nil {
 		return "", err
 	}
-	// The destination is an insertion position, so it may equal the section count.
-	if args.DestChecklistIdx > len(run.Checklists) {
-		return "", outOfRangeError("dest_checklist_idx", args.DestChecklistIdx, run)
+	// MoveChecklist rejects a destination >= section count; the last valid slot
+	// is count-1, not an append at count.
+	if err := checkChecklistIndex(run, args.DestChecklistIdx, "dest_checklist_idx"); err != nil {
+		return "", err
 	}
 
 	body := map[string]int{
