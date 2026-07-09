@@ -307,6 +307,8 @@ func TestToolEditChecklistItemUpdatesFieldsAndDueDate(t *testing.T) {
 	dueDateBody, ok := client.putBodies[1].(map[string]int64)
 	require.True(t, ok)
 	assert.Equal(t, int64(1717200000000), dueDateBody["due_date"])
+}
+
 func TestToolAddChecklistItemRejectsInvalidAssignee(t *testing.T) {
 	client := &fakeAPIClient{}
 	args := AddChecklistItemArgs{
