@@ -5,6 +5,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -164,6 +165,75 @@ func TestToolFindChecklistItemByRunID(t *testing.T) {
 	assert.Contains(t, out, "Found 1 matching item")
 	// Should fetch only the single run, never list.
 	assert.NotContains(t, client.getEndpoints, "runs", "expected no list_runs call when run_id given")
+}
+
+func TestToolResolveChannelContextPaginatesAllRuns(t *testing.T) {
+	// Two pages of run summaries; resolve must fetch both, not just the first.
+	client := &fakeAPIClient{
+		listPages: []listRunsResponse{
+			{TotalCount: 2, Items: []playbookRunSummary{{ID: testRunID1}}},
+			{TotalCount: 2, Items: []playbookRunSummary{{ID: testRunID2}}},
+		},
+		runsByID: map[string]playbookRunDetail{
+			testRunID1: {ID: testRunID1, Name: "Run one", CurrentStatus: "InProgress"},
+			testRunID2: {ID: testRunID2, Name: "Run two", CurrentStatus: "InProgress"},
+		},
+	}
+
+	out, err := toolResolveChannelContext(context.Background(), client, ResolveChannelContextArgs{ChannelID: testChannelID})
+	require.NoError(t, err)
+	assert.Contains(t, out, "Run one")
+	assert.Contains(t, out, "Run two")
+	assert.Contains(t, out, "has 2 run(s)")
+
+	// page 0 and page 1 both requested.
+	var pages []string
+	for _, call := range client.listCalls {
+		pages = append(pages, call.Get("page"))
+	}
+	assert.Equal(t, []string{"0", "1"}, pages)
+}
+
+func TestToolFindChecklistItemFallsBackToCurrentUserRuns(t *testing.T) {
+	const currentUser = "usr00000000000000000000000"
+	client := &fakeAPIClient{
+		currentUserID: currentUser,
+		listRuns:      listRunsResponse{Items: []playbookRunSummary{{ID: testRunID1}}},
+		runsByID: map[string]playbookRunDetail{
+			testRunID1: {ID: testRunID1, Name: "My run", Checklists: []checklist{
+				{Items: []checklistItem{{Title: "Rotate credentials", State: ""}}},
+			}},
+		},
+	}
+
+	// No run_id and no channel_id -> fall back to the current user's runs.
+	out, err := toolFindChecklistItem(context.Background(), client, FindChecklistItemArgs{
+		Query: "rotate",
+	})
+	require.NoError(t, err)
+	assert.Contains(t, out, "Found 1 matching item")
+
+	// The fallback must cover both owned and participant runs (the backend ANDs
+	// the two filters, so they are queried separately).
+	var owner, participant bool
+	for _, call := range client.listCalls {
+		if call.Get("owner_user_id") == currentUser {
+			owner = true
+		}
+		if call.Get("participant_id") == currentUser {
+			participant = true
+		}
+	}
+	assert.True(t, owner, "expected an owner_user_id=me query")
+	assert.True(t, participant, "expected a participant_id=me query")
+}
+
+func TestToolFindChecklistItemFallbackSurfacesUserIDError(t *testing.T) {
+	client := &fakeAPIClient{currentUserErr: errors.New("no user")}
+
+	_, err := toolFindChecklistItem(context.Background(), client, FindChecklistItemArgs{Query: "rotate"})
+	require.Error(t, err)
+	assert.Empty(t, client.listCalls, "expected no run listing when the user ID is unavailable")
 }
 
 func TestToolFindChecklistItemRequiresQuery(t *testing.T) {

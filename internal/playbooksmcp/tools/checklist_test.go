@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -18,15 +19,23 @@ import (
 type fakeAPIClient struct {
 	run      playbookRunDetail
 	listRuns listRunsResponse
+	// listPages, when set, returns a distinct listRunsResponse per page index
+	// so pagination can be exercised.
+	listPages []listRunsResponse
 
 	// runsByID, when set, lets Get resolve a specific run by the ID in the
 	// "runs/{id}" endpoint. Falls back to run when the ID is not present.
 	runsByID map[string]playbookRunDetail
 
+	// currentUserID / currentUserErr override GetCurrentUserID when set.
+	currentUserID  string
+	currentUserErr error
+
 	getEndpoint  string
 	getParams    url.Values
 	getEndpoints []string
 	listParams   url.Values
+	listCalls    []url.Values
 
 	postEndpoint string
 	postBody     any
@@ -55,7 +64,16 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 		}
 	case *listRunsResponse:
 		*v = f.listRuns
+		if f.listPages != nil {
+			page, _ := strconv.Atoi(params.Get("page"))
+			if page >= 0 && page < len(f.listPages) {
+				*v = f.listPages[page]
+			} else {
+				*v = listRunsResponse{}
+			}
+		}
 		f.listParams = params
+		f.listCalls = append(f.listCalls, cloneValues(params))
 	case *map[string]any:
 		*v = map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Created playbook"}
 	default:
@@ -93,11 +111,27 @@ func (f *fakeAPIClient) Delete(_ context.Context, endpoint string) error {
 }
 
 func (f *fakeAPIClient) GetCurrentUserID(context.Context) (string, error) {
+	if f.currentUserErr != nil {
+		return "", f.currentUserErr
+	}
+	if f.currentUserID != "" {
+		return f.currentUserID, nil
+	}
 	return "abcdefghijklmnopqrstuvwxy0", nil
 }
 
 func (f *fakeAPIClient) GetPlaybookURL(playbookID string) string {
 	return "https://mattermost.example.com/playbooks/playbooks/" + playbookID
+}
+
+// cloneValues snapshots query params, since fetchRunDetails mutates the same
+// url.Values across pagination iterations.
+func cloneValues(v url.Values) url.Values {
+	out := url.Values{}
+	for k, vals := range v {
+		out[k] = append([]string(nil), vals...)
+	}
+	return out
 }
 
 // fixtureRun builds a run with the given number of sections and items per

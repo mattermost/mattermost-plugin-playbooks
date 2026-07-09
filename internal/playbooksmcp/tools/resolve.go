@@ -117,10 +117,45 @@ func candidateRuns(ctx context.Context, client APIClient, runID, channelID strin
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current user ID: %w", err)
 	}
-	return fetchRunDetails(ctx, client, listRunsParams(map[string]string{
+	return fetchUserRuns(ctx, client, userID)
+}
+
+// fetchUserRuns returns the user's in-progress runs covering both runs they own
+// and runs they only participate in. The list API ANDs owner_user_id and
+// participant_id, so the two must be queried separately and merged rather than
+// combined into one filter.
+func fetchUserRuns(ctx context.Context, client APIClient, userID string) ([]playbookRunDetail, error) {
+	owned, err := fetchRunDetails(ctx, client, listRunsParams(map[string]string{
 		"statuses":      "InProgress",
 		"owner_user_id": userID,
 	}))
+	if err != nil {
+		return nil, err
+	}
+	participating, err := fetchRunDetails(ctx, client, listRunsParams(map[string]string{
+		"statuses":       "InProgress",
+		"participant_id": userID,
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return mergeRunsByID(owned, participating), nil
+}
+
+// mergeRunsByID concatenates run lists, keeping first occurrence of each run ID.
+func mergeRunsByID(lists ...[]playbookRunDetail) []playbookRunDetail {
+	seen := make(map[string]bool)
+	var merged []playbookRunDetail
+	for _, list := range lists {
+		for _, run := range list {
+			if seen[run.ID] {
+				continue
+			}
+			seen[run.ID] = true
+			merged = append(merged, run)
+		}
+	}
+	return merged
 }
 
 // fetchChannelRuns lists a channel's runs (in-progress unless includeFinished)
@@ -134,20 +169,26 @@ func fetchChannelRuns(ctx context.Context, client APIClient, channelID string, i
 }
 
 func fetchRunDetails(ctx context.Context, client APIClient, params url.Values) ([]playbookRunDetail, error) {
-	var resp listRunsResponse
-	if err := client.Get(ctx, "runs", params, &resp); err != nil {
-		return nil, fmt.Errorf("failed to list runs: %w", err)
-	}
-
-	runs := make([]playbookRunDetail, 0, len(resp.Items))
-	for _, summary := range resp.Items {
-		var run playbookRunDetail
-		if err := client.Get(ctx, fmt.Sprintf("runs/%s", summary.ID), nil, &run); err != nil {
-			return nil, fmt.Errorf("failed to get run %s: %w", summary.ID, err)
+	var runs []playbookRunDetail
+	for page := 0; ; page++ {
+		params.Set("page", fmt.Sprintf("%d", page))
+		var resp listRunsResponse
+		if err := client.Get(ctx, "runs", params, &resp); err != nil {
+			return nil, fmt.Errorf("failed to list runs: %w", err)
 		}
-		runs = append(runs, run)
+		for _, summary := range resp.Items {
+			var run playbookRunDetail
+			if err := client.Get(ctx, fmt.Sprintf("runs/%s", summary.ID), nil, &run); err != nil {
+				return nil, fmt.Errorf("failed to get run %s: %w", summary.ID, err)
+			}
+			runs = append(runs, run)
+		}
+		// Stop once we've collected everything or a page came back empty (guards
+		// against a mismatched TotalCount causing an endless loop).
+		if len(resp.Items) == 0 || len(runs) >= resp.TotalCount {
+			return runs, nil
+		}
 	}
-	return runs, nil
 }
 
 func listRunsParams(pairs map[string]string) url.Values {
@@ -155,7 +196,6 @@ func listRunsParams(pairs map[string]string) url.Values {
 	for k, v := range pairs {
 		params.Set(k, v)
 	}
-	params.Set("page", "0")
 	params.Set("per_page", "50")
 	return params
 }
@@ -172,32 +212,43 @@ type itemMatch struct {
 	score           int
 }
 
-func matchChecklistItems(runs []playbookRunDetail, query string, includeClosed bool) []itemMatch {
-	q := strings.ToLower(query)
-	qTokens := strings.Fields(q)
-
-	var matches []itemMatch
+// collectCandidateItems flattens the runs into unscored item candidates,
+// applying the open/closed filter. Both the matcher and the no-match listing
+// build on this so the two stay in sync.
+func collectCandidateItems(runs []playbookRunDetail, includeClosed bool) []itemMatch {
+	var items []itemMatch
 	for _, run := range runs {
 		for ci, cl := range run.Checklists {
 			for ii, item := range cl.Items {
 				if !includeClosed && !itemIsOpen(item.State) {
 					continue
 				}
-				score := matchScore(strings.ToLower(item.Title), q, qTokens)
-				if score == 0 {
-					continue
-				}
-				matches = append(matches, itemMatch{
+				items = append(items, itemMatch{
 					runID:           run.ID,
 					runName:         run.Name,
 					checklistNumber: ci,
 					itemNumber:      ii,
 					title:           item.Title,
 					state:           displayState(item.State),
-					score:           score,
 				})
 			}
 		}
+	}
+	return items
+}
+
+func matchChecklistItems(runs []playbookRunDetail, query string, includeClosed bool) []itemMatch {
+	q := strings.ToLower(query)
+	qTokens := strings.Fields(q)
+
+	var matches []itemMatch
+	for _, cand := range collectCandidateItems(runs, includeClosed) {
+		score := matchScore(strings.ToLower(cand.title), q, qTokens)
+		if score == 0 {
+			continue
+		}
+		cand.score = score
+		matches = append(matches, cand)
 	}
 
 	sort.SliceStable(matches, func(i, j int) bool {
@@ -287,25 +338,7 @@ func formatNoMatches(runs []playbookRunDetail, query string, includeClosed bool)
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "No %schecklist item matching %q found.", scope, query)
 
-	var available []itemMatch
-	for _, run := range runs {
-		for ci, cl := range run.Checklists {
-			for ii, item := range cl.Items {
-				if !includeClosed && !itemIsOpen(item.State) {
-					continue
-				}
-				available = append(available, itemMatch{
-					runID:           run.ID,
-					runName:         run.Name,
-					checklistNumber: ci,
-					itemNumber:      ii,
-					title:           item.Title,
-					state:           displayState(item.State),
-				})
-			}
-		}
-	}
-
+	available := collectCandidateItems(runs, includeClosed)
 	if len(available) == 0 {
 		sb.WriteString(" No candidate items were found in the searched runs.")
 		return sb.String()
