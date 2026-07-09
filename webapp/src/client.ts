@@ -263,6 +263,13 @@ export async function updatePlaybookChannelNameTemplate(playbookId: Playbook['id
     });
 }
 
+export async function updatePlaybookChannelNameTemplateOverrideAllowed(playbookId: Playbook['id'], overrideAllowed: boolean) {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({channel_name_template_override_allowed: overrideAllowed}),
+    });
+}
+
 export async function restorePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
         method: 'PUT',

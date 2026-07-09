@@ -177,6 +177,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.RunSummaryTemplateEnabled",
 			"COALESCE(p.RunSummaryTemplate, '') RunSummaryTemplate",
 			"COALESCE(p.ChannelNameTemplate, '') ChannelNameTemplate",
+			"p.ChannelNameTemplateOverrideAllowed",
 			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -277,6 +278,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RunSummaryTemplateEnabled":               rawPlaybook.RunSummaryTemplateEnabled,
 			"RunSummaryTemplate":                      rawPlaybook.RunSummaryTemplate,
 			"ChannelNameTemplate":                     rawPlaybook.ChannelNameTemplate,
+			"ChannelNameTemplateOverrideAllowed":      rawPlaybook.ChannelNameTemplateOverrideAllowed,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybook.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
@@ -384,6 +386,7 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 			CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
 		) AS NumActions`,
 		"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+		"p.ChannelNameTemplateOverrideAllowed",
 		"p.RunNumberPrefix",
 		"p.NextRunNumber",
 		"p.AdminOnlyEdit",
@@ -479,6 +482,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+			"p.ChannelNameTemplateOverrideAllowed",
 			"p.RunNumberPrefix",
 			"p.NextRunNumber",
 			"p.AdminOnlyEdit",
@@ -729,6 +733,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RunSummaryTemplateEnabled":               rawPlaybook.RunSummaryTemplateEnabled,
 			"RunSummaryTemplate":                      rawPlaybook.RunSummaryTemplate,
 			"ChannelNameTemplate":                     rawPlaybook.ChannelNameTemplate,
+			"ChannelNameTemplateOverrideAllowed":      rawPlaybook.ChannelNameTemplateOverrideAllowed,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybook.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
@@ -846,6 +851,33 @@ func (p *playbookStore) UpdateChannelNameTemplate(id, template string) error {
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to update channel name template for playbook '%s'", id)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "failed to read rows affected for playbook '%s'", id)
+	}
+	if affected == 0 {
+		return errors.Wrapf(app.ErrNotFound, "playbook '%s' not found or archived", id)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) UpdateChannelNameTemplateOverrideAllowed(id string, overrideAllowed bool) error {
+	if id == "" {
+		return errors.New("ID cannot be empty")
+	}
+
+	result, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("ChannelNameTemplateOverrideAllowed", overrideAllowed).
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": id}).
+		Where(sq.Eq{"DeleteAt": 0}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update channel name template override allowed for playbook '%s'", id)
 	}
 
 	affected, err := result.RowsAffected()

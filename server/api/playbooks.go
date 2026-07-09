@@ -378,8 +378,9 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
 
 	var body struct {
-		RunNumberPrefix     *string `json:"run_number_prefix"`
-		ChannelNameTemplate *string `json:"channel_name_template"`
+		RunNumberPrefix                    *string `json:"run_number_prefix"`
+		ChannelNameTemplate                *string `json:"channel_name_template"`
+		ChannelNameTemplateOverrideAllowed *bool   `json:"channel_name_template_override_allowed"`
 	}
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
@@ -400,6 +401,13 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 
 	if body.ChannelNameTemplate != nil {
 		if err = h.playbookService.UpdateChannelNameTemplate(playbookID, *body.ChannelNameTemplate, userID); err != nil {
+			h.handlePlaybookWriteError(w, c.logger, err)
+			return
+		}
+	}
+
+	if body.ChannelNameTemplateOverrideAllowed != nil {
+		if err = h.playbookService.UpdateChannelNameTemplateOverrideAllowed(playbookID, *body.ChannelNameTemplateOverrideAllowed, userID); err != nil {
 			h.handlePlaybookWriteError(w, c.logger, err)
 			return
 		}

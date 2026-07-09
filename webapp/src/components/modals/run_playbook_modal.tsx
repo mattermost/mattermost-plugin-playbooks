@@ -45,7 +45,7 @@ import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
+import {buildTemplatePreview, extractTemplateFieldNames, templateHasValidVariable} from 'src/utils/template_utils';
 import {PropertyField, PropertyFieldType} from 'src/types/properties';
 import {HelpText} from 'src/components/backstage/playbook_runs/shared';
 
@@ -157,6 +157,13 @@ export const RunPlaybookModal = ({
 
     const isNewChannelOnly = Boolean(restPlaybook?.new_channel_only);
 
+    // A template with no valid variable (a literal string, or only an unrecognized
+    // placeholder) always allows override, mirroring the backend's TemplateOverrideAllowed rule.
+    const hasTemplate = Boolean(playbook?.channel_name_template);
+    const templateHasVariable = templateHasValidVariable(playbook?.channel_name_template ?? '', (playbookAttributes ?? []).map((f) => f.name));
+    const overrideAllowed = !templateHasVariable || (restPlaybook?.channel_name_template_override_allowed ?? true);
+    const locked = hasTemplate && !overrideAllowed;
+
     const playbookInitializationKey = playbook ? JSON.stringify({
         id: playbook.id,
         channelNameTemplate: playbook.channel_name_template ?? '',
@@ -190,8 +197,9 @@ export const RunPlaybookModal = ({
         }
         initializedPlaybookIdRef.current = playbookInitializationKey;
 
-        // Pre-fill with the channel_name_template so the user can see the raw template.
-        // When a template is NOT set the input is required and starts empty.
+        // Pre-fill with the raw channel_name_template so the user can see it (or, when not
+        // locked, edit it). Submitting it unedited still resolves correctly — the backend
+        // resolves tokens in a user-supplied name the same way it resolves the template itself.
         setRunName(playbook.channel_name_template ?? '');
 
         setRunSummary(playbook.run_summary_template_enabled ? playbook.run_summary_template : '');
@@ -238,16 +246,18 @@ export const RunPlaybookModal = ({
         return [...templateFieldNames].filter((n) => !loadedNames.has(n));
     }, [templateFieldNames, playbookAttributes, playbook?.channel_name_template]);
 
-    const hasTemplate = Boolean(playbook?.channel_name_template);
-
-    // Preview the resolved name (client-side approximation)
+    // Preview the resolved name (client-side approximation). Always sourced from the current
+    // run-name field content — not just the playbook's own template — so typing a recognized
+    // token (e.g. "Release {Version}") previews correctly whether that text came from the
+    // template or was typed freehand; the backend resolves tokens in a user-supplied name the
+    // same way.
+    const runNameHasToken = (/\{[^}]+\}/).test(runName);
     const namePreview = useMemo(() => {
-        const tpl = playbook?.channel_name_template;
-        if (!tpl) {
+        if (!runNameHasToken) {
             return '';
         }
         return buildTemplatePreview(
-            tpl,
+            runName,
             (playbookAttributes ?? []) as unknown as PropertyField[],
             propertyValues,
             {
@@ -260,18 +270,18 @@ export const RunPlaybookModal = ({
                 creatorFallback: formatMessage({defaultMessage: "Creator's name"}),
             },
         );
-    }, [playbook?.channel_name_template, playbook?.run_number_prefix, playbookAttributes, playbook?.next_run_number, propertyValues, effectiveUserMap, userId, currentUserId, formatMessage]);
+    }, [runName, runNameHasToken, playbook?.run_number_prefix, playbookAttributes, playbook?.next_run_number, propertyValues, effectiveUserMap, userId, currentUserId, formatMessage]);
 
     const createNewChannel = channelMode === 'create_new_channel' || isNewChannelOnly;
 
-    // Name is required unless the playbook has a name template.
-    // In template mode the resolved preview must also fit within the limit so the backend
-    // accepts it; the raw template string itself is not validated against the limit.
+    // Name is required unless the template is locked (authoritative and will be used as-is).
+    // When locked, the resolved preview must fit within the limit so the backend accepts it;
+    // the raw template string itself is not validated against the limit.
     const templateNameValid = namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH;
     const freeNameValid = runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
-    const nameValid = hasTemplate ? templateNameValid : freeNameValid;
+    const nameValid = locked ? templateNameValid : freeNameValid;
 
-    const namePreviewTooLong = hasTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
+    const namePreviewTooLong = runNameHasToken && namePreview !== '' && [...namePreview].length > RUN_NAME_MAX_LENGTH;
 
     const requiredFieldsFilled = useMemo(() => templateFields.every((field) => {
         const val = propertyValues[field.id];
@@ -316,7 +326,7 @@ export const RunPlaybookModal = ({
         channelMode,
         public: isNewChannel ? createPublicRun : undefined,
         hasPlaybookChanged: playbookId !== selectedPlaybookId,
-        hasNameChanged: playbook!.channel_name_template ? false : runName !== '',
+        hasNameChanged: runName !== (playbook!.channel_name_template ?? ''),
         hasSummaryChanged: runSummary !== (playbook!.run_summary_template_enabled ? playbook!.run_summary_template : ''),
         hasChannelModeChanged: channelMode !== playbook!.channel_mode,
         hasChannelIdChanged: channelId !== playbook!.channel_id,
@@ -463,9 +473,9 @@ export const RunPlaybookModal = ({
                     <RunNameSection
                         runName={runName}
                         onSetRunName={setRunName}
-                        readOnly={hasTemplate}
+                        readOnly={locked}
                     />
-                    {hasTemplate && namePreview && (
+                    {runNameHasToken && namePreview && (
                         <NamePreview data-testid='run-name-preview'>
                             {formatMessage({defaultMessage: 'Preview: {preview}'}, {preview: namePreview})}
                         </NamePreview>

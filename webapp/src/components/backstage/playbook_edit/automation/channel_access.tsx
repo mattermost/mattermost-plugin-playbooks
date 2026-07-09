@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {CodeBracketsIcon, SettingsOutlineIcon} from '@mattermost/compass-icons/components';
@@ -24,8 +24,10 @@ import ClearIndicator from 'src/components/backstage/playbook_edit/automation/cl
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 import {TemplateInput} from 'src/components/backstage/playbook_edit/automation/template_input';
 import {BaseInput} from 'src/components/assets/inputs';
+import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
+import {templateHasValidVariable} from 'src/utils/template_utils';
 
-type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
+type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'channel_name_template_override_allowed' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
 
 interface Props {
     playbook: PlaybookSubset;
@@ -35,16 +37,20 @@ interface Props {
     disabled?: boolean;
     onRunNumberPrefixChange?: (prefix: string) => void;
     onChannelNameTemplateChange?: (template: string) => void;
+    onChannelNameTemplateOverrideAllowedChange?: (overrideAllowed: boolean) => void;
     newChannelOnly?: boolean;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange, newChannelOnly = false}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange, onChannelNameTemplateOverrideAllowedChange, newChannelOnly = false}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
     const disabled = disabledProp || playbook.delete_at !== 0;
     const [insertCounter, setInsertCounter] = useState(0);
     const templateEnabled = !disabled && playbook.channel_mode === 'create_new_channel';
+    const templateHasVariable = templateHasValidVariable(playbook.channel_name_template ?? '', fieldNames ?? []);
+    const overrideAllowedEnabled = templateEnabled && templateHasVariable;
+    const overrideAllowedChecked = !templateHasVariable || (playbook.channel_name_template_override_allowed ?? true);
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -62,6 +68,24 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
         setChangesMade?.(true);
         onChannelNameTemplateChange?.(channelNameTemplate);
     };
+
+    const handleChannelNameTemplateOverrideAllowedChange = (overrideAllowed: boolean) => {
+        setPlaybook({
+            ...playbook,
+            channel_name_template_override_allowed: overrideAllowed,
+        });
+        setChangesMade?.(true);
+        onChannelNameTemplateOverrideAllowedChange?.(overrideAllowed);
+    };
+
+    // Persist the forced-true display so a stale stored `false` can't resurface later and look
+    // like the checkbox unchecked itself once a valid variable is reintroduced.
+    useEffect(() => {
+        if (templateEnabled && !templateHasVariable && playbook.channel_name_template_override_allowed === false) {
+            handleChannelNameTemplateOverrideAllowedChange(true);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [templateEnabled, templateHasVariable, playbook.channel_name_template_override_allowed]);
 
     const handleRunNumberPrefixChange = (runNumberPrefix: string) => {
         setPlaybook({
@@ -203,6 +227,13 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                             testId='channel-access-run-name-template'
                             openInsertToggle={insertCounter}
                         />
+                        <OverrideAllowedCheckbox
+                            testId='channel-access-run-name-template-override-allowed'
+                            text={formatMessage({defaultMessage: 'Allow users to change run name'})}
+                            checked={overrideAllowedChecked}
+                            disabled={!overrideAllowedEnabled}
+                            onChange={handleChannelNameTemplateOverrideAllowedChange}
+                        />
                     </RunNamingBlock>
                     <ChannelActionButton
                         disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
@@ -331,5 +362,14 @@ const InsertVariableButton = styled.button`
 
     &.a11y--focused {
         box-shadow: 0 0 0 2px var(--button-bg);
+    }
+`;
+
+const OverrideAllowedCheckbox = styled(CheckboxInput)`
+    padding: 6px 0;
+    margin-top: 4px;
+
+    &:hover {
+        background-color: transparent;
     }
 `;

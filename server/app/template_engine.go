@@ -181,6 +181,37 @@ func TemplateUsesSeqToken(tmpl string) bool {
 	return seqTokenRegex.MatchString(tmpl)
 }
 
+// templateHasValidVariable reports whether template contains at least one placeholder that
+// resolves to a real value: a system token (SEQ, OWNER, CREATOR, PROPERTY_USER) or the name of a
+// field in fields. An unrecognized placeholder (a typo, or a reference to a deleted field) does
+// not count — it can never resolve, so it must not be able to "lock" the template.
+func templateHasValidVariable(template string, fields []PropertyField) bool {
+	for _, match := range placeholderRegex.FindAllStringSubmatch(template, -1) {
+		name := strings.TrimSpace(match[1])
+		if isSystemToken(name) {
+			return true
+		}
+		for i := range fields {
+			if strings.EqualFold(fields[i].Name, name) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// TemplateOverrideAllowed reports whether a caller-supplied run name may override the given
+// playbook's resolved channel name template. Only a template with at least one VALID variable
+// (see templateHasValidVariable) is gated by ChannelNameTemplateOverrideAllowed — a purely
+// literal template, or one with only unrecognized placeholders, always allows override, since
+// forcing either would either produce one fixed run name or a template that can never resolve.
+func TemplateOverrideAllowed(pb *Playbook, template string, fields []PropertyField) bool {
+	if template == "" || !templateHasValidVariable(template, fields) {
+		return true
+	}
+	return pb.ChannelNameTemplateOverrideAllowed
+}
+
 // StripFieldFromTemplate removes all occurrences of {fieldName} from a template string
 // and cleans up orphaned separators and whitespace.
 func StripFieldFromTemplate(tmpl, fieldName string) string {

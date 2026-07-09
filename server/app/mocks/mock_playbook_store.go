@@ -456,6 +456,20 @@ func (mr *MockPlaybookStoreMockRecorder) UpdateChannelNameTemplateIfUnchanged(ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChannelNameTemplateIfUnchanged", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateChannelNameTemplateIfUnchanged), arg0, arg1, arg2)
 }
 
+// UpdateChannelNameTemplateOverrideAllowed mocks base method.
+func (m *MockPlaybookStore) UpdateChannelNameTemplateOverrideAllowed(arg0 string, arg1 bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChannelNameTemplateOverrideAllowed", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateChannelNameTemplateOverrideAllowed indicates an expected call of UpdateChannelNameTemplateOverrideAllowed.
+func (mr *MockPlaybookStoreMockRecorder) UpdateChannelNameTemplateOverrideAllowed(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChannelNameTemplateOverrideAllowed", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateChannelNameTemplateOverrideAllowed), arg0, arg1)
+}
+
 // UpdateMetric mocks base method.
 func (m *MockPlaybookStore) UpdateMetric(arg0 string, arg1 map[string]interface{}) error {
 	m.ctrl.T.Helper()

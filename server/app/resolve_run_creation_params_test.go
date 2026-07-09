@@ -303,3 +303,52 @@ func TestResolveRunCreationParams_DoesNotAllocateRunNumber(t *testing.T) {
 	assert.Equal(t, int64(0), run.RunNumber)
 	assert.Equal(t, "", run.SequentialID)
 }
+
+func TestResolveRunCreationParams_OverrideAllowedTemplateSkipsDryRunValidation(t *testing.T) {
+	zoneField := PropertyField{
+		PropertyField: mm_model.PropertyField{
+			ID:   "fld_zone",
+			Name: "Zone",
+			Type: mm_model.PropertyFieldTypeText,
+		},
+	}
+	pb := &Playbook{
+		ID:                                 mm_model.NewId(),
+		ChannelNameTemplate:                "{Zone}",
+		ChannelNameTemplateOverrideAllowed: true,
+	}
+	svc := &PlaybookRunServiceImpl{
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+	}
+
+	run := &PlaybookRun{PlaybookID: pb.ID}
+	err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
+
+	require.NoError(t, err, "an override-allowed template is only a prefill, so a missing field value must not block preflight")
+}
+
+func TestResolveRunCreationParams_OverrideNotAllowedTemplateStillValidates(t *testing.T) {
+	zoneField := PropertyField{
+		PropertyField: mm_model.PropertyField{
+			ID:   "fld_zone",
+			Name: "Zone",
+			Type: mm_model.PropertyFieldTypeText,
+		},
+	}
+	pb := &Playbook{
+		ID:                                 mm_model.NewId(),
+		ChannelNameTemplate:                "{Zone}",
+		ChannelNameTemplateOverrideAllowed: false,
+	}
+	svc := &PlaybookRunServiceImpl{
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+	}
+
+	run := &PlaybookRun{PlaybookID: pb.ID}
+	err := svc.ResolveRunCreationParams(run, pb, nil, RunSourcePost)
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+}

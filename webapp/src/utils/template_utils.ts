@@ -42,6 +42,25 @@ export function extractTemplateFieldNames(template: string): string[] {
     return names;
 }
 
+// Mirrors server/app.templateHasValidVariable: true iff template references at least one
+// recognized token — a system token (SEQ, OWNER, CREATOR), or the name of a real property
+// field in fieldNames. An unrecognized placeholder (a typo, or a reference to a deleted field)
+// does not count, since it can never resolve.
+export function templateHasValidVariable(template: string, fieldNames: string[]): boolean {
+    const re = /\{([^}]+)\}/g;
+    let match;
+    while ((match = re.exec(template)) !== null) {
+        const name = match[1].trim();
+        if (SYSTEM_TOKENS.has(name.toUpperCase())) {
+            return true;
+        }
+        if (fieldNames.some((fieldName) => fieldName.toLowerCase() === name.toLowerCase())) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export type BuildTemplatePreviewOptions = {
     prefix?: string;
     userMap?: Record<string, string>;

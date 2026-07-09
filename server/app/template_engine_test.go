@@ -334,6 +334,54 @@ func TestTemplateUsesSeqToken(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// TemplateOverrideAllowed
+// ---------------------------------------------------------------------------
+
+func TestTemplateOverrideAllowed(t *testing.T) {
+	zone := textField("fld_zone", "Zone")
+
+	t.Run("empty template always allows override", func(t *testing.T) {
+		pb := &Playbook{ChannelNameTemplateOverrideAllowed: false}
+		require.True(t, TemplateOverrideAllowed(pb, "", nil))
+	})
+
+	t.Run("literal template with no placeholder always allows override, even when the flag is false", func(t *testing.T) {
+		pb := &Playbook{ChannelNameTemplateOverrideAllowed: false}
+		require.True(t, TemplateOverrideAllowed(pb, "Incident War Room", nil))
+	})
+
+	t.Run("a system token is a valid variable and honors the flag", func(t *testing.T) {
+		pb := &Playbook{ChannelNameTemplateOverrideAllowed: false}
+		require.False(t, TemplateOverrideAllowed(pb, "Incident-{SEQ}", nil))
+
+		pb.ChannelNameTemplateOverrideAllowed = true
+		require.True(t, TemplateOverrideAllowed(pb, "Incident-{SEQ}", nil))
+	})
+
+	t.Run("a known property field is a valid variable and honors the flag", func(t *testing.T) {
+		pb := &Playbook{ChannelNameTemplateOverrideAllowed: false}
+		require.False(t, TemplateOverrideAllowed(pb, "{Zone} Incident", []PropertyField{zone}))
+
+		pb.ChannelNameTemplateOverrideAllowed = true
+		require.True(t, TemplateOverrideAllowed(pb, "{Zone} Incident", []PropertyField{zone}))
+	})
+
+	// An unrecognized placeholder (a typo, or a reference to a field that no longer exists) must
+	// not be able to "lock" a template that can never actually resolve — the flag is forced to
+	// true regardless of its stored value, exactly like a template with no placeholder at all.
+	t.Run("an unrecognized placeholder does not trick the system into honoring the flag", func(t *testing.T) {
+		pb := &Playbook{ChannelNameTemplateOverrideAllowed: false}
+		require.True(t, TemplateOverrideAllowed(pb, "{notARealVariable}", nil))
+		require.True(t, TemplateOverrideAllowed(pb, "{notARealVariable}", []PropertyField{zone}), "an unrelated known field must not validate an unrecognized placeholder")
+	})
+
+	t.Run("a mix of one valid and one unrecognized placeholder still honors the flag", func(t *testing.T) {
+		pb := &Playbook{ChannelNameTemplateOverrideAllowed: false}
+		require.False(t, TemplateOverrideAllowed(pb, "{SEQ} - {notARealVariable}", nil))
+	})
+}
+
+// ---------------------------------------------------------------------------
 // StripFieldFromTemplate
 // ---------------------------------------------------------------------------
 

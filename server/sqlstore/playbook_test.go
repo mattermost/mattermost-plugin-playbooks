@@ -2264,6 +2264,52 @@ func TestUpdateChannelNameTemplateIfUnchanged(t *testing.T) {
 	})
 }
 
+func TestUpdateChannelNameTemplateOverrideAllowed(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	t.Run("empty playbookID returns error", func(t *testing.T) {
+		err := playbookStore.UpdateChannelNameTemplateOverrideAllowed("", true)
+		require.Error(t, err)
+	})
+
+	t.Run("can be toggled false and back to true", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Template Override Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		pb.ChannelNameTemplate = "{Priority} - Channel"
+		pb.ChannelNameTemplateOverrideAllowed = true
+
+		pbID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.True(t, got.ChannelNameTemplateOverrideAllowed)
+
+		err = playbookStore.UpdateChannelNameTemplateOverrideAllowed(pbID, false)
+		require.NoError(t, err)
+
+		got, err = playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.False(t, got.ChannelNameTemplateOverrideAllowed)
+
+		err = playbookStore.UpdateChannelNameTemplateOverrideAllowed(pbID, true)
+		require.NoError(t, err)
+
+		got, err = playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.True(t, got.ChannelNameTemplateOverrideAllowed)
+	})
+
+	t.Run("nonexistent playbook returns not-found error", func(t *testing.T) {
+		err := playbookStore.UpdateChannelNameTemplateOverrideAllowed("nonexistent-id", true)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, app.ErrNotFound))
+	})
+}
+
 func TestGraphqlUpdateGuards(t *testing.T) {
 	db := setupTestDB(t)
 	playbookStore := setupPlaybookStore(t, db)

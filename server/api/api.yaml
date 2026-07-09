@@ -2577,6 +2577,14 @@ components:
             type: string
             description: User ID of the playbook member.
             example: ilh6s1j4yefbdhxhtlzt179i6m
+        channel_name_template:
+          type: string
+          description: A template used to derive the channel name and the run name/title when a run is created from this playbook. May reference property fields and system tokens such as {SEQ}.
+          example: "Incident - {SEQ}"
+        channel_name_template_override_allowed:
+          type: boolean
+          description: When true (the default), the caller may override channel_name_template with an explicit name when creating a run; the template is only a suggested default. When false, the template always overrides the supplied name. Only takes effect when channel_name_template references a variable (e.g. {SEQ} or a property field) — a purely literal template always allows override regardless of this setting.
+          example: true
     PlaybookList:
       type: object
       properties:

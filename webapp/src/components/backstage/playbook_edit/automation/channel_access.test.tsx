@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import renderer from 'react-test-renderer';
+import renderer, {act} from 'react-test-renderer';
 import {IntlProvider} from 'react-intl';
 
 const capturedProps: Array<Record<string, unknown>> = [];
@@ -55,6 +55,7 @@ describe('CreateAChannel — run number prefix input', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_override_allowed: true,
             delete_at: 0,
             channel_mode: 'create_new_channel' as const,
             channel_id: '',
@@ -79,6 +80,7 @@ describe('CreateAChannel — run number prefix input', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_override_allowed: true,
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
@@ -103,6 +105,7 @@ describe('CreateAChannel — run number prefix input', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_override_allowed: true,
             delete_at: 0,
             channel_mode: 'create_new_channel' as const,
             channel_id: '',
@@ -128,6 +131,270 @@ describe('CreateAChannel — run number prefix input', () => {
     });
 });
 
+describe('CreateAChannel — run name template override allowed checkbox', () => {
+    it('is checked when override is allowed', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_override_allowed: true,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === 'channel-access-run-name-template-override-allowed',
+        );
+        expect(checkbox?.props.checked).toBe(true);
+    });
+
+    it('is unchecked when override is not allowed', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_override_allowed: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === 'channel-access-run-name-template-override-allowed',
+        );
+        expect(checkbox?.props.checked).toBe(false);
+    });
+
+    it('calls onChannelNameTemplateOverrideAllowedChange with the new value when toggled', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_override_allowed: true,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const onChannelNameTemplateOverrideAllowedChange = jest.fn();
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+                onChannelNameTemplateOverrideAllowedChange={onChannelNameTemplateOverrideAllowedChange}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === 'channel-access-run-name-template-override-allowed',
+        );
+        checkbox.props.onChange(false);
+
+        expect(onChannelNameTemplateOverrideAllowedChange).toHaveBeenCalledWith(false);
+    });
+
+    it('disables the checkbox when channel_mode is link_existing_channel', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_override_allowed: true,
+            delete_at: 0,
+            channel_mode: 'link_existing_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === 'channel-access-run-name-template-override-allowed',
+        );
+        expect(checkbox?.props.disabled).toBe(true);
+    });
+
+    it('disables and force-checks the checkbox when the template has no valid variable (literal template)', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident War Room',
+            channel_name_template_override_allowed: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === 'channel-access-run-name-template-override-allowed',
+        );
+        expect(checkbox?.props.disabled).toBe(true);
+        expect(checkbox?.props.checked).toBe(true);
+    });
+
+    it('disables and force-checks the checkbox when the template only has an unrecognized placeholder', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '{notARealVariable}',
+            channel_name_template_override_allowed: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+                fieldNames={['Zone']}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === 'channel-access-run-name-template-override-allowed',
+        );
+        expect(checkbox?.props.disabled).toBe(true);
+        expect(checkbox?.props.checked).toBe(true);
+    });
+
+    it('keeps the checkbox enabled and respects the stored value when the template references a known property field', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '{Zone} Incident',
+            channel_name_template_override_allowed: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+                fieldNames={['Zone']}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === 'channel-access-run-name-template-override-allowed',
+        );
+        expect(checkbox?.props.disabled).toBe(false);
+        expect(checkbox?.props.checked).toBe(false);
+    });
+
+    it('self-heals a stale stored false by persisting true when the template has no valid variable', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident War Room',
+            channel_name_template_override_allowed: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const onChannelNameTemplateOverrideAllowedChange = jest.fn();
+        act(() => {
+            renderWithIntl(
+                <CreateAChannel
+                    playbook={playbook}
+                    setPlaybook={jest.fn()}
+                    onChannelNameTemplateOverrideAllowedChange={onChannelNameTemplateOverrideAllowedChange}
+                />,
+            );
+        });
+
+        expect(onChannelNameTemplateOverrideAllowedChange).toHaveBeenCalledWith(true);
+    });
+
+    it('does not persist anything when the stored value already matches the forced display', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident War Room',
+            channel_name_template_override_allowed: true,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const onChannelNameTemplateOverrideAllowedChange = jest.fn();
+        act(() => {
+            renderWithIntl(
+                <CreateAChannel
+                    playbook={playbook}
+                    setPlaybook={jest.fn()}
+                    onChannelNameTemplateOverrideAllowedChange={onChannelNameTemplateOverrideAllowedChange}
+                />,
+            );
+        });
+
+        expect(onChannelNameTemplateOverrideAllowedChange).not.toHaveBeenCalled();
+    });
+
+    it('does not persist anything when the template is disabled (link_existing_channel)', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident War Room',
+            channel_name_template_override_allowed: false,
+            delete_at: 0,
+            channel_mode: 'link_existing_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const onChannelNameTemplateOverrideAllowedChange = jest.fn();
+        act(() => {
+            renderWithIntl(
+                <CreateAChannel
+                    playbook={playbook}
+                    setPlaybook={jest.fn()}
+                    onChannelNameTemplateOverrideAllowedChange={onChannelNameTemplateOverrideAllowedChange}
+                />,
+            );
+        });
+
+        expect(onChannelNameTemplateOverrideAllowedChange).not.toHaveBeenCalled();
+    });
+});
+
 describe('CreateAChannel — link-existing channel selector', () => {
     beforeEach(() => {
         capturedProps.length = 0;
@@ -137,6 +404,7 @@ describe('CreateAChannel — link-existing channel selector', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_override_allowed: true,
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
@@ -165,6 +433,7 @@ describe('CreateAChannel — link-existing channel selector', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_override_allowed: true,
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',

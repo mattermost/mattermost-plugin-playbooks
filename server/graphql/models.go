@@ -147,6 +147,7 @@ type PlaybookUpdates struct {
 	RunSummaryTemplateEnabled               *bool              `json:"runSummaryTemplateEnabled"`
 	RunSummaryTemplate                      *string            `json:"runSummaryTemplate"`
 	ChannelNameTemplate                     *string            `json:"channelNameTemplate"`
+	ChannelNameTemplateOverrideAllowed      *bool              `json:"channelNameTemplateOverrideAllowed"`
 	Checklists                              []ChecklistUpdates `json:"checklists"`
 	CreateChannelMemberOnNewParticipant     *bool              `json:"createChannelMemberOnNewParticipant"`
 	RemoveChannelMemberOnRemovedParticipant *bool              `json:"removeChannelMemberOnRemovedParticipant"`
@@ -228,6 +229,7 @@ type Playbook struct {
 	CategoryName                            string                 `json:"categoryName"`
 	RunSummaryTemplate                      string                 `json:"runSummaryTemplate"`
 	ChannelNameTemplate                     string                 `json:"channelNameTemplate"`
+	ChannelNameTemplateOverrideAllowed      bool                   `json:"channelNameTemplateOverrideAllowed"`
 	DefaultPlaybookAdminRole                string                 `json:"defaultPlaybookAdminRole"`
 	DefaultRunAdminRole                     string                 `json:"defaultRunAdminRole"`
 	DefaultRunMemberRole                    string                 `json:"defaultRunMemberRole"`
