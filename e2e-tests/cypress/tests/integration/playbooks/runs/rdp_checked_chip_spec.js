@@ -94,6 +94,40 @@ describe('runs > RHS > checked/unchecked chip', {testIsolation: true}, () => {
         });
     });
 
+    it('shows a "skipped" chip after a task is skipped, then "restored" after it is restored', () => {
+        setupRunWithChecklist(({partner}) => {
+            openRunRHS(partner);
+
+            // # Add a task and skip it via its dot menu
+            const taskTitle = 'Skip chip task ' + Date.now();
+            cy.addNewTaskFromRHS(taskTitle);
+            cy.findByText(taskTitle).parents('[data-testid="checkbox-item-container"]').as('taskRow');
+
+            cy.get('@taskRow').trigger('mouseover');
+            cy.get('@taskRow').within(() => {
+                cy.findByTitle('More').click();
+            });
+            cy.findByRole('button', {name: 'Skip task'}).click();
+
+            // * The chip appears and its tooltip reads "skipped"
+            cy.get('@taskRow').findByTestId('checklist-item-checked-chip').should('be.visible');
+            cy.get('@taskRow').findByTestId('checklist-item-checked-chip').realHover();
+            cy.uiGetToolTip('skipped');
+
+            // # Restore the task via its dot menu
+            cy.get('@taskRow').trigger('mouseover');
+            cy.get('@taskRow').within(() => {
+                cy.findByTitle('More').click();
+            });
+            cy.findByRole('button', {name: 'Restore task'}).click();
+
+            // * Tooltip now reads "restored" (not "unchecked")
+            cy.get('@taskRow').findByTestId('checklist-item-checked-chip').should('be.visible');
+            cy.get('@taskRow').findByTestId('checklist-item-checked-chip').realHover();
+            cy.uiGetToolTip('restored');
+        });
+    });
+
     it('shows no chip for an unchecked, never-touched task', () => {
         setupRunWithChecklist(({partner}) => {
             openRunRHS(partner);

@@ -4,8 +4,12 @@
 import React, {useMemo} from 'react';
 import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
-import {DateTime} from 'luxon';
-import {CheckIcon, CheckboxBlankOutlineIcon} from '@mattermost/compass-icons/components';
+import {
+    CheckIcon,
+    CheckboxBlankOutlineIcon,
+    CloseIcon,
+    RefreshIcon,
+} from '@mattermost/compass-icons/components';
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import Profile from 'src/components/profile/profile';
@@ -14,6 +18,8 @@ import {useFormattedUsernameByID} from 'src/hooks';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {TaskStateModifiedDetails, TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {Timestamp} from 'src/webapp_globals';
+
+type StateAction = 'check' | 'uncheck' | 'skip' | 'restore';
 
 interface Props {
     item: ChecklistItem;
@@ -27,35 +33,51 @@ interface Props {
     compact?: boolean;
 }
 
+const ICON_FOR_ACTION: Record<StateAction, typeof CheckIcon> = {
+    check: CheckIcon,
+    uncheck: CheckboxBlankOutlineIcon,
+    skip: CloseIcon,
+    restore: RefreshIcon,
+};
+
+// The item's resting state bounds which actions could have produced it. Only Open is ambiguous
+// (unchecked vs. restored-from-skip) — the timeline event, when matched, tells them apart; with no
+// event we default to the first (uncheck). Never-touched items (state_modified === 0) show nothing.
+const actionsForState = (state: ChecklistItem['state']): StateAction[] => {
+    switch (state) {
+    case ChecklistItemState.Closed:
+        return ['check'];
+    case ChecklistItemState.Skip:
+        return ['skip'];
+    case ChecklistItemState.Open:
+        return ['uncheck', 'restore'];
+    default:
+        return [];
+    }
+};
+
 /**
- * CheckedChip shows when a checklist item was last checked off or unchecked, and (best-effort)
- * who did it.
+ * CheckedChip shows when a checklist item last changed state — checked, unchecked, skipped, or
+ * restored — and (best-effort) who did it.
  *
- * The "when" comes purely from the item JSON (`state_modified`) and is always reliable.
- * The "who" is resolved from the run timeline events — see {@link useStateEvent} — and degrades
- * gracefully (no avatar, no name) whenever attribution can't be made confidently.
+ * The "when" comes purely from the item JSON (`state_modified`) and is always reliable. The precise
+ * verb and the "who" are resolved from the run timeline events — see {@link useStateEvent} — and
+ * degrade gracefully (default verb, no avatar) whenever a confident match can't be made.
  */
 const CheckedChip = ({item, timelineEvents, compact = false}: Props) => {
-    const isChecked = item.state === ChecklistItemState.Closed && item.state_modified > 0;
+    const candidateActions = actionsForState(item.state);
+    const show = candidateActions.length > 0 && item.state_modified > 0;
 
-    // An item changed back to open (state_modified set) was unchecked. Brand-new open items
-    // (state_modified === 0) show nothing. A skip→open "restore" is a rare edge that also lands
-    // here and reads as "unchecked".
-    const isUnchecked = item.state === ChecklistItemState.Open && item.state_modified > 0;
-    const action = isChecked ? 'check' : 'uncheck';
-
-    const stateEvent = useStateEvent(timelineEvents, item, isChecked || isUnchecked, action);
+    const stateEvent = useStateEvent(timelineEvents, item, show, candidateActions);
     const subjectUserId = stateEvent?.subject_user_id ?? '';
     const subjectName = useFormattedUsernameByID(subjectUserId);
 
-    if (!isChecked && !isUnchecked) {
+    if (!show) {
         return null;
     }
 
-    const value = DateTime.fromMillis(item.state_modified).toJSDate();
-
-    // Full, fixed timestamp for the tooltip, e.g. "Jun 17, 2026, 2:30 PM".
-    const absolute = DateTime.fromMillis(item.state_modified).toLocaleString(DateTime.DATETIME_MED);
+    const action = parseAction(stateEvent?.details) ?? candidateActions[0];
+    const value = new Date(item.state_modified);
 
     const relative = (
         <Timestamp
@@ -65,9 +87,19 @@ const CheckedChip = ({item, timelineEvents, compact = false}: Props) => {
         />
     );
 
+    // Full, fixed timestamp for the tooltip, e.g. "Jun 17, 2026 at 2:30 PM". Rendered via the
+    // connected Timestamp so the time respects the user's 12/24-hour clock display preference.
+    const absolute = (
+        <Timestamp
+            value={value}
+            useRelative={false}
+            useDate={{year: 'numeric', month: 'short', day: 'numeric'}}
+        />
+    );
+
     let label;
     if (compact) {
-        const Icon = isChecked ? CheckIcon : CheckboxBlankOutlineIcon;
+        const Icon = ICON_FOR_ACTION[action];
         label = (
             <>
                 <Icon size={14}/>
@@ -79,50 +111,13 @@ const CheckedChip = ({item, timelineEvents, compact = false}: Props) => {
                 />
             </>
         );
-    } else if (isChecked) {
-        label = (
-            <FormattedMessage
-                defaultMessage='Checked {time}'
-                values={{time: relative}}
-            />
-        );
     } else {
-        label = (
-            <FormattedMessage
-                defaultMessage='Unchecked {time}'
-                values={{time: relative}}
-            />
-        );
+        label = chipLabel(action, relative);
     }
 
-    // Tooltip mirrors the run activity log verbs ("checked off" / "unchecked") plus the full fixed
-    // timestamp, since the chip itself only shows relative time.
-    let tooltipContent;
-    if (isChecked) {
-        tooltipContent = subjectUserId ? (
-            <FormattedMessage
-                defaultMessage='{user} checked off {time}'
-                values={{user: subjectName, time: absolute}}
-            />
-        ) : (
-            <FormattedMessage
-                defaultMessage='Checked off {time}'
-                values={{time: absolute}}
-            />
-        );
-    } else {
-        tooltipContent = subjectUserId ? (
-            <FormattedMessage
-                defaultMessage='{user} unchecked {time}'
-                values={{user: subjectName, time: absolute}}
-            />
-        ) : (
-            <FormattedMessage
-                defaultMessage='Unchecked {time}'
-                values={{time: absolute}}
-            />
-        );
-    }
+    // Tooltip mirrors the run activity log verbs plus the full fixed timestamp, since the chip
+    // itself only shows relative time.
+    const tooltipContent = tooltipLabel(action, subjectUserId, subjectName, absolute);
 
     return (
         <WithTooltip
@@ -150,19 +145,129 @@ const parseDetails = (raw: string): TaskStateModifiedDetails | null => {
     }
 };
 
+const parseAction = (raw?: string): StateAction | undefined => {
+    const action = raw ? parseDetails(raw)?.action : undefined;
+    return (action && action in ICON_FOR_ACTION) ? action as StateAction : undefined;
+};
+
+function chipLabel(action: StateAction, time: React.ReactNode): React.ReactNode {
+    switch (action) {
+    case 'check':
+        return (
+            <FormattedMessage
+                defaultMessage='Checked {time}'
+                values={{time}}
+            />
+        );
+    case 'skip':
+        return (
+            <FormattedMessage
+                defaultMessage='Skipped {time}'
+                values={{time}}
+            />
+        );
+    case 'restore':
+        return (
+            <FormattedMessage
+                defaultMessage='Restored {time}'
+                values={{time}}
+            />
+        );
+    case 'uncheck':
+    default:
+        return (
+            <FormattedMessage
+                defaultMessage='Unchecked {time}'
+                values={{time}}
+            />
+        );
+    }
+}
+
+function tooltipLabel(action: StateAction, subjectUserId: string, user: React.ReactNode, time: React.ReactNode): React.ReactNode {
+    if (subjectUserId) {
+        switch (action) {
+        case 'check':
+            return (
+                <FormattedMessage
+                    defaultMessage='{user} checked off {time}'
+                    values={{user, time}}
+                />
+            );
+        case 'skip':
+            return (
+                <FormattedMessage
+                    defaultMessage='{user} skipped {time}'
+                    values={{user, time}}
+                />
+            );
+        case 'restore':
+            return (
+                <FormattedMessage
+                    defaultMessage='{user} restored {time}'
+                    values={{user, time}}
+                />
+            );
+        case 'uncheck':
+        default:
+            return (
+                <FormattedMessage
+                    defaultMessage='{user} unchecked {time}'
+                    values={{user, time}}
+                />
+            );
+        }
+    }
+    switch (action) {
+    case 'check':
+        return (
+            <FormattedMessage
+                defaultMessage='Checked off {time}'
+                values={{time}}
+            />
+        );
+    case 'skip':
+        return (
+            <FormattedMessage
+                defaultMessage='Skipped {time}'
+                values={{time}}
+            />
+        );
+    case 'restore':
+        return (
+            <FormattedMessage
+                defaultMessage='Restored {time}'
+                values={{time}}
+            />
+        );
+    case 'uncheck':
+    default:
+        return (
+            <FormattedMessage
+                defaultMessage='Unchecked {time}'
+                values={{time}}
+            />
+        );
+    }
+}
+
 /**
- * Resolve the timeline event for this item's last state change of the given action ("check" or
- * "uncheck"), or undefined when it can't be determined confidently. The link between a timeline
- * event and a checklist item is imperfect (the event stores only the action + the markdown-stripped
- * task title — no item id reaches the frontend), so we never guess:
- *   1. The event's event_at MUST equal this item's state_modified — the backend sets both from the
- *      same clock read, so this is the authoritative key. A single matching-action event is the match.
- *   2. If several share that millisecond (e.g. a bulk/API action), disambiguate by title; use it
+ * Resolve the timeline event for this item's last state change, or undefined when it can't be
+ * determined confidently. The link between a timeline event and a checklist item is imperfect (the
+ * event stores only the action + the markdown-stripped task title — no item id reaches the
+ * frontend), so we never guess:
+ *   1. The event's action must be one the item's resting state could have produced (`allowedActions`)
+ *      — this keeps a stale/contradictory event from matching (e.g. a `check` event against an Open
+ *      item) and disambiguates uncheck vs. restore for Open items.
+ *   2. The event's event_at MUST equal this item's state_modified — the backend sets both from the
+ *      same clock read, so this is the authoritative key. A single matching event is the match.
+ *   3. If several share that millisecond (e.g. a bulk/API action), disambiguate by title; use it
  *      only when exactly one title matches.
  * Title is never used as a sole link — only as a tiebreaker among exact event_at matches. Any
  * remaining ambiguity returns undefined so the chip omits attribution rather than mis-attributing.
  */
-function useStateEvent(events: TimelineEvent[] | undefined, item: ChecklistItem, show: boolean, action: 'check' | 'uncheck'): TimelineEvent | undefined {
+function useStateEvent(events: TimelineEvent[] | undefined, item: ChecklistItem, show: boolean, allowedActions: StateAction[]): TimelineEvent | undefined {
+    const allowedKey = allowedActions.join(',');
     return useMemo(() => {
         if (!show || !item.state_modified || !events) {
             return undefined;
@@ -172,7 +277,8 @@ function useStateEvent(events: TimelineEvent[] | undefined, item: ChecklistItem,
             if (e.event_type !== TimelineEventType.TaskStateModified) {
                 return false;
             }
-            return parseDetails(e.details)?.action === action;
+            const action = parseAction(e.details);
+            return action !== undefined && allowedActions.includes(action);
         });
 
         const titleMatches = (raw: string) => parseDetails(raw)?.task === item.title;
@@ -189,7 +295,9 @@ function useStateEvent(events: TimelineEvent[] | undefined, item: ChecklistItem,
             return byTitle.length === 1 ? byTitle[0] : undefined;
         }
         return undefined;
-    }, [events, item.state_modified, item.title, show, action]);
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [events, item.state_modified, item.title, show, allowedKey]);
 }
 
 const Chip = styled.div`

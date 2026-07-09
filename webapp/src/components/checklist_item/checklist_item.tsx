@@ -121,10 +121,11 @@ interface ChecklistItemProps {
     onItemSelect?: () => void;
 }
 
-// The "checked off / unchecked" chip shows for items that have been checked (Closed) or unchecked
-// (back to Open with a recorded state change). Never-touched items (state_modified === 0) are skipped.
+// The state-change chip shows for items that have been checked (Closed), unchecked/restored (back
+// to Open with a recorded state change), or skipped (Skip). Never-touched items (state_modified === 0)
+// are excluded.
 const showCheckedChip = (item: ChecklistItemType): boolean =>
-    (item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Open) && item.state_modified > 0;
+    (item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Open || item.state === ChecklistItemState.Skip) && item.state_modified > 0;
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();

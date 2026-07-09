@@ -32,6 +32,8 @@ jest.mock('src/components/profile/profile', () => ({
 jest.mock('@mattermost/compass-icons/components', () => ({
     CheckIcon: () => <span data-testid='check-icon'/>,
     CheckboxBlankOutlineIcon: () => <span data-testid='uncheck-icon'/>,
+    CloseIcon: () => <span data-testid='skip-icon'/>,
+    RefreshIcon: () => <span data-testid='restore-icon'/>,
 }));
 
 jest.mock('src/webapp_globals', () => ({
@@ -58,6 +60,14 @@ const uncheckedItem = (overrides: Partial<ChecklistItem> = {}): ChecklistItem =>
     ...emptyChecklistItem(),
     title: 'Deploy',
     state: ChecklistItemState.Open,
+    state_modified: STATE_MODIFIED,
+    ...overrides,
+});
+
+const skippedItem = (overrides: Partial<ChecklistItem> = {}): ChecklistItem => ({
+    ...emptyChecklistItem(),
+    title: 'Deploy',
+    state: ChecklistItemState.Skip,
     state_modified: STATE_MODIFIED,
     ...overrides,
 });
@@ -195,6 +205,55 @@ describe('CheckedChip', () => {
 
             expect(avatarUserIds(component)).toHaveLength(0);
             expect(text(component)).toContain('Unchecked');
+        });
+    });
+
+    describe('restored', () => {
+        it('reads a restore event as "Restored" (not "Unchecked") for an open item', () => {
+            const component = render(uncheckedItem(), {timelineEvents: [stateEvent('restore', {subject_user_id: 'erin'})]});
+
+            expect(avatarUserIds(component)).toEqual(['erin']);
+            expect(text(component)).toContain('@erin');
+            expect(text(component)).toContain('restored');
+            expect(text(component)).not.toContain('unchecked');
+        });
+
+        it('shows the restore icon in compact mode', () => {
+            const component = render(uncheckedItem(), {compact: true, timelineEvents: [stateEvent('restore', {subject_user_id: 'erin'})]});
+
+            expect(has(component, 'restore-icon')).toBe(true);
+            expect(has(component, 'uncheck-icon')).toBe(false);
+        });
+
+        it('defaults to "Unchecked" for an open item when no event resolves the ambiguity', () => {
+            const component = render(uncheckedItem(), {timelineEvents: []});
+
+            expect(text(component)).toContain('Unchecked');
+            expect(text(component)).not.toContain('Restored');
+        });
+    });
+
+    describe('skipped', () => {
+        it('renders a "Skipped" chip with actor for a skipped item', () => {
+            const component = render(skippedItem(), {timelineEvents: [stateEvent('skip', {subject_user_id: 'frank'})]});
+
+            expect(avatarUserIds(component)).toEqual(['frank']);
+            expect(text(component)).toContain('@frank');
+            expect(text(component)).toContain('skipped');
+        });
+
+        it('falls back to no avatar and a Skipped tooltip when no events are passed', () => {
+            const component = render(skippedItem(), {timelineEvents: []});
+
+            expect(avatarUserIds(component)).toHaveLength(0);
+            expect(text(component)).toContain('Skipped');
+        });
+
+        it('shows the skip icon in compact mode', () => {
+            const component = render(skippedItem(), {compact: true, timelineEvents: [stateEvent('skip', {subject_user_id: 'frank'})]});
+
+            expect(has(component, 'skip-icon')).toBe(true);
+            expect(has(component, 'check-icon')).toBe(false);
         });
     });
 });
