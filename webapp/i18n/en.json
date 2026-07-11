@@ -201,7 +201,7 @@
   "GD+JsI": "{count} {count, plural, one {task} other {tasks}} selected",
   "GDCpPr": "Recent status update",
   "GHxJtB": "Select options...",
-  "GPXx3Z": "Allow users to change run name",
+  "GPXx3Z": "Lock run name",
   "GPhFZn": "Only the run owner can restart this run",
   "GR4us3": "Only admins can rename this playbook.",
   "GVpA4Q": "Create New Playbook",

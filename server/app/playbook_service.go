@@ -712,13 +712,13 @@ func (s *playbookService) UpdateChannelNameTemplate(playbookID, template, userID
 	return nil
 }
 
-func (s *playbookService) UpdateChannelNameTemplateOverrideAllowed(playbookID string, overrideAllowed bool, userID string) error {
-	auditRec := s.auditor.MakeAuditRecord("updateChannelNameTemplateOverrideAllowed", model.AuditStatusFail)
+func (s *playbookService) UpdateChannelNameTemplateLocked(playbookID string, templateLocked bool, userID string) error {
+	auditRec := s.auditor.MakeAuditRecord("updateChannelNameTemplateLocked", model.AuditStatusFail)
 	defer s.auditor.LogAuditRec(auditRec)
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbookID)
 
-	if err := s.store.UpdateChannelNameTemplateOverrideAllowed(playbookID, overrideAllowed); err != nil {
+	if err := s.store.UpdateChannelNameTemplateLocked(playbookID, templateLocked); err != nil {
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}

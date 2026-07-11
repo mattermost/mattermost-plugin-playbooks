@@ -251,7 +251,7 @@ export type Playbook = {
   channelID: Scalars['String'];
   channelMode: Scalars['String'];
   channelNameTemplate: Scalars['String'];
-  channelNameTemplateOverrideAllowed: Scalars['Boolean'];
+  channelNameTemplateLocked: Scalars['Boolean'];
   checklists: Array<Checklist>;
   createChannelMemberOnNewParticipant: Scalars['Boolean'];
   createPublicPlaybookRun: Scalars['Boolean'];
@@ -317,7 +317,7 @@ export type PlaybookUpdates = {
   channelId?: InputMaybe<Scalars['String']>;
   channelMode?: InputMaybe<Scalars['String']>;
   channelNameTemplate?: InputMaybe<Scalars['String']>;
-  channelNameTemplateOverrideAllowed?: InputMaybe<Scalars['Boolean']>;
+  channelNameTemplateLocked?: InputMaybe<Scalars['Boolean']>;
   checklists?: InputMaybe<Array<ChecklistUpdates>>;
   createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
   createPublicPlaybookRun?: InputMaybe<Scalars['Boolean']>;

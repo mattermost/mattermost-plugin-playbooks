@@ -161,8 +161,7 @@ export const RunPlaybookModal = ({
     // placeholder) always allows override, mirroring the backend's TemplateOverrideAllowed rule.
     const hasTemplate = Boolean(playbook?.channel_name_template);
     const templateHasVariable = templateHasValidVariable(playbook?.channel_name_template ?? '', (playbookAttributes ?? []).map((f) => f.name));
-    const overrideAllowed = !templateHasVariable || (restPlaybook?.channel_name_template_override_allowed ?? true);
-    const locked = hasTemplate && !overrideAllowed;
+    const locked = hasTemplate && templateHasVariable && (restPlaybook?.channel_name_template_locked ?? false);
 
     const playbookInitializationKey = playbook ? JSON.stringify({
         id: playbook.id,

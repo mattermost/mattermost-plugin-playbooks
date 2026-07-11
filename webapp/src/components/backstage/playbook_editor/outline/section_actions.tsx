@@ -28,7 +28,7 @@ import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {
     fetchPlaybookPropertyFields,
     updatePlaybookChannelNameTemplate,
-    updatePlaybookChannelNameTemplateOverrideAllowed,
+    updatePlaybookChannelNameTemplateLocked,
     updatePlaybookRunNumberPrefix,
 } from 'src/client';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
@@ -108,24 +108,24 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
         setSavedPrefix(restPlaybook?.run_number_prefix ?? '');
     }, [restPlaybook?.run_number_prefix]);
 
-    // channel_name_template_override_allowed is REST-only (not yet in the GraphQL query),
+    // channel_name_template_locked is REST-only (not yet in the GraphQL query),
     // tracked the same way as run_number_prefix.
-    const [savedOverrideAllowed, setSavedOverrideAllowed] = useState(restPlaybook?.channel_name_template_override_allowed ?? true);
-    const savedOverrideAllowedRef = useRef(savedOverrideAllowed);
+    const [savedTemplateLocked, setSavedTemplateLocked] = useState(restPlaybook?.channel_name_template_locked ?? false);
+    const savedTemplateLockedRef = useRef(savedTemplateLocked);
     useEffect(() => {
-        savedOverrideAllowedRef.current = savedOverrideAllowed;
-    }, [savedOverrideAllowed]);
+        savedTemplateLockedRef.current = savedTemplateLocked;
+    }, [savedTemplateLocked]);
     useEffect(() => {
-        setSavedOverrideAllowed(restPlaybook?.channel_name_template_override_allowed ?? true);
-    }, [restPlaybook?.channel_name_template_override_allowed]);
+        setSavedTemplateLocked(restPlaybook?.channel_name_template_locked ?? false);
+    }, [restPlaybook?.channel_name_template_locked]);
 
     // Merge GraphQL playbook with REST-only fields so CreateAChannel can display run_number_prefix.
     const channelPlaybookSource = useMemo(() => ({
         ...playbook,
         run_number_prefix: savedPrefix,
         next_run_number: restPlaybook?.next_run_number,
-        channel_name_template_override_allowed: savedOverrideAllowed,
-    }), [playbook, savedPrefix, restPlaybook?.next_run_number, savedOverrideAllowed]);
+        channel_name_template_locked: savedTemplateLocked,
+    }), [playbook, savedPrefix, restPlaybook?.next_run_number, savedTemplateLocked]);
 
     const [
         playbookForCreateChannel,
@@ -196,25 +196,25 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
     // not free text — but rapid clicks still fire overlapping requests that can resolve out of
     // order. Track the latest request so a slower, superseded one can't apply its own
     // success/failure over a newer toggle's outcome.
-    const overrideAllowedRequestIDRef = useRef(0);
-    const handleChannelNameTemplateOverrideAllowedSave = useCallback((overrideAllowed: boolean) => {
-        const requestID = ++overrideAllowedRequestIDRef.current;
-        updatePlaybookChannelNameTemplateOverrideAllowed(playbook.id, overrideAllowed)
+    const templateLockedRequestIDRef = useRef(0);
+    const handleChannelNameTemplateLockedSave = useCallback((locked: boolean) => {
+        const requestID = ++templateLockedRequestIDRef.current;
+        updatePlaybookChannelNameTemplateLocked(playbook.id, locked)
             .then(() => {
-                if (requestID === overrideAllowedRequestIDRef.current) {
-                    setSavedOverrideAllowed(overrideAllowed);
+                if (requestID === templateLockedRequestIDRef.current) {
+                    setSavedTemplateLocked(locked);
                 }
             })
             .catch((err) => {
-                if (requestID === overrideAllowedRequestIDRef.current) {
-                    setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template_override_allowed: savedOverrideAllowedRef.current}));
+                if (requestID === templateLockedRequestIDRef.current) {
+                    setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template_locked: savedTemplateLockedRef.current}));
                     addToastRef.current({
                         content: formatMessage({defaultMessage: 'Failed to save this setting. Please try again.'}),
                         toastStyle: ToastStyle.Failure,
                     });
                 }
                 // eslint-disable-next-line no-console
-                console.error('Failed to save channel name template override allowed', err);
+                console.error('Failed to save channel name template locked', err);
             });
     }, [playbook.id, setPlaybookForCreateChannel, formatMessage]);
 
@@ -327,7 +327,7 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                         disabled={disabled}
                         onRunNumberPrefixChange={handleRunNumberPrefixSave}
                         onChannelNameTemplateChange={handleChannelNameTemplateSave}
-                        onChannelNameTemplateOverrideAllowedChange={handleChannelNameTemplateOverrideAllowedSave}
+                        onChannelNameTemplateLockedChange={handleChannelNameTemplateLockedSave}
                         newChannelOnly={newChannelOnly}
                     />
                 </Setting>

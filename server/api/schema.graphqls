@@ -90,7 +90,7 @@ input PlaybookUpdates {
 	runSummaryTemplateEnabled: Boolean
 	runSummaryTemplate: String
 	channelNameTemplate: String
-	channelNameTemplateOverrideAllowed: Boolean
+	channelNameTemplateLocked: Boolean
 	checklists: [ChecklistUpdates!]
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
@@ -174,7 +174,7 @@ type Playbook {
 	categoryName: String!
 	runSummaryTemplate: String!
 	channelNameTemplate: String!
-	channelNameTemplateOverrideAllowed: Boolean!
+	channelNameTemplateLocked: Boolean!
 	defaultPlaybookAdminRole: String!
 	defaultRunAdminRole: String!
 	defaultRunMemberRole: String!

@@ -62,7 +62,7 @@ export interface PlaybookWithChecklist extends Playbook {
     categorize_channel_enabled: boolean;
     run_summary_template: string;
     channel_name_template: string;
-    channel_name_template_override_allowed: boolean;
+    channel_name_template_locked: boolean;
     metrics: Metric[];
     is_favorite: boolean;
     create_channel_member_on_new_participant: boolean;
@@ -227,7 +227,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         run_summary_template_enabled: false,
         run_summary_template: '',
         channel_name_template: '',
-        channel_name_template_override_allowed: true,
+        channel_name_template_locked: false,
         default_playbook_member_role: '',
         metrics: [],
         is_favorite: false,

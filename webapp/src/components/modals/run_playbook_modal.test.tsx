@@ -296,7 +296,7 @@ describe('RunPlaybookModal — template mode', () => {
         // Default to override-not-allowed (locked) so this describe block's tests exercise the
         // "template is authoritative, name is read-only" behavior. Tests for the override-allowed
         // (default product) behavior live in their own describe block below with their own mock.
-        mockUseRestPlaybook.mockReturnValue([{channel_name_template_override_allowed: false}]);
+        mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: true}]);
     });
 
     const playbookWithTemplate = {
@@ -386,7 +386,7 @@ describe('RunPlaybookModal — template mode', () => {
         beforeEach(() => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
-            mockUseRestPlaybook.mockReturnValue([{channel_name_template_override_allowed: true}]);
+            mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: false}]);
         });
 
         it('shows the run name input as editable, not read-only', () => {
@@ -511,9 +511,9 @@ describe('RunPlaybookModal — template mode', () => {
     describe('name field behavior — forced override allowed (no valid variable)', () => {
         // A template with no valid variable (a literal string, or only an unrecognized
         // placeholder) always allows override, mirroring the backend's TemplateOverrideAllowed
-        // rule — even if an admin explicitly stored channel_name_template_override_allowed: false.
+        // rule — even if an admin explicitly stored channel_name_template_locked: true.
         beforeEach(() => {
-            mockUseRestPlaybook.mockReturnValue([{channel_name_template_override_allowed: false}]);
+            mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: true}]);
         });
 
         it('is editable for a literal template with no placeholder', () => {
@@ -922,7 +922,7 @@ describe('RunPlaybookModal — template mode', () => {
     describe('namePreviewTooLong', () => {
         it('shows error and disables confirm button when resolved name exceeds 64 chars', () => {
             // Includes {SEQ} so the template has a valid variable and is locked (mirroring the
-            // outer beforeEach's channel_name_template_override_allowed: false) — a purely
+            // outer beforeEach's channel_name_template_locked: true) — a purely
             // literal template always allows override and would never hit this validation path.
             const longTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1) + '{SEQ}';
             const pbLongName = {
@@ -954,7 +954,7 @@ describe('RunPlaybookModal — template mode', () => {
             // divergence is exactly what the "exceeds" warning is telling the user about.
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
-            mockUseRestPlaybook.mockReturnValue([{channel_name_template_override_allowed: true}]);
+            mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: false}]);
 
             let component: renderer.ReactTestRenderer;
             act(() => {

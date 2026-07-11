@@ -1765,24 +1765,24 @@ func NewPBBuilder() *PlaybookBuilder {
 	timeNow := model.GetMillis()
 	return &PlaybookBuilder{
 		&app.Playbook{
-			Title:                              "base playbook",
-			TeamID:                             model.NewId(),
-			CreatePublicPlaybookRun:            false,
-			CreateAt:                           model.GetMillis(),
-			UpdateAt:                           timeNow,
-			DeleteAt:                           0,
-			Checklists:                         []app.Checklist(nil),
-			Members:                            []app.PlaybookMember(nil),
-			InvitedUserIDs:                     []string(nil),
-			InvitedGroupIDs:                    []string(nil),
-			NumActions:                         1, // Channel creation is always on
-			DefaultPlaybookAdminRole:           app.PlaybookRoleAdmin,
-			DefaultPlaybookMemberRole:          app.PlaybookRoleMember,
-			DefaultRunAdminRole:                app.RunRoleAdmin,
-			DefaultRunMemberRole:               app.RunRoleMember,
-			NextRunNumber:                      1,
-			RetrospectiveEnabled:               true,
-			ChannelNameTemplateOverrideAllowed: true,
+			Title:                     "base playbook",
+			TeamID:                    model.NewId(),
+			CreatePublicPlaybookRun:   false,
+			CreateAt:                  model.GetMillis(),
+			UpdateAt:                  timeNow,
+			DeleteAt:                  0,
+			Checklists:                []app.Checklist(nil),
+			Members:                   []app.PlaybookMember(nil),
+			InvitedUserIDs:            []string(nil),
+			InvitedGroupIDs:           []string(nil),
+			NumActions:                1, // Channel creation is always on
+			DefaultPlaybookAdminRole:  app.PlaybookRoleAdmin,
+			DefaultPlaybookMemberRole: app.PlaybookRoleMember,
+			DefaultRunAdminRole:       app.RunRoleAdmin,
+			DefaultRunMemberRole:      app.RunRoleMember,
+			NextRunNumber:             1,
+			RetrospectiveEnabled:      true,
+			ChannelNameTemplateLocked: false,
 		},
 	}
 }
@@ -2265,47 +2265,46 @@ func TestUpdateChannelNameTemplateIfUnchanged(t *testing.T) {
 	})
 }
 
-func TestUpdateChannelNameTemplateOverrideAllowed(t *testing.T) {
+func TestUpdateChannelNameTemplateLocked(t *testing.T) {
 	db := setupTestDB(t)
 	playbookStore := setupPlaybookStore(t, db)
 
 	t.Run("empty playbookID returns error", func(t *testing.T) {
-		err := playbookStore.UpdateChannelNameTemplateOverrideAllowed("", true)
+		err := playbookStore.UpdateChannelNameTemplateLocked("", true)
 		require.Error(t, err)
 	})
 
-	t.Run("can be toggled false and back to true", func(t *testing.T) {
+	t.Run("defaults to false and can be toggled true and back to false", func(t *testing.T) {
 		pb := NewPBBuilder().
-			WithTitle("Template Override Playbook").
+			WithTitle("Template Locked Playbook").
 			WithTeamID(model.NewId()).
 			ToPlaybook()
 		pb.ChannelNameTemplate = "{Priority} - Channel"
-		pb.ChannelNameTemplateOverrideAllowed = true
 
 		pbID, err := playbookStore.Create(pb)
 		require.NoError(t, err)
 
 		got, err := playbookStore.Get(pbID)
 		require.NoError(t, err)
-		require.True(t, got.ChannelNameTemplateOverrideAllowed)
+		require.False(t, got.ChannelNameTemplateLocked)
 
-		err = playbookStore.UpdateChannelNameTemplateOverrideAllowed(pbID, false)
+		err = playbookStore.UpdateChannelNameTemplateLocked(pbID, true)
 		require.NoError(t, err)
 
 		got, err = playbookStore.Get(pbID)
 		require.NoError(t, err)
-		require.False(t, got.ChannelNameTemplateOverrideAllowed)
+		require.True(t, got.ChannelNameTemplateLocked)
 
-		err = playbookStore.UpdateChannelNameTemplateOverrideAllowed(pbID, true)
+		err = playbookStore.UpdateChannelNameTemplateLocked(pbID, false)
 		require.NoError(t, err)
 
 		got, err = playbookStore.Get(pbID)
 		require.NoError(t, err)
-		require.True(t, got.ChannelNameTemplateOverrideAllowed)
+		require.False(t, got.ChannelNameTemplateLocked)
 	})
 
 	t.Run("nonexistent playbook returns not-found error", func(t *testing.T) {
-		err := playbookStore.UpdateChannelNameTemplateOverrideAllowed("nonexistent-id", true)
+		err := playbookStore.UpdateChannelNameTemplateLocked("nonexistent-id", true)
 		require.Error(t, err)
 		require.True(t, errors.Is(err, app.ErrNotFound))
 	})

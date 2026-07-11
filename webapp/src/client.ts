@@ -263,10 +263,10 @@ export async function updatePlaybookChannelNameTemplate(playbookId: Playbook['id
     });
 }
 
-export async function updatePlaybookChannelNameTemplateOverrideAllowed(playbookId: Playbook['id'], overrideAllowed: boolean) {
+export async function updatePlaybookChannelNameTemplateLocked(playbookId: Playbook['id'], locked: boolean) {
     await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}`, {
         method: 'PATCH',
-        body: JSON.stringify({channel_name_template_override_allowed: overrideAllowed}),
+        body: JSON.stringify({channel_name_template_locked: locked}),
     });
 }
 

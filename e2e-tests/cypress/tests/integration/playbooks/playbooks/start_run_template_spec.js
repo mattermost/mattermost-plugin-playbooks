@@ -45,7 +45,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
-                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{OWNER}', channel_name_template_override_allowed: false}).then(() => {
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{OWNER}', channel_name_template_locked: true}).then(() => {
                     seqTemplatePlaybook = playbook;
                 });
             });
@@ -120,11 +120,6 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         let unlockedTemplatePlaybook;
 
         beforeEach(() => {
-            // # A template with a valid variable, override explicitly allowed. Note:
-            // # cy.apiCreatePlaybook (raw REST create) doesn't send this field, so it comes
-            // # back as false (Go zero value) unless set here — the webapp UI's own
-            // # new-playbook flow already defaults it to true (see emptyPlaybook() in
-            // # webapp/src/types/playbook.ts), so this mirrors that intended default.
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'UnlockedTemplate PB ' + getRandomId(),
@@ -132,7 +127,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
-                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{OWNER} - Incident', channel_name_template_override_allowed: true}).then(() => {
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{OWNER} - Incident'}).then(() => {
                     unlockedTemplatePlaybook = playbook;
                 });
             });
@@ -146,7 +141,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
 
         it('shows an editable name field prefilled with the template and its resolved preview', () => {
             cy.apiGetPlaybook(unlockedTemplatePlaybook.id).then((pb) => {
-                expect(pb.channel_name_template_override_allowed).to.equal(true);
+                expect(pb.channel_name_template_locked).to.equal(false);
             });
 
             cy.playbooksOpenRunModal(unlockedTemplatePlaybook.id);
@@ -238,7 +233,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
-                cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Incident War Room', channel_name_template_override_allowed: false}).then(() => {
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Incident War Room', channel_name_template_locked: true}).then(() => {
                     literalTemplatePlaybook = playbook;
                 });
             });
@@ -253,7 +248,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         it('shows an editable name field despite the stored lock, since there is no valid variable to lock', () => {
             cy.apiGetPlaybook(literalTemplatePlaybook.id).then((pb) => {
                 expect(pb.channel_name_template).to.equal('Incident War Room');
-                expect(pb.channel_name_template_override_allowed).to.equal(false);
+                expect(pb.channel_name_template_locked).to.equal(true);
             });
 
             cy.playbooksOpenRunModal(literalTemplatePlaybook.id);
@@ -458,7 +453,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 // # 65-char template (plus {SEQ}) exceeds the 64-char run name limit. Includes a
                 // # valid variable and is locked (override not allowed) — a purely literal
                 // # template always allows override and would never hit this validation path.
-                cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'x'.repeat(65) + '{SEQ}', channel_name_template_override_allowed: false});
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'x'.repeat(65) + '{SEQ}', channel_name_template_locked: true});
             });
         });
 

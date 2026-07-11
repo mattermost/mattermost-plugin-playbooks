@@ -82,7 +82,7 @@ func (s *allocPlaybookServiceStub) ReorderPropertyFields(string, string, int) ([
 func (s *allocPlaybookServiceStub) UpdateChannelNameTemplate(string, string, string) error {
 	panic("not called")
 }
-func (s *allocPlaybookServiceStub) UpdateChannelNameTemplateOverrideAllowed(string, bool, string) error {
+func (s *allocPlaybookServiceStub) UpdateChannelNameTemplateLocked(string, bool, string) error {
 	panic("not called")
 }
 func (s *allocPlaybookServiceStub) UpdateRunNumberPrefix(string, string, string) error {
@@ -270,10 +270,10 @@ func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 		},
 	}
 	pb := Playbook{
-		ID:                                 "pb_1",
-		RunNumberPrefix:                    "INC",
-		ChannelNameTemplate:                "{Zone}",
-		ChannelNameTemplateOverrideAllowed: false,
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "{Zone}",
+		ChannelNameTemplateLocked: true,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb}
 	svc := &PlaybookRunServiceImpl{
@@ -294,20 +294,20 @@ func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Tests for ChannelNameTemplateOverrideAllowed
+// Tests for ChannelNameTemplateLocked
 // ---------------------------------------------------------------------------
 //
-// ChannelNameTemplateOverrideAllowed defaults to true (the caller's name wins) and only takes
+// ChannelNameTemplateLocked defaults to false (the caller's name wins) and only takes
 // effect when the template actually contains a {token} placeholder. A purely literal template
 // (no placeholder) always allows override, regardless of the stored flag, since forcing it would
 // only ever produce one fixed run name.
 
 func TestResolveAndAllocate_OverrideNotAllowedTemplateWithVariableOverridesUserSuppliedName(t *testing.T) {
 	pb := Playbook{
-		ID:                                 "pb_1",
-		RunNumberPrefix:                    "INC",
-		ChannelNameTemplate:                "Incident-{SEQ}",
-		ChannelNameTemplateOverrideAllowed: false,
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Incident-{SEQ}",
+		ChannelNameTemplateLocked: true,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
 	svc := newAllocService(pbStub)
@@ -322,10 +322,10 @@ func TestResolveAndAllocate_OverrideNotAllowedTemplateWithVariableOverridesUserS
 
 func TestResolveAndAllocate_OverrideNotAllowedTemplateWithNoUserSuppliedName(t *testing.T) {
 	pb := Playbook{
-		ID:                                 "pb_1",
-		RunNumberPrefix:                    "INC",
-		ChannelNameTemplate:                "Incident-{SEQ}",
-		ChannelNameTemplateOverrideAllowed: false,
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Incident-{SEQ}",
+		ChannelNameTemplateLocked: true,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
 	svc := newAllocService(pbStub)
@@ -340,10 +340,10 @@ func TestResolveAndAllocate_OverrideNotAllowedTemplateWithNoUserSuppliedName(t *
 
 func TestResolveAndAllocate_OverrideAllowedTemplateUsesUserSuppliedName(t *testing.T) {
 	pb := Playbook{
-		ID:                                 "pb_1",
-		RunNumberPrefix:                    "INC",
-		ChannelNameTemplate:                "Incident-{SEQ}",
-		ChannelNameTemplateOverrideAllowed: true,
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Incident-{SEQ}",
+		ChannelNameTemplateLocked: false,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
 	svc := newAllocService(pbStub)
@@ -362,10 +362,10 @@ func TestResolveAndAllocate_OverrideAllowedTemplateUsesUserSuppliedName(t *testi
 // the run number is already allocated by the time the missing-name check runs.
 func TestResolveAndAllocate_OverrideAllowedWithNoUserSuppliedNameFails(t *testing.T) {
 	pb := Playbook{
-		ID:                                 "pb_1",
-		RunNumberPrefix:                    "INC",
-		ChannelNameTemplate:                "Incident-{SEQ}",
-		ChannelNameTemplateOverrideAllowed: true,
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Incident-{SEQ}",
+		ChannelNameTemplateLocked: false,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
 	svc := newAllocService(pbStub)
@@ -378,14 +378,14 @@ func TestResolveAndAllocate_OverrideAllowedWithNoUserSuppliedNameFails(t *testin
 }
 
 // A literal template (no {token} placeholder) always allows override, even if an admin
-// explicitly set ChannelNameTemplateOverrideAllowed to false — locking it would just force
+// explicitly set ChannelNameTemplateLocked to true — locking it would just force
 // every run to the exact same name, so the flag is a no-op for a template with no variable.
 func TestResolveAndAllocate_LiteralTemplateAlwaysAllowsOverride(t *testing.T) {
 	pb := Playbook{
-		ID:                                 "pb_1",
-		RunNumberPrefix:                    "INC",
-		ChannelNameTemplate:                "Zone Alpha",
-		ChannelNameTemplateOverrideAllowed: false,
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Zone Alpha",
+		ChannelNameTemplateLocked: true,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
 	svc := newAllocService(pbStub)
@@ -400,10 +400,10 @@ func TestResolveAndAllocate_LiteralTemplateAlwaysAllowsOverride(t *testing.T) {
 
 func TestResolveAndAllocate_LiteralTemplateWithNoUserSuppliedNameFails(t *testing.T) {
 	pb := Playbook{
-		ID:                                 "pb_1",
-		RunNumberPrefix:                    "INC",
-		ChannelNameTemplate:                "Zone Alpha",
-		ChannelNameTemplateOverrideAllowed: false,
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Zone Alpha",
+		ChannelNameTemplateLocked: true,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
 	svc := newAllocService(pbStub)
@@ -427,10 +427,10 @@ func TestResolveAndAllocate_UnrecognizedPlaceholderDoesNotTrickOverrideAllowed(t
 		},
 	}
 	pb := Playbook{
-		ID:                                 "pb_1",
-		RunNumberPrefix:                    "INC",
-		ChannelNameTemplate:                "{notARealVariable}",
-		ChannelNameTemplateOverrideAllowed: false,
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "{notARealVariable}",
+		ChannelNameTemplateLocked: true,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
 	svc := &PlaybookRunServiceImpl{

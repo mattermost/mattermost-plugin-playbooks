@@ -47,7 +47,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         cy.viewport('macbook-13');
 
         // # Reset mutable fields so each test starts from a clean state
-        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: '', channel_name_template: '', channel_name_template_override_allowed: true});
+        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: '', channel_name_template: '', channel_name_template_locked: false});
     });
 
     it('shows run naming fields inside the Actions section', () => {
@@ -59,53 +59,67 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         cy.findByTestId('channel-access-run-name-template-input').should('exist');
     });
 
-    it('shows the "allow users to change run name" checkbox, checked by default', () => {
+    it('shows the "Lock run name" checkbox, unchecked by default', () => {
         // # Set a template with a valid variable so the checkbox is actionable
         cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: TOKEN_SEQ}).then(() => {
             cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
-            // * Checkbox exists, is enabled, and checked by default
-            cy.findByTestId('channel-access-run-name-template-override-allowed').should('exist');
-            cy.findByTestId('channel-access-run-name-template-override-allowed').find('input').should('be.checked');
-            cy.findByTestId('channel-access-run-name-template-override-allowed').find('input').should('be.enabled');
+            // * Checkbox exists, is enabled, and unchecked by default
+            cy.findByTestId('channel-access-run-name-template-locked').should('exist');
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.enabled');
         });
     });
 
-    it('unchecking the checkbox persists after reload', () => {
+    it('checking the lock checkbox persists after reload', () => {
         cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: TOKEN_SEQ}).then(() => {
             cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
-            cy.findByTestId('channel-access-run-name-template-override-allowed').find('input').should('be.checked');
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
 
             // # Intercept the REST PATCH so we can wait for the save before asserting server state
             cy.playbooksInterceptPatchPlaybook();
 
-            // # Uncheck the box
-            cy.findByTestId('channel-access-run-name-template-override-allowed').click();
-            cy.findByTestId('channel-access-run-name-template-override-allowed').find('input').should('not.be.checked');
+            // # Check the lock box
+            cy.findByTestId('channel-access-run-name-template-locked').click();
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
 
             // # Wait for the save to reach the server before asserting persisted state
             cy.wait('@PatchPlaybook');
 
             // * Persisted server-side
             cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
-                expect(pb.channel_name_template_override_allowed).to.equal(false);
+                expect(pb.channel_name_template_locked).to.equal(true);
             });
 
             // * Survives reload
             cy.reload();
-            cy.findByTestId('channel-access-run-name-template-override-allowed').find('input').should('not.be.checked');
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
         });
     });
 
-    it('disables and force-checks the checkbox when the template has no valid variable', () => {
-        // # A literal template (no {token}) with the box explicitly unchecked beforehand
-        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident War Room', channel_name_template_override_allowed: false}).then(() => {
+    it('defaults a template playbook to unlocked when created via raw REST without the flag', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'DefaultUnlocked PB ' + getRandomId(),
+            memberIDs: [testUser.id],
+        }).then((pb) => {
+            cy.apiPatchPlaybook(pb.id, {channel_name_template: '{OWNER} - Incident'});
+            cy.apiGetPlaybook(pb.id).then((fetched) => {
+                expect(fetched.channel_name_template_locked).to.equal(false);
+            });
+            cy.apiArchivePlaybook(pb.id);
+        });
+    });
+
+    it('disables and force-unchecks the checkbox when the template has no valid variable', () => {
+        // # A literal template (no {token}) with the box explicitly checked beforehand
+        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident War Room', channel_name_template_locked: true}).then(() => {
             cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
-            // * The checkbox is force-checked and disabled — a literal template can never be locked
-            cy.findByTestId('channel-access-run-name-template-override-allowed').find('input').should('be.checked');
-            cy.findByTestId('channel-access-run-name-template-override-allowed').find('input').should('be.disabled');
+            // * The checkbox is force-unchecked and disabled — a literal template can never be locked
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.disabled');
         });
     });
 
@@ -232,7 +246,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
     it('run started from a locked playbook with SEQ template gets the resolved sequential ID in its name', () => {
         // # Set prefix and template via API, with override NOT allowed (locked) so the
         // # template is authoritative and the run-name field is read-only in the modal.
-        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'SEQ', channel_name_template: `${TOKEN_SEQ} - Convention`, channel_name_template_override_allowed: false}).then(() => {
+        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'SEQ', channel_name_template: `${TOKEN_SEQ} - Convention`, channel_name_template_locked: true}).then(() => {
             // # Open the Run playbook modal from the outline editor
             cy.playbooksVisitEditor(testPlaybook.id, 'outline');
             cy.findByTestId('channel-access-run-name-template-input').should('exist');

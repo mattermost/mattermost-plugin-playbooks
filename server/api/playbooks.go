@@ -297,6 +297,9 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	if _, ok := rawFields["admin_only_edit"]; !ok {
 		playbook.AdminOnlyEdit = oldPlaybook.AdminOnlyEdit
 	}
+	if _, ok := rawFields["channel_name_template_locked"]; !ok {
+		playbook.ChannelNameTemplateLocked = oldPlaybook.ChannelNameTemplateLocked
+	}
 
 	if err = h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
@@ -378,9 +381,9 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
 
 	var body struct {
-		RunNumberPrefix                    *string `json:"run_number_prefix"`
-		ChannelNameTemplate                *string `json:"channel_name_template"`
-		ChannelNameTemplateOverrideAllowed *bool   `json:"channel_name_template_override_allowed"`
+		RunNumberPrefix           *string `json:"run_number_prefix"`
+		ChannelNameTemplate       *string `json:"channel_name_template"`
+		ChannelNameTemplateLocked *bool   `json:"channel_name_template_locked"`
 	}
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
@@ -406,8 +409,8 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 		}
 	}
 
-	if body.ChannelNameTemplateOverrideAllowed != nil {
-		if err = h.playbookService.UpdateChannelNameTemplateOverrideAllowed(playbookID, *body.ChannelNameTemplateOverrideAllowed, userID); err != nil {
+	if body.ChannelNameTemplateLocked != nil {
+		if err = h.playbookService.UpdateChannelNameTemplateLocked(playbookID, *body.ChannelNameTemplateLocked, userID); err != nil {
 			h.handlePlaybookWriteError(w, c.logger, err)
 			return
 		}

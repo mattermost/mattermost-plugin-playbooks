@@ -27,7 +27,7 @@ import {BaseInput} from 'src/components/assets/inputs';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {extractTemplateFieldNames, templateHasValidVariable} from 'src/utils/template_utils';
 
-type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'channel_name_template_override_allowed' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
+type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'channel_name_template_locked' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
 
 interface Props {
     playbook: PlaybookSubset;
@@ -37,11 +37,11 @@ interface Props {
     disabled?: boolean;
     onRunNumberPrefixChange?: (prefix: string) => void;
     onChannelNameTemplateChange?: (template: string) => void;
-    onChannelNameTemplateOverrideAllowedChange?: (overrideAllowed: boolean) => void;
+    onChannelNameTemplateLockedChange?: (locked: boolean) => void;
     newChannelOnly?: boolean;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange, onChannelNameTemplateOverrideAllowedChange, newChannelOnly = false}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange, onChannelNameTemplateLockedChange, newChannelOnly = false}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
@@ -53,12 +53,12 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
     // section_actions.tsx). Only wait on it when the template actually references a
     // non-system-token placeholder — mirrors run_playbook_modal.tsx's attributesLoading.
     // Otherwise the self-heal effect below would race the fetch and overwrite a genuinely
-    // locked, field-based template with "allowed" on every load.
+    // locked, field-based template with "unlocked" on every load.
     const templateFieldNames = extractTemplateFieldNames(playbook.channel_name_template ?? '');
     const fieldsLoading = fieldNames === undefined && templateFieldNames.length > 0;
     const templateHasVariable = fieldsLoading || templateHasValidVariable(playbook.channel_name_template ?? '', fieldNames ?? []);
-    const overrideAllowedEnabled = templateEnabled && templateHasVariable;
-    const overrideAllowedChecked = !templateHasVariable || (playbook.channel_name_template_override_allowed ?? true);
+    const templateLockedEnabled = templateEnabled && templateHasVariable;
+    const templateLockedChecked = templateHasVariable && (playbook.channel_name_template_locked ?? false);
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -77,23 +77,23 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
         onChannelNameTemplateChange?.(channelNameTemplate);
     };
 
-    const handleChannelNameTemplateOverrideAllowedChange = (overrideAllowed: boolean) => {
+    const handleChannelNameTemplateLockedChange = (locked: boolean) => {
         setPlaybook({
             ...playbook,
-            channel_name_template_override_allowed: overrideAllowed,
+            channel_name_template_locked: locked,
         });
         setChangesMade?.(true);
-        onChannelNameTemplateOverrideAllowedChange?.(overrideAllowed);
+        onChannelNameTemplateLockedChange?.(locked);
     };
 
-    // Persist the forced-true display so a stale stored `false` can't resurface later and look
-    // like the checkbox unchecked itself once a valid variable is reintroduced.
+    // Persist the forced-false display so a stale stored `true` can't resurface later and look
+    // like the checkbox checked itself once a valid variable is reintroduced.
     useEffect(() => {
-        if (templateEnabled && !templateHasVariable && playbook.channel_name_template_override_allowed === false) {
-            handleChannelNameTemplateOverrideAllowedChange(true);
+        if (templateEnabled && !templateHasVariable && playbook.channel_name_template_locked === true) {
+            handleChannelNameTemplateLockedChange(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [templateEnabled, templateHasVariable, playbook.channel_name_template_override_allowed]);
+    }, [templateEnabled, templateHasVariable, playbook.channel_name_template_locked]);
 
     const handleRunNumberPrefixChange = (runNumberPrefix: string) => {
         setPlaybook({
@@ -235,12 +235,12 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                             testId='channel-access-run-name-template'
                             openInsertToggle={insertCounter}
                         />
-                        <OverrideAllowedCheckbox
-                            testId='channel-access-run-name-template-override-allowed'
-                            text={formatMessage({defaultMessage: 'Allow users to change run name'})}
-                            checked={overrideAllowedChecked}
-                            disabled={!overrideAllowedEnabled}
-                            onChange={handleChannelNameTemplateOverrideAllowedChange}
+                        <TemplateLockedCheckbox
+                            testId='channel-access-run-name-template-locked'
+                            text={formatMessage({defaultMessage: 'Lock run name'})}
+                            checked={templateLockedChecked}
+                            disabled={!templateLockedEnabled}
+                            onChange={handleChannelNameTemplateLockedChange}
                         />
                     </RunNamingBlock>
                     <ChannelActionButton
@@ -373,7 +373,7 @@ const InsertVariableButton = styled.button`
     }
 `;
 
-const OverrideAllowedCheckbox = styled(CheckboxInput)`
+const TemplateLockedCheckbox = styled(CheckboxInput)`
     padding: 6px 0;
     margin-top: 4px;
 

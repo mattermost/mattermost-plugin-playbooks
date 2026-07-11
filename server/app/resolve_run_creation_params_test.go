@@ -313,9 +313,9 @@ func TestResolveRunCreationParams_OverrideAllowedTemplateSkipsDryRunValidation(t
 		},
 	}
 	pb := &Playbook{
-		ID:                                 mm_model.NewId(),
-		ChannelNameTemplate:                "{Zone}",
-		ChannelNameTemplateOverrideAllowed: true,
+		ID:                        mm_model.NewId(),
+		ChannelNameTemplate:       "{Zone}",
+		ChannelNameTemplateLocked: false,
 	}
 	svc := &PlaybookRunServiceImpl{
 		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
@@ -337,9 +337,9 @@ func TestResolveRunCreationParams_OverrideNotAllowedTemplateStillValidates(t *te
 		},
 	}
 	pb := &Playbook{
-		ID:                                 mm_model.NewId(),
-		ChannelNameTemplate:                "{Zone}",
-		ChannelNameTemplateOverrideAllowed: false,
+		ID:                        mm_model.NewId(),
+		ChannelNameTemplate:       "{Zone}",
+		ChannelNameTemplateLocked: true,
 	}
 	svc := &PlaybookRunServiceImpl{
 		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
