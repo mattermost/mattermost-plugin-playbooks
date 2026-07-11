@@ -570,11 +570,18 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			public = pb.CreatePublicPlaybookRun
 		}
 
-		// Playbook is now loaded; reject an empty name unless the ChannelNameTemplate is locked
-		// (so it will generate one), or an existing channel is being linked (ChannelID != ""
-		// means no new channel is created).
+		// Playbook is now loaded; reject an empty name unless the ChannelNameTemplate does not
+		// allow overriding it (so it will generate one), or an existing channel is being linked
+		// (ChannelID != "" means no new channel is created).
+		var templateFields []app.PropertyField
+		if h.licenseChecker.PlaybookAttributesAllowed() && strings.Contains(pb.ChannelNameTemplate, "{") {
+			templateFields, err = h.propertyService.GetPropertyFields(pb.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load property fields for channel name template check")
+			}
+		}
 		if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" &&
-			!app.TemplateLocked(&pb, pb.ChannelNameTemplate) {
+			app.TemplateOverrideAllowed(&pb, pb.ChannelNameTemplate, templateFields) {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 		}
 

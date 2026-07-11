@@ -76,12 +76,10 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                     setFieldNames(fields.map((f) => f.name));
                 }
             })
-            .catch((err) => {
+            .catch(() => {
                 if (!cancelled) {
                     setFieldNames([]);
                 }
-                // eslint-disable-next-line no-console
-                console.error('Failed to fetch playbook property fields', err);
             });
         return () => {
             cancelled = true;
@@ -194,33 +192,31 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
         return () => handleChannelNameTemplateSave.flush();
     }, [handleChannelNameTemplateSave]);
 
-    // channel_name_template_locked: debounced the same way as the prefix/template saves above.
-    // Debouncing coalesces rapid toggles into a single request, which avoids two overlapping
-    // PATCHes resolving out of order — with two in flight at once, a slower one succeeding after
-    // a faster one already rolled back could leave the client permanently out of sync with the
-    // server until a full reload, since restPlaybook is fetched once and never refreshed.
-    const handleChannelNameTemplateLockedSave = useMemo(
-        () => debounce((locked: boolean) => {
-            updatePlaybookChannelNameTemplateLocked(playbook.id, locked)
-                .then(() => {
+    // Not debounced (unlike the prefix/template inputs above) since this is a checkbox toggle,
+    // not free text — but rapid clicks still fire overlapping requests that can resolve out of
+    // order. Track the latest request so a slower, superseded one can't apply its own
+    // success/failure over a newer toggle's outcome.
+    const templateLockedRequestIDRef = useRef(0);
+    const handleChannelNameTemplateLockedSave = useCallback((locked: boolean) => {
+        const requestID = ++templateLockedRequestIDRef.current;
+        updatePlaybookChannelNameTemplateLocked(playbook.id, locked)
+            .then(() => {
+                if (requestID === templateLockedRequestIDRef.current) {
                     setSavedTemplateLocked(locked);
-                })
-                .catch((err) => {
+                }
+            })
+            .catch((err) => {
+                if (requestID === templateLockedRequestIDRef.current) {
                     setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template_locked: savedTemplateLockedRef.current}));
                     addToastRef.current({
                         content: formatMessage({defaultMessage: 'Failed to save this setting. Please try again.'}),
                         toastStyle: ToastStyle.Failure,
                     });
-                    // eslint-disable-next-line no-console
-                    console.error('Failed to save channel name template locked', err);
-                });
-        }, 500),
-        [playbook.id, setPlaybookForCreateChannel, formatMessage],
-    );
-
-    useEffect(() => {
-        return () => handleChannelNameTemplateLockedSave.flush();
-    }, [handleChannelNameTemplateLockedSave]);
+                }
+                // eslint-disable-next-line no-console
+                console.error('Failed to save channel name template locked', err);
+            });
+    }, [playbook.id, setPlaybookForCreateChannel, formatMessage]);
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);

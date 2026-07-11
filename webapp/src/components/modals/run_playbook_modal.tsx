@@ -45,7 +45,7 @@ import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
+import {buildTemplatePreview, extractTemplateFieldNames, templateHasValidVariable} from 'src/utils/template_utils';
 import {PropertyField, PropertyFieldType} from 'src/types/properties';
 import {HelpText} from 'src/components/backstage/playbook_runs/shared';
 
@@ -244,7 +244,13 @@ export const RunPlaybookModal = ({
     // we cannot validate required-field coverage until the attribute list arrives.
     const attributesLoading = playbookAttributes === undefined && templateFieldNames.size > 0;
 
-    const locked = hasTemplate && (restPlaybook?.channel_name_template_locked ?? false);
+    // Treat loading as "has variable" so a locked template does not briefly appear editable
+    // before property fields arrive and confirm the placeholder is valid.
+    const templateHasVariable = attributesLoading || templateHasValidVariable(
+        playbook?.channel_name_template ?? '',
+        (playbookAttributes ?? []).map((f) => f.name),
+    );
+    const locked = hasTemplate && templateHasVariable && (restPlaybook?.channel_name_template_locked ?? false);
 
     const unmatchedTemplateNames = useMemo(() => {
         if (!playbook?.channel_name_template || templateFieldNames.size === 0) {
@@ -285,25 +291,14 @@ export const RunPlaybookModal = ({
 
     const createNewChannel = channelMode === 'create_new_channel' || isNewChannelOnly;
 
-    // The value that will actually be used as the run/channel name: the live preview when the
-    // name contains a token (resolved, whether locked or not), otherwise the raw name itself
-    // when locked (a locked literal template's raw text IS the final value — nothing to
-    // substitute, so there's no separate preview to check against).
-    let effectiveResolvedName = '';
-    if (runNameHasToken) {
-        effectiveResolvedName = namePreview;
-    } else if (locked) {
-        effectiveResolvedName = runName;
-    }
-
     // Name is required unless the template is locked (authoritative and will be used as-is).
-    // When locked, the resolved value must fit within the limit so the backend accepts it;
+    // When locked, the resolved preview must fit within the limit so the backend accepts it;
     // the raw template string itself is not validated against the limit.
-    const templateNameValid = effectiveResolvedName === '' || [...effectiveResolvedName].length <= RUN_NAME_MAX_LENGTH;
+    const templateNameValid = namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH;
     const freeNameValid = runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
     const nameValid = locked ? templateNameValid : freeNameValid;
 
-    const namePreviewTooLong = effectiveResolvedName !== '' && [...effectiveResolvedName].length > RUN_NAME_MAX_LENGTH;
+    const namePreviewTooLong = runNameHasToken && namePreview !== '' && [...namePreview].length > RUN_NAME_MAX_LENGTH;
 
     const requiredFieldsFilled = useMemo(() => templateFields.every((field) => {
         const val = propertyValues[field.id];
@@ -508,9 +503,9 @@ export const RunPlaybookModal = ({
                     )}
                     {namePreviewTooLong && (
                         <ErrorMessage data-testid='run-name-preview-error'>
-                            {locked ?
-                                formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH}) :
-                                formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the name or use fewer fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
+                            {locked
+                                ? formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH})
+                                : formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the name or use fewer fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
                         </ErrorMessage>
                     )}
                     {templateFields.length > 0 && (
