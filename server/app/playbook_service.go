@@ -476,9 +476,12 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 	newPlaybook.Title = "Copy of " + playbook.Title
 
 	// Clear prefix (per-team unique constraint) and template (may reference {SEQ} or property fields with new IDs).
+	// Locked travels with the template it locks, so it's cleared too — otherwise a duplicate
+	// could inherit locked=true against an empty template.
 	newPlaybook.RunNumberPrefix = ""
 	newPlaybook.NextRunNumber = 0
 	newPlaybook.ChannelNameTemplate = ""
+	newPlaybook.ChannelNameTemplateLocked = false
 
 	// On duplicating, make the current user the administrator.
 	newPlaybook.Members = []PlaybookMember{{

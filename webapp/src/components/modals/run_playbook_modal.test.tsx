@@ -317,8 +317,8 @@ describe('RunPlaybookModal — template mode', () => {
         beforeEach(() => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
 
-            // Severity must be recognized as a valid variable for the template to be lockable —
-            // otherwise the frontend can't confirm the placeholder resolves and forces override-allowed.
+            // Severity must be loaded as a known property field so its token resolves in the
+            // preview and its input renders below the run-name field.
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
         });
 
@@ -533,6 +533,34 @@ describe('RunPlaybookModal — template mode', () => {
         });
     });
 
+    describe('restPlaybook loading state', () => {
+        it('shows the loading spinner instead of an editable field while restPlaybook is still loading', () => {
+            const pb = {...basePlaybook, channel_name_template: 'Incident War Room'};
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
+
+            // Simulate the pending-fetch window: restPlaybook is still undefined even though the
+            // GraphQL playbook has already resolved.
+            mockUseRestPlaybook.mockReturnValue([undefined, {isFetching: true}]);
+
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            const tree = component.toJSON();
+
+            expect(findNodeByTestId(tree, 'run-name-input')).toBeNull();
+            expect(JSON.stringify(tree)).toContain('Loading playbook details');
+        });
+
+        it('shows the read-only, locked field once restPlaybook resolves', () => {
+            const pb = {...basePlaybook, channel_name_template: 'Incident War Room'};
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
+            mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: true}]);
+
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
+            expect(nameInput).not.toBeNull();
+            expect(nameInput.props.readOnly).toBe(true);
+        });
+    });
+
     describe('property field inputs', () => {
         beforeEach(() => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
@@ -617,9 +645,9 @@ describe('RunPlaybookModal — template mode', () => {
         beforeEach(() => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
 
-            // Severity must be recognized as a valid variable for the template to be locked —
-            // the preview only shows for a locked template (the field the user types into IS
-            // the value for an unlocked one, so there's nothing separate to preview).
+            // Severity must be loaded as a known property field so its token actually resolves
+            // in the preview — the preview shows whenever the run-name field contains a {token},
+            // whether the template is locked or not.
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
         });
 
@@ -918,7 +946,9 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('namePreviewTooLong', () => {
         it('shows error and disables confirm button when resolved name exceeds 64 chars', () => {
-            // Includes {SEQ} so the template has a valid variable and is locked.
+            // Includes {SEQ} so the run name contains a token and the resolved preview is
+            // computed and checked against the length limit (locked is set in the outer
+            // beforeEach; this describe block doesn't need the checkbox, just the resolution).
             const longTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1) + '{SEQ}';
             const pbLongName = {
                 ...basePlaybook,
@@ -970,6 +1000,30 @@ describe('RunPlaybookModal — template mode', () => {
             expect(json).toContain('Shorten the name or use fewer fields');
 
             const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
+            expect(btn.props.disabled).toBe(true);
+        });
+
+        it('shows error and disables confirm button for a locked literal template with no token that exceeds 64 chars', () => {
+            // No {token} at all — the raw template text IS the final resolved value. Locked is
+            // set in the outer beforeEach.
+            const longLiteralTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1);
+            const pbLongLiteral = {
+                ...basePlaybook,
+                channel_name_template: longLiteralTemplate,
+                propertyFields: [],
+            };
+            mockUsePlaybook.mockReturnValue([pbLongLiteral, {isFetching: false, error: undefined}]);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+            const json = toJson(component!);
+
+            expect(json).toContain('exceeds');
+
+            const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
+            expect(btn).not.toBeNull();
             expect(btn.props.disabled).toBe(true);
         });
     });

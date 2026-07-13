@@ -334,25 +334,25 @@ func TestTemplateUsesSeqToken(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// TemplateOverrideAllowed
+// TemplateLocked
 // ---------------------------------------------------------------------------
 
-func TestTemplateOverrideAllowed(t *testing.T) {
-	t.Run("empty template always allows override", func(t *testing.T) {
+func TestTemplateLocked(t *testing.T) {
+	t.Run("empty template is never locked", func(t *testing.T) {
 		pb := &Playbook{ChannelNameTemplateLocked: true}
-		require.True(t, TemplateOverrideAllowed(pb, ""))
+		require.False(t, TemplateLocked(pb, ""))
 	})
 
-	t.Run("locked true prevents override", func(t *testing.T) {
+	t.Run("locked true locks a non-empty template", func(t *testing.T) {
 		pb := &Playbook{ChannelNameTemplateLocked: true}
-		require.False(t, TemplateOverrideAllowed(pb, "Incident War Room"))
-		require.False(t, TemplateOverrideAllowed(pb, "Incident-{SEQ}"))
+		require.True(t, TemplateLocked(pb, "Incident War Room"))
+		require.True(t, TemplateLocked(pb, "Incident-{SEQ}"))
 	})
 
-	t.Run("locked false allows override", func(t *testing.T) {
+	t.Run("locked false does not lock a non-empty template", func(t *testing.T) {
 		pb := &Playbook{ChannelNameTemplateLocked: false}
-		require.True(t, TemplateOverrideAllowed(pb, "Incident War Room"))
-		require.True(t, TemplateOverrideAllowed(pb, "Incident-{SEQ}"))
+		require.False(t, TemplateLocked(pb, "Incident War Room"))
+		require.False(t, TemplateLocked(pb, "Incident-{SEQ}"))
 	})
 }
 

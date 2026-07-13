@@ -76,10 +76,12 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                     setFieldNames(fields.map((f) => f.name));
                 }
             })
-            .catch(() => {
+            .catch((err) => {
                 if (!cancelled) {
                     setFieldNames([]);
                 }
+                // eslint-disable-next-line no-console
+                console.error('Failed to fetch playbook property fields', err);
             });
         return () => {
             cancelled = true;

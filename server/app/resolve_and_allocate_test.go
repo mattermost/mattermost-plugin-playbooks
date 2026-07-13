@@ -507,3 +507,26 @@ func TestResolveAndAllocate_UserSuppliedNameLeavesUnrecognizedTokenLiteral(t *te
 	require.NoError(t, err, "an unresolved token in a user-supplied name must not block run creation")
 	assert.Equal(t, "Sprint {notARealVariable}", run.Name, "an unrecognized token is left literal, not stripped or rejected")
 }
+
+// A whitespace-only literal template has no placeholders, so it resolves successfully (no
+// unresolved fields) but trims to an empty string. ValidateChannelNameTemplate rejects a
+// whitespace-only template on the normal write path, so this pins resolveAndAllocate's own
+// defense-in-depth behavior for callers that skip that pre-check (e.g. a template that
+// slipped through the GraphQL setmap update).
+func TestResolveAndAllocate_LockedWhitespaceTemplateResolvesEmptyRejectsRegardlessOfUserSuppliedName(t *testing.T) {
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "   ",
+		ChannelNameTemplateLocked: true,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My Custom Name"}
+	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+	assert.Contains(t, err.Error(), "resolved to an empty name", "message must reflect the locked case, not the unlocked 'allows overriding the name' message")
+}

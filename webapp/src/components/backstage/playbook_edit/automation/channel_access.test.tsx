@@ -318,7 +318,7 @@ describe('CreateAChannel — lock run name checkbox', () => {
         expect(checkbox?.props.checked).toBe(true);
     });
 
-    it('does not change the stored lock value while fieldNames is still loading', () => {
+    it('does not fire onChannelNameTemplateLockedChange on mount and reflects the stored value', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '{Zone} Incident',

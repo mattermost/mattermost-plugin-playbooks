@@ -84,7 +84,12 @@ export const RunPlaybookModal = ({
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook, {isFetching: playbookLoading, error: playbookError}] = usePlaybook(selectedPlaybookId || '');
     const playbookAttributes = usePlaybookAttributes(selectedPlaybookId || '');
+
+    // useRestPlaybook's isFetching flips to false as soon as the fetch is fired, not once it
+    // resolves (see useThing), so it can't signal "still loading" here — restPlaybook itself
+    // stays undefined until the fetch (or a cache hit) actually settles, so that's the check to use.
     const [restPlaybook] = useRestPlaybook(selectedPlaybookId || '');
+    const restPlaybookLoading = Boolean(selectedPlaybookId) && restPlaybook === undefined;
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
@@ -271,14 +276,25 @@ export const RunPlaybookModal = ({
 
     const createNewChannel = channelMode === 'create_new_channel' || isNewChannelOnly;
 
+    // The value that will actually be used as the run/channel name: the live preview when the
+    // name contains a token (resolved, whether locked or not), otherwise the raw name itself
+    // when locked (a locked literal template's raw text IS the final value — nothing to
+    // substitute, so there's no separate preview to check against).
+    let effectiveResolvedName = '';
+    if (runNameHasToken) {
+        effectiveResolvedName = namePreview;
+    } else if (locked) {
+        effectiveResolvedName = runName;
+    }
+
     // Name is required unless the template is locked (authoritative and will be used as-is).
-    // When locked, the resolved preview must fit within the limit so the backend accepts it;
+    // When locked, the resolved value must fit within the limit so the backend accepts it;
     // the raw template string itself is not validated against the limit.
-    const templateNameValid = namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH;
+    const templateNameValid = effectiveResolvedName === '' || [...effectiveResolvedName].length <= RUN_NAME_MAX_LENGTH;
     const freeNameValid = runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
     const nameValid = locked ? templateNameValid : freeNameValid;
 
-    const namePreviewTooLong = runNameHasToken && namePreview !== '' && [...namePreview].length > RUN_NAME_MAX_LENGTH;
+    const namePreviewTooLong = effectiveResolvedName !== '' && [...effectiveResolvedName].length > RUN_NAME_MAX_LENGTH;
 
     const requiredFieldsFilled = useMemo(() => templateFields.every((field) => {
         const val = propertyValues[field.id];
@@ -401,7 +417,11 @@ export const RunPlaybookModal = ({
 
     // Start a run tab
     if (step === 'run-details') {
-        if (selectedPlaybookId && playbookLoading && !submitError) {
+        // Also wait on restPlaybookLoading: the run-name field's readOnly/required behavior
+        // depends on restPlaybook.channel_name_template_locked, which fails open (unlocked) while
+        // still loading — rendering the interactive form before it resolves would let a locked
+        // template briefly show as editable.
+        if (selectedPlaybookId && (playbookLoading || restPlaybookLoading) && !submitError) {
             return (
                 <StyledGenericModal
                     id={ID}
