@@ -157,11 +157,7 @@ export const RunPlaybookModal = ({
 
     const isNewChannelOnly = Boolean(restPlaybook?.new_channel_only);
 
-    // A template with no valid variable (a literal string, or only an unrecognized
-    // placeholder) always allows override, mirroring the backend's TemplateOverrideAllowed rule.
     const hasTemplate = Boolean(playbook?.channel_name_template);
-    const templateHasVariable = templateHasValidVariable(playbook?.channel_name_template ?? '', (playbookAttributes ?? []).map((f) => f.name));
-    const locked = hasTemplate && templateHasVariable && (restPlaybook?.channel_name_template_locked ?? false);
 
     const playbookInitializationKey = playbook ? JSON.stringify({
         id: playbook.id,
@@ -233,6 +229,14 @@ export const RunPlaybookModal = ({
     // Block submission while attributes are loading for a template that references fields:
     // we cannot validate required-field coverage until the attribute list arrives.
     const attributesLoading = playbookAttributes === undefined && templateFieldNames.size > 0;
+
+    // Treat loading as "has variable" so a locked template does not briefly appear editable
+    // before property fields arrive and confirm the placeholder is valid.
+    const templateHasVariable = attributesLoading || templateHasValidVariable(
+        playbook?.channel_name_template ?? '',
+        (playbookAttributes ?? []).map((f) => f.name),
+    );
+    const locked = hasTemplate && templateHasVariable && (restPlaybook?.channel_name_template_locked ?? false);
 
     const unmatchedTemplateNames = useMemo(() => {
         if (!playbook?.channel_name_template || templateFieldNames.size === 0) {
@@ -481,7 +485,9 @@ export const RunPlaybookModal = ({
                     )}
                     {namePreviewTooLong && (
                         <ErrorMessage data-testid='run-name-preview-error'>
-                            {formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Edit the playbook template to use fewer or shorter fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
+                            {locked
+                                ? formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH})
+                                : formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the name or use fewer fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
                         </ErrorMessage>
                     )}
                     {templateFields.length > 0 && (
@@ -581,8 +587,6 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
     let suffix = '';
     if (error) {
         suffix = ' ' + formatMessage({defaultMessage: '*'});
-    } else if (readOnly) {
-        suffix = ' ' + formatMessage({defaultMessage: '(optional)'});
     }
 
     const readOnlyExplanation = formatMessage({defaultMessage: 'The run name is set automatically from this playbook\'s channel name template and can\'t be edited here.'});

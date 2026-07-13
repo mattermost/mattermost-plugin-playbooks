@@ -938,7 +938,7 @@ describe('RunPlaybookModal — template mode', () => {
             });
             const json = toJson(component!);
 
-            expect(json).toContain('exceeds');
+            expect(json).toContain('Shorten the field values used in the template');
 
             const tree = component!.toJSON();
             const btn = findNodeByTestId(tree, 'confirm-button');
@@ -946,7 +946,7 @@ describe('RunPlaybookModal — template mode', () => {
             expect(btn.props.disabled).toBe(true);
         });
 
-        it('disables confirm when override is allowed and a short typed name resolves to a name over 64 chars', () => {
+        it('shows unlocked copy when override is allowed and the resolved preview is too long', () => {
             // The raw typed name is short (freeNameValid would pass on its own), but the property
             // value it references is long enough that the resolved preview exceeds the limit —
             // this must still block submission, since the channel display name is silently
@@ -972,7 +972,7 @@ describe('RunPlaybookModal — template mode', () => {
             });
 
             const json = toJson(component!);
-            expect(json).toContain('exceeds');
+            expect(json).toContain('Shorten the name or use fewer fields');
 
             const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
             expect(btn.props.disabled).toBe(true);
