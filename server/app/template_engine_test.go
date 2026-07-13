@@ -345,8 +345,11 @@ func TestTemplateOverrideAllowed(t *testing.T) {
 		require.True(t, TemplateOverrideAllowed(pb, "", nil))
 	})
 
-	t.Run("literal template with no placeholder always allows override, even when the flag is false", func(t *testing.T) {
+	t.Run("literal template with no placeholder always allows override, even when locked is true", func(t *testing.T) {
 		pb := &Playbook{ChannelNameTemplateLocked: true}
+		require.True(t, TemplateOverrideAllowed(pb, "Incident War Room", nil))
+
+		pb.ChannelNameTemplateLocked = false
 		require.True(t, TemplateOverrideAllowed(pb, "Incident War Room", nil))
 	})
 
