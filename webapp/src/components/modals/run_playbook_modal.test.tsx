@@ -296,7 +296,12 @@ describe('RunPlaybookModal — template mode', () => {
         // Default to override-not-allowed (locked) so this describe block's tests exercise the
         // "template is authoritative, name is read-only" behavior. Tests for the override-allowed
         // (default product) behavior live in their own describe block below with their own mock.
-        mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: true}]);
+        //
+        // Mock implementation echoes back whatever id was queried (matching the real hook, which
+        // returns data keyed by id) instead of a fixed literal — the component now guards against
+        // a stale restPlaybook by comparing its id to the currently selected playbook, so a mock
+        // that ignores the id argument would look "stale" forever and the modal would spin.
+        mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: true, id}]);
     });
 
     const playbookWithTemplate = {
@@ -386,7 +391,7 @@ describe('RunPlaybookModal — template mode', () => {
         beforeEach(() => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
-            mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: false}]);
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: false, id}]);
         });
 
         it('shows the run name input as editable, not read-only', () => {
@@ -510,7 +515,7 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('name field behavior — locked template', () => {
         beforeEach(() => {
-            mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: true}]);
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: true, id}]);
         });
 
         it('is read-only for a literal template with no placeholder', () => {
@@ -552,7 +557,7 @@ describe('RunPlaybookModal — template mode', () => {
         it('shows the read-only, locked field once restPlaybook resolves', () => {
             const pb = {...basePlaybook, channel_name_template: 'Incident War Room'};
             mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
-            mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: true}]);
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: true, id}]);
 
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
@@ -979,7 +984,7 @@ describe('RunPlaybookModal — template mode', () => {
             // divergence is exactly what the "exceeds" warning is telling the user about.
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
-            mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: false}]);
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: false, id}]);
 
             let component: renderer.ReactTestRenderer;
             act(() => {
@@ -1116,6 +1121,7 @@ describe('RunPlaybookModal — no template (free-text mode)', () => {
             return 'mock-user-id';
         });
         mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
+        mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: false, id}]);
     });
 
     it('shows the free-text run name input', () => {

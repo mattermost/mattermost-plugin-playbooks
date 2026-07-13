@@ -88,7 +88,16 @@ export const RunPlaybookModal = ({
     // useRestPlaybook's isFetching flips to false as soon as the fetch is fired, not once it
     // resolves (see useThing), so it can't signal "still loading" here — restPlaybook itself
     // stays undefined until the fetch (or a cache hit) actually settles, so that's the check to use.
-    const [restPlaybook] = useRestPlaybook(selectedPlaybookId || '');
+    //
+    // useThing also never resets its cached value back to undefined when selectedPlaybookId
+    // changes, and has no fetch cancellation — so a slow fetch for a previously-selected
+    // playbook can resolve after a newer one is already selected and clobber restPlaybook with
+    // the wrong playbook's data. Guard against that the same way `playbook` (the GraphQL side)
+    // is already guarded at the effect below (`playbook.id !== selectedPlaybookId`): only trust
+    // restPlaybook once its id actually matches the currently selected playbook, otherwise treat
+    // it the same as still loading.
+    const [restPlaybookRaw] = useRestPlaybook(selectedPlaybookId || '');
+    const restPlaybook = restPlaybookRaw?.id === selectedPlaybookId ? restPlaybookRaw : undefined;
     const restPlaybookLoading = Boolean(selectedPlaybookId) && restPlaybook === undefined;
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
