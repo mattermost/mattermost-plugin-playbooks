@@ -184,7 +184,7 @@ func TemplateUsesSeqToken(tmpl string) bool {
 // TemplateOverrideAllowed reports whether a caller-supplied run name may override the given
 // playbook's channel name template. When ChannelNameTemplateLocked is true and a template is
 // set, the template is authoritative regardless of whether its placeholders resolve.
-func TemplateOverrideAllowed(pb *Playbook, template string, _ []PropertyField) bool {
+func TemplateOverrideAllowed(pb *Playbook, template string) bool {
 	if template == "" {
 		return true
 	}

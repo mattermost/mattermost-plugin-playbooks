@@ -6184,7 +6184,7 @@ func (s *PlaybookRunServiceImpl) sanitizePropertyValues(fields []PropertyField, 
 // sanitizedValues must come from sanitizePropertyValues — callers are responsible for sanitizing once.
 // Pass a non-nil formatFunc to share its user-display-name cache with a subsequent resolveRunName call.
 func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRun *PlaybookRun, template string, fields []PropertyField, sanitizedValues map[string]json.RawMessage, formatFunc FormatFunc, logger *logrus.Entry) error {
-	if template == "" || TemplateOverrideAllowed(pb, template, fields) {
+	if template == "" || TemplateOverrideAllowed(pb, template) {
 		return nil
 	}
 	if formatFunc == nil {
@@ -6228,7 +6228,7 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 	systemTokens["SEQ"] = seqID
 
 	var resolvedRunName, resolvedChannelName string
-	if template != "" && !TemplateOverrideAllowed(pb, template, fields) {
+	if template != "" && !TemplateOverrideAllowed(pb, template) {
 		resolved, unresolved := ResolveTemplate(template, ResolveOptions{
 			Fields:       fields,
 			Values:       sanitizedValues,
