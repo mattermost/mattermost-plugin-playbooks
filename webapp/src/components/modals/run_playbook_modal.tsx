@@ -485,9 +485,9 @@ export const RunPlaybookModal = ({
                     )}
                     {namePreviewTooLong && (
                         <ErrorMessage data-testid='run-name-preview-error'>
-                            {locked
-                                ? formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH})
-                                : formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the name or use fewer fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
+                            {locked ?
+                                formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH}) :
+                                formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the name or use fewer fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
                         </ErrorMessage>
                     )}
                     {templateFields.length > 0 && (
