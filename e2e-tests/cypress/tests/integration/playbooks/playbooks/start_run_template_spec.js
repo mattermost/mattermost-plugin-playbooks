@@ -218,14 +218,10 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         });
     });
 
-    describe('literal template (no variable) always allows override, even when explicitly locked', () => {
+    describe('literal template locked', () => {
         let literalTemplatePlaybook;
 
         beforeEach(() => {
-            // # A purely literal template (no {token}) with override explicitly set to false —
-            // # simulating an admin who tried to lock it. The backend forces override-allowed
-            // # to true regardless: locking a literal string would just force every run to the
-            // # exact same fixed name, so the flag is a no-op here.
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'LiteralTemplate PB ' + getRandomId(),
@@ -245,7 +241,7 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
             }
         });
 
-        it('shows an editable name field despite the stored lock, since there is no valid variable to lock', () => {
+        it('shows a read-only name field when locked, even for a literal template', () => {
             cy.apiGetPlaybook(literalTemplatePlaybook.id).then((pb) => {
                 expect(pb.channel_name_template).to.equal('Incident War Room');
                 expect(pb.channel_name_template_locked).to.equal(true);
@@ -254,44 +250,24 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
             cy.playbooksOpenRunModal(literalTemplatePlaybook.id);
 
             cy.get('#root-portal.modal-open').within(() => {
-                // * Prefilled with the literal template, but NOT read-only despite the stored lock
                 cy.findByTestId('run-name-input').should('have.value', 'Incident War Room');
-                cy.findByTestId('run-name-input').should('not.have.attr', 'readonly');
+                cy.findByTestId('run-name-input').should('have.attr', 'readonly');
 
-                // * No preview — a literal template has no token to resolve
                 cy.findByTestId('run-name-preview').should('not.exist');
-
-                // * Submit is enabled with the prefilled default
                 cy.findByTestId('modal-confirm-button').should('not.be.disabled');
             });
         });
 
-        it('creates the run with the edited name, not forced to the stored template', () => {
-            const runName = 'Custom Literal Run ' + getRandomId();
-
-            cy.playbooksOpenRunModal(literalTemplatePlaybook.id);
-
-            cy.get('#root-portal.modal-open').within(() => {
-                cy.findByTestId('run-name-input').clear().type(runName);
-                cy.findByTestId('modal-confirm-button').should('not.be.disabled').click();
-            });
-
-            cy.url().should('include', '/playbooks/runs/');
-            cy.get('h1').contains(runName);
-
-            cy.playbooksGetRunIdFromUrl().then((runId) => {
+        it('creates the run using the locked template, not a client-supplied name', () => {
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: literalTemplatePlaybook.id,
+                playbookRunName: 'Something Else Entirely',
+                ownerUserId: testUser.id,
+            }).then(({id: runId}) => {
                 cy.apiGetPlaybookRun(runId).then(({body: run}) => {
-                    expect(run.name).to.equal(runName);
+                    expect(run.name).to.equal('Incident War Room');
                 });
-            });
-        });
-
-        it('requires an explicit name and disables submit when the prefilled name is cleared', () => {
-            cy.playbooksOpenRunModal(literalTemplatePlaybook.id);
-
-            cy.get('#root-portal.modal-open').within(() => {
-                cy.findByTestId('run-name-input').clear();
-                cy.findByTestId('modal-confirm-button').should('be.disabled');
             });
         });
     });

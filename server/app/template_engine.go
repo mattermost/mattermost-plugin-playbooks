@@ -219,12 +219,10 @@ func templateHasValidVariable(template string, fields []PropertyField) bool {
 }
 
 // TemplateOverrideAllowed reports whether a caller-supplied run name may override the given
-// playbook's resolved channel name template. Only a template with at least one VALID variable
-// (see templateHasValidVariable) is gated by ChannelNameTemplateLocked — a purely
-// literal template, or one with only unrecognized placeholders, always allows override, since
-// forcing either would either produce one fixed run name or a template that can never resolve.
+// playbook's channel name template. When ChannelNameTemplateLocked is true and a template is
+// set, the template is authoritative regardless of whether its placeholders resolve.
 func TemplateOverrideAllowed(pb *Playbook, template string, fields []PropertyField) bool {
-	if template == "" || !templateHasValidVariable(template, fields) {
+	if template == "" {
 		return true
 	}
 	return !pb.ChannelNameTemplateLocked

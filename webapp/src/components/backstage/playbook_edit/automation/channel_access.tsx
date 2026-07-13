@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {CodeBracketsIcon, SettingsOutlineIcon} from '@mattermost/compass-icons/components';
@@ -25,7 +25,6 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 import {TemplateInput} from 'src/components/backstage/playbook_edit/automation/template_input';
 import {BaseInput} from 'src/components/assets/inputs';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
-import {extractTemplateFieldNames, templateHasValidVariable} from 'src/utils/template_utils';
 
 type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'channel_name_template_locked' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
 
@@ -48,17 +47,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
     const disabled = disabledProp || playbook.delete_at !== 0;
     const [insertCounter, setInsertCounter] = useState(0);
     const templateEnabled = !disabled && playbook.channel_mode === 'create_new_channel';
-
-    // fieldNames is undefined until the property-fields fetch resolves (see
-    // section_actions.tsx). Only wait on it when the template actually references a
-    // non-system-token placeholder — mirrors run_playbook_modal.tsx's attributesLoading.
-    // Otherwise the self-heal effect below would race the fetch and overwrite a genuinely
-    // locked, field-based template with "unlocked" on every load.
-    const templateFieldNames = extractTemplateFieldNames(playbook.channel_name_template ?? '');
-    const fieldsLoading = fieldNames === undefined && templateFieldNames.length > 0;
-    const templateHasVariable = fieldsLoading || templateHasValidVariable(playbook.channel_name_template ?? '', fieldNames ?? []);
-    const templateLockedEnabled = templateEnabled && templateHasVariable;
-    const templateLockedChecked = templateHasVariable && (playbook.channel_name_template_locked ?? false);
+    const templateLockedChecked = playbook.channel_name_template_locked ?? false;
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -85,15 +74,6 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
         setChangesMade?.(true);
         onChannelNameTemplateLockedChange?.(locked);
     };
-
-    // Persist the forced-false display so a stale stored `true` can't resurface later and look
-    // like the checkbox checked itself once a valid variable is reintroduced.
-    useEffect(() => {
-        if (templateEnabled && !templateHasVariable && playbook.channel_name_template_locked === true) {
-            handleChannelNameTemplateLockedChange(false);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [templateEnabled, templateHasVariable, playbook.channel_name_template_locked]);
 
     const handleRunNumberPrefixChange = (runNumberPrefix: string) => {
         setPlaybook({
@@ -239,7 +219,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                             testId='channel-access-run-name-template-locked'
                             text={formatMessage({defaultMessage: 'Lock run name'})}
                             checked={templateLockedChecked}
-                            disabled={!templateLockedEnabled}
+                            disabled={!templateEnabled}
                             onChange={handleChannelNameTemplateLockedChange}
                         />
                     </RunNamingBlock>

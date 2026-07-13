@@ -112,14 +112,23 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         });
     });
 
-    it('disables and force-unchecks the checkbox when the template has no valid variable', () => {
-        // # A literal template (no {token}) with the box explicitly checked beforehand
-        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident War Room', channel_name_template_locked: true}).then(() => {
+    it('allows locking a literal template and persists after reload', () => {
+        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident War Room'}).then(() => {
             cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
-            // * The checkbox is force-unchecked and disabled — a literal template can never be locked
             cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
-            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.disabled');
+
+            cy.playbooksInterceptPatchPlaybook();
+            cy.findByTestId('channel-access-run-name-template-locked').click();
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
+            cy.wait('@PatchPlaybook');
+
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.channel_name_template_locked).to.equal(true);
+            });
+
+            cy.reload();
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
         });
     });
 

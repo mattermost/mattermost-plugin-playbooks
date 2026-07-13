@@ -238,7 +238,7 @@ describe('CreateAChannel — lock run name checkbox', () => {
         expect(checkbox?.props.disabled).toBe(true);
     });
 
-    it('disables and force-unchecks the checkbox when the template has no valid variable (literal template)', () => {
+    it('keeps the checkbox enabled for a literal template and respects the stored value', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: 'Incident War Room',
@@ -260,15 +260,15 @@ describe('CreateAChannel — lock run name checkbox', () => {
         const [checkbox] = component.root.findAll(
             (node) => node.props.testId === checkboxTestId,
         );
-        expect(checkbox?.props.disabled).toBe(true);
-        expect(checkbox?.props.checked).toBe(false);
+        expect(checkbox?.props.disabled).toBe(false);
+        expect(checkbox?.props.checked).toBe(true);
     });
 
-    it('disables and force-unchecks the checkbox when the template only has an unrecognized placeholder', () => {
+    it('keeps the checkbox enabled for an unrecognized placeholder and respects the stored value', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '{notARealVariable}',
-            channel_name_template_locked: true,
+            channel_name_template_locked: false,
             delete_at: 0,
             channel_mode: 'create_new_channel' as const,
             channel_id: '',
@@ -287,7 +287,7 @@ describe('CreateAChannel — lock run name checkbox', () => {
         const [checkbox] = component.root.findAll(
             (node) => node.props.testId === checkboxTestId,
         );
-        expect(checkbox?.props.disabled).toBe(true);
+        expect(checkbox?.props.disabled).toBe(false);
         expect(checkbox?.props.checked).toBe(false);
     });
 
@@ -318,7 +318,7 @@ describe('CreateAChannel — lock run name checkbox', () => {
         expect(checkbox?.props.checked).toBe(true);
     });
 
-    it('does not self-heal a locked, field-based template while fieldNames is still loading', () => {
+    it('does not change the stored lock value while fieldNames is still loading', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '{Zone} Incident',
@@ -332,8 +332,6 @@ describe('CreateAChannel — lock run name checkbox', () => {
 
         const onChannelNameTemplateLockedChange = jest.fn();
 
-        // fieldNames omitted entirely — mirrors the parent's loading state before
-        // fetchPlaybookPropertyFields resolves (section_actions.tsx).
         let component: ReturnType<typeof renderWithIntl>;
         act(() => {
             component = renderWithIntl(
@@ -352,84 +350,6 @@ describe('CreateAChannel — lock run name checkbox', () => {
         );
         expect(checkbox?.props.disabled).toBe(false);
         expect(checkbox?.props.checked).toBe(true);
-    });
-
-    it('self-heals a stale stored true by persisting false when the template has no valid variable', () => {
-        const playbook = {
-            create_public_playbook_run: true,
-            channel_name_template: 'Incident War Room',
-            channel_name_template_locked: true,
-            delete_at: 0,
-            channel_mode: 'create_new_channel' as const,
-            channel_id: '',
-            run_number_prefix: '',
-            next_run_number: 1,
-        };
-
-        const onChannelNameTemplateLockedChange = jest.fn();
-        act(() => {
-            renderWithIntl(
-                <CreateAChannel
-                    playbook={playbook}
-                    setPlaybook={jest.fn()}
-                    onChannelNameTemplateLockedChange={onChannelNameTemplateLockedChange}
-                />,
-            );
-        });
-
-        expect(onChannelNameTemplateLockedChange).toHaveBeenCalledWith(false);
-    });
-
-    it('does not persist anything when the stored value already matches the forced display', () => {
-        const playbook = {
-            create_public_playbook_run: true,
-            channel_name_template: 'Incident War Room',
-            channel_name_template_locked: false,
-            delete_at: 0,
-            channel_mode: 'create_new_channel' as const,
-            channel_id: '',
-            run_number_prefix: '',
-            next_run_number: 1,
-        };
-
-        const onChannelNameTemplateLockedChange = jest.fn();
-        act(() => {
-            renderWithIntl(
-                <CreateAChannel
-                    playbook={playbook}
-                    setPlaybook={jest.fn()}
-                    onChannelNameTemplateLockedChange={onChannelNameTemplateLockedChange}
-                />,
-            );
-        });
-
-        expect(onChannelNameTemplateLockedChange).not.toHaveBeenCalled();
-    });
-
-    it('does not persist anything when the template is disabled (link_existing_channel)', () => {
-        const playbook = {
-            create_public_playbook_run: true,
-            channel_name_template: 'Incident War Room',
-            channel_name_template_locked: true,
-            delete_at: 0,
-            channel_mode: 'link_existing_channel' as const,
-            channel_id: '',
-            run_number_prefix: '',
-            next_run_number: 1,
-        };
-
-        const onChannelNameTemplateLockedChange = jest.fn();
-        act(() => {
-            renderWithIntl(
-                <CreateAChannel
-                    playbook={playbook}
-                    setPlaybook={jest.fn()}
-                    onChannelNameTemplateLockedChange={onChannelNameTemplateLockedChange}
-                />,
-            );
-        });
-
-        expect(onChannelNameTemplateLockedChange).not.toHaveBeenCalled();
     });
 });
 

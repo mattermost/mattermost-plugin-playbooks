@@ -508,31 +508,28 @@ describe('RunPlaybookModal — template mode', () => {
         });
     });
 
-    describe('name field behavior — forced override allowed (no valid variable)', () => {
-        // A template with no valid variable (a literal string, or only an unrecognized
-        // placeholder) always allows override, mirroring the backend's TemplateOverrideAllowed
-        // rule — even if an admin explicitly stored channel_name_template_locked: true.
+    describe('name field behavior — locked template', () => {
         beforeEach(() => {
             mockUseRestPlaybook.mockReturnValue([{channel_name_template_locked: true}]);
         });
 
-        it('is editable for a literal template with no placeholder', () => {
+        it('is read-only for a literal template with no placeholder', () => {
             const pb = {...basePlaybook, channel_name_template: 'Incident War Room'};
             mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
 
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
-            expect(nameInput.props.readOnly).toBe(false);
+            expect(nameInput.props.readOnly).toBe(true);
         });
 
-        it('is editable when the template only references an unrecognized placeholder', () => {
+        it('is read-only when the template only references an unrecognized placeholder', () => {
             const pb = {...basePlaybook, channel_name_template: '{notARealVariable}'};
             mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue([]);
 
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
-            expect(nameInput.props.readOnly).toBe(false);
+            expect(nameInput.props.readOnly).toBe(true);
         });
     });
 
@@ -921,9 +918,7 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('namePreviewTooLong', () => {
         it('shows error and disables confirm button when resolved name exceeds 64 chars', () => {
-            // Includes {SEQ} so the template has a valid variable and is locked (mirroring the
-            // outer beforeEach's channel_name_template_locked: true) — a purely
-            // literal template always allows override and would never hit this validation path.
+            // Includes {SEQ} so the template has a valid variable and is locked.
             const longTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1) + '{SEQ}';
             const pbLongName = {
                 ...basePlaybook,

@@ -297,10 +297,8 @@ func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 // Tests for ChannelNameTemplateLocked
 // ---------------------------------------------------------------------------
 //
-// ChannelNameTemplateLocked defaults to false (the caller's name wins) and only takes
-// effect when the template actually contains a {token} placeholder. A purely literal template
-// (no placeholder) always allows override, regardless of the stored flag, since forcing it would
-// only ever produce one fixed run name.
+// ChannelNameTemplateLocked defaults to false (the caller's name wins). When locked is true,
+// the template always overrides the supplied name regardless of placeholder type.
 
 func TestResolveAndAllocate_OverrideNotAllowedTemplateWithVariableOverridesUserSuppliedName(t *testing.T) {
 	pb := Playbook{
@@ -377,10 +375,7 @@ func TestResolveAndAllocate_OverrideAllowedWithNoUserSuppliedNameFails(t *testin
 	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
 }
 
-// A literal template (no {token} placeholder) always allows override, even if an admin
-// explicitly set ChannelNameTemplateLocked to true — locking it would just force
-// every run to the exact same name, so the flag is a no-op for a template with no variable.
-func TestResolveAndAllocate_LiteralTemplateAlwaysAllowsOverride(t *testing.T) {
+func TestResolveAndAllocate_LiteralTemplateLockedUsesTemplate(t *testing.T) {
 	pb := Playbook{
 		ID:                        "pb_1",
 		RunNumberPrefix:           "INC",
@@ -394,11 +389,11 @@ func TestResolveAndAllocate_LiteralTemplateAlwaysAllowsOverride(t *testing.T) {
 	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
 
 	require.NoError(t, err)
-	assert.Equal(t, "My Custom Name", run.Name, "a template with no variable can never be forced, regardless of the stored flag")
-	assert.Equal(t, "My Custom Name", channelName)
+	assert.Equal(t, "Zone Alpha", run.Name)
+	assert.Equal(t, "Zone Alpha", channelName)
 }
 
-func TestResolveAndAllocate_LiteralTemplateWithNoUserSuppliedNameFails(t *testing.T) {
+func TestResolveAndAllocate_LiteralTemplateLockedWithNoUserSuppliedName(t *testing.T) {
 	pb := Playbook{
 		ID:                        "pb_1",
 		RunNumberPrefix:           "INC",
@@ -409,16 +404,14 @@ func TestResolveAndAllocate_LiteralTemplateWithNoUserSuppliedNameFails(t *testin
 	svc := newAllocService(pbStub)
 
 	run := &PlaybookRun{PlaybookID: pb.ID}
-	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
 
-	require.Error(t, err, "override is forced-allowed for a literal template, so an explicit name is still required")
-	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+	require.NoError(t, err)
+	assert.Equal(t, "Zone Alpha", run.Name)
+	assert.Equal(t, "Zone Alpha", channelName)
 }
 
-// An unrecognized placeholder (a typo, or a reference to a field that was since deleted) must not
-// be able to "lock" a template that can never actually resolve, even when real property fields
-// ARE loaded and one happens to exist under a different name.
-func TestResolveAndAllocate_UnrecognizedPlaceholderDoesNotTrickOverrideAllowed(t *testing.T) {
+func TestResolveAndAllocate_UnrecognizedPlaceholderLockedFailsResolve(t *testing.T) {
 	zoneField := PropertyField{
 		PropertyField: model.PropertyField{
 			ID:   "fld_zone",
@@ -440,11 +433,10 @@ func TestResolveAndAllocate_UnrecognizedPlaceholderDoesNotTrickOverrideAllowed(t
 	}
 
 	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My Custom Name"}
-	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
 
-	require.NoError(t, err)
-	assert.Equal(t, "My Custom Name", run.Name, "an unrecognized placeholder must not be honored as a lock; the caller's name must win")
-	assert.Equal(t, "My Custom Name", channelName)
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
 }
 
 // ---------------------------------------------------------------------------

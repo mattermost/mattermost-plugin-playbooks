@@ -45,7 +45,7 @@ import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {buildTemplatePreview, extractTemplateFieldNames, templateHasValidVariable} from 'src/utils/template_utils';
+import {buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
 import {PropertyField, PropertyFieldType} from 'src/types/properties';
 import {HelpText} from 'src/components/backstage/playbook_runs/shared';
 
@@ -230,13 +230,7 @@ export const RunPlaybookModal = ({
     // we cannot validate required-field coverage until the attribute list arrives.
     const attributesLoading = playbookAttributes === undefined && templateFieldNames.size > 0;
 
-    // Treat loading as "has variable" so a locked template does not briefly appear editable
-    // before property fields arrive and confirm the placeholder is valid.
-    const templateHasVariable = attributesLoading || templateHasValidVariable(
-        playbook?.channel_name_template ?? '',
-        (playbookAttributes ?? []).map((f) => f.name),
-    );
-    const locked = hasTemplate && templateHasVariable && (restPlaybook?.channel_name_template_locked ?? false);
+    const locked = hasTemplate && (restPlaybook?.channel_name_template_locked ?? false);
 
     const unmatchedTemplateNames = useMemo(() => {
         if (!playbook?.channel_name_template || templateFieldNames.size === 0) {
