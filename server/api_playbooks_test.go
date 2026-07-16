@@ -1616,6 +1616,53 @@ func TestPlaybooksImportExport(t *testing.T) {
 		assert.Equal(t, newFields[0].ID, importedConditions.Items[0].ConditionExpr.Is.FieldID,
 			"imported condition should reference the new property field ID")
 	})
+
+	t.Run("Export and reimport into the same team resolves a colliding run number prefix", func(t *testing.T) {
+		// Simulates exporting a playbook and immediately reimporting it into the same team
+		// (e.g. to sanity-check the export), which collides with the still-existing source
+		// playbook's run number prefix since it's unique per team.
+		sourceID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:           "Prefix Source Playbook",
+			TeamID:          e.BasicTeam.Id,
+			Public:          true,
+			RunNumberPrefix: "NUM",
+		})
+		require.NoError(t, err)
+
+		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), sourceID)
+		require.NoError(t, err)
+
+		newPlaybookID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), result, e.BasicTeam.Id)
+		require.NoError(t, err, "import should not fail because of a run number prefix collision")
+
+		newPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newPlaybookID)
+		require.NoError(t, err)
+
+		assert.Equal(t, "NUM-2", newPlaybook.RunNumberPrefix,
+			"colliding prefix should be resolved to a suffixed variant instead of being dropped")
+	})
+
+	t.Run("Export and import into a different team preserves the run number prefix", func(t *testing.T) {
+		sourceID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:           "Prefix Cross-Team Source Playbook",
+			TeamID:          e.BasicTeam.Id,
+			Public:          true,
+			RunNumberPrefix: "CROSS",
+		})
+		require.NoError(t, err)
+
+		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), sourceID)
+		require.NoError(t, err)
+
+		newPlaybookID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), result, e.BasicTeam2.Id)
+		require.NoError(t, err)
+
+		newPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newPlaybookID)
+		require.NoError(t, err)
+
+		assert.Equal(t, "CROSS", newPlaybook.RunNumberPrefix,
+			"prefix should be preserved unchanged when importing into a team with no collision")
+	})
 }
 
 func TestPlaybooksDuplicate(t *testing.T) {
