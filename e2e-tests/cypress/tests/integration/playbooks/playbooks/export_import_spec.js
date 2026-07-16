@@ -293,11 +293,11 @@ describe('playbooks > export and import with attributes and conditions', {testIs
                 title: 'Prefix Collision Source',
                 userId: testUser.id,
             }).then((playbook) => {
-                cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'NUM'}).then(() => {
+                cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'API-NUM'}).then(() => {
                     cy.apiExportPlaybook(playbook.id).then((exportData) => {
                         cy.apiImportPlaybook(exportData, testTeam.id).then((importResult) => {
                             cy.apiGetPlaybook(importResult.id).then((imported) => {
-                                expect(imported.run_number_prefix).to.equal('NUM-2');
+                                expect(imported.run_number_prefix).to.equal('API-NUM-2');
                             });
                         });
                     });
@@ -512,7 +512,7 @@ describe('playbooks > export and import with attributes and conditions', {testIs
                 title: 'UI Prefix Collision Source',
                 userId: testUser.id,
             }).then((playbook) => {
-                cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'NUM'}).then(() => {
+                cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'UI-NUM'}).then(() => {
                     cy.apiExportPlaybook(playbook.id).then((exportData) => {
                         const exportBuffer = Cypress.Buffer.from(JSON.stringify(exportData));
 
@@ -532,7 +532,7 @@ describe('playbooks > export and import with attributes and conditions', {testIs
                         cy.findByTestId('playbook-editor-title').should('contain', 'UI Prefix Collision Source');
 
                         // * Verify the colliding prefix was resolved to a suffixed variant
-                        cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'NUM-2');
+                        cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'UI-NUM-2');
                     });
                 });
             });
