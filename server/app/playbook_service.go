@@ -111,9 +111,6 @@ func (s *playbookService) Import(data PlaybookImportData, userID string) (string
 
 	condRefs := saveAndClearConditionRefs(&playbook)
 
-	// A run number prefix is unique per team; re-importing a playbook into the team it was
-	// exported from (or any team that already has a playbook using the same prefix) would
-	// otherwise fail the whole import. Resolve the collision instead of failing.
 	playbook.RunNumberPrefix = s.resolveImportRunNumberPrefix(playbook.TeamID, playbook.RunNumberPrefix, playbook.Title)
 
 	newPlaybookID, err := s.Create(playbook, userID)
@@ -678,18 +675,11 @@ func (s *playbookService) checkRunNumberPrefixUnique(teamID, prefix, excludeID s
 	return nil
 }
 
-// maxImportPrefixSuffixAttempts caps the "-N" suffixes tried when resolving a run number
-// prefix collision on import (i.e. we try "-2" through "-maxImportPrefixSuffixAttempts").
+// maxImportPrefixSuffixAttempts caps the "-N" suffixes tried below.
 const maxImportPrefixSuffixAttempts = 50
 
-// resolveImportRunNumberPrefix returns a run number prefix that's unique within teamID.
-// A playbook exported with a prefix set is commonly re-imported into the same team it came
-// from (e.g. a sanity-check re-import right after exporting), which would otherwise collide
-// with the still-existing source playbook's prefix. If prefix doesn't collide (including the
-// common case of importing into a different team), it's returned unchanged, preserving
-// cross-team import fidelity. If it does collide, a suffixed variant ("-2", "-3", ...) is
-// returned instead, preserving the admin's intent to have some prefix rather than silently
-// dropping it.
+// resolveImportRunNumberPrefix suffixes prefix (e.g. "-2") if it collides with an existing
+// playbook in teamID, instead of failing the import or silently dropping the prefix.
 func (s *playbookService) resolveImportRunNumberPrefix(teamID, prefix, playbookTitle string) string {
 	if prefix == "" {
 		return prefix

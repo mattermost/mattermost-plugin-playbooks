@@ -287,6 +287,24 @@ describe('playbooks > export and import with attributes and conditions', {testIs
             });
         });
 
+        it('round-trip: reimporting into the same team resolves a colliding run number prefix', () => {
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Prefix Collision Source',
+                userId: testUser.id,
+            }).then((playbook) => {
+                cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'NUM'}).then(() => {
+                    cy.apiExportPlaybook(playbook.id).then((exportData) => {
+                        cy.apiImportPlaybook(exportData, testTeam.id).then((importResult) => {
+                            cy.apiGetPlaybook(importResult.id).then((imported) => {
+                                expect(imported.run_number_prefix).to.equal('NUM-2');
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
         it('rejects import with unsupported version', () => {
             const badExport = {
                 title: 'Bad Version Playbook',
@@ -481,6 +499,40 @@ describe('playbooks > export and import with attributes and conditions', {testIs
                                 cy.findByText('Urgency').should('exist');
                             });
                         });
+                    });
+                });
+            });
+        });
+    });
+
+    describe('UI import with run number prefix', () => {
+        it('resolves a colliding run number prefix on reimport into the same team', () => {
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'UI Prefix Collision Source',
+                userId: testUser.id,
+            }).then((playbook) => {
+                cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'NUM'}).then(() => {
+                    cy.apiExportPlaybook(playbook.id).then((exportData) => {
+                        const exportBuffer = Cypress.Buffer.from(JSON.stringify(exportData));
+
+                        // # Open the Playbooks list
+                        cy.visit('/playbooks');
+                        cy.findByTestId('playbooksLHSButton').click();
+
+                        // # Use the file input to import into the same team
+                        cy.findByTestId('titlePlaybook').within(() => {
+                            cy.findByTestId('playbook-import-input').selectFile(
+                                {contents: exportBuffer, fileName: 'export.json', mimeType: 'application/json'},
+                                {force: true},
+                            );
+                        });
+
+                        // * Verify the playbook editor opens with the correct title (no import error toast)
+                        cy.findByTestId('playbook-editor-title').should('contain', 'UI Prefix Collision Source');
+
+                        // * Verify the colliding prefix was resolved to a suffixed variant
+                        cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'NUM-2');
                     });
                 });
             });

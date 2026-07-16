@@ -1618,9 +1618,6 @@ func TestPlaybooksImportExport(t *testing.T) {
 	})
 
 	t.Run("Export and reimport into the same team resolves a colliding run number prefix", func(t *testing.T) {
-		// Simulates exporting a playbook and immediately reimporting it into the same team
-		// (e.g. to sanity-check the export), which collides with the still-existing source
-		// playbook's run number prefix since it's unique per team.
 		sourceID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:           "Prefix Source Playbook",
 			TeamID:          e.BasicTeam.Id,
@@ -1633,13 +1630,12 @@ func TestPlaybooksImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		newPlaybookID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), result, e.BasicTeam.Id)
-		require.NoError(t, err, "import should not fail because of a run number prefix collision")
+		require.NoError(t, err)
 
 		newPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newPlaybookID)
 		require.NoError(t, err)
 
-		assert.Equal(t, "NUM-2", newPlaybook.RunNumberPrefix,
-			"colliding prefix should be resolved to a suffixed variant instead of being dropped")
+		assert.Equal(t, "NUM-2", newPlaybook.RunNumberPrefix)
 	})
 
 	t.Run("Export and import into a different team preserves the run number prefix", func(t *testing.T) {
@@ -1660,8 +1656,7 @@ func TestPlaybooksImportExport(t *testing.T) {
 		newPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newPlaybookID)
 		require.NoError(t, err)
 
-		assert.Equal(t, "CROSS", newPlaybook.RunNumberPrefix,
-			"prefix should be preserved unchanged when importing into a team with no collision")
+		assert.Equal(t, "CROSS", newPlaybook.RunNumberPrefix)
 	})
 }
 
