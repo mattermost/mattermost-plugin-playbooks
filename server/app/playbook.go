@@ -63,6 +63,7 @@ type Playbook struct {
 	RunSummaryTemplateEnabled               bool                   `json:"run_summary_template_enabled" export:"run_summary_template_enabled"`
 	RunSummaryTemplate                      string                 `json:"run_summary_template" export:"run_summary_template"`
 	ChannelNameTemplate                     string                 `json:"channel_name_template" export:"channel_name_template"`
+	ChannelNameTemplateLocked               bool                   `json:"channel_name_template_locked" export:"channel_name_template_locked"`
 	DefaultPlaybookAdminRole                string                 `json:"default_playbook_admin_role" export:"-"`
 	DefaultPlaybookMemberRole               string                 `json:"default_playbook_member_role" export:"-"`
 	DefaultRunAdminRole                     string                 `json:"default_run_admin_role" export:"-"`
@@ -478,6 +479,10 @@ type PlaybookService interface {
 
 	// UpdateChannelNameTemplate updates only the channel name template for a playbook.
 	UpdateChannelNameTemplate(playbookID, template, userID string) error
+
+	// UpdateChannelNameTemplateLocked updates only the channel name template lock
+	// setting for a playbook.
+	UpdateChannelNameTemplateLocked(playbookID string, locked bool, userID string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -575,6 +580,10 @@ type PlaybookStore interface {
 
 	// UpdateChannelNameTemplate updates only the ChannelNameTemplate column for the given playbook.
 	UpdateChannelNameTemplate(id, template string) error
+
+	// UpdateChannelNameTemplateLocked updates only the ChannelNameTemplateLocked
+	// column for the given playbook.
+	UpdateChannelNameTemplateLocked(id string, templateLocked bool) error
 }
 
 const (
