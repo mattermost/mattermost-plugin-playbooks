@@ -181,6 +181,17 @@ func TemplateUsesSeqToken(tmpl string) bool {
 	return seqTokenRegex.MatchString(tmpl)
 }
 
+// TemplateLocked reports whether the given playbook's channel name template is authoritative
+// over a caller-supplied run name. An empty template is never locked (nothing to be
+// authoritative about). Otherwise it mirrors ChannelNameTemplateLocked directly, regardless of
+// whether the template's placeholders resolve.
+func TemplateLocked(pb *Playbook, template string) bool {
+	if template == "" {
+		return false
+	}
+	return pb.ChannelNameTemplateLocked
+}
+
 // StripFieldFromTemplate removes all occurrences of {fieldName} from a template string
 // and cleans up orphaned separators and whitespace.
 func StripFieldFromTemplate(tmpl, fieldName string) string {
