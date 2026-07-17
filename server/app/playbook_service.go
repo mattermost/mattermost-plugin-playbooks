@@ -4,6 +4,7 @@
 package app
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -109,6 +110,8 @@ func (s *playbookService) Import(data PlaybookImportData, userID string) (string
 	}
 
 	condRefs := saveAndClearConditionRefs(&playbook)
+
+	playbook.RunNumberPrefix = s.resolveImportRunNumberPrefix(playbook.TeamID, playbook.RunNumberPrefix, playbook.Title)
 
 	newPlaybookID, err := s.Create(playbook, userID)
 	if err != nil {
@@ -670,6 +673,51 @@ func (s *playbookService) checkRunNumberPrefixUnique(teamID, prefix, excludeID s
 		return ErrDuplicateEntry
 	}
 	return nil
+}
+
+// maxImportPrefixSuffixAttempts caps the "-N" suffixes tried below.
+const maxImportPrefixSuffixAttempts = 50
+
+// resolveImportRunNumberPrefix suffixes prefix (e.g. "-2") if it collides with an existing
+// playbook in teamID, instead of failing the import or silently dropping the prefix.
+func (s *playbookService) resolveImportRunNumberPrefix(teamID, prefix, playbookTitle string) string {
+	if prefix == "" {
+		return prefix
+	}
+
+	if err := s.checkRunNumberPrefixUnique(teamID, prefix, ""); err == nil {
+		return prefix
+	} else if !errors.Is(err, ErrDuplicateEntry) {
+		// Couldn't determine uniqueness (e.g. store error); leave the prefix as-is and let
+		// Create's own check surface the error.
+		return prefix
+	}
+
+	for n := 2; n <= maxImportPrefixSuffixAttempts; n++ {
+		suffix := fmt.Sprintf("-%d", n)
+		base := prefix
+		if len(base)+len(suffix) > MaxRunNumberPrefixLength {
+			base = base[:MaxRunNumberPrefixLength-len(suffix)]
+		}
+		candidate := base + suffix
+
+		if err := s.checkRunNumberPrefixUnique(teamID, candidate, ""); err == nil {
+			logrus.WithFields(logrus.Fields{
+				"team_id":         teamID,
+				"playbook_title":  playbookTitle,
+				"original_prefix": prefix,
+				"resolved_prefix": candidate,
+			}).Warn("run number prefix collided with an existing playbook on import, using a suffixed variant instead")
+			return candidate
+		}
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"team_id":         teamID,
+		"playbook_title":  playbookTitle,
+		"original_prefix": prefix,
+	}).Warn("could not find a unique run number prefix variant on import after exhausting attempts, clearing prefix")
+	return ""
 }
 
 func (s *playbookService) IncrementRunNumber(playbookID string) (int64, error) {
