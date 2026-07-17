@@ -708,7 +708,7 @@ paths:
   /plugins/playbooks/api/v0/runs/{id}/status:
     post:
       summary: Update a playbook run's status
-      operationId: status
+      operationId: updatePlaybookRunStatus
       security:
         - BearerAuth: []
       tags:
