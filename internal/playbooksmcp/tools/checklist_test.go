@@ -791,6 +791,87 @@ func TestMoveChecklistToolsValidation(t *testing.T) {
 	}
 }
 
+func TestChecklistToolsOutOfRangeIndexes(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+	const assigneeID = "bcdefghijklmnopqrstuvwxyza"
+
+	// A run with two sections of two items each: valid indexes are 0-1, so
+	// index 5 is always out of range while still passing the negative-index
+	// validation that runs before the run is fetched.
+	fixture := fixtureRun(runID, 2, 2)
+
+	tests := []struct {
+		name    string
+		runTool func(context.Context, APIClient) (string, error)
+		wantErr string
+	}{
+		{
+			name: "add checklist item rejects out-of-range checklist",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolAddChecklistItem(ctx, client, AddChecklistItemArgs{RunID: runID, ChecklistNumber: 5, Title: "New item"})
+			},
+			wantErr: "checklist_number 5 is out of range",
+		},
+		{
+			name: "set checklist item due date rejects out-of-range item",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemDueDate(ctx, client, SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 5, DueDate: 1717200000000})
+			},
+			wantErr: "item_number 5 is out of range",
+		},
+		{
+			name: "edit checklist item rejects out-of-range item",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				title := "Updated"
+				return toolEditChecklistItem(ctx, client, EditChecklistItemArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 5, Title: &title})
+			},
+			wantErr: "item_number 5 is out of range",
+		},
+		{
+			name: "set checklist item assignee rejects out-of-range item",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemAssignee(ctx, client, SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 5, AssigneeID: assigneeID})
+			},
+			wantErr: "item_number 5 is out of range",
+		},
+		{
+			name: "remove checklist item rejects out-of-range item",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolRemoveChecklistItem(ctx, client, RemoveChecklistItemArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 5})
+			},
+			wantErr: "item_number 5 is out of range",
+		},
+		{
+			name: "rename section rejects out-of-range checklist",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolRenameSection(ctx, client, RenameSectionArgs{RunID: runID, ChecklistNumber: 5, Title: "Renamed"})
+			},
+			wantErr: "checklist_number 5 is out of range",
+		},
+		{
+			// The move tool's argument is source_checklist_idx, not
+			// checklist_number, so the error must name the field the caller passed.
+			name: "move checklist item names source_checklist_idx when out of range",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveChecklistItem(ctx, client, MoveChecklistItemArgs{RunID: runID, SourceChecklistIdx: 5, SourceItemIdx: 0, DestChecklistIdx: 0, DestItemIdx: 0})
+			},
+			wantErr: "source_checklist_idx 5 is out of range",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{run: fixture}
+			_, err := tt.runTool(context.Background(), client)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+			assert.Empty(t, client.postEndpoint, "expected no create/move on out-of-range")
+			assert.Empty(t, client.putEndpoint, "expected no update on out-of-range")
+			assert.Empty(t, client.deleteEndpoint, "expected no delete on out-of-range")
+		})
+	}
+}
+
 func TestToolSetChecklistItemAssigneeValidation(t *testing.T) {
 	const runID = "abcdefghijklmnopqrstuvwxyz"
 	const assigneeID = "bcdefghijklmnopqrstuvwxyza"

@@ -174,7 +174,7 @@ func toolCheckItem(ctx context.Context, client APIClient, args CheckItemArgs) (s
 	if err != nil {
 		return "", err
 	}
-	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "checklist_number", "item_number"); err != nil {
 		return "", err
 	}
 
@@ -223,12 +223,15 @@ func checkChecklistIndex(run playbookRunDetail, idx int, field string) error {
 }
 
 // checkItemIndex verifies an item index exists within an existing checklist.
-func checkItemIndex(run playbookRunDetail, checklistIdx, itemIdx int, field string) error {
-	if err := checkChecklistIndex(run, checklistIdx, "checklist_number"); err != nil {
+// checklistField/itemField name the respective arguments so the actionable
+// error refers to the field the caller actually passed (e.g. move_checklist_item
+// uses source_checklist_idx/source_item_idx, not checklist_number/item_number).
+func checkItemIndex(run playbookRunDetail, checklistIdx, itemIdx int, checklistField, itemField string) error {
+	if err := checkChecklistIndex(run, checklistIdx, checklistField); err != nil {
 		return err
 	}
 	if itemIdx >= len(run.Checklists[checklistIdx].Items) {
-		return outOfRangeError(field, itemIdx, run)
+		return outOfRangeError(itemField, itemIdx, run)
 	}
 	return nil
 }
@@ -315,7 +318,7 @@ func toolSetChecklistItemDueDate(ctx context.Context, client APIClient, args Set
 	if err != nil {
 		return "", err
 	}
-	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "checklist_number", "item_number"); err != nil {
 		return "", err
 	}
 
@@ -364,7 +367,7 @@ func toolEditChecklistItem(ctx context.Context, client APIClient, args EditCheck
 	if err != nil {
 		return "", err
 	}
-	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "checklist_number", "item_number"); err != nil {
 		return "", err
 	}
 
@@ -420,7 +423,7 @@ func toolSetChecklistItemAssignee(ctx context.Context, client APIClient, args Se
 	if err != nil {
 		return "", err
 	}
-	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "checklist_number", "item_number"); err != nil {
 		return "", err
 	}
 
@@ -454,7 +457,7 @@ func toolRemoveChecklistItem(ctx context.Context, client APIClient, args RemoveC
 	if err != nil {
 		return "", err
 	}
-	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "item_number"); err != nil {
+	if err := checkItemIndex(run, args.ChecklistNumber, args.ItemNumber, "checklist_number", "item_number"); err != nil {
 		return "", err
 	}
 	removed := run.Checklists[args.ChecklistNumber].Items[args.ItemNumber].Title
@@ -488,7 +491,7 @@ func toolMoveChecklistItem(ctx context.Context, client APIClient, args MoveCheck
 	if err != nil {
 		return "", err
 	}
-	if err := checkItemIndex(run, args.SourceChecklistIdx, args.SourceItemIdx, "source_item_idx"); err != nil {
+	if err := checkItemIndex(run, args.SourceChecklistIdx, args.SourceItemIdx, "source_checklist_idx", "source_item_idx"); err != nil {
 		return "", err
 	}
 	if err := checkMoveItemDest(run, args.SourceChecklistIdx, args.DestChecklistIdx, args.DestItemIdx); err != nil {
