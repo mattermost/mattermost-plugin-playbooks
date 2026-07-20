@@ -9,6 +9,7 @@ import {
     extractTemplateFieldNames,
     formatSequentialID,
     resolveTemplatePreview,
+    templateHasValidVariable,
 } from './template_utils';
 
 describe('template_utils', () => {
@@ -100,6 +101,35 @@ describe('template_utils', () => {
         it('should handle template with only system tokens', () => {
             const result = extractTemplateFieldNames('{SEQ}-{OWNER}-{CREATOR}');
             expect(result).toEqual([]);
+        });
+    });
+
+    describe('templateHasValidVariable', () => {
+        it('returns false for an empty template', () => {
+            expect(templateHasValidVariable('', [])).toBe(false);
+        });
+
+        it('returns false for a literal template with no placeholder', () => {
+            expect(templateHasValidVariable('Incident War Room', [])).toBe(false);
+        });
+
+        it('returns true for a system token', () => {
+            expect(templateHasValidVariable('Incident-{SEQ}', [])).toBe(true);
+            expect(templateHasValidVariable('{owner}', [])).toBe(true);
+        });
+
+        it('returns true for a known property field name (case-insensitive)', () => {
+            expect(templateHasValidVariable('{Zone} Incident', ['Zone'])).toBe(true);
+            expect(templateHasValidVariable('{zone} Incident', ['Zone'])).toBe(true);
+        });
+
+        it('returns false for an unrecognized placeholder, even with unrelated known fields', () => {
+            expect(templateHasValidVariable('{notARealVariable}', [])).toBe(false);
+            expect(templateHasValidVariable('{notARealVariable}', ['Zone'])).toBe(false);
+        });
+
+        it('returns true when at least one of several placeholders is valid', () => {
+            expect(templateHasValidVariable('{SEQ} - {notARealVariable}', [])).toBe(true);
         });
     });
 
