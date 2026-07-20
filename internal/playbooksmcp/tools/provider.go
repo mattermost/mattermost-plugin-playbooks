@@ -42,6 +42,7 @@ func NewPlaybooksToolProvider(clientFactory ClientFactory) (*PlaybooksToolProvid
 func (p *PlaybooksToolProvider) ProvideMCPHelperTools(mcpServer *mcphelper.Server) {
 	p.addMCPHelperRunTools(mcpServer)
 	p.addMCPHelperChecklistTools(mcpServer)
+	p.addMCPHelperResolveTools(mcpServer)
 	p.addMCPHelperPlaybookTools(mcpServer)
 }
 

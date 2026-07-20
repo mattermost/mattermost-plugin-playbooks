@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,9 +19,23 @@ import (
 type fakeAPIClient struct {
 	run      playbookRunDetail
 	listRuns listRunsResponse
+	// listPages, when set, returns a distinct listRunsResponse per page index
+	// so pagination can be exercised.
+	listPages []listRunsResponse
 
-	getEndpoint string
-	getParams   url.Values
+	// runsByID, when set, lets Get resolve a specific run by the ID in the
+	// "runs/{id}" endpoint. Falls back to run when the ID is not present.
+	runsByID map[string]playbookRunDetail
+
+	// currentUserID / currentUserErr override GetCurrentUserID when set.
+	currentUserID  string
+	currentUserErr error
+
+	getEndpoint  string
+	getParams    url.Values
+	getEndpoints []string
+	listParams   url.Values
+	listCalls    []url.Values
 
 	postEndpoint string
 	postBody     any
@@ -36,11 +52,28 @@ type fakeAPIClient struct {
 func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Values, result any) error {
 	f.getEndpoint = endpoint
 	f.getParams = params
+	f.getEndpoints = append(f.getEndpoints, endpoint)
 	switch v := result.(type) {
 	case *playbookRunDetail:
 		*v = f.run
+		if f.runsByID != nil {
+			id := strings.TrimPrefix(endpoint, "runs/")
+			if run, ok := f.runsByID[id]; ok {
+				*v = run
+			}
+		}
 	case *listRunsResponse:
 		*v = f.listRuns
+		if f.listPages != nil {
+			page, _ := strconv.Atoi(params.Get("page"))
+			if page >= 0 && page < len(f.listPages) {
+				*v = f.listPages[page]
+			} else {
+				*v = listRunsResponse{}
+			}
+		}
+		f.listParams = params
+		f.listCalls = append(f.listCalls, cloneValues(params))
 	case *map[string]any:
 		*v = map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Created playbook"}
 	default:
@@ -78,6 +111,12 @@ func (f *fakeAPIClient) Delete(_ context.Context, endpoint string) error {
 }
 
 func (f *fakeAPIClient) GetCurrentUserID(context.Context) (string, error) {
+	if f.currentUserErr != nil {
+		return "", f.currentUserErr
+	}
+	if f.currentUserID != "" {
+		return f.currentUserID, nil
+	}
 	return "abcdefghijklmnopqrstuvwxy0", nil
 }
 
@@ -85,8 +124,40 @@ func (f *fakeAPIClient) GetPlaybookURL(playbookID string) string {
 	return "https://mattermost.example.com/playbooks/playbooks/" + playbookID
 }
 
+// cloneValues snapshots query params, since fetchRunDetails mutates the same
+// url.Values across pagination iterations.
+func cloneValues(v url.Values) url.Values {
+	out := url.Values{}
+	for k, vals := range v {
+		out[k] = append([]string(nil), vals...)
+	}
+	return out
+}
+
+// fixtureRun builds a run with the given number of sections and items per
+// section, so tests can exercise index-based tools that bounds-check.
+func fixtureRun(runID string, checklists, items int) playbookRunDetail {
+	run := playbookRunDetail{ID: runID}
+	for c := 0; c < checklists; c++ {
+		cl := checklist{Title: fmt.Sprintf("Section %d", c)}
+		for i := 0; i < items; i++ {
+			cl.Items = append(cl.Items, checklistItem{Title: fmt.Sprintf("Item %d-%d", c, i)})
+		}
+		run.Checklists = append(run.Checklists, cl)
+	}
+	return run
+}
+
 func TestToolCheckItemOpenTranslatesToEmptyAPIState(t *testing.T) {
-	client := &fakeAPIClient{}
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			ID: "abcdefghijklmnopqrstuvwxyz",
+			Checklists: []checklist{
+				{Items: []checklistItem{{}}},
+				{Items: []checklistItem{{}, {}, {Title: "Deploy", State: "closed"}}},
+			},
+		},
+	}
 	args := CheckItemArgs{
 		RunID:           "abcdefghijklmnopqrstuvwxyz",
 		ChecklistNumber: 1,
@@ -94,20 +165,13 @@ func TestToolCheckItemOpenTranslatesToEmptyAPIState(t *testing.T) {
 		NewState:        "open",
 	}
 
-	if _, err := toolCheckItem(context.Background(), client, args); err != nil {
-		t.Fatalf("toolCheckItem returned error: %v", err)
-	}
+	_, err := toolCheckItem(context.Background(), client, args)
+	require.NoError(t, err)
 
-	if client.putEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/state" {
-		t.Fatalf("unexpected endpoint: %s", client.putEndpoint)
-	}
+	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/1/item/2/state", client.putEndpoint)
 	body, ok := client.putBody.(map[string]string)
-	if !ok {
-		t.Fatalf("unexpected body type %T", client.putBody)
-	}
-	if got := body["new_state"]; got != "" {
-		t.Fatalf("expected open state to be sent as empty string, got %q", got)
-	}
+	require.Truef(t, ok, "unexpected body type %T", client.putBody)
+	assert.Empty(t, body["new_state"], "expected open state to be sent as empty string")
 }
 
 func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
@@ -223,7 +287,7 @@ func TestToolEditChecklistItemSetsDueDate(t *testing.T) {
 	_, err := toolEditChecklistItem(context.Background(), client, args)
 	require.NoError(t, err)
 
-	assert.Empty(t, client.getEndpoint)
+	assert.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz", client.getEndpoint)
 	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate", client.putEndpoint)
 	require.IsType(t, map[string]int64{}, client.putBody)
 	body := client.putBody.(map[string]int64)
@@ -258,7 +322,7 @@ func TestToolEditChecklistItemClearsDueDate(t *testing.T) {
 	_, err := toolEditChecklistItem(context.Background(), client, args)
 	require.NoError(t, err)
 
-	assert.Empty(t, client.getEndpoint)
+	assert.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz", client.getEndpoint)
 	require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists/0/item/0/duedate", client.putEndpoint)
 	require.IsType(t, map[string]int64{}, client.putBody)
 	body := client.putBody.(map[string]int64)
@@ -446,8 +510,13 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	const runID = "abcdefghijklmnopqrstuvwxyz"
 	const assigneeID = "bcdefghijklmnopqrstuvwxyza"
 
+	// The mutating tools now bounds-check indexes against the run, so provide a
+	// run large enough for every index used below (checklists 0-3, items 0-4).
+	fixture := fixtureRun(runID, 4, 5)
+	newClient := func() *fakeAPIClient { return &fakeAPIClient{run: fixture} }
+
 	t.Run("add checklist item", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item ", Description: "details", AssigneeID: assigneeID, DueDate: 1717200000000}
 		_, err := toolAddChecklistItem(context.Background(), client, args)
 		require.NoError(t, err)
@@ -461,7 +530,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("add checklist item without due date omits due date", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := AddChecklistItemArgs{RunID: runID, ChecklistNumber: 1, Title: " New item "}
 		_, err := toolAddChecklistItem(context.Background(), client, args)
 		require.NoError(t, err)
@@ -472,7 +541,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("set checklist item due date", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 1717200000000}
 		_, err := toolSetChecklistItemDueDate(context.Background(), client, args)
 		require.NoError(t, err)
@@ -483,7 +552,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("clear checklist item due date", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, DueDate: 0}
 		_, err := toolSetChecklistItemDueDate(context.Background(), client, args)
 		require.NoError(t, err)
@@ -494,7 +563,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("set checklist item assignee", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2, AssigneeID: assigneeID}
 		_, err := toolSetChecklistItemAssignee(context.Background(), client, args)
 		require.NoError(t, err)
@@ -506,7 +575,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("clear checklist item assignee", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2}
 		_, err := toolSetChecklistItemAssignee(context.Background(), client, args)
 		require.NoError(t, err)
@@ -518,7 +587,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("remove checklist item", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		if _, err := toolRemoveChecklistItem(context.Background(), client, RemoveChecklistItemArgs{RunID: runID, ChecklistNumber: 1, ItemNumber: 2}); err != nil {
 			t.Fatalf("toolRemoveChecklistItem returned error: %v", err)
 		}
@@ -528,7 +597,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("move checklist item", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := MoveChecklistItemArgs{
 			RunID:              runID,
 			SourceChecklistIdx: 1,
@@ -558,7 +627,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("add section", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		if _, err := toolAddSection(context.Background(), client, AddSectionArgs{RunID: runID, Title: " Section "}); err != nil {
 			t.Fatalf("toolAddSection returned error: %v", err)
 		}
@@ -575,7 +644,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("rename section", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		if _, err := toolRenameSection(context.Background(), client, RenameSectionArgs{RunID: runID, ChecklistNumber: 1, Title: " Renamed "}); err != nil {
 			t.Fatalf("toolRenameSection returned error: %v", err)
 		}
@@ -592,7 +661,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("remove section", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		if _, err := toolRemoveSection(context.Background(), client, RemoveSectionArgs{RunID: runID, ChecklistNumber: 1}); err != nil {
 			t.Fatalf("toolRemoveSection returned error: %v", err)
 		}
@@ -602,7 +671,7 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 	})
 
 	t.Run("move section", func(t *testing.T) {
-		client := &fakeAPIClient{}
+		client := newClient()
 		args := MoveSectionArgs{RunID: runID, SourceChecklistIdx: 2, DestChecklistIdx: 0}
 		if _, err := toolMoveSection(context.Background(), client, args); err != nil {
 			t.Fatalf("toolMoveSection returned error: %v", err)
@@ -718,6 +787,87 @@ func TestMoveChecklistToolsValidation(t *testing.T) {
 			require.EqualError(t, err, tt.wantErr)
 			require.Equal(t, "", client.postEndpoint)
 			require.Equal(t, "", client.putEndpoint)
+		})
+	}
+}
+
+func TestChecklistToolsOutOfRangeIndexes(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+	const assigneeID = "bcdefghijklmnopqrstuvwxyza"
+
+	// A run with two sections of two items each: valid indexes are 0-1, so
+	// index 5 is always out of range while still passing the negative-index
+	// validation that runs before the run is fetched.
+	fixture := fixtureRun(runID, 2, 2)
+
+	tests := []struct {
+		name    string
+		runTool func(context.Context, APIClient) (string, error)
+		wantErr string
+	}{
+		{
+			name: "add checklist item rejects out-of-range checklist",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolAddChecklistItem(ctx, client, AddChecklistItemArgs{RunID: runID, ChecklistNumber: 5, Title: "New item"})
+			},
+			wantErr: "checklist_number 5 is out of range",
+		},
+		{
+			name: "set checklist item due date rejects out-of-range item",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemDueDate(ctx, client, SetChecklistItemDueDateArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 5, DueDate: 1717200000000})
+			},
+			wantErr: "item_number 5 is out of range",
+		},
+		{
+			name: "edit checklist item rejects out-of-range item",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				title := "Updated"
+				return toolEditChecklistItem(ctx, client, EditChecklistItemArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 5, Title: &title})
+			},
+			wantErr: "item_number 5 is out of range",
+		},
+		{
+			name: "set checklist item assignee rejects out-of-range item",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolSetChecklistItemAssignee(ctx, client, SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 5, AssigneeID: assigneeID})
+			},
+			wantErr: "item_number 5 is out of range",
+		},
+		{
+			name: "remove checklist item rejects out-of-range item",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolRemoveChecklistItem(ctx, client, RemoveChecklistItemArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 5})
+			},
+			wantErr: "item_number 5 is out of range",
+		},
+		{
+			name: "rename section rejects out-of-range checklist",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolRenameSection(ctx, client, RenameSectionArgs{RunID: runID, ChecklistNumber: 5, Title: "Renamed"})
+			},
+			wantErr: "checklist_number 5 is out of range",
+		},
+		{
+			// The move tool's argument is source_checklist_idx, not
+			// checklist_number, so the error must name the field the caller passed.
+			name: "move checklist item names source_checklist_idx when out of range",
+			runTool: func(ctx context.Context, client APIClient) (string, error) {
+				return toolMoveChecklistItem(ctx, client, MoveChecklistItemArgs{RunID: runID, SourceChecklistIdx: 5, SourceItemIdx: 0, DestChecklistIdx: 0, DestItemIdx: 0})
+			},
+			wantErr: "source_checklist_idx 5 is out of range",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{run: fixture}
+			_, err := tt.runTool(context.Background(), client)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+			assert.Empty(t, client.postEndpoint, "expected no create/move on out-of-range")
+			assert.Empty(t, client.putEndpoint, "expected no update on out-of-range")
+			assert.Empty(t, client.deleteEndpoint, "expected no delete on out-of-range")
 		})
 	}
 }
