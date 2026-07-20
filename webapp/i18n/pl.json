@@ -1064,5 +1064,9 @@
     "xAoYB/": "Tylko właściciel uruchomienia może zakończyć to uruchomienie",
     "xB/R5b": "Czy na pewno chcesz włączyć retrospektywę dla tego uruchomienia?",
     "yVKYcF": "Czy na pewno chcesz wyłączyć retrospektywę dla tego uruchomienia? Żadne przypomnienie o retrospektywie nie zostanie wysłane.",
-    "nGnueQ": "Nazwa uruchomienia jest ustawiana automatycznie na podstawie szablonu nazwy kanału tego playboka i nie można jej tutaj edytować."
+    "nGnueQ": "Nazwa uruchomienia jest ustawiana automatycznie na podstawie szablonu nazwy kanału tego playboka i nie można jej tutaj edytować.",
+    "61uz0P": "Nie udało się zapisać tego ustawienia. Spróbuj ponownie.",
+    "OrFUC3": "Zablokuj nazwę uruchomienia",
+    "TAViq6": "Rozwinięta nazwa uruchomienia przekracza limit {maxLength} znaków. Skróć nazwę lub użyj mniejszej liczby pól.",
+    "j40vB5": "Rozwinięta nazwa uruchomienia przekracza limit {maxLength} znaków. Skróć wartości pól używanych w szablonie."
 }
