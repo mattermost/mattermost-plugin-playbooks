@@ -185,6 +185,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		RunSummaryTemplateEnabled               *bool
 		RunSummaryTemplate                      *string
 		ChannelNameTemplate                     *string
+		ChannelNameTemplateLocked               *bool
 		Checklists                              *[]UpdateChecklist
 		CreateChannelMemberOnNewParticipant     *bool
 		RemoveChannelMemberOnRemovedParticipant *bool
@@ -297,6 +298,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "RunSummaryTemplateEnabled", args.Updates.RunSummaryTemplateEnabled)
 	addToSetmap(setmap, "RunSummaryTemplate", args.Updates.RunSummaryTemplate)
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
+	addToSetmap(setmap, "ChannelNameTemplateLocked", args.Updates.ChannelNameTemplateLocked)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 

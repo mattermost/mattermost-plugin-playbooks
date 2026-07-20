@@ -6000,7 +6000,7 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 		playbookRun.PlaybookID = pb.ID
 	}
 
-	fields, attributesLicensed, err := s.loadTemplateFields(pb)
+	fields, attributesLicensed, err := s.loadTemplateFields(pb, strings.TrimSpace(playbookRun.Name))
 	if err != nil {
 		return err
 	}
@@ -6038,7 +6038,7 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 	}
 	pb = &latestPb
 
-	fields, attributesLicensed, err := s.loadTemplateFields(pb)
+	fields, attributesLicensed, err := s.loadTemplateFields(pb, userSuppliedName)
 	if err != nil {
 		return "", err
 	}
@@ -6074,10 +6074,12 @@ func (s *PlaybookRunServiceImpl) resolveAndAllocate(playbookRun *PlaybookRun, pb
 }
 
 // loadTemplateFields checks whether the attributes licence is active and, if the playbook's
-// channel name template contains placeholders, fetches the associated property fields.
-func (s *PlaybookRunServiceImpl) loadTemplateFields(pb *Playbook) (fields []PropertyField, attributesLicensed bool, err error) {
+// channel name template or the caller-supplied name contains placeholders, fetches the
+// associated property fields — tokens in a user-supplied name are resolved the same as the
+// template's, so its fields must be loaded too.
+func (s *PlaybookRunServiceImpl) loadTemplateFields(pb *Playbook, userSuppliedName string) (fields []PropertyField, attributesLicensed bool, err error) {
 	attributesLicensed = s.licenseChecker.PlaybookAttributesAllowed()
-	if attributesLicensed && strings.Contains(pb.ChannelNameTemplate, "{") {
+	if attributesLicensed && (strings.Contains(pb.ChannelNameTemplate, "{") || strings.Contains(userSuppliedName, "{")) {
 		fields, err = s.propertyService.GetPropertyFields(pb.ID)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to load property fields for template resolution")
@@ -6137,17 +6139,21 @@ func (s *PlaybookRunServiceImpl) prepareTemplate(pb *Playbook, source string, fi
 	}
 
 	// Property placeholders require an active attributes license and cannot be supplied
-	// via dialog or slash command (those sources have no property value input).
+	// via dialog or slash command (those sources have no property value input). This only
+	// matters when the template will actually be used to resolve the run name — an unlocked
+	// template is just a prefill suggestion, so its placeholders must not block run creation.
 	// Check against the cleaned template so deleted-field ghosts don't trip this gate.
-	if propertyPlaceholders := ValidateTemplate(template, ResolveOptions{}); len(propertyPlaceholders) > 0 {
-		if !attributesLicensed {
-			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates but the attributes license is not active")
-		}
-		switch source {
-		case RunSourceDialog:
-			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires property values that cannot be provided via the dialog; use the webapp creation flow instead")
-		case RunSourceCommand:
-			return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates; please create runs via the web interface")
+	if TemplateLocked(pb, template) {
+		if propertyPlaceholders := ValidateTemplate(template, ResolveOptions{}); len(propertyPlaceholders) > 0 {
+			if !attributesLicensed {
+				return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates but the attributes license is not active")
+			}
+			switch source {
+			case RunSourceDialog:
+				return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires property values that cannot be provided via the dialog; use the webapp creation flow instead")
+			case RunSourceCommand:
+				return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook uses property-based name templates; please create runs via the web interface")
+			}
 		}
 	}
 
@@ -6182,7 +6188,7 @@ func (s *PlaybookRunServiceImpl) sanitizePropertyValues(fields []PropertyField, 
 // sanitizedValues must come from sanitizePropertyValues — callers are responsible for sanitizing once.
 // Pass a non-nil formatFunc to share its user-display-name cache with a subsequent resolveRunName call.
 func (s *PlaybookRunServiceImpl) dryRunValidateTemplate(pb *Playbook, playbookRun *PlaybookRun, template string, fields []PropertyField, sanitizedValues map[string]json.RawMessage, formatFunc FormatFunc, logger *logrus.Entry) error {
-	if template == "" {
+	if !TemplateLocked(pb, template) {
 		return nil
 	}
 	if formatFunc == nil {
@@ -6223,10 +6229,11 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 		formatFunc = s.makeRunNameFormatFunc()
 	}
 	systemTokens := s.buildSystemTokens(playbookRun, "")
+	systemTokens["SEQ"] = seqID
 
 	var resolvedRunName, resolvedChannelName string
-	if template != "" {
-		systemTokens["SEQ"] = seqID
+	locked := TemplateLocked(pb, template)
+	if locked {
 		resolved, unresolved := ResolveTemplate(template, ResolveOptions{
 			Fields:       fields,
 			Values:       sanitizedValues,
@@ -6247,8 +6254,26 @@ func (s *PlaybookRunServiceImpl) resolveRunName(playbookRun *PlaybookRun, pb *Pl
 
 	if resolvedRunName == "" {
 		switch {
+		case locked:
+			// The template is authoritative but resolved to nothing (e.g. a whitespace-only
+			// literal) — a non-empty userSuppliedName must NOT be allowed to silently win here,
+			// and the "allows overriding the name" message below would be backwards for a
+			// locked template, so this case must come before the userSuppliedName check.
+			return "", errors.Wrap(ErrMalformedPlaybookRun, "channel name template resolved to an empty name")
 		case userSuppliedName != "":
-			resolvedRunName = userSuppliedName
+			// Best-effort: resolve any recognized tokens within the user's own name too, so
+			// typing e.g. "Release {Version}" behaves the same whether that text came from the
+			// playbook's template or was typed freehand. Unlike the template branch above, an
+			// unresolved token here is left as literal text rather than rejected — the user
+			// didn't necessarily intend it as a placeholder.
+			resolvedRunName, _ = ResolveTemplate(userSuppliedName, ResolveOptions{
+				Fields:       fields,
+				Values:       sanitizedValues,
+				SystemTokens: systemTokens,
+				FormatFunc:   formatFunc,
+			})
+		case template != "":
+			return "", errors.Wrap(ErrMalformedPlaybookRun, "run name is required: this playbook's channel name template allows overriding the name")
 		case seqID != "":
 			resolvedRunName = seqID + " - Untitled"
 		default:

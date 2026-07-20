@@ -722,6 +722,9 @@ func (s *stubPlaybookService) DeleteMetric(string) error {
 func (s *stubPlaybookService) UpdateChannelNameTemplate(string, string, string) error {
 	panic("stubPlaybookService: UpdateChannelNameTemplate not implemented")
 }
+func (s *stubPlaybookService) UpdateChannelNameTemplateLocked(string, bool, string) error {
+	panic("stubPlaybookService: UpdateChannelNameTemplateLocked not implemented")
+}
 func (s *stubPlaybookService) UpdateChannelNameTemplateIfUnchanged(string, string, string) (bool, error) {
 	panic("stubPlaybookService: UpdateChannelNameTemplateIfUnchanged not implemented")
 }

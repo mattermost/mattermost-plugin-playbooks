@@ -1782,6 +1782,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			DefaultRunMemberRole:      app.RunRoleMember,
 			NextRunNumber:             1,
 			RetrospectiveEnabled:      true,
+			ChannelNameTemplateLocked: false,
 		},
 	}
 }
@@ -2261,6 +2262,51 @@ func TestUpdateChannelNameTemplateIfUnchanged(t *testing.T) {
 		updated, err := playbookStore.UpdateChannelNameTemplateIfUnchanged("nonexistent-id", "old", "new")
 		require.NoError(t, err)
 		require.False(t, updated)
+	})
+}
+
+func TestUpdateChannelNameTemplateLocked(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	t.Run("empty playbookID returns error", func(t *testing.T) {
+		err := playbookStore.UpdateChannelNameTemplateLocked("", true)
+		require.Error(t, err)
+	})
+
+	t.Run("defaults to false and can be toggled true and back to false", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Template Locked Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		pb.ChannelNameTemplate = "{Priority} - Channel"
+
+		pbID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.False(t, got.ChannelNameTemplateLocked)
+
+		err = playbookStore.UpdateChannelNameTemplateLocked(pbID, true)
+		require.NoError(t, err)
+
+		got, err = playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.True(t, got.ChannelNameTemplateLocked)
+
+		err = playbookStore.UpdateChannelNameTemplateLocked(pbID, false)
+		require.NoError(t, err)
+
+		got, err = playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.False(t, got.ChannelNameTemplateLocked)
+	})
+
+	t.Run("nonexistent playbook returns not-found error", func(t *testing.T) {
+		err := playbookStore.UpdateChannelNameTemplateLocked("nonexistent-id", true)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, app.ErrNotFound))
 	})
 }
 

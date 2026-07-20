@@ -4,28 +4,32 @@
 import React from 'react';
 import styled from 'styled-components';
 
-const Component = styled.label`
+const Component = styled.label<{disabled?: boolean}>`
     width: fit-content;
     padding: 10px 16px;
     border-radius: 4px;
     margin-bottom: 0;
-    cursor: pointer;
+    cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
     transition: background-color 0.2s;
     user-select: none;
     white-space: nowrap;
 
     &:hover {
-        background-color: rgba(var(--button-bg-rgb), 0.08);
+        background-color: ${({disabled}) => (disabled ? 'transparent' : 'rgba(var(--button-bg-rgb), 0.08)')};
     }
 
     input {
         display: none;
     }
 
+    input + span {
+        color: ${({disabled}) => (disabled ? 'rgba(var(--center-channel-color-rgb), 0.32)' : 'inherit')};
+    }
+
     input + span::before {
         width: 16px;
         height: 16px;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+        border: 1px solid rgba(var(--center-channel-color-rgb), ${({disabled}) => (disabled ? '0.12' : '0.24')});
         border-radius: 2px;
         margin-right: 10px;
         background-color: var(--center-channel-bg);
@@ -38,7 +42,7 @@ const Component = styled.label`
 
     input:checked + span::before {
         border: 1px solid transparent;
-        background-color: var(--button-bg);
+        background-color: ${({disabled}) => (disabled ? 'var(--button-bg-30)' : 'var(--button-bg)')};
         color: var(--button-color);
     }
 `;
@@ -61,6 +65,7 @@ const CheckboxInput = (props: Props) => {
         <Component
             data-testid={props.testId}
             className={props.className}
+            disabled={props.disabled}
         >
             <input
                 type='checkbox'

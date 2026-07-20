@@ -84,7 +84,21 @@ export const RunPlaybookModal = ({
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook, {isFetching: playbookLoading, error: playbookError}] = usePlaybook(selectedPlaybookId || '');
     const playbookAttributes = usePlaybookAttributes(selectedPlaybookId || '');
-    const [restPlaybook] = useRestPlaybook(selectedPlaybookId || '');
+
+    // useRestPlaybook's isFetching flips to false as soon as the fetch is fired, not once it
+    // resolves (see useThing), so it can't signal "still loading" here — restPlaybook itself
+    // stays undefined until the fetch (or a cache hit) actually settles, so that's the check to use.
+    //
+    // useThing also never resets its cached value back to undefined when selectedPlaybookId
+    // changes, and has no fetch cancellation — so a slow fetch for a previously-selected
+    // playbook can resolve after a newer one is already selected and clobber restPlaybook with
+    // the wrong playbook's data. Guard against that the same way `playbook` (the GraphQL side)
+    // is already guarded at the effect below (`playbook.id !== selectedPlaybookId`): only trust
+    // restPlaybook once its id actually matches the currently selected playbook, otherwise treat
+    // it the same as still loading.
+    const [restPlaybookRaw] = useRestPlaybook(selectedPlaybookId || '');
+    const restPlaybook = restPlaybookRaw?.id === selectedPlaybookId ? restPlaybookRaw : undefined;
+    const restPlaybookLoading = Boolean(selectedPlaybookId) && restPlaybook === undefined;
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
@@ -157,6 +171,8 @@ export const RunPlaybookModal = ({
 
     const isNewChannelOnly = Boolean(restPlaybook?.new_channel_only);
 
+    const hasTemplate = Boolean(playbook?.channel_name_template);
+
     const playbookInitializationKey = playbook ? JSON.stringify({
         id: playbook.id,
         channelNameTemplate: playbook.channel_name_template ?? '',
@@ -190,8 +206,9 @@ export const RunPlaybookModal = ({
         }
         initializedPlaybookIdRef.current = playbookInitializationKey;
 
-        // Pre-fill with the channel_name_template so the user can see the raw template.
-        // When a template is NOT set the input is required and starts empty.
+        // Pre-fill with the raw channel_name_template so the user can see it (or, when not
+        // locked, edit it). Submitting it unedited still resolves correctly — the backend
+        // resolves tokens in a user-supplied name the same way it resolves the template itself.
         setRunName(playbook.channel_name_template ?? '');
 
         setRunSummary(playbook.run_summary_template_enabled ? playbook.run_summary_template : '');
@@ -227,6 +244,8 @@ export const RunPlaybookModal = ({
     // we cannot validate required-field coverage until the attribute list arrives.
     const attributesLoading = playbookAttributes === undefined && templateFieldNames.size > 0;
 
+    const locked = hasTemplate && (restPlaybook?.channel_name_template_locked ?? false);
+
     const unmatchedTemplateNames = useMemo(() => {
         if (!playbook?.channel_name_template || templateFieldNames.size === 0) {
             return [];
@@ -238,16 +257,18 @@ export const RunPlaybookModal = ({
         return [...templateFieldNames].filter((n) => !loadedNames.has(n));
     }, [templateFieldNames, playbookAttributes, playbook?.channel_name_template]);
 
-    const hasTemplate = Boolean(playbook?.channel_name_template);
-
-    // Preview the resolved name (client-side approximation)
+    // Preview the resolved name (client-side approximation). Always sourced from the current
+    // run-name field content — not just the playbook's own template — so typing a recognized
+    // token (e.g. "Release {Version}") previews correctly whether that text came from the
+    // template or was typed freehand; the backend resolves tokens in a user-supplied name the
+    // same way.
+    const runNameHasToken = (/\{[^}]+\}/).test(runName);
     const namePreview = useMemo(() => {
-        const tpl = playbook?.channel_name_template;
-        if (!tpl) {
+        if (!runNameHasToken) {
             return '';
         }
         return buildTemplatePreview(
-            tpl,
+            runName,
             (playbookAttributes ?? []) as unknown as PropertyField[],
             propertyValues,
             {
@@ -260,18 +281,29 @@ export const RunPlaybookModal = ({
                 creatorFallback: formatMessage({defaultMessage: "Creator's name"}),
             },
         );
-    }, [playbook?.channel_name_template, playbook?.run_number_prefix, playbookAttributes, playbook?.next_run_number, propertyValues, effectiveUserMap, userId, currentUserId, formatMessage]);
+    }, [runName, runNameHasToken, playbook?.run_number_prefix, playbookAttributes, playbook?.next_run_number, propertyValues, effectiveUserMap, userId, currentUserId, formatMessage]);
 
     const createNewChannel = channelMode === 'create_new_channel' || isNewChannelOnly;
 
-    // Name is required unless the playbook has a name template.
-    // In template mode the resolved preview must also fit within the limit so the backend
-    // accepts it; the raw template string itself is not validated against the limit.
-    const templateNameValid = namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH;
-    const freeNameValid = runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
-    const nameValid = hasTemplate ? templateNameValid : freeNameValid;
+    // The value that will actually be used as the run/channel name: the live preview when the
+    // name contains a token (resolved, whether locked or not), otherwise the raw name itself
+    // when locked (a locked literal template's raw text IS the final value — nothing to
+    // substitute, so there's no separate preview to check against).
+    let effectiveResolvedName = '';
+    if (runNameHasToken) {
+        effectiveResolvedName = namePreview;
+    } else if (locked) {
+        effectiveResolvedName = runName;
+    }
 
-    const namePreviewTooLong = hasTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
+    // Name is required unless the template is locked (authoritative and will be used as-is).
+    // When locked, the resolved value must fit within the limit so the backend accepts it;
+    // the raw template string itself is not validated against the limit.
+    const templateNameValid = effectiveResolvedName === '' || [...effectiveResolvedName].length <= RUN_NAME_MAX_LENGTH;
+    const freeNameValid = runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
+    const nameValid = locked ? templateNameValid : freeNameValid;
+
+    const namePreviewTooLong = effectiveResolvedName !== '' && [...effectiveResolvedName].length > RUN_NAME_MAX_LENGTH;
 
     const requiredFieldsFilled = useMemo(() => templateFields.every((field) => {
         const val = propertyValues[field.id];
@@ -284,7 +316,7 @@ export const RunPlaybookModal = ({
         return true;
     }), [templateFields, propertyValues]);
 
-    const isFormValid = !attributesLoading && nameValid && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
+    const isFormValid = !attributesLoading && nameValid && !namePreviewTooLong && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
 
     const handleSetChannelMode = useCallback((mode: 'link_existing_channel' | 'create_new_channel') => {
         if (isNewChannelOnly && mode === 'link_existing_channel') {
@@ -316,7 +348,7 @@ export const RunPlaybookModal = ({
         channelMode,
         public: isNewChannel ? createPublicRun : undefined,
         hasPlaybookChanged: playbookId !== selectedPlaybookId,
-        hasNameChanged: playbook!.channel_name_template ? false : runName !== '',
+        hasNameChanged: runName !== (playbook!.channel_name_template ?? ''),
         hasSummaryChanged: runSummary !== (playbook!.run_summary_template_enabled ? playbook!.run_summary_template : ''),
         hasChannelModeChanged: channelMode !== playbook!.channel_mode,
         hasChannelIdChanged: channelId !== playbook!.channel_id,
@@ -394,7 +426,11 @@ export const RunPlaybookModal = ({
 
     // Start a run tab
     if (step === 'run-details') {
-        if (selectedPlaybookId && playbookLoading && !submitError) {
+        // Also wait on restPlaybookLoading: the run-name field's readOnly/required behavior
+        // depends on restPlaybook.channel_name_template_locked, which fails open (unlocked) while
+        // still loading — rendering the interactive form before it resolves would let a locked
+        // template briefly show as editable.
+        if (selectedPlaybookId && (playbookLoading || restPlaybookLoading) && !submitError) {
             return (
                 <StyledGenericModal
                     id={ID}
@@ -463,16 +499,18 @@ export const RunPlaybookModal = ({
                     <RunNameSection
                         runName={runName}
                         onSetRunName={setRunName}
-                        readOnly={hasTemplate}
+                        readOnly={locked}
                     />
-                    {hasTemplate && namePreview && (
+                    {runNameHasToken && namePreview && (
                         <NamePreview data-testid='run-name-preview'>
                             {formatMessage({defaultMessage: 'Preview: {preview}'}, {preview: namePreview})}
                         </NamePreview>
                     )}
                     {namePreviewTooLong && (
                         <ErrorMessage data-testid='run-name-preview-error'>
-                            {formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Edit the playbook template to use fewer or shorter fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
+                            {locked ?
+                                formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.'}, {maxLength: RUN_NAME_MAX_LENGTH}) :
+                                formatMessage({defaultMessage: 'The resolved run name exceeds the {maxLength}-character limit. Shorten the name or use fewer fields.'}, {maxLength: RUN_NAME_MAX_LENGTH})}
                         </ErrorMessage>
                     )}
                     {templateFields.length > 0 && (
@@ -572,8 +610,6 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
     let suffix = '';
     if (error) {
         suffix = ' ' + formatMessage({defaultMessage: '*'});
-    } else if (readOnly) {
-        suffix = ' ' + formatMessage({defaultMessage: '(optional)'});
     }
 
     const readOnlyExplanation = formatMessage({defaultMessage: 'The run name is set automatically from this playbook\'s channel name template and can\'t be edited here.'});
