@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -79,6 +80,12 @@ type ExportCondition struct {
 // Since ConditionExpression is an interface, we need custom unmarshaling to properly
 // deserialize condition_expr based on the version field.
 func (ec *ExportCondition) UnmarshalJSON(data []byte) error {
+	// Reject JSON null: unmarshaling null into &aux would set aux to nil and panic
+	// on the ConditionExpr access below (MM-69518).
+	if string(data) == "null" {
+		return errors.New("condition cannot be null")
+	}
+
 	type Alias ExportCondition
 	aux := &struct {
 		ConditionExpr json.RawMessage `json:"condition_expr"`
