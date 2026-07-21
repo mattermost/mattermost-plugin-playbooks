@@ -824,7 +824,7 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunChangeOwner(userID, vars["id"])) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, vars["id"])) {
 		return
 	}
 
