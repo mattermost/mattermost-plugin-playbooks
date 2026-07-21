@@ -266,6 +266,37 @@ func TestToolAddPlaybookTaskCreatesItemsAndDoesNotDuplicateInvite(t *testing.T) 
 	assert.Equal(t, "Verify remediation", items[0].(map[string]any)["title"])
 }
 
+func TestToolAddPlaybookTaskWithoutAssigneeLeavesInvitesUnchanged(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":                   playbookID,
+			"invited_user_ids":     []any{},
+			"invite_users_enabled": false,
+			"checklists": []any{
+				map[string]any{
+					"title": "Triage",
+					"items": []any{},
+				},
+			},
+		},
+	}
+
+	_, err := toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{
+		PlaybookID:      playbookID,
+		ChecklistNumber: 0,
+		Title:           "Verify remediation",
+	})
+	require.NoError(t, err)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, false, body["invite_users_enabled"])
+	assert.Equal(t, []any{}, body["invited_user_ids"])
+	items := requirePlaybookItems(t, body, 0)
+	require.Len(t, items, 1)
+	assert.NotContains(t, items[0].(map[string]any), "assignee_id")
+}
+
 func TestToolEditPlaybookTaskUpdatesProvidedFieldsOnly(t *testing.T) {
 	playbookID := "abcdefghijklmnopqrstuvwxyz"
 	assigneeID := "cdefghijklmnopqrstuvwxyzab"
@@ -427,6 +458,14 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 		playbook  map[string]any
 	}{
 		{
+			name: "add invalid playbook ID",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: "bad", ChecklistNumber: 0, Title: "New task"})
+			},
+			want:      "playbook_id must be a valid Mattermost ID",
+			wantNoPut: true,
+		},
+		{
 			name: "add blank title",
 			run: func(client *fakeAPIClient) (string, error) {
 				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, Title: "   "})
@@ -466,6 +505,24 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 				return toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: 0, AssigneeID: &assigneeID})
 			},
 			want:      "assignee_id must be a valid Mattermost ID",
+			wantNoPut: true,
+		},
+		{
+			name: "edit negative checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				title := "New task"
+				return toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: -1, ItemNumber: 0, Title: &title})
+			},
+			want:      "checklist_number must be a non-negative integer",
+			wantNoPut: true,
+		},
+		{
+			name: "edit negative item index",
+			run: func(client *fakeAPIClient) (string, error) {
+				title := "New task"
+				return toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: -1, Title: &title})
+			},
+			want:      "item_number must be a non-negative integer",
 			wantNoPut: true,
 		},
 		{
