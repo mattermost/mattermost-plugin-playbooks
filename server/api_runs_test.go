@@ -471,7 +471,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 
 		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "different_owner_private",
-			Name:        e.resourceName("different-owner-private"),
+			Name:        "different-owner-private",
 			Type:        model.ChannelTypePrivate,
 			TeamId:      e.BasicTeam.Id,
 		})
@@ -508,7 +508,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 
 		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "different_owner_public",
-			Name:        e.resourceName("different-owner-public"),
+			Name:        "different-owner-public",
 			Type:        model.ChannelTypeOpen,
 			TeamId:      e.BasicTeam.Id,
 		})
@@ -545,7 +545,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 
 		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "different_owner_checklist",
-			Name:        e.resourceName("different-owner-checklist"),
+			Name:        "different-owner-checklist",
 			Type:        model.ChannelTypeOpen,
 			TeamId:      e.BasicTeam.Id,
 		})
@@ -581,7 +581,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 
 		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "managed_owner_public",
-			Name:        e.resourceName("managed-owner-public"),
+			Name:        "managed-owner-public",
 			Type:        model.ChannelTypeOpen,
 			TeamId:      e.BasicTeam.Id,
 		})
