@@ -8,6 +8,9 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToolCreatePlaybookPostsPlaybook(t *testing.T) {
@@ -152,4 +155,276 @@ func TestToolCreatePlaybookSupportsWebhooks(t *testing.T) {
 	if body["webhook_on_creation_enabled"] != true || body["webhook_on_status_update_enabled"] != true {
 		t.Fatalf("expected webhook enablement defaults, got %#v", body)
 	}
+}
+
+func TestToolAddPlaybookTaskGetsAndPutsMutatedPlaybook(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	existingUserID := "bcdefghijklmnopqrstuvwxyza"
+	assigneeID := "cdefghijklmnopqrstuvwxyzab"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":                   playbookID,
+			"title":                "Incident Response",
+			"public":               false,
+			"custom_field":         "preserve me",
+			"invited_user_ids":     []any{existingUserID},
+			"invite_users_enabled": false,
+			"checklists": []any{
+				map[string]any{
+					"title":       "Triage",
+					"items_order": []any{"task-id-1"},
+					"items": []any{
+						map[string]any{
+							"id":                "task-id-1",
+							"title":             "Existing task",
+							"description":       "Keep this description",
+							"command":           "/keep",
+							"assignee_id":       existingUserID,
+							"due_date":          float64(5000),
+							"state":             "closed",
+							"custom_task_field": "preserve task field",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{
+		PlaybookID:      playbookID,
+		ChecklistNumber: 0,
+		Title:           "  Verify remediation  ",
+		Description:     "Confirm the incident is resolved.",
+		Command:         "/remediate",
+		AssigneeID:      assigneeID,
+		DueDate:         86400000,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "Incident Response", body["title"])
+	assert.Equal(t, false, body["public"])
+	assert.Equal(t, "preserve me", body["custom_field"])
+	assert.Equal(t, true, body["invite_users_enabled"])
+	invited := body["invited_user_ids"].([]any)
+	assert.Contains(t, invited, existingUserID)
+	assert.Contains(t, invited, assigneeID)
+
+	items := requirePlaybookItems(t, body, 0)
+	require.Len(t, items, 2)
+	existingTask := items[0].(map[string]any)
+	assert.Equal(t, "Existing task", existingTask["title"])
+	assert.Equal(t, "preserve task field", existingTask["custom_task_field"])
+	assert.Equal(t, "closed", existingTask["state"])
+
+	addedTask := items[1].(map[string]any)
+	assert.Equal(t, "Verify remediation", addedTask["title"])
+	assert.Equal(t, "Confirm the incident is resolved.", addedTask["description"])
+	assert.Equal(t, "/remediate", addedTask["command"])
+	assert.Equal(t, assigneeID, addedTask["assignee_id"])
+	assert.Equal(t, int64(86400000), addedTask["due_date"])
+}
+
+func TestToolEditPlaybookTaskUpdatesProvidedFieldsOnly(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	assigneeID := "cdefghijklmnopqrstuvwxyzab"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":                   playbookID,
+			"title":                "Incident Response",
+			"custom_field":         "preserve me",
+			"invited_user_ids":     []any{},
+			"invite_users_enabled": false,
+			"checklists": []any{
+				map[string]any{
+					"title": "Triage",
+					"items": []any{
+						map[string]any{
+							"id":           "task-id-1",
+							"title":        "Old title",
+							"description":  "Keep this description",
+							"command":      "/keep",
+							"due_date":     float64(5000),
+							"condition_id": "condition-id",
+						},
+					},
+				},
+			},
+		},
+	}
+	title := "  New title  "
+	dueDate := int64(0)
+
+	_, err := toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{
+		PlaybookID:      playbookID,
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+		Title:           &title,
+		AssigneeID:      &assigneeID,
+		DueDate:         &dueDate,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "preserve me", body["custom_field"])
+	assert.Equal(t, true, body["invite_users_enabled"])
+	assert.Contains(t, body["invited_user_ids"].([]any), assigneeID)
+
+	items := requirePlaybookItems(t, body, 0)
+	require.Len(t, items, 1)
+	task := items[0].(map[string]any)
+	assert.Equal(t, "New title", task["title"])
+	assert.Equal(t, assigneeID, task["assignee_id"])
+	assert.Equal(t, int64(0), task["due_date"])
+	assert.Equal(t, "Keep this description", task["description"])
+	assert.Equal(t, "/keep", task["command"])
+	assert.Equal(t, "condition-id", task["condition_id"])
+}
+
+func TestToolRemovePlaybookTaskGetsAndPutsMutatedPlaybook(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":           playbookID,
+			"title":        "Incident Response",
+			"custom_field": "preserve me",
+			"checklists": []any{
+				map[string]any{
+					"title": "Triage",
+					"items": []any{
+						map[string]any{"id": "task-id-1", "title": "Remove me"},
+						map[string]any{"id": "task-id-2", "title": "Keep me", "custom_task_field": "preserve task field"},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := toolRemovePlaybookTask(context.Background(), client, RemovePlaybookTaskArgs{
+		PlaybookID:      playbookID,
+		ChecklistNumber: 0,
+		ItemNumber:      0,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "preserve me", body["custom_field"])
+	items := requirePlaybookItems(t, body, 0)
+	require.Len(t, items, 1)
+	remainingTask := items[0].(map[string]any)
+	assert.Equal(t, "task-id-2", remainingTask["id"])
+	assert.Equal(t, "Keep me", remainingTask["title"])
+	assert.Equal(t, "preserve task field", remainingTask["custom_task_field"])
+}
+
+func TestToolPlaybookTaskValidationErrors(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	tests := []struct {
+		name      string
+		run       func(*fakeAPIClient) (string, error)
+		want      string
+		wantGet   bool
+		wantNoPut bool
+		playbook  map[string]any
+	}{
+		{
+			name: "add blank title",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, Title: "   "})
+			},
+			want:      "title is required",
+			wantNoPut: true,
+		},
+		{
+			name: "edit blank title",
+			run: func(client *fakeAPIClient) (string, error) {
+				blank := "   "
+				return toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: 0, Title: &blank})
+			},
+			want:      "title is required",
+			wantNoPut: true,
+		},
+		{
+			name: "remove negative item index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRemovePlaybookTask(context.Background(), client, RemovePlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: -1})
+			},
+			want:      "item_number must be a non-negative integer",
+			wantNoPut: true,
+		},
+		{
+			name: "add invalid checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 1, Title: "New task"})
+			},
+			want:      "checklist_number 1 is out of range",
+			wantGet:   true,
+			wantNoPut: true,
+			playbook:  playbookWithOneEmptyChecklist(playbookID),
+		},
+		{
+			name: "edit invalid item index",
+			run: func(client *fakeAPIClient) (string, error) {
+				title := "New task"
+				return toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: 0, Title: &title})
+			},
+			want:      "item_number 0 is out of range",
+			wantGet:   true,
+			wantNoPut: true,
+			playbook:  playbookWithOneEmptyChecklist(playbookID),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{playbook: tt.playbook}
+			_, err := tt.run(client)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+			if tt.wantGet {
+				assert.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+			} else {
+				assert.Empty(t, client.getEndpoint)
+			}
+			if tt.wantNoPut {
+				assert.Empty(t, client.putEndpoint)
+			}
+		})
+	}
+}
+
+func playbookWithOneEmptyChecklist(playbookID string) map[string]any {
+	return map[string]any{
+		"id": playbookID,
+		"checklists": []any{
+			map[string]any{
+				"title": "Triage",
+				"items": []any{},
+			},
+		},
+	}
+}
+
+func requirePlaybookPutBody(t *testing.T, client *fakeAPIClient) map[string]any {
+	t.Helper()
+	body, ok := client.putBody.(map[string]any)
+	require.Truef(t, ok, "unexpected put body type %T", client.putBody)
+	return body
+}
+
+func requirePlaybookItems(t *testing.T, playbook map[string]any, checklistNumber int) []any {
+	t.Helper()
+	checklists, ok := playbook["checklists"].([]any)
+	require.Truef(t, ok, "unexpected checklists type %T", playbook["checklists"])
+	require.Greater(t, len(checklists), checklistNumber)
+	checklist, ok := checklists[checklistNumber].(map[string]any)
+	require.Truef(t, ok, "unexpected checklist type %T", checklists[checklistNumber])
+	items, ok := checklist["items"].([]any)
+	require.Truef(t, ok, "unexpected items type %T", checklist["items"])
+	return items
 }

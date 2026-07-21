@@ -19,6 +19,7 @@ import (
 type fakeAPIClient struct {
 	run      playbookRunDetail
 	listRuns listRunsResponse
+	playbook map[string]any
 	// listPages, when set, returns a distinct listRunsResponse per page index
 	// so pagination can be exercised.
 	listPages []listRunsResponse
@@ -75,7 +76,11 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 		f.listParams = params
 		f.listCalls = append(f.listCalls, cloneValues(params))
 	case *map[string]any:
-		*v = map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Created playbook"}
+		if f.playbook != nil {
+			*v = cloneMapAny(f.playbook)
+		} else {
+			*v = map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Created playbook"}
+		}
 	default:
 		return fmt.Errorf("unexpected get result type %T", result)
 	}
@@ -132,6 +137,29 @@ func cloneValues(v url.Values) url.Values {
 		out[k] = append([]string(nil), vals...)
 	}
 	return out
+}
+
+func cloneMapAny(in map[string]any) map[string]any {
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		out[k] = cloneAny(v)
+	}
+	return out
+}
+
+func cloneAny(in any) any {
+	switch v := in.(type) {
+	case map[string]any:
+		return cloneMapAny(v)
+	case []any:
+		out := make([]any, len(v))
+		for i := range v {
+			out[i] = cloneAny(v[i])
+		}
+		return out
+	default:
+		return v
+	}
 }
 
 // fixtureRun builds a run with the given number of sections and items per
