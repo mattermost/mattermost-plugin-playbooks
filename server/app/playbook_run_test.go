@@ -1473,3 +1473,19 @@ func TestPlaybookRun_MarshalJSON_ItemsOrder(t *testing.T) {
 		require.NotContains(t, itemsOrder, "wrong_id")
 	})
 }
+
+func TestEnsureRunIsActive(t *testing.T) {
+	t.Run("in progress run is active", func(t *testing.T) {
+		require.NoError(t, EnsureRunIsActive(&PlaybookRun{CurrentStatus: StatusInProgress}))
+	})
+
+	t.Run("finished run is not active", func(t *testing.T) {
+		err := EnsureRunIsActive(&PlaybookRun{CurrentStatus: StatusFinished})
+		require.ErrorIs(t, err, ErrPlaybookRunNotActive)
+	})
+
+	t.Run("nil run is not found", func(t *testing.T) {
+		err := EnsureRunIsActive(nil)
+		require.ErrorIs(t, err, ErrNotFound)
+	})
+}
