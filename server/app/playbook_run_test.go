@@ -1489,4 +1489,3 @@ func TestEnsureRunIsActive(t *testing.T) {
 		require.ErrorIs(t, err, ErrNotFound)
 	})
 }
-

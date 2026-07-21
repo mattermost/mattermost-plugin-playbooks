@@ -182,7 +182,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 
 	if err := app.EnsureRunIsActive(playbookRun); err != nil {
-		return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+		return "", errors.Wrap(err, "cannot modify a finished run")
 	}
 
 	now := model.GetMillis()
@@ -273,7 +273,7 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 			return "", err
 		}
 		if err := app.EnsureRunIsActive(playbookRun); err != nil {
-			return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+			return "", errors.Wrap(err, "cannot modify a finished run")
 		}
 	}
 
@@ -309,7 +309,7 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 			return "", err
 		}
 		if err := app.EnsureRunIsActive(playbookRun); err != nil {
-			return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+			return "", errors.Wrap(err, "cannot modify a finished run")
 		}
 	}
 
@@ -349,7 +349,7 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 		return "", err
 	}
 	if err := app.EnsureRunIsActive(playbookRun); err != nil {
-		return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+		return "", errors.Wrap(err, "cannot modify a finished run")
 	}
 
 	if err := c.playbookRunService.ChangeOwner(args.RunID, requesterID, args.OwnerID); err != nil {
@@ -383,7 +383,7 @@ func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct 
 		return "", err
 	}
 	if err := app.EnsureRunIsActive(playbookRun); err != nil {
-		return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+		return "", errors.Wrap(err, "cannot modify a finished run")
 	}
 
 	if err := validateTaskActions(*args.TaskActions); err != nil {

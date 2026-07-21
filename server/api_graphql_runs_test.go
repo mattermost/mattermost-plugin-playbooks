@@ -1504,8 +1504,6 @@ func updateRun(c *client.Client, playbookRunID string, updates map[string]interf
 	return response, err
 }
 
-}
-
 func TestFinishedRunGraphQLWriteOperationsBlocked(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1610,4 +1608,3 @@ func UpdateRunTaskActions(c *client.Client, playbookRunID string, checklistNum f
 
 	return response, err
 }
-

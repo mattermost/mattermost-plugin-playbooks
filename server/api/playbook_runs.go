@@ -2056,4 +2056,3 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 
 	return &options, nil
 }
-}

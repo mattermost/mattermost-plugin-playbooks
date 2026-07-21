@@ -2657,9 +2657,9 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 
 	// Grant run_create at the team level before any run operations so the
 	// server's role cache is primed before the plugin checks permissions.
-	defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
-	defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
-	e.Permissions.AddPermissionToRole(t, model.PermissionRunCreate.Id, model.TeamUserRoleId)
+	defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+	defer e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+	e.Permissions.AddPermissionToRole(model.PermissionRunCreate.Id, model.TeamUserRoleId)
 
 	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 		Name:        "Cross-team run with team-level permission",
@@ -2715,7 +2715,7 @@ func TestFinishedRunWriteOperationsBlocked(t *testing.T) {
 
 		_, err = e.ServerClient.DoAPIRequestBytes(context.Background(), http.MethodPost,
 			e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+run.ID+"/owner",
-			string(body), "")
+			body, "")
 		require.Error(t, err)
 	})
 
@@ -2757,4 +2757,3 @@ func TestFinishedRunWriteOperationsBlocked(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
-
