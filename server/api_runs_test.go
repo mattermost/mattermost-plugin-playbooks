@@ -440,14 +440,14 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 	})
 
 	t.Run("does not add different owner to existing private channel when requester lacks manage-members", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
-		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
-		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePrivateChannelMembers.Id, model.TeamUserRoleId)
-		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
 
 		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "different_owner_private",
-			Name:        e.resourceName("different-owner-private"),
+			Name:        "different_owner_private",
 			Type:        model.ChannelTypePrivate,
 			TeamId:      e.BasicTeam.Id,
 		})
@@ -477,14 +477,14 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 	})
 
 	t.Run("does not add different owner to existing public channel when requester lacks manage-members", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
-		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
-		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
-		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
 
 		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "different_owner_public",
-			Name:        e.resourceName("different-owner-public"),
+			Name:        "different_owner_public",
 			Type:        model.ChannelTypeOpen,
 			TeamId:      e.BasicTeam.Id,
 		})
@@ -514,14 +514,14 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 	})
 
 	t.Run("does not add different owner to checklist run without playbook when requester lacks manage-members", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
-		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
-		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
-		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
 
 		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "different_owner_checklist",
-			Name:        e.resourceName("different-owner-checklist"),
+			Name:        "different_owner_checklist",
 			Type:        model.ChannelTypeOpen,
 			TeamId:      e.BasicTeam.Id,
 		})
@@ -550,14 +550,14 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 	})
 
 	t.Run("adds different owner to existing channel when requester can manage members", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
-		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
-		e.Permissions.AddPermissionToRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
-		e.Permissions.AddPermissionToRole(t, model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		e.Permissions.AddPermissionToRole(model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+		e.Permissions.AddPermissionToRole(model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
 
 		publicChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "managed_owner_public",
-			Name:        e.resourceName("managed-owner-public"),
+			Name:        "managed_owner_public",
 			Type:        model.ChannelTypeOpen,
 			TeamId:      e.BasicTeam.Id,
 		})
