@@ -20,9 +20,20 @@ Every tool that takes a `run_id`/`playbook_id` plus zero-based `checklist_number
 - **Fetch-first + actionable errors.** Fetch the object and bounds-check indexes
   before mutating. On an out-of-range index, return an error that **lists the actual
   checklists/items** so the model can self-correct — do not return a bare
-  `"index N is out of range"`. Reuse the `outOfRangeError` / `fetchRunForBounds` /
-  `checkChecklistIndex` / `checkItemIndex` helpers in `tools/checklist.go`. For
-  destructive tools, never delete before the bounds check passes.
+  `"index N is out of range"`. For **destructive** tools, never delete before the
+  bounds check passes.
+  - *Run-based tools* (`run_id`, endpoints under `runs/{id}/...`): reuse the
+    `fetchRunForBounds` / `checkChecklistIndex` / `checkItemIndex` / `outOfRangeError`
+    helpers in `tools/checklist.go`. These operate on `playbookRunDetail` and are
+    **run-only** — do not use them for `playbook_id` or template indexes.
+  - *Template tools* (`playbook_id`): there is no shared helper yet — the run helpers
+    don't apply because a template is fetched as a raw `map[string]any` (see the
+    GET → mutate → PUT section below), not a typed `playbookRunDetail`. Apply the same
+    pattern by hand: GET the playbook, read `checklists` (and each checklist's `items`)
+    from the map, validate `checklist_number` / `item_number` against their real
+    lengths, and on a miss return an error naming the `playbook_id` and listing the
+    available checklists/items. If you add more than one template tool, factor these
+    checks into template-specific helpers rather than reaching for the run ones.
 
 ## `due_date` is relative for templates, absolute for runs
 
