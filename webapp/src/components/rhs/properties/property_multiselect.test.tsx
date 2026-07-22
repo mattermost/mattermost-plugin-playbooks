@@ -26,7 +26,11 @@ const field: PropertyField = {
     target_id: '',
     target_type: 'run',
     object_type: 'run',
-    attrs: {visibility: 'always', sort_order: 0, options: null},
+    attrs: {
+        visibility: 'always',
+        sort_order: 0,
+        options: [{id: 'opt-1', name: 'Option 1'}],
+    },
     create_at: 0,
     update_at: 0,
     delete_at: 0,
@@ -35,6 +39,7 @@ const field: PropertyField = {
 } as unknown as PropertyField;
 
 const emptyValue: PropertyValue = {field_id: 'field-1', value: []} as unknown as PropertyValue;
+const populatedValue: PropertyValue = {field_id: 'field-1', value: ['opt-1']} as unknown as PropertyValue;
 
 const isEditing = (root: ReturnType<typeof create>['root']) =>
     root.findAllByProps({'data-testid': 'edit-mode'}).length > 0;
@@ -72,5 +77,34 @@ describe('MultiselectProperty readOnly guards', () => {
         );
         triggerClick(component.root);
         expect(isEditing(component.root)).toBe(true);
+    });
+
+    it('renders chips with an undefined onClick when readOnly', () => {
+        const component = create(
+            <MultiselectProperty
+                field={field}
+                value={populatedValue}
+                runID='run-1'
+                readOnly={true}
+                onValueChange={jest.fn()}
+            />,
+        );
+        const chips = component.root.findAllByProps({label: 'Option 1'});
+        expect(chips.length).toBeGreaterThan(0);
+        chips.forEach((chip) => expect(chip.props.onClick).toBeUndefined());
+    });
+
+    it('renders chips with a defined onClick when not readOnly', () => {
+        const component = create(
+            <MultiselectProperty
+                field={field}
+                value={populatedValue}
+                runID='run-1'
+                onValueChange={jest.fn()}
+            />,
+        );
+        const chips = component.root.findAllByProps({label: 'Option 1'});
+        expect(chips.length).toBeGreaterThan(0);
+        chips.forEach((chip) => expect(chip.props.onClick).toBeDefined());
     });
 });
