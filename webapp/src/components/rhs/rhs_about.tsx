@@ -142,8 +142,9 @@ const RHSAbout = (props: Props) => {
                                 <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
                                 <RHSParticipants
                                     userIds={props.playbookRun.participant_ids.filter((id) => id !== props.playbookRun.owner_user_id)}
-                                    onParticipate={shouldShowParticipate ? showParticipateConfirm : undefined}
+                                    onParticipate={!isFinished && shouldShowParticipate ? showParticipateConfirm : undefined}
                                     setShowParticipants={props.setShowParticipants}
+                                    canAddParticipants={!isFinished}
                                 />
                             </ParticipantsSection>
                         </Row>
