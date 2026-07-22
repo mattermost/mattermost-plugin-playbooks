@@ -157,6 +157,45 @@ func TestToolCreatePlaybookSupportsWebhooks(t *testing.T) {
 	}
 }
 
+func TestToolListPlaybooksUsesFiltersAndFormatsIDs(t *testing.T) {
+	client := &fakeAPIClient{
+		listPlaybooks: listPlaybooksResponse{
+			TotalCount: 1,
+			Items: []playbookSummary{
+				{ID: "abcdefghijklmnopqrstuvwxyz", Title: "Incident Response", TeamID: "bcdefghijklmnopqrstuvwxyza", Public: true},
+			},
+		},
+	}
+
+	result, err := toolListPlaybooks(context.Background(), client, ListPlaybooksArgs{
+		TeamID:     "bcdefghijklmnopqrstuvwxyza",
+		SearchTerm: "  Incident  ",
+		PerPage:    200,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks", client.getEndpoint)
+	assert.Equal(t, "bcdefghijklmnopqrstuvwxyza", client.getParams.Get("team_id"))
+	assert.Equal(t, "Incident", client.getParams.Get("search_term"))
+	assert.Equal(t, "100", client.getParams.Get("per_page"))
+	assert.Contains(t, result, "Incident Response")
+	assert.Contains(t, result, "playbook_id: abcdefghijklmnopqrstuvwxyz")
+}
+
+func TestToolGetPlaybookReturnsFetchedTemplate(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":    playbookID,
+			"title": "Incident Response",
+		},
+	}
+
+	result, err := toolGetPlaybook(context.Background(), client, GetPlaybookArgs{PlaybookID: playbookID})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	assert.Contains(t, result, `"title": "Incident Response"`)
+}
+
 func TestToolAddPlaybookTaskGetsAndPutsMutatedPlaybook(t *testing.T) {
 	playbookID := "abcdefghijklmnopqrstuvwxyz"
 	existingUserID := "bcdefghijklmnopqrstuvwxyza"
@@ -450,12 +489,13 @@ func TestToolRemovePlaybookTaskGetsAndPutsMutatedPlaybook(t *testing.T) {
 func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 	playbookID := "abcdefghijklmnopqrstuvwxyz"
 	tests := []struct {
-		name      string
-		run       func(*fakeAPIClient) (string, error)
-		want      string
-		wantGet   bool
-		wantNoPut bool
-		playbook  map[string]any
+		name        string
+		run         func(*fakeAPIClient) (string, error)
+		want        string
+		wantDetails []string
+		wantGet     bool
+		wantNoPut   bool
+		playbook    map[string]any
 	}{
 		{
 			name: "add invalid playbook ID",
@@ -538,10 +578,11 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			run: func(client *fakeAPIClient) (string, error) {
 				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 1, Title: "New task"})
 			},
-			want:      "checklist_number 1 is out of range",
-			wantGet:   true,
-			wantNoPut: true,
-			playbook:  playbookWithOneEmptyChecklist(playbookID),
+			want:        "checklist_number 1 is out of range",
+			wantDetails: []string{"Available tasks:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
 		},
 		{
 			name: "edit invalid item index",
@@ -549,30 +590,33 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 				title := "New task"
 				return toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: 0, Title: &title})
 			},
-			want:      "item_number 0 is out of range",
-			wantGet:   true,
-			wantNoPut: true,
-			playbook:  playbookWithOneEmptyChecklist(playbookID),
+			want:        "item_number 0 is out of range",
+			wantDetails: []string{"Available tasks:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
 		},
 		{
 			name: "remove invalid checklist index",
 			run: func(client *fakeAPIClient) (string, error) {
 				return toolRemovePlaybookTask(context.Background(), client, RemovePlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 1, ItemNumber: 0})
 			},
-			want:      "checklist_number 1 is out of range",
-			wantGet:   true,
-			wantNoPut: true,
-			playbook:  playbookWithOneEmptyChecklist(playbookID),
+			want:        "checklist_number 1 is out of range",
+			wantDetails: []string{"Available tasks:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
 		},
 		{
 			name: "remove invalid item index",
 			run: func(client *fakeAPIClient) (string, error) {
 				return toolRemovePlaybookTask(context.Background(), client, RemovePlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: 0})
 			},
-			want:      "item_number 0 is out of range",
-			wantGet:   true,
-			wantNoPut: true,
-			playbook:  playbookWithOneEmptyChecklist(playbookID),
+			want:        "item_number 0 is out of range",
+			wantDetails: []string{"Available tasks:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
 		},
 	}
 	for _, tt := range tests {
@@ -581,6 +625,9 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			_, err := tt.run(client)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.want)
+			for _, detail := range tt.wantDetails {
+				assert.Contains(t, err.Error(), detail)
+			}
 			if tt.wantGet {
 				assert.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
 			} else {
@@ -593,9 +640,48 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 	}
 }
 
+func TestPlaybookTaskOutOfRangeErrorsListAvailableTaskIndexes(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":    playbookID,
+			"title": "Incident Response",
+			"checklists": []any{
+				map[string]any{
+					"title": "Triage",
+					"items": []any{
+						map[string]any{"title": "Confirm customer impact"},
+					},
+				},
+				map[string]any{
+					"title": "Follow-up",
+					"items": []any{
+						map[string]any{"title": "Schedule retrospective"},
+					},
+				},
+			},
+		},
+	}
+	title := "Updated task"
+
+	_, err := toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{
+		PlaybookID:      playbookID,
+		ChecklistNumber: 0,
+		ItemNumber:      5,
+		Title:           &title,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "item_number 5 is out of range")
+	assert.Contains(t, err.Error(), "**Incident Response** (playbook_id: abcdefghijklmnopqrstuvwxyz)")
+	assert.Contains(t, err.Error(), "[0][0] Confirm customer impact")
+	assert.Contains(t, err.Error(), "[1][0] Schedule retrospective")
+	assert.Empty(t, client.putEndpoint)
+}
+
 func playbookWithOneEmptyChecklist(playbookID string) map[string]any {
 	return map[string]any{
-		"id": playbookID,
+		"id":    playbookID,
+		"title": "Incident Response",
 		"checklists": []any{
 			map[string]any{
 				"title": "Triage",

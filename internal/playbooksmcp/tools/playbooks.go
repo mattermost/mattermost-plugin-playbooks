@@ -63,6 +63,18 @@ type CreatePlaybookMetric struct {
 	Target      *int64 `json:"target,omitempty"`
 }
 
+type ListPlaybooksArgs struct {
+	TeamID       string `json:"team_id,omitempty" jsonschema:"Optional 26-character Mattermost team ID to filter playbook templates"`
+	SearchTerm   string `json:"search_term,omitempty" jsonschema:"Optional search text for playbook template title or team name"`
+	WithArchived bool   `json:"with_archived,omitempty" jsonschema:"Include archived playbook templates"`
+	Page         int    `json:"page,omitempty" jsonschema:"Page number (0-indexed)"`
+	PerPage      int    `json:"per_page,omitempty" jsonschema:"Number of results per page (max 100)"`
+}
+
+type GetPlaybookArgs struct {
+	PlaybookID string `json:"playbook_id" jsonschema:"The ID of the playbook template to retrieve"`
+}
+
 type AddPlaybookTaskArgs struct {
 	PlaybookID      string `json:"playbook_id" jsonschema:"The ID of the playbook template"`
 	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist to add the task to"`
@@ -70,7 +82,7 @@ type AddPlaybookTaskArgs struct {
 	Description     string `json:"description,omitempty" jsonschema:"Optional task description (supports Markdown)"`
 	Command         string `json:"command,omitempty" jsonschema:"Optional slash command to associate with the task"`
 	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"Optional Mattermost user ID to assign the task to"`
-	DueDate         int64  `json:"due_date,omitempty" jsonschema:"Optional relative due date as Unix timestamp in milliseconds"`
+	DueDate         int64  `json:"due_date,omitempty" jsonschema:"Optional relative offset from run start, in milliseconds (for example, 86400000 = 1 day)"`
 }
 
 type EditPlaybookTaskArgs struct {
@@ -81,7 +93,7 @@ type EditPlaybookTaskArgs struct {
 	Description     *string `json:"description,omitempty" jsonschema:"New task description (supports Markdown)"`
 	Command         *string `json:"command,omitempty" jsonschema:"Slash command to associate with the task"`
 	AssigneeID      *string `json:"assignee_id,omitempty" jsonschema:"Mattermost user ID to assign the task to; set empty string to clear"`
-	DueDate         *int64  `json:"due_date,omitempty" jsonschema:"Relative due date as Unix timestamp in milliseconds; use 0 to clear"`
+	DueDate         *int64  `json:"due_date,omitempty" jsonschema:"Relative offset from run start, in milliseconds (for example, 86400000 = 1 day); use 0 to clear"`
 }
 
 type RemovePlaybookTaskArgs struct {
@@ -95,11 +107,28 @@ type createPlaybookResult struct {
 	Playbook    any    `json:"playbook"`
 }
 
+type playbookSummary struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	TeamID   string `json:"team_id"`
+	Public   bool   `json:"public"`
+	DeleteAt int64  `json:"delete_at"`
+}
+
+type listPlaybooksResponse struct {
+	TotalCount int               `json:"total_count"`
+	PageCount  int               `json:"page_count"`
+	HasMore    bool              `json:"has_more"`
+	Items      []playbookSummary `json:"items"`
+}
+
 func (p *PlaybooksToolProvider) addMCPHelperPlaybookTools(server *mcphelper.Server) {
 	addMCPHelperTool(server, p.clientFactory, "create_playbook", "Create a Mattermost Playbook in a team with optional stages/checklists, tasks, members, invitations, default owner, broadcast settings, metrics, run channel options, and webhooks. Returns the created playbook and browser URL.", toolCreatePlaybook)
-	addMCPHelperTool(server, p.clientFactory, "add_playbook_task", "Add a task to an existing playbook template checklist. The checklist_number is a zero-based index. This fetches the playbook, preserves its existing fields, mutates only checklists, and saves the full playbook. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix\", \"assignee_id\": \"user123...\"}", toolAddPlaybookTask)
-	addMCPHelperTool(server, p.clientFactory, "edit_playbook_task", "Edit a task in an existing playbook template. Checklist and item numbers are zero-based indexes, and only provided task fields are updated. This preserves all other playbook and task fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task\"}", toolEditPlaybookTask)
-	addMCPHelperTool(server, p.clientFactory, "remove_playbook_task", "Remove a task from an existing playbook template. Checklist and item numbers are zero-based indexes. This fetches and saves the full playbook while mutating only checklists. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}", toolRemovePlaybookTask)
+	addMCPHelperTool(server, p.clientFactory, "list_playbooks", "List playbook templates with optional team and search filters. Use this first when you know a template title or team but do not yet know the playbook_id. Example: {\"team_id\": \"team123...\", \"search_term\": \"Incident\", \"per_page\": 10}", toolListPlaybooks)
+	addMCPHelperTool(server, p.clientFactory, "get_playbook", "Get full details for a playbook template, including checklists and task indexes. Use this to confirm the playbook_id and the zero-based checklist_number/item_number values before mutating tasks. Example: {\"playbook_id\": \"abc123...\"}", toolGetPlaybook)
+	addMCPHelperTool(server, p.clientFactory, "add_playbook_task", "Add a task to an existing playbook template checklist. The checklist_number is a zero-based index. If you do not already know the playbook_id and checklist_number, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist indexes. This fetches the playbook, preserves its existing fields, mutates only checklists, and saves the full playbook. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix\", \"assignee_id\": \"user123...\"}", toolAddPlaybookTask)
+	addMCPHelperTool(server, p.clientFactory, "edit_playbook_task", "Edit a task in an existing playbook template. Checklist and item numbers are zero-based indexes, and only provided task fields are updated. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This preserves all other playbook and task fields. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task\"}", toolEditPlaybookTask)
+	addMCPHelperTool(server, p.clientFactory, "remove_playbook_task", "Remove a task from an existing playbook template. Checklist and item numbers are zero-based indexes. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This fetches and saves the full playbook while mutating only checklists. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}", toolRemovePlaybookTask)
 }
 
 func toolCreatePlaybook(ctx context.Context, client APIClient, args CreatePlaybookArgs) (string, error) {
@@ -212,6 +241,59 @@ func toolCreatePlaybook(ctx context.Context, client APIClient, args CreatePlaybo
 	}
 
 	data, err := json.MarshalIndent(createPlaybookResult{PlaybookURL: client.GetPlaybookURL(created.ID), Playbook: playbook}, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func toolListPlaybooks(ctx context.Context, client APIClient, args ListPlaybooksArgs) (string, error) {
+	if args.Page < 0 {
+		return "", fmt.Errorf("page must be >= 0")
+	}
+	if args.TeamID != "" {
+		if err := validateID(args.TeamID, "team_id"); err != nil {
+			return "", err
+		}
+	}
+
+	perPage := args.PerPage
+	if perPage <= 0 {
+		perPage = 10
+	}
+	if perPage > 100 {
+		perPage = 100
+	}
+
+	params := url.Values{}
+	params.Set("page", fmt.Sprintf("%d", args.Page))
+	params.Set("per_page", fmt.Sprintf("%d", perPage))
+	if args.TeamID != "" {
+		params.Set("team_id", args.TeamID)
+	}
+	if search := strings.TrimSpace(args.SearchTerm); search != "" {
+		params.Set("search_term", search)
+	}
+	if args.WithArchived {
+		params.Set("with_archived", "true")
+	}
+
+	var resp listPlaybooksResponse
+	if err := client.Get(ctx, "playbooks", params, &resp); err != nil {
+		return "", fmt.Errorf("failed to list playbooks: %w", err)
+	}
+	return formatListPlaybooks(resp), nil
+}
+
+func toolGetPlaybook(ctx context.Context, client APIClient, args GetPlaybookArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+	playbook, err := fetchPlaybookForMutation(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	data, err := json.MarshalIndent(playbook, "", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -348,7 +430,7 @@ func toolRemovePlaybookTask(ctx context.Context, client APIClient, args RemovePl
 		return "", err
 	}
 	if args.ItemNumber >= len(items) {
-		return "", fmt.Errorf("item_number %d is out of range for playbook %s checklist_number %d", args.ItemNumber, args.PlaybookID, args.ChecklistNumber)
+		return "", playbookOutOfRangeError("item_number", args.ItemNumber, args.PlaybookID, playbook)
 	}
 	removedTitle := playbookTaskTitle(items[args.ItemNumber])
 	checklist["items"] = append(items[:args.ItemNumber], items[args.ItemNumber+1:]...)
@@ -380,17 +462,14 @@ func putMutatedPlaybook(ctx context.Context, client APIClient, playbookID string
 func playbookChecklist(playbook map[string]any, playbookID string, checklistNumber int) (map[string]any, error) {
 	rawChecklists, ok := playbook["checklists"]
 	if !ok || rawChecklists == nil {
-		if checklistNumber == 0 {
-			return nil, fmt.Errorf("checklist_number 0 is out of range for playbook %s", playbookID)
-		}
-		return nil, fmt.Errorf("checklist_number %d is out of range for playbook %s", checklistNumber, playbookID)
+		return nil, playbookOutOfRangeError("checklist_number", checklistNumber, playbookID, playbook)
 	}
 	checklists, ok := rawChecklists.([]any)
 	if !ok {
 		return nil, fmt.Errorf("playbook %s checklists have unexpected format", playbookID)
 	}
 	if checklistNumber >= len(checklists) {
-		return nil, fmt.Errorf("checklist_number %d is out of range for playbook %s", checklistNumber, playbookID)
+		return nil, playbookOutOfRangeError("checklist_number", checklistNumber, playbookID, playbook)
 	}
 	checklist, ok := checklists[checklistNumber].(map[string]any)
 	if !ok {
@@ -421,7 +500,7 @@ func playbookTaskItem(playbook map[string]any, playbookID string, checklistNumbe
 		return nil, err
 	}
 	if itemNumber >= len(items) {
-		return nil, fmt.Errorf("item_number %d is out of range for playbook %s checklist_number %d", itemNumber, playbookID, checklistNumber)
+		return nil, playbookOutOfRangeError("item_number", itemNumber, playbookID, playbook)
 	}
 	item, ok := items[itemNumber].(map[string]any)
 	if !ok {
@@ -435,11 +514,74 @@ func ensurePlaybookInvitesUser(playbook map[string]any, userID string) {
 	invited, found := normalizePlaybookInvitedUserIDs(rawInvited, userID)
 	if !found {
 		invited = append(invited, userID)
-		playbook["invited_user_ids"] = invited
-	} else {
-		playbook["invited_user_ids"] = invited
 	}
+	playbook["invited_user_ids"] = invited
 	playbook["invite_users_enabled"] = true
+}
+
+func formatListPlaybooks(resp listPlaybooksResponse) string {
+	if len(resp.Items) == 0 {
+		return "No playbook templates found."
+	}
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "Found %d playbook template(s) (total: %d):\n", len(resp.Items), resp.TotalCount)
+	for _, playbook := range resp.Items {
+		visibility := "private"
+		if playbook.Public {
+			visibility = "public"
+		}
+		archived := ""
+		if playbook.DeleteAt != 0 {
+			archived = " archived"
+		}
+		fmt.Fprintf(&sb, "- %s (playbook_id: %s, team_id: %s, %s%s)\n", playbook.Title, playbook.ID, playbook.TeamID, visibility, archived)
+	}
+	return strings.TrimRight(sb.String(), "\n")
+}
+
+func playbookOutOfRangeError(field string, value int, playbookID string, playbook map[string]any) error {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "%s %d is out of range for playbook %s. Available tasks:\n", field, value, playbookID)
+	writePlaybookChecklists(&sb, playbookID, playbook)
+	return fmt.Errorf("%s", sb.String())
+}
+
+func writePlaybookChecklists(sb *strings.Builder, playbookID string, playbook map[string]any) {
+	title, _ := playbook["title"].(string)
+	if strings.TrimSpace(title) == "" {
+		title = "Playbook"
+	}
+	fmt.Fprintf(sb, "**%s** (playbook_id: %s)\n", title, playbookID)
+
+	checklists, ok := playbook["checklists"].([]any)
+	if !ok || len(checklists) == 0 {
+		sb.WriteString("  (no checklists)\n")
+		return
+	}
+	for ci, rawChecklist := range checklists {
+		checklist, ok := rawChecklist.(map[string]any)
+		if !ok {
+			fmt.Fprintf(sb, "  [%d] (unexpected checklist format)\n", ci)
+			continue
+		}
+		checklistTitle, _ := checklist["title"].(string)
+		if strings.TrimSpace(checklistTitle) == "" {
+			checklistTitle = fmt.Sprintf("Checklist %d", ci)
+		}
+		fmt.Fprintf(sb, "  [%d] %s\n", ci, checklistTitle)
+		items, ok := checklist["items"].([]any)
+		if !ok || len(items) == 0 {
+			sb.WriteString("    (no tasks)\n")
+			continue
+		}
+		for ii, rawItem := range items {
+			itemTitle := playbookTaskTitle(rawItem)
+			if strings.TrimSpace(itemTitle) == "" {
+				itemTitle = "(untitled task)"
+			}
+			fmt.Fprintf(sb, "    [%d][%d] %s\n", ci, ii, itemTitle)
+		}
+	}
 }
 
 func normalizePlaybookInvitedUserIDs(raw any, userID string) ([]any, bool) {

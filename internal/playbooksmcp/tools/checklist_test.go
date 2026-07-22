@@ -17,9 +17,10 @@ import (
 )
 
 type fakeAPIClient struct {
-	run      playbookRunDetail
-	listRuns listRunsResponse
-	playbook map[string]any
+	run           playbookRunDetail
+	listRuns      listRunsResponse
+	playbook      map[string]any
+	listPlaybooks listPlaybooksResponse
 	// listPages, when set, returns a distinct listRunsResponse per page index
 	// so pagination can be exercised.
 	listPages []listRunsResponse
@@ -75,6 +76,8 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 		}
 		f.listParams = params
 		f.listCalls = append(f.listCalls, cloneValues(params))
+	case *listPlaybooksResponse:
+		*v = f.listPlaybooks
 	case *map[string]any:
 		if f.playbook != nil {
 			*v = cloneMapAny(f.playbook)
