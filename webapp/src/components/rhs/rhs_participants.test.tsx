@@ -5,6 +5,7 @@
 
 import React from 'react';
 import renderer from 'react-test-renderer';
+import {MemoryRouter} from 'react-router-dom';
 
 import RHSParticipants from './rhs_participants';
 
@@ -14,7 +15,10 @@ jest.mock('react-intl', () => {
     return {
         ...reactIntl,
         useIntl: () => intl,
-        FormattedMessage: ({defaultMessage}: {defaultMessage: string}) => defaultMessage,
+
+        // The formatjs babel plugin pre-compiles defaultMessage into an ICU AST, so
+        // defer to the real formatMessage implementation to resolve it to text.
+        FormattedMessage: (descriptor: {defaultMessage: string}) => <span>{intl.formatMessage(descriptor)}</span>,
     };
 });
 
@@ -49,5 +53,36 @@ describe('RHSParticipants', () => {
             />,
         );
         expect(component.root.findAllByProps({'data-testid': 'rhs-add-participant-icon'}).length).toBeGreaterThan(0);
+    });
+
+    it('hides the "Add participant" link and "Become a participant" icon on a finished run with no participants', () => {
+        // Mirrors how rhs_about.tsx wires RHSParticipants for a finished run:
+        // onParticipate is undefined and canAddParticipants is false.
+        const component = renderer.create(
+            <MemoryRouter>
+                <RHSParticipants
+                    userIds={[]}
+                    setShowParticipants={jest.fn()}
+                    canAddParticipants={false}
+                />
+            </MemoryRouter>,
+        );
+        expect(component.root.findAllByProps({'data-testid': 'rhs-participate-icon'})).toHaveLength(0);
+        const links = component.root.findAll((node) => node.type === 'a' && node.props.children?.[0] === 'Add participant');
+        expect(links).toHaveLength(0);
+    });
+
+    it('shows the "Add participant" link when canAddParticipants is true and there are no participants', () => {
+        const component = renderer.create(
+            <MemoryRouter>
+                <RHSParticipants
+                    userIds={[]}
+                    setShowParticipants={jest.fn()}
+                    canAddParticipants={true}
+                />
+            </MemoryRouter>,
+        );
+        const links = component.root.findAll((node) => node.type === 'a' && node.props.children?.[0] === 'Add participant');
+        expect(links.length).toBeGreaterThan(0);
     });
 });
