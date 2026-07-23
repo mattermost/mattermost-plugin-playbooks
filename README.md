@@ -6,6 +6,17 @@ Mattermost Playbooks allows your team to create and run playbooks from within Ma
 
 ![Mattermost Playbooks](assets/incident_response.png)
 
+## Version Support
+
+| Mattermost version | Playbooks version | Supported Until |
+|---|---|---|
+| master | v2.11.1 | always |
+| v11.10 | v2.11.1 | TBD |
+| v11.9 | v2.10.0 | 2026-10-15 |
+| v11.8 | v2.9.1 | 2026-09-15 |
+| v11.7 ESR | v2.9.2 | 2027-05-15 |
+| v10.11 ESR | v2.4.7 | 2026-08-15 |
+
 ## Development Builds
 In your `mattermost-server` configuration (`config/config.json`), set the following values:
 
