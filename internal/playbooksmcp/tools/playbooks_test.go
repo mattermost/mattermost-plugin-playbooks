@@ -514,7 +514,7 @@ func TestToolAddPlaybookSectionGetsAndPutsMutatedPlaybook(t *testing.T) {
 		},
 	}
 
-	_, err := toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
+	result, err := toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
 		PlaybookID:      playbookID,
 		ChecklistNumber: &insertAt,
 		Title:           "  Remediation  ",
@@ -529,6 +529,8 @@ func TestToolAddPlaybookSectionGetsAndPutsMutatedPlaybook(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+	assert.Contains(t, result, "Added section \"Remediation\"")
+	assert.Contains(t, result, "Assigned users were added to invited_user_ids")
 	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
 	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
 
@@ -575,6 +577,8 @@ func TestToolAddPlaybookSectionAppendsWhenIndexOmitted(t *testing.T) {
 		Title:      "New section",
 	})
 	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
 
 	body := requirePlaybookPutBody(t, client)
 	checklists := requirePlaybookChecklists(t, body)
@@ -687,16 +691,53 @@ func TestToolMovePlaybookSectionGetsAndPutsMutatedPlaybook(t *testing.T) {
 	assert.Equal(t, "First", items[0].(map[string]any)["title"])
 }
 
+func TestToolMovePlaybookSectionMovesEarlierSectionLater(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":           playbookID,
+			"custom_field": "preserve me",
+			"checklists": []any{
+				map[string]any{"title": "Triage", "custom_checklist_field": "preserve checklist field", "items": []any{map[string]any{"title": "First"}}},
+				map[string]any{"title": "Remediation", "items": []any{}},
+				map[string]any{"title": "Follow-up", "items": []any{}},
+			},
+		},
+	}
+
+	_, err := toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{
+		PlaybookID:         playbookID,
+		SourceChecklistIdx: 0,
+		DestChecklistIdx:   2,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "preserve me", body["custom_field"])
+	checklists := requirePlaybookChecklists(t, body)
+	require.Len(t, checklists, 3)
+	assert.Equal(t, "Remediation", checklists[0].(map[string]any)["title"])
+	assert.Equal(t, "Follow-up", checklists[1].(map[string]any)["title"])
+	assert.Equal(t, "Triage", checklists[2].(map[string]any)["title"])
+	assert.Equal(t, "preserve checklist field", checklists[2].(map[string]any)["custom_checklist_field"])
+	items := requirePlaybookItems(t, body, 2)
+	require.Len(t, items, 1)
+	assert.Equal(t, "First", items[0].(map[string]any)["title"])
+}
+
 func TestToolMovePlaybookSectionSameIndexDoesNotPut(t *testing.T) {
 	playbookID := "abcdefghijklmnopqrstuvwxyz"
 	client := &fakeAPIClient{playbook: playbookWithOneEmptyChecklist(playbookID)}
 
-	_, err := toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{
+	result, err := toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{
 		PlaybookID:         playbookID,
 		SourceChecklistIdx: 0,
 		DestChecklistIdx:   0,
 	})
 	require.NoError(t, err)
+	assert.Contains(t, result, "already at destination")
 	assert.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
 	assert.Empty(t, client.putEndpoint)
 }
@@ -895,11 +936,46 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			playbook:    playbookWithOneEmptyChecklist(playbookID),
 		},
 		{
+			name: "rename section invalid playbook ID",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{PlaybookID: "bad", ChecklistNumber: 0, Title: "Renamed"})
+			},
+			want:      "playbook_id must be a valid Mattermost ID",
+			wantNoPut: true,
+		},
+		{
+			name: "rename section negative checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: -1, Title: "Renamed"})
+			},
+			want:      "checklist_number must be a non-negative integer",
+			wantNoPut: true,
+		},
+		{
 			name: "rename section blank title",
 			run: func(client *fakeAPIClient) (string, error) {
 				return toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: 0, Title: "   "})
 			},
 			want:      "title is required",
+			wantNoPut: true,
+		},
+		{
+			name: "rename section out-of-range checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: 1, Title: "Renamed"})
+			},
+			want:        "checklist_number 1 is out of range",
+			wantDetails: []string{"Available sections:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
+		},
+		{
+			name: "remove section invalid playbook ID",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRemovePlaybookSection(context.Background(), client, RemovePlaybookSectionArgs{PlaybookID: "bad", ChecklistNumber: 0})
+			},
+			want:      "playbook_id must be a valid Mattermost ID",
 			wantNoPut: true,
 		},
 		{
@@ -920,6 +996,14 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			wantGet:     true,
 			wantNoPut:   true,
 			playbook:    playbookWithOneEmptyChecklist(playbookID),
+		},
+		{
+			name: "move section invalid playbook ID",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{PlaybookID: "bad", SourceChecklistIdx: 0, DestChecklistIdx: 0})
+			},
+			want:      "playbook_id must be a valid Mattermost ID",
+			wantNoPut: true,
 		},
 		{
 			name: "move section negative source index",

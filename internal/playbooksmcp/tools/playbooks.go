@@ -514,7 +514,11 @@ func toolAddPlaybookSection(ctx context.Context, client APIClient, args AddPlayb
 	if err := putMutatedPlaybook(ctx, client, args.PlaybookID, playbook); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Added section %q to playbook %s at checklist_number %d.", title, args.PlaybookID, insertAt), nil
+	message := fmt.Sprintf("Added section %q to playbook %s at checklist_number %d.", title, args.PlaybookID, insertAt)
+	if hasAssignedCreatePlaybookItems(args.Items) {
+		message += " Assigned users were added to invited_user_ids and invite_users_enabled was set."
+	}
+	return message, nil
 }
 
 func toolRenamePlaybookSection(ctx context.Context, client APIClient, args RenamePlaybookSectionArgs) (string, error) {
@@ -533,7 +537,7 @@ func toolRenamePlaybookSection(ctx context.Context, client APIClient, args Renam
 	if err != nil {
 		return "", err
 	}
-	checklist, err := playbookChecklist(playbook, args.PlaybookID, args.ChecklistNumber)
+	checklist, err := playbookSection(playbook, args.PlaybookID, args.ChecklistNumber)
 	if err != nil {
 		return "", err
 	}
@@ -802,6 +806,21 @@ func playbookChecklists(playbook map[string]any, playbookID string) ([]any, erro
 	return checklists, nil
 }
 
+func playbookSection(playbook map[string]any, playbookID string, checklistNumber int) (map[string]any, error) {
+	checklists, err := playbookChecklists(playbook, playbookID)
+	if err != nil {
+		return nil, err
+	}
+	if checklistNumber >= len(checklists) {
+		return nil, playbookSectionOutOfRangeError("checklist_number", checklistNumber, playbookID, playbook)
+	}
+	checklist, ok := checklists[checklistNumber].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("playbook %s checklist_number %d has unexpected format", playbookID, checklistNumber)
+	}
+	return checklist, nil
+}
+
 func playbookSectionOutOfRangeError(field string, value int, playbookID string, playbook map[string]any) error {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "%s %d is out of range for playbook %s. Available sections:\n", field, value, playbookID)
@@ -836,6 +855,15 @@ func buildCreatePlaybookItems(items []CreatePlaybookItem, playbook map[string]an
 		out = append(out, m)
 	}
 	return out
+}
+
+func hasAssignedCreatePlaybookItems(items []CreatePlaybookItem) bool {
+	for _, item := range items {
+		if item.AssigneeID != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func validateCreatePlaybookItems(items []CreatePlaybookItem, field string) error {
