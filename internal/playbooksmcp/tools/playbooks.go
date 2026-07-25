@@ -102,6 +102,30 @@ type RemovePlaybookTaskArgs struct {
 	ItemNumber      int    `json:"item_number" jsonschema:"The zero-based index of the task to remove"`
 }
 
+type AddPlaybookSectionArgs struct {
+	PlaybookID      string               `json:"playbook_id" jsonschema:"The ID of the playbook template"`
+	ChecklistNumber *int                 `json:"checklist_number,omitempty" jsonschema:"Optional zero-based insertion index for the new section. Omit to append at the end."`
+	Title           string               `json:"title" jsonschema:"Title of the new section"`
+	Items           []CreatePlaybookItem `json:"items,omitempty" jsonschema:"Optional initial tasks using the same shape as create_playbook checklist items"`
+}
+
+type RenamePlaybookSectionArgs struct {
+	PlaybookID      string `json:"playbook_id" jsonschema:"The ID of the playbook template"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the section to rename"`
+	Title           string `json:"title" jsonschema:"New title for the section"`
+}
+
+type RemovePlaybookSectionArgs struct {
+	PlaybookID      string `json:"playbook_id" jsonschema:"The ID of the playbook template"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the section to remove"`
+}
+
+type MovePlaybookSectionArgs struct {
+	PlaybookID         string `json:"playbook_id" jsonschema:"The ID of the playbook template"`
+	SourceChecklistIdx int    `json:"source_checklist_idx" jsonschema:"The zero-based source section index"`
+	DestChecklistIdx   int    `json:"dest_checklist_idx" jsonschema:"The zero-based destination section index"`
+}
+
 type createPlaybookResult struct {
 	PlaybookURL string `json:"playbook_url"`
 	Playbook    any    `json:"playbook"`
@@ -129,6 +153,10 @@ func (p *PlaybooksToolProvider) addMCPHelperPlaybookTools(server *mcphelper.Serv
 	addMCPHelperTool(server, p.clientFactory, "add_playbook_task", "Add a task to an existing playbook template checklist. The checklist_number is a zero-based index. If you do not already know the playbook_id and checklist_number, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist indexes. This fetches the playbook, preserves its existing fields, mutates only checklists, and saves the full playbook. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix\", \"assignee_id\": \"user123...\"}", toolAddPlaybookTask)
 	addMCPHelperTool(server, p.clientFactory, "edit_playbook_task", "Edit a task in an existing playbook template. Checklist and item numbers are zero-based indexes, and only provided task fields are updated. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This preserves all other playbook and task fields. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task\"}", toolEditPlaybookTask)
 	addMCPHelperTool(server, p.clientFactory, "remove_playbook_task", "Remove a task from an existing playbook template. Checklist and item numbers are zero-based indexes. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This fetches and saves the full playbook while mutating only checklists. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}", toolRemovePlaybookTask)
+	addMCPHelperTool(server, p.clientFactory, "add_playbook_section", "Add a new section/checklist to an existing playbook template. The optional checklist_number is a zero-based insertion index; omit it to append. If you do not already know the playbook_id or section indexes, call list_playbooks, then get_playbook first. Initial items use the same shape as create_playbook checklist items, and assignees are invited automatically. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 1, \"title\": \"Post-incident review\", \"items\": [{\"title\": \"Schedule retrospective\"}]}", toolAddPlaybookSection)
+	addMCPHelperTool(server, p.clientFactory, "rename_playbook_section", "Rename an existing section/checklist in a playbook template. The checklist_number is a zero-based index. If you do not already know the playbook_id and checklist_number, call list_playbooks, then get_playbook first. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Updated section name\"}", toolRenamePlaybookSection)
+	addMCPHelperTool(server, p.clientFactory, "remove_playbook_section", "Remove an entire section/checklist and all its tasks from a playbook template. The checklist_number is a zero-based index; confirm it with get_playbook before using this destructive tool. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 1}", toolRemovePlaybookSection)
+	addMCPHelperTool(server, p.clientFactory, "move_playbook_section", "Move a section/checklist within a playbook template. Source and destination indexes are zero-based existing section indexes (0 = first, section count-1 = last). If you do not already know the playbook_id and indexes, call list_playbooks, then get_playbook first. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}", toolMovePlaybookSection)
 }
 
 func toolCreatePlaybook(ctx context.Context, client APIClient, args CreatePlaybookArgs) (string, error) {
@@ -441,6 +469,153 @@ func toolRemovePlaybookTask(ctx context.Context, client APIClient, args RemovePl
 	return fmt.Sprintf("Removed task [%d][%d] (%q) from playbook %s.", args.ChecklistNumber, args.ItemNumber, removedTitle, args.PlaybookID), nil
 }
 
+func toolAddPlaybookSection(ctx context.Context, client APIClient, args AddPlaybookSectionArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+	if args.ChecklistNumber != nil {
+		if err := validateIndex(*args.ChecklistNumber, "checklist_number"); err != nil {
+			return "", err
+		}
+	}
+	title := strings.TrimSpace(args.Title)
+	if title == "" {
+		return "", fmt.Errorf("title is required")
+	}
+	if err := validateCreatePlaybookItems(args.Items, "items"); err != nil {
+		return "", err
+	}
+
+	playbook, err := fetchPlaybookForMutation(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	checklists, err := playbookChecklists(playbook, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	insertAt := len(checklists)
+	if args.ChecklistNumber != nil {
+		insertAt = *args.ChecklistNumber
+	}
+	if insertAt > len(checklists) {
+		return "", playbookSectionOutOfRangeError("checklist_number", insertAt, args.PlaybookID, playbook)
+	}
+
+	section := map[string]any{
+		"title": title,
+		"items": buildCreatePlaybookItems(args.Items, playbook),
+	}
+	checklists = append(checklists, nil)
+	copy(checklists[insertAt+1:], checklists[insertAt:])
+	checklists[insertAt] = section
+	playbook["checklists"] = checklists
+
+	if err := putMutatedPlaybook(ctx, client, args.PlaybookID, playbook); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Added section %q to playbook %s at checklist_number %d.", title, args.PlaybookID, insertAt), nil
+}
+
+func toolRenamePlaybookSection(ctx context.Context, client APIClient, args RenamePlaybookSectionArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.ChecklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
+	title := strings.TrimSpace(args.Title)
+	if title == "" {
+		return "", fmt.Errorf("title is required")
+	}
+
+	playbook, err := fetchPlaybookForMutation(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	checklist, err := playbookChecklist(playbook, args.PlaybookID, args.ChecklistNumber)
+	if err != nil {
+		return "", err
+	}
+	checklist["title"] = title
+
+	if err := putMutatedPlaybook(ctx, client, args.PlaybookID, playbook); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Renamed section %d in playbook %s to %q.", args.ChecklistNumber, args.PlaybookID, title), nil
+}
+
+func toolRemovePlaybookSection(ctx context.Context, client APIClient, args RemovePlaybookSectionArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.ChecklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
+
+	playbook, err := fetchPlaybookForMutation(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	checklists, err := playbookChecklists(playbook, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	if args.ChecklistNumber >= len(checklists) {
+		return "", playbookSectionOutOfRangeError("checklist_number", args.ChecklistNumber, args.PlaybookID, playbook)
+	}
+	removedTitle := playbookChecklistTitle(checklists[args.ChecklistNumber])
+	checklists = append(checklists[:args.ChecklistNumber], checklists[args.ChecklistNumber+1:]...)
+	playbook["checklists"] = checklists
+
+	if err := putMutatedPlaybook(ctx, client, args.PlaybookID, playbook); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Removed section %d (%q) from playbook %s.", args.ChecklistNumber, removedTitle, args.PlaybookID), nil
+}
+
+func toolMovePlaybookSection(ctx context.Context, client APIClient, args MovePlaybookSectionArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.SourceChecklistIdx, "source_checklist_idx"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.DestChecklistIdx, "dest_checklist_idx"); err != nil {
+		return "", err
+	}
+
+	playbook, err := fetchPlaybookForMutation(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	checklists, err := playbookChecklists(playbook, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	if args.SourceChecklistIdx >= len(checklists) {
+		return "", playbookSectionOutOfRangeError("source_checklist_idx", args.SourceChecklistIdx, args.PlaybookID, playbook)
+	}
+	if args.DestChecklistIdx >= len(checklists) {
+		return "", playbookSectionOutOfRangeError("dest_checklist_idx", args.DestChecklistIdx, args.PlaybookID, playbook)
+	}
+	if args.SourceChecklistIdx == args.DestChecklistIdx {
+		return fmt.Sprintf("Section %d is already at destination %d in playbook %s.", args.SourceChecklistIdx, args.DestChecklistIdx, args.PlaybookID), nil
+	}
+
+	section := checklists[args.SourceChecklistIdx]
+	checklists = append(checklists[:args.SourceChecklistIdx], checklists[args.SourceChecklistIdx+1:]...)
+	checklists = append(checklists, nil)
+	copy(checklists[args.DestChecklistIdx+1:], checklists[args.DestChecklistIdx:])
+	checklists[args.DestChecklistIdx] = section
+	playbook["checklists"] = checklists
+
+	if err := putMutatedPlaybook(ctx, client, args.PlaybookID, playbook); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Moved section %d to %d in playbook %s.", args.SourceChecklistIdx, args.DestChecklistIdx, args.PlaybookID), nil
+}
+
 func fetchPlaybookForMutation(ctx context.Context, client APIClient, playbookID string) (map[string]any, error) {
 	var playbook map[string]any
 	if err := client.Get(ctx, fmt.Sprintf("playbooks/%s", playbookID), nil, &playbook); err != nil {
@@ -615,6 +790,68 @@ func playbookTaskTitle(raw any) string {
 	return title
 }
 
+func playbookChecklists(playbook map[string]any, playbookID string) ([]any, error) {
+	rawChecklists, ok := playbook["checklists"]
+	if !ok || rawChecklists == nil {
+		return []any{}, nil
+	}
+	checklists, ok := rawChecklists.([]any)
+	if !ok {
+		return nil, fmt.Errorf("playbook %s checklists have unexpected format", playbookID)
+	}
+	return checklists, nil
+}
+
+func playbookSectionOutOfRangeError(field string, value int, playbookID string, playbook map[string]any) error {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "%s %d is out of range for playbook %s. Available sections:\n", field, value, playbookID)
+	writePlaybookChecklists(&sb, playbookID, playbook)
+	return fmt.Errorf("%s", sb.String())
+}
+
+func playbookChecklistTitle(raw any) string {
+	checklist, ok := raw.(map[string]any)
+	if !ok {
+		return ""
+	}
+	title, _ := checklist["title"].(string)
+	return title
+}
+
+func buildCreatePlaybookItems(items []CreatePlaybookItem, playbook map[string]any) []any {
+	out := make([]any, 0, len(items))
+	for _, item := range items {
+		m := map[string]any{
+			"title":       strings.TrimSpace(item.Title),
+			"description": item.Description,
+			"command":     item.Command,
+		}
+		if item.AssigneeID != "" {
+			m["assignee_id"] = item.AssigneeID
+			ensurePlaybookInvitesUser(playbook, item.AssigneeID)
+		}
+		if item.DueDate != 0 {
+			m["due_date"] = item.DueDate
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
+func validateCreatePlaybookItems(items []CreatePlaybookItem, field string) error {
+	for i, item := range items {
+		if strings.TrimSpace(item.Title) == "" {
+			return fmt.Errorf("%s[%d].title is required", field, i)
+		}
+		if item.AssigneeID != "" {
+			if err := validateID(item.AssigneeID, fmt.Sprintf("%s[%d].assignee_id", field, i)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func validateCreatePlaybookArgs(args CreatePlaybookArgs) error {
 	if args.ReminderTimerDefaultSeconds < 0 {
 		return fmt.Errorf("reminder_timer_default_seconds must be non-negative")
@@ -648,15 +885,8 @@ func validateCreatePlaybookArgs(args CreatePlaybookArgs) error {
 		if strings.TrimSpace(c.Title) == "" {
 			return fmt.Errorf("checklists[%d].title is required", i)
 		}
-		for j, item := range c.Items {
-			if strings.TrimSpace(item.Title) == "" {
-				return fmt.Errorf("checklists[%d].items[%d].title is required", i, j)
-			}
-			if item.AssigneeID != "" {
-				if err := validateID(item.AssigneeID, fmt.Sprintf("checklists[%d].items[%d].assignee_id", i, j)); err != nil {
-					return err
-				}
-			}
+		if err := validateCreatePlaybookItems(c.Items, fmt.Sprintf("checklists[%d].items", i)); err != nil {
+			return err
 		}
 	}
 	if err := validateMetrics(args.Metrics); err != nil {
