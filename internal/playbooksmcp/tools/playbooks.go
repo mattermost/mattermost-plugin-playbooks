@@ -506,9 +506,7 @@ func toolAddPlaybookSection(ctx context.Context, client APIClient, args AddPlayb
 		"title": title,
 		"items": buildCreatePlaybookItems(args.Items, playbook),
 	}
-	checklists = append(checklists, nil)
-	copy(checklists[insertAt+1:], checklists[insertAt:])
-	checklists[insertAt] = section
+	checklists = insertChecklistAt(checklists, insertAt, section)
 	playbook["checklists"] = checklists
 
 	if err := putMutatedPlaybook(ctx, client, args.PlaybookID, playbook); err != nil {
@@ -609,9 +607,7 @@ func toolMovePlaybookSection(ctx context.Context, client APIClient, args MovePla
 
 	section := checklists[args.SourceChecklistIdx]
 	checklists = append(checklists[:args.SourceChecklistIdx], checklists[args.SourceChecklistIdx+1:]...)
-	checklists = append(checklists, nil)
-	copy(checklists[args.DestChecklistIdx+1:], checklists[args.DestChecklistIdx:])
-	checklists[args.DestChecklistIdx] = section
+	checklists = insertChecklistAt(checklists, args.DestChecklistIdx, section)
 	playbook["checklists"] = checklists
 
 	if err := putMutatedPlaybook(ctx, client, args.PlaybookID, playbook); err != nil {
@@ -804,6 +800,13 @@ func playbookChecklists(playbook map[string]any, playbookID string) ([]any, erro
 		return nil, fmt.Errorf("playbook %s checklists have unexpected format", playbookID)
 	}
 	return checklists, nil
+}
+
+func insertChecklistAt(checklists []any, idx int, val any) []any {
+	checklists = append(checklists, nil)
+	copy(checklists[idx+1:], checklists[idx:])
+	checklists[idx] = val
+	return checklists
 }
 
 func playbookSection(playbook map[string]any, playbookID string, checklistNumber int) (map[string]any, error) {
