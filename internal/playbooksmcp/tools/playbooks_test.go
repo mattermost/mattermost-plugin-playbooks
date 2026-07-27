@@ -1103,6 +1103,43 @@ func TestPlaybookTaskOutOfRangeErrorsListAvailableTaskIndexes(t *testing.T) {
 	assert.Empty(t, client.putEndpoint)
 }
 
+func TestToolPlaybookSectionUnexpectedFormatErrorsDescribeExpectedShape(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+
+	t.Run("checklists not an array", func(t *testing.T) {
+		client := &fakeAPIClient{
+			playbook: map[string]any{
+				"id":         playbookID,
+				"checklists": "not-an-array",
+			},
+		}
+		_, err := toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
+			PlaybookID: playbookID,
+			Title:      "New section",
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "expected a JSON array of sections, got string")
+		assert.Empty(t, client.putEndpoint)
+	})
+
+	t.Run("section not an object", func(t *testing.T) {
+		client := &fakeAPIClient{
+			playbook: map[string]any{
+				"id":         playbookID,
+				"checklists": []any{"not-an-object"},
+			},
+		}
+		_, err := toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{
+			PlaybookID:      playbookID,
+			ChecklistNumber: 0,
+			Title:           "Renamed",
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "expected a JSON object, got string")
+		assert.Empty(t, client.putEndpoint)
+	})
+}
+
 func playbookWithOneEmptyChecklist(playbookID string) map[string]any {
 	return map[string]any{
 		"id":    playbookID,

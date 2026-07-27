@@ -797,7 +797,7 @@ func playbookChecklists(playbook map[string]any, playbookID string) ([]any, erro
 	}
 	checklists, ok := rawChecklists.([]any)
 	if !ok {
-		return nil, fmt.Errorf("playbook %s checklists have unexpected format", playbookID)
+		return nil, fmt.Errorf("playbook %s checklists have unexpected format: expected a JSON array of sections, got %T", playbookID, rawChecklists)
 	}
 	return checklists, nil
 }
@@ -819,7 +819,7 @@ func playbookSection(playbook map[string]any, playbookID string, checklistNumber
 	}
 	checklist, ok := checklists[checklistNumber].(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("playbook %s checklist_number %d has unexpected format", playbookID, checklistNumber)
+		return nil, fmt.Errorf("playbook %s checklist_number %d has unexpected format: expected a JSON object, got %T", playbookID, checklistNumber, checklists[checklistNumber])
 	}
 	return checklist, nil
 }
