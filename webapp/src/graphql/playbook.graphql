@@ -66,6 +66,11 @@ query Playbook($id: String!) {
 						payload
 					}
 				}
+				requirements {
+					id
+					label
+					value
+				}
 			}
         	}
 		members {

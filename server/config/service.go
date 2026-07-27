@@ -199,6 +199,9 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 		if oldConfig.EnableExperimentalFeatures != configuration.EnableExperimentalFeatures {
 			settingsPayload["enable_experimental_features"] = configuration.EnableExperimentalFeatures
 		}
+		if oldConfig.BetaFeatures.TaskRequirements != configuration.BetaFeatures.TaskRequirements {
+			settingsPayload["enable_task_requirements"] = configuration.BetaFeatures.TaskRequirements
+		}
 	}
 
 	if c.websocketPublisher != nil && len(settingsPayload) > 0 {
@@ -296,4 +299,9 @@ func (c *ServiceImpl) IsIncrementalUpdatesEnabled() bool {
 // IsExperimentalFeaturesEnabled returns true when experimental features are enabled.
 func (c *ServiceImpl) IsExperimentalFeaturesEnabled() bool {
 	return c.GetConfiguration().EnableExperimentalFeatures
+}
+
+// IsTaskRequirementsEnabled returns true when the task requirements beta feature is enabled.
+func (c *ServiceImpl) IsTaskRequirementsEnabled() bool {
+	return c.GetConfiguration().BetaFeatures.TaskRequirements
 }

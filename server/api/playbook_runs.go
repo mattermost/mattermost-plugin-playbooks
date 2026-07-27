@@ -1464,7 +1464,8 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		NewState string `json:"new_state"`
+		NewState          string            `json:"new_state"`
+		RequirementValues map[string]string `json:"requirement_values"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
@@ -1476,7 +1477,12 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 		return
 	}
 
-	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
+	var opts []app.ModifyCheckedStateOptions
+	if params.RequirementValues != nil {
+		opts = append(opts, app.ModifyCheckedStateOptions{RequirementValues: params.RequirementValues})
+	}
+
+	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, opts...); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

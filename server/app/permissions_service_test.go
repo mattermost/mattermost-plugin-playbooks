@@ -457,7 +457,7 @@ func (s *stubRunService) IsOwner(string, string) bool {
 func (s *stubRunService) ChangeOwner(string, string, string) error {
 	panic("stubRunService: ChangeOwner not implemented")
 }
-func (s *stubRunService) ModifyCheckedState(string, string, string, int, int) error {
+func (s *stubRunService) ModifyCheckedState(string, string, string, int, int, ...ModifyCheckedStateOptions) error {
 	panic("stubRunService: ModifyCheckedState not implemented")
 }
 func (s *stubRunService) ToggleCheckedState(string, string, int, int) error {

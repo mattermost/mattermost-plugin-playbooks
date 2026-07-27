@@ -60,6 +60,8 @@ export interface Props {
     availableConditions?: Condition[];
     propertyFields?: PropertyField[];
     isChannelChecklist?: boolean;
+    onAddRequirement?: () => void;
+    hasRequirements?: boolean;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -140,6 +142,15 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     >
                         <DropdownIcon className='icon-source-branch icon-16'/>
                         {formatMessage({defaultMessage: 'Add condition'})}
+                    </StyledDropdownMenuItem>
+                }
+                {props.playbookRunId === undefined && props.onAddRequirement &&
+                    <StyledDropdownMenuItem
+                        data-testid='task-menu-add-requirement'
+                        onClick={() => props.onAddRequirement?.()}
+                    >
+                        <DropdownIcon className='icon-check-circle-outline icon-16'/>
+                        {props.hasRequirements ? formatMessage({defaultMessage: 'Edit requirements'}) : formatMessage({defaultMessage: 'Add a requirement'})}
                     </StyledDropdownMenuItem>
                 }
                 {props.playbookRunId === undefined && props.hasCondition && props.onRemoveFromCondition &&

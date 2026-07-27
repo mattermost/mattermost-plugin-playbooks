@@ -33,6 +33,7 @@ import {
     ChecklistItemState,
     ChecklistItem as ChecklistItemType,
     TaskAction as TaskActionType,
+    TaskRequirement,
     isRoleBasedAssigneeType,
 } from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
@@ -47,6 +48,8 @@ import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from 'src/components/datetime_input';
 
 import AssigneeDropdown from 'src/components/checklists/assignee_dropdown';
+import {useAppSelector} from 'src/hooks/redux';
+import {selectTaskRequirementsEnabled} from 'src/selectors';
 
 import ChecklistItemHoverMenu, {HoverMenu} from './hover_menu';
 import ChecklistItemDescription from './description';
@@ -59,6 +62,9 @@ import ConditionIndicator from './condition_indicator';
 
 import TaskActions from './task_actions';
 import {haveAtleastOneEnabledAction} from './task_actions_modal';
+import EditRequirementsModal from './edit_requirements_modal';
+import FillRequirementsModal from './fill_requirements_modal';
+import RequirementsAccordion from './requirements_accordion';
 
 export enum ButtonsFormat {
 
@@ -83,7 +89,7 @@ interface ChecklistItemProps {
     playbookId?: string;
     teamId?: string;
     channelId?: string;
-    onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
+    onChange?: (item: ChecklistItemState, requirementValues?: Record<string, string>) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     readOnly: boolean;
@@ -122,6 +128,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const {formatMessage} = useIntl();
     const toaster = useToaster();
     const isPlaybookEditor = !props.playbookRunId;
+    const betaFeaturesEnabled = useAppSelector(selectTaskRequirementsEnabled);
     const isMounted = useRef(true);
     useEffect(() => {
         return () => {
@@ -169,7 +176,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [assigneeType, setAssigneeType] = useState(props.checklistItem.assignee_type || '');
     const [assigneePropertyFieldID, setAssigneePropertyFieldID] = useState(props.checklistItem.assignee_property_field_id || '');
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
+    const [showAddRequirementModal, setShowAddRequirementModal] = useState(false);
+    const [showFillRequirementsModal, setShowFillRequirementsModal] = useState(false);
+    const [fillRequirementsEditMode, setFillRequirementsEditMode] = useState(false);
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
+
+    const requirements = props.checklistItem.requirements || [];
 
     const userPropertyFields = useMemo(
         () => props.propertyFields?.filter((f) => f.type === PropertyFieldType.User) ?? [],
@@ -500,6 +512,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 assignee_id: assigneeID,
                 assignee_type: assigneeType,
                 task_actions: taskActions,
+                requirements: props.checklistItem.requirements || [],
                 state_modified: 0,
                 assignee_modified: 0,
                 condition_id: '',
@@ -609,6 +622,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         availableConditions={props.availableConditions}
                         propertyFields={props.propertyFields}
                         isChannelChecklist={props.isChannelChecklist}
+                        onAddRequirement={isPlaybookEditor && betaFeaturesEnabled ? () => setShowAddRequirementModal(true) : undefined}
+                        hasRequirements={requirements.length > 0}
                     />
                     }
                     <DragButton
@@ -622,7 +637,19 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         readOnly={props.readOnly}
                         disabled={isSkipped() || props.playbookRunId === undefined || props.newItem}
                         item={props.checklistItem}
-                        onChange={(item: ChecklistItemState) => props.onChange?.(item)}
+                        onChange={(item: ChecklistItemState) => {
+                            if (
+                                betaFeaturesEnabled &&
+                                item === ChecklistItemState.Closed &&
+                                requirements.length > 0 &&
+                                props.playbookRunId
+                            ) {
+                                setFillRequirementsEditMode(false);
+                                setShowFillRequirementsModal(true);
+                                return Promise.resolve({cancelled: true});
+                            }
+                            return props.onChange?.(item);
+                        }}
                         onReadOnlyInteract={props.onReadOnlyInteract}
                     />
                     <ConditionIndicator
@@ -654,6 +681,22 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     title={titleValue}
                 />
                 }
+                {betaFeaturesEnabled && requirements.length > 0 && (
+                    <RequirementsAccordion
+                        requirements={requirements}
+                        editMode={isPlaybookEditor}
+                        isTaskComplete={props.checklistItem.state === ChecklistItemState.Closed}
+                        readOnly={props.readOnly || isSkipped()}
+                        onComplete={!isPlaybookEditor && props.playbookRunId ? () => {
+                            setFillRequirementsEditMode(false);
+                            setShowFillRequirementsModal(true);
+                        } : undefined}
+                        onEditValues={!isPlaybookEditor && props.playbookRunId ? () => {
+                            setFillRequirementsEditMode(true);
+                            setShowFillRequirementsModal(true);
+                        } : undefined}
+                    />
+                )}
                 {isEditing && renderAssigneeEditor()}
                 {renderRow()}
                 {isEditing &&
@@ -668,6 +711,42 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 />
                 }
             </ItemContainer>
+            {showAddRequirementModal && betaFeaturesEnabled && (
+                <EditRequirementsModal
+                    initialRequirements={requirements}
+                    onConfirm={(nextRequirements: TaskRequirement[]) => {
+                        props.onUpdateChecklistItem?.({
+                            ...props.checklistItem,
+                            requirements: nextRequirements,
+                        });
+                        setShowAddRequirementModal(false);
+                    }}
+                    onCancel={() => setShowAddRequirementModal(false)}
+                />
+            )}
+            {showFillRequirementsModal && betaFeaturesEnabled && (
+                <FillRequirementsModal
+                    taskTitle={props.checklistItem.title}
+                    requirements={requirements}
+                    editMode={fillRequirementsEditMode}
+                    isTaskComplete={props.checklistItem.state === ChecklistItemState.Closed}
+                    onSave={(values: Record<string, string>) => {
+                        setShowFillRequirementsModal(false);
+                        setFillRequirementsEditMode(false);
+                        const currentState = (props.checklistItem.state || ChecklistItemState.Open) as ChecklistItemState;
+                        props.onChange?.(currentState, values);
+                    }}
+                    onSaveAndComplete={(values: Record<string, string>) => {
+                        setShowFillRequirementsModal(false);
+                        setFillRequirementsEditMode(false);
+                        props.onChange?.(ChecklistItemState.Closed, values);
+                    }}
+                    onCancel={() => {
+                        setShowFillRequirementsModal(false);
+                        setFillRequirementsEditMode(false);
+                    }}
+                />
+            )}
         </DraggableWrapper>
     );
 

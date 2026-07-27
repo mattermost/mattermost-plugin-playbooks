@@ -240,8 +240,9 @@ type UpdateChecklistItem struct {
 	Description             string            `json:"description"`
 	LastSkipped             float64           `json:"delete_at"`
 	DueDate                 float64           `json:"due_date"`
-	TaskActions             *[]app.TaskAction `json:"task_actions"`
-	ConditionID             string            `json:"condition_id"`
+	TaskActions             *[]app.TaskAction      `json:"task_actions"`
+	ConditionID             string                 `json:"condition_id"`
+	Requirements            *[]app.TaskRequirement `json:"requirements"`
 }
 
 func (ci *UpdateChecklistItem) GetAssigneeID() string {

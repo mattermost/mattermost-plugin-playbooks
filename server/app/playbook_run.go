@@ -795,6 +795,9 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if !reflect.DeepEqual(prev.TaskActions, item.TaskActions) {
 				fields["task_actions"] = item.TaskActions
 			}
+			if !reflect.DeepEqual(prev.Requirements, item.Requirements) {
+				fields["requirements"] = item.Requirements
+			}
 			if prev.UpdateAt != item.UpdateAt {
 				fields["update_at"] = item.UpdateAt
 			}
@@ -1254,6 +1257,12 @@ const (
 	TriggerTypeStatusUpdatePosted = "status_update_posted"
 )
 
+// ModifyCheckedStateOptions holds optional parameters for ModifyCheckedState.
+type ModifyCheckedStateOptions struct {
+	// RequirementValues maps requirement IDs to the values filled in when checking off a task.
+	RequirementValues map[string]string
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -1321,8 +1330,9 @@ type PlaybookRunService interface {
 	ChangeOwner(playbookRunID string, userID string, ownerID string) error
 
 	// ModifyCheckedState modifies the state of the specified checklist item
-	// Idempotent, will not perform any actions if the checklist item is already in the specified state
-	ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber int, itemNumber int) error
+	// Idempotent, will not perform any actions if the checklist item is already in the specified state.
+	// Optional opts may include requirement values to apply when checking off a task.
+	ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber int, itemNumber int, opts ...ModifyCheckedStateOptions) error
 
 	// ToggleCheckedState checks or unchecks the specified checklist item
 	ToggleCheckedState(playbookRunID, userID string, checklistNumber, itemNumber int) error

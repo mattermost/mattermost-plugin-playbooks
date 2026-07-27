@@ -2265,8 +2265,10 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 }
 
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
-// any action if the checklist item is already in the given checked state
-func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
+// any action if the checklist item is already in the given checked state.
+// When checking off a task that has requirements, opts may supply RequirementValues; all
+// requirements must have non-empty values or the call fails.
+func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int, opts ...ModifyCheckedStateOptions) error {
 	auditRec := plugin.MakeAuditRecord("modifyChecklistItemState", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -2302,10 +2304,45 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		originalRun = playbookRunToModify.Clone()
 	}
 
-	if newState == itemToCheck.State {
+	var requirementValues map[string]string
+	if len(opts) > 0 {
+		requirementValues = opts[0].RequirementValues
+	}
+
+	wasClosed := itemToCheck.State == ChecklistItemStateClosed
+
+	requirementsChanged := false
+	if len(itemToCheck.Requirements) > 0 && requirementValues != nil {
+		reqs := make([]TaskRequirement, len(itemToCheck.Requirements))
+		copy(reqs, itemToCheck.Requirements)
+		itemToCheck.Requirements = reqs
+		for i := range itemToCheck.Requirements {
+			if val, ok := requirementValues[itemToCheck.Requirements[i].ID]; ok {
+				if itemToCheck.Requirements[i].Value != val {
+					itemToCheck.Requirements[i].Value = val
+					requirementsChanged = true
+				}
+			}
+		}
+	}
+
+	// Only require all fields when checking off while beta features are enabled.
+	// Saving values alone may leave some fields empty.
+	if newState == ChecklistItemStateClosed && !wasClosed && len(itemToCheck.Requirements) > 0 && s.configService.IsTaskRequirementsEnabled() {
+		for _, req := range itemToCheck.Requirements {
+			if strings.TrimSpace(req.Value) == "" {
+				return errors.Wrap(ErrMalformedPlaybookRun, "all task requirements must be filled before checking off")
+			}
+		}
+	}
+
+	if newState == itemToCheck.State && !requirementsChanged {
 		auditRec.Success()
 		return nil
 	}
+
+	stateChanged := newState != itemToCheck.State
+	timestamp := model.GetMillis()
 
 	details := Details{
 		Action: "check",
@@ -2326,9 +2363,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 
-	itemToCheck.State = newState
-	timestamp := model.GetMillis()
-	itemToCheck.StateModified = timestamp
+	if stateChanged {
+		itemToCheck.State = newState
+		itemToCheck.StateModified = timestamp
+	}
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
@@ -2337,23 +2375,25 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return errors.Wrapf(err, "failed to update playbook run, is now in inconsistent state")
 	}
 
-	detailsJSON, err := json.Marshal(details)
-	if err != nil {
-		return errors.Wrap(err, "failed to encode timeline event details")
-	}
+	if stateChanged {
+		detailsJSON, err := json.Marshal(details)
+		if err != nil {
+			return errors.Wrap(err, "failed to encode timeline event details")
+		}
 
-	event := &TimelineEvent{
-		PlaybookRunID: playbookRunID,
-		CreateAt:      itemToCheck.StateModified,
-		EventAt:       itemToCheck.StateModified,
-		EventType:     TaskStateModified,
-		Summary:       modifyMessage,
-		SubjectUserID: userID,
-		Details:       string(detailsJSON),
-	}
+		event := &TimelineEvent{
+			PlaybookRunID: playbookRunID,
+			CreateAt:      itemToCheck.StateModified,
+			EventAt:       itemToCheck.StateModified,
+			EventType:     TaskStateModified,
+			Summary:       modifyMessage,
+			SubjectUserID: userID,
+			Details:       string(detailsJSON),
+		}
 
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
+		if _, err = s.store.CreateTimelineEvent(event); err != nil {
+			return errors.Wrap(err, "failed to create timeline event")
+		}
 	}
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 

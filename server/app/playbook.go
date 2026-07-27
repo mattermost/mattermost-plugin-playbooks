@@ -342,6 +342,9 @@ type ChecklistItem struct {
 	// TaskActions is an array of all the task actions associated with this task.
 	TaskActions []TaskAction `json:"task_actions" export:"-"`
 
+	// Requirements are fields that must be filled when checking off this task in a run.
+	Requirements []TaskRequirement `json:"requirements" export:"requirements"`
+
 	// UpdateAt is when this checklist item was last modified
 	UpdateAt int64 `json:"update_at" export:"-"`
 
@@ -353,6 +356,13 @@ type ChecklistItem struct {
 
 	// ConditionReason is a string representation of the condition.
 	ConditionReason string `json:"condition_reason" export:"-"`
+}
+
+// TaskRequirement is a labeled field that must be completed when checking off a task.
+type TaskRequirement struct {
+	ID    string `json:"id" export:"id"`
+	Label string `json:"label" export:"label"`
+	Value string `json:"value" export:"-"`
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {
