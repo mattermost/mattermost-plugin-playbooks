@@ -2341,6 +2341,230 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /plugins/playbooks/api/v0/runs/{id}/report.pdf:
+    get:
+      summary: Export a playbook run as a PDF report
+      operationId: exportPlaybookRunPDFReport
+      description: |
+        Renders a PDF report for the given playbook run. Sections may be
+        selected via the `sections` query parameter; omit it for the default
+        set (cover, summary, timeline, updates, checklists, retro — but not
+        transcript). The transcript section requires the requester to be a
+        member of the run's channel.
+
+        Response is always either a complete `application/pdf` payload OR a
+        canonical JSON error — never a partial PDF.
+
+        When a server-side cap (post count or byte budget) is hit, the
+        response is still 200 with a truncation footer page; the response
+        also carries `X-Playbooks-Report-Truncated: true` and
+        `X-Playbooks-Report-Truncated-Reason: posts|bytes`.
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook run to export.
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: sections
+          in: query
+          required: false
+          description: |
+            Comma-separated list of section tokens to include. Allowed:
+            `cover`, `summary`, `timeline`, `updates`, `checklists`, `retro`,
+            `transcript`. Omit to use the server-configured default set.
+          schema:
+            type: string
+            example: cover,summary,timeline,updates
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          description: Session CSRF token, constant-time compared against the session record.
+          schema:
+            type: string
+        - name: Accept
+          in: header
+          required: false
+          description: Must permit `application/pdf` (e.g. `*/*`, `application/*`, or `application/pdf`). Returns 406 otherwise.
+          schema:
+            type: string
+            example: application/pdf
+      responses:
+        200:
+          description: PDF report (atomic; full body buffered before any header is sent).
+          headers:
+            Content-Disposition:
+              description: |
+                Always `attachment` with both ASCII (`filename="…"`) and
+                UTF-8 (`filename*=UTF-8''…`) variants per RFC 6266.
+              schema:
+                type: string
+            Cache-Control:
+              description: Always `no-store`.
+              schema:
+                type: string
+            X-Request-ID:
+              description: Correlation ID echoed on success and failure; matches the value used in server-side error logs.
+              schema:
+                type: string
+            X-Playbooks-Report-Truncated:
+              description: Present only when a cap was hit (transcript posts or byte budget); value is `true`.
+              schema:
+                type: string
+            X-Playbooks-Report-Truncated-Reason:
+              description: One of `posts` or `bytes`; present only when truncated.
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        400:
+          description: Unknown section token in the `sections` query.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        403:
+          description: CSRF token missing or mismatched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        404:
+          description: |
+            Run not found OR not visible to the caller — existence is not
+            disclosed. Also returned when PDF reports are disabled in the
+            plugin config.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        406:
+          description: Accept header does not permit `application/pdf`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        429:
+          description: Concurrent render semaphore saturated.
+          headers:
+            Retry-After:
+              description: Seconds the client should wait before retrying.
+              schema:
+                type: integer
+                example: 5
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Render or context assembly failure. `X-Request-ID` is set for correlation with server logs.
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /plugins/playbooks/api/v0/playbooks/{id}/report.pdf:
+    get:
+      summary: Export a playbook (template) as a PDF report
+      operationId: exportPlaybookPDFReport
+      description: |
+        Renders a PDF report for the given playbook template. Webhook URLs
+        are redacted (host-masked) unless the requester has playbook-manage
+        permission.
+
+        Response is always either a complete `application/pdf` payload OR a
+        canonical JSON error — never a partial PDF.
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to export.
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: sections
+          in: query
+          required: false
+          description: |
+            Comma-separated list of section tokens to include. Allowed:
+            `overview`, `checklists`, `settings`. Omit to use the full
+            playbook section set.
+          schema:
+            type: string
+            example: overview,checklists
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          description: Session CSRF token, constant-time compared against the session record.
+          schema:
+            type: string
+        - name: Accept
+          in: header
+          required: false
+          description: Must permit `application/pdf`. Returns 406 otherwise.
+          schema:
+            type: string
+            example: application/pdf
+      responses:
+        200:
+          description: PDF report (atomic; full body buffered before any header is sent).
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            Cache-Control:
+              schema:
+                type: string
+            X-Request-ID:
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        406:
+          description: Accept header does not permit `application/pdf`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        429:
+          description: Concurrent render semaphore saturated.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                example: 5
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          $ref: "#/components/responses/500"
+
 components:
   securitySchemes:
     BearerAuth:

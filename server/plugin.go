@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/MicahParks/keyfunc/v3"
@@ -29,6 +30,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/renderer/html2pdf"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/renderer/html2pdf/gotenberg"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 
@@ -37,6 +40,7 @@ import (
 
 const (
 	updateMetricsTaskFrequency = 15 * time.Minute
+	rendererHealthCheckPeriod  = 60 * time.Second
 )
 
 // Plugin implements the interface expected by the Mattermost server to communicate between the
@@ -65,6 +69,12 @@ type Plugin struct {
 	cancelRunning     context.CancelFunc
 	cancelRunningLock sync.Mutex
 	tabAppJWTKeyFunc  keyfunc.Keyfunc
+
+	// htmlPdfRenderer is the active PDF rendering backend, rebuilt on config change.
+	// nil when PdfRendererBackend is empty (markdown+HTML+browser-print only).
+	htmlPdfRenderer atomic.Pointer[html2pdf.HTMLPdfRenderer]
+	// rendererHealthCancel cancels the background HealthCheck ticker goroutine.
+	rendererHealthCancel context.CancelFunc
 }
 
 type StatusRecorder struct {
@@ -272,6 +282,38 @@ func (p *Plugin) OnActivate() error {
 		},
 	)
 
+	// Build the HTML→PDF renderer (Gotenberg or none) and start the background
+	// health-check ticker. Rebuilds happen on OnConfigurationChange.
+	p.rebuildRenderer()
+
+	reportSvc := app.NewReportService(
+		p.playbookRunService,
+		p.playbookService,
+		p.permissions,
+		pluginAPIClient,
+		auditorService,
+		app.DefaultReportConfig(),
+	)
+	api.RegisterExportHandler(api.NewExportHandler(
+		pluginAPIClient,
+		p.config,
+		p.permissions,
+		p.playbookRunService,
+		p.playbookService,
+		reportSvc,
+		func() html2pdf.HTMLPdfRenderer {
+			ptr := p.htmlPdfRenderer.Load()
+			if ptr == nil {
+				return nil
+			}
+			return *ptr
+		},
+	))
+
+	healthCtx, healthCancel := context.WithCancel(context.Background())
+	p.rendererHealthCancel = healthCancel
+	go p.runRendererHealthCheck(healthCtx)
+
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
 	if flag != nil {
@@ -311,6 +353,8 @@ func (p *Plugin) OnConfigurationChange() error {
 		return err
 	}
 
+	p.rebuildRenderer()
+
 	if !p.isMCPEnabled() {
 		p.clearMCPServer()
 		return nil
@@ -322,6 +366,49 @@ func (p *Plugin) OnConfigurationChange() error {
 	p.registerMCPServerBestEffort()
 
 	return nil
+}
+
+func (p *Plugin) rebuildRenderer() {
+	if p.config == nil {
+		p.htmlPdfRenderer.Store(nil)
+		return
+	}
+	cfg := p.config.GetConfiguration()
+	if cfg.PdfRendererBackend != "gotenberg" || cfg.GotenbergURL == "" {
+		p.htmlPdfRenderer.Store(nil)
+		return
+	}
+	r := gotenberg.New(gotenberg.Config{
+		BaseURL:          cfg.GotenbergURL,
+		AuthHeader:       cfg.GotenbergAuthHeader,
+		TimeoutSec:       cfg.GotenbergTimeoutSec,
+		MaxConcurrent:    cfg.GotenbergMaxConcurrent,
+		MaxResponseBytes: cfg.MaxGotenbergResponseBytes,
+		PdfAFlavor:       cfg.PdfAFlavor,
+	})
+	var iface html2pdf.HTMLPdfRenderer = r
+	p.htmlPdfRenderer.Store(&iface)
+}
+
+func (p *Plugin) runRendererHealthCheck(ctx context.Context) {
+	ticker := time.NewTicker(rendererHealthCheckPeriod)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			ptr := p.htmlPdfRenderer.Load()
+			if ptr == nil || *ptr == nil {
+				continue
+			}
+			probeCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			if err := (*ptr).HealthCheck(probeCtx); err != nil {
+				logrus.WithError(err).WithField("renderer", (*ptr).Name()).Warn("html2pdf renderer health check failed")
+			}
+			cancel()
+		}
+	}
 }
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
@@ -424,6 +511,11 @@ func (p *Plugin) OnDeactivate() error {
 		p.cancelRunning = nil
 	}
 	p.cancelRunningLock.Unlock()
+
+	if p.rendererHealthCancel != nil {
+		p.rendererHealthCancel()
+		p.rendererHealthCancel = nil
+	}
 
 	logrus.Info("Shutting down store..")
 	return p.pluginAPI.Store.Close()

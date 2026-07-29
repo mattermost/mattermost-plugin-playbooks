@@ -1,0 +1,257 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
+<div
+  data-testid="mock-generic-modal"
+>
+  <div
+    className="Body-jPQbxz gCtmSH"
+  >
+    <div
+      className="FormatSelector-fRuKVN frSyxO"
+    >
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-md"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-file-text-outline"
+        />
+        Markdown
+      </button>
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-html"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-code-tags"
+        />
+        HTML
+      </button>
+      <button
+        className="FormatButton-jpoeiq kywyMA"
+        data-testid="format-button-pdf"
+        onClick={[Function]}
+        selected={true}
+      >
+        <i
+          className="icon icon-file-pdf-outline"
+        />
+        PDF
+      </button>
+    </div>
+    <p
+      className="FormatHint-lnvEeT kBHaCo"
+      data-testid="format-hint"
+    >
+      Rendered in your browser — Save as PDF in the print dialog
+    </p>
+    <p
+      className="Description-dTdaMR caPvRr"
+    >
+      Select the sections to include in the export.
+    </p>
+    <div
+      className="Toggles-hAkmHW UekAt"
+    >
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-playbookOverview"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Overview
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-playbookChecklistTemplates"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Tasks
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-playbookSettings"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Settings & automations
+        </span>
+      </label>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
+<div
+  data-testid="mock-generic-modal"
+>
+  <div
+    className="Body-jPQbxz gCtmSH"
+  >
+    <div
+      className="FormatSelector-fRuKVN frSyxO"
+    >
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-md"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-file-text-outline"
+        />
+        Markdown
+      </button>
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-html"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-code-tags"
+        />
+        HTML
+      </button>
+      <button
+        className="FormatButton-jpoeiq kywyMA"
+        data-testid="format-button-pdf"
+        onClick={[Function]}
+        selected={true}
+      >
+        <i
+          className="icon icon-file-pdf-outline"
+        />
+        PDF
+      </button>
+    </div>
+    <p
+      className="FormatHint-lnvEeT kBHaCo"
+      data-testid="format-hint"
+    >
+      Rendered in your browser — Save as PDF in the print dialog
+    </p>
+    <p
+      className="Description-dTdaMR caPvRr"
+    >
+      Select the sections to include in the export.
+    </p>
+    <div
+      className="Toggles-hAkmHW UekAt"
+    >
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-cover"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Cover page
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-executiveSummary"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Executive summary
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-timeline"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Timeline
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-statusUpdates"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Status updates
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-checklists"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Tasks
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-retrospective"
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Retrospective
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb mducf"
+        data-testid="section-toggle-transcript"
+      >
+        <input
+          checked={false}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Channel transcript
+        </span>
+      </label>
+    </div>
+  </div>
+</div>
+`;

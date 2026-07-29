@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {Fragment, useMemo} from 'react';
+import React, {Fragment, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -15,6 +15,7 @@ import {
     DotsVerticalIcon,
     ExportVariantIcon,
     EyeOutlineIcon,
+    FilePdfOutlineIcon,
     PencilOutlineIcon,
     PlayOutlineIcon,
     RestoreIcon,
@@ -30,6 +31,7 @@ import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {isCurrentUserAdmin} from 'src/selectors';
 import {Playbook} from 'src/types/playbook';
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {
     DotMenuButton,
@@ -37,7 +39,19 @@ import DotMenu, {
     DropdownMenuItemStyled,
     iconSplitStyling,
 } from 'src/components/dot_menu';
-import {createPlaybookRun, playbookExportProps} from 'src/client';
+import {
+    PDFExportError,
+    createPlaybookRun,
+    exportPlaybookHTML,
+    exportPlaybookMarkdown,
+    exportPlaybookPDF,
+    playbookExportProps,
+    triggerBrowserPrint,
+    triggerPDFDownload,
+} from 'src/client';
+import ExportOptionsModal, {ExportFormat, SectionFlags} from 'src/components/export_options_modal';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
@@ -133,6 +147,47 @@ const PlaybookListRow = (props: Props) => {
     const {formatMessage} = useIntl();
 
     const {join, leave} = usePlaybookMembership(props.playbook.id, currentUser.id);
+    const [showPDFModal, setShowPDFModal] = useState(false);
+    const addToast = useToaster().add;
+
+    // Third positional arg (transcriptMode) is accepted but unused — playbook
+    // templates don't have a transcript section.
+    const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat = 'pdf') => {
+        setShowPDFModal(false);
+        try {
+            if (format === 'md') {
+                const result = await exportPlaybookMarkdown(props.playbook.id, sections);
+                triggerPDFDownload(result);
+                return;
+            }
+            if (format === 'html') {
+                const result = await exportPlaybookHTML(props.playbook.id, sections, false);
+                triggerPDFDownload(result);
+                return;
+            }
+
+            // format === 'pdf'
+            try {
+                const result = await exportPlaybookPDF(props.playbook.id, sections);
+                triggerPDFDownload(result);
+            } catch (err) {
+                // Server-rendered PDF not configured — fall back to browser print of HTML.
+                if (err instanceof PDFExportError && err.status === 501) {
+                    const html = await exportPlaybookHTML(props.playbook.id, sections, true);
+                    triggerBrowserPrint(html.blob);
+                    return;
+                }
+                throw err;
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export.'});
+            const requestId = (err as {requestId?: string | null})?.requestId;
+            addToast({
+                content: requestId ? `${message} (ref: ${requestId})` : message,
+                toastStyle: ToastStyle.Failure,
+            });
+        }
+    };
 
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
@@ -297,6 +352,12 @@ const PlaybookListRow = (props: Props) => {
                         <ExportVariantIcon size={18}/>
                         <FormattedMessage defaultMessage='Export'/>
                     </DropdownMenuItemStyled>
+                    <DropdownMenuItem
+                        onClick={() => setShowPDFModal(true)}
+                    >
+                        <FilePdfOutlineIcon size={18}/>
+                        <FormattedMessage defaultMessage='Download as PDF'/>
+                    </DropdownMenuItem>
                     {currentUserPlaybookMember && (
                         <>
                             <div className='MenuGroup menu-divider'/>
@@ -345,6 +406,14 @@ const PlaybookListRow = (props: Props) => {
                     )}
                 </DotMenu>
             </ActionCol>
+            {showPDFModal && (
+                <ExportOptionsModal
+                    surface='playbook'
+                    defaults={{}}
+                    onConfirm={onPDFConfirm}
+                    onCancel={() => setShowPDFModal(false)}
+                />
+            )}
         </PlaybookItem>
     );
 };
