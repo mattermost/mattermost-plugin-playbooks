@@ -112,6 +112,7 @@ input ChecklistItemUpdates {
 	assigneeModified: Float!
 	assigneeType: String
 	assigneePropertyFieldID: String
+	assigneeOnlyComplete: Boolean
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
@@ -207,6 +208,7 @@ type ChecklistItem {
 	assigneeType: String!
 	assigneePropertyFieldID: String!
 	assigneeModified: Float!
+	assigneeOnlyComplete: Boolean!
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!

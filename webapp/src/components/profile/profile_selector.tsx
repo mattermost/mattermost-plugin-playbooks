@@ -354,7 +354,31 @@ export default function ProfileSelector(props: Props) {
 
 // styles for the select component
 const selectStyles: StylesConfig<Option, boolean> = {
-    control: (provided) => ({...provided, minWidth: 240, margin: 8}),
+    control: (provided, state) => ({
+        ...provided,
+        minWidth: 240,
+        margin: 8,
+        backgroundColor: 'var(--center-channel-bg)',
+        border: 'none',
+        borderRadius: '4px',
+        boxShadow: state.isFocused ?
+            'inset 0 0 0 2px var(--button-bg)' :
+            'inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16)',
+        '&:hover': {
+            boxShadow: state.isFocused ?
+                'inset 0 0 0 2px var(--button-bg)' :
+                'inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.24)',
+        },
+    }),
+    input: (provided) => ({
+        ...provided,
+        color: 'var(--center-channel-color)',
+        margin: 0,
+    }),
+    placeholder: (provided) => ({
+        ...provided,
+        color: 'rgba(var(--center-channel-color-rgb), 0.56)',
+    }),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
         const hoverColor = 'rgba(20, 93, 191, 0.08)';

@@ -45,8 +45,10 @@ export interface Props {
     toggleDescription: () => void;
     assignee_id: string;
     assignee_type?: string;
+    assignee_only_complete?: boolean;
     onAssigneeChange: (user?: UserProfile) => void;
     onExtraOptionSelected?: (value: string) => void;
+    onAssigneeOnlyCompleteChange?: (value: boolean) => void;
     roleOptions?: RoleOption[];
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
@@ -83,10 +85,12 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}
                     assignee_type={props.assignee_type}
+                    assignee_only_complete={props.assignee_only_complete}
                     editable={props.isEditing}
                     inHoverMenu={true}
                     onSelectedChange={props.onAssigneeChange}
                     onExtraOptionSelected={props.onExtraOptionSelected}
+                    onAssigneeOnlyCompleteChange={props.onAssigneeOnlyCompleteChange}
                     roleOptions={props.roleOptions}
                     placement={'bottom-end'}
                     onOpenChange={props.onItemOpenChange}

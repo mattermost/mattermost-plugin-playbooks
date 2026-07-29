@@ -320,6 +320,10 @@ type ChecklistItem struct {
 	// AssigneePropertyFieldID is the property field whose value is used when AssigneeType == AssigneeTypePropertyUser.
 	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"assignee_property_field_id"`
 
+	// AssigneeOnlyComplete, when true and an assignee is set, restricts checking/unchecking
+	// this item to the assignee. Anyone may still change the assignee.
+	AssigneeOnlyComplete bool `json:"assignee_only_complete" export:"assignee_only_complete"`
+
 	// Command, if not empty, is the slash command that can be run as part of this item.
 	Command string `json:"command" export:"command"`
 

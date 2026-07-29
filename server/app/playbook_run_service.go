@@ -2307,6 +2307,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return nil
 	}
 
+	if err := checkAssigneeOnlyComplete(itemToCheck, userID); err != nil {
+		return err
+	}
+
 	details := Details{
 		Action: "check",
 		Task:   stripmd.Strip(itemToCheck.Title),
@@ -2403,6 +2407,60 @@ func (s *PlaybookRunServiceImpl) ToggleCheckedState(playbookRunID, userID string
 	auditRec.Success()
 
 	return s.ModifyCheckedState(playbookRunID, userID, newState, checklistNumber, itemNumber)
+}
+
+// checkAssigneeOnlyComplete returns ErrAssigneeOnlyComplete when the item is locked to its
+// assignee and the acting user is not that assignee. Unassigned locked items are not restricted.
+func checkAssigneeOnlyComplete(item ChecklistItem, userID string) error {
+	if !item.AssigneeOnlyComplete || item.AssigneeID == "" || item.AssigneeID == userID {
+		return nil
+	}
+	return ErrAssigneeOnlyComplete
+}
+
+// SetAssigneeOnlyComplete sets whether only the assignee may check/uncheck the checklist item.
+func (s *PlaybookRunServiceImpl) SetAssigneeOnlyComplete(playbookRunID, userID string, checklistNumber, itemNumber int, assigneeOnlyComplete bool) error {
+	auditRec := plugin.MakeAuditRecord("setChecklistItemAssigneeOnlyComplete", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+	model.AddEventParameterToAuditRec(auditRec, "assigneeOnlyComplete", assigneeOnlyComplete)
+
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
+
+	if itemToCheck.AssigneeOnlyComplete == assigneeOnlyComplete {
+		auditRec.Success()
+		return nil
+	}
+
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
+	}
+
+	itemToCheck.AssigneeOnlyComplete = assigneeOnlyComplete
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, 0)
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
+	}
+
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	auditRec.Success()
+	auditRec.AddEventResultState(*playbookRunToModify)
+
+	return nil
 }
 
 // SetAssignee sets the assignee for the specified checklist item

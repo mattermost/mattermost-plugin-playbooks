@@ -9,7 +9,7 @@ import {UserProfile} from '@mattermost/types/users';
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {Placement} from '@floating-ui/react';
 
-import {AccountOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountOutlineIcon, LockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import Profile from 'src/components/profile/profile';
 import ProfileSelector, {type ExtraSection, Option} from 'src/components/profile/profile_selector';
@@ -57,12 +57,14 @@ interface AssignedToProps {
     assignee_id: string;
     assignee_type?: string;
     assignee_property_field_id?: string;
+    assignee_only_complete?: boolean;
     participantUserIds: string[];
     editable: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
     onSelectedChange?: (user?: UserProfile) => void;
     onExtraOptionSelected?: (value: string) => void;
+    onAssigneeOnlyCompleteChange?: (value: boolean) => void;
     onOpenChange?: (isOpen: boolean) => void;
     isEditing?: boolean;
     roleOptions?: RoleOption[];
@@ -179,6 +181,14 @@ const AssignTo = (props: AssignedToProps) => {
         assignedDisplay: roleAssigneeDisplay ?? undefined,
     };
 
+    const customControlProps = {
+        showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
+        onCustomReset: resetAssignee,
+        showAssigneeOnlyComplete: Boolean(props.onAssigneeOnlyCompleteChange),
+        assigneeOnlyComplete: Boolean(props.assignee_only_complete),
+        onAssigneeOnlyCompleteChange: props.onAssigneeOnlyCompleteChange,
+    };
+
     if (props.inHoverMenu) {
         return (
             <ProfileSelector
@@ -206,10 +216,7 @@ const AssignTo = (props: AssignedToProps) => {
                 extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
-                customControlProps={{
-                    showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
-                    onCustomReset: resetAssignee,
-                }}
+                customControlProps={customControlProps}
                 controlledOpenToggle={profileSelectorToggle}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
@@ -258,10 +265,7 @@ const AssignTo = (props: AssignedToProps) => {
                 extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
-                customControlProps={{
-                    showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
-                    onCustomReset: resetAssignee,
-                }}
+                customControlProps={customControlProps}
                 customDropdownArrow={dropdownArrow}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
@@ -288,6 +292,33 @@ export default AssignTo;
 const ControlComponent = (ownProps: ControlProps<Option, boolean>) => (
     <div>
         <components.Control {...ownProps}/>
+        {ownProps.selectProps.showAssigneeOnlyComplete && (
+            <AssigneeOnlyCompleteRow
+                data-testid='assignee-only-complete-toggle'
+                onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    ownProps.selectProps.onAssigneeOnlyCompleteChange?.(
+                        !ownProps.selectProps.assigneeOnlyComplete,
+                    );
+                }}
+            >
+                <AssigneeOnlyCompleteCheckbox
+                    type='checkbox'
+                    checked={Boolean(ownProps.selectProps.assigneeOnlyComplete)}
+                    readOnly={true}
+                    tabIndex={-1}
+                />
+                <LockOutlineIcon size={14}/>
+                <AssigneeOnlyCompleteLabel>
+                    <FormattedMessage defaultMessage='Only the assignee can complete the task'/>
+                </AssigneeOnlyCompleteLabel>
+            </AssigneeOnlyCompleteRow>
+        )}
         {ownProps.selectProps.showCustomReset && (
             <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
                 <FormattedMessage defaultMessage='No Assignee'/>
@@ -401,6 +432,28 @@ const ControlComponentAnchor = styled.a`
     margin: 0 0 8px 12px;
     font-size: 12px;
     font-weight: 600;
+`;
+
+const AssigneeOnlyCompleteRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 10px;
+    cursor: pointer;
+    user-select: none;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+`;
+
+const AssigneeOnlyCompleteCheckbox = styled.input`
+    margin: 0;
+    cursor: pointer;
+`;
+
+const AssigneeOnlyCompleteLabel = styled.span`
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    color: var(--center-channel-color);
 `;
 
 export const DropdownArrow = styled.i`

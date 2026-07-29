@@ -16,6 +16,9 @@ var ErrNoPermissions = errors.New("does not have permissions")
 // It wraps ErrNoPermissions so callers checking errors.Is(err, ErrNoPermissions) still match.
 var ErrOwnerGroupOnlyAction = errors.Wrap(ErrNoPermissions, "action restricted to run owner or admin")
 
+// ErrAssigneeOnlyComplete is returned when a checklist item is locked so only its assignee can complete it.
+var ErrAssigneeOnlyComplete = errors.Wrap(ErrNoPermissions, "only the assignee can complete this task")
+
 // ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
 var ErrLicensedFeature = errors.New("not covered by current server license")
 

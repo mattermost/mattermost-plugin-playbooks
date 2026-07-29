@@ -141,6 +141,7 @@ export interface ChecklistItem {
     assignee_id: string;
     assignee_type: string;
     assignee_modified: number;
+    assignee_only_complete?: boolean;
     command: string;
     command_last_run: number;
     due_date: number;
@@ -266,6 +267,7 @@ export function emptyChecklistItem(): ChecklistItem {
         assignee_modified: 0,
         assignee_id: '',
         assignee_type: '',
+        assignee_only_complete: false,
         condition_id: '',
         condition_action: '',
         condition_reason: '',
@@ -285,6 +287,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     assignee_modified: 0,
     assignee_id: '',
     assignee_type: '',
+    assignee_only_complete: false,
     condition_id: '',
     condition_action: '',
     condition_reason: '',
