@@ -102,6 +102,11 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 	}); ok {
 		created.ID = "abcdefghijklmnopqrstuvwxyz"
 	}
+	if created, ok := result.(*map[string]any); ok {
+		bodyMap, _ := body.(map[string]any)
+		*created = cloneMapAny(bodyMap)
+		(*created)["id"] = "bcdefghijklmnopqrstuvwxyza"
+	}
 	return nil
 }
 

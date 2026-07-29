@@ -106,6 +106,114 @@ func TestToolCreatePlaybookFetchesCreatedPlaybookAndReturnsURL(t *testing.T) {
 	}
 }
 
+func TestToolCreatePlaybookAttributePostsPropertyField(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{}
+
+	result, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		Name:       "  Severity  ",
+		Type:       "Select",
+		Attrs: &CreatePlaybookAttributeAttrs{
+			Visibility: "always",
+			SortOrder:  2,
+			Options: []CreatePlaybookAttributeOption{
+				{Name: "  High  ", Color: "red"},
+				{ID: "option-id", Name: "Low"},
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.postEndpoint)
+
+	body := client.postBody.(map[string]any)
+	assert.Equal(t, "Severity", body["name"])
+	assert.Equal(t, "select", body["type"])
+
+	attrs := body["attrs"].(map[string]any)
+	assert.Equal(t, "always", attrs["visibility"])
+	assert.Equal(t, float64(2), attrs["sort_order"])
+	options := attrs["options"].([]map[string]any)
+	require.Len(t, options, 2)
+	assert.Equal(t, map[string]any{"name": "High", "color": "red"}, options[0])
+	assert.Equal(t, map[string]any{"name": "Low", "id": "option-id"}, options[1])
+
+	var decoded map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result), &decoded))
+	assert.Equal(t, "bcdefghijklmnopqrstuvwxyza", decoded["id"])
+	assert.Equal(t, "Severity", decoded["name"])
+	assert.Equal(t, "select", decoded["type"])
+}
+
+func TestToolCreatePlaybookAttributeRejectsInvalidInput(t *testing.T) {
+	tests := []struct {
+		name string
+		args CreatePlaybookAttributeArgs
+		want string
+	}{
+		{
+			name: "invalid playbook id",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "bad", Name: "Severity", Type: "text"},
+			want: "playbook_id must be a valid Mattermost ID",
+		},
+		{
+			name: "blank name",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: " ", Type: "text"},
+			want: "name is required",
+		},
+		{
+			name: "reserved name",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: " seq ", Type: "text"},
+			want: `name "seq" is reserved`,
+		},
+		{
+			name: "unsupported type",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity", Type: "checkbox"},
+			want: "type must be one of",
+		},
+		{
+			name: "select missing options",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity", Type: "select"},
+			want: "attrs.options is required for select attributes",
+		},
+		{
+			name: "multiselect empty options",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Tags", Type: "multiselect", Attrs: &CreatePlaybookAttributeAttrs{}},
+			want: "attrs.options is required for multiselect attributes",
+		},
+		{
+			name: "invalid visibility",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{Visibility: "sometimes"}},
+			want: "attrs.visibility must be one of",
+		},
+		{
+			name: "blank option name",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity", Type: "select", Attrs: &CreatePlaybookAttributeAttrs{Options: []CreatePlaybookAttributeOption{{Name: " "}}}},
+			want: "attrs.options[0].name is required",
+		},
+		{
+			name: "invalid parent id",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity detail", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{ParentID: "bad"}},
+			want: "attrs.parent_id must be a valid Mattermost ID",
+		},
+		{
+			name: "invalid value type",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Link", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{ValueType: "email"}},
+			want: "attrs.value_type must be url when provided",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolCreatePlaybookAttribute(context.Background(), client, tt.args)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Empty(t, client.postEndpoint)
+		})
+	}
+}
+
 func TestToolCreatePlaybookRejectsInvalidInput(t *testing.T) {
 	tests := []struct {
 		name string
