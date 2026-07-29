@@ -42,6 +42,10 @@ type fakeAPIClient struct {
 	postEndpoint string
 	postBody     any
 	postResult   any
+	postErr      error
+
+	postMapResult    map[string]any
+	postMapResultSet bool
 
 	putEndpoint  string
 	putBody      any
@@ -94,6 +98,9 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 	f.postEndpoint = endpoint
 	f.postBody = body
 	f.postResult = result
+	if f.postErr != nil {
+		return f.postErr
+	}
 	if run, ok := result.(*playbookRunDetail); ok {
 		*run = f.run
 	}
@@ -103,6 +110,14 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 		created.ID = "abcdefghijklmnopqrstuvwxyz"
 	}
 	if created, ok := result.(*map[string]any); ok {
+		if f.postMapResultSet {
+			if f.postMapResult == nil {
+				*created = nil
+				return nil
+			}
+			*created = cloneMapAny(f.postMapResult)
+			return nil
+		}
 		bodyMap, _ := body.(map[string]any)
 		*created = cloneMapAny(bodyMap)
 		(*created)["id"] = "bcdefghijklmnopqrstuvwxyza"

@@ -6,6 +6,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -108,7 +109,18 @@ func TestToolCreatePlaybookFetchesCreatedPlaybookAndReturnsURL(t *testing.T) {
 
 func TestToolCreatePlaybookAttributePostsPropertyField(t *testing.T) {
 	playbookID := "abcdefghijklmnopqrstuvwxyz"
-	client := &fakeAPIClient{}
+	client := &fakeAPIClient{
+		postMapResultSet: true,
+		postMapResult: map[string]any{
+			"id":        "bcdefghijklmnopqrstuvwxyza",
+			"name":      "Severity",
+			"type":      "select",
+			"create_at": float64(123),
+			"attrs": map[string]any{
+				"visibility": "always",
+			},
+		},
+	}
 
 	result, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
 		PlaybookID: playbookID,
@@ -140,9 +152,61 @@ func TestToolCreatePlaybookAttributePostsPropertyField(t *testing.T) {
 
 	var decoded map[string]any
 	require.NoError(t, json.Unmarshal([]byte(result), &decoded))
+	assert.True(t, strings.HasPrefix(result, "{\n"))
+	assert.Contains(t, result, "\n  ")
 	assert.Equal(t, "bcdefghijklmnopqrstuvwxyza", decoded["id"])
 	assert.Equal(t, "Severity", decoded["name"])
 	assert.Equal(t, "select", decoded["type"])
+	assert.Equal(t, float64(123), decoded["create_at"])
+}
+
+func TestToolCreatePlaybookAttributePostsTextFieldAttrs(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	parentID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{}
+
+	_, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		Name:       "Runbook URL",
+		Type:       "text",
+		Attrs: &CreatePlaybookAttributeAttrs{
+			ParentID:  parentID,
+			ValueType: "url",
+		},
+	})
+	require.NoError(t, err)
+
+	body := client.postBody.(map[string]any)
+	attrs := body["attrs"].(map[string]any)
+	assert.Equal(t, parentID, attrs["parent_id"])
+	assert.Equal(t, "url", attrs["value_type"])
+	assert.NotContains(t, attrs, "options")
+}
+
+func TestToolCreatePlaybookAttributeWrapsPostErrors(t *testing.T) {
+	client := &fakeAPIClient{postErr: errors.New("boom")}
+
+	_, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+		PlaybookID: "abcdefghijklmnopqrstuvwxyz",
+		Name:       "Impact",
+		Type:       "text",
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create playbook attribute")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields", client.postEndpoint)
+}
+
+func TestToolCreatePlaybookAttributeRejectsEmptyResponse(t *testing.T) {
+	client := &fakeAPIClient{postMapResultSet: true}
+
+	_, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+		PlaybookID: "abcdefghijklmnopqrstuvwxyz",
+		Name:       "Impact",
+		Type:       "text",
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "response was empty")
 }
 
 func TestToolCreatePlaybookAttributeRejectsInvalidInput(t *testing.T) {
@@ -210,6 +274,9 @@ func TestToolCreatePlaybookAttributeRejectsInvalidInput(t *testing.T) {
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.want)
 			assert.Empty(t, client.postEndpoint)
+			assert.Empty(t, client.getEndpoint)
+			assert.Empty(t, client.putEndpoint)
+			assert.Empty(t, client.deleteEndpoint)
 		})
 	}
 }
