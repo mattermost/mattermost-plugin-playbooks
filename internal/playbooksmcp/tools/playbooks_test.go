@@ -197,16 +197,56 @@ func TestToolCreatePlaybookAttributeWrapsPostErrors(t *testing.T) {
 	assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields", client.postEndpoint)
 }
 
-func TestToolCreatePlaybookAttributeRejectsEmptyResponse(t *testing.T) {
-	client := &fakeAPIClient{postMapResultSet: true}
+func TestToolCreatePlaybookAttributeRejectsEmptyOrUnidentifiedResponse(t *testing.T) {
+	tests := []struct {
+		name          string
+		postMapResult map[string]any
+		want          string
+	}{
+		{
+			name: "nil response",
+			want: "response was empty",
+		},
+		{
+			name:          "empty object",
+			postMapResult: map[string]any{},
+			want:          "response was empty",
+		},
+		{
+			name:          "missing id",
+			postMapResult: map[string]any{"name": "Impact", "type": "text"},
+			want:          "response missing id",
+		},
+		{
+			name:          "blank id",
+			postMapResult: map[string]any{"id": "   ", "name": "Impact"},
+			want:          "response missing id",
+		},
+		{
+			name:          "non-string id",
+			postMapResult: map[string]any{"id": float64(1), "name": "Impact"},
+			want:          "response missing id",
+		},
+	}
 
-	_, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
-		PlaybookID: "abcdefghijklmnopqrstuvwxyz",
-		Name:       "Impact",
-		Type:       "text",
-	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "response was empty")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{
+				postMapResultSet: true,
+				postMapResult:    tt.postMapResult,
+			}
+
+			_, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+				PlaybookID: "abcdefghijklmnopqrstuvwxyz",
+				Name:       "Impact",
+				Type:       "text",
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "failed to create playbook attribute")
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields", client.postEndpoint)
+		})
+	}
 }
 
 func TestToolCreatePlaybookAttributeRejectsInvalidInput(t *testing.T) {

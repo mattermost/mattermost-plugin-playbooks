@@ -361,13 +361,17 @@ func toolCreatePlaybookAttribute(ctx context.Context, client APIClient, args Cre
 	if err := client.Post(ctx, endpoint, body, &created); err != nil {
 		return "", fmt.Errorf("failed to create playbook attribute: %w", err)
 	}
+	if len(created) == 0 {
+		return "", fmt.Errorf("failed to create playbook attribute: response was empty")
+	}
+	id, ok := created["id"].(string)
+	if !ok || strings.TrimSpace(id) == "" {
+		return "", fmt.Errorf("failed to create playbook attribute: response missing id")
+	}
 
 	data, err := json.MarshalIndent(created, "", "  ")
 	if err != nil {
 		return "", err
-	}
-	if string(data) == "null" {
-		return "", fmt.Errorf("failed to create playbook attribute: response was empty")
 	}
 	return string(data), nil
 }
