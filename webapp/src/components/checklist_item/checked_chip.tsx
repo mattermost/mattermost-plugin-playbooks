@@ -261,18 +261,20 @@ function tooltipLabel(action: StateAction, subjectUserId: string, user: React.Re
 
 /**
  * Resolve the timeline event for this item's last state change, or undefined when it can't be
- * determined confidently. The link between a timeline event and a checklist item is imperfect (the
- * event stores only the action + the markdown-stripped task title — no item id reaches the
- * frontend), so we never guess:
- *   1. The event's action must be one the item's resting state could have produced (`allowedActions`)
- *      — this keeps a stale/contradictory event from matching (e.g. a `check` event against an Open
- *      item) and disambiguates uncheck vs. restore for Open items.
- *   2. The event's event_at MUST equal this item's state_modified — the backend sets both from the
- *      same clock read, so this is the authoritative key. A single matching event is the match.
- *   3. If several share that millisecond (e.g. a bulk/API action), disambiguate by title; use it
- *      only when exactly one title matches.
- * Title is never used as a sole link — only as a tiebreaker among exact event_at matches. Any
- * remaining ambiguity returns undefined so the chip omits attribution rather than mis-attributing.
+ * determined confidently, without ever mis-attributing across items.
+ *
+ * Candidate events are always first restricted by action to the ones the item's resting state could
+ * have produced (`allowedActions`) — this keeps a stale/contradictory event from matching (e.g. a
+ * `check` event against an Open item) and disambiguates uncheck vs. restore for Open items.
+ *
+ * Among those, the join to this specific item uses the strongest key available:
+ *   1. Stable item id: events created by current servers carry `details.item_id`. When any candidate
+ *      does, we scope strictly to this item's events and take the one at `state_modified` (or, if the
+ *      exact-timestamp event hasn't arrived yet, the most recent) — unambiguous, so same-millisecond
+ *      bulk changes, duplicate titles, and markdown titles all attribute correctly.
+ *   2. Legacy fallback (events predating `item_id`): match on `event_at === state_modified` (the
+ *      backend sets both from one clock read), breaking same-millisecond ties by exact title. Title
+ *      is only ever a tiebreaker, never a sole link; unresolved ambiguity returns undefined.
  */
 function useStateEvent(events: TimelineEvent[] | undefined, item: ChecklistItem, show: boolean, allowedActions: StateAction[]): TimelineEvent | undefined {
     const allowedKey = allowedActions.join(',');
@@ -289,23 +291,41 @@ function useStateEvent(events: TimelineEvent[] | undefined, item: ChecklistItem,
             return action !== undefined && allowedActions.includes(action);
         });
 
-        const titleMatches = (raw: string) => parseDetails(raw)?.task === item.title;
+        // Stable id join (current servers): scope to this item's events by id, unaffected by
+        // timestamp collisions or title ambiguity.
+        if (item.id) {
+            const byId = matches.filter((e) => parseDetails(e.details)?.item_id === item.id);
+            if (byId.length > 0) {
+                const atChange = byId.filter((e) => e.event_at === item.state_modified);
+                if (atChange.length > 0) {
+                    return atChange[0];
+                }
+                return byId.reduce((latest, e) => (e.event_at > latest.event_at ? e : latest));
+            }
+        }
 
-        // event_at must always equal state_modified; title alone is never a sufficient link.
-        const exact = matches.filter((e) => e.event_at === item.state_modified);
+        // Legacy fallback (events without an item_id). Never consider an event that names a different
+        // item — an id-carrying event belongs to whichever item it names, so it can't be ours here.
+        const legacyPool = matches.filter((e) => {
+            const eventItemId = parseDetails(e.details)?.item_id;
+            return !eventItemId || eventItemId === item.id;
+        });
+
+        // event_at must equal state_modified; title alone is never a sufficient link.
+        const exact = legacyPool.filter((e) => e.event_at === item.state_modified);
         if (exact.length === 1) {
             return exact[0];
         }
         if (exact.length > 1) {
             // Same-millisecond collision (e.g. bulk/API action): disambiguate by title, and only
             // when exactly one title matches.
-            const byTitle = exact.filter((e) => titleMatches(e.details));
+            const byTitle = exact.filter((e) => parseDetails(e.details)?.task === item.title);
             return byTitle.length === 1 ? byTitle[0] : undefined;
         }
         return undefined;
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [events, item.state_modified, item.title, show, allowedKey]);
+    }, [events, item.id, item.state_modified, item.title, show, allowedKey]);
 }
 
 const Chip = styled.div`

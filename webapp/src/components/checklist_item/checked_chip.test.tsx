@@ -233,6 +233,38 @@ describe('CheckedChip', () => {
         });
     });
 
+    describe('stable item-id join', () => {
+        const withItemId = (action: string, itemId: string, overrides: Partial<TimelineEvent> = {}): TimelineEvent =>
+            stateEvent(action, {details: JSON.stringify({action, task: 'Deploy', item_id: itemId}), ...overrides});
+
+        it('attributes by item_id even when two items collide in the same millisecond with identical titles', () => {
+            const events = [
+                withItemId('check', 'other-item', {id: 'e1', subject_user_id: 'alice'}),
+                withItemId('check', 'my-item', {id: 'e2', subject_user_id: 'bob'}),
+            ];
+            const component = render(closedItem({id: 'my-item', title: 'Deploy'}), {timelineEvents: events});
+
+            expect(avatarUserIds(component)).toEqual(['bob']);
+            expect(text(component)).toContain('@bob');
+        });
+
+        it('uses the most recent id-matched event when the exact-timestamp event has not arrived yet', () => {
+            const events = [withItemId('check', 'my-item', {event_at: STATE_MODIFIED - 5000, subject_user_id: 'carol'})];
+            const component = render(closedItem({id: 'my-item', state_modified: STATE_MODIFIED}), {timelineEvents: events});
+
+            expect(avatarUserIds(component)).toEqual(['carol']);
+        });
+
+        it('never attributes another item\'s id-tagged event via the timestamp fallback', () => {
+            // Event at the exact state_modified, but tagged for a different item — must not be borrowed.
+            const events = [withItemId('check', 'someone-else', {subject_user_id: 'alice'})];
+            const component = render(closedItem({id: 'my-item', title: 'Deploy'}), {timelineEvents: events});
+
+            expect(avatarUserIds(component)).toHaveLength(0);
+            expect(text(component)).toContain('Checked off');
+        });
+    });
+
     describe('skipped', () => {
         it('renders a "Skipped" chip with actor for a skipped item', () => {
             const component = render(skippedItem(), {timelineEvents: [stateEvent('skip', {subject_user_id: 'frank'})]});
