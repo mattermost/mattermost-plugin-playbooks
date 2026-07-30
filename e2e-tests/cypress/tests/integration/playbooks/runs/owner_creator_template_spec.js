@@ -55,7 +55,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
-            cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Run by {OWNER}'}).then(() => {
+            cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Run by {OWNER}', channel_name_template_locked: true}).then(() => {
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: playbook.id,
@@ -91,7 +91,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
-            cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Started by {CREATOR}'}).then(() => {
+            cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Started by {CREATOR}', channel_name_template_locked: true}).then(() => {
                 // # testCreator starts the run — they become reporter_user_id
                 cy.apiLogin(testCreator);
                 cy.apiRunPlaybook({
@@ -129,7 +129,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
-            cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{CREATOR} for {OWNER}'}).then(() => {
+            cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{CREATOR} for {OWNER}', channel_name_template_locked: true}).then(() => {
                 // # testCreator starts the run, testOwner is the owner — they differ
                 cy.apiLogin(testCreator);
                 cy.apiRunPlaybook({
@@ -170,7 +170,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
-            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: seqPrefix, channel_name_template: '{SEQ} by {CREATOR} owned by {OWNER}'}).then(() => {
+            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: seqPrefix, channel_name_template: '{SEQ} by {CREATOR} owned by {OWNER}', channel_name_template_locked: true}).then(() => {
                 cy.apiLogin(testCreator);
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
@@ -263,7 +263,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
-            cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Owner={OWNER} Creator={CREATOR}'}).then(() => {
+            cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Owner={OWNER} Creator={CREATOR}', channel_name_template_locked: true}).then(() => {
                 // # testCreator starts the run with testOwner as initial owner
                 cy.apiLogin(testCreator);
                 cy.apiRunPlaybook({

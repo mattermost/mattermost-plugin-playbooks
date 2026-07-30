@@ -82,6 +82,9 @@ func (s *allocPlaybookServiceStub) ReorderPropertyFields(string, string, int) ([
 func (s *allocPlaybookServiceStub) UpdateChannelNameTemplate(string, string, string) error {
 	panic("not called")
 }
+func (s *allocPlaybookServiceStub) UpdateChannelNameTemplateLocked(string, bool, string) error {
+	panic("not called")
+}
 func (s *allocPlaybookServiceStub) UpdateRunNumberPrefix(string, string, string) error {
 	panic("not called")
 }
@@ -267,9 +270,10 @@ func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 		},
 	}
 	pb := Playbook{
-		ID:                  "pb_1",
-		RunNumberPrefix:     "INC",
-		ChannelNameTemplate: "{Zone}",
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "{Zone}",
+		ChannelNameTemplateLocked: true,
 	}
 	pbStub := &allocPlaybookServiceStub{getResult: pb}
 	svc := &PlaybookRunServiceImpl{
@@ -287,4 +291,242 @@ func TestResolveAndAllocate_DryRunFailureSkipsAllocation(t *testing.T) {
 	assert.Equal(t, 0, pbStub.incrementCalled, "counter MUST NOT be consumed when dry-run fails (gap-free atomicity)")
 	assert.Equal(t, int64(0), run.RunNumber)
 	assert.Equal(t, "", run.SequentialID)
+}
+
+// ---------------------------------------------------------------------------
+// Tests for ChannelNameTemplateLocked
+// ---------------------------------------------------------------------------
+//
+// ChannelNameTemplateLocked defaults to false (the caller's name wins). When locked is true,
+// the template always overrides the supplied name regardless of placeholder type.
+
+func TestResolveAndAllocate_OverrideNotAllowedTemplateWithVariableOverridesUserSuppliedName(t *testing.T) {
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Incident-{SEQ}",
+		ChannelNameTemplateLocked: true,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My Custom Name"}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Incident-INC-00001", run.Name, "override-not-allowed template must override the caller's name")
+	assert.Equal(t, "Incident-INC-00001", channelName)
+}
+
+func TestResolveAndAllocate_OverrideNotAllowedTemplateWithNoUserSuppliedName(t *testing.T) {
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Incident-{SEQ}",
+		ChannelNameTemplateLocked: true,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Incident-INC-00001", run.Name)
+	assert.Equal(t, "Incident-INC-00001", channelName)
+}
+
+func TestResolveAndAllocate_OverrideAllowedTemplateUsesUserSuppliedName(t *testing.T) {
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Incident-{SEQ}",
+		ChannelNameTemplateLocked: false,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My Custom Name"}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "My Custom Name", run.Name, "when override is allowed, the caller's name must win")
+	assert.Equal(t, "My Custom Name", channelName, "the channel name must be derived from the caller's name, not the template")
+}
+
+// The API layer (server/api/playbook_runs.go) rejects this case before CreatePlaybookRun is
+// even called, so this test only pins resolveAndAllocate's own defense-in-depth behavior for
+// callers that skip that pre-check. Per the "gaps are acceptable" comment on resolveAndAllocate,
+// the run number is already allocated by the time the missing-name check runs.
+func TestResolveAndAllocate_OverrideAllowedWithNoUserSuppliedNameFails(t *testing.T) {
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Incident-{SEQ}",
+		ChannelNameTemplateLocked: false,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID}
+	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+}
+
+func TestResolveAndAllocate_LiteralTemplateLockedUsesTemplate(t *testing.T) {
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Zone Alpha",
+		ChannelNameTemplateLocked: true,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My Custom Name"}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Zone Alpha", run.Name)
+	assert.Equal(t, "Zone Alpha", channelName)
+}
+
+func TestResolveAndAllocate_LiteralTemplateLockedWithNoUserSuppliedName(t *testing.T) {
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "Zone Alpha",
+		ChannelNameTemplateLocked: true,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Zone Alpha", run.Name)
+	assert.Equal(t, "Zone Alpha", channelName)
+}
+
+func TestResolveAndAllocate_UnrecognizedPlaceholderLockedFailsResolve(t *testing.T) {
+	zoneField := PropertyField{
+		PropertyField: model.PropertyField{
+			ID:   "fld_zone",
+			Name: "Zone",
+			Type: model.PropertyFieldTypeText,
+		},
+	}
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "{notARealVariable}",
+		ChannelNameTemplateLocked: true,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := &PlaybookRunServiceImpl{
+		playbookService: pbStub,
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{zoneField}},
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+	}
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My Custom Name"}
+	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+}
+
+// ---------------------------------------------------------------------------
+// Tests for token resolution within a user-supplied name
+// ---------------------------------------------------------------------------
+//
+// A user-supplied name is resolved the same way a template is: recognized tokens
+// (system tokens or real property fields) are substituted. Unlike a locked template,
+// an unresolved token is left as literal text rather than rejected.
+
+func TestResolveAndAllocate_UserSuppliedNameResolvesSystemToken(t *testing.T) {
+	pb := Playbook{
+		ID:              "pb_1",
+		RunNumberPrefix: "INC",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "Release {SEQ} kickoff"}
+	channelName, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Release INC-00001 kickoff", run.Name)
+	assert.Equal(t, "Release INC-00001 kickoff", channelName)
+}
+
+func TestResolveAndAllocate_UserSuppliedNameResolvesPropertyField(t *testing.T) {
+	versionField := PropertyField{
+		PropertyField: model.PropertyField{
+			ID:   "fld_version",
+			Name: "Version",
+			Type: model.PropertyFieldTypeText,
+		},
+	}
+	pb := Playbook{
+		ID:              "pb_1",
+		RunNumberPrefix: "INC",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := &PlaybookRunServiceImpl{
+		playbookService: pbStub,
+		propertyService: &allocPropertyServiceStub{fields: []PropertyField{versionField}},
+		licenseChecker:  &allocLicenseCheckerWithAttributes{},
+	}
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "Release version {Version}"}
+	initialValues := map[string]json.RawMessage{
+		"fld_version": json.RawMessage(`"2.10"`),
+	}
+	channelName, err := svc.resolveAndAllocate(run, &pb, initialValues, RunSourcePost)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Release version 2.10", run.Name)
+	assert.Equal(t, "Release version 2.10", channelName)
+}
+
+func TestResolveAndAllocate_UserSuppliedNameLeavesUnrecognizedTokenLiteral(t *testing.T) {
+	pb := Playbook{
+		ID:              "pb_1",
+		RunNumberPrefix: "INC",
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "Sprint {notARealVariable}"}
+	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.NoError(t, err, "an unresolved token in a user-supplied name must not block run creation")
+	assert.Equal(t, "Sprint {notARealVariable}", run.Name, "an unrecognized token is left literal, not stripped or rejected")
+}
+
+// A whitespace-only literal template has no placeholders, so it resolves successfully (no
+// unresolved fields) but trims to an empty string. ValidateChannelNameTemplate rejects a
+// whitespace-only template on the normal write path, so this pins resolveAndAllocate's own
+// defense-in-depth behavior for callers that skip that pre-check (e.g. a template that
+// slipped through the GraphQL setmap update).
+func TestResolveAndAllocate_LockedWhitespaceTemplateResolvesEmptyRejectsRegardlessOfUserSuppliedName(t *testing.T) {
+	pb := Playbook{
+		ID:                        "pb_1",
+		RunNumberPrefix:           "INC",
+		ChannelNameTemplate:       "   ",
+		ChannelNameTemplateLocked: true,
+	}
+	pbStub := &allocPlaybookServiceStub{getResult: pb, incrementResult: 1}
+	svc := newAllocService(pbStub)
+
+	run := &PlaybookRun{PlaybookID: pb.ID, Name: "My Custom Name"}
+	_, err := svc.resolveAndAllocate(run, &pb, nil, RunSourcePost)
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+	assert.Contains(t, err.Error(), "resolved to an empty name", "message must reflect the locked case, not the unlocked 'allows overriding the name' message")
 }

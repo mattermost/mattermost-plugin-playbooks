@@ -26,7 +26,7 @@ func TestNewPlaybooksToolProviderRejectsNilClientFactory(t *testing.T) {
 
 func TestProvideMCPHelperToolsRegistersChecklistAssigneeTool(t *testing.T) {
 	ctx := context.Background()
-	fakeClient := &fakeAPIClient{}
+	fakeClient := &fakeAPIClient{run: fixtureRun("abcdefghijklmnopqrstuvwxyz", 3, 3)}
 
 	provider, err := NewPlaybooksToolProvider(func(context.Context) (APIClient, error) {
 		return fakeClient, nil
@@ -64,15 +64,18 @@ func TestProvideMCPHelperToolsRegistersChecklistAssigneeTool(t *testing.T) {
 		t.Fatalf("ListTools returned error: %v", err)
 	}
 
-	found := false
+	registered := make(map[string]bool)
 	for _, tool := range tools.Tools {
-		if tool.Name == "playbooks__set_checklist_item_assignee" {
-			found = true
-			break
-		}
+		registered[tool.Name] = true
 	}
-	if !found {
-		t.Fatalf("expected set_checklist_item_assignee to be registered, got tools %#v", tools.Tools)
+	for _, want := range []string{
+		"playbooks__set_checklist_item_assignee",
+		"playbooks__resolve_channel_context",
+		"playbooks__find_checklist_item",
+	} {
+		if !registered[want] {
+			t.Fatalf("expected %s to be registered, got tools %#v", want, tools.Tools)
+		}
 	}
 
 	_, err = session.CallTool(ctx, &mcp.CallToolParams{
