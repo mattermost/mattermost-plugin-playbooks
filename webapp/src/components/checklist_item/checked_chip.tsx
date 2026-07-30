@@ -57,6 +57,14 @@ const actionsForState = (state: ChecklistItem['state']): StateAction[] => {
 };
 
 /**
+ * Whether the state-change chip renders for this item — a recorded state change (state_modified > 0)
+ * in a state the chip can label. Exported so the containing task row can gate its metadata layout on
+ * the exact same condition the chip renders on, rather than duplicating it.
+ */
+export const shouldShowCheckedChip = (item: ChecklistItem): boolean =>
+    actionsForState(item.state).length > 0 && item.state_modified > 0;
+
+/**
  * CheckedChip shows when a checklist item last changed state — checked, unchecked, skipped, or
  * restored — and (best-effort) who did it.
  *
@@ -66,7 +74,7 @@ const actionsForState = (state: ChecklistItem['state']): StateAction[] => {
  */
 const CheckedChip = ({item, timelineEvents, compact = false}: Props) => {
     const candidateActions = actionsForState(item.state);
-    const show = candidateActions.length > 0 && item.state_modified > 0;
+    const show = shouldShowCheckedChip(item);
 
     const stateEvent = useStateEvent(timelineEvents, item, show, candidateActions);
     const subjectUserId = stateEvent?.subject_user_id ?? '';

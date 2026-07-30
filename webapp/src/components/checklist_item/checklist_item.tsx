@@ -39,7 +39,7 @@ import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
 import {TimelineEvent} from 'src/types/rhs';
-import CheckedChip from 'src/components/checklist_item/checked_chip';
+import CheckedChip, {shouldShowCheckedChip} from 'src/components/checklist_item/checked_chip';
 import {formatConditionExpr} from 'src/utils/condition_format';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -120,12 +120,6 @@ interface ChecklistItemProps {
     isSelected?: boolean;
     onItemSelect?: () => void;
 }
-
-// The state-change chip shows for items that have been checked (Closed), unchecked/restored (back
-// to Open with a recorded state change), or skipped (Skip). Never-touched items (state_modified === 0)
-// are excluded.
-const showCheckedChip = (item: ChecklistItemType): boolean =>
-    (item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Open || item.state === ChecklistItemState.Skip) && item.state_modified > 0;
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
@@ -495,7 +489,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderCheckedChip = (): null | React.ReactNode => {
-        if (!showCheckedChip(props.checklistItem)) {
+        if (!shouldShowCheckedChip(props.checklistItem)) {
             return null;
         }
         return (
@@ -559,7 +553,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         const haveTaskActions = taskActions?.length > 0;
         if (
             !isEditing &&
-            !showCheckedChip(props.checklistItem) &&
+            !shouldShowCheckedChip(props.checklistItem) &&
             !assigneeID &&
             !hasRoleAssignee &&
             !command &&

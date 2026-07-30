@@ -111,6 +111,7 @@ jest.mock('./condition_indicator', () => ({
 
 jest.mock('./checked_chip', () => ({
     __esModule: true,
+    ...jest.requireActual('./checked_chip'),
     default: () => null,
 }));
 
