@@ -1,0 +1,3054 @@
+{
+  "+/x2FM": {
+    "defaultMessage": "Select a playbook",
+    "description": "Placeholder for the playbook selector dropdown in channel action configuration."
+  },
+  "+4cyEF": {
+    "defaultMessage": "If",
+    "description": "Compact conditional prefix label starting a checklist condition clause (e.g. 'If Severity is High')."
+  },
+  "+8G9qr": {
+    "defaultMessage": "Default text for the retrospective.",
+    "description": "Help text under the 'Retrospective template' subheader in the playbook editor's retrospective section, describing the template field."
+  },
+  "+8UeKB": {
+    "defaultMessage": "Are you sure you want to delete {count} selected {count, plural, one {task} other {tasks}}? This action cannot be undone.",
+    "description": "Body of the confirmation dialog for bulk-deleting the selected checklist tasks; {count} is how many tasks are selected."
+  },
+  "+RhnH+": {
+    "defaultMessage": "Empty",
+    "description": "Placeholder shown for a custom attribute that has no value set; adjective meaning 'no value'."
+  },
+  "+Tmpup": {
+    "defaultMessage": "You automatically receive updates when this playbook is run.",
+    "description": "Tooltip on the enabled auto-follow toggle; 'is run' is the verb (when someone starts this playbook)."
+  },
+  "+hddg7": {
+    "defaultMessage": "Add to run timeline",
+    "description": "Post dot-menu item that saves the message to a run's timeline; 'run timeline' is the event history of a playbook run."
+  },
+  "+qDKgW": {
+    "defaultMessage": "View all updates",
+    "description": "Link/menu item in the run status update section that opens the panel listing every posted status update."
+  },
+  "+xTpT1": {
+    "defaultMessage": "Attributes",
+    "description": "Label above the custom attribute fields in the run creation modal; 'Attributes' are custom playbook fields. Noun."
+  },
+  "/+8SGX": {
+    "defaultMessage": "Showing {filteredNum} of {totalNum} events",
+    "description": "Counter above the run timeline showing how many events pass the current filter; {filteredNum} shown out of {totalNum} total events."
+  },
+  "//o1Nu": {
+    "defaultMessage": "Disable updates",
+    "description": "Confirm button of the dialog that disables scheduled status updates for a run; 'updates' means status updates. Imperative verb phrase."
+  },
+  "/1FEJW": {
+    "defaultMessage": "ACTIVE PARTICIPANTS per day over the last 14 days",
+    "description": "Title of a bar chart in playbook stats; the capitalized part is visually emphasized. Participants active per day, last 14 days."
+  },
+  "/GCoTA": {
+    "defaultMessage": "Clear",
+    "description": "Tooltip/button for clearing the text in a search input; verb."
+  },
+  "/HtNUp": {
+    "defaultMessage": "Select or specify a {mode, select, DurationValue {time span (\"4 hours\", \"7 days\"...)} DateTimeValue {time (\"in 4 hours\", \"May 1\", \"Tomorrow at 1 PM\"...)} other {time or time span}}",
+    "description": "Placeholder for a date/time input; the {mode} select switches wording between entering a duration (DurationValue), a point in time (DateTimeValue), or either. Keep the quoted example formats natural for the locale."
+  },
+  "/MaJux": {
+    "defaultMessage": "Start retrospective",
+    "description": "Button in a bot reminder post that opens the retrospective for editing; verb phrase."
+  },
+  "/PxBNo": {
+    "defaultMessage": "Maximum of {limit} attributes allowed",
+    "description": "Tooltip on the disabled 'Add attribute' button in the playbook Attributes editor; {limit} is the maximum number of custom attributes allowed."
+  },
+  "/RnCQb": {
+    "defaultMessage": "Send outgoing webhook",
+    "description": "Toggle title for the action that POSTs run events to configured webhook URLs; 'webhook' is a technical term."
+  },
+  "/YZ/sw": {
+    "defaultMessage": "Start trial",
+    "description": "Button for admins to start a free 30-day Enterprise trial, in upgrade banners and modals."
+  },
+  "/gbqA6": {
+    "defaultMessage": "{duration} before run started",
+    "description": "Tooltip line on a timeline event showing how long before the run started the event occurred; {duration} is a formatted duration like '2 hours'. 'Run' is a noun."
+  },
+  "/jUtaM": {
+    "defaultMessage": "ACTIVE RUNS per day over the last 14 days",
+    "description": "Title of a bar chart in playbook stats; the capitalized part is visually emphasized. Runs active per day ('runs' is the noun), last 14 days."
+  },
+  "/mYUy/": {
+    "defaultMessage": "There are no finished checklists linked to this channel",
+    "description": "Empty-state text in the channel sidebar when the Finished filter is selected but the channel has no finished checklists."
+  },
+  "/pSioa": {
+    "defaultMessage": "Condition no longer met, but task shown because it was modified",
+    "description": "Tooltip on a task whose visibility condition is no longer satisfied but which stays visible because it was modified."
+  },
+  "/qDObA": {
+    "defaultMessage": "Browse Runs",
+    "description": "Menu item in the channel sidebar '+' dropdown that opens the runs list page. Imperative; 'Runs' is a noun."
+  },
+  "03oqA2": {
+    "defaultMessage": "Active Runs",
+    "description": "Column header in the playbook list for the count of currently active runs; 'Runs' is the noun, compact space."
+  },
+  "0Azlrb": {
+    "defaultMessage": "Manage",
+    "description": "Button in the run participants RHS entering management mode (change roles, remove participants); verb, compact space."
+  },
+  "0HT+Ib": {
+    "defaultMessage": "Archived",
+    "description": "Run status badge for an archived run; compact badge text. Adjective."
+  },
+  "0QD99o": {
+    "defaultMessage": "Request to join channel",
+    "description": "Title of the confirmation dialog for requesting to join the private channel linked to a run."
+  },
+  "0RlzlZ": {
+    "defaultMessage": "Send a temporary welcome message to the user",
+    "description": "Toggle title for the action that sends an ephemeral welcome message to users joining the channel; 'temporary' means only visible to that user."
+  },
+  "0Vvpht": {
+    "defaultMessage": "Make Playbook Member",
+    "description": "Dropdown menu item changing a user's playbook role to regular member."
+  },
+  "0X/ezu": {
+    "defaultMessage": "{fields} will appear as literal text — if this is unintentional, check the field name against available options.",
+    "description": "Warning under the run name template input; {fields} lists variable names that don't match any attribute and will render literally."
+  },
+  "0Xt1ea": {
+    "defaultMessage": "You will still be able to access historical data for this metric.",
+    "description": "Reassuring second line in the delete-metric confirmation modal; historical data stays available."
+  },
+  "0cimup": {
+    "defaultMessage": "Creator's name",
+    "description": "Template variable fallback label representing the run creator's name in run name templates."
+  },
+  "0oL1zz": {
+    "defaultMessage": "Copied!",
+    "description": "Brief success toast after copying a link to the clipboard; exclamation."
+  },
+  "0oLj/t": {
+    "defaultMessage": "Expand",
+    "description": "Tooltip/label of an icon button that expands collapsed content (e.g. expand all checklists in the right-hand sidebar, or expand a panel); opposite of 'Collapse'. Verb."
+  },
+  "0tznw6": {
+    "defaultMessage": "Convert to private playbook",
+    "description": "Link/menu item that opens the convert-to-private-playbook confirmation flow."
+  },
+  "15jbT0": {
+    "defaultMessage": "Add more to your timeline",
+    "description": "Title of the upgrade modal advertising the paid 'add message to timeline' feature; 'timeline' is the run event history."
+  },
+  "1GOpgL": {
+    "defaultMessage": "Assignee...",
+    "description": "Placeholder of the task assignee picker; ends with an ellipsis. Noun."
+  },
+  "1I48bs": {
+    "defaultMessage": "Retrospective template",
+    "description": "Subheader in the playbook editor's retrospective section above the default retrospective text editor."
+  },
+  "1MQ3XZ": {
+    "defaultMessage": "{numActiveRuns, plural, =0 {no active runs} =1 {# active run} other {# active runs}}",
+    "description": "Chart tooltip label; {numActiveRuns} is the number of runs active on that day, with a zero branch."
+  },
+  "1OluNs": {
+    "defaultMessage": "Confirm enable status updates",
+    "description": "Title of the confirmation dialog before enabling status updates for a run."
+  },
+  "1QosTr": {
+    "defaultMessage": "Used by",
+    "description": "Tooltip over the author name on a playbook template card, indicating which organization uses/provides the template."
+  },
+  "1ikfp3": {
+    "defaultMessage": "If you delete this metric, the values for it will not be collected for any future runs.",
+    "description": "Body of the confirmation dialog for deleting a retrospective metric from a playbook; future runs will not collect it."
+  },
+  "1prgB2": {
+    "defaultMessage": "Search for people",
+    "description": "Placeholder of the people search input in the add-participants modal."
+  },
+  "2/2yg+": {
+    "defaultMessage": "Add",
+    "description": "Button label in the run participants RHS and confirm button of the 'Add participants' modal; adds selected users as run participants."
+  },
+  "2563nT": {
+    "defaultMessage": "Confirm finish run",
+    "description": "Title of the confirmation dialog before finishing a run from the status update modal; 'run' is a noun, 'finish' a verb."
+  },
+  "28FTjr": {
+    "defaultMessage": "Run actions allow you to automate activities for this channel",
+    "description": "Subtitle of the Run Actions modal, which configures automations tied to the run's channel."
+  },
+  "2BCWLD": {
+    "defaultMessage": "Configure channel",
+    "description": "Button that opens the channel actions configuration modal from playbook channel settings."
+  },
+  "2NDgJq": {
+    "defaultMessage": "Last status update",
+    "description": "Sort option in the channel sidebar run list ordering by the time of the most recent status update."
+  },
+  "2O2sfp": {
+    "defaultMessage": "Finish",
+    "description": "Button label that finishes (ends) a playbook run; verb, pairs with the run lifecycle."
+  },
+  "2Q5PhZ": {
+    "defaultMessage": "Prompt to run a playbook",
+    "description": "Toggle title for a channel action that prompts members to start a playbook run; 'run' is a verb here."
+  },
+  "2QkJ4s": {
+    "defaultMessage": "Save important messages for a complete picture that streamlines retrospectives.",
+    "description": "Help text of the upgrade modal for the timeline feature: saved messages help build the retrospective."
+  },
+  "3/wF0G": {
+    "defaultMessage": "Slash commands",
+    "description": "Checkbox option in the run timeline filter for events where slash commands were executed."
+  },
+  "36GNZj": {
+    "defaultMessage": "The playbook {title} was successfully archived.",
+    "description": "Success banner after archiving a playbook; {title} is the playbook's name."
+  },
+  "3Adhq6": {
+    "defaultMessage": "Duplicate attribute",
+    "description": "Menu item in a playbook attribute's dot menu that creates a copy of the attribute. Imperative verb phrase."
+  },
+  "3Ls2m+": {
+    "defaultMessage": "Playbook Member",
+    "description": "Role label for a regular member of a playbook (as opposed to 'Playbook Admin') in the playbook member management list."
+  },
+  "3PoGhY": {
+    "defaultMessage": "Are you sure you want to publish?",
+    "description": "Title of the confirmation dialog before publishing a run's retrospective report."
+  },
+  "3hBelc": {
+    "defaultMessage": "A retrospective is not expected.",
+    "description": "Text shown in the playbook editor's retrospective section when the retrospective feature is disabled for this playbook."
+  },
+  "3qPQMX": {
+    "defaultMessage": "{name} requested a status update",
+    "description": "Run timeline event title; {name} is the display name of the user who requested the status update."
+  },
+  "3rCdDw": {
+    "defaultMessage": "Status updates",
+    "description": "Title of the status updates panel in the run details right-hand sidebar; also a checkbox option in the run timeline event filter and a playbook outline section name. 'Status updates' is a noun phrase."
+  },
+  "3y9DGg": {
+    "defaultMessage": "Resume",
+    "description": "Button/menu item label that reactivates a finished channel checklist (a lightweight run without a playbook); also the confirm button of that dialog. Verb."
+  },
+  "3zF589": {
+    "defaultMessage": "Reset to all {filterName}",
+    "description": "Reset link inside the owner/playbook filter dropdowns on the runs list; {filterName} is an untranslated English word, either 'owners' or 'playbooks'."
+  },
+  "42qmJ5": {
+    "defaultMessage": "You do not have permission to post an update.",
+    "description": "Warning shown in the post-update modal when the user is not allowed to post a status update for the run."
+  },
+  "450Fty": {
+    "defaultMessage": "None",
+    "description": "Option in the role-based assignee dropdown meaning no role is assigned; alongside options like 'Run Owner'."
+  },
+  "47FYwb": {
+    "defaultMessage": "Cancel",
+    "description": "Cancel button in confirmation and settings modals; dismisses without saving."
+  },
+  "4BN53Q": {
+    "defaultMessage": "We’ll show you how close or far from the target each run’s value is and also plot it on a chart.",
+    "description": "Help text under the metric target input explaining how the target is used in charts and comparisons."
+  },
+  "4F90TN": {
+    "defaultMessage": "Confirm disable retrospective",
+    "description": "Title of the confirmation dialog before disabling the retrospective for a run."
+  },
+  "4GjZsL": {
+    "defaultMessage": "Total Playbooks",
+    "description": "Label in system statistics for the total number of playbooks on the server; admin audience."
+  },
+  "4Hrh5B": {
+    "defaultMessage": "{name} changed status from {summary}",
+    "description": "Run timeline event title when the run status changed; {name} is a user's display name, {summary} is text like 'Active to Resolved'."
+  },
+  "4Iqlfe": {
+    "defaultMessage": "You've joined this run.",
+    "description": "Success toast after the user joins a run as a participant."
+  },
+  "4aupaG": {
+    "defaultMessage": "The playbook {title} was successfully restored.",
+    "description": "Success banner after restoring (un-archiving) a playbook; {title} is the playbook's name."
+  },
+  "4cwL43": {
+    "defaultMessage": "With archived",
+    "description": "Checkbox label in the playbook list filter that includes archived playbooks in the results; compact space."
+  },
+  "4fHiNl": {
+    "defaultMessage": "Duplicate",
+    "description": "Dropdown menu item that creates a copy of a playbook; verb."
+  },
+  "4hzY0/": {
+    "defaultMessage": "An error occurred while creating the run.",
+    "description": "Error message in the run creation modal when starting the run fails on the server."
+  },
+  "4j2wKr": {
+    "defaultMessage": "It wasn't possible to finish the run.",
+    "description": "Error toast when finishing the run fails."
+  },
+  "4ltHYh": {
+    "defaultMessage": "Go to playbook",
+    "description": "Context menu item on a run card that navigates to the playbook the run was created from."
+  },
+  "4mCpAv": {
+    "defaultMessage": "It was not possible to change the owner",
+    "description": "Generic error toast when changing the run owner fails."
+  },
+  "4vuNrq": {
+    "defaultMessage": "{duration} after run started",
+    "description": "Tooltip line on a timeline event showing how long after the run started the event occurred; {duration} is a formatted duration. 'Run' is a noun."
+  },
+  "55HPp9": {
+    "defaultMessage": "Save condition changes",
+    "description": "Accessibility label (aria-label) of the checkmark button that saves edits to a task-visibility condition."
+  },
+  "5AJmOz": {
+    "defaultMessage": "When a user joins the channel",
+    "description": "Trigger section title in channel/playbook actions modal; the event of a user joining the channel fires the actions below it."
+  },
+  "5BUxvl": {
+    "defaultMessage": "Everyone in this team can view this playbook.",
+    "description": "Subtitle in the playbook access modal for a public playbook when the team name is unavailable."
+  },
+  "5CI3KH": {
+    "defaultMessage": "Contact support",
+    "description": "Button shown to admins after a trial/upgrade error, linking to Mattermost support."
+  },
+  "5HXkY/": {
+    "defaultMessage": "Type: {typeTitle}",
+    "description": "Read-only header in the metric editor showing the metric's data type; {typeTitle} is the type name (Duration, Cost, Integer)."
+  },
+  "5Hzwqs": {
+    "defaultMessage": "Favorite",
+    "description": "Menu item that marks a playbook or run as a favorite; verb, pairs with 'Unfavorite'."
+  },
+  "5Ofkag": {
+    "defaultMessage": "Enable retrospective",
+    "description": "Menu item in the run context menu and confirm button that turns the retrospective feature on for a run. Imperative verb phrase."
+  },
+  "5ZIN3u": {
+    "defaultMessage": "Status Updates",
+    "description": "Section title in the playbook editor outline for configuring status updates (recurring run progress reports)."
+  },
+  "5b1zuB": {
+    "defaultMessage": "Add them to the run channel",
+    "description": "Title of the Run Actions toggle that automatically adds new run participants to the run's channel; 'them' refers to the new participants."
+  },
+  "5fGYe2": {
+    "defaultMessage": "No attributes yet",
+    "description": "Empty-state title on the playbook Attributes page when no custom attributes exist yet."
+  },
+  "5j6GD/": {
+    "defaultMessage": "{numParticipants, plural, =0 {no participants} =1 {# participant} other {# participants}}",
+    "description": "Participant count shown under the owner in a runs-list row; e.g. 'no participants', '3 participants'. Compact space."
+  },
+  "5kK+j9": {
+    "defaultMessage": "Restart",
+    "description": "Button/menu item label that reactivates a finished playbook run; also the confirm button of that dialog. Verb."
+  },
+  "5qBEKB": {
+    "defaultMessage": "What are playbook runs?",
+    "description": "Title of the empty-state panel on the runs page introducing the concept of playbook runs; 'runs' is the noun."
+  },
+  "61uz0P": {
+    "defaultMessage": "Failed to save this setting. Please try again.",
+    "description": "Error toast when saving the channel-name-template lock setting fails; generic retry prompt."
+  },
+  "69nlA3": {
+    "defaultMessage": "Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00).",
+    "description": "Validation error for a duration metric value; dd:hh:mm means days:hours:minutes, keep the format literal."
+  },
+  "6CGo3o": {
+    "defaultMessage": "Status / Last update",
+    "description": "Sortable column header in the runs list combining the run's status and last status update time. Compact space."
+  },
+  "6D6ffM": {
+    "defaultMessage": "Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.",
+    "description": "Validation error for a duration metric target; dd:hh:mm means days:hours:minutes, blank is allowed."
+  },
+  "6rygzu": {
+    "defaultMessage": "Remove from run",
+    "description": "Menu item in the participants management view that removes a participant from the run. Imperative verb phrase."
+  },
+  "6uhSSw": {
+    "defaultMessage": "Select a channel",
+    "description": "Placeholder for channel selector dropdowns (e.g. broadcast channels, linked channel)."
+  },
+  "706Soh": {
+    "defaultMessage": "tasks done",
+    "description": "Compact suffix after a numeric fraction on a run card, e.g. '3/5 tasks done'; the numbers are rendered separately before this text."
+  },
+  "724CrE": {
+    "defaultMessage": "Select...",
+    "description": "Placeholder of a single-select attribute dropdown in the run creation modal; ends with an ellipsis."
+  },
+  "7KMbBa": {
+    "defaultMessage": "Never used",
+    "description": "Status line under a playbook in the playbook selector meaning the playbook has never been run."
+  },
+  "7P5T3W": {
+    "defaultMessage": "Restore checklist",
+    "description": "Tooltip on the refresh icon that un-skips a previously skipped checklist in a run. Imperative verb phrase."
+  },
+  "8FzC0B": {
+    "defaultMessage": "{user} checked off checklist item \"{name}\"",
+    "description": "Run timeline event title when a task was checked off; {user} is a display name, {name} is the checklist item title."
+  },
+  "8JP4EK": {
+    "defaultMessage": "Auto-follow",
+    "description": "Checkbox/menu label to automatically follow every run started from this playbook; compact setting name."
+  },
+  "8PDS6L": {
+    "defaultMessage": "Restrict run management to owner only",
+    "description": "Confirmation modal title for the setting that limits run management (finish/restore/reassign) to the run owner."
+  },
+  "8T9fet": {
+    "defaultMessage": "Delete {count} {count, plural, one {task} other {tasks}}?",
+    "description": "Title of the confirmation dialog for bulk-deleting selected checklist tasks; {count} is how many are selected."
+  },
+  "8UDi5O": {
+    "defaultMessage": "Preview:",
+    "description": "Label prefix before the resolved example text of a template input (e.g. run name template) in the playbook editor; a preview value follows the colon."
+  },
+  "8kS2BY": {
+    "defaultMessage": "Save as playbook",
+    "description": "Menu item in the run details context menu; creates a new reusable playbook from the current run's checklists."
+  },
+  "8n24G2": {
+    "defaultMessage": "View run details in a side panel",
+    "description": "Title of a tutorial tour tip pointing at the run details right-hand side panel; 'run' is a noun (an execution of a playbook)."
+  },
+  "8oPf1o": {
+    "defaultMessage": "Contact Sales",
+    "description": "Button in a bot post prompting Cloud workspace admins to contact the sales team about upgrading."
+  },
+  "9+Ddtu": {
+    "defaultMessage": "Next",
+    "description": "Button for the next page in pagination or the next step in a tutorial tour; compact space."
+  },
+  "91Hr5f": {
+    "defaultMessage": "Drag me to reorder",
+    "description": "Tooltip on the drag handle used to reorder a single task within a checklist."
+  },
+  "95v+5O": {
+    "defaultMessage": "{actions, plural, =0 {Task Actions} one {# action} other {# actions}}",
+    "description": "Label of the task actions button on a checklist item; shows 'Task Actions' when none are configured, otherwise the number of configured automations, e.g. '2 actions'."
+  },
+  "9M92On": {
+    "defaultMessage": "Select channels",
+    "description": "Placeholder for the multi-select channel picker used to choose broadcast channels."
+  },
+  "9MSO0T": {
+    "defaultMessage": "There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish <i>{runName}</i> for all participants?",
+    "description": "Body of the 'finish run' confirmation dialog when unfinished tasks remain; {outstanding} is the number of open tasks, <i> renders italics, {runName} is the run's name."
+  },
+  "9Obw6C": {
+    "defaultMessage": "Filter",
+    "description": "Button label above the run timeline in the RHS; opens event-type filter options for timeline entries."
+  },
+  "9PXW6Q": {
+    "defaultMessage": "Duration / Started on",
+    "description": "Sortable column header in the runs list combining the run's duration and start date. Compact space."
+  },
+  "9SIW2x": {
+    "defaultMessage": "Target value for each run",
+    "description": "Placeholder for the numeric target input when configuring a playbook metric; 'run' is a noun (each execution of the playbook)."
+  },
+  "9TTfXU": {
+    "defaultMessage": "Your System Admin has been notified.",
+    "description": "Help text in the upgrade banner after the user successfully notified their System Admin to request a license upgrade."
+  },
+  "9Wq55e": {
+    "defaultMessage": "Failed to assign {count} of {total} tasks",
+    "description": "Error toast after a bulk assignee change when some tasks failed; {count} failed out of {total} selected tasks."
+  },
+  "9WyylR": {
+    "defaultMessage": "Command",
+    "description": "Tooltip on a checklist task's slash-command button; 'Command' is a Mattermost slash command attached to the task."
+  },
+  "9X3jwi": {
+    "defaultMessage": "{icon} Cost",
+    "description": "Metric type title in the editor dropdown; {icon} is a currency icon element placed before the word."
+  },
+  "9XUYQt": {
+    "defaultMessage": "Import",
+    "description": "Button label on the playbooks list page to import a playbook from an exported JSON file; verb."
+  },
+  "9a9+ww": {
+    "defaultMessage": "Title",
+    "description": "Label for the title input field when editing a retrospective metric."
+  },
+  "9j5KzL": {
+    "defaultMessage": "Enter category name",
+    "description": "Placeholder for the input naming the sidebar category into which the run channel will be sorted (channel action configuration)."
+  },
+  "9kBCE0": {
+    "defaultMessage": "Leave{isFollowing, select, true { and unfollow} other {}}",
+    "description": "Destructive menu item for leaving a run; the select branch appends ' and unfollow' when the user is also following the run; 'Leave' is a verb."
+  },
+  "9kQNdp": {
+    "defaultMessage": "This playbook is private.",
+    "description": "Tooltip on the lock icon next to a private playbook's title in the editor."
+  },
+  "9qqGGd": {
+    "defaultMessage": "Invite participants",
+    "description": "Toggle label enabling automatic invitation of selected members when a run starts; imperative-style setting name."
+  },
+  "9tBhzB": {
+    "defaultMessage": "Upgrade now",
+    "description": "Button for Cloud admins to upgrade their subscription, in upgrade banners and modals."
+  },
+  "9trZXa": {
+    "defaultMessage": "Anyone on the team can view",
+    "description": "Short caption under the 'Public' access option when creating a playbook; describes team-wide visibility."
+  },
+  "9uOFF3": {
+    "defaultMessage": "Overview",
+    "description": "Section header in the run info right-hand sidebar showing the run's key facts (owner, participants, channel); also used elsewhere as a link/label for the run overview page. Noun."
+  },
+  "9w0mDI": {
+    "defaultMessage": "Confirm remove pre-assigned member",
+    "description": "Title of a confirmation modal shown when removing a single pre-assigned member from a playbook's automatic invite list."
+  },
+  "9xs0pp": {
+    "defaultMessage": "Add value...",
+    "description": "Placeholder shown in the run info panel where a participant can enter a metric value."
+  },
+  "A21Mgv": {
+    "defaultMessage": "Run finished",
+    "description": "Status label in the run details status-update section shown when the run has ended; 'Run' is a noun."
+  },
+  "A42NVB": {
+    "defaultMessage": "Failed to load playbook details. Please close and try again.",
+    "description": "Error message in the run creation modal when the selected playbook's details cannot be loaded."
+  },
+  "A7QaWD": {
+    "defaultMessage": "Join to make changes or interact",
+    "description": "Text in the channel right-hand sidebar footer prompting non-participants to join the run before they can edit it."
+  },
+  "A8dbCS": {
+    "defaultMessage": "Playbook Not Found",
+    "description": "Error page title shown when the requested playbook is private or does not exist."
+  },
+  "AG7PKJ": {
+    "defaultMessage": "Rename run",
+    "description": "Modal header for renaming a playbook run; 'run' is a noun (counterpart of 'Rename checklist')."
+  },
+  "AML4RW": {
+    "defaultMessage": "Task assignments",
+    "description": "Checkbox option in the run timeline filter for task assignee change events."
+  },
+  "Ab0NkQ": {
+    "defaultMessage": "Run {name}",
+    "description": "Badge label for a task assignee resolved from a run attribute; {name} is the user-type attribute's name; 'Run' refers to the playbook run (noun)."
+  },
+  "AhY0vJ": {
+    "defaultMessage": "Leave and unfollow",
+    "description": "Confirm button in the leave-run confirmation modal, shown when the user is also following the run."
+  },
+  "AkyGP2": {
+    "defaultMessage": "Channel deleted",
+    "description": "Disabled-state text in the run info overview when the channel linked to the run has been deleted."
+  },
+  "Auj1ap": {
+    "defaultMessage": "Start a trial or upgrade your subscription.",
+    "description": "List item in the steps to unlock a licensed feature on unlicensed servers; admin audience."
+  },
+  "B3Q5mz": {
+    "defaultMessage": "Trigger",
+    "description": "Section header inside the actions modal marking the trigger (the event that fires the configured actions)."
+  },
+  "B487HA": {
+    "defaultMessage": "In Progress",
+    "description": "Status badge for an active playbook run; compact space, pairs with 'Finished'."
+  },
+  "B6S87C": {
+    "defaultMessage": "Not available for direct and group message channels",
+    "description": "Hint under disabled run-action toggles explaining they don't apply to direct or group message channels."
+  },
+  "BJNrYQ": {
+    "defaultMessage": "As a participant, you’ll be able to update the run summary, check off tasks, post status updates and edit the retrospective.",
+    "description": "Body text of the 'Become a participant' modal explaining what run participants can do."
+  },
+  "BNB75h": {
+    "defaultMessage": "A playbook prescribes the checklists, automations, and templates for any repeatable procedures. {br} It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.",
+    "description": "Welcome screen description in the Playbooks right-hand sidebar explaining what a playbook is; {br} is a line break."
+  },
+  "BQtd5I": {
+    "defaultMessage": "Welcome to Playbooks!",
+    "description": "Heading of the welcome screen in the Playbooks right-hand sidebar for first-time users."
+  },
+  "BbnCBV": {
+    "defaultMessage": "Require new channel for all runs",
+    "description": "Toggle label and confirmation title forcing every run of this playbook to create a new channel (no linking to existing channels)."
+  },
+  "Bgt0C8": {
+    "defaultMessage": "This update for the run <i>{runName}</i> will be broadcasted to {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.",
+    "description": "Description in the status update modal of where the update will be broadcast; <i> italicizes the run name, <OverviewLink> links to the run overview, <ChannelsTooltip>/<FollowersTooltip> wrap hoverable counts of broadcast channels and followers' direct messages. The select branches hide the parts that don't apply."
+  },
+  "BiQjuS": {
+    "defaultMessage": "Run moved to {channel}",
+    "description": "Success toast after moving a run to a different channel; {channel} is the destination channel's name; 'Run' is a noun."
+  },
+  "Brya9X": {
+    "defaultMessage": "Add a run summary template…",
+    "description": "Placeholder for the markdown editor of the run summary template in the playbook outline."
+  },
+  "C1khRR": {
+    "defaultMessage": "Back to playbooks",
+    "description": "Link on the error page returning the user to the playbooks list."
+  },
+  "C7tmYz": {
+    "defaultMessage": "Move to a different channel",
+    "description": "Title of the modal (and context menu item) for moving a run/checklist to a different channel."
+  },
+  "C9NScU": {
+    "defaultMessage": "Put your team in control",
+    "description": "Marketing headline in the upgrade modal for the restrict-playbook-creation feature."
+  },
+  "CAME2M": {
+    "defaultMessage": "Select attribute...",
+    "description": "Placeholder option of the dropdown for picking which user-type playbook attribute resolves to the task assignee; ends with an ellipsis."
+  },
+  "CBM4vh": {
+    "defaultMessage": "Timer for next update",
+    "description": "Form label in the status update modal above the picker for when the next update reminder is due."
+  },
+  "CFysvS": {
+    "defaultMessage": "Create Playbook Dropdown",
+    "description": "Accessibility label for the '+' dropdown button and menu used to browse or create playbooks and runs."
+  },
+  "CIV4Pa": {
+    "defaultMessage": "Join as a participant",
+    "description": "Tooltip on the button that lets a non-participant join the run as a participant."
+  },
+  "CUhlqp": {
+    "defaultMessage": "tutorial tour tip product image",
+    "description": "Alt text of the illustration image inside a tutorial tour tip; describes the image for screen readers."
+  },
+  "CgAtTJ": {
+    "defaultMessage": "{overdueNum, plural, =0 {} other {# overdue}}",
+    "description": "Compact overdue-task counter in the task inbox header; renders nothing when {overdueNum} is 0, otherwise e.g. '3 overdue'."
+  },
+  "CmVz3f": {
+    "defaultMessage": "Only the run owner can restore this run",
+    "description": "Tooltip on the disabled Resume/Restart button when only the run owner may restore the finished run."
+  },
+  "CyGaem": {
+    "defaultMessage": "Run name",
+    "description": "Placeholder for the run title text field, and a sortable column header in run lists; 'Run' is a noun."
+  },
+  "CywktV": {
+    "defaultMessage": "Move to condition",
+    "description": "Label of the bulk-action bar button/dropdown that moves the selected tasks into a condition group (tasks shown only when a condition is met)."
+  },
+  "D2CE02": {
+    "defaultMessage": "Enter webhook",
+    "description": "Placeholder for the textarea where outgoing webhook URLs are entered, one per line."
+  },
+  "D3idYv": {
+    "defaultMessage": "Settings",
+    "description": "Section title for playbook/channel settings, e.g. in the playbook editor outline; compact heading."
+  },
+  "D55vrs": {
+    "defaultMessage": "Your license could not be generated",
+    "description": "Error title shown to admins when trial license generation fails."
+  },
+  "D7jYUm": {
+    "defaultMessage": "Enabling this will immediately restrict finishing and restoring runs to the run owner. Reassigning ownership will also be restricted for non-admins. This applies to all active runs of this playbook. System admins keep access, and playbook admins can still reassign ownership. Continue?",
+    "description": "Confirmation body for the owner-only run management setting; details which actions are restricted and who keeps access. Admin-ish register."
+  },
+  "DCl7Vv": {
+    "defaultMessage": "inline code",
+    "description": "Sample text demonstrating inline-code markdown formatting in the textbox help bar; rendered in monospace."
+  },
+  "DKiv0o": {
+    "defaultMessage": "{user} skipped checklist item \"{name}\"",
+    "description": "Run timeline event title when a task was skipped; {user} is a display name, {name} is the checklist item title."
+  },
+  "DQn9Uj": {
+    "defaultMessage": "The user <i>{name}</i> is pre-assigned to one or more tasks. Not automatically inviting this user will clear their pre-assignments.{br}{br}Are you sure you want to stop inviting this user as a member of the run?",
+    "description": "Confirmation modal body when removing an auto-invited user who has pre-assigned tasks; {name} is the username, {br} are line breaks, <i> italicizes the name."
+  },
+  "DUU48k": {
+    "defaultMessage": "There is no task explicitly assigned to you. You can expand your search using the filters.",
+    "description": "Empty-state description in the task inbox when filters hide all tasks; suggests widening the filters."
+  },
+  "DWMdZC": {
+    "defaultMessage": "Remove from condition",
+    "description": "Menu item on a task that removes it from its conditional group ('condition' = rule showing tasks based on attribute values)."
+  },
+  "DXACD6": {
+    "defaultMessage": "Publish retrospective report and access the timeline",
+    "description": "Title of an upgrade banner on the run retrospective tab promoting the paid retrospective and timeline features."
+  },
+  "Da8Mnx": {
+    "defaultMessage": "Bulk edit",
+    "description": "Button entering bulk-edit mode for checklist tasks in the playbook editor; toggles with 'Exit bulk edit'."
+  },
+  "DaHpK1": {
+    "defaultMessage": "Search for a channel",
+    "description": "Placeholder for the channel search picker when selecting broadcast channels in the playbook outline."
+  },
+  "DnBhRg": {
+    "defaultMessage": "Add People",
+    "description": "Default placeholder for the user autocomplete field used to add members."
+  },
+  "DqTQOp": {
+    "defaultMessage": "Once",
+    "description": "Frequency option in the retrospective reminder interval dropdown meaning a single, non-repeating reminder."
+  },
+  "DqbhUm": {
+    "defaultMessage": "Confirm resume",
+    "description": "Title of the confirmation modal for resuming a finished channel checklist (counterpart of 'Confirm restart' used for runs)."
+  },
+  "DtCplA": {
+    "defaultMessage": "{numParticipants, plural, =1 {<b>#</b> participant} other {<b>#</b> participants}}",
+    "description": "Participant count line in a status update post; {numParticipants} is the count, <b># </b> renders the number in bold."
+  },
+  "DvRKGH": {
+    "defaultMessage": "Only admins can restore this playbook.",
+    "description": "Disabled-state tooltip on the Restore menu item; only playbook admins may restore."
+  },
+  "EQpfkS": {
+    "defaultMessage": "Finished",
+    "description": "Label for a run's Finished status, used as a status badge and as a filter option in the channel sidebar run list; refers to a run that has ended."
+  },
+  "EWz2w5": {
+    "defaultMessage": "Run Playbook",
+    "description": "Tooltip on the button that starts a new run of the playbook; 'Run' is a verb here."
+  },
+  "EYIw2M": {
+    "defaultMessage": "Clear selection",
+    "description": "Accessibility label for the button that deselects all tasks in the checklist bulk-edit action bar."
+  },
+  "Edy3wX": {
+    "defaultMessage": "Checklist moved to {channel}",
+    "description": "Success toast after moving a channel checklist to a different channel; {channel} is the destination channel's name."
+  },
+  "Eisqqk": {
+    "defaultMessage": "Run Creator — Resolves to run creator at creation",
+    "description": "Option in the task assignee dropdown; assigns the task to whoever creates the run, resolved when the run starts. The em dash separates the option name from its explanation."
+  },
+  "Ek1Fx2": {
+    "defaultMessage": "When a message with these keywords is posted",
+    "description": "Trigger section title in the channel actions modal; fires when a posted message contains configured keywords."
+  },
+  "EkpdpQ": {
+    "defaultMessage": "Add a summary…",
+    "description": "Placeholder for the editable run summary field in the channel right-hand sidebar."
+  },
+  "EvBQLq": {
+    "defaultMessage": "Make Playbook Admin",
+    "description": "Dropdown menu item changing a user's playbook role to admin."
+  },
+  "F4pfM/": {
+    "defaultMessage": "Please enter a number, or leave the target blank.",
+    "description": "Validation error for a numeric (cost/integer) metric target; blank is allowed."
+  },
+  "F7C/TR": {
+    "defaultMessage": "Run Owner — Resolves to run owner at creation",
+    "description": "Option in the task assignee dropdown; assigns the task to the run owner, resolved when the run starts. The em dash separates the option name from its explanation."
+  },
+  "F9LrJA": {
+    "defaultMessage": "Filter items",
+    "description": "Tooltip on the filter icon above the checklist in the channel right-hand sidebar."
+  },
+  "FEGywG": {
+    "defaultMessage": "Please specify a future date/time for the update reminder.",
+    "description": "Validation warning in the status update modal when no future date/time is set for the next update reminder."
+  },
+  "FGzxgY": {
+    "defaultMessage": "e.g., Time to acknowledge, Time to resolve",
+    "description": "Example metric names shown under the Duration metric type option; incident-response examples."
+  },
+  "FLG4Iu": {
+    "defaultMessage": "Make run owner",
+    "description": "Menu item in the run participants management view that transfers run ownership to the selected participant. Imperative verb phrase."
+  },
+  "FXCLuZ": {
+    "defaultMessage": "{total, number} total",
+    "description": "Total count caption above list tables; {total} is the number of items."
+  },
+  "FgydNe": {
+    "defaultMessage": "View",
+    "description": "Dropdown menu item in the playbook list row; opens the playbook for viewing."
+  },
+  "FipAX+": {
+    "defaultMessage": "Error loading playbook attributes. Please try again.",
+    "description": "Error message shown on the playbook Attributes page when the attribute list fails to load. 'Playbook attributes' are custom fields defined on a playbook."
+  },
+  "G/yZLu": {
+    "defaultMessage": "Remove",
+    "description": "Button label: confirm button for removing a checklist condition, and action to remove a user from the auto-invite list."
+  },
+  "GAUm4/": {
+    "defaultMessage": "View finished",
+    "description": "Button in the channel sidebar run list empty state that switches the filter to finished runs."
+  },
+  "GD+JsI": {
+    "defaultMessage": "{count} {count, plural, one {task} other {tasks}} selected",
+    "description": "Counter in the bulk-edit action bar showing how many checklist tasks are currently selected; {count} is the number."
+  },
+  "GDCpPr": {
+    "defaultMessage": "Recent status update",
+    "description": "Section heading on the run details page showing the most recent status update post."
+  },
+  "GHxJtB": {
+    "defaultMessage": "Select options...",
+    "description": "Placeholder of a multiselect attribute dropdown (run creation modal and run details sidebar); ends with an ellipsis."
+  },
+  "GPhFZn": {
+    "defaultMessage": "Only the run owner can restart this run",
+    "description": "Tooltip on the disabled 'Restart' menu item when only the run owner may restart the run ('run' is a noun, an execution of a playbook)."
+  },
+  "GR4us3": {
+    "defaultMessage": "Only admins can rename this playbook.",
+    "description": "Disabled-state tooltip on the Rename menu item; only playbook admins may rename."
+  },
+  "GVpA4Q": {
+    "defaultMessage": "Create New Playbook",
+    "description": "Menu item in the channel sidebar '+' dropdown that opens the playbook creation modal."
+  },
+  "GZoWl1": {
+    "defaultMessage": "Automate activities for this task",
+    "description": "Subtitle of the Task actions modal, which configures automations for a checklist task."
+  },
+  "Gg/nch": {
+    "defaultMessage": "NOT PARTICIPATING",
+    "description": "All-caps group heading in the task assignee picker for users who are not participants of the run; compact dropdown section label."
+  },
+  "GilXoi": {
+    "defaultMessage": "Mine only",
+    "description": "Checkbox filter on the runs list that shows only runs the current user participates in or follows. Compact label."
+  },
+  "GjCS6U": {
+    "defaultMessage": "Choose a template",
+    "description": "Heading above the template gallery when creating a playbook."
+  },
+  "Gwmqz5": {
+    "defaultMessage": "Request an update",
+    "description": "Title of the confirmation dialog for asking the run owner to post a status update."
+  },
+  "GxJAK1": {
+    "defaultMessage": "The playbook you're requesting is private or does not exist.",
+    "description": "Error page message when a requested playbook is inaccessible; deliberately ambiguous between private and nonexistent."
+  },
+  "GzjoWC": {
+    "defaultMessage": "Failed to update status updates setting",
+    "description": "Error toast when enabling/disabling status updates for a run fails."
+  },
+  "H+U7mq": {
+    "defaultMessage": "Join as a participant to restart",
+    "description": "Tooltip on the restart button when a non-participant tries to restart a finished run."
+  },
+  "H7IzRB": {
+    "defaultMessage": "Disable status updates",
+    "description": "Menu item in the run context menu that turns off scheduled status updates for the run. Imperative verb phrase."
+  },
+  "HAlOn1": {
+    "defaultMessage": "Name",
+    "description": "Sortable column header for the playbook or run name in list tables; compact space."
+  },
+  "HGSVzc": {
+    "defaultMessage": "Can not import multiple files at once.",
+    "description": "Error toast when the user drops more than one file onto the playbook import area."
+  },
+  "HLn43R": {
+    "defaultMessage": "Manage access",
+    "description": "Menu item in the playbook editor dot menu; opens the playbook members and permissions modal."
+  },
+  "HSi3uv": {
+    "defaultMessage": "No Assignee",
+    "description": "Reset link in the task assignee picker that clears the assignee."
+  },
+  "HXvk56": {
+    "defaultMessage": "Post status updates",
+    "description": "Title of a tutorial tour tip pointing at the post-update button in the run details sidebar. Imperative verb phrase."
+  },
+  "HZXZ6p": {
+    "defaultMessage": "Invalid prefix: must start and end with a letter or number and contain only letters, numbers, and hyphens.",
+    "description": "Validation error toast for an invalid run number prefix; describes the allowed characters."
+  },
+  "HgV5et": {
+    "defaultMessage": "Assign to condition:",
+    "description": "Non-clickable header inside a task's menu, above the list of conditional groups the task can be assigned to; ends with a colon."
+  },
+  "HhLp57": {
+    "defaultMessage": "quote",
+    "description": "Sample word demonstrating block-quote markdown formatting in the textbox help bar."
+  },
+  "HvAcYh": {
+    "defaultMessage": "{text}{rest, plural, =0 {} one { and other} other { and {rest} others}}",
+    "description": "Tooltip text listing channel/follower names in the status update modal; {text} is the joined list of names and {rest} the count of unnamed remaining items, e.g. 'A, B and 3 others'."
+  },
+  "I0NIMp": {
+    "defaultMessage": "Your tasks",
+    "description": "Title of the task inbox panel in the right-hand sidebar listing the user's assigned checklist tasks."
+  },
+  "I2zEie": {
+    "defaultMessage": "Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.",
+    "description": "Help text in the upgrade banner advertising the paid retrospective feature on the run details page."
+  },
+  "I5NMJ8": {
+    "defaultMessage": "More",
+    "description": "Tooltip/title on overflow ('...') menus and extra-filters buttons; compact space."
+  },
+  "I7+d55": {
+    "defaultMessage": "Specify date/time (“in 4 hours”, “May 1”...)",
+    "description": "Placeholder for a date/time selector when a specific point in time is expected; quoted strings are example inputs."
+  },
+  "I90sbW": {
+    "defaultMessage": "just now",
+    "description": "Relative timestamp shown for events within the last few seconds; appears lowercase mid-sentence."
+  },
+  "IE2BzH": {
+    "defaultMessage": "There are users that are pre-assigned to one or more tasks. Disabling invitations will clear <strong>all</strong> pre-assignments.{br}{br}Are you sure you want to disable invitations?",
+    "description": "Confirmation modal body when turning off auto-invitations entirely; warns all task pre-assignments will be cleared. Keep <strong> and {br} markup."
+  },
+  "IKCviq": {
+    "defaultMessage": "Retrospective disabled by {name}",
+    "description": "Run timeline entry; {name} is the display name of the user who disabled the retrospective."
+  },
+  "INlWvJ": {
+    "defaultMessage": "OR",
+    "description": "Logical operator joining condition clauses in checklist condition builders (as opposed to AND); keep as a boolean-logic connective."
+  },
+  "IdTL+v": {
+    "defaultMessage": "Create a run channel",
+    "description": "Radio option: each run gets a newly created channel; 'run' is the noun. Pairs with 'Link to an existing channel'."
+  },
+  "IyxIDd": {
+    "defaultMessage": "Select an example",
+    "description": "Placeholder of the dropdown for choosing a pre-built playbook template ('example') when creating a playbook."
+  },
+  "J9iebs": {
+    "defaultMessage": "Owner's name",
+    "description": "Fallback text substituted for the owner token when previewing a run name template before an owner is selected."
+  },
+  "JJNc3c": {
+    "defaultMessage": "Previous",
+    "description": "Button for the previous page in pagination or the previous step in a tutorial tour; compact space."
+  },
+  "JWVsso": {
+    "defaultMessage": "ASSIGN TO A ROLE",
+    "description": "All-caps section heading in the assignee dropdown for assigning a task to a role (e.g. run owner) rather than a person; compact label."
+  },
+  "JXdbo8": {
+    "defaultMessage": "Done",
+    "description": "Generic button label meaning 'finished'; used to exit manage/edit modes and close modals (e.g. done managing participants, final tutorial button). Not a task state."
+  },
+  "JYW9Fn": {
+    "defaultMessage": "Task Actions",
+    "description": "Tooltip on the task actions button when no automations are configured for the task."
+  },
+  "JcefuP": {
+    "defaultMessage": "Add a description (optional)",
+    "description": "Placeholder for a checklist task's description field."
+  },
+  "JeqL8w": {
+    "defaultMessage": "Retrospective canceled by {name}",
+    "description": "Run timeline entry; {name} is the display name of the user who canceled the retrospective."
+  },
+  "JfG49w": {
+    "defaultMessage": "Open",
+    "description": "Dropdown menu item in the RHS run list; opens the selected playbook run's details."
+  },
+  "JrZ2th": {
+    "defaultMessage": "Add Metric",
+    "description": "Button and dropdown label for adding a key metric in a playbook's retrospective settings."
+  },
+  "K3r6DQ": {
+    "defaultMessage": "Delete",
+    "description": "Confirm button label for deleting an attribute value or bulk-deleting selected checklist tasks; destructive action."
+  },
+  "KAd2Q5": {
+    "defaultMessage": "Failed to update retrospective setting",
+    "description": "Error toast when toggling the retrospective on/off for a run fails."
+  },
+  "KeO51o": {
+    "defaultMessage": "Channel",
+    "description": "Label in the run details RHS overview identifying the Mattermost channel linked to the run; noun."
+  },
+  "KiXNvz": {
+    "defaultMessage": "Run",
+    "description": "Button label that starts (executes) a playbook; verb 'to run', not the noun 'a run'."
+  },
+  "KjNfA8": {
+    "defaultMessage": "Invalid time duration",
+    "description": "Error shown when the typed text cannot be parsed as a time duration in a date/time selector."
+  },
+  "KoYfRy": {
+    "defaultMessage": "Change attribute type",
+    "description": "Accessibility label (aria-label) of the icon button that opens the type selector for a playbook attribute (text, select, user, etc.)."
+  },
+  "KzHQCQ": {
+    "defaultMessage": "There are no finished runs matching those filters.",
+    "description": "Empty-state message in the playbook metrics run list when filters match nothing; 'runs' is the noun."
+  },
+  "LDYFkN": {
+    "defaultMessage": "Duration (in dd:hh:mm)",
+    "description": "Duration metric type option title; dd:hh:mm means days:hours:minutes, keep the format literal."
+  },
+  "LI7YlB": {
+    "defaultMessage": "Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each run where values for these metrics will be input.",
+    "description": "Help text under the metric description input in the playbook metric editor; 'run' is a noun (each execution of the playbook)."
+  },
+  "Lbd31f": {
+    "defaultMessage": "Only admins can edit this playbook",
+    "description": "Toggle label in playbook settings restricting editing to playbook admins."
+  },
+  "LeuTI+": {
+    "defaultMessage": "Delete Attribute",
+    "description": "Header of the confirmation modal for deleting a custom attribute from a playbook."
+  },
+  "LfhTNW": {
+    "defaultMessage": "Browse or create Playbooks and Runs",
+    "description": "Tooltip on the '+' button in the channel sidebar Playbooks section; 'Playbooks' and 'Runs' are the object types being browsed/created."
+  },
+  "LmO/u3": {
+    "defaultMessage": "The channel will be auto-archived when the run is finished.",
+    "description": "Informational banner when auto-archive is enabled; the run's channel is archived automatically when the run finishes."
+  },
+  "LmhSmU": {
+    "defaultMessage": "Confirm Entry Delete",
+    "description": "Title of the confirmation modal for deleting an event from the run timeline."
+  },
+  "Lo10yH": {
+    "defaultMessage": "Unknown Channel",
+    "description": "Fallback display name in channel selectors for a channel the user cannot resolve/see."
+  },
+  "Lv0zJu": {
+    "defaultMessage": "Details",
+    "description": "Button in the RHS run description linking to the full run details page; compact button label."
+  },
+  "M/2yY/": {
+    "defaultMessage": "Nobody yet.",
+    "description": "Empty-state text in the run participants list when there are no participants; followed by an 'add participants' link."
+  },
+  "M4gAc9": {
+    "defaultMessage": "Add value",
+    "description": "Tooltip and accessibility label for the '+' button that adds a new option value to a select-type playbook attribute."
+  },
+  "M7NOBS": {
+    "defaultMessage": "Move to condition:",
+    "description": "Non-clickable header inside a task's menu when the task already has a condition, above the list of conditional groups it can be moved to; ends with a colon."
+  },
+  "M9tXoZ": {
+    "defaultMessage": "A join request will be sent to the run channel.",
+    "description": "Body of the confirmation dialog for requesting to join the run's channel; the request is posted as a message in that channel."
+  },
+  "MBNMo9": {
+    "defaultMessage": "Channel Actions",
+    "description": "Title of the channel actions modal, where users automate activities for a channel."
+  },
+  "MFpAtm": {
+    "defaultMessage": "{numTasks, number} {numTasks, plural, one {task} other {tasks}}",
+    "description": "Task count shown next to a checklist name in the playbook editor, e.g. '5 tasks'; {numTasks} is the number of checklist items."
+  },
+  "MHzP9I": {
+    "defaultMessage": "Define a message to welcome users joining the channel.",
+    "description": "Placeholder for the markdown textbox where a channel welcome message is composed (channel actions)."
+  },
+  "MJ89uW": {
+    "defaultMessage": "Convert to Private playbook",
+    "description": "Title and confirm button of the modal converting a public playbook to private."
+  },
+  "MOImZ2": {
+    "defaultMessage": "Created from \"{runName}\"",
+    "description": "Default description given to a playbook created via 'Save as playbook' from an existing run; {runName} is the source run's name."
+  },
+  "MRb11N": {
+    "defaultMessage": "Run Creator",
+    "description": "Badge label showing a task is assigned to the run creator role; 'Run' is a noun."
+  },
+  "MTzF3S": {
+    "defaultMessage": "Are you sure you want to restore the playbook {title}?",
+    "description": "Confirmation prompt in the restore-playbook modal; {title} is the playbook's name."
+  },
+  "MbapTE": {
+    "defaultMessage": "{num} {num, plural, =1 {task} other {tasks}} overdue",
+    "description": "Toggle button in the checklists sidebar that filters to overdue tasks; {num} is the number of overdue tasks, e.g. '3 tasks overdue'. Compact."
+  },
+  "MieztS": {
+    "defaultMessage": "Drop a playbook export file to import it.",
+    "description": "Instruction text in the drag-and-drop overlay on the playbook list; dropping an exported playbook file imports it."
+  },
+  "Mjq//Y": {
+    "defaultMessage": "Unfavorite",
+    "description": "Menu item removing a playbook or run from favorites; verb, pairs with 'Favorite'."
+  },
+  "MojlqB": {
+    "defaultMessage": "Run name template",
+    "description": "Label for the run name template input in the playbook's channel settings; the template generates names for new runs."
+  },
+  "MrJPOh": {
+    "defaultMessage": "Enable status updates",
+    "description": "Menu item in the run context menu that turns on scheduled status updates for the run. Imperative verb phrase."
+  },
+  "MtrTNy": {
+    "defaultMessage": "Tomorrow",
+    "description": "Suggested option label in date pickers (due date, date attribute) meaning the next day."
+  },
+  "MvEydR": {
+    "defaultMessage": "{name} posted a status update",
+    "description": "Run timeline event title when a status update was posted; {name} is the poster's display name."
+  },
+  "MyIJbr": {
+    "defaultMessage": "Contents",
+    "description": "Header of the table-of-contents side navigation in the playbook editor outline; compact space."
+  },
+  "N1U/QR": {
+    "defaultMessage": "Task state changes",
+    "description": "Checkbox option in the run timeline filter for task check/uncheck/skip events."
+  },
+  "N2IrpM": {
+    "defaultMessage": "Confirm",
+    "description": "Default confirm button label in generic confirmation modals."
+  },
+  "N7Ln74": {
+    "defaultMessage": "Rerun",
+    "description": "Button on a checklist task that executes its slash command again after it has already been run once; counterpart of 'Run'. Verb."
+  },
+  "NFyWnZ": {
+    "defaultMessage": "Work more effectively",
+    "description": "Marketing headline in the upgrade modal for the task due-dates feature."
+  },
+  "NGKqOC": {
+    "defaultMessage": "Also add me to the channel linked to this run",
+    "description": "Checkbox in the 'Become a participant' modal; checking it also adds the current user to the channel linked to the run."
+  },
+  "NJ9uPu": {
+    "defaultMessage": "Key metrics",
+    "description": "Subheader in the playbook editor's retrospective section, above the custom metrics configuration."
+  },
+  "NLeFGn": {
+    "defaultMessage": "to",
+    "description": "Connector word between the minimum and maximum values in a metric's value range display (e.g. '2 to 5'); grammatically joins two numbers."
+  },
+  "NMxVd+": {
+    "defaultMessage": "Please fill in the metric value.",
+    "description": "Validation error under a retrospective metric input when the value is empty at publish time."
+  },
+  "NNksk4": {
+    "defaultMessage": "Alphabetically",
+    "description": "Sort option in the channel sidebar run list ordering runs by name. Adverb."
+  },
+  "NYTGIb": {
+    "defaultMessage": "Got it",
+    "description": "Dismiss button of a single-step tutorial tour tip; acknowledges the tip."
+  },
+  "Nh91Us": {
+    "defaultMessage": "{from, number}–{to, number} of {total, number} total",
+    "description": "Pagination summary under list tables; {from}–{to} is the visible item range and {total} is the overall item count."
+  },
+  "NiAH1z": {
+    "defaultMessage": "Target value",
+    "description": "Cell title on the metrics report card showing the configured target value for a metric."
+  },
+  "NrHdCC": {
+    "defaultMessage": "Are you sure you want to restart {name}?",
+    "description": "Body of the confirmation dialog before restarting a finished playbook run; {name} is the run's name."
+  },
+  "O08xtN": {
+    "defaultMessage": "Failed to save setting. Please try again.",
+    "description": "Error toast when saving a playbook setting toggle fails; generic retry prompt."
+  },
+  "OG34OC": {
+    "defaultMessage": "Exit bulk edit",
+    "description": "Button leaving bulk-edit mode for checklist tasks; toggles with 'Bulk edit'."
+  },
+  "OQplDX": {
+    "defaultMessage": "A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>.",
+    "description": "Sentence in the playbook editor's status updates section; <duration>, <channels> and <webhooks> wrap inline clickable pickers (the update interval, broadcast channel selector, webhook selector). The plurals show how many broadcast channels/outgoing webhooks are configured."
+  },
+  "Ob5cSv": {
+    "defaultMessage": "Changes that you made will not be saved if you leave this page. Are you sure you want to discard changes and leave?",
+    "description": "Body of the unsaved-changes confirmation shown when navigating away from an edit page."
+  },
+  "ObmjTB": {
+    "defaultMessage": "Slash Command",
+    "description": "Placeholder/creation message of the slash command autocomplete input when configuring a slash command for a checklist task. Noun phrase."
+  },
+  "OcpRSQ": {
+    "defaultMessage": "Delete Entry",
+    "description": "Confirm button for permanently deleting an event from the run timeline."
+  },
+  "OfN7IN": {
+    "defaultMessage": "A status update request will be sent to the run channel.",
+    "description": "Body of the confirmation dialog for requesting a status update; the request is posted to the run's channel."
+  },
+  "Onx9co": {
+    "defaultMessage": "There are no in progress checklists in this channel",
+    "description": "Empty-state text in the channel sidebar when the In-progress filter is selected but the channel has no active checklists."
+  },
+  "Oo5sdB": {
+    "defaultMessage": "Playbook name",
+    "description": "Label and placeholder for the playbook title field in the create-playbook modal and playbook editor."
+  },
+  "OqCzNb": {
+    "defaultMessage": "Add a task",
+    "description": "Link at the bottom of a checklist for adding a new task."
+  },
+  "OqWwvQ": {
+    "defaultMessage": "{user} unchecked checklist item \"{name}\"",
+    "description": "Run timeline event title when a task was unchecked; {user} is a display name, {name} is the checklist item title."
+  },
+  "OrFUC3": {
+    "defaultMessage": "Lock run name",
+    "description": "Checkbox label that prevents run participants from changing the templated run name; compact space."
+  },
+  "OsDomv": {
+    "defaultMessage": "All events",
+    "description": "Checkbox option in the run timeline filter that shows every event type."
+  },
+  "OsU2Fs": {
+    "defaultMessage": "Attribute",
+    "description": "Column header in the playbook attributes table for the attribute (custom property) name; compact space."
+  },
+  "OsorgC": {
+    "defaultMessage": "does not contain",
+    "description": "Operator option in the task condition editor for multiselect attributes (paired with 'contains'); appears lowercase mid-sentence like '<attribute> does not contain <value>'."
+  },
+  "OuZhcQ": {
+    "defaultMessage": "Specify duration (\"8 hours\", \"3 days\"...)",
+    "description": "Placeholder for a date/time selector when a time span is expected; quoted strings are example inputs."
+  },
+  "OyZnsJ": {
+    "defaultMessage": "per run",
+    "description": "Suffix after a metric name indicating the value is recorded once per run (noun); compact space."
+  },
+  "OzaQJu": {
+    "defaultMessage": "Failed to save run name template. Please try again.",
+    "description": "Error toast when saving the run name template fails; generic retry prompt."
+  },
+  "P2I5vg": {
+    "defaultMessage": "Enter value name",
+    "description": "Placeholder of the text input for naming a new option value of a select/multiselect playbook attribute."
+  },
+  "P6NEL/": {
+    "defaultMessage": "Command...",
+    "description": "Placeholder for a task's slash command field."
+  },
+  "P6PLpi": {
+    "defaultMessage": "Join",
+    "description": "Button label to join a playbook run as a participant; verb."
+  },
+  "PIl9U8": {
+    "defaultMessage": "Run Owner",
+    "description": "Badge label showing a task is assigned to the run owner role; 'Run' is a noun."
+  },
+  "PW+sL4": {
+    "defaultMessage": "N/A",
+    "description": "Abbreviation for 'not applicable', shown when a run has no value for a metric; very compact space."
+  },
+  "PWmZrW": {
+    "defaultMessage": "View all runs",
+    "description": "Accessibility label for the left-hand sidebar link opening the full runs list; 'runs' is a plural noun."
+  },
+  "PdRg+3": {
+    "defaultMessage": "View all...",
+    "description": "Left-hand sidebar link text under the Runs and Playbooks categories, leading to the full list page."
+  },
+  "PoX2HN": {
+    "defaultMessage": "Send request",
+    "description": "Confirm button of the dialogs that send a join request or a status update request to the run channel. Imperative verb phrase."
+  },
+  "Ppx673": {
+    "defaultMessage": "Reports",
+    "description": "Navigation tab in the playbook editor showing usage statistics and metric reports."
+  },
+  "PsBEMG": {
+    "defaultMessage": "e.g. INC-",
+    "description": "Placeholder showing an example run-number prefix (like a ticket prefix); 'INC-' is an example, keep short."
+  },
+  "Q15rLN": {
+    "defaultMessage": "Request update...",
+    "description": "Button/menu item that opens the confirmation to request a status update from the run participants; ends with an ellipsis. Imperative verb phrase."
+  },
+  "Q4sutg": {
+    "defaultMessage": "Confirm leave{isFollowing, select, true { and unfollow} other {}}",
+    "description": "Title of the confirmation modal for leaving a run; the select branch appends ' and unfollow' when the user also follows the run."
+  },
+  "Q5hysF": {
+    "defaultMessage": "Do more with Playbooks",
+    "description": "Marketing-style heading on the playbook list page above the template gallery; 'Playbooks' is the product/feature name."
+  },
+  "Q7aZO4": {
+    "defaultMessage": "{numParticipants, plural, =0 {no active participants} =1 {# active participant} other {# active participants}}",
+    "description": "Chart tooltip label; {numParticipants} is the number of active participants on that day, with a zero branch."
+  },
+  "Q7hMnp": {
+    "defaultMessage": "Run playbook",
+    "description": "Post dropdown menu item and empty-state button that starts a run from a playbook; 'Run' is a verb here."
+  },
+  "Q8Qw5B": {
+    "defaultMessage": "Description",
+    "description": "Label for the metric description field in metric view and edit forms."
+  },
+  "QUwMsX": {
+    "defaultMessage": "Reminder to fill out the retrospective",
+    "description": "Heading of a bot post reminding the run owner to complete the retrospective."
+  },
+  "QaZNp9": {
+    "defaultMessage": "Finish run",
+    "description": "Confirm button that ends the run in the finish-run confirmation dialog; 'Finish' is a verb, 'run' a noun."
+  },
+  "QbGfqo": {
+    "defaultMessage": "Broadcast to stakeholders in multiple places and keep a paper trail for retrospective with just one post.",
+    "description": "Body of the tutorial tour tip about status updates: one post broadcasts to stakeholders and records history for the retrospective."
+  },
+  "QegBKq": {
+    "defaultMessage": "Join playbook",
+    "description": "Button in the playbook editor letting a non-member join the playbook."
+  },
+  "QiKcO7": {
+    "defaultMessage": "Enter retrospective template",
+    "description": "Placeholder of the markdown editor for the retrospective template text in the playbook editor."
+  },
+  "QpUBDr": {
+    "defaultMessage": "{members, plural, =0 {No one} =1 {One person} other {# people}} can access this playbook.",
+    "description": "Subtitle in the access modal for a private playbook; {members} is the member count and selects between no one / one person / N people."
+  },
+  "QywYDe": {
+    "defaultMessage": "Also mark the run as finished",
+    "description": "Checkbox in the status update modal footer that finishes the run when the update is posted."
+  },
+  "R+ig4Z": {
+    "defaultMessage": "No runs in progress",
+    "description": "Status line under a playbook in the playbook selector when it has no active runs; 'runs' is the noun."
+  },
+  "R5Zh+l": {
+    "defaultMessage": "This lets you experience a sample playbook first before investing time to create your own.",
+    "description": "Description in the dialog shown after a sample run is auto-created, explaining the value of trying a sample playbook."
+  },
+  "RC6rA2": {
+    "defaultMessage": "Recently created",
+    "description": "Sort option in the channel sidebar run list ordering by creation time, newest first."
+  },
+  "RO+BaS": {
+    "defaultMessage": "Copy link to run",
+    "description": "Tooltip on the copy-link icon next to the run title; copies the run's URL; 'run' is a noun."
+  },
+  "RQl8IW": {
+    "defaultMessage": "Snooze for…",
+    "description": "Placeholder for the snooze-duration dropdown on a status-update request post; followed by duration options."
+  },
+  "RXjd3Q": {
+    "defaultMessage": "{name} removed @{user} from the run",
+    "description": "Run timeline event title; {name} removed the participant @{user} from the run. {user} is a username shown as an @-mention."
+  },
+  "RnOiCg": {
+    "defaultMessage": "It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run",
+    "description": "Error toast when following/unfollowing a run fails; the {isFollowing} select picks 'unfollow' (currently following) or 'follow'."
+  },
+  "RoGxij": {
+    "defaultMessage": "Runs active on {date}",
+    "description": "Chart label on the run statistics page; {date} is a formatted date element; 'Runs' is a plural noun."
+  },
+  "RrCui3": {
+    "defaultMessage": "Summary",
+    "description": "Section title for the run summary text, in the playbook editor outline and run details RHS; compact heading."
+  },
+  "RthEJt": {
+    "defaultMessage": "Retrospective",
+    "description": "Section title for the retrospective (post-run review) in the run details page; noun."
+  },
+  "RzEVnf": {
+    "defaultMessage": "Playbooks make important procedures more repeatable and accountable. A playbook can be run multiple times, and each run has its own record and retrospective.",
+    "description": "Description on the playbooks getting-started screen; here 'be run' is a verb (executed) and 'each run' is a noun."
+  },
+  "S00Cdn": {
+    "defaultMessage": "Maximum attributes reached ({limit})",
+    "description": "Label of the disabled 'Add attribute' button when the playbook already has the maximum number of attributes; {limit} is that maximum."
+  },
+  "S0kWcH": {
+    "defaultMessage": "Update overdue",
+    "description": "Compact label next to a run's status when the scheduled status update is past due; 'Update' is a noun (status update), followed by a relative time."
+  },
+  "SDSqfA": {
+    "defaultMessage": "When a run starts",
+    "description": "Section title in the playbook editor grouping actions triggered when a run starts; 'run' is the noun."
+  },
+  "SK5APX": {
+    "defaultMessage": "It wasn't possible to leave the run.",
+    "description": "Error toast when the request to leave a run fails."
+  },
+  "SMrXWc": {
+    "defaultMessage": "Favorites",
+    "description": "Category name in the plugin's left-hand sidebar grouping favorited runs and playbooks."
+  },
+  "SRqpbI": {
+    "defaultMessage": "{assignedNum, plural, =0 {No assigned tasks} other {# assigned}}",
+    "description": "Compact assigned-task counter in the task inbox header; {assignedNum} is the number of tasks assigned to the user."
+  },
+  "SVwJTM": {
+    "defaultMessage": "Export",
+    "description": "Dropdown menu item that exports a playbook as a JSON file; verb."
+  },
+  "SXJ98n": {
+    "defaultMessage": "You will not be able to edit the retrospective report after publishing it. Do you want to publish the retrospective report?",
+    "description": "Body of the confirmation dialog before publishing a retrospective report, warning that it cannot be edited afterwards."
+  },
+  "SmAUf9": {
+    "defaultMessage": "A reminder will be sent <b>{timestamp}</b>",
+    "description": "Line in a retrospective reminder post; {timestamp} is a relative/absolute time for the next reminder, <b> is bold markup to keep."
+  },
+  "Suyx6A": {
+    "defaultMessage": "The playbook import has failed. Please check that JSON is valid and try again.",
+    "description": "Error toast for a failed playbook import; asks the user to verify the JSON file."
+  },
+  "SwlL5j": {
+    "defaultMessage": "@{user} joined the run",
+    "description": "Run timeline event title when a user joined the run as participant; {user} is a username shown as an @-mention."
+  },
+  "Sx3lHL": {
+    "defaultMessage": "Integer",
+    "description": "Metric type option meaning a whole-number value, in the add-metric dropdown."
+  },
+  "T352W1": {
+    "defaultMessage": "Run name template (optional)",
+    "description": "Placeholder for the run name template input in the playbook's channel settings."
+  },
+  "T4VxQN": {
+    "defaultMessage": "Loading…",
+    "description": "Loading indicator text while the playbook Attributes page fetches data; ends with an ellipsis character."
+  },
+  "TAViq6": {
+    "defaultMessage": "The resolved run name exceeds the {maxLength}-character limit. Shorten the name or use fewer fields.",
+    "description": "Validation error in the run creation modal when the run name resolved from a name template exceeds {maxLength} characters and the name is editable."
+  },
+  "TBez4r": {
+    "defaultMessage": "There are no playbooks to view. You don't have permission to create playbooks in this workspace.",
+    "description": "Empty-state message for users who can neither see existing playbooks nor create new ones (no permission)."
+  },
+  "TD8WrM": {
+    "defaultMessage": "Duplicate is disabled for this team.",
+    "description": "Tooltip on the disabled Duplicate menu item when the user lacks permission to create playbooks in the team."
+  },
+  "TJo5E6": {
+    "defaultMessage": "Preview",
+    "description": "Button label switching a markdown textbox to rendered preview mode; pairs with 'Edit'."
+  },
+  "TP/O/b": {
+    "defaultMessage": "Remove user",
+    "description": "Accessibility label for the button removing a selected user chip, and confirm button for removing a pre-assigned user from a playbook's automatic invite list."
+  },
+  "TSSNg/": {
+    "defaultMessage": "TOTAL RUNS started per week over the last 12 weeks",
+    "description": "Title of a line chart in playbook stats; the capitalized part is visually emphasized. Runs started per week, last 12 weeks."
+  },
+  "TTIQ6E": {
+    "defaultMessage": "Assign due dates to tasks so assignees can prioritize and get things done.",
+    "description": "Upgrade modal help text promoting the paid task due-dates feature."
+  },
+  "TZYiF/": {
+    "defaultMessage": "strike",
+    "description": "Sample word demonstrating strikethrough markdown formatting in the textbox help bar; rendered struck through."
+  },
+  "TdTXXf": {
+    "defaultMessage": "Learn more",
+    "description": "Button in a Cloud upgrade bot post linking to more information about paid plans."
+  },
+  "TnUG7m": {
+    "defaultMessage": "You don't have any pending task assigned.",
+    "description": "Empty-state description in the task inbox when the user has no assigned tasks."
+  },
+  "Tp2Yvu": {
+    "defaultMessage": "PARTICIPANTS",
+    "description": "All-caps group heading in the task assignee picker for users who are participants of the run; compact dropdown section label."
+  },
+  "Tt04f1": {
+    "defaultMessage": "See who is involved and what needs to be done without leaving the conversation.",
+    "description": "Body of the tutorial tour tip about viewing run details in the channel side panel."
+  },
+  "TxmjKI": {
+    "defaultMessage": "Describe what this metric is about",
+    "description": "Placeholder for the metric description input in the metric editor."
+  },
+  "U+7ZLW": {
+    "defaultMessage": "{name} set {property} to {value}",
+    "description": "Run timeline event title when an attribute value was set for the first time; {name} is a user, {property} the attribute name, {value} the new value."
+  },
+  "U2RCQm": {
+    "defaultMessage": "ASSIGN TO A PERSON",
+    "description": "All-caps section heading in the assignee dropdown for assigning a task to a specific person; compact label."
+  },
+  "U7Ai5E": {
+    "defaultMessage": "Delete condition",
+    "description": "Accessibility label for the button that deletes a conditional task group."
+  },
+  "U7tDQH": {
+    "defaultMessage": "Join as a participant to resume",
+    "description": "Tooltip on the resume button when a non-participant tries to resume a finished channel checklist."
+  },
+  "UAS7Bn": {
+    "defaultMessage": "Request access to the channel linked to this run",
+    "description": "Checkbox in the 'Become a participant' modal shown when the user lacks access to the run's channel; checking it sends a join request instead."
+  },
+  "UGU8kA": {
+    "defaultMessage": "AND",
+    "description": "Logical operator joining condition clauses in checklist condition builders (as opposed to OR); boolean-logic connective."
+  },
+  "UMFnWV": {
+    "defaultMessage": "View Retrospective",
+    "description": "Link in the run info panel's Key Metrics section header, leading to the retrospective page."
+  },
+  "UbCHHU": {
+    "defaultMessage": "Run User",
+    "description": "Badge label when a task is assigned to a user-type run attribute whose field can no longer be found; 'Run' is a noun."
+  },
+  "UbTsGY": {
+    "defaultMessage": "Runs started between {start} and {end}",
+    "description": "Chart label on the run statistics page; {start} and {end} are formatted dates; 'Runs' is a plural noun."
+  },
+  "UePrSL": {
+    "defaultMessage": "{num} {num, plural, one {Participant} other {Participants}}",
+    "description": "Heading of the run participants panel showing the participant count; {num} is the number of participants."
+  },
+  "Ul0aFX": {
+    "defaultMessage": "Import Playbook",
+    "description": "Menu item in the create dropdown for importing a playbook from a file."
+  },
+  "V3tvkc": {
+    "defaultMessage": "When a run finishes",
+    "description": "Section title in the playbook editor grouping actions triggered when a run finishes; 'run' is the noun."
+  },
+  "VA1Q/S": {
+    "defaultMessage": "Public channel",
+    "description": "Radio option label in the run creation modal for creating the run's channel as public."
+  },
+  "VCDMz9": {
+    "defaultMessage": "…or start with an example",
+    "description": "Caption starting with an ellipsis, shown under the 'Create playbook' button on the welcome screen, pointing to the example templates below."
+  },
+  "VM75su": {
+    "defaultMessage": "{name} removed {num} participants from the run",
+    "description": "Run timeline event title when several participants were removed at once; {name} is the requester, {num} the number of removed participants."
+  },
+  "VOzlSL": {
+    "defaultMessage": "Running a playbook orchestrates workflows for your team and tools.",
+    "description": "Description on the runs page empty state; 'Running' is a verb (executing a playbook)."
+  },
+  "Vf/QlZ": {
+    "defaultMessage": "Value range",
+    "description": "Label in a playbook metrics card for the minimum–maximum range the metric has taken across runs."
+  },
+  "Vhnd2J": {
+    "defaultMessage": "Toggle description",
+    "description": "Tooltip on the chevron button that shows/hides a task's description text."
+  },
+  "VjJYEV": {
+    "defaultMessage": "e.g., Sales impact, Purchases",
+    "description": "Example metric names shown under the Cost metric type option."
+  },
+  "VmnoW8": {
+    "defaultMessage": "Please check the system logs for more information.",
+    "description": "Help text under license errors directing the admin to the server logs."
+  },
+  "W++skp": {
+    "defaultMessage": "Confirm finish",
+    "description": "Title of the confirmation modal shown before finishing a run."
+  },
+  "W/V6+Y": {
+    "defaultMessage": "Collapse",
+    "description": "Button title in the checklist RHS that collapses all checklists; toggles with 'Expand'."
+  },
+  "W1EKh5": {
+    "defaultMessage": "Create new playbook",
+    "description": "Button in the run creation modal header that navigates to creating a brand-new playbook. Imperative verb phrase."
+  },
+  "W1Qs5O": {
+    "defaultMessage": "Runs",
+    "description": "Sortable column header in the playbooks list showing the total number of runs per playbook; compact space; 'Runs' is a plural noun."
+  },
+  "WAHCT2": {
+    "defaultMessage": "Notify System Admin",
+    "description": "Button for non-admin users to send their System Admin an upgrade request; 'System Admin' is a Mattermost role name."
+  },
+  "WC+NOj": {
+    "defaultMessage": "Also add people to the channel linked to this run",
+    "description": "Checkbox in the footer of the 'Add participants' modal; checking it also adds the selected people to the channel linked to the run."
+  },
+  "WFA0Cg": {
+    "defaultMessage": "Are you sure you want to enable status updates for this run?",
+    "description": "Body of the confirmation dialog before enabling status updates for a run."
+  },
+  "WFd88+": {
+    "defaultMessage": "Show checked tasks",
+    "description": "Checkbox filter option that also shows completed (checked-off) tasks in the task inbox / checklist filter menu."
+  },
+  "WGSprq": {
+    "defaultMessage": "Remove condition",
+    "description": "Tooltip on the button removing a condition rule from a conditional task group."
+  },
+  "WUwxYi": {
+    "defaultMessage": "{name} cleared {property}",
+    "description": "Run timeline event title when an attribute value was cleared; {name} is a user, {property} the attribute name."
+  },
+  "WqjrUR": {
+    "defaultMessage": "RUN ROLES",
+    "description": "All-caps section heading in the task assignee picker listing role-based assignees (e.g. Run Owner) instead of specific users; compact label."
+  },
+  "X/koAN": {
+    "defaultMessage": "Invalid entry: the maximum number of webhooks allowed is 64",
+    "description": "Validation error under the webhooks textarea when more than 64 webhook URLs are entered (playbook status-update/run actions webhook settings)."
+  },
+  "X2K92H": {
+    "defaultMessage": "Checklist name",
+    "description": "Input label in the rename modal for a channel checklist (counterpart of 'Run name')."
+  },
+  "X5Q310": {
+    "defaultMessage": "Hide details",
+    "description": "Toggle link in the channel right-hand sidebar run view that collapses the run detail fields; counterpart of 'Details'."
+  },
+  "XF8rrh": {
+    "defaultMessage": "Copy link to ''{name}''",
+    "description": "Tooltip on a copy-link icon; {name} is the item's name; the doubled apostrophes are ICU escapes that render as single quotes around the name."
+  },
+  "XMpO69": {
+    "defaultMessage": "Condition",
+    "description": "Fallback noun label for a checklist condition when its full text cannot be rendered; also used in bulk-edit action bar."
+  },
+  "XRyRzf": {
+    "defaultMessage": "Status updates are not expected.",
+    "description": "Text shown in the playbook outline's status updates section when status updates are turned off."
+  },
+  "XS4umx": {
+    "defaultMessage": "{name} snoozed a status update",
+    "description": "Run timeline event title when a user postponed (snoozed) the status update reminder; {name} is a display name."
+  },
+  "XTIr2z": {
+    "defaultMessage": "Failed to update assignee.",
+    "description": "Error toast when changing a task's assignee fails."
+  },
+  "XXbWAU": {
+    "defaultMessage": "Select this to automatically receive updates when this playbook is run.",
+    "description": "Tooltip on the disabled auto-follow toggle inviting the user to enable it; 'is run' is the verb."
+  },
+  "XmUdvV": {
+    "defaultMessage": "All the statistics you need",
+    "description": "Headline of the placeholder shown instead of playbook statistics on unlicensed servers."
+  },
+  "XnICdK": {
+    "defaultMessage": "It wasn't possible to join the run",
+    "description": "Failure toast when the request to join a run fails; 'run' is a noun."
+  },
+  "XpDetT": {
+    "defaultMessage": "Opt out of these tips.",
+    "description": "Link at the bottom of tutorial tour tips that disables all remaining tips; follows the sentence 'Seen this before?'."
+  },
+  "Xx0WZV": {
+    "defaultMessage": "Send message",
+    "description": "Tooltip on the button that opens a direct message with a run participant. Imperative verb phrase."
+  },
+  "Y1EoT/": {
+    "defaultMessage": "When a participant leaves the run",
+    "description": "Trigger section title for actions fired when a participant leaves the run (run actions modal and playbook editor)."
+  },
+  "Y46Vea": {
+    "defaultMessage": "Delete selected tasks",
+    "description": "Accessibility label for the delete button in the checklist bulk-edit action bar."
+  },
+  "Y7PzH1": {
+    "defaultMessage": "Manage participants list",
+    "description": "Tooltip on the Participants title in the channel sidebar, indicating clicking it opens participant management."
+  },
+  "YBvwXR": {
+    "defaultMessage": "No assigned tasks",
+    "description": "Empty-state title in the task inbox when the user has no assigned tasks."
+  },
+  "YH62NY": {
+    "defaultMessage": "Select user...",
+    "description": "Placeholder of a user-type attribute picker (run creation modal and run details); ends with an ellipsis."
+  },
+  "YNdmQQ": {
+    "defaultMessage": "Without a run number prefix, '{SEQ}' will display as a bare number (e.g. 00001)",
+    "description": "Warning under the run number template input when the {SEQ} sequence variable is used without a prefix; keep '{SEQ}' literal."
+  },
+  "YORRGQ": {
+    "defaultMessage": "Post update",
+    "description": "Button that opens the status update composer, and the title/confirm button of that modal. Imperative verb phrase ('post' is a verb)."
+  },
+  "YQOmSf": {
+    "defaultMessage": "Enter one webhook per line",
+    "description": "Placeholder of the multi-line textarea where users enter outgoing webhook URLs, one URL per line."
+  },
+  "Z+G95u": {
+    "defaultMessage": "Rename section",
+    "description": "Menu item for renaming a checklist section (a named group of tasks)."
+  },
+  "Z18I+c": {
+    "defaultMessage": "Channel actions allow you to automate activities for the channel",
+    "description": "Subtitle of the channel actions modal when opened from a playbook."
+  },
+  "Z2Hfu4": {
+    "defaultMessage": "Add a run summary",
+    "description": "Placeholder for the run summary field on the run details page, shown to participants who can edit it."
+  },
+  "Z3ybv/": {
+    "defaultMessage": "Add the channel to a sidebar category for the user",
+    "description": "Toggle label in the channel actions modal enabling automatic sidebar categorization for users who join the channel."
+  },
+  "Z7vWDQ": {
+    "defaultMessage": "There was an error",
+    "description": "Generic error title in upgrade banners/modals when the notify-admin action fails."
+  },
+  "ZAJviT": {
+    "defaultMessage": "We weren't able to notify the System Admin.",
+    "description": "Error message when the request to notify the System Admin about an upgrade could not be sent."
+  },
+  "ZJS10z": {
+    "defaultMessage": "No updates have been posted yet",
+    "description": "Placeholder text in the run's status update section when no status updates exist yet."
+  },
+  "ZNNjWw": {
+    "defaultMessage": "Please enter a number.",
+    "description": "Validation error under a retrospective metric input when the value is not numeric."
+  },
+  "ZRv7Dm": {
+    "defaultMessage": "Request to Join",
+    "description": "Small button in the run info sidebar, shown next to a private channel the user cannot access, that opens the join request dialog."
+  },
+  "ZSa3cf": {
+    "defaultMessage": "@{targetUsername}, please provide a status update for [{runName}]({playbookURL}).",
+    "description": "Markdown bot-post asking a user for a status update; {targetUsername} is the mentioned user (after literal @), {runName} the run's name, {playbookURL} the link target — keep markdown link syntax."
+  },
+  "ZWtlyd": {
+    "defaultMessage": "Run restored by {name}",
+    "description": "Run timeline entry; {name} is the display name of the user who restored (reopened) the finished run."
+  },
+  "ZXTJwY": {
+    "defaultMessage": "Values",
+    "description": "Column header in the playbook attributes table for an attribute's selectable values; compact space."
+  },
+  "ZahHm/": {
+    "defaultMessage": "Edit condition",
+    "description": "Tooltip on the edit button of a conditional task group."
+  },
+  "Zbk+OU": {
+    "defaultMessage": "The file size exceeds the limit of 5MB.",
+    "description": "Error toast when the playbook import file is larger than the 5MB limit."
+  },
+  "ZdWYcm": {
+    "defaultMessage": "No, skip retrospective",
+    "description": "Decline button in the retrospective reminder post; skips the retrospective for this run."
+  },
+  "ZkhArX": {
+    "defaultMessage": "Let's go!",
+    "description": "Enthusiastic call-to-action heading on the playbooks getting-started screen."
+  },
+  "a/4SZM": {
+    "defaultMessage": "Done editing",
+    "description": "Tooltip on the button that saves changes and exits condition editing mode."
+  },
+  "a0hBZ0": {
+    "defaultMessage": "Delete metric",
+    "description": "Confirm button in the modal for deleting a playbook metric."
+  },
+  "a2r7Vb": {
+    "defaultMessage": "Private channel",
+    "description": "Radio option label in the run creation modal for creating the run's channel as private."
+  },
+  "aACJNp": {
+    "defaultMessage": "Run started by {name}",
+    "description": "Run timeline entry for run creation; {name} is the display name of the user who started the run."
+  },
+  "aEhjYg": {
+    "defaultMessage": "Outline",
+    "description": "Tab title in the playbook editor for the outline view (checklists, actions, settings); compact space."
+  },
+  "aWpBzj": {
+    "defaultMessage": "Show more",
+    "description": "Button that loads more runs in the channel sidebar list / expands truncated text; counterpart of 'Show less'."
+  },
+  "aYIUar": {
+    "defaultMessage": "Thank you!",
+    "description": "Success title after the System Admin has been notified of an upgrade request."
+  },
+  "aZGAOI": {
+    "defaultMessage": "Add a status update template…",
+    "description": "Placeholder for the markdown editor of the status update template in the playbook outline."
+  },
+  "aZiJbJ": {
+    "defaultMessage": "Get started with a checklist for this channel",
+    "description": "Empty-state title in the channel sidebar inviting the user to create their first checklist for the channel."
+  },
+  "acsVyU": {
+    "defaultMessage": "Auto-archive channel",
+    "description": "Toggle label for automatically archiving the run channel when the run finishes; compact setting name."
+  },
+  "alA913": {
+    "defaultMessage": "is not",
+    "description": "Negative comparison operator label in the task condition editor (e.g. 'Severity is not High'); counterpart of 'is'."
+  },
+  "avPeEI": {
+    "defaultMessage": "Upgrade to view trends for total runs, active runs and participants involved in runs of this playbook.",
+    "description": "Body of the statistics upgrade placeholder listing the charts unlocked by upgrading; 'runs' is the noun."
+  },
+  "awG90C": {
+    "defaultMessage": "Target per run",
+    "description": "Input label for the metric target when configuring a playbook metric; 'run' is a noun (each execution of the playbook)."
+  },
+  "ayjup2": {
+    "defaultMessage": "Duplicate section",
+    "description": "Menu item for duplicating a checklist section (a named group of tasks)."
+  },
+  "b/QBNs": {
+    "defaultMessage": "Update due",
+    "description": "Compact label next to a run's status when the next status update is scheduled; followed by a relative time ('Update' is a noun)."
+  },
+  "b3TdyZ": {
+    "defaultMessage": "By clicking <b>Start trial</b>, I agree to the <AgreementLink>Mattermost Software Evaluation Agreement</AgreementLink>, <PrivacyLink>Privacy Policy</PrivacyLink>, and receiving product emails.",
+    "description": "Legal disclosure below the Start trial button; keep <b>, <AgreementLink> and <PrivacyLink> tags and the exact legal document names."
+  },
+  "b8Gps8": {
+    "defaultMessage": "Run status updates enabled by {name}",
+    "description": "Run timeline entry; {name} is the display name of the user who enabled status updates for the run."
+  },
+  "bEoDyV": {
+    "defaultMessage": "@{authorUsername} posted an update for [{runName}]({overviewURL})",
+    "description": "Markdown bot-post text announcing a status update; {authorUsername} is the poster's username (after literal @), {runName} the run's name, {overviewURL} the link target — keep markdown link syntax intact."
+  },
+  "bLK+Kr": {
+    "defaultMessage": "Reminds the channel at a specified interval to fill out the retrospective.",
+    "description": "Help text under the 'Retrospective reminder interval' subheader in the playbook editor; the reminder is posted to the run's channel."
+  },
+  "bPLen5": {
+    "defaultMessage": "Runs finished in the last 30 days",
+    "description": "Stat card label on the run statistics page; 'Runs' is a plural noun."
+  },
+  "bTgMQ2": {
+    "defaultMessage": "This playbook is archived.",
+    "description": "Tooltip on the archive icon next to an archived playbook's title in the editor and list."
+  },
+  "bf5rs0": {
+    "defaultMessage": "View Info",
+    "description": "Tooltip on the run details header button that opens the info right-hand panel."
+  },
+  "blhOTz": {
+    "defaultMessage": "Restrict run management actions for non-owners",
+    "description": "Toggle label in playbook settings restricting run management actions (finish, restore, reassign) to the run owner."
+  },
+  "bmOWgs": {
+    "defaultMessage": "Only admins can archive this playbook.",
+    "description": "Disabled-state tooltip on the Archive menu item; only playbook admins may archive."
+  },
+  "c23IHq": {
+    "defaultMessage": "Channel actions allow you to automate activities for this channel",
+    "description": "Subtitle of the channel actions modal when opened from the channel header."
+  },
+  "c6LNcW": {
+    "defaultMessage": "Delete task",
+    "description": "Destructive menu item in a task's hover menu that deletes the task."
+  },
+  "c8hxKk": {
+    "defaultMessage": "Week of {date}",
+    "description": "Chart tooltip title for weekly data points; {date} is the formatted start date of the week."
+  },
+  "cGCoJe": {
+    "defaultMessage": "Posted by",
+    "description": "Placeholder of the user picker in the Task actions modal that restricts the keyword trigger to messages posted by specific people."
+  },
+  "cPIKU2": {
+    "defaultMessage": "Following",
+    "description": "State label on the follow button and in runs list rows when the user is following the run."
+  },
+  "cUCiWw": {
+    "defaultMessage": "Become a participant",
+    "description": "Title of the modal a run viewer sees when choosing to join a run as a participant."
+  },
+  "ch4Vs1": {
+    "defaultMessage": "Request updates for playbook runs in a single click and get notified directly when an update is posted. Start a free, 30-day trial to try it out.",
+    "description": "Marketing body text in the upgrade modal describing the request-update feature and the free 30-day trial."
+  },
+  "cp7KUI": {
+    "defaultMessage": "Playbook",
+    "description": "Placeholder for the playbook filter dropdown in the runs list, and label identifying the source playbook in the run details RHS; noun."
+  },
+  "cpGAhx": {
+    "defaultMessage": "Are you sure you want to disable status updates for this run?",
+    "description": "Body of the confirmation dialog before disabling status updates for a run."
+  },
+  "cx5CGf": {
+    "defaultMessage": "Choose a property",
+    "description": "Placeholder of the dropdown for picking which playbook attribute a task-visibility condition applies to ('property' = attribute)."
+  },
+  "cyR7Kh": {
+    "defaultMessage": "Back",
+    "description": "Back-navigation control: aria-label of the back button in the run playbook modal and link text returning to the playbooks list."
+  },
+  "d4g2r8": {
+    "defaultMessage": "Deleted: {timestamp}",
+    "description": "Shown under a status update in the run timeline when the post was deleted; {timestamp} is the deletion date and time."
+  },
+  "d85l4z": {
+    "defaultMessage": "Add user...",
+    "description": "Placeholder for the user picker used to add users to a user-type run attribute."
+  },
+  "d8KvXJ": {
+    "defaultMessage": "Your trial license expires on {expiryDate}. You can purchase a license at any time through the <PortalLink>Customer Portal</PortalLink> to avoid any disruption.",
+    "description": "Post-trial-start notice for admins; {expiryDate} is the trial end date and <PortalLink> wraps the link to the Customer Portal."
+  },
+  "d9epHh": {
+    "defaultMessage": "Export channel log",
+    "description": "Menu item in the run context menu that exports the run channel's message history."
+  },
+  "dK2JKl": {
+    "defaultMessage": "Link to an existing channel",
+    "description": "Radio option: the run attaches to an already existing channel instead of creating one. Pairs with 'Create a run channel'."
+  },
+  "dQeS2Y": {
+    "defaultMessage": "Delete section",
+    "description": "Destructive menu item that deletes a checklist section (a named group of tasks)."
+  },
+  "dSC1YD": {
+    "defaultMessage": "Skip task",
+    "description": "Menu item in a task's hover menu that marks the task as skipped; counterpart of 'Restore task'. Imperative verb phrase."
+  },
+  "dSL9sW": {
+    "defaultMessage": "Confirm enable retrospective",
+    "description": "Title of the confirmation modal for enabling the retrospective on a run."
+  },
+  "dZmYk6": {
+    "defaultMessage": "Successfully duplicated playbook",
+    "description": "Success toast after duplicating a playbook."
+  },
+  "dn57lO": {
+    "defaultMessage": "Add custom attributes to capture additional information about your playbook runs.",
+    "description": "Empty-state description on the playbook attributes tab; 'runs' is a plural noun."
+  },
+  "dvhvum": {
+    "defaultMessage": "(Optional) Describe how this playbook should be used",
+    "description": "Placeholder for the optional playbook description field in the create-playbook modal."
+  },
+  "dx+O3r": {
+    "defaultMessage": "{name} updated {property} from {oldValue} to {newValue}",
+    "description": "Run timeline event title when an attribute value changed; {name} is a user, {property} the attribute name, {oldValue}/{newValue} the previous and new values."
+  },
+  "dxyZg3": {
+    "defaultMessage": "Let me explore for myself",
+    "description": "Decline button of the run tour dialog; the user skips the guided tour and explores alone."
+  },
+  "dzVypR": {
+    "defaultMessage": "Select property field for assignee",
+    "description": "Accessibility label (aria-label) of the dropdown selecting which user-type attribute ('property field') provides the task assignee."
+  },
+  "e/AZL5": {
+    "defaultMessage": "Your 30-day trial has started",
+    "description": "Success title shown to admins right after their 30-day trial begins."
+  },
+  "e3z3P8": {
+    "defaultMessage": "Discard & leave",
+    "description": "Destructive confirm button of the unsaved-changes dialog; discards edits and leaves the page."
+  },
+  "eEbN1M": {
+    "defaultMessage": "*",
+    "description": "Literal asterisk appended to an input label in the run playbook modal to mark it required/in error; usually left untranslated."
+  },
+  "eHAvFf": {
+    "defaultMessage": "bold",
+    "description": "Markdown formatting hint below a markdown textbox; the word appears wrapped in ** markers to demonstrate bold syntax. Adjective, lowercase."
+  },
+  "ePhhuK": {
+    "defaultMessage": "Your request was sent to the run channel.",
+    "description": "Success toast after a join request or status update request was posted to the run's channel."
+  },
+  "eV84x5": {
+    "defaultMessage": "PRE-BUILT PLAYBOOKS",
+    "description": "All-caps section header in the playbook selector listing built-in template playbooks; compact space."
+  },
+  "ecS/qx": {
+    "defaultMessage": "{name} added {num} participants to the run",
+    "description": "Run timeline event title when several participants were added at once; {name} is the requester, {num} the number of added participants."
+  },
+  "edxtzC": {
+    "defaultMessage": "Create playbook",
+    "description": "Button label to create a new playbook (RHS home, template cards, create modal); imperative."
+  },
+  "efeNi1": {
+    "defaultMessage": "10-run average value",
+    "description": "Label in a playbook metrics card for the rolling average over the last 10 runs."
+  },
+  "egvJrY": {
+    "defaultMessage": "Assignee Changed",
+    "description": "Run timeline entry title when a task's assignee was changed."
+  },
+  "eiPBw7": {
+    "defaultMessage": "Retrospective reminder interval",
+    "description": "Setting label in the playbook outline retrospective section controlling how often the channel is reminded to fill out the retrospective."
+  },
+  "ekokCz": {
+    "defaultMessage": "Confirm restart",
+    "description": "Title of the confirmation modal for restarting a finished run."
+  },
+  "f+BJFx": {
+    "defaultMessage": "Disable retrospective",
+    "description": "Menu item in the run context menu and confirm button that turns the retrospective feature off for a run. Imperative verb phrase."
+  },
+  "f+bqgK": {
+    "defaultMessage": "Name of the metric",
+    "description": "Placeholder for the metric title input in the playbook metric editor."
+  },
+  "f19YrE": {
+    "defaultMessage": "contains",
+    "description": "Operator in checklist condition builders for multi-select fields (e.g. 'Tags contains X'); third-person verb."
+  },
+  "fBG/Ge": {
+    "defaultMessage": "Cost",
+    "description": "Cost metric type option title (monetary value); noun, compact space."
+  },
+  "fCWXX7": {
+    "defaultMessage": "The channel cannot be auto-archived when linking to an existing channel.",
+    "description": "Tooltip explaining the auto-archive toggle is disabled because the run links to an existing channel."
+  },
+  "fPadCC": {
+    "defaultMessage": "Add your first attribute",
+    "description": "Button on the playbook attributes tab empty state that creates the first custom attribute."
+  },
+  "fV6578": {
+    "defaultMessage": "Assign the owner role",
+    "description": "Placeholder for the run owner picker in the channel sidebar, and toggle label for auto-assigning an owner in playbook settings; 'Assign' is a verb."
+  },
+  "fVMECF": {
+    "defaultMessage": "Participant",
+    "description": "Role label in the run participants list dropdown, contrasted with 'Owner'; noun."
+  },
+  "fXGjhC": {
+    "defaultMessage": "Owner changed from {summary}",
+    "description": "Run timeline entry when run ownership changed; {summary} is server-provided text like 'user A to user B', so the sentence continues after 'from'."
+  },
+  "fXdkiI": {
+    "defaultMessage": "is",
+    "description": "Equality operator shown in checklist condition builders (e.g. 'Severity is High'); verb linking a field to a value."
+  },
+  "fc03Fb": {
+    "defaultMessage": "Add a section",
+    "description": "Button at the bottom of the checklist list that adds a new section (checklist)."
+  },
+  "feNxoJ": {
+    "defaultMessage": "{requester} added {users} to the run",
+    "description": "Run timeline event summary line; {requester} is a display name, {users} is a formatted list of @-mentions of the added participants."
+  },
+  "fg8dzN": {
+    "defaultMessage": "Add condition",
+    "description": "Menu item and tooltip for adding a condition rule to a task or conditional group."
+  },
+  "fhMaTZ": {
+    "defaultMessage": "Take a quick tour",
+    "description": "Confirm button of the run tour dialog that starts the guided product tour."
+  },
+  "fkzH83": {
+    "defaultMessage": "Add attribute",
+    "description": "Button on the playbook attributes tab that adds a new custom attribute."
+  },
+  "fmbSyg": {
+    "defaultMessage": "Add value (in dd:hh:mm)",
+    "description": "Placeholder for a duration-type metric value input on the run retrospective; dd:hh:mm means days:hours:minutes."
+  },
+  "fnihsY": {
+    "defaultMessage": "Leave",
+    "description": "Menu item to leave a playbook or run (remove yourself as member/participant); verb."
+  },
+  "fvNMLo": {
+    "defaultMessage": "Task actions",
+    "description": "Title of the modal for configuring automations on a checklist task."
+  },
+  "fwW0T1": {
+    "defaultMessage": "Confirm remove pre-assigned members",
+    "description": "Title of a confirmation modal shown when disabling automatic invitations would clear all pre-assigned task members."
+  },
+  "g0mp+I": {
+    "defaultMessage": "When you convert to a private playbook, membership and run history is preserved. This change is permanent and cannot be undone. Are you sure you want to convert {playbookTitle} to a private playbook?",
+    "description": "Body of the convert-to-private confirmation modal; {playbookTitle} is the playbook's name. Warns the change is irreversible."
+  },
+  "g4IF1x": {
+    "defaultMessage": "There are no runs for this playbook.",
+    "description": "Empty-state text on a playbook's runs list when the playbook has never been run. 'Runs' is a noun."
+  },
+  "g9pEhE": {
+    "defaultMessage": "Due",
+    "description": "Compact prefix before a task's due date (e.g. 'Due tomorrow') in checklist item displays."
+  },
+  "gGcNUr": {
+    "defaultMessage": "You do not have permissions",
+    "description": "Disabled-state tooltip when the user lacks permission for an action (e.g. running or making a playbook public)."
+  },
+  "gQMKIn": {
+    "defaultMessage": "Failed to update due date for {count} of {total} tasks",
+    "description": "Error toast after a bulk due-date change when some tasks failed; {count} failed out of {total} selected tasks."
+  },
+  "gS1i4/": {
+    "defaultMessage": "Mark the task as done",
+    "description": "Title of the automation toggle in the Task actions modal that automatically checks off the task when triggered."
+  },
+  "gfUBRi": {
+    "defaultMessage": "Assign a new owner before you leave the run.",
+    "description": "Failure toast when the run owner tries to leave the run without assigning a new owner first."
+  },
+  "gpb7g4": {
+    "defaultMessage": "Delete attribute",
+    "description": "Destructive menu item in an attribute's dot menu that deletes the attribute."
+  },
+  "grv9Fm": {
+    "defaultMessage": "Select to toggle a list of tasks.",
+    "description": "Aria-label (screen readers) for the task inbox icon button in the global header."
+  },
+  "guunZt": {
+    "defaultMessage": "Assign",
+    "description": "Placeholder/button label for choosing a user to assign a checklist task to; verb, compact space."
+  },
+  "hDI+JM": {
+    "defaultMessage": "Sort by",
+    "description": "Heading of the sort menu in the channel sidebar run list; followed by options like 'Recently created'."
+  },
+  "hJaF6/": {
+    "defaultMessage": "Include checklists",
+    "description": "Checkbox filter on the runs list that also includes channel checklists (runs without a playbook) in the results. Compact label."
+  },
+  "hK7XOC": {
+    "defaultMessage": "Click on any task to select it. Use the action bar below to apply changes to all selected tasks.",
+    "description": "Informational toast shown when entering bulk-edit mode for checklist tasks, explaining how multi-select works."
+  },
+  "hOIFxg": {
+    "defaultMessage": "This playbook requires a new channel for each run",
+    "description": "Helper text in the run creation modal when the playbook forces creating a new channel per run, so no existing channel can be linked."
+  },
+  "hVFgh4": {
+    "defaultMessage": "Include finished",
+    "description": "Checkbox filter on the runs list that also includes finished runs in the results. Compact label."
+  },
+  "hXIYHG": {
+    "defaultMessage": "Install and enable the Channel Export plugin to support exporting the channel",
+    "description": "Tooltip on the disabled 'Export channel log' menu item when the Channel Export plugin is not installed; addressed to end users/admins."
+  },
+  "hYKZ6z": {
+    "defaultMessage": "Untitled checklist",
+    "description": "Default name given to a newly created blank channel checklist before the user renames it."
+  },
+  "hZuj+c": {
+    "defaultMessage": "Members without admin role will have read-only access.",
+    "description": "Help text under the admins-only-edit toggle; non-admin members get read-only access."
+  },
+  "ha1TB3": {
+    "defaultMessage": "When a participant joins the run",
+    "description": "Trigger section title for actions fired when a participant joins the run (run actions modal and playbook editor)."
+  },
+  "hjteuA": {
+    "defaultMessage": "All the playbooks that you can access will show here",
+    "description": "Subtitle under the playbook list heading describing what the table contains."
+  },
+  "hrgo+E": {
+    "defaultMessage": "Archive",
+    "description": "Confirm button of the archive-playbook modal and dropdown menu item to archive a playbook; verb."
+  },
+  "hw83pa": {
+    "defaultMessage": "Track key metrics and measure value",
+    "description": "Headline promoting the metrics feature in upgrade prompts and the empty metrics placeholder."
+  },
+  "hxU8eY": {
+    "defaultMessage": "Runs and Checklists",
+    "description": "Category name in the plugin's left-hand sidebar grouping the user's in-progress runs and channel checklists; 'Runs' is a plural noun."
+  },
+  "i6fgI6": {
+    "defaultMessage": "Shown because {reason}",
+    "description": "Tooltip on a conditionally-shown task in a run; {reason} is a formatted condition like '\"Priority\" is \"High\"'."
+  },
+  "iEtImk": {
+    "defaultMessage": "When you leave{isFollowing, select, true { and unfollow a run} other { a run}}, it's removed from the left-hand sidebar. You can find it again by viewing all runs.",
+    "description": "Body of the confirmation dialog for leaving a run; the {isFollowing} select adds 'and unfollow' when the user also follows the run. The left-hand sidebar is the Mattermost channel/run sidebar."
+  },
+  "iH5e4J": {
+    "defaultMessage": "You’ll also be added to the channel linked to this run.",
+    "description": "Informational note in the 'Become a participant' modal shown when joining the run automatically adds the user to the linked channel."
+  },
+  "iMjjOH": {
+    "defaultMessage": "Next week",
+    "description": "Quick-select option in the due date picker setting the date one week ahead."
+  },
+  "iNU1lj": {
+    "defaultMessage": "The run you're requesting is private or does not exist.",
+    "description": "Error page message when a requested playbook run is inaccessible; 'run' is the noun (an execution of a playbook)."
+  },
+  "iPbdz5": {
+    "defaultMessage": "There are pre-built playbooks for a range of use cases and events. You can use a pre-built playbook as-is or customize it—then share it with your team.",
+    "description": "Paragraph on the playbook list/getting-started page describing the pre-built template gallery."
+  },
+  "iQhFxR": {
+    "defaultMessage": "Last used",
+    "description": "Column header in the playbook list for the date the playbook last started a run; compact space."
+  },
+  "iXNbPf": {
+    "defaultMessage": "Rename",
+    "description": "Dropdown menu item to rename a playbook or an attribute; verb."
+  },
+  "ieGrWo": {
+    "defaultMessage": "Follow",
+    "description": "Button label to follow a run and receive its status update notifications; verb, pairs with 'Unfollow'."
+  },
+  "ifNqB6": {
+    "defaultMessage": "Add to condition",
+    "description": "Button in the checklist bulk-edit action bar assigning the selected tasks to a conditional group."
+  },
+  "iigkp8": {
+    "defaultMessage": "Time to wrap up?",
+    "description": "Prompt text next to the 'Finish' button in the run details footer, inviting the user to finish the run."
+  },
+  "ijAUQf": {
+    "defaultMessage": "Notify your System Admin to upgrade.",
+    "description": "Helper line telling non-admin users to ask their System Admin to upgrade the server."
+  },
+  "izWS4J": {
+    "defaultMessage": "Unfollow",
+    "description": "Button/menu label to stop following a run's status updates; verb, pairs with 'Follow'."
+  },
+  "j2VYGA": {
+    "defaultMessage": "View all playbooks",
+    "description": "Accessibility label for the left-hand sidebar link opening the full playbooks list."
+  },
+  "j40vB5": {
+    "defaultMessage": "The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.",
+    "description": "Validation error in the run creation modal when the run name from a locked name template exceeds {maxLength} characters; the user can only shorten attribute values."
+  },
+  "j7fLhH": {
+    "defaultMessage": "Are you sure you want to finish <i>{runName}</i> for all participants?",
+    "description": "Body of the 'finish run' confirmation dialog when no tasks are outstanding; <i> renders italics, {runName} is the run's name."
+  },
+  "j7jdWG": {
+    "defaultMessage": "Convert to a commercial edition.",
+    "description": "List item with a link in the steps to unlock a licensed feature; refers to converting the server from Team Edition to a commercial edition."
+  },
+  "j940pJ": {
+    "defaultMessage": "This update will be saved to <OverviewLink>overview page</OverviewLink>.",
+    "description": "Description in the status update modal when the update is not broadcast anywhere; <OverviewLink> wraps the link text to the run's overview page."
+  },
+  "jAo8dd": {
+    "defaultMessage": "Run status updates disabled by {name}",
+    "description": "Run timeline entry; {name} is the display name of the user who disabled status updates for the run."
+  },
+  "jGNTFs": {
+    "defaultMessage": "No custom attributes have been configured for this playbook.",
+    "description": "Empty-state description on the playbook Attributes page shown to users without edit permission."
+  },
+  "jIIWN+": {
+    "defaultMessage": "preformatted",
+    "description": "Sample word demonstrating preformatted-text markdown in the textbox help bar; rendered in monospace."
+  },
+  "jIgqRa": {
+    "defaultMessage": "Owner / Participants",
+    "description": "Column header in the runs list showing each run's owner and participants; compact space."
+  },
+  "jM3GcE": {
+    "defaultMessage": "Run number prefix",
+    "description": "Label for the input defining a prefix (e.g. 'INC-') for automatically numbered run names in playbook settings."
+  },
+  "jWN6Kl": {
+    "defaultMessage": "Preview: {preview}",
+    "description": "Shows the resolved run name below the name template input in the run creation modal; {preview} is the generated name."
+  },
+  "jXpTvI": {
+    "defaultMessage": "Only the run owner can reassign ownership of this run.",
+    "description": "Error toast when a non-owner tries to change the run owner from the channel sidebar."
+  },
+  "jfpnye": {
+    "defaultMessage": "@{user} left the run",
+    "description": "Run timeline event title when a user left the run; {user} is a username shown as an @-mention."
+  },
+  "jrOlPO": {
+    "defaultMessage": "Get run status update notifications",
+    "description": "Tooltip on the Follow button explaining that following delivers the run's status update notifications."
+  },
+  "jvo0vs": {
+    "defaultMessage": "Save",
+    "description": "Save button in edit modals (run name, linked channel, actions); commits changes."
+  },
+  "jwimQJ": {
+    "defaultMessage": "Ok",
+    "description": "Confirm/acknowledge button label in simple dialogs, e.g. the status update confirmation."
+  },
+  "k7Nzfi": {
+    "defaultMessage": "Disable invitation",
+    "description": "Confirm button of the modal that disables automatic run invitations."
+  },
+  "k8Fjp1": {
+    "defaultMessage": "View in progress",
+    "description": "Button in the channel sidebar run list empty state that switches the filter to in-progress runs."
+  },
+  "kEMvwX": {
+    "defaultMessage": "There are no runs matching those filters.",
+    "description": "Empty-state text on the runs list when the active filters match no runs. 'Runs' is a noun."
+  },
+  "kTr2o8": {
+    "defaultMessage": "Attribute name",
+    "description": "Accessibility label for the attribute name text input on the playbook attributes tab."
+  },
+  "kV5GkX": {
+    "defaultMessage": "When a status update is posted",
+    "description": "Trigger section title in the run actions modal; fires whenever a status update is posted for the run."
+  },
+  "kYCbJE": {
+    "defaultMessage": "Add time frame",
+    "description": "Tooltip and button label for setting a relative due time frame on a task in the playbook editor."
+  },
+  "ksG35Q": {
+    "defaultMessage": "You don't have permission to create playbooks in this workspace.",
+    "description": "Warning on the Playbooks welcome screen for users without permission to create playbooks."
+  },
+  "l/W5n7": {
+    "defaultMessage": "Participants will also be added to the channel linked to this run",
+    "description": "Footer note in the add-participants modal explaining the side effect; 'run' is a noun."
+  },
+  "l3AfOI": {
+    "defaultMessage": "Due date",
+    "description": "Button label in the bulk-edit bar and tooltip for setting a task's due date."
+  },
+  "l3QwVw": {
+    "defaultMessage": "Select channel",
+    "description": "Label above the channel picker in the 'Move run to a different channel' modal. Imperative verb phrase."
+  },
+  "l5/RKZ": {
+    "defaultMessage": "There are no finished runs for this playbook.",
+    "description": "Empty-state message in the playbook metrics run list when the playbook has no finished runs; noun."
+  },
+  "lBqu4h": {
+    "defaultMessage": "Restore playbook",
+    "description": "Title of the confirmation modal for restoring an archived playbook."
+  },
+  "lJ48wN": {
+    "defaultMessage": "Private playbook",
+    "description": "Option label in the public/private selector when creating or converting a playbook."
+  },
+  "lJyq2a": {
+    "defaultMessage": "Run not found",
+    "description": "Error page title shown when the requested run is private or does not exist; 'Run' is a noun."
+  },
+  "lKeJ+i": {
+    "defaultMessage": "There's no summary",
+    "description": "Placeholder for the run summary field shown to viewers who cannot edit it."
+  },
+  "lKyWN0": {
+    "defaultMessage": "Run a playbook",
+    "description": "Menu item in the channel sidebar creation menu that starts a new run from a playbook; 'Run' is a verb here."
+  },
+  "lQT7iD": {
+    "defaultMessage": "Create Playbook",
+    "description": "Modal title and confirm button for creating a new playbook; also button label on template cards. Imperative."
+  },
+  "lUfDe1": {
+    "defaultMessage": "Export the playbook run channel and save it for later analysis.",
+    "description": "Upgrade modal help text promoting the paid channel export feature; 'run' is a noun."
+  },
+  "lZwZi+": {
+    "defaultMessage": "Day: {date}",
+    "description": "Chart tooltip title for daily data points; {date} is the formatted day."
+  },
+  "lbhO3D": {
+    "defaultMessage": "italic",
+    "description": "Sample word demonstrating italic markdown formatting in the textbox help bar; will be rendered in italics."
+  },
+  "lbr3Lq": {
+    "defaultMessage": "Copy link",
+    "description": "Dropdown menu item copying a permalink to the playbook or run to the clipboard."
+  },
+  "lbs7UO": {
+    "defaultMessage": "per run over the last 10 runs",
+    "description": "Chart title suffix concatenated after a metric's name (e.g. 'Time to resolution per run over the last 10 runs'); 'run(s)' are nouns."
+  },
+  "lgZf0l": {
+    "defaultMessage": "Get started with Playbooks",
+    "description": "Title of the getting-started screen shown to first-time users; 'Playbooks' is the product name."
+  },
+  "lkv547": {
+    "defaultMessage": "Due date (Available in the Professional plan)",
+    "description": "Tooltip on the task due date control when the feature requires a Professional license."
+  },
+  "lqceIp": {
+    "defaultMessage": "or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>",
+    "description": "Suffix after the 'Create playbook' call to action offering import instead; keep the <ImportPlaybookButton> tags around the clickable text."
+  },
+  "lqzBNa": {
+    "defaultMessage": "Remove them from the run channel",
+    "description": "Toggle label in the run actions modal; 'them' refers to participants removed from the run, who will also be removed from the linked channel."
+  },
+  "lr1CUA": {
+    "defaultMessage": "Browse Playbooks",
+    "description": "Menu item in the channel sidebar '+' dropdown that opens the playbooks list page."
+  },
+  "lrbrjv": {
+    "defaultMessage": "Yes, start retrospective",
+    "description": "Accept button in the retrospective reminder post; opens the retrospective."
+  },
+  "lyXljU": {
+    "defaultMessage": "Duplicate task",
+    "description": "Menu item in a task's hover menu that duplicates the task."
+  },
+  "m/KtHt": {
+    "defaultMessage": "You have no permissions to change the owner",
+    "description": "Error toast when the user lacks permission to change the run owner."
+  },
+  "m/Q4ye": {
+    "defaultMessage": "Rename checklist",
+    "description": "Modal header for renaming a channel checklist (counterpart of 'Rename run')."
+  },
+  "m4vqJl": {
+    "defaultMessage": "Files",
+    "description": "Alt text for the illustration in the drag-and-drop file upload overlay."
+  },
+  "m8hzTK": {
+    "defaultMessage": "Last used {time}",
+    "description": "Subtitle line on a playbook item in the playbook selector; {time} is a relative time like '2 days ago'."
+  },
+  "mCrdeS": {
+    "defaultMessage": "Total Playbook Runs",
+    "description": "Label in system statistics for the total number of playbook runs on the server; admin audience."
+  },
+  "mILd++": {
+    "defaultMessage": "The run name should not exceed {maxLength} characters",
+    "description": "Validation error under the run name input when the typed name is longer than {maxLength} characters."
+  },
+  "mKWDap": {
+    "defaultMessage": "Insert variable",
+    "description": "Aria-label/tooltip for the button that inserts a template variable into the run name template."
+  },
+  "mLrh+0": {
+    "defaultMessage": "No due date",
+    "description": "Reset link in the due-date picker that clears a task's due date."
+  },
+  "mNgqXf": {
+    "defaultMessage": "To unlock this feature:",
+    "description": "Lead-in line before the list of steps to unlock a licensed feature; ends with a colon."
+  },
+  "mVpO8u": {
+    "defaultMessage": "Seen this before?",
+    "description": "Lead-in question before the 'Opt out of these tips.' link at the bottom of tutorial tour tips."
+  },
+  "mkLeuq": {
+    "defaultMessage": "Broadcast update to selected channels",
+    "description": "Toggle title in the run actions modal for automatically reposting status updates to other channels."
+  },
+  "mm5vL8": {
+    "defaultMessage": "Only invited members",
+    "description": "Short caption under the 'Private' access option when creating a playbook; access limited to invited members."
+  },
+  "mw9jVA": {
+    "defaultMessage": "Add a title",
+    "description": "Placeholder for a checklist task's title field."
+  },
+  "n70CD4": {
+    "defaultMessage": "Are you sure you want to resume {name}?",
+    "description": "Body of the confirmation dialog before resuming a finished channel checklist; {name} is the checklist run's name."
+  },
+  "nGnueQ": {
+    "defaultMessage": "The run name is set automatically from this playbook's channel name template and can't be edited here.",
+    "description": "Explanation shown in the run creation modal when the run name is read-only because the playbook defines a channel name template."
+  },
+  "nR9VfG": {
+    "defaultMessage": "Failed to save run number prefix. Please try again.",
+    "description": "Generic error toast when saving the run number prefix fails; retry prompt."
+  },
+  "nc8QpJ": {
+    "defaultMessage": "Recent Activity",
+    "description": "Section header in the run info right-hand sidebar showing the latest timeline events."
+  },
+  "nkCCM2": {
+    "defaultMessage": "You will not be reminded again.",
+    "description": "Line in a retrospective reminder post indicating reminders are one-time and won't repeat."
+  },
+  "nqVby7": {
+    "defaultMessage": "<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked",
+    "description": "Task progress line in a status update post; {numTasksChecked} of {numTasks} checklist tasks are done, <b> tags bold the numbers."
+  },
+  "nsd54s": {
+    "defaultMessage": "Confirm disable status updates",
+    "description": "Title of the confirmation modal for disabling status updates on a run."
+  },
+  "nyPgVB": {
+    "defaultMessage": "The condition will be removed from all tasks in this group. Tasks will not be deleted.",
+    "description": "Body of the confirmation dialog for removing a visibility condition from a group of checklist tasks."
+  },
+  "o+ZEL3": {
+    "defaultMessage": "Published {timestamp}",
+    "description": "Timestamp line on the run retrospective when the report has been published; {timestamp} is a formatted date and time."
+  },
+  "o//vQX": {
+    "defaultMessage": "Applies immediately to all active runs of this playbook. System admins keep access, and playbook admins can still reassign ownership.",
+    "description": "Help text under the owner-only run management toggle; notes it takes effect immediately and lists admin exceptions."
+  },
+  "o2eHmz": {
+    "defaultMessage": "Run finished by {name}",
+    "description": "Run timeline entry; {name} is the display name of the user who finished the run."
+  },
+  "oAJsne": {
+    "defaultMessage": "Public playbook",
+    "description": "Option label in the public/private selector when creating a playbook."
+  },
+  "oBeKB4": {
+    "defaultMessage": "Due on {date}",
+    "description": "Tooltip on a task's due date button; {date} is a short formatted date like 'Jul 30'."
+  },
+  "oJoQVu": {
+    "defaultMessage": "Template has an unclosed variable — every variable must be wrapped in matching curly braces, e.g. '{Field Name}'.",
+    "description": "Warning under the run name template input for an unbalanced brace; '{Field Name}' is a literal example of correct syntax, keep the braces."
+  },
+  "oL7YsP": {
+    "defaultMessage": "Last edited {timestamp}",
+    "description": "Timestamp caption under the run summary showing when it was last modified; {timestamp} is a relative time like '2 hours ago'."
+  },
+  "oMm3+0": {
+    "defaultMessage": "Skip section",
+    "description": "Menu item in a checklist's hover menu that marks the entire checklist (section) as skipped in a run. Imperative verb phrase."
+  },
+  "oVHn4s": {
+    "defaultMessage": "Last update",
+    "description": "Compact label preceding the relative time of the most recent status update; also a sort option label. Noun phrase."
+  },
+  "ocYb9S": {
+    "defaultMessage": "Key Metrics",
+    "description": "Section header in the run info right-hand sidebar showing the retrospective metric values for the run."
+  },
+  "ojQue/": {
+    "defaultMessage": "{icon} Duration (in dd:hh:mm)",
+    "description": "Metric type title in the editor dropdown; {icon} is a clock icon, dd:hh:mm means days:hours:minutes."
+  },
+  "opn6uf": {
+    "defaultMessage": "View Timeline",
+    "description": "Tooltip on the run details header button that opens the timeline right-hand panel."
+  },
+  "osuP6z": {
+    "defaultMessage": "Drag to reorder checklist",
+    "description": "Tooltip on the drag handle used to reorder a whole checklist within a run/playbook."
+  },
+  "p1I/Fx": {
+    "defaultMessage": "We’ve auto-created your run",
+    "description": "Title of the dialog shown when a sample run has been automatically created for onboarding; 'run' is a noun."
+  },
+  "pFK6bJ": {
+    "defaultMessage": "View all",
+    "description": "Link in the run info panel's Recent Activity section header, leading to the full timeline."
+  },
+  "pKLw8O": {
+    "defaultMessage": "Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.",
+    "description": "Body of the confirmation dialog for permanently deleting an event from the run timeline."
+  },
+  "pOrQjG": {
+    "defaultMessage": "Another active playbook in this team already uses that prefix.",
+    "description": "Error toast when the chosen run number prefix conflicts with another active playbook in the same team."
+  },
+  "pjt3qA": {
+    "defaultMessage": "New checklist",
+    "description": "Button in the channel sidebar that creates a new blank checklist for the channel. Noun phrase."
+  },
+  "playbooks.property_date.select_placeholder": {
+    "defaultMessage": "Select date...",
+    "description": "Placeholder of the date picker for a date-type attribute value on the run details panel; ends with an ellipsis."
+  },
+  "playbooks.property_user.add_placeholder": {
+    "defaultMessage": "Add user...",
+    "description": "Placeholder for the user picker that adds users to a user-type run attribute in the right-hand sidebar."
+  },
+  "playbooks.property_user.remove_user": {
+    "defaultMessage": "Remove user",
+    "description": "Accessibility label for the X button removing a selected user chip from a user-type run attribute."
+  },
+  "playbooks.property_user.select_placeholder": {
+    "defaultMessage": "Select user...",
+    "description": "Placeholder of the user picker for a user-type attribute value on the run details panel; ends with an ellipsis."
+  },
+  "playbooks.rhs_property.update_error": {
+    "defaultMessage": "Failed to update property value.",
+    "description": "Error toast when saving a run attribute ('property') value from the right-hand sidebar fails."
+  },
+  "playbooks.run_playbook_modal.run_name_label": {
+    "defaultMessage": "Run name{suffix}",
+    "description": "Label above the run name input in the run creation modal; {suffix} is empty or an asterisk marking a validation error; 'Run' is a noun."
+  },
+  "playbooks.update_run_status_modal.message_preview": {
+    "defaultMessage": "Resolves to: {preview}",
+    "description": "Preview line under the status update textbox showing the message with template variables substituted; {preview} is the resolved text."
+  },
+  "prs4kX": {
+    "defaultMessage": "When a message with specific keywords is posted",
+    "description": "Title of the trigger section in the Task actions modal: the automation fires when a message containing configured keywords is posted in the channel."
+  },
+  "pzTOmv": {
+    "defaultMessage": "Followers",
+    "description": "Row label in the run info overview showing the count of users following the run."
+  },
+  "q/Qo8l": {
+    "defaultMessage": "Private playbooks are only available in Mattermost Enterprise",
+    "description": "Tooltip on the upgrade badge next to the private playbook option when the license does not allow private playbooks."
+  },
+  "q1WWIr": {
+    "defaultMessage": "In progress",
+    "description": "Filter option in the channel sidebar run list showing active (not finished) runs/checklists; also a run status label. Adjective phrase."
+  },
+  "q6f8x9": {
+    "defaultMessage": "Change since last update",
+    "description": "Form label in the status update modal above the message textbox where the user describes what changed since the last update."
+  },
+  "qDxsQH": {
+    "defaultMessage": "Become a participant to interact with this run",
+    "description": "Informational toast prompting a viewer to become a run participant; 'run' is a noun."
+  },
+  "qGlwfc": {
+    "defaultMessage": "Start run",
+    "description": "Confirm button of the run creation modal that starts a new run of the playbook; 'run' is a noun, 'start' a verb."
+  },
+  "qJ5ITb": {
+    "defaultMessage": "Shown when {reason}",
+    "description": "Tooltip on a conditionally-shown task in the playbook editor; {reason} is a formatted condition describing when the task will appear."
+  },
+  "qnLI4Z": {
+    "defaultMessage": "Failed to delete {count} of {total} tasks",
+    "description": "Error toast after a bulk delete when some tasks failed; {count} failed out of {total} selected tasks."
+  },
+  "qvJKo3": {
+    "defaultMessage": "Created from {playbook} playbook",
+    "description": "Tooltip on the playbook chip in the channel sidebar run header; {playbook} is the playbook's name. The run was created from that playbook."
+  },
+  "qxYWTy": {
+    "defaultMessage": "Show all tasks from runs I own",
+    "description": "Checkbox filter option in the task inbox including every task from runs the user owns, not just tasks assigned to them. 'Runs' is a noun."
+  },
+  "qyJtWy": {
+    "defaultMessage": "Show less",
+    "description": "Toggle that collapses previously expanded truncated text; counterpart of 'Show more'."
+  },
+  "rDvvQs": {
+    "defaultMessage": "{completed, number} / {total, number} done",
+    "description": "Compact progress label in a collapsed checklist header during a run, e.g. '3 / 10 done'; {completed} and {total} are numbers of tasks."
+  },
+  "rMhrJH": {
+    "defaultMessage": "Please add a title for your metric.",
+    "description": "Validation error when the metric title is left empty in the metric editor."
+  },
+  "rVUz+O": {
+    "defaultMessage": "Retrospective enabled by {name}",
+    "description": "Run timeline entry; {name} is the display name of the user who enabled the retrospective."
+  },
+  "rX08cW": {
+    "defaultMessage": "Date must be in the future.",
+    "description": "Validation warning in the status update modal when the chosen reminder date/time is in the past."
+  },
+  "rbrahO": {
+    "defaultMessage": "Close",
+    "description": "Close/dismiss control: aria-label for the toast close button and cancel button in the status update modal."
+  },
+  "rlApwT": {
+    "defaultMessage": "Loading playbook details…",
+    "description": "Accessibility label of the loading spinner while the run creation modal fetches playbook details; ends with an ellipsis character."
+  },
+  "ru+JCk": {
+    "defaultMessage": "Average value",
+    "description": "Label in a playbook metrics card for the all-time average metric value."
+  },
+  "ruJGqS": {
+    "defaultMessage": "Playbook Access",
+    "description": "Header of the modal for managing a playbook's members and permissions."
+  },
+  "ryrP8K": {
+    "defaultMessage": "Manage permission for who can view, modify, and run this playbook.",
+    "description": "Upgrade modal help text promoting granular playbook permissions; 'run' is a verb here (start an execution of the playbook)."
+  },
+  "rzbYbE": {
+    "defaultMessage": "Target",
+    "description": "Label for a metric's target value in metric editing and display; noun (goal value)."
+  },
+  "s+rSpl": {
+    "defaultMessage": "{icon} Integer",
+    "description": "Metric type title in the editor dropdown; {icon} is a pound-sign icon placed before the word."
+  },
+  "s3jjqi": {
+    "defaultMessage": "{num_actions, plural, =0 {no actions} one {# action} other {# actions}}",
+    "description": "Compact metadata on a playbook template card showing how many automated actions it has; e.g. 'no actions', '2 actions'."
+  },
+  "sDKojV": {
+    "defaultMessage": "Archive playbook",
+    "description": "Title of the confirmation modal for archiving a playbook."
+  },
+  "sGJpuF": {
+    "defaultMessage": "Add a description…",
+    "description": "Placeholder for the playbook description markdown editor."
+  },
+  "sIX63S": {
+    "defaultMessage": "Your System Admin has been notified",
+    "description": "Confirmation text after a non-admin's upgrade request was delivered to the System Admin."
+  },
+  "sQu1rA": {
+    "defaultMessage": "{numTotalRuns, plural, =0 {no runs started} =1 {# run started} other {# runs started}}",
+    "description": "Chart tooltip label; {numTotalRuns} is the number of runs started that week, with a zero branch."
+  },
+  "sVlNlY": {
+    "defaultMessage": "Every team's structure is different. You can manage which users in the team can create playbooks.",
+    "description": "Marketing body text in the upgrade modal for restricting who can create playbooks."
+  },
+  "sX5Mn5": {
+    "defaultMessage": "Please enter one webhook per line",
+    "description": "Help text under the outgoing-webhook textarea telling the user to put each webhook URL on its own line."
+  },
+  "scYyVv": {
+    "defaultMessage": "Would you like to fill out the retrospective report?",
+    "description": "Heading of the first retrospective reminder bot post, phrased as a question to the run owner."
+  },
+  "soCLV+": {
+    "defaultMessage": "Checklist",
+    "description": "Link text in the run details RHS title navigating to the run's checklist section; singular noun."
+  },
+  "soePYH": {
+    "defaultMessage": "{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}",
+    "description": "Compact metadata on a playbook template card showing how many checklists it contains; e.g. 'no checklists', '2 checklists'."
+  },
+  "sqNmlF": {
+    "defaultMessage": "Skip retrospective",
+    "description": "Secondary button in the retrospective reminder post; dismisses the retrospective."
+  },
+  "syEQFE": {
+    "defaultMessage": "Publish",
+    "description": "Button label that publishes the retrospective report to the run channel; verb."
+  },
+  "t2BuHe": {
+    "defaultMessage": "Go to overview",
+    "description": "Tooltip on the run title in the channel sidebar and context menu item that navigates to the run's full overview page."
+  },
+  "t6SiGO": {
+    "defaultMessage": "Runs currently in progress",
+    "description": "Stat card label on the run statistics page; 'Runs' is a plural noun."
+  },
+  "t6lwwM": {
+    "defaultMessage": "{requester} removed {users} from the run",
+    "description": "Run timeline event summary line; {requester} is a display name, {users} is a formatted list of @-mentions of the removed participants."
+  },
+  "tVPYMu": {
+    "defaultMessage": "Playbook Admin",
+    "description": "Role name shown next to a playbook member who has admin permissions on the playbook."
+  },
+  "tbjmvS": {
+    "defaultMessage": "A metric with the same name already exists. Please add a unique name for each metric.",
+    "description": "Validation error when the metric title duplicates an existing metric's name."
+  },
+  "tl4dCw": {
+    "defaultMessage": "{completed, number}/{total, number} tasks",
+    "description": "Compact task progress label in a runs-list row, e.g. '3/10 tasks'; {completed} and {total} are numbers."
+  },
+  "tnDRiU": {
+    "defaultMessage": "Select channel members",
+    "description": "Placeholder for the people picker in the add-participants modal when the run is linked to a direct or group message channel."
+  },
+  "tqtgzu": {
+    "defaultMessage": "Edit attribute type",
+    "description": "Menu item in an attribute's dot menu for changing the attribute's value type."
+  },
+  "u/yGzS": {
+    "defaultMessage": "{name} added @{user} to the run",
+    "description": "Run timeline event title when one participant was added; {name} is the requester, {user} is a username shown as an @-mention."
+  },
+  "u4L4yd": {
+    "defaultMessage": "You have unsaved changes",
+    "description": "Title of the unsaved-changes confirmation dialog."
+  },
+  "u4MwUB": {
+    "defaultMessage": "Save your playbook run history",
+    "description": "Upgrade modal title promoting the paid channel export feature; 'run' is a noun."
+  },
+  "uLH4aJ": {
+    "defaultMessage": "Run User — Resolves to a user-type attribute at creation",
+    "description": "Option in the task assignee dropdown; assigns the task to a user stored in a user-type run attribute, resolved when the run starts. The em dash separates the option name from its explanation."
+  },
+  "uT4ebt": {
+    "defaultMessage": "e.g., Resource count, Customers affected",
+    "description": "Example metric names shown under the Integer metric type option."
+  },
+  "uYrkxy": {
+    "defaultMessage": "The file must be a valid JSON playbook template.",
+    "description": "Error toast when the imported file is not a valid playbook JSON export."
+  },
+  "udrLSP": {
+    "defaultMessage": "Use metrics to understand patterns and progress across runs, and track performance.",
+    "description": "Help text promoting the paid key metrics feature in upgrade banners and empty states; 'runs' is a plural noun."
+  },
+  "ugwV+W": {
+    "defaultMessage": "Checklist created from {playbook} playbook",
+    "description": "Tooltip on the playbook chip of a run list item; {playbook} is the source playbook's title."
+  },
+  "uhu5aG": {
+    "defaultMessage": "Public",
+    "description": "Option label for public visibility when choosing playbook or channel access; adjective."
+  },
+  "uiX1eu": {
+    "defaultMessage": "Remove condition?",
+    "description": "Title of the confirmation dialog for removing a condition from a conditional task group."
+  },
+  "unwVil": {
+    "defaultMessage": "The join channel request was unsuccessful.",
+    "description": "Error toast when the request to join the run's channel fails."
+  },
+  "uny3Zy": {
+    "defaultMessage": "Playbooks",
+    "description": "Product name, used as the left-hand sidebar category for playbooks and as the playbooks page heading."
+  },
+  "upszHT": {
+    "defaultMessage": "Go to Playbooks",
+    "description": "Menu item in the channel sidebar that opens the full Playbooks app; 'Playbooks' is the product name."
+  },
+  "utHl3F": {
+    "defaultMessage": "Add people to {runName}",
+    "description": "Title of the add-participants modal; {runName} is the run's name."
+  },
+  "uxcVP6": {
+    "defaultMessage": "Enter value...",
+    "description": "Placeholder of a free-text value input (condition value in the condition editor, or a text attribute value); ends with an ellipsis."
+  },
+  "v1DNMW": {
+    "defaultMessage": "Retrospective published by {name}",
+    "description": "Run timeline entry; {name} is the display name of the user who published the retrospective report."
+  },
+  "v1SpKO": {
+    "defaultMessage": "Role changes",
+    "description": "Checkbox option in the run timeline filter for run owner change events."
+  },
+  "v1ahrr": {
+    "defaultMessage": "{count, plural, =0 {None in progress} other {# in progress}}",
+    "description": "Status line under a playbook showing how many of its runs are currently active; {count} is the number of in-progress runs."
+  },
+  "vDvWJ6": {
+    "defaultMessage": "Try request update with a free trial",
+    "description": "Marketing headline in the upgrade modal promoting the request-update feature via a free trial."
+  },
+  "vFdXy0": {
+    "defaultMessage": "Enabling this will prevent runs from linking to existing channels. All future runs will create a new channel. Continue?",
+    "description": "Confirmation body for the require-new-channel toggle; explains existing-channel linking will be blocked and asks to continue."
+  },
+  "vL4++D": {
+    "defaultMessage": "Track progress and ownership",
+    "description": "Title of a tutorial tour tip pointing at the run checklists, about assigning and completing tasks."
+  },
+  "vNYDe4": {
+    "defaultMessage": "Are you sure you want to move {name} to a different channel?",
+    "description": "Body of the confirmation in the move-run modal; {name} is the run's name."
+  },
+  "viXE32": {
+    "defaultMessage": "Private",
+    "description": "Option label for private (invite-only) visibility when choosing playbook or channel access; adjective."
+  },
+  "vjb+hS": {
+    "defaultMessage": "{user} restored checklist item \"{name}\"",
+    "description": "Run timeline event title when a skipped task was restored; {user} is a display name, {name} is the checklist item title."
+  },
+  "vjzpnC": {
+    "defaultMessage": "There are no playbooks matching those filters.",
+    "description": "Empty-state message when playbook list filters return no results."
+  },
+  "vndQuC": {
+    "defaultMessage": "Slash Command Executed",
+    "description": "Run timeline entry title when a participant executed a slash command."
+  },
+  "vx8bv3": {
+    "defaultMessage": "Assignee",
+    "description": "Tooltip on the assignee button while editing a checklist task."
+  },
+  "w0muFd": {
+    "defaultMessage": "Send outgoing webhook (One per line)",
+    "description": "Toggle label in the playbook run actions section for sending outgoing webhooks; the parenthetical tells users to enter one URL per line."
+  },
+  "w4Nhhb": {
+    "defaultMessage": "Add participant",
+    "description": "Tooltip and link for adding a participant to the run from the channel sidebar."
+  },
+  "wBZz47": {
+    "defaultMessage": "You've left the run.",
+    "description": "Success toast after the user leaves a run."
+  },
+  "wCDmf3": {
+    "defaultMessage": "Enable updates",
+    "description": "Confirm button of the dialog that enables scheduled status updates for a run; 'updates' means status updates. Imperative verb phrase."
+  },
+  "wDorPP": {
+    "defaultMessage": "Playbook Examples",
+    "description": "Heading in the channel sidebar home view above the list of prebuilt playbook templates."
+  },
+  "wEQDC6": {
+    "defaultMessage": "Edit",
+    "description": "Button label toggling a markdown textbox from preview back to editing mode; pairs with 'Preview'."
+  },
+  "wJt/1b": {
+    "defaultMessage": "Section name",
+    "description": "Placeholder of the inline text input for renaming a checklist ('section') in a run or playbook."
+  },
+  "wL7VAE": {
+    "defaultMessage": "Actions",
+    "description": "Column header for the actions column in the playbook attributes table and playbook list; compact space."
+  },
+  "wRM2AO": {
+    "defaultMessage": "The update request was unsuccessful.",
+    "description": "Error toast when the request for a status update fails."
+  },
+  "wZ83YL": {
+    "defaultMessage": "Not right now",
+    "description": "Dismiss button in upgrade prompts; declines starting a trial for now."
+  },
+  "waVyVY": {
+    "defaultMessage": "Participants currently active",
+    "description": "Stat card label on the run statistics page counting currently active run participants."
+  },
+  "wbdGb5": {
+    "defaultMessage": "Assign, check off, or skip tasks to ensure the team is clear on how to move toward the finish line together.",
+    "description": "Body of a tutorial tour tip explaining the checklist area of the run details view."
+  },
+  "wbsq7O": {
+    "defaultMessage": "Usage",
+    "description": "Navigation tab in the playbook editor showing usage statistics and run history; compact space."
+  },
+  "wcWpGs": {
+    "defaultMessage": "Invalid webhook URLs",
+    "description": "Validation error under the webhooks textarea when an entered URL is not a valid http(s) webhook URL."
+  },
+  "we4Lby": {
+    "defaultMessage": "Info",
+    "description": "Title of the information section in the run details RHS; compact heading, noun."
+  },
+  "wylJpv": {
+    "defaultMessage": "Everyone in {team} can view this playbook.",
+    "description": "Subtitle in the playbook access modal for a public playbook; {team} is the team's display name."
+  },
+  "wz7PIL": {
+    "defaultMessage": "Select role for assignee",
+    "description": "Accessibility label (aria-label) of the dropdown selecting a role (run owner/creator) as the task assignee."
+  },
+  "x1phlu": {
+    "defaultMessage": "No time frame",
+    "description": "Reset link in the duration variant of the date/time picker that clears the selected time frame."
+  },
+  "x5Tz6M": {
+    "defaultMessage": "Report",
+    "description": "Section title above the retrospective report text area on the run details page; noun."
+  },
+  "x6PFyT": {
+    "defaultMessage": "YOUR PLAYBOOKS",
+    "description": "All-caps section header in the playbook selector listing the user's own playbooks; compact space."
+  },
+  "xAoYB/": {
+    "defaultMessage": "Only the run owner can finish this run",
+    "description": "Tooltip on the disabled 'Finish' menu item when only the run owner may finish the run."
+  },
+  "xB/R5b": {
+    "defaultMessage": "Are you sure you want to enable the retrospective for this run?",
+    "description": "Body of the confirmation dialog before enabling the retrospective for a run."
+  },
+  "xEQYo5": {
+    "defaultMessage": "Configure custom metrics to fill out with the retrospective report.",
+    "description": "Help text under the 'Key metrics' subheader in the playbook editor's retrospective section."
+  },
+  "xHNF7i": {
+    "defaultMessage": "Run Actions",
+    "description": "Title of the run actions modal and tooltip/accessibility label of the header button that opens it; 'Run' is a noun."
+  },
+  "xVyHgP": {
+    "defaultMessage": "Start a test run",
+    "description": "Primary button in the tutorial ('Learn how to use Playbooks') playbook; starts a practice run. 'run' is the noun, 'Start' the verb."
+  },
+  "xfnuXm": {
+    "defaultMessage": "Participate",
+    "description": "Button label ('Participate') for a run viewer to become a participant; used as the confirm button of the participate modal and on the run header/right-hand sidebar. Verb."
+  },
+  "xfp/3t": {
+    "defaultMessage": "Back to checklists",
+    "description": "Tooltip on the back button in the channel sidebar returning from run details to the checklist list."
+  },
+  "xmcVZ0": {
+    "defaultMessage": "Search",
+    "description": "Placeholder for search input fields (runs list filters, user selector); verb."
+  },
+  "xvBDOH": {
+    "defaultMessage": "Are you sure you want to archive the playbook {title}?",
+    "description": "Confirmation prompt in the archive-playbook modal; {title} is the playbook's name."
+  },
+  "y7o4Rn": {
+    "defaultMessage": "Are you sure you want to delete?",
+    "description": "Title of the confirmation modal for deleting a retrospective metric."
+  },
+  "yN4+6d": {
+    "defaultMessage": "Choose values",
+    "description": "Placeholder of the multi-value select for a condition on a multiselect attribute; plural counterpart of 'Choose a value'."
+  },
+  "yN63it": {
+    "defaultMessage": "Choose a value",
+    "description": "Placeholder of the single-value select for a condition on a select attribute."
+  },
+  "yVKYcF": {
+    "defaultMessage": "Are you sure you want to disable the retrospective for this run? No retrospective reminder will be sent.",
+    "description": "Body of the confirmation dialog before disabling the retrospective for a run."
+  },
+  "yhU1et": {
+    "defaultMessage": "Tasks",
+    "description": "Section title for the checklist tasks area (run details RHS) and tooltip on the global-header task inbox icon; plural noun, compact."
+  },
+  "yllba1": {
+    "defaultMessage": "This archived playbook cannot be renamed.",
+    "description": "Disabled-state tooltip on the Rename menu item when the playbook is archived."
+  },
+  "ypIsVG": {
+    "defaultMessage": "Restore task",
+    "description": "Menu item in a task's hover menu that restores a previously skipped task."
+  },
+  "yqpcOa": {
+    "defaultMessage": "Use",
+    "description": "Button label on a pre-built playbook template card; selects that template to create a playbook. Verb, compact space."
+  },
+  "z3B83t": {
+    "defaultMessage": "Search for a playbook",
+    "description": "Placeholder for the search input on the playbooks list page."
+  },
+  "z5FBbG": {
+    "defaultMessage": "Are you sure you want to delete the attribute \"{propertyName}\"? This action cannot be undone.",
+    "description": "Body of the confirmation dialog for deleting a playbook attribute; {propertyName} is the attribute's name."
+  },
+  "zELxbG": {
+    "defaultMessage": "Saved messages",
+    "description": "Run timeline filter option for events created from posts saved to the timeline."
+  },
+  "zINlao": {
+    "defaultMessage": "Owner",
+    "description": "Label for the run owner section in the run details RHS, and fallback variable name for the owner in run name templates; noun (the person responsible for the run)."
+  },
+  "zSOvI0": {
+    "defaultMessage": "Filters",
+    "description": "Label on the filter dropdown button in the task inbox; compact space."
+  },
+  "zW/5AB": {
+    "defaultMessage": "<title>Professional feature</title> <body>This is a paid feature, available with a free 30-day trial</body>",
+    "description": "Tooltip on the request-update button when unlicensed; <title> and <body> are formatting tags for the heading and detail lines."
+  },
+  "zWgbGg": {
+    "defaultMessage": "Today",
+    "description": "Suggested option label in date pickers (due date, date attribute) meaning the current day; also a relative date label on status update cards."
+  },
+  "zWkvNO": {
+    "defaultMessage": "Timeline",
+    "description": "Title of the timeline section in the run details RHS listing the run's chronological events."
+  },
+  "zl6378": {
+    "defaultMessage": "Configure metrics in Retrospective",
+    "description": "Button navigating to the playbook's Retrospective section where metrics are configured; 'Retrospective' is that section's title."
+  },
+  "zx0myy": {
+    "defaultMessage": "Participants",
+    "description": "Section title and row label for the list of run participants (channel sidebar, run info overview)."
+  },
+  "zxj2Gh": {
+    "defaultMessage": "Last updated {time}",
+    "description": "Metadata line on a run list item; {time} is a relative time like '2 hours ago'."
+  },
+  "zz6ObK": {
+    "defaultMessage": "Restore",
+    "description": "Confirm button of the restore-playbook modal and menu item to un-archive an archived playbook; verb."
+  }
+}

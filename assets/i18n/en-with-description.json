@@ -1,0 +1,261 @@
+[
+  {
+    "id": "app.command.execute.error",
+    "translation": "Unable to execute command.",
+    "description": "Generic error returned to the user when a /playbook slash command fails to execute for any reason."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Overdue Status Updates",
+    "description": "Markdown section heading in the to-do digest the Playbooks bot sends via DM (and in the /playbook todo response); introduces the list of runs with overdue status updates."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "You have {{.Count}} run overdue for a status update:",
+      "other": "You have {{.Count}} runs overdue for a status update:"
+    },
+    "description": "Line in the bot DM digest under the overdue status updates heading, preceding a list of run links; {{.Count}} is the number of runs the user owns that are overdue for a status update. 'Run' is a noun (execution of a playbook)."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "You have 0 runs overdue.",
+    "description": "Line in the bot DM digest under the overdue status updates heading when the user has no runs overdue for a status update."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Runs in Progress",
+    "description": "Markdown section heading in the bot DM to-do digest; introduces the list of the user's in-progress runs. 'Runs' is a noun (executions of a playbook)."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "one": "You have {{.Count}} run currently in progress:",
+      "other": "You have {{.Count}} runs currently in progress:"
+    },
+    "description": "Line in the bot DM digest under the runs-in-progress heading, preceding a list of run links; {{.Count}} is the number of runs the user participates in. 'Run' is a noun."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "You have 0 runs currently in progress.",
+    "description": "Line in the bot DM digest under the runs-in-progress heading when the user participates in no active runs."
+  },
+  {
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "Please use `/playbook todo` to see all your tasks.",
+    "description": "Hint appended to the daily digest DM when some assigned tasks are due later; markdown with a literal slash command in backticks that must not be translated."
+  },
+  {
+    "id": "app.user.digest.tasks.due_after_today",
+    "translation": {
+      "one": "You have **{{.Count}} assigned task due after today**.",
+      "other": "You have **{{.Count}} assigned tasks due after today**."
+    },
+    "description": "Summary line in the daily digest DM; {{.Count}} is the number of the user's assigned tasks whose due date is in the future; markdown bold. Followed in the same paragraph by the hint to use /playbook todo."
+  },
+  {
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "one": "Due in {{.Count}} day",
+      "other": "Due in {{.Count}} days"
+    },
+    "description": "Compact due-date badge appended after a task name in the digest task list; {{.Count}} is the number of days until the task is due; rendered in monospace."
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "Due today",
+    "description": "Compact due-date badge appended after a task name in the digest task list, for tasks due on the current day; rendered in bold monospace."
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "Due {{.Count}} days ago",
+    "description": "Compact overdue badge appended after a task name in the digest task list; {{.Count}} is the number of days past the due date (always 2 or more; 'yesterday' has its own string); rendered in bold monospace."
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "Due yesterday",
+    "description": "Compact overdue badge appended after a task name in the digest task list, for tasks whose due date was the previous day; rendered in bold monospace."
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Your assigned tasks",
+    "description": "Markdown section heading in the bot DM to-do digest; introduces the list of checklist tasks assigned to the user across runs."
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "one": "You have {{.Count}} assigned task:",
+      "other": "You have {{.Count}} total assigned tasks:"
+    },
+    "description": "Line in the full to-do digest (/playbook todo) preceding the list of the user's assigned tasks; {{.Count}} is the total number of assigned tasks; ends with a colon."
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "one": "You have {{.Count}} assigned task that is now due:",
+      "other": "You have {{.Count}} assigned tasks that are now due:"
+    },
+    "description": "Line in the daily digest DM preceding the task list; {{.Count}} is the number of the user's assigned tasks that are due today or overdue; ends with a colon."
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "You have 0 assigned tasks.",
+    "description": "Line in the bot DM digest under the assigned-tasks heading when the user has no assigned tasks."
+  },
+  {
+    "id": "app.user.new_run.intro",
+    "translation": "**Owner** {{.Username}}",
+    "description": "Introduction text of the 'Run playbook' interactive dialog; {{.Username}} is the display name of the user who will own the new run; markdown bold on 'Owner'."
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "Playbook",
+    "description": "Label of the playbook select field in the 'Run playbook' dialog, where the user picks which playbook (process template) to start."
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "Run name",
+    "description": "Label of the text field in the 'Run playbook' dialog where the user names the new run; 'run' is a noun (execution of a playbook)."
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "Start run",
+    "description": "Submit button of the 'Run playbook' dialog; starts the new run; 'run' is a noun; compact button label."
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "Run playbook",
+    "description": "Title of the interactive dialog for starting a playbook; 'Run' is a verb here (execute the playbook)."
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "Description",
+    "description": "Label of the optional description textarea in the 'Add new task' dialog for a run's checklist."
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "Name",
+    "description": "Label of the task name text field in the 'Add new task' dialog for a run's checklist."
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "Add task",
+    "description": "Submit button of the 'Add new task' dialog; adds the task to the run's checklist; compact button label."
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "Add new task",
+    "description": "Title of the interactive dialog for adding a checklist task to a run."
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "Playbook Run",
+    "description": "Label of the select field in the 'Add to run timeline' dialog where the user picks which run's timeline the post should be added to; noun phrase."
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "Add to run timeline",
+    "description": "Submit button of the dialog that saves a channel post as an event on a run's timeline; 'run timeline' means the chronological event log of the run."
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "Summary",
+    "description": "Label of the short text field in the 'Add to run timeline' dialog where the user writes a summary of the timeline event; noun."
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "Max 64 chars",
+    "description": "Help text under the summary field in the 'Add to run timeline' dialog stating the 64-character limit; very compact."
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "Short summary shown in the timeline",
+    "description": "Placeholder text of the summary field in the 'Add to run timeline' dialog; 'timeline' is the run's chronological event log."
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "Add to run timeline",
+    "description": "Title of the interactive dialog for saving a channel post as an event on a run's timeline."
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "one": "There is **{{.Count}} outstanding task**. Are you sure you want to finish *{{.RunName}}* for all participants?",
+      "other": "There are **{{.Count}} outstanding tasks**. Are you sure you want to finish *{{.RunName}}* for all participants?"
+    },
+    "description": "Introduction text of the 'Confirm finish' dialog shown before finishing a run that still has unchecked tasks; {{.Count}} is the number of incomplete tasks, {{.RunName}} is the run's name; markdown bold and italics."
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "Finish",
+    "description": "Submit button of the 'Confirm finish' dialog; confirms ending the run; verb, compact button label."
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "Confirm finish",
+    "description": "Title of the confirmation dialog shown before finishing a run that has outstanding tasks; 'finish' is a noun/gerund here (the act of finishing the run)."
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} is a run participant and wants join this channel. Any member of the channel can invite them.\n",
+    "description": "Bot post in the run's channel when a run participant asks to be added to it; {{.Name}} is the requester's username rendered as an @-mention; keep the leading @ and trailing newline."
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} requested a status update for [{{.RunName}}]({{.RunURL}}). \n",
+    "description": "Bot post in the run's channel when someone requests a status update; keep the literal @here mention; {{.Name}} is the requester's username (@-mentioned), {{.RunName}}/{{.RunURL}} form a markdown link to the run."
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} disabled the status updates for [{{.RunName}}]({{.RunURL}})",
+    "description": "Bot post in the run's channel announcing that a user turned off periodic status update reminders; {{.Username}} is @-mentioned, {{.RunName}}/{{.RunURL}} form a markdown link to the run."
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} enabled the status updates for [{{.RunName}}]({{.RunURL}})",
+    "description": "Bot post in the run's channel announcing that a user turned on periodic status update reminders; {{.Username}} is @-mentioned, {{.RunName}}/{{.RunURL}} form a markdown link to the run."
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "Change since last update",
+    "description": "Label of the main textarea in the 'Status update' dialog where the user writes what changed in the run since the previous update."
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "Finish run",
+    "description": "Label of an optional checkbox in the 'Status update' dialog that also ends the run when the update is posted; 'run' is a noun; compact label."
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "Also mark the run as finished",
+    "description": "Placeholder/description text next to the 'Finish run' checkbox in the 'Status update' dialog, clarifying that checking it also marks the run as finished."
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "one": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channel.",
+      "other": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channels."
+    },
+    "description": "Introduction text of the 'Status update' dialog; {{.Count}} is the number of channels the update post will be broadcast to."
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "Reminder for next update",
+    "description": "Label of the select field in the 'Status update' dialog for choosing when to be reminded to post the next update (options like 15min, 60min)."
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "Post",
+    "description": "Submit button of the 'Status update' dialog; 'Post' is a verb (publishes the update as a message); compact button label."
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "Status update",
+    "description": "Title of the interactive dialog for posting a status update on a run; noun phrase."
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "shown because the task was modified",
+    "description": "Reason label attached to a checklist task in a run, explaining why a conditionally-hidden task is still visible (its assignee or state was changed); lowercase sentence fragment."
+  }
+]
