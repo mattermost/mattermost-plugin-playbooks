@@ -200,6 +200,12 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// A client-supplied members list can assign roles (e.g. playbook_admin) to arbitrary users,
+	// so it needs the same authorization as modifying members on an existing playbook.
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreateWithMembers(userID, playbook)) {
+		return
+	}
+
 	// If not specified make the creator the sole admin
 	if len(playbook.Members) == 0 {
 		playbook.Members = []app.PlaybookMember{

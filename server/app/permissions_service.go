@@ -149,6 +149,19 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create playbook", userID)
 }
 
+// PlaybookCreateWithMembers checks that a client-supplied members list on playbook creation is
+// permitted. An empty list is always allowed (the caller then defaults to making the creator the
+// sole admin). A non-empty list requires ManageMembers, and assigning any member a role other
+// than a plain "playbook_member" (e.g. playbook_admin) additionally requires ManageRoles -
+// mirroring the checks already enforced on playbook updates in PlaybookModifyWithFixes.
+func (p *PermissionsService) PlaybookCreateWithMembers(userID string, playbook Playbook) error {
+	if len(playbook.Members) == 0 {
+		return nil
+	}
+
+	return p.noAddedMembersWithoutPermission(userID, playbook, nil, playbook.Members)
+}
+
 func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Playbook) error {
 	permission := model.PermissionPrivatePlaybookManageProperties
 	if p.PlaybookIsPublic(playbook) {
@@ -258,28 +271,8 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 	}
 
 	// Check if we have changed members, if so check that permission.
-	if !reflect.DeepEqual(oldPlaybook.Members, playbook.Members) {
-		if err := p.PlaybookManageMembers(userID, oldPlaybook); err != nil {
-			return errors.Wrap(err, "attempted to modify members without permissions")
-		}
-
-		oldMemberRoles := map[string]string{}
-		for _, member := range oldPlaybook.Members {
-			oldMemberRoles[member.UserID] = strings.Join(member.Roles, ",")
-		}
-
-		// Also need to check if roles changed. If so we need to check manage roles permission.
-		for _, member := range playbook.Members {
-			oldRoles, memberExisted := oldMemberRoles[member.UserID]
-			userAddedAsMember := !memberExisted && len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember
-			rolesHaveNotChanged := memberExisted && strings.Join(member.Roles, ",") == oldRoles
-			if !userAddedAsMember && !rolesHaveNotChanged {
-				if err := p.PlaybookManageRoles(userID, oldPlaybook); err != nil {
-					return errors.Wrap(err, "attempted to modify members without permissions")
-				}
-				break
-			}
-		}
+	if err := p.noAddedMembersWithoutPermission(userID, oldPlaybook, oldPlaybook.Members, playbook.Members); err != nil {
+		return err
 	}
 
 	// Check if team is being changed
@@ -379,6 +372,40 @@ func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID st
 				userID,
 				channelID,
 			)
+		}
+	}
+
+	return nil
+}
+
+// noAddedMembersWithoutPermission checks that changing oldMembers to newMembers is permitted:
+// any change to the member list requires ManageMembers, and assigning a member a role other than
+// a plain new "playbook_member" additionally requires ManageRoles. permCheckPlaybook is used to
+// resolve the permission scope (playbook-level role if it exists, else team-level).
+func (p *PermissionsService) noAddedMembersWithoutPermission(userID string, permCheckPlaybook Playbook, oldMembers, newMembers []PlaybookMember) error {
+	if reflect.DeepEqual(oldMembers, newMembers) {
+		return nil
+	}
+
+	if err := p.PlaybookManageMembers(userID, permCheckPlaybook); err != nil {
+		return errors.Wrap(err, "attempted to modify members without permissions")
+	}
+
+	oldMemberRoles := map[string]string{}
+	for _, member := range oldMembers {
+		oldMemberRoles[member.UserID] = strings.Join(member.Roles, ",")
+	}
+
+	// Also need to check if roles changed. If so we need to check manage roles permission.
+	for _, member := range newMembers {
+		oldRoles, memberExisted := oldMemberRoles[member.UserID]
+		userAddedAsMember := !memberExisted && len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember
+		rolesHaveNotChanged := memberExisted && strings.Join(member.Roles, ",") == oldRoles
+		if !userAddedAsMember && !rolesHaveNotChanged {
+			if err := p.PlaybookManageRoles(userID, permCheckPlaybook); err != nil {
+				return errors.Wrap(err, "attempted to modify members without permissions")
+			}
+			break
 		}
 	}
 

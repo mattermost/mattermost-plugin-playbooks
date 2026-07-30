@@ -388,6 +388,83 @@ func TestPlaybookModifyWithFixes_AdminOnlyEditFlip(t *testing.T) {
 	})
 }
 
+func TestPlaybookCreateWithMembers(t *testing.T) {
+	const (
+		teamID    = "team-1"
+		creatorID = "u-creator"
+		targetID  = "u-target"
+	)
+
+	makePlaybook := func(members []PlaybookMember) Playbook {
+		return Playbook{
+			TeamID:  teamID,
+			Public:  false,
+			Members: members,
+		}
+	}
+
+	t.Run("empty members list is always allowed (creator auto-assigned later)", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		// No mocks configured: any unexpected permission lookup would fail the test via
+		// plugintest's strict mock, proving the empty-members path performs no extra checks.
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, makePlaybook(nil)))
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, makePlaybook([]PlaybookMember{})))
+	})
+
+	t.Run("user without ManageMembers cannot add another user at creation", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPrivatePlaybookManageMembers).Return(false)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+		})
+		err := f.svc.PlaybookCreateWithMembers(creatorID, pb)
+		assert.ErrorIs(t, err, ErrNoPermissions)
+	})
+
+	t.Run("user with ManageMembers but without ManageRoles cannot assign playbook_admin to another user", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPrivatePlaybookManageMembers).Return(true)
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPrivatePlaybookManageRoles).Return(false)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+		})
+		err := f.svc.PlaybookCreateWithMembers(creatorID, pb)
+		assert.ErrorIs(t, err, ErrNoPermissions)
+	})
+
+	t.Run("user with ManageMembers can add a plain member without needing ManageRoles", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPrivatePlaybookManageMembers).Return(true)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
+
+	t.Run("user with ManageMembers and ManageRoles can pre-assign another admin", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPrivatePlaybookManageMembers).Return(true)
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPrivatePlaybookManageRoles).Return(true)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+			{UserID: targetID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
+}
+
 // ---------------------------------------------------------------------------
 // stubRunService — minimal implementation of PlaybookRunService.
 // Only GetPlaybookRun is exercised by the permission helpers.
