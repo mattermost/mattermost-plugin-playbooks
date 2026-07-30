@@ -151,15 +151,44 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 
 // PlaybookCreateWithMembers checks that a client-supplied members list on playbook creation is
 // permitted. An empty list is always allowed (the caller then defaults to making the creator the
-// sole admin). A non-empty list requires ManageMembers, and assigning any member a role other
-// than a plain "playbook_member" (e.g. playbook_admin) additionally requires ManageRoles -
-// mirroring the checks already enforced on playbook updates in PlaybookModifyWithFixes.
+// sole admin), as is a list where the creator is the only member and only assigns themselves the
+// default self-admin role (or plain membership) - this mirrors what the server does automatically
+// when Members is omitted, so it isn't a privilege escalation. Any other non-empty list requires
+// ManageMembers, and assigning any member a role other than a plain "playbook_member" (e.g.
+// playbook_admin) additionally requires ManageRoles - mirroring the checks already enforced on
+// playbook updates in PlaybookModifyWithFixes.
 func (p *PermissionsService) PlaybookCreateWithMembers(userID string, playbook Playbook) error {
 	if len(playbook.Members) == 0 {
 		return nil
 	}
 
+	if isSelfOnlyDefaultMembership(userID, playbook.Members) {
+		return nil
+	}
+
 	return p.noAddedMembersWithoutPermission(userID, playbook, nil, playbook.Members)
+}
+
+// isSelfOnlyDefaultMembership reports whether members consists solely of the requesting user,
+// assigned either the default self-admin roles (playbook_member + playbook_admin) or a plain
+// playbook_member role - i.e. no more than what the server would assign automatically.
+func isSelfOnlyDefaultMembership(userID string, members []PlaybookMember) bool {
+	if len(members) != 1 || members[0].UserID != userID {
+		return false
+	}
+
+	roles := members[0].Roles
+	if len(roles) == 1 && roles[0] == PlaybookRoleMember {
+		return true
+	}
+
+	if len(roles) == 2 &&
+		((roles[0] == PlaybookRoleMember && roles[1] == PlaybookRoleAdmin) ||
+			(roles[0] == PlaybookRoleAdmin && roles[1] == PlaybookRoleMember)) {
+		return true
+	}
+
+	return false
 }
 
 func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Playbook) error {

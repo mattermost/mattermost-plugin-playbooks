@@ -411,6 +411,32 @@ func TestPlaybookCreateWithMembers(t *testing.T) {
 		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, makePlaybook([]PlaybookMember{})))
 	})
 
+	t.Run("creator self-assigning as sole admin is always allowed (mirrors default assignment)", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		// No mocks configured: strict mock ensures this exact self-assignment (mirroring what
+		// the server would do automatically for an empty Members list) requires no permission
+		// check at all.
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+
+		pbReversed := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pbReversed))
+	})
+
+	t.Run("creator self-assigning as plain member only is always allowed", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		// No mocks configured: a plain self-membership is strictly less privileged than the
+		// default self-admin assignment, so it also requires no permission check.
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleMember}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
+
 	t.Run("user without ManageMembers cannot add another user at creation", func(t *testing.T) {
 		f := newPermissionsFixture(t)
 		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false).Maybe()
@@ -448,6 +474,20 @@ func TestPlaybookCreateWithMembers(t *testing.T) {
 			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
 		})
 		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
+
+	t.Run("user without permissions cannot self-assign admin alongside injecting another user", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPrivatePlaybookManageMembers).Return(false)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+		})
+		err := f.svc.PlaybookCreateWithMembers(creatorID, pb)
+		assert.ErrorIs(t, err, ErrNoPermissions)
 	})
 
 	t.Run("user with ManageMembers and ManageRoles can pre-assign another admin", func(t *testing.T) {
