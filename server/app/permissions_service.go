@@ -6,7 +6,6 @@ package app
 import (
 	"reflect"
 	"slices"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -412,7 +411,7 @@ func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID st
 // a plain new "playbook_member" additionally requires ManageRoles. permCheckPlaybook is used to
 // resolve the permission scope (playbook-level role if it exists, else team-level).
 func (p *PermissionsService) noAddedMembersWithoutPermission(userID string, permCheckPlaybook Playbook, oldMembers, newMembers []PlaybookMember) error {
-	if reflect.DeepEqual(oldMembers, newMembers) {
+	if (len(oldMembers) == 0 && len(newMembers) == 0) || reflect.DeepEqual(oldMembers, newMembers) {
 		return nil
 	}
 
@@ -420,16 +419,16 @@ func (p *PermissionsService) noAddedMembersWithoutPermission(userID string, perm
 		return errors.Wrap(err, "attempted to modify members without permissions")
 	}
 
-	oldMemberRoles := map[string]string{}
+	oldMemberRoles := map[string][]string{}
 	for _, member := range oldMembers {
-		oldMemberRoles[member.UserID] = strings.Join(member.Roles, ",")
+		oldMemberRoles[member.UserID] = member.Roles
 	}
 
 	// Also need to check if roles changed. If so we need to check manage roles permission.
 	for _, member := range newMembers {
 		oldRoles, memberExisted := oldMemberRoles[member.UserID]
 		userAddedAsMember := !memberExisted && len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember
-		rolesHaveNotChanged := memberExisted && strings.Join(member.Roles, ",") == oldRoles
+		rolesHaveNotChanged := memberExisted && sameRoleSet(member.Roles, oldRoles)
 		if !userAddedAsMember && !rolesHaveNotChanged {
 			if err := p.PlaybookManageRoles(userID, permCheckPlaybook); err != nil {
 				return errors.Wrap(err, "attempted to modify members without permissions")
@@ -439,6 +438,19 @@ func (p *PermissionsService) noAddedMembersWithoutPermission(userID string, perm
 	}
 
 	return nil
+}
+
+func sameRoleSet(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+
+	leftCopy := append([]string(nil), left...)
+	rightCopy := append([]string(nil), right...)
+	slices.Sort(leftCopy)
+	slices.Sort(rightCopy)
+
+	return slices.Equal(leftCopy, rightCopy)
 }
 
 func (p *PermissionsService) PlaybookManageMembers(userID string, playbook Playbook) error {

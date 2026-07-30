@@ -505,6 +505,44 @@ func TestPlaybookCreateWithMembers(t *testing.T) {
 	})
 }
 
+func TestNoAddedMembersWithoutPermission(t *testing.T) {
+	const (
+		teamID   = "team-1"
+		editorID = "u-editor"
+	)
+
+	makePlaybook := func(members []PlaybookMember) Playbook {
+		return Playbook{
+			TeamID:  teamID,
+			Public:  false,
+			Members: members,
+		}
+	}
+
+	t.Run("nil and empty member lists are treated as equivalent", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		assert.NoError(t, f.svc.noAddedMembersWithoutPermission(editorID, makePlaybook(nil), nil, nil))
+		assert.NoError(t, f.svc.noAddedMembersWithoutPermission(editorID, makePlaybook(nil), nil, []PlaybookMember{}))
+		assert.NoError(t, f.svc.noAddedMembersWithoutPermission(editorID, makePlaybook(nil), []PlaybookMember{}, nil))
+	})
+
+	t.Run("reordered roles do not require ManageRoles", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false).Maybe()
+		f.api.On("HasPermissionToTeam", editorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", editorID, teamID, model.PermissionPrivatePlaybookManageMembers).Return(true)
+
+		oldMembers := []PlaybookMember{
+			{UserID: editorID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+		}
+		newMembers := []PlaybookMember{
+			{UserID: editorID, Roles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
+		}
+
+		assert.NoError(t, f.svc.noAddedMembersWithoutPermission(editorID, makePlaybook(oldMembers), oldMembers, newMembers))
+	})
+}
+
 // ---------------------------------------------------------------------------
 // stubRunService — minimal implementation of PlaybookRunService.
 // Only GetPlaybookRun is exercised by the permission helpers.
