@@ -111,7 +111,6 @@ describe('channels > broadcast', {testIsolation: true}, () => {
                                     userId: testUser.id,
                                     broadcastChannelIds: [testPublicChannel1.id, testPrivateChannel1.id],
                                     broadcastEnabled: true,
-                                    otherMembers: [testAdmin.id],
                                     invitedUserIds: [testAdmin.id],
                                 }).then((playbook) => {
                                     rootDeletePlaybook = playbook;
