@@ -43,7 +43,7 @@ describe('playbooks > overview', {testIsolation: true}, () => {
                 });
 
                 // # Create another user
-                cy.apiCreateUser().then(({user: anotherUser}) => {
+                cy.apiCreateUser().then(() => {
                     // # Login as testUser
                     cy.apiLogin(testUser);
 
@@ -69,7 +69,7 @@ describe('playbooks > overview', {testIsolation: true}, () => {
                     cy.apiCreatePlaybook({
                         teamId: testTeam.id,
                         title: 'Private Shared Playbook',
-                        memberIDs: [testUser.id, anotherUser.id],
+                        memberIDs: [testUser.id],
                     });
 
                     // # Create a public playbook
