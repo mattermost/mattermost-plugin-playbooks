@@ -192,36 +192,36 @@ function chipLabel(action: StateAction, time: React.ReactNode): React.ReactNode 
     }
 }
 
-function tooltipLabel(action: StateAction, subjectUserId: string, user: React.ReactNode, time: React.ReactNode): React.ReactNode {
+function tooltipLabel(action: StateAction, subjectUserId: string, user: React.ReactNode, timestamp: React.ReactNode): React.ReactNode {
     if (subjectUserId) {
         switch (action) {
         case 'check':
             return (
                 <FormattedMessage
-                    defaultMessage='{user} checked off {time}'
-                    values={{user, time}}
+                    defaultMessage='{user} checked off {timestamp}'
+                    values={{user, timestamp}}
                 />
             );
         case 'skip':
             return (
                 <FormattedMessage
-                    defaultMessage='{user} skipped {time}'
-                    values={{user, time}}
+                    defaultMessage='{user} skipped {timestamp}'
+                    values={{user, timestamp}}
                 />
             );
         case 'restore':
             return (
                 <FormattedMessage
-                    defaultMessage='{user} restored {time}'
-                    values={{user, time}}
+                    defaultMessage='{user} restored {timestamp}'
+                    values={{user, timestamp}}
                 />
             );
         case 'uncheck':
         default:
             return (
                 <FormattedMessage
-                    defaultMessage='{user} unchecked {time}'
-                    values={{user, time}}
+                    defaultMessage='{user} unchecked {timestamp}'
+                    values={{user, timestamp}}
                 />
             );
         }
@@ -230,30 +230,30 @@ function tooltipLabel(action: StateAction, subjectUserId: string, user: React.Re
     case 'check':
         return (
             <FormattedMessage
-                defaultMessage='Checked off {time}'
-                values={{time}}
+                defaultMessage='Checked off {timestamp}'
+                values={{timestamp}}
             />
         );
     case 'skip':
         return (
             <FormattedMessage
-                defaultMessage='Skipped {time}'
-                values={{time}}
+                defaultMessage='Skipped {timestamp}'
+                values={{timestamp}}
             />
         );
     case 'restore':
         return (
             <FormattedMessage
-                defaultMessage='Restored {time}'
-                values={{time}}
+                defaultMessage='Restored {timestamp}'
+                values={{timestamp}}
             />
         );
     case 'uncheck':
     default:
         return (
             <FormattedMessage
-                defaultMessage='Unchecked {time}'
-                values={{time}}
+                defaultMessage='Unchecked {timestamp}'
+                values={{timestamp}}
             />
         );
     }

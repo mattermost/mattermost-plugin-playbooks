@@ -1,0 +1,271 @@
+- generic [ref=e4673]:
+  - generic [ref=e4719]:
+    - generic [ref=e4720]:
+      - generic [ref=e4721]: 󰗖
+      - generic [ref=e4722]: We need your permission to show notifications in the browser.
+      - button "Manage notification preferences" [ref=e4723] [cursor=pointer]
+    - link "×" [ref=e4725] [cursor=pointer]:
+      - /url: "#"
+  - banner [ref=e4726]:
+    - navigation [ref=e4730] [cursor=pointer]:
+      - button "Product switch menu" [ref=e4731]:
+        - generic [ref=e4734]:
+          - heading "Channels" [level=1] [ref=e4737]
+          - generic [ref=e4738]: Channels
+    - generic [ref=e4739]:
+      - button "󰍉 Search" [ref=e4741] [cursor=pointer]:
+        - generic [ref=e4742]: 󰍉
+        - generic [ref=e4743]: Search
+      - button "Help" [ref=e4745] [cursor=pointer]:
+        - generic [ref=e4746]: 󰘥
+    - generic [ref=e4747]:
+      - button "Recent mentions" [ref=e4748] [cursor=pointer]:
+        - generic [ref=e4749]: 󰁥
+      - button "Saved messages" [ref=e4750] [cursor=pointer]:
+        - generic [ref=e4751]: 󰃃
+      - generic [ref=e4752]:
+        - button "Settings" [ref=e4753] [cursor=pointer]:
+          - generic [ref=e4754]: 󰢻
+        - button "User's account menu" [ref=e4755] [cursor=pointer]:
+          - paragraph [ref=e4760]: Status is "Online".
+  - navigation [ref=e4761]:
+    - region "scrollable content" [ref=e4766]:
+      - generic [ref=e4768]:
+        - generic [ref=e4769]:
+          - button "eligendi team" [ref=e4770]:
+            - img "eligendi Team Initials" [ref=e4775]: el
+          - button "minus team" [ref=e4776]:
+            - img "minus Team Initials" [ref=e4781]: mi
+        - link "Create a Team" [ref=e4783] [cursor=pointer]:
+          - /url: /create_team
+          - img "Plus Icon" [ref=e4787]: 󰐕
+  - generic [ref=e4788]:
+    - generic [ref=e4789]:
+      - generic [ref=e4790]:
+        - button "eligendi 󰅀" [ref=e4791] [cursor=pointer]:
+          - generic [ref=e4792]: eligendi
+          - generic [ref=e4793]: 󰅀
+        - button "Browse or create channels" [ref=e4794] [cursor=pointer]
+      - application "channel navigator region" [ref=e4797]:
+        - generic [ref=e4798]:
+          - link "unreads filter" [ref=e4800] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e4801]: 󰈶
+          - button "Find Channels" [ref=e4802] [cursor=pointer]:
+            - generic [ref=e4803]: 󰍉
+            - generic [ref=e4804]: Find channel
+      - application "channel sidebar region" [ref=e4805]:
+        - region "scrollable content" [ref=e4810]:
+          - generic [ref=e4812]:
+            - generic [ref=e4814]:
+              - button "FAVORITES" [expanded] [ref=e4816] [cursor=pointer]:
+                - generic [ref=e4817]: 󰅀
+              - list [ref=e4820]:
+                - listitem [ref=e4821]:
+                  - link "release (vx.y) public channel" [ref=e4822] [cursor=pointer]:
+                    - /url: /ad-1/channels/release-vxy-cxkk
+                    - generic [ref=e4823]: 
+                    - generic [ref=e4824]: Release (vX.Y)
+            - generic [ref=e4826]:
+              - generic [ref=e4827]:
+                - button "CHANNELS" [expanded] [ref=e4829] [cursor=pointer]:
+                  - generic [ref=e4830]: 󰅀
+                - list [ref=e4833]:
+                  - listitem [ref=e4834]:
+                    - link "error public channel" [ref=e4835] [cursor=pointer]:
+                      - /url: /ad-1/channels/amet-0
+                      - generic [ref=e4836]: 
+                      - generic [ref=e4837]: error
+                  - listitem [ref=e4839]:
+                    - link "incidunt public channel unread" [ref=e4840] [cursor=pointer]:
+                      - /url: /ad-1/channels/iusto-9
+                      - generic [ref=e4841]: 
+                      - generic [ref=e4842]: incidunt
+                  - listitem [ref=e4844]:
+                    - link "nesciunt public channel unread" [ref=e4845] [cursor=pointer]:
+                      - /url: /ad-1/channels/sequi-7
+                      - generic [ref=e4846]: 
+                      - generic [ref=e4847]: nesciunt
+                  - listitem [ref=e4849]:
+                    - link "onboarding run public channel" [ref=e4850] [cursor=pointer]:
+                      - /url: /ad-1/channels/onboarding-run2
+                      - generic [ref=e4851]: 
+                      - generic [ref=e4852]: Onboarding Run
+                  - listitem [ref=e4854]:
+                    - link "onboarding run public channel" [ref=e4855] [cursor=pointer]:
+                      - /url: /ad-1/channels/onboarding-run
+                      - generic [ref=e4856]: 
+                      - generic [ref=e4857]: Onboarding Run
+                  - listitem [ref=e4859]:
+                    - link "release (vx.y) private channel" [ref=e4860] [cursor=pointer]:
+                      - /url: /ad-1/channels/release-vxy
+                      - generic [ref=e4861]: 󰍁
+                      - generic [ref=e4862]: Release (vX.Y)
+                  - listitem [ref=e4864]:
+                    - link "repro run private channel 1 mention" [ref=e4865] [cursor=pointer]:
+                      - /url: /ad-1/channels/repro-run
+                      - generic [ref=e4866]: 󰍁
+                      - generic [ref=e4867]: repro run
+                      - generic [ref=e4869]: "1"
+                  - listitem [ref=e4870]:
+                    - link "sint private channel unread" [ref=e4871] [cursor=pointer]:
+                      - /url: /ad-1/channels/suscipit-4
+                      - generic [ref=e4872]: 󰍁
+                      - generic [ref=e4873]: sint
+                  - listitem [ref=e4875]:
+                    - link "town square public channel" [ref=e4876] [cursor=pointer]:
+                      - /url: /ad-1/channels/town-square
+                      - generic [ref=e4877]: 
+                      - generic [ref=e4878]: Town Square
+                  - listitem [ref=e4880]:
+                    - link "ut public channel unread" [ref=e4881] [cursor=pointer]:
+                      - /url: /ad-1/channels/ratione-1
+                      - generic [ref=e4882]: 
+                      - generic [ref=e4883]: ut
+              - button "Add Channels" [ref=e4885] [cursor=pointer]:
+                - generic [ref=e4886]: 󰐖
+            - generic [ref=e4888]:
+              - generic [ref=e4889]:
+                - generic [ref=e4890]:
+                  - button "DIRECT MESSAGES" [expanded] [ref=e4891] [cursor=pointer]:
+                    - generic [ref=e4892]: 󰅀
+                  - button "Write a direct message" [ref=e4894] [cursor=pointer]:
+                    - generic [ref=e4895]: 󰐕
+                - list [ref=e4897]:
+                  - listitem [ref=e4898]:
+                    - link "playbooks 13 mentions" [ref=e4899] [cursor=pointer]:
+                      - /url: /ad-1/messages/@playbooks
+                      - img "user profile image" [ref=e4902]
+                      - generic [ref=e4903]: playbooks
+                      - generic [ref=e4905]: "13"
+                  - listitem [ref=e4906]:
+                    - link "sysadmin (you)" [ref=e4907] [cursor=pointer]:
+                      - /url: /ad-1/messages/@sysadmin
+                      - generic [ref=e4908]:
+                        - img "user profile image" [ref=e4910]
+                        - generic [ref=e4911]: 󰗠
+                  - listitem [ref=e4914]:
+                    - link "system-bot 1 mention" [ref=e4915] [cursor=pointer]:
+                      - /url: /ad-1/messages/@system-bot
+                      - img "user profile image" [ref=e4918]
+                      - generic [ref=e4919]: system-bot
+                      - generic [ref=e4921]: "1"
+                  - listitem [ref=e4922]:
+                    - link "adam.tucker, maria.brooks, nicole.alvarez" [ref=e4923] [cursor=pointer]:
+                      - /url: /ad-1/messages/92b6f59d7fecd9ad5be449434af31745dc20306f
+                      - generic [ref=e4924]: "3"
+                  - listitem [ref=e4927]:
+                    - link "frank.austin, guest, kenneth.ruiz, larry.stevens unread" [ref=e4928] [cursor=pointer]:
+                      - /url: /ad-1/messages/6f8c15c1d81b7d4a1d54fc2f0e94bbfbc1e0f05f
+                      - generic [ref=e4929]: "4"
+                      - generic [ref=e4930]: frank.austin, guest, kenneth.ruiz, larry.stevens
+                  - listitem [ref=e4932]:
+                    - link "adam.palmer, harold.johnson, tammy.little unread" [ref=e4933] [cursor=pointer]:
+                      - /url: /ad-1/messages/fc18232ebe44223068992d0902be0d3053338a75
+                      - generic [ref=e4934]: "3"
+                      - generic [ref=e4935]: adam.palmer, harold.johnson, tammy.little
+                  - listitem [ref=e4937]:
+                    - link "keith.ryan unread" [ref=e4938] [cursor=pointer]:
+                      - /url: /ad-1/messages/@keith.ryan
+                      - generic [ref=e4939]:
+                        - img "user profile image" [ref=e4941]
+                        - generic [ref=e4942]: 󰝦
+                      - generic [ref=e4943]: keith.ryan
+              - button "Invite Members" [ref=e4945] [cursor=pointer]:
+                - generic "Invite Users" [ref=e4946]:
+                  - generic [ref=e4947]: 󰐖
+                  - generic [ref=e4948]: Invite Members
+    - generic [ref=e4954]:
+      - banner "channel header region" [ref=e4955]:
+        - generic [ref=e4956]:
+          - generic [ref=e4959]:
+            - generic [ref=e4960]:
+              - button "add to favorites" [ref=e4961] [cursor=pointer]:
+                - generic [ref=e4962]: 󰓒
+              - button "town square channel menu" [ref=e4963] [cursor=pointer]:
+                - strong [ref=e4964]: Town Square
+            - generic [ref=e4967]:
+              - button "Members" [ref=e4968] [cursor=pointer]:
+                - generic [ref=e4969]: 󰀓
+                - generic [ref=e4971]: "61"
+              - button "Channel files" [ref=e4972] [cursor=pointer]:
+                - generic [ref=e4973]: 󰧮
+            - generic [ref=e4974]: 󰲶
+          - button "󰏲 Start call" [ref=e4976] [cursor=pointer]:
+            - generic [ref=e4977]: 󰏲
+            - generic [ref=e4978]: Start call
+          - button "Open in new window" [ref=e4979] [cursor=pointer]:
+            - generic [ref=e4980]: 󱂬
+          - button "View Info" [ref=e4981] [cursor=pointer]:
+            - generic [ref=e4982]: 󰋽
+      - main [ref=e4983]:
+        - generic [ref=e4986]:
+          - generic "message list main region":
+            - generic [ref=e4989]:
+              - generic [ref=e4990]: At 5:07 PM Tuesday, June 30, playbooks wrote, playbooks joined the team.
+              - list [ref=e4992]:
+                - listitem [ref=e4993]:
+                  - generic [ref=e4995]:
+                    - heading "Town Square" [level=2] [ref=e5013]
+                    - paragraph [ref=e5014]: Welcome to Town Square. Post messages here that you want everyone to see. Everyone automatically becomes a member of this channel when they join the team.
+                    - generic [ref=e5015]:
+                      - button "Favorite" [ref=e5016] [cursor=pointer]
+                      - button "Set header" [ref=e5020] [cursor=pointer]
+                      - button "Notifications" [ref=e5024] [cursor=pointer]
+                - listitem [ref=e5028]:
+                  - generic [ref=e5029]:
+                    - generic:
+                      - separator
+                      - generic: June 30
+                - listitem [ref=e5030]:
+                  - generic "At 5:07 PM Tuesday, June 30, Someone wrote, playbooks joined the team." [ref=e5032]:
+                    - generic [ref=e5033]:
+                      - img "Mattermost Logo" [ref=e5036]
+                      - generic [ref=e5041]:
+                        - generic [ref=e5042]:
+                          - generic [ref=e5043]: System
+                          - link [ref=e5046] [cursor=pointer]:
+                            - /url: /ad-1/pl/user-activity-ybt3caepb3rfxet4kwmrcpb1tr
+                            - time [ref=e5047]: 5:07 PM
+                          - list [ref=e5048]:
+                            - listitem
+                        - paragraph [ref=e5056]:
+                          - button "@playbooks" [ref=e5058] [cursor=pointer]
+                          - strong [ref=e5059]: joined the team
+                          - text: .
+      - generic [ref=e5061]:
+        - generic [ref=e5062]:
+          - generic [ref=e5063]: Login Successful
+          - application "Login Successful message input complementary region" [ref=e5065]:
+            - textbox "Write to Town Square" [active] [ref=e5070]
+            - generic [ref=e5073]:
+              - button "bold" [ref=e5074] [cursor=pointer]
+              - button "italic" [ref=e5077] [cursor=pointer]
+              - button "strike through" [ref=e5080] [cursor=pointer]
+              - button "heading" [ref=e5088] [cursor=pointer]
+              - button "link" [ref=e5092] [cursor=pointer]
+              - button "code" [ref=e5095] [cursor=pointer]
+              - button "quote" [ref=e5098] [cursor=pointer]
+              - button "bulleted list" [ref=e5101] [cursor=pointer]
+              - button "numbered list" [ref=e5104] [cursor=pointer]
+              - button "Message priority" [ref=e5109] [cursor=pointer]
+              - 'button "Burn-on-read: Message will be deleted for a recipient 10 minutes after they open it" [ref=e5113] [cursor=pointer]'
+            - generic [ref=e5118]:
+              - button "formatting" [ref=e5119] [cursor=pointer]:
+                - img "Format letter Case Icon" [ref=e5120]
+                - img "Format letter Case Icon" [ref=e5122]
+              - generic [ref=e5126]:
+                - button "attachment" [ref=e5127] [cursor=pointer]:
+                  - img "Attachment Icon" [ref=e5128]
+                - button "Upload files"
+              - button "select an emoji" [ref=e5130] [cursor=pointer]
+              - generic [ref=e5133]:
+                - button "Send Now" [disabled] [ref=e5134]
+                - button "Schedule message" [disabled] [ref=e5137]
+        - form [ref=e5140]:
+          - button "Messaging help" [ref=e5142] [cursor=pointer]: Help
+  - generic [ref=e5144]:
+    - button [ref=e5147] [cursor=pointer]:
+      - img "playbooks" [ref=e5148]
+    - button "App Marketplace" [ref=e5150] [cursor=pointer]
+  - status [ref=e5153]

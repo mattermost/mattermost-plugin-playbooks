@@ -1,0 +1,373 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e4673]:
+    - generic [ref=f1e4675]:
+      - generic [ref=f1e4676]:
+        - generic [ref=f1e4677]: 󰗖
+        - generic [ref=f1e4678]: We need your permission to show notifications in the browser.
+        - button "Manage notification preferences" [ref=f1e4679] [cursor=pointer]
+      - link "×" [ref=f1e4681] [cursor=pointer]:
+        - /url: "#"
+    - banner [ref=f1e4682]:
+      - navigation [ref=f1e4686] [cursor=pointer]:
+        - button "Product switch menu" [ref=f1e4687]:
+          - generic [ref=f1e4690]:
+            - heading "Channels" [level=1] [ref=f1e4693]
+            - generic [ref=f1e4694]: Channels
+      - generic [ref=f1e4695]:
+        - button "󰍉 Search" [ref=f1e4697] [cursor=pointer]:
+          - generic [ref=f1e4698]: 󰍉
+          - generic [ref=f1e4699]: Search
+        - button "Help" [ref=f1e4701] [cursor=pointer]:
+          - generic [ref=f1e4702]: 󰘥
+      - generic [ref=f1e4703]:
+        - button "Recent mentions" [ref=f1e4704] [cursor=pointer]:
+          - generic [ref=f1e4705]: 󰁥
+        - button "Saved messages" [ref=f1e4706] [cursor=pointer]:
+          - generic [ref=f1e4707]: 󰃃
+        - generic [ref=f1e4708]:
+          - button "Settings" [ref=f1e4709] [cursor=pointer]:
+            - generic [ref=f1e4710]: 󰢻
+          - button "User's account menu" [ref=f1e4711] [cursor=pointer]:
+            - paragraph [ref=f1e4716]: Status is "Online".
+    - navigation [ref=f1e4717]:
+      - region "scrollable content" [ref=f1e4722]:
+        - generic [ref=f1e4724]:
+          - generic [ref=f1e4725]:
+            - button "eligendi team" [ref=f1e4726]:
+              - img "eligendi Team Initials" [ref=f1e4731]: el
+            - button "minus team" [ref=f1e4732]:
+              - img "minus Team Initials" [ref=f1e4737]: mi
+          - link "Create a Team" [ref=f1e4739] [cursor=pointer]:
+            - /url: /create_team
+            - img "Plus Icon" [ref=f1e4743]: 󰐕
+    - generic [ref=f1e4744]:
+      - generic [ref=f1e4745]:
+        - generic [ref=f1e4746]:
+          - button "eligendi 󰅀" [ref=f1e4747] [cursor=pointer]:
+            - generic [ref=f1e4748]: eligendi
+            - generic [ref=f1e4749]: 󰅀
+          - button "Browse or create channels" [ref=f1e4750] [cursor=pointer]
+        - application "channel navigator region" [ref=f1e4753]:
+          - generic [ref=f1e4754]:
+            - link "unreads filter" [ref=f1e4756] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=f1e4757]: 󰈶
+            - button "Find Channels" [ref=f1e4758] [cursor=pointer]:
+              - generic [ref=f1e4759]: 󰍉
+              - generic [ref=f1e4760]: Find channel
+        - application "channel sidebar region" [ref=f1e4761]:
+          - region "scrollable content" [ref=f1e4766]:
+            - generic [ref=f1e4768]:
+              - generic [ref=f1e4770]:
+                - button "FAVORITES" [expanded] [ref=f1e4772] [cursor=pointer]:
+                  - generic [ref=f1e4773]: 󰅀
+                - list [ref=f1e4776]:
+                  - listitem [ref=f1e4777]:
+                    - link "release (vx.y) public channel" [ref=f1e4778] [cursor=pointer]:
+                      - /url: /ad-1/channels/release-vxy-cxkk
+                      - generic [ref=f1e4779]: 
+                      - generic [ref=f1e4780]: Release (vX.Y)
+              - generic [ref=f1e4782]:
+                - generic [ref=f1e4783]:
+                  - button "CHANNELS" [expanded] [ref=f1e4785] [cursor=pointer]:
+                    - generic [ref=f1e4786]: 󰅀
+                  - list [ref=f1e4789]:
+                    - listitem [ref=f1e4790]:
+                      - link "error public channel" [ref=f1e4791] [cursor=pointer]:
+                        - /url: /ad-1/channels/amet-0
+                        - generic [ref=f1e4792]: 
+                        - generic [ref=f1e4793]: error
+                    - listitem [ref=f1e4795]:
+                      - link "incidunt public channel unread" [ref=f1e4796] [cursor=pointer]:
+                        - /url: /ad-1/channels/iusto-9
+                        - generic [ref=f1e4797]: 
+                        - generic [ref=f1e4798]: incidunt
+                    - listitem [ref=f1e4800]:
+                      - link "nesciunt public channel unread" [ref=f1e4801] [cursor=pointer]:
+                        - /url: /ad-1/channels/sequi-7
+                        - generic [ref=f1e4802]: 
+                        - generic [ref=f1e4803]: nesciunt
+                    - listitem [ref=f1e4805]:
+                      - link "onboarding run public channel" [ref=f1e4806] [cursor=pointer]:
+                        - /url: /ad-1/channels/onboarding-run2
+                        - generic [ref=f1e4807]: 
+                        - generic [ref=f1e4808]: Onboarding Run
+                    - listitem [ref=f1e4810]:
+                      - link "onboarding run public channel" [ref=f1e4811] [cursor=pointer]:
+                        - /url: /ad-1/channels/onboarding-run
+                        - generic [ref=f1e4812]: 
+                        - generic [ref=f1e4813]: Onboarding Run
+                    - listitem [ref=f1e4815]:
+                      - link "release (vx.y) private channel" [ref=f1e4816] [cursor=pointer]:
+                        - /url: /ad-1/channels/release-vxy
+                        - generic [ref=f1e4817]: 󰍁
+                        - generic [ref=f1e4818]: Release (vX.Y)
+                    - listitem [ref=f1e4820]:
+                      - link "repro run private channel" [ref=f1e4821] [cursor=pointer]:
+                        - /url: /ad-1/channels/repro-run
+                        - generic [ref=f1e4822]: 󰍁
+                        - generic [ref=f1e4823]: repro run
+                    - listitem [ref=f1e4825]:
+                      - link "sint private channel unread" [ref=f1e4826] [cursor=pointer]:
+                        - /url: /ad-1/channels/suscipit-4
+                        - generic [ref=f1e4827]: 󰍁
+                        - generic [ref=f1e4828]: sint
+                    - listitem [ref=f1e4830]:
+                      - link "town square public channel" [ref=f1e4831] [cursor=pointer]:
+                        - /url: /ad-1/channels/town-square
+                        - generic [ref=f1e4832]: 
+                        - generic [ref=f1e4833]: Town Square
+                    - listitem [ref=f1e4835]:
+                      - link "ut public channel unread" [ref=f1e4836] [cursor=pointer]:
+                        - /url: /ad-1/channels/ratione-1
+                        - generic [ref=f1e4837]: 
+                        - generic [ref=f1e4838]: ut
+                - button "Add Channels" [ref=f1e4840] [cursor=pointer]:
+                  - generic [ref=f1e4841]: 󰐖
+              - generic [ref=f1e4843]:
+                - generic [ref=f1e4844]:
+                  - generic [ref=f1e4845]:
+                    - button "DIRECT MESSAGES" [expanded] [ref=f1e4846] [cursor=pointer]:
+                      - generic [ref=f1e4847]: 󰅀
+                    - button "Write a direct message" [ref=f1e4849] [cursor=pointer]:
+                      - generic [ref=f1e4850]: 󰐕
+                  - list [ref=f1e4852]:
+                    - listitem [ref=f1e4853]:
+                      - link "playbooks 13 mentions" [ref=f1e4854] [cursor=pointer]:
+                        - /url: /ad-1/messages/@playbooks
+                        - img "user profile image" [ref=f1e4857]
+                        - generic [ref=f1e4858]: playbooks
+                        - generic [ref=f1e4860]: "13"
+                    - listitem [ref=f1e4861]:
+                      - link "sysadmin (you)" [ref=f1e4862] [cursor=pointer]:
+                        - /url: /ad-1/messages/@sysadmin
+                        - generic [ref=f1e4863]:
+                          - img "user profile image" [ref=f1e4865]
+                          - generic [ref=f1e4866]: 󰗠
+                    - listitem [ref=f1e4869]:
+                      - link "system-bot 1 mention" [ref=f1e4870] [cursor=pointer]:
+                        - /url: /ad-1/messages/@system-bot
+                        - img "user profile image" [ref=f1e4873]
+                        - generic [ref=f1e4874]: system-bot
+                        - generic [ref=f1e4876]: "1"
+                    - listitem [ref=f1e4877]:
+                      - link "adam.tucker, maria.brooks, nicole.alvarez" [ref=f1e4878] [cursor=pointer]:
+                        - /url: /ad-1/messages/92b6f59d7fecd9ad5be449434af31745dc20306f
+                        - generic [ref=f1e4879]: "3"
+                    - listitem [ref=f1e4882]:
+                      - link "frank.austin, guest, kenneth.ruiz, larry.stevens unread" [ref=f1e4883] [cursor=pointer]:
+                        - /url: /ad-1/messages/6f8c15c1d81b7d4a1d54fc2f0e94bbfbc1e0f05f
+                        - generic [ref=f1e4884]: "4"
+                        - generic [ref=f1e4885]: frank.austin, guest, kenneth.ruiz, larry.stevens
+                    - listitem [ref=f1e4887]:
+                      - link "adam.palmer, harold.johnson, tammy.little unread" [ref=f1e4888] [cursor=pointer]:
+                        - /url: /ad-1/messages/fc18232ebe44223068992d0902be0d3053338a75
+                        - generic [ref=f1e4889]: "3"
+                        - generic [ref=f1e4890]: adam.palmer, harold.johnson, tammy.little
+                    - listitem [ref=f1e4892]:
+                      - link "keith.ryan unread" [ref=f1e4893] [cursor=pointer]:
+                        - /url: /ad-1/messages/@keith.ryan
+                        - generic [ref=f1e4894]:
+                          - img "user profile image" [ref=f1e4896]
+                          - generic [ref=f1e4897]: 󰝦
+                        - generic [ref=f1e4898]: keith.ryan
+                - button "Invite Members" [ref=f1e4900] [cursor=pointer]:
+                  - generic "Invite Users" [ref=f1e4901]:
+                    - generic [ref=f1e4902]: 󰐖
+                    - generic [ref=f1e4903]: Invite Members
+      - generic [ref=f1e4909]:
+        - banner "channel header region" [ref=f1e4910]:
+          - generic [ref=f1e4911]:
+            - generic [ref=f1e4914]:
+              - generic [ref=f1e4915]:
+                - button "add to favorites" [ref=f1e4916] [cursor=pointer]:
+                  - generic [ref=f1e4917]: 󰓒
+                - button "repro run channel menu" [ref=f1e4918] [cursor=pointer]:
+                  - strong [ref=f1e4919]: repro run
+              - generic [ref=f1e4922]:
+                - button "Members" [ref=f1e4923] [cursor=pointer]:
+                  - generic [ref=f1e4924]: 󰀓
+                  - generic [ref=f1e4926]: "2"
+                - button "Channel files" [ref=f1e4927] [cursor=pointer]:
+                  - generic [ref=f1e4928]: 󰧮
+              - paragraph [ref=f1e4931]:
+                - text: This channel was created as part of the
+                - link "repro-1785442318" [ref=f1e4932] [cursor=pointer]:
+                  - /url: /playbooks/playbooks/65hmm97xpbd3fcqcrxb6yqxd6o
+                - text: playbook. Visit
+                - link "the overview page" [ref=f1e4933] [cursor=pointer]:
+                  - /url: /playbooks/runs/6qw55mqgf7rapdex9fhiaiebxa
+                - text: for more information.
+            - button "󰏲 Start call" [ref=f1e4935] [cursor=pointer]:
+              - generic [ref=f1e4936]: 󰏲
+              - generic [ref=f1e4937]: Start call
+            - button "Open in new window" [ref=f1e4938] [cursor=pointer]:
+              - generic [ref=f1e4939]: 󱂬
+            - button "View Info" [ref=f1e4940] [cursor=pointer]:
+              - generic [ref=f1e4941]: 󰋽
+        - main [ref=f1e4942]:
+          - generic [ref=f1e4945]:
+            - generic "message list main region":
+              - generic [ref=f1e4948]:
+                - generic [ref=f1e4949]: At 3:11 PM Thursday, July 30, playbooks wrote, sysadmin added to the channel by playbooks.
+                - list [ref=f1e4951]:
+                  - listitem [ref=f1e4952]:
+                    - generic [ref=f1e4954]:
+                      - heading "repro run" [level=2] [ref=f1e4975]
+                      - generic [ref=f1e4976]: Private channel created on July 30, 2026.
+                      - paragraph [ref=f1e4980]: This is the start of repro run. Only invited members can see this private channel.
+                      - generic [ref=f1e4981]:
+                        - button "Favorite" [ref=f1e4982] [cursor=pointer]
+                        - button "Add people" [ref=f1e4988] [cursor=pointer]:
+                          - generic [ref=f1e4989]: 󰠁
+                        - button "Set header" [ref=f1e4991] [cursor=pointer]
+                        - button "Notifications" [ref=f1e4995] [cursor=pointer]
+                  - listitem [ref=f1e4999]:
+                    - generic [ref=f1e5000]:
+                      - generic:
+                        - separator
+                        - generic: Today
+                  - listitem [ref=f1e5001]:
+                    - generic "At 3:11 PM Thursday, July 30, Someone wrote, sysadmin added to the channel by playbooks. playbooks joined the channel." [ref=f1e5003]:
+                      - generic [ref=f1e5004]:
+                        - img "Mattermost Logo" [ref=f1e5007]
+                        - generic [ref=f1e5012]:
+                          - generic [ref=f1e5013]:
+                            - generic [ref=f1e5014]: System
+                            - link [ref=f1e5017] [cursor=pointer]:
+                              - /url: /ad-1/pl/user-activity-y616o54o4jyrzye61gydjfcrdr_srea9wdmz3dm7cdhoa5c58b6sy
+                              - time [ref=f1e5018]: 3:11 PM
+                            - list [ref=f1e5019]:
+                              - listitem
+                          - generic [ref=f1e5026]:
+                            - paragraph [ref=f1e5027]:
+                              - button "@playbooks" [ref=f1e5029] [cursor=pointer]
+                              - strong [ref=f1e5030]: joined the channel
+                              - text: .
+                            - paragraph [ref=f1e5031]:
+                              - text: You were
+                              - strong [ref=f1e5032]: added to the channel
+                              - text: by
+                              - generic [ref=f1e5033]:
+                                - button "@playbooks" [ref=f1e5034] [cursor=pointer]
+                                - text: .
+        - generic [ref=f1e5036]:
+          - application "message input complementary region" [ref=f1e5039]:
+            - textbox "Write to repro run" [ref=f1e5044]
+            - generic [ref=f1e5047]:
+              - button "bold" [ref=f1e5048] [cursor=pointer]
+              - button "italic" [ref=f1e5051] [cursor=pointer]
+              - button "strike through" [ref=f1e5054] [cursor=pointer]
+              - button "heading" [ref=f1e5062] [cursor=pointer]
+              - button "link" [ref=f1e5066] [cursor=pointer]
+              - button "code" [ref=f1e5069] [cursor=pointer]
+              - button "quote" [ref=f1e5072] [cursor=pointer]
+              - button "bulleted list" [ref=f1e5075] [cursor=pointer]
+              - button "numbered list" [ref=f1e5078] [cursor=pointer]
+              - button "Message priority" [ref=f1e5083] [cursor=pointer]
+              - 'button "Burn-on-read: Message will be deleted for a recipient 10 minutes after they open it" [ref=f1e5087] [cursor=pointer]'
+            - generic [ref=f1e5092]:
+              - button "formatting" [ref=f1e5093] [cursor=pointer]:
+                - img "Format letter Case Icon" [ref=f1e5094]
+                - img "Format letter Case Icon" [ref=f1e5096]
+              - generic [ref=f1e5100]:
+                - button "attachment" [ref=f1e5101] [cursor=pointer]:
+                  - img "Attachment Icon" [ref=f1e5102]
+                - button "Upload files"
+              - button "select an emoji" [ref=f1e5104] [cursor=pointer]
+              - generic [ref=f1e5107]:
+                - button "Send Now" [disabled] [ref=f1e5108]
+                - button "Schedule message" [disabled] [ref=f1e5111]
+          - form [ref=f1e5114]:
+            - button "Messaging help" [ref=f1e5116] [cursor=pointer]: Help
+      - region "Checklist repro run Following" [ref=f1e5119]:
+        - generic [ref=f1e5121]:
+          - text:  󰍉
+          - generic [ref=f1e5122]:
+            - generic [ref=f1e5123]:
+              - generic [ref=f1e5126]:
+                - button [ref=f1e5127] [cursor=pointer]
+                - button [ref=f1e5130] [cursor=pointer]
+                - generic [ref=f1e5135]: repro run
+                - button "Following" [ref=f1e5137] [cursor=pointer]
+              - generic [ref=f1e5138]:
+                - button "Expand Sidebar Icon" [active] [ref=f1e5139] [cursor=pointer]:
+                  - generic [ref=f1e5140]: 󰘖
+                  - text: 󰘕
+                - button "Open in new window" [ref=f1e5141] [cursor=pointer]:
+                  - generic [ref=f1e5142]: 󱂬
+                - button "Close" [ref=f1e5143] [cursor=pointer]:
+                  - generic "Close Sidebar Icon" [ref=f1e5144]: 󰅖
+            - generic [ref=f1e5148]:
+              - generic [ref=f1e5149]:
+                - generic [ref=f1e5150]:
+                  - button "repro-1785442318" [ref=f1e5151] [cursor=pointer]
+                  - generic [ref=f1e5155]: /
+                  - generic [ref=f1e5156]: "00001"
+                - button "repro run 󰅀" [ref=f1e5160] [cursor=pointer]:
+                  - heading "repro run" [level=1] [ref=f1e5161]
+                  - generic [ref=f1e5166]: 󰅀
+                - generic [ref=f1e5167]: Add a summary…
+                - generic [ref=f1e5168]:
+                  - generic [ref=f1e5169]:
+                    - generic [ref=f1e5170]: Owner
+                    - button "@sysadmin 󰅀" [ref=f1e5172]:
+                      - generic [ref=f1e5173] [cursor=pointer]:
+                        - generic [ref=f1e5175]: "@sysadmin"
+                        - generic [ref=f1e5177]: 󰅀
+                  - generic [ref=f1e5178]:
+                    - generic [ref=f1e5179]: Participants
+                    - generic [ref=f1e5181]:
+                      - text: Nobody yet.
+                      - link "Add participant" [ref=f1e5182] [cursor=pointer]:
+                        - /url: /ad-1/channels/repro-run
+                - button "Hide details" [ref=f1e5186] [cursor=pointer]
+              - generic [ref=f1e5191]:
+                - generic [ref=f1e5193]:
+                  - text: Tasks
+                  - generic [ref=f1e5263]:
+                    - generic "Collapse" [ref=f1e5264] [cursor=pointer]: 󰘕
+                    - button "󰈶" [ref=f1e5265] [cursor=pointer]:
+                      - generic "Filter items" [ref=f1e5266]: 󰈶
+                - generic [ref=f1e5195]:
+                  - generic [ref=f1e5197] [cursor=pointer]:
+                    - generic [ref=f1e5198]: 󰅀
+                    - generic [ref=f1e5199]: CL
+                    - generic [ref=f1e5200]: 0 / 1 done
+                  - generic [ref=f1e5204]:
+                    - generic [ref=f1e5206]:
+                      - generic [ref=f1e5207]:
+                        - generic [ref=f1e5208]:
+                          - generic "Assign" [ref=f1e5211] [cursor=pointer]: 󰠁
+                          - generic [ref=f1e5212]: 󰭧
+                          - generic "Edit" [ref=f1e5215] [cursor=pointer]: 󰲶
+                          - button "󰇙" [ref=f1e5216] [cursor=pointer]
+                        - button "󰇝" [ref=f1e5218]
+                        - checkbox [ref=f1e5219] [cursor=pointer]: 󰄬
+                        - paragraph [ref=f1e5223]: Repro task
+                      - time [ref=f1e5230]: 37m ago
+                    - button "󰐕 Add a task" [ref=f1e5231] [cursor=pointer]:
+                      - generic [ref=f1e5232]: 󰐕
+                      - text: Add a task
+                - button "󰐕 Add a section" [ref=f1e5234] [cursor=pointer]:
+                  - generic [ref=f1e5235]: 󰐕
+                  - text: Add a section
+                - generic [ref=f1e5238]:
+                  - generic [ref=f1e5242]: Time to wrap up?
+                  - button "Finish" [ref=f1e5244] [cursor=pointer]
+    - generic [ref=f1e5250]:
+      - button [ref=f1e5253] [cursor=pointer]:
+        - img "playbooks" [ref=f1e5254]
+      - button "App Marketplace" [ref=f1e5256] [cursor=pointer]
+    - status [ref=f1e5259]
+  - generic:
+    - generic:
+      - tooltip "Expand the right sidebar ⌘ Shift .":
+        - generic:
+          - generic:
+            - generic:
+              - text: Expand the right sidebar
+              - generic:
+                - mark: ⌘
+                - mark: Shift
+                - mark: .

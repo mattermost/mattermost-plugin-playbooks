@@ -1,0 +1,29 @@
+[       9ms] [LOG] websocket closed manually @ webpack-internal:///../platform/client/lib/websocket.js:449
+[      90ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///../node_modules/react-dom/cjs/react-dom.development.js:29835
+[     109ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///../platform/components/dist/index.esm.js:5484
+[     128ms] [ERROR] Warning: ReactDOM.render is no longer supported in React 18. Use createRoot instead. Until you switch to the new API, your app will behave as if it's running React 17. Learn more: https://reactjs.org/link/switch-to-createroot @ webpack-internal:///../node_modules/react-dom/cjs/react-dom.development.js:85
+[     373ms] [LOG] Loading plugin playbooks, version 2.11.0+96e990f5 @ webpack-internal:///./src/plugins/index.ts:176
+[     373ms] [LOG] Loading plugin com.mattermost.docs, version 0.0.0+7bc8af0 @ webpack-internal:///./src/plugins/index.ts:176
+[     373ms] [LOG] Loading plugin com.mattermost.calls, version 1.12.2+56f40db6 @ webpack-internal:///./src/plugins/index.ts:176
+[     375ms] [WARNING] It looks like there are several instances of 'styled-components' initialized in this application. This may cause dynamic styles to not render properly, errors during the rehydration process, a missing theme prop, and makes your application bigger without good reason.
+
+See https://s-c.sh/2BAXzed for more info. @ webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31
+[     376ms] [WARNING] You are loading @emotion/react when it is already loaded. Running multiple instances may cause problems. This can happen if multiple versions are used, or if multiple builds of the same version are used. @ webpack-internal:///./node_modules/@emotion/react/dist/emotion-react.browser.esm.js:377
+[     390ms] [ERROR] The `pure` option has been removed. `connect` is now always a "pure/memoized" component @ webpack-internal:///../node_modules/react-redux/dist/react-redux.mjs:86
+[     409ms] [LOG] Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ webpack-internal:///./node_modules/ts-invariant/lib/invariant.js:42
+[     413ms] [LOG] Loaded plugin playbooks, version 2.11.0+96e990f5 @ webpack-internal:///./src/plugins/index.ts:163
+[     455ms] [WARNING] You are loading @emotion/react when it is already loaded. Running multiple instances may cause problems. This can happen if multiple versions are used, or if multiple builds of the same version are used. @ webpack-internal:///./node_modules/@emotion/react/dist/emotion-react.browser.esm.js:378
+[     457ms] [LOG] Loaded plugin com.mattermost.docs, version 0.0.0+7bc8af0 @ webpack-internal:///./src/plugins/index.ts:163
+[     481ms] [LOG] Loaded plugin com.mattermost.calls, version 1.12.2+56f40db6 @ webpack-internal:///./src/plugins/index.ts:163
+[     499ms] [LOG] Initializing or re-initializing WebSocket @ webpack-internal:///./src/actions/websocket_actions.ts:276
+[     500ms] [LOG] websocket connecting to ws://localhost:8065/api/v4/websocket @ webpack-internal:///../platform/client/lib/websocket.js:115
+[     612ms] [LOG] got connection id  7ab3zccp33dxdq5b3nwq83d8zo @ webpack-internal:///../platform/client/lib/websocket.js:293
+[     716ms] [WARNING] Selector unknown returned a different result when called with the same parameters. This can lead to unnecessary rerenders.
+Selectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization {state: Object, selected: Object, selected2: Object, stack: Error
+    at eval (webpack-internal:///../node_mod…/react-dom/cjs/react-dom.development.js:16305:18)} @ webpack-internal:///../node_modules/react-redux/dist/react-redux.mjs:1018
+[     988ms] [WARNING] Selector unknown returned a different result when called with the same parameters. This can lead to unnecessary rerenders.
+Selectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization {state: Object, selected: , selected2: , stack: Error
+    at eval (webpack-internal:///../node_mod…nal:///./src/components/rhs/rhs_about.tsx:180:64)} @ webpack-internal:///../node_modules/react-redux/dist/react-redux.mjs:1018
+[   49906ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:8065/api/v4/jobs/type/post_persistent_notifications?page=0&per_page=50:0
+[  229945ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:8065/api/v4/jobs/type/post_persistent_notifications?page=0&per_page=50:0
+[  409981ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:8065/api/v4/jobs/type/post_persistent_notifications?page=0&per_page=50:0
