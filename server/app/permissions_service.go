@@ -151,11 +151,9 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 // PlaybookCreateWithMembers checks that a client-supplied members list on playbook creation is
 // permitted. An empty list is always allowed (the caller then defaults to making the creator the
 // sole admin), as is a list where the creator is the only member and only assigns themselves the
-// default self-admin role (or plain membership) - this mirrors what the server does automatically
-// when Members is omitted, so it isn't a privilege escalation. Any other non-empty list requires
-// ManageMembers, and assigning any member a role other than a plain "playbook_member" (e.g.
-// playbook_admin) additionally requires ManageRoles - mirroring the checks already enforced on
-// playbook updates in PlaybookModifyWithFixes.
+// default self-admin role (or plain membership). Any other non-empty list requires ManageMembers,
+// and assigning any member a role other than a plain "playbook_member" additionally requires
+// ManageRoles. Checked directly at team level (not via getPlaybookRole).
 func (p *PermissionsService) PlaybookCreateWithMembers(userID string, playbook Playbook) error {
 	if len(playbook.Members) == 0 {
 		return nil
@@ -165,7 +163,49 @@ func (p *PermissionsService) PlaybookCreateWithMembers(userID string, playbook P
 		return nil
 	}
 
-	return p.noAddedMembersWithoutPermission(userID, playbook, nil, playbook.Members)
+	if err := p.teamLevelPlaybookManageMembers(userID, playbook); err != nil {
+		return err
+	}
+
+	for _, member := range playbook.Members {
+		if len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember {
+			continue
+		}
+		if err := p.teamLevelPlaybookManageRoles(userID, playbook); err != nil {
+			return err
+		}
+		break
+	}
+
+	return nil
+}
+
+// teamLevelPlaybookManageMembers checks ManageMembers at the team level only.
+func (p *PermissionsService) teamLevelPlaybookManageMembers(userID string, playbook Playbook) error {
+	permission := model.PermissionPrivatePlaybookManageMembers
+	if p.PlaybookIsPublic(playbook) {
+		permission = model.PermissionPublicPlaybookManageMembers
+	}
+
+	if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission) {
+		return nil
+	}
+
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage members for playbook `%s`", userID, playbook.ID)
+}
+
+// teamLevelPlaybookManageRoles checks ManageRoles at the team level only.
+func (p *PermissionsService) teamLevelPlaybookManageRoles(userID string, playbook Playbook) error {
+	permission := model.PermissionPrivatePlaybookManageRoles
+	if p.PlaybookIsPublic(playbook) {
+		permission = model.PermissionPublicPlaybookManageRoles
+	}
+
+	if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission) {
+		return nil
+	}
+
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage roles for playbook `%s`", userID, playbook.ID)
 }
 
 // isSelfOnlyDefaultMembership reports whether members consists solely of the requesting user,

@@ -503,6 +503,38 @@ func TestPlaybookCreateWithMembers(t *testing.T) {
 		})
 		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
 	})
+
+	t.Run("public playbook without team-level ManageMembers cannot add another member", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPublicPlaybookManageMembers).Return(false)
+
+		pb := Playbook{
+			TeamID:                    teamID,
+			Public:                    true,
+			DefaultPlaybookMemberRole: "anything_non_empty",
+			Members: []PlaybookMember{
+				{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+			},
+		}
+		err := f.svc.PlaybookCreateWithMembers(creatorID, pb)
+		assert.ErrorIs(t, err, ErrNoPermissions)
+	})
+
+	t.Run("public playbook with real team-level ManageMembers can still add another member", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPublicPlaybookManageMembers).Return(true)
+
+		pb := Playbook{
+			TeamID: teamID,
+			Public: true,
+			Members: []PlaybookMember{
+				{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+			},
+		}
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
 }
 
 func TestNoAddedMembersWithoutPermission(t *testing.T) {
