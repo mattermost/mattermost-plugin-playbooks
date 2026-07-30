@@ -1,0 +1,113 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "No Vietnamese Playbooks translations exist. Keep the loanword 'playbook' (common in Vietnamese incident-response/business content); a literal 'kịch bản' means 'script/scenario' and loses the reusable-workflow sense."
+  },
+  "run": {
+    "target": "lần chạy",
+    "note": "Noun (a single execution): 'lần chạy'. Verb ('Run playbook'): 'chạy playbook'."
+  },
+  "finish a run": {
+    "target": "hoàn thành lần chạy",
+    "note": "Finished (state) = 'Đã hoàn thành'."
+  },
+  "resume a run": {
+    "target": "tiếp tục lần chạy",
+    "note": "Restart alias = 'khởi động lại' when explicitly restarting."
+  },
+  "checklist": {
+    "target": "danh sách kiểm tra",
+    "note": "Standard Vietnamese term; the loanword 'checklist' is also widely understood but prefer the translation."
+  },
+  "task": {
+    "target": "nhiệm vụ",
+    "note": "Preferred over 'tác vụ' (which skews technical/system tasks) and 'công việc' (too generic)."
+  },
+  "status update": {
+    "target": "cập nhật trạng thái",
+    "note": "Aligns with core status = 'trạng thái'. Post update = 'Đăng cập nhật'."
+  },
+  "retrospective": {
+    "target": "bản tổng kết",
+    "note": "The published post-run review; 'tổng kết rút kinh nghiệm' is a fuller alternative if space allows."
+  },
+  "owner": {
+    "target": "người phụ trách",
+    "note": "The single person responsible for the run; preferred over literal 'chủ sở hữu' (ownership of property). Run owner = 'người phụ trách lần chạy'."
+  },
+  "participant": {
+    "target": "người tham gia",
+    "note": "Consistent with Calls glossary."
+  },
+  "follower": {
+    "target": "người theo dõi",
+    "note": "Follow/Unfollow = 'theo dõi'/'bỏ theo dõi', consistent with core."
+  },
+  "trigger": {
+    "target": "bộ kích hoạt",
+    "note": "Noun; follows Microsoft Power Automate Vietnamese convention. Verb 'to trigger' = 'kích hoạt'; core 'trigger word' = 'từ kích hoạt'."
+  },
+  "action": {
+    "target": "hành động"
+  },
+  "key metrics": {
+    "target": "chỉ số chính"
+  },
+  "metric": {
+    "target": "chỉ số"
+  },
+  "overdue": {
+    "target": "quá hạn"
+  },
+  "due date": {
+    "target": "hạn chót",
+    "note": "'Ngày đến hạn' is a formal alternative; 'Due' alone = 'Hạn', 'No due date' = 'Không có hạn chót'."
+  },
+  "template": {
+    "target": "mẫu"
+  },
+  "timeline": {
+    "target": "dòng thời gian"
+  },
+  "stakeholder": {
+    "target": "bên liên quan"
+  },
+  "assignee": {
+    "target": "người được giao",
+    "note": "The person a task is assigned to; assign = 'giao'."
+  },
+  "invitation": {
+    "target": "lời mời",
+    "note": "Here it means auto-adding members to the run channel; 'Invite participants' = 'Mời người tham gia', consistent with core invite = 'mời'."
+  },
+  "filter": {
+    "target": "bộ lọc",
+    "note": "Noun 'bộ lọc'; verb = 'lọc'."
+  },
+  "run channel": {
+    "target": "kênh lần chạy",
+    "note": "Consistent with channel = 'kênh' and run = 'lần chạy'."
+  },
+  "broadcast": {
+    "target": "phát tới kênh khác",
+    "note": "Verb: auto-posting status updates to additional channels; avoid bare 'phát sóng' (TV broadcasting). 'Broadcast update' = 'Phát cập nhật tới kênh khác'."
+  },
+  "condition": {
+    "target": "điều kiện",
+    "note": "Distinct from trigger = 'bộ kích hoạt'."
+  },
+  "attribute": {
+    "target": "thuộc tính",
+    "note": "Consistent with core; here a playbook-defined property field, not a user profile attribute."
+  },
+  "section": {
+    "target": "phần",
+    "note": "Section name = 'Tên phần'; 'mục' is an alternative but 'phần' better fits a group of tasks."
+  },
+  "run summary": {
+    "target": "tóm tắt lần chạy"
+  }
+}

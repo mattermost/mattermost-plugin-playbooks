@@ -1,0 +1,92 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook"
+  },
+  "run": {
+    "target": "run"
+  },
+  "finish a run": {
+    "target": "finish a run"
+  },
+  "resume a run": {
+    "target": "resume a run"
+  },
+  "checklist": {
+    "target": "checklist"
+  },
+  "task": {
+    "target": "task"
+  },
+  "status update": {
+    "target": "status update"
+  },
+  "retrospective": {
+    "target": "retrospective"
+  },
+  "owner": {
+    "target": "owner"
+  },
+  "participant": {
+    "target": "participant"
+  },
+  "follower": {
+    "target": "follower"
+  },
+  "trigger": {
+    "target": "trigger"
+  },
+  "action": {
+    "target": "action"
+  },
+  "key metrics": {
+    "target": "key metrics"
+  },
+  "metric": {
+    "target": "metric"
+  },
+  "overdue": {
+    "target": "overdue"
+  },
+  "due date": {
+    "target": "due date"
+  },
+  "template": {
+    "target": "template"
+  },
+  "timeline": {
+    "target": "timeline"
+  },
+  "stakeholder": {
+    "target": "stakeholder"
+  },
+  "assignee": {
+    "target": "assignee"
+  },
+  "invitation": {
+    "target": "invitation"
+  },
+  "filter": {
+    "target": "filter"
+  },
+  "run channel": {
+    "target": "run channel"
+  },
+  "broadcast": {
+    "target": "broadcast"
+  },
+  "condition": {
+    "target": "condition"
+  },
+  "attribute": {
+    "target": "attribute"
+  },
+  "section": {
+    "target": "section"
+  },
+  "run summary": {
+    "target": "run summary"
+  }
+}

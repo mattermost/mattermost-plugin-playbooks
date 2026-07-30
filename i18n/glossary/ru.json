@@ -1,0 +1,120 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "сценарий",
+    "note": "Consistent in existing translations (94 occurrences); do not use 'плейбук'."
+  },
+  "run": {
+    "target": "запуск",
+    "note": "Noun (majority rendering, 92 occurrences); verb 'to run a playbook' = 'запустить сценарий'. Existing strings occasionally use 'прогон' and one mistranslation 'бег' — avoid both."
+  },
+  "finish a run": {
+    "target": "завершить запуск",
+    "note": "Existing rendering; 'Finished' status = 'Завершён'."
+  },
+  "resume a run": {
+    "target": "возобновить запуск",
+    "note": "No stable existing translation; 'Restart' alias can be 'перезапустить'."
+  },
+  "checklist": {
+    "target": "чек-лист",
+    "note": "Existing rendering; plural 'чек-листы'."
+  },
+  "task": {
+    "target": "задача",
+    "note": "Plural 'задачи'."
+  },
+  "status update": {
+    "target": "обновление статуса",
+    "note": "Consistent in existing translations; 'Post update' = 'опубликовать обновление'."
+  },
+  "retrospective": {
+    "target": "ретроспектива",
+    "note": "Consistent in existing translations."
+  },
+  "owner": {
+    "target": "владелец",
+    "note": "Existing rendering ('владелец запуска' for run owner)."
+  },
+  "participant": {
+    "target": "участник",
+    "note": "Plural 'участники'; all-caps header 'УЧАСТНИКИ'."
+  },
+  "follower": {
+    "target": "подписчик",
+    "note": "No stable existing translation; aligns with follow = 'подписаться', unfollow = 'отписаться' used for threads."
+  },
+  "trigger": {
+    "target": "триггер",
+    "note": "Existing rendering."
+  },
+  "action": {
+    "target": "действие",
+    "note": "'Run/Task/Channel Actions' = 'действия запуска/задачи/канала'."
+  },
+  "key metrics": {
+    "target": "ключевые метрики"
+  },
+  "metric": {
+    "target": "метрика",
+    "note": "Existing rendering ('Добавить метрику')."
+  },
+  "overdue": {
+    "target": "просрочено",
+    "note": "Adjective agrees with noun: 'просроченная задача', 'обновление просрочено' (existing)."
+  },
+  "due date": {
+    "target": "крайний срок",
+    "note": "Existing rendering; 'No due date' = 'Нет срока'."
+  },
+  "template": {
+    "target": "шаблон",
+    "note": "Existing rendering ('Шаблон ретроспективы')."
+  },
+  "timeline": {
+    "target": "временная шкала",
+    "note": "Consistent in existing translations."
+  },
+  "stakeholder": {
+    "target": "заинтересованная сторона",
+    "note": "Existing rendering; plural 'заинтересованные стороны'."
+  },
+  "assignee": {
+    "target": "исполнитель",
+    "note": "Existing strings are mistranslated ('получатель', 'правопреемник') — do not reuse them; 'исполнитель' is the standard task-management term."
+  },
+  "invitation": {
+    "target": "приглашение",
+    "note": "'Invite participants' = 'пригласить участников'."
+  },
+  "filter": {
+    "target": "фильтр",
+    "note": "Verb: 'фильтровать'. Existing rendering."
+  },
+  "run channel": {
+    "target": "канал запуска",
+    "note": "'Create a run channel' = 'создать канал запуска'."
+  },
+  "broadcast": {
+    "target": "транслировать",
+    "note": "Existing rendering ('Транслировать обновление на выбранные каналы')."
+  },
+  "condition": {
+    "target": "условие",
+    "note": "'Add condition' = 'добавить условие'."
+  },
+  "attribute": {
+    "target": "атрибут",
+    "note": "Playbook property field; 'Property Fields' can be 'поля свойств', but prefer 'атрибуты' for the feature."
+  },
+  "section": {
+    "target": "раздел",
+    "note": "'Add a section' = 'добавить раздел'; 'Section name' = 'название раздела'."
+  },
+  "run summary": {
+    "target": "сводка запуска",
+    "note": "Existing strings use 'сводка по прогону'; keep 'сводка' but pair with the standardized 'запуск' instead of 'прогон'."
+  }
+}

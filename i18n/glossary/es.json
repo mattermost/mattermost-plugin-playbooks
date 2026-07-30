@@ -1,0 +1,115 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "libro de jugadas",
+    "note": "Clear majority rendering (~52 occurrences); a few strings keep 'playbook' in English."
+  },
+  "run": {
+    "target": "ejecución",
+    "note": "Noun. Verb: 'ejecutar' ('ejecutar un libro de jugadas'). Existing es.json is split between 'ejecución' (~40) and the mistranslation 'carrera' (~42, meaning 'race'); use 'ejecución' — 'carrera' is an MT artifact, not a deliberate choice."
+  },
+  "finish a run": {
+    "target": "finalizar la ejecución",
+    "note": "Existing 'Finaliza la carrera' inherits the 'carrera' mistranslation; use 'ejecución'."
+  },
+  "resume a run": {
+    "target": "reanudar la ejecución",
+    "note": "Restart alias: 'reiniciar'."
+  },
+  "checklist": {
+    "target": "lista de control",
+    "note": "Majority rendering; 'lista de comprobación' appears sporadically."
+  },
+  "task": {
+    "target": "tarea"
+  },
+  "status update": {
+    "target": "actualización de estado",
+    "note": "Post update: 'Publicar actualización'."
+  },
+  "retrospective": {
+    "target": "retrospectiva"
+  },
+  "owner": {
+    "target": "propietario",
+    "note": "Run owner: 'propietario de la ejecución'."
+  },
+  "participant": {
+    "target": "participante"
+  },
+  "follower": {
+    "target": "seguidor",
+    "note": "Existing: 'Seguidores'. Follow/Unfollow: 'seguir' / 'dejar de seguir'."
+  },
+  "trigger": {
+    "target": "disparador",
+    "note": "Existing rendering; verb sense: 'activar'."
+  },
+  "action": {
+    "target": "acción",
+    "note": "Run actions: 'acciones de ejecución'; task actions: 'acciones de la tarea' per existing strings."
+  },
+  "key metrics": {
+    "target": "métricas clave"
+  },
+  "metric": {
+    "target": "métrica",
+    "note": "Feminine: 'la métrica', 'Añadir métrica'."
+  },
+  "overdue": {
+    "target": "atrasado",
+    "note": "Agrees in gender: 'actualización atrasada', 'tarea atrasada'."
+  },
+  "due date": {
+    "target": "fecha de vencimiento",
+    "note": "Existing rendering; 'No due date': 'Sin fecha de vencimiento'."
+  },
+  "template": {
+    "target": "plantilla"
+  },
+  "timeline": {
+    "target": "cronología",
+    "note": "Majority rendering; 'línea de tiempo' appears once."
+  },
+  "stakeholder": {
+    "target": "parte interesada",
+    "note": "No repo signal; standard business-Spanish rendering. Plural: 'partes interesadas'."
+  },
+  "assignee": {
+    "target": "persona asignada",
+    "note": "Existing 'Cesionario' is a legal-domain mistranslation; other strings use 'los asignados'. Prefer 'persona asignada'."
+  },
+  "invitation": {
+    "target": "invitación",
+    "note": "Invite participants: 'Invitar participantes'."
+  },
+  "filter": {
+    "target": "filtro",
+    "note": "Verb: 'filtrar'."
+  },
+  "run channel": {
+    "target": "canal de ejecución",
+    "note": "Existing rendering ('Se enviará una solicitud… al canal de ejecución')."
+  },
+  "broadcast": {
+    "target": "transmitir",
+    "note": "Existing: 'Transmitir la actualización a los canales seleccionados'."
+  },
+  "condition": {
+    "target": "condición",
+    "note": "Add condition: 'Añadir condición'."
+  },
+  "attribute": {
+    "target": "atributo"
+  },
+  "section": {
+    "target": "sección",
+    "note": "Add a section: 'Añadir una sección'."
+  },
+  "run summary": {
+    "target": "resumen de la ejecución",
+    "note": "Existing template string uses 'resumen de ejecución'."
+  }
+}

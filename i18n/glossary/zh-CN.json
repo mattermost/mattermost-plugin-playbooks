@@ -1,0 +1,114 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "The strong majority of existing zh_Hans strings keep the English word (64 kept vs 10 手册); keep 'playbook' for consistency. 手册 appears in a minority of strings."
+  },
+  "run": {
+    "target": "流程",
+    "note": "Noun: 流程 is the majority rendering (72 vs 37 运行). Verb 'run a playbook' = 运行 playbook. Some strings use 运行 for the noun — treat as legacy inconsistency."
+  },
+  "finish a run": {
+    "target": "结束流程",
+    "note": "Finished (state) = 已结束."
+  },
+  "resume a run": {
+    "target": "恢复流程",
+    "note": "No established rendering in existing zh_Hans; 恢复 matches 'reopen and continue'."
+  },
+  "checklist": {
+    "target": "清单"
+  },
+  "task": {
+    "target": "任务"
+  },
+  "status update": {
+    "target": "状态更新",
+    "note": "Post update = 发布更新."
+  },
+  "retrospective": {
+    "target": "复盘",
+    "note": "Majority (18 vs 5 回顾); a few strings keep English 'Retrospective' — treat as untranslated legacy."
+  },
+  "owner": {
+    "target": "所有者",
+    "note": "One string uses 业主, which is a mistranslation; run owner = 流程所有者."
+  },
+  "participant": {
+    "target": "参与者"
+  },
+  "follower": {
+    "target": "关注者",
+    "note": "Existing zh_Hans is inconsistent (追随者 once, Follow mistranslated as 跟进/后续行动), while Unfollow = 取消关注 and the core product consistently uses 关注 for follow; 关注者 aligns the whole family."
+  },
+  "trigger": {
+    "target": "触发器"
+  },
+  "action": {
+    "target": "动作",
+    "note": "Run Actions = 流程动作, Task Actions = 任务动作, Channel Actions = 频道动作."
+  },
+  "key metrics": {
+    "target": "关键指标",
+    "note": "核心指标 appears once; 关键指标 is the majority."
+  },
+  "metric": {
+    "target": "指标"
+  },
+  "overdue": {
+    "target": "逾期"
+  },
+  "due date": {
+    "target": "到期日期",
+    "note": "Existing mixes 到期日期/到期日/截止日期; 到期 forms are the majority."
+  },
+  "template": {
+    "target": "模板"
+  },
+  "timeline": {
+    "target": "时间线",
+    "note": "Existing usage ties 时间线/时间轴; 时间线 chosen as the modern software convention."
+  },
+  "stakeholder": {
+    "target": "相关方",
+    "note": "相关者 appears once; 相关方 is the majority."
+  },
+  "assignee": {
+    "target": "负责人",
+    "note": "One string uses 受让人, which is a mistranslation."
+  },
+  "invitation": {
+    "target": "邀请",
+    "note": "Invite participants = 邀请参与者."
+  },
+  "filter": {
+    "target": "过滤",
+    "note": "Majority in this repo (7 vs 1 筛选); the core webapp prefers 筛选 — consider unifying on 筛选 in a future cleanup."
+  },
+  "run channel": {
+    "target": "流程频道",
+    "note": "Existing renderings are scattered (运行频道, 流程通道, 流程所在的频道); 流程频道 aligns with run = 流程 and channel = 频道."
+  },
+  "broadcast": {
+    "target": "广播",
+    "note": "Broadcast update = 广播更新."
+  },
+  "condition": {
+    "target": "条件",
+    "note": "New feature, no existing rendering; Add condition = 添加条件."
+  },
+  "attribute": {
+    "target": "属性",
+    "note": "Property Fields = 属性字段; same word as user profile attributes, disambiguate by context."
+  },
+  "section": {
+    "target": "部分",
+    "note": "New feature, no existing rendering; Section name = 部分名称, Add a section = 添加部分."
+  },
+  "run summary": {
+    "target": "流程摘要",
+    "note": "Existing mixes 运行摘要 and 流程摘要; 流程摘要 aligns with run = 流程."
+  }
+}

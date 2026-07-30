@@ -1,0 +1,116 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "senaryo",
+    "note": "Established plugin convention: playbook = 'senaryo' (script/scenario)."
+  },
+  "run": {
+    "target": "oyun",
+    "note": "Established pairing with 'senaryo': the noun 'run' = 'oyun' (a play/performance of the scenario); the verb 'to run a playbook' = 'senaryoyu oyna(mak)'. Do not translate the noun as 'çalıştırma'."
+  },
+  "finish a run": {
+    "target": "oyunu tamamla",
+    "note": "'Finished' = 'Tamamlanmış'; 'Run finished' = 'Oyun tamamlandı'."
+  },
+  "resume a run": {
+    "target": "oyunu sürdür",
+    "note": "No existing tr string for Resume/Restart; repo uses 'sürüyor' for in-progress runs, so 'sürdür' fits. 'Restart' = 'yeniden başlat'."
+  },
+  "checklist": {
+    "target": "kontrol listesi"
+  },
+  "task": {
+    "target": "görev"
+  },
+  "status update": {
+    "target": "durum güncellemesi",
+    "note": "'Post update' = 'güncelleme gönder'."
+  },
+  "retrospective": {
+    "target": "geçmiş değerlendirmesi",
+    "note": "Established plugin term; do not use the loanword 'retrospektif'."
+  },
+  "owner": {
+    "target": "sahip",
+    "note": "'run owner' = 'oyun sahibi'; 'Make run owner' = 'Oyun sahibi olarak ata'."
+  },
+  "participant": {
+    "target": "katılımcı"
+  },
+  "follower": {
+    "target": "takipçi",
+    "note": "Noun is 'takipçi', but the verbs follow core apps: 'Follow' = 'izle', 'Unfollow' = 'izlemeyi bırak'."
+  },
+  "trigger": {
+    "target": "tetikleyici"
+  },
+  "action": {
+    "target": "işlem",
+    "note": "'Run Actions' = 'oyun işlemleri'; 'Channel Actions' = 'kanal işlemleri'; 'Task actions' = 'görev işlemleri'."
+  },
+  "key metrics": {
+    "target": "anahtar ölçümler"
+  },
+  "metric": {
+    "target": "ölçüm",
+    "note": "'Add Metric' = 'Ölçüm ekle'."
+  },
+  "overdue": {
+    "target": "süresi geçmiş",
+    "note": "Also rendered as 'bitiş tarihi geçmiş' when tied to a due date; both appear in the plugin."
+  },
+  "due date": {
+    "target": "bitiş tarihi",
+    "note": "'No due date' = 'Bitiş tarihi yok'; 'Due' = 'bitiş'."
+  },
+  "template": {
+    "target": "kalıp",
+    "note": "Plugin convention is 'kalıp' (not 'şablon'): 'Retrospective template' = 'Geçmiş değerlendirmesi kalıbı'."
+  },
+  "timeline": {
+    "target": "zaman çizelgesi",
+    "note": "'View Timeline' = 'Zaman çizelgesini görüntüle'."
+  },
+  "stakeholder": {
+    "target": "paydaş",
+    "note": "No existing tr string; 'paydaş' is the standard Turkish business term."
+  },
+  "assignee": {
+    "target": "atanan",
+    "note": "'No Assignee' = 'Atanmış kimse yok'; one string uses 'sorumlu' — prefer 'atanan' (from 'ata-' = assign)."
+  },
+  "invitation": {
+    "target": "çağrı",
+    "note": "Plugin currently uses 'çağır/çağrı': 'Invite participants' = 'Katılımcılar çağır' (sic), 'Disable invitation' = 'Çağrıları devre dışı bırak'. This collides with Calls 'çağrı' = call; the core apps' 'davet' would be clearer — flag for harmonization, but 'çağrı' is what exists in this plugin today."
+  },
+  "filter": {
+    "target": "süzgeç",
+    "note": "Noun: 'süzgeç'; verb: 'süz' ('Filter items' = 'Ögeleri süz'). Do not use 'filtre'."
+  },
+  "run channel": {
+    "target": "oyun kanalı",
+    "note": "'Add them to the run channel' = 'Bu kişileri oyun kanalına ekle'."
+  },
+  "broadcast": {
+    "target": "yayınla",
+    "note": "'Broadcast update to selected channels' = 'Güncellemeyi seçilmiş kanallara yayınla'."
+  },
+  "condition": {
+    "target": "koşul",
+    "note": "No existing tr string for this newer feature; 'koşul' is the standard term. 'Add condition' = 'Koşul ekle'."
+  },
+  "attribute": {
+    "target": "öznitelik",
+    "note": "Same as core apps; 'Property Fields' in this context also maps to 'öznitelikler'."
+  },
+  "section": {
+    "target": "bölüm",
+    "note": "No existing tr string for checklist sections; 'bölüm' is the natural term. 'Section name' = 'Bölüm adı'."
+  },
+  "run summary": {
+    "target": "oyun özeti",
+    "note": "'Add a run summary' = 'Bir oyun özeti ekle'."
+  }
+}

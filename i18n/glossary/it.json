@@ -1,0 +1,122 @@
+{
+  "Playbooks": {
+    "target": "Playbooks",
+    "note": "Product name. No Italian locale file exists for the Playbooks plugin; all entries below are grounded in core-product Italian conventions and standard Italian software terminology."
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "Kept in English, as is customary in Italian business/ops software; masculine, invariable: 'il playbook', 'i playbook'."
+  },
+  "run": {
+    "target": "esecuzione",
+    "note": "Noun (a run of a playbook): 'esecuzione' (feminine). Verb (to run a playbook): 'eseguire' — button 'Esegui playbook'. Keep the noun/verb distinction."
+  },
+  "finish a run": {
+    "target": "terminare un'esecuzione",
+    "note": "Button: 'Termina esecuzione'; state 'Finished' = 'Terminata' (feminine, agrees with 'esecuzione')."
+  },
+  "resume a run": {
+    "target": "riprendere un'esecuzione",
+    "note": "Button: 'Riprendi'."
+  },
+  "checklist": {
+    "target": "checklist",
+    "note": "Kept in English, common in Italian software; feminine, invariable: 'la checklist', 'le checklist'. Alternative 'lista di controllo' if a fully Italian form is preferred."
+  },
+  "task": {
+    "target": "attività",
+    "note": "Standard Italian for task (Microsoft convention); feminine, invariable in plural: 'le attività'."
+  },
+  "status update": {
+    "target": "aggiornamento di stato",
+    "note": "Button 'Post update' = 'Pubblica aggiornamento'."
+  },
+  "retrospective": {
+    "target": "retrospettiva",
+    "note": "Established Italian agile term; feminine."
+  },
+  "owner": {
+    "target": "proprietario",
+    "note": "Consistent with core-product usage ('proprietario' for bot owner). 'Run owner' = 'proprietario dell'esecuzione'. Alternative 'responsabile' conveys accountability but breaks consistency."
+  },
+  "participant": {
+    "target": "partecipante",
+    "note": "Consistent with Calls; header form 'PARTECIPANTI'."
+  },
+  "follower": {
+    "target": "follower",
+    "note": "Kept in English per Italian social-software convention; masculine, invariable. Verb pair: Follow = 'Segui', Unfollow = 'Non seguire più' (consistent with core glossary)."
+  },
+  "trigger": {
+    "target": "trigger",
+    "note": "Kept in English, common in Italian automation tools; masculine, invariable. Alternative 'attivazione'. Related: trigger word = 'parola di attivazione' in the core glossary."
+  },
+  "action": {
+    "target": "azione",
+    "note": "Feminine; 'Run Actions' = 'Azioni dell'esecuzione', 'Channel Actions' = 'Azioni del canale'."
+  },
+  "key metrics": {
+    "target": "metriche chiave",
+    "note": "Feminine plural; singular 'metrica chiave'."
+  },
+  "metric": {
+    "target": "metrica",
+    "note": "Feminine; 'Add Metric' = 'Aggiungi metrica'."
+  },
+  "overdue": {
+    "target": "in ritardo",
+    "note": "'Update overdue' = 'Aggiornamento in ritardo'; also 'scaduto' for a passed due date on tasks."
+  },
+  "due date": {
+    "target": "scadenza",
+    "note": "Feminine. 'No due date' = 'Nessuna scadenza'; 'Due' = 'Scadenza'. Fuller form 'data di scadenza' where space allows."
+  },
+  "template": {
+    "target": "modello",
+    "note": "Standard Italian UI term; 'Retrospective template' = 'Modello di retrospettiva'."
+  },
+  "timeline": {
+    "target": "cronologia",
+    "note": "'View Timeline' = 'Visualizza cronologia'. Alternative 'sequenza temporale' (Microsoft) is longer; prefer 'cronologia'."
+  },
+  "stakeholder": {
+    "target": "stakeholder",
+    "note": "Kept in English, standard in Italian business language; masculine, invariable."
+  },
+  "assignee": {
+    "target": "assegnatario",
+    "note": "Masculine; plural 'assegnatari'."
+  },
+  "invitation": {
+    "target": "invito",
+    "note": "Consistent with core glossary; 'Invite participants' = 'Invita i partecipanti'."
+  },
+  "filter": {
+    "target": "filtro",
+    "note": "Noun 'filtro' (masculine); verb 'filtrare', button 'Filtra'."
+  },
+  "run channel": {
+    "target": "canale dell'esecuzione",
+    "note": "'Create a run channel' = 'Crea un canale per l'esecuzione'; channel = 'canale' per core glossary."
+  },
+  "broadcast": {
+    "target": "trasmettere",
+    "note": "'Broadcast update' = 'Trasmetti l'aggiornamento' (to additional channels)."
+  },
+  "condition": {
+    "target": "condizione",
+    "note": "Feminine; 'Add condition' = 'Aggiungi condizione'."
+  },
+  "attribute": {
+    "target": "attributo",
+    "note": "Consistent with core glossary; 'Property Fields' alias = 'campi proprietà'."
+  },
+  "section": {
+    "target": "sezione",
+    "note": "Feminine; 'Add a section' = 'Aggiungi una sezione', 'Section name' = 'Nome della sezione'."
+  },
+  "run summary": {
+    "target": "riepilogo dell'esecuzione",
+    "note": "'Add a run summary' = 'Aggiungi un riepilogo dell'esecuzione'; 'riepilogo' consistent with recap/meeting summary in the other glossaries."
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "No pt-BR file exists for this plugin. Keep the common noun as the loanword 'playbook' (masculine: 'o playbook', plural 'playbooks'), which is standard in Brazilian business/ops language and keeps it aligned with the product name."
+  },
+  "run": {
+    "target": "execução",
+    "note": "Noun (a single execution of a playbook) = 'execução'; verb 'to run a playbook' = 'executar um playbook'. Avoid 'corrida'."
+  },
+  "finish a run": {
+    "target": "concluir a execução",
+    "note": "'Concluída' for the Finished state label."
+  },
+  "resume a run": {
+    "target": "retomar a execução",
+    "note": "'Reiniciar' for the Restart button alias."
+  },
+  "checklist": {
+    "target": "checklist",
+    "note": "Common loanword in pt-BR (feminine or masculine varies; Trello pt-BR treats it as masculine: 'o checklist'). 'Lista de verificação' is an acceptable translated alternative if loanwords are undesired."
+  },
+  "task": {
+    "target": "tarefa"
+  },
+  "status update": {
+    "target": "atualização de status",
+    "note": "'Status' stays untranslated per core-product convention; 'Publicar atualização' for Post update."
+  },
+  "retrospective": {
+    "target": "retrospectiva"
+  },
+  "owner": {
+    "target": "proprietário",
+    "note": "Matches core-product usage ('proprietário do bot', 'proprietário do espaço de trabalho'). For 'run owner', 'responsável pela execução' would read more naturally but breaks consistency with 'assignee' = 'responsável'; keep 'proprietário'."
+  },
+  "participant": {
+    "target": "participante",
+    "note": "All-caps label: 'PARTICIPANTES'."
+  },
+  "follower": {
+    "target": "seguidor",
+    "note": "'Seguir'/'Deixar de seguir' for Follow/Unfollow, matching thread terminology in the core product."
+  },
+  "trigger": {
+    "target": "gatilho",
+    "note": "Matches core-product 'palavra gatilho' and 'Gatilho inválido'."
+  },
+  "action": {
+    "target": "ação",
+    "note": "'Ações da Execução' (Run Actions), 'Ações da Tarefa' (Task Actions), 'Ações do Canal' (Channel Actions)."
+  },
+  "key metrics": {
+    "target": "métricas principais"
+  },
+  "metric": {
+    "target": "métrica"
+  },
+  "overdue": {
+    "target": "atrasado",
+    "note": "Agrees in gender: 'atualização atrasada' (status update), 'tarefa atrasada'."
+  },
+  "due date": {
+    "target": "prazo",
+    "note": "Short and natural for tasks ('Sem prazo' = No due date, 'Prazo' = Due). 'Data de entrega' (Trello convention) is an alternative if a fuller form is needed."
+  },
+  "template": {
+    "target": "modelo",
+    "note": "Matches server usage ('Falha ao criar o modelo...'); 'Modelo de retrospectiva' for retrospective template."
+  },
+  "timeline": {
+    "target": "linha do tempo"
+  },
+  "stakeholder": {
+    "target": "parte interessada",
+    "note": "Feminine ('as partes interessadas'). The loanword 'stakeholder' is also common in Brazilian business language but prefer the translated form in UI."
+  },
+  "assignee": {
+    "target": "responsável",
+    "note": "'Responsável' is the standard pt-BR term for the person a task is assigned to (Trello, Asana, Jira)."
+  },
+  "invitation": {
+    "target": "convite",
+    "note": "'Convidar participantes' (Invite participants), 'Desativar convite' (Disable invitation)."
+  },
+  "filter": {
+    "target": "filtro",
+    "note": "Noun 'filtro'; verb 'filtrar' ('Filtrar por...'), matching core-product usage."
+  },
+  "run channel": {
+    "target": "canal da execução",
+    "note": "'Criar um canal para a execução' for 'Create a run channel'."
+  },
+  "broadcast": {
+    "target": "transmitir",
+    "note": "'Transmitir atualização' for Broadcast update; the destination channels are 'canais de transmissão'."
+  },
+  "condition": {
+    "target": "condição",
+    "note": "'Adicionar condição' for Add condition."
+  },
+  "attribute": {
+    "target": "atributo",
+    "note": "'Campos de propriedade' for the Property Fields alias."
+  },
+  "section": {
+    "target": "seção",
+    "note": "'Nome da seção' (Section name), 'Adicionar uma seção' (Add a section)."
+  },
+  "run summary": {
+    "target": "resumo da execução",
+    "note": "'Adicionar um resumo da execução' for 'Add a run summary'."
+  }
+}

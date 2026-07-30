@@ -1,0 +1,273 @@
+{
+  "Playbooks": {
+    "definition": "Product name of the Mattermost workflow product; stays in English as a product name.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": true
+  },
+  "playbook": {
+    "definition": "A reusable, configurable workflow definition (checklists, triggers, actions) that teams run repeatedly.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Playbook",
+      "playbooks"
+    ]
+  },
+  "run": {
+    "definition": "A single execution of a playbook, with its own channel, tasks, and status updates; distinct from the verb 'to run a playbook'.",
+    "partOfSpeech": "noun/verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Run",
+      "runs",
+      "Run playbook"
+    ]
+  },
+  "finish a run": {
+    "definition": "To mark a run as completed; a finished run can later be restarted.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Finish run",
+      "Finished"
+    ]
+  },
+  "resume a run": {
+    "definition": "To reopen a finished run and continue working on it.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Resume",
+      "Restart"
+    ]
+  },
+  "checklist": {
+    "definition": "An ordered list of tasks within a playbook or run.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Checklist",
+      "checklists"
+    ]
+  },
+  "task": {
+    "definition": "A single checklist item that can be assigned, checked off, or skipped.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Task",
+      "Tasks"
+    ]
+  },
+  "status update": {
+    "definition": "A periodic progress message posted for a run, optionally broadcast to other channels.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Status updates",
+      "Status Updates",
+      "Post update"
+    ]
+  },
+  "retrospective": {
+    "definition": "The review published after a run finishes, capturing learnings and metric values.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Retrospective"
+    ]
+  },
+  "owner": {
+    "definition": "The run participant responsible for the run; there is exactly one owner at a time.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Owner",
+      "Run Owner",
+      "run owner"
+    ]
+  },
+  "participant": {
+    "definition": "A person actively involved in a run, with permission to update tasks and post status updates.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Participants",
+      "PARTICIPANTS"
+    ]
+  },
+  "follower": {
+    "definition": "A person who receives a run's status update notifications without being a participant.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Followers",
+      "Follow",
+      "Unfollow"
+    ]
+  },
+  "trigger": {
+    "definition": "A condition (e.g. keywords posted, a user joining a channel) that starts an automatic playbook action.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Trigger",
+      "triggers"
+    ]
+  },
+  "action": {
+    "definition": "An automated step performed when a trigger fires, such as prompting to run a playbook or sending a webhook.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Actions",
+      "Run Actions",
+      "Task Actions",
+      "Channel Actions"
+    ]
+  },
+  "key metrics": {
+    "definition": "The measurements a playbook defines (duration, cost, integer values) recorded in each run's retrospective.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Key Metrics",
+      "key metric"
+    ]
+  },
+  "metric": {
+    "definition": "One measurable value tracked per run, e.g. time to resolve.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "metrics",
+      "Metric",
+      "Add Metric"
+    ]
+  },
+  "overdue": {
+    "definition": "Describes a status update or task whose due time has passed.",
+    "partOfSpeech": "adjective",
+    "doNotTranslate": false,
+    "aliases": [
+      "Overdue",
+      "Update overdue"
+    ]
+  },
+  "due date": {
+    "definition": "The date or time by which a task or status update is expected.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Due date",
+      "Due",
+      "No due date"
+    ]
+  },
+  "template": {
+    "definition": "A pre-built playbook, or a pre-filled text block (run name, summary, status update, retrospective) used when creating content.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "templates",
+      "Retrospective template"
+    ]
+  },
+  "timeline": {
+    "definition": "The chronological record of a run's events, such as status changes and task completions.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Timeline",
+      "View Timeline"
+    ]
+  },
+  "stakeholder": {
+    "definition": "A person interested in a run's progress who receives updates without working on tasks.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "stakeholders"
+    ]
+  },
+  "assignee": {
+    "definition": "The person a specific task is assigned to.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Assignee",
+      "assignees"
+    ]
+  },
+  "invitation": {
+    "definition": "The automatic adding of selected members to a run's channel when a run starts.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Invite participants",
+      "Disable invitation"
+    ]
+  },
+  "filter": {
+    "definition": "A control for narrowing lists of runs, playbooks, or tasks by criteria such as owner or status.",
+    "partOfSpeech": "noun/verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Filter",
+      "Filters"
+    ]
+  },
+  "run channel": {
+    "definition": "The Mattermost channel linked to a run, where its updates and collaboration happen.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Create a run channel"
+    ]
+  },
+  "broadcast": {
+    "definition": "To automatically post a run's status updates to additional selected channels.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Broadcast update"
+    ]
+  },
+  "condition": {
+    "definition": "A rule based on attribute values that controls when certain tasks or sections apply to a run.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Condition",
+      "Add condition"
+    ]
+  },
+  "attribute": {
+    "definition": "A custom property field defined on a playbook and filled per run (text, select, date, etc.); distinct from user profile attributes.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Attribute",
+      "Attributes",
+      "Property Fields"
+    ]
+  },
+  "section": {
+    "definition": "A named group of tasks within a checklist that can be skipped or duplicated as a unit.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Section name",
+      "Add a section"
+    ]
+  },
+  "run summary": {
+    "definition": "The editable description of a run shown in run details.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Summary",
+      "Add a run summary"
+    ]
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "Kept in English (73 of 76 strings): en playbook, playbooken, playbooks. 'spelbok' appears twice — avoid."
+  },
+  "run": {
+    "target": "körning",
+    "note": "Noun: 'körning' (en körning, körningen, körningar) — established throughout. Verb: 'köra' (Run playbook = 'Kör playbook')."
+  },
+  "finish a run": {
+    "target": "slutföra en körning",
+    "note": "UI button 'Finish run' = 'Slutför körningen'; Finished = 'Slutförd'. Some strings use 'avsluta körningen' — prefer 'slutföra'."
+  },
+  "resume a run": {
+    "target": "återuppta en körning",
+    "note": "No existing sv translation; 'återuppta' pairs with 'slutföra'."
+  },
+  "checklist": {
+    "target": "checklista",
+    "note": "en checklista, checklistan, checklistor."
+  },
+  "task": {
+    "target": "uppgift",
+    "note": "en uppgift, uppgiften, uppgifter."
+  },
+  "status update": {
+    "target": "statusuppdatering",
+    "note": "Post update = 'Skicka uppdatering'."
+  },
+  "retrospective": {
+    "target": "retrospektiv",
+    "note": "Noun, neuter: ett retrospektiv, retrospektivet. Established in existing strings."
+  },
+  "owner": {
+    "target": "ägare",
+    "note": "en ägare. Run owner = 'ägare av körningen'."
+  },
+  "participant": {
+    "target": "deltagare"
+  },
+  "follower": {
+    "target": "följare",
+    "note": "Follow = 'Följ', Unfollow = 'Sluta följa' (avoid the calque 'avfölj' seen once)."
+  },
+  "trigger": {
+    "target": "utlösare",
+    "note": "Noun: 'utlösare' (existing 'Trigger' → 'Utlösare'). Verb: 'utlösa'/'aktivera'."
+  },
+  "action": {
+    "target": "åtgärd",
+    "note": "en åtgärd, åtgärder. Run/Task/Channel Actions = 'åtgärder för körning/uppgift/kanal'."
+  },
+  "key metrics": {
+    "target": "viktiga mätvärden",
+    "note": "Existing mixes 'Viktiga mätvärden' and 'Viktiga nyckeltal'; prefer 'viktiga mätvärden' to align with metric = 'mätvärde'."
+  },
+  "metric": {
+    "target": "mätvärde",
+    "note": "ett mätvärde, mätvärden. Add Metric = 'Lägg till mätvärde'."
+  },
+  "overdue": {
+    "target": "försenad",
+    "note": "försenad/försenat/försenade by gender and number. Update overdue = 'Uppdatering försenad'."
+  },
+  "due date": {
+    "target": "förfallodag",
+    "note": "Existing rendering; No due date = 'Ingen förfallodag'."
+  },
+  "template": {
+    "target": "mall",
+    "note": "en mall, mallar. Retrospective template = 'Mall för retrospektiv'."
+  },
+  "timeline": {
+    "target": "tidslinje",
+    "note": "en tidslinje, tidslinjen. View Timeline = 'Visa tidslinje'."
+  },
+  "stakeholder": {
+    "target": "intressent",
+    "note": "en intressent, intressenter."
+  },
+  "assignee": {
+    "target": "mottagare",
+    "note": "Existing consistently uses 'Mottagare' (lit. 'recipient'), which is semantically loose — 'tilldelad person' or 'ansvarig' would be clearer — but keep 'mottagare' for consistency unless a coordinated change is made."
+  },
+  "invitation": {
+    "target": "inbjudan",
+    "note": "Invite participants = 'Bjud in deltagare'; Disable invitation = 'Inaktivera inbjudan'."
+  },
+  "filter": {
+    "target": "filter",
+    "note": "Noun: ett filter, filtret, filter (pl.). Verb: 'filtrera'."
+  },
+  "run channel": {
+    "target": "körningens kanal",
+    "note": "No fixed existing rendering. Create a run channel = 'Skapa en kanal för körningen'."
+  },
+  "broadcast": {
+    "target": "sända",
+    "note": "Existing: 'Sänd uppdatering till utvalda kanaler'; running text also uses 'publiceras i'."
+  },
+  "condition": {
+    "target": "villkor",
+    "note": "ett villkor, villkoret, villkor (pl.). Add condition = 'Lägg till villkor'."
+  },
+  "attribute": {
+    "target": "attribut",
+    "note": "ett attribut, attribut (pl.). Property Fields = 'egenskapsfält'."
+  },
+  "section": {
+    "target": "sektion",
+    "note": "Existing splits evenly between 'sektion' and 'avsnitt'; prefer 'sektion' for a named group of tasks. Section name = 'Sektionsnamn'; Add a section = 'Lägg till en sektion'."
+  },
+  "run summary": {
+    "target": "sammanfattning av körningen",
+    "note": "Existing rendering: 'Lägg till en sammanfattning av körningen'."
+  }
+}

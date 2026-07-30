@@ -1,0 +1,121 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "Kept in English by established convention; declined as masculine ('playbooka', 'playbooki', 'playbooków'). Avoid the phonetic spelling 'playbok' seen in one string."
+  },
+  "run": {
+    "target": "uruchomienie",
+    "note": "Noun (a single execution): 'uruchomienie' (neuter; plural 'uruchomienia') — majority rendering; 'przebieg' and 'działanie' appear sporadically, avoid them. Verb 'run a playbook' → 'uruchomić playbooka'."
+  },
+  "finish a run": {
+    "target": "zakończyć uruchomienie",
+    "note": "Button 'Zakończ uruchomienie' (established); 'Finished' → 'Zakończone'."
+  },
+  "resume a run": {
+    "target": "wznowić uruchomienie",
+    "note": "Button 'Wznów' (established)."
+  },
+  "checklist": {
+    "target": "lista kontrolna",
+    "note": "Feminine. 'checklist item' → 'pozycja z listy kontrolnej' (established)."
+  },
+  "task": {
+    "target": "zadanie",
+    "note": "Neuter. Plural 'zadania'; genitive plural 'zadań'."
+  },
+  "status update": {
+    "target": "aktualizacja statusu",
+    "note": "'Post update' → 'Opublikuj aktualizację'."
+  },
+  "retrospective": {
+    "target": "retrospektywa",
+    "note": "Feminine. 'Retrospective template' → 'szablon retrospektywy' (existing 'Szablon retrospektywny' is less precise)."
+  },
+  "owner": {
+    "target": "właściciel",
+    "note": "'run owner' → 'właściciel uruchomienia' (established)."
+  },
+  "participant": {
+    "target": "uczestnik",
+    "note": "Plural 'uczestnicy'; uppercase label 'PARTICIPANTS' → 'UCZESTNICY'."
+  },
+  "follower": {
+    "target": "obserwujący",
+    "note": "Adjectival noun; plural also 'obserwujący'. 'Follow' → 'Obserwuj', 'Unfollow' → 'Przestań obserwować' (established)."
+  },
+  "trigger": {
+    "target": "wyzwalacz",
+    "note": "Established. Masculine; plural 'wyzwalacze'."
+  },
+  "action": {
+    "target": "akcja",
+    "note": "Existing usage mixes 'akcja' and 'działanie'; prefer 'akcja' ('Akcje uruchomień' = Run Actions, 'Akcje zadań' = Task Actions, 'Akcje kanału' = Channel Actions)."
+  },
+  "key metrics": {
+    "target": "kluczowe metryki",
+    "note": "Singular 'kluczowa metryka'."
+  },
+  "metric": {
+    "target": "metryka",
+    "note": "Feminine. 'Add Metric' → 'Dodaj metrykę' (established)."
+  },
+  "overdue": {
+    "target": "zaległy",
+    "note": "Agrees in gender/number: 'zaległa aktualizacja' (Update overdue), 'zaległe zadania'."
+  },
+  "due date": {
+    "target": "termin",
+    "note": "'No due date' → 'Brak terminu'. Some existing strings mistranslate as 'termin płatności' (payment deadline) — avoid. When explicit, 'termin wykonania' is acceptable."
+  },
+  "template": {
+    "target": "szablon",
+    "note": "Masculine. Plural 'szablony'."
+  },
+  "timeline": {
+    "target": "oś czasu",
+    "note": "Feminine; locative 'na osi czasu'. 'View Timeline' → 'Wyświetl oś czasu'."
+  },
+  "stakeholder": {
+    "target": "zainteresowana strona",
+    "note": "Existing rendering ('zainteresowanym stronom'). Plural 'zainteresowane strony'. 'Interesariusz' is the standard business term and an acceptable alternative."
+  },
+  "assignee": {
+    "target": "osoba przypisana",
+    "note": "Established ('Brak przypisanej osoby' = No Assignee). Compact 'Przypisany' used in tight UI labels."
+  },
+  "invitation": {
+    "target": "zaproszenie",
+    "note": "'Invite participants' → 'Zaproś uczestników'; 'Disable invitation' → 'Wyłącz zaproszenia'."
+  },
+  "filter": {
+    "target": "filtr",
+    "note": "Noun 'filtr' (plural 'filtry'); verb 'filtrować' / 'Filtruj'."
+  },
+  "run channel": {
+    "target": "kanał uruchomienia",
+    "note": "Established ('Dodaj je do kanału uruchomienia')."
+  },
+  "broadcast": {
+    "target": "rozesłać",
+    "note": "Established: 'Rozesłanie aktualizacji na wybranych kanałach' (Broadcast update to selected channels); imperfective 'rozsyłać'."
+  },
+  "condition": {
+    "target": "warunek",
+    "note": "Masculine. Plural 'warunki'; 'Add condition' → 'Dodaj warunek'."
+  },
+  "attribute": {
+    "target": "atrybut",
+    "note": "Playbook property field. Same word as user profile attributes; context disambiguates. 'Property Fields' → 'pola właściwości'."
+  },
+  "section": {
+    "target": "sekcja",
+    "note": "'Add a section' → 'Dodaj sekcję'; 'Section name' → 'Nazwa sekcji' (established)."
+  },
+  "run summary": {
+    "target": "podsumowanie uruchomienia",
+    "note": "Established: 'Dodaj podsumowanie uruchomienia'. Standalone 'Summary' → 'Podsumowanie'."
+  }
+}

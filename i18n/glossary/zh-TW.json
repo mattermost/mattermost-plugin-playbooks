@@ -1,0 +1,110 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "指南",
+    "note": "The only existing zh-TW rendering (webapp admin permissions: 管理私人指南). Alternatives 教戰手冊/劇本 exist in Taiwan usage but keep 指南 for consistency with what admins already see."
+  },
+  "run": {
+    "target": "執行",
+    "note": "Noun and verb both 執行; as a countable noun prefer phrasing like 一次執行 or 執行項目. Run playbook → 執行指南."
+  },
+  "finish a run": {
+    "target": "結束執行",
+    "note": "Finished → 已結束."
+  },
+  "resume a run": {
+    "target": "恢復執行"
+  },
+  "checklist": {
+    "target": "檢查清單"
+  },
+  "task": {
+    "target": "任務"
+  },
+  "status update": {
+    "target": "狀態更新",
+    "note": "Post update → 發布更新."
+  },
+  "retrospective": {
+    "target": "回顧",
+    "note": "Agile convention in Taiwan (衝刺回顧); distinct from recap, which the core glossary maps to 重點回顧."
+  },
+  "owner": {
+    "target": "負責人",
+    "note": "責任 semantics fit 負責人 better than 擁有者; run owner → 執行負責人."
+  },
+  "participant": {
+    "target": "參與者"
+  },
+  "follower": {
+    "target": "追蹤者",
+    "note": "Follow/Unfollow → 追蹤/取消追蹤, matching the core thread terminology."
+  },
+  "trigger": {
+    "target": "觸發條件",
+    "note": "Verb: 觸發. Core webapp uses 觸發關鍵字 for keyword trigger words."
+  },
+  "action": {
+    "target": "動作",
+    "note": "Run/Task/Channel Actions → 執行動作/任務動作/頻道動作."
+  },
+  "key metrics": {
+    "target": "關鍵指標"
+  },
+  "metric": {
+    "target": "指標"
+  },
+  "overdue": {
+    "target": "逾期"
+  },
+  "due date": {
+    "target": "截止日期",
+    "note": "Due → 截止; No due date → 無截止日期."
+  },
+  "template": {
+    "target": "範本",
+    "note": "Taiwan convention; do not use 模板 (Simplified convention)."
+  },
+  "timeline": {
+    "target": "時間軸"
+  },
+  "stakeholder": {
+    "target": "利害關係人"
+  },
+  "assignee": {
+    "target": "受指派人",
+    "note": "assign → 指派, matching existing webapp usage."
+  },
+  "invitation": {
+    "target": "邀請",
+    "note": "Invite participants → 邀請參與者."
+  },
+  "filter": {
+    "target": "篩選",
+    "note": "Noun: 篩選器. Legacy webapp strings often use 過濾/過濾器; 篩選 is the current Taiwan UI convention — use 篩選 in Playbooks and note the webapp inconsistency."
+  },
+  "run channel": {
+    "target": "執行頻道"
+  },
+  "broadcast": {
+    "target": "廣播",
+    "note": "Broadcast update → 廣播更新."
+  },
+  "condition": {
+    "target": "條件",
+    "note": "Add condition → 新增條件."
+  },
+  "attribute": {
+    "target": "屬性",
+    "note": "Property Fields → 屬性欄位; distinct from user profile attributes (same word, different scope)."
+  },
+  "section": {
+    "target": "區段",
+    "note": "Section name → 區段名稱; Add a section → 新增區段."
+  },
+  "run summary": {
+    "target": "執行摘要"
+  }
+}

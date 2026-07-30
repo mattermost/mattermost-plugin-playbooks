@@ -1,0 +1,118 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "forgatókönyv",
+    "note": "Firmly established in the Hungarian Playbooks locale; plural 'forgatókönyvek'."
+  },
+  "run": {
+    "target": "futás",
+    "note": "Noun (an execution) = 'futás' (established: 'aktív futás', 'futás befejezése'). Verb 'to run a playbook' = 'forgatókönyv futtatása' (futtat)."
+  },
+  "finish a run": {
+    "target": "futás befejezése",
+    "note": "Established ('Futás befejezésének jóváhagyása'); Finished = 'Befejezett'."
+  },
+  "resume a run": {
+    "target": "futás folytatása",
+    "note": "Restart in this context = 'újraindítás'."
+  },
+  "checklist": {
+    "target": "ellenőrzőlista",
+    "note": "Majority one word ('ellenőrzőlista'); 'ellenőrző lista' appears occasionally — prefer the compound."
+  },
+  "task": {
+    "target": "feladat"
+  },
+  "status update": {
+    "target": "állapotfrissítés",
+    "note": "Repo mixes 'állapotfrissítés' and 'állapot frissítés'; prefer the compound 'állapotfrissítés'. Post update = 'frissítés közzététele'."
+  },
+  "retrospective": {
+    "target": "visszatekintő",
+    "note": "Established ('Visszatekintő indítása', 'visszatekintő sablon')."
+  },
+  "owner": {
+    "target": "tulajdonos",
+    "note": "Established; run owner = 'futás tulajdonosa'."
+  },
+  "participant": {
+    "target": "résztvevő"
+  },
+  "follower": {
+    "target": "követő",
+    "note": "Follow = 'követés', Unfollow = 'követés visszavonása' (established in Playbooks)."
+  },
+  "trigger": {
+    "target": "aktiválás",
+    "note": "Existing Playbooks rendering; 'eseményindító' would be the standard Microsoft-style term, but keep the established 'aktiválás' for consistency."
+  },
+  "action": {
+    "target": "művelet",
+    "note": "Established ('Feladat műveletek'); Run Actions = 'futási műveletek', Channel Actions = 'csatornaműveletek'."
+  },
+  "key metrics": {
+    "target": "kulcsfontosságú mérőszámok",
+    "note": "Singular: 'kulcsfontosságú mérőszám'; builds on the established metric = 'mérőszám'."
+  },
+  "metric": {
+    "target": "mérőszám",
+    "note": "Established ('Mérőszám hozzáadása', 'Mérőszám törlése')."
+  },
+  "overdue": {
+    "target": "késésben lévő",
+    "note": "Established in count/status contexts ('# késésben', 'A frissítés késésben van'); 'lejárt' appears once for tasks — prefer 'késésben'."
+  },
+  "due date": {
+    "target": "határidő",
+    "note": "Established; No due date = 'Nincs határidő'."
+  },
+  "template": {
+    "target": "sablon"
+  },
+  "timeline": {
+    "target": "idővonal",
+    "note": "Established ('Idővonal megtekintése')."
+  },
+  "stakeholder": {
+    "target": "érdekelt fél",
+    "note": "No repo signal; standard Hungarian business term, plural 'érdekelt felek'."
+  },
+  "assignee": {
+    "target": "felelős",
+    "note": "Established ('Felelős...'); avoid 'hozzárendelt' which the repo uses inconsistently."
+  },
+  "invitation": {
+    "target": "meghívás",
+    "note": "Established here as the act ('Meghívás letiltása'); Invite participants = 'Résztvevők meghívása'."
+  },
+  "filter": {
+    "target": "szűrő",
+    "note": "Noun 'szűrő'; verb 'szűrés' (e.g. 'Tételek szűrése')."
+  },
+  "run channel": {
+    "target": "futási csatorna",
+    "note": "Established ('futási csatornához'); also phrased as 'a futás csatornája'."
+  },
+  "broadcast": {
+    "target": "közzététel más csatornákban",
+    "note": "Repo renders 'Broadcast update to selected channels' as 'Frissítés közzététele a kiválasztott csatornákban'; verb 'közzétesz'."
+  },
+  "condition": {
+    "target": "feltétel",
+    "note": "Established ('A feltétel már nem teljesül'); Add condition = 'Feltétel hozzáadása'."
+  },
+  "attribute": {
+    "target": "attribútum",
+    "note": "Same rendering as core-product profile attributes; context disambiguates. Property Fields = 'tulajdonságmezők'."
+  },
+  "section": {
+    "target": "szakasz",
+    "note": "Section name = 'szakasz neve'; Add a section = 'Szakasz hozzáadása'."
+  },
+  "run summary": {
+    "target": "futás összefoglalója",
+    "note": "Repo uses 'Futás összefoglaló (sablon)'; grammatical possessive 'futás összefoglalója' preferred in full sentences."
+  }
+}

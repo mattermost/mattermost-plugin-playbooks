@@ -1,0 +1,118 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "پلی‌بوک",
+    "note": "The fa playbooks file is largely untranslated; پلی‌بوک is the established Persian transliteration (as in Ansible playbooks). Plural: پلی‌بوک‌ها."
+  },
+  "run": {
+    "target": "اجرا",
+    "note": "Noun (a run): اجرا, plural اجراها. Verb (run a playbook): اجرا کردن پلی‌بوک."
+  },
+  "finish a run": {
+    "target": "پایان دادن به اجرا",
+    "note": "Finished (state): پایان‌یافته."
+  },
+  "resume a run": {
+    "target": "از سرگیری اجرا"
+  },
+  "checklist": {
+    "target": "چک‌لیست",
+    "note": "Common Persian usage; فهرست وارسی is a more formal alternative."
+  },
+  "task": {
+    "target": "وظیفه",
+    "note": "Plural: وظایف."
+  },
+  "status update": {
+    "target": "به‌روزرسانی وضعیت",
+    "note": "Post update: ارسال به‌روزرسانی. Use the ZWNJ spelling به‌روزرسانی, not بروزرسانی."
+  },
+  "retrospective": {
+    "target": "بازنگری",
+    "note": "In agile contexts the transliteration رتروسپکتیو is also common; standardize on بازنگری."
+  },
+  "owner": {
+    "target": "مالک",
+    "note": "Run owner: مالک اجرا."
+  },
+  "participant": {
+    "target": "شرکت‌کننده",
+    "note": "Plural: شرکت‌کنندگان; aligns with Calls."
+  },
+  "follower": {
+    "target": "دنبال‌کننده",
+    "note": "Follow/Unfollow: دنبال کردن / لغو دنبال کردن (core glossary)."
+  },
+  "trigger": {
+    "target": "محرک",
+    "note": "Aligns with trigger word = کلمه محرک in the core glossary."
+  },
+  "action": {
+    "target": "اقدام",
+    "note": "Run/Task/Channel Actions: اقدامات اجرا / اقدامات وظیفه / اقدامات کانال."
+  },
+  "key metrics": {
+    "target": "شاخص‌های کلیدی"
+  },
+  "metric": {
+    "target": "شاخص",
+    "note": "Plural: شاخص‌ها; سنجه is a more literal alternative for 'metric'."
+  },
+  "overdue": {
+    "target": "عقب‌افتاده",
+    "note": "Update overdue: به‌روزرسانی عقب‌افتاده."
+  },
+  "due date": {
+    "target": "تاریخ سررسید",
+    "note": "Due (label): سررسید; No due date: بدون تاریخ سررسید."
+  },
+  "template": {
+    "target": "قالب",
+    "note": "Plural: قالب‌ها."
+  },
+  "timeline": {
+    "target": "خط زمانی",
+    "note": "One existing fa string uses the transliteration تایملاین; خط زمانی is the standard Persian term."
+  },
+  "stakeholder": {
+    "target": "ذی‌نفع",
+    "note": "Plural: ذی‌نفعان."
+  },
+  "assignee": {
+    "target": "مسئول انجام",
+    "note": "The person a task is assigned to; plain مسئول works where context is clear."
+  },
+  "invitation": {
+    "target": "دعوت",
+    "note": "Here it is the automatic adding of members when a run starts; the email/link sense in the core glossary is دعوت‌نامه."
+  },
+  "filter": {
+    "target": "فیلتر",
+    "note": "Verb: فیلتر کردن."
+  },
+  "run channel": {
+    "target": "کانال اجرا",
+    "note": "Create a run channel: ایجاد کانال اجرا."
+  },
+  "broadcast": {
+    "target": "پخش کردن",
+    "note": "Broadcast update: پخش به‌روزرسانی در کانال‌های انتخاب‌شده."
+  },
+  "condition": {
+    "target": "شرط",
+    "note": "Add condition: افزودن شرط."
+  },
+  "attribute": {
+    "target": "ویژگی",
+    "note": "Property fields: فیلدهای ویژگی; aligns with core glossary attribute = ویژگی."
+  },
+  "section": {
+    "target": "بخش",
+    "note": "Section name: نام بخش."
+  },
+  "run summary": {
+    "target": "خلاصه اجرا"
+  }
+}

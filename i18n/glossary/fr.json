@@ -1,0 +1,120 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "Kept in English (masculine) per Weblate glossary and existing translations ('Sélectionner un playbook')."
+  },
+  "run": {
+    "target": "exécution",
+    "note": "Noun (a playbook instance): 'exécution' (f.) per Weblate glossary. Existing fr.json inconsistently keeps 'run' or has MT artifacts ('la course') — prefer 'exécution'. Verb 'run a playbook': 'lancer un playbook'."
+  },
+  "finish a run": {
+    "target": "terminer l'exécution",
+    "note": "Finished: 'terminée'. Existing strings vary ('fin du run', 'Finir la course' — the latter is a mistranslation)."
+  },
+  "resume a run": {
+    "target": "reprendre l'exécution",
+    "note": "Restart in this context is also 'reprendre'/'relancer', not 'redémarrer'."
+  },
+  "checklist": {
+    "target": "liste de contrôle",
+    "note": "Existing rendering; feminine."
+  },
+  "task": {
+    "target": "tâche",
+    "note": "Feminine."
+  },
+  "status update": {
+    "target": "mise à jour du statut",
+    "note": "Existing rendering. Post update: 'Publier la mise à jour'."
+  },
+  "retrospective": {
+    "target": "rétrospective",
+    "note": "Feminine; existing rendering."
+  },
+  "owner": {
+    "target": "propriétaire",
+    "note": "Existing rendering. Run owner: 'propriétaire de l'exécution'."
+  },
+  "participant": {
+    "target": "participant"
+  },
+  "follower": {
+    "target": "suiveur",
+    "note": "Existing rendering ('Suiveurs'); 'abonné' would be more idiomatic but is not the established term here."
+  },
+  "trigger": {
+    "target": "déclencheur",
+    "note": "Masculine; existing rendering."
+  },
+  "action": {
+    "target": "action",
+    "note": "Feminine. Run/Task/Channel Actions: 'actions de l'exécution / de la tâche / du canal'."
+  },
+  "key metrics": {
+    "target": "métriques clés",
+    "note": "No hyphen; singular 'métrique clé'."
+  },
+  "metric": {
+    "target": "métrique",
+    "note": "Feminine; existing majority ('Ajouter une métrique'); 'mesure' appears once — prefer 'métrique'."
+  },
+  "overdue": {
+    "target": "en retard",
+    "note": "Existing: 'Mise à jour en retard'."
+  },
+  "due date": {
+    "target": "date d'échéance",
+    "note": "Existing rendering. No due date: 'Pas de date d'échéance'."
+  },
+  "template": {
+    "target": "modèle",
+    "note": "Masculine; existing rendering ('Modèle de rétrospective')."
+  },
+  "timeline": {
+    "target": "chronologie",
+    "note": "Feminine; existing rendering."
+  },
+  "stakeholder": {
+    "target": "partie prenante",
+    "note": "Feminine; standard French business term, no established rendering in existing strings."
+  },
+  "assignee": {
+    "target": "personne assignée",
+    "note": "Existing rendering; avoid the MT artifact 'cessionnaire' found in one existing string."
+  },
+  "invitation": {
+    "target": "invitation",
+    "note": "Invite participants: 'Inviter des participants'."
+  },
+  "filter": {
+    "target": "filtre",
+    "note": "Noun: 'filtre' (m.); verb: 'filtrer'."
+  },
+  "run channel": {
+    "target": "canal d'exécution",
+    "note": "Create a run channel: 'Créer un canal d'exécution'."
+  },
+  "broadcast": {
+    "target": "diffuser",
+    "note": "'diffuser la mise à jour dans les canaux sélectionnés'; an existing string mistranslates channels as 'chaînes' — always 'canaux'."
+  },
+  "condition": {
+    "target": "condition",
+    "note": "Feminine. Add condition: 'Ajouter une condition'."
+  },
+  "attribute": {
+    "target": "attribut",
+    "note": "Masculine. Property fields: 'champs de propriété'."
+  },
+  "section": {
+    "target": "section",
+    "note": "Feminine. Section name: 'nom de la section'."
+  },
+  "run summary": {
+    "target": "résumé de l'exécution",
+    "note": "Existing strings use 'résumé' ('modèle de résumé')."
+  }
+}

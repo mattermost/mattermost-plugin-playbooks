@@ -1,0 +1,121 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "Keep as loanword (no natural Romanian equivalent; 'scenariu' loses the reusable-workflow sense). Articulate: 'playbook-ul', plural 'playbook-uri'. No Romanian file exists for this plugin."
+  },
+  "run": {
+    "target": "rulare",
+    "note": "Noun: one execution of a playbook; plural 'rulări'. Verb 'Run playbook' = 'Rulați playbook-ul'. Avoid 'execuție' (harsh connotation)."
+  },
+  "finish a run": {
+    "target": "a finaliza o rulare",
+    "note": "'Finish run' = 'Finalizați rularea'; state 'Finished' = 'Finalizată' (feminine, agrees with 'rulare')."
+  },
+  "resume a run": {
+    "target": "a relua o rulare",
+    "note": "Button: 'Reluați rularea'."
+  },
+  "checklist": {
+    "target": "listă de verificare",
+    "note": "Plural: 'liste de verificare'."
+  },
+  "task": {
+    "target": "sarcină",
+    "note": "Plural: 'sarcini'."
+  },
+  "status update": {
+    "target": "actualizare de stare",
+    "note": "Plural: 'actualizări de stare'. 'Post update' = 'Publicați actualizarea'. Uses 'stare' consistent with core 'status'."
+  },
+  "retrospective": {
+    "target": "retrospectivă",
+    "note": "Plural: 'retrospective'."
+  },
+  "owner": {
+    "target": "proprietar",
+    "note": "'Run owner' = 'proprietarul rulării'."
+  },
+  "participant": {
+    "target": "participant",
+    "note": "Plural: 'participanți'; label 'PARTICIPANȚI'."
+  },
+  "follower": {
+    "target": "urmăritor",
+    "note": "Plural: 'urmăritori'. Follow/Unfollow: 'Urmăriți' / 'Nu mai urmăriți' — consistent with thread following in core."
+  },
+  "trigger": {
+    "target": "declanșator",
+    "note": "Plural: 'declanșatoare'. Consistent with 'trigger word' = 'cuvânt de declanșare'."
+  },
+  "action": {
+    "target": "acțiune",
+    "note": "Plural: 'acțiuni'. 'Run Actions' = 'Acțiuni de rulare'; 'Channel Actions' = 'Acțiuni de canal'."
+  },
+  "key metrics": {
+    "target": "metrici-cheie",
+    "note": "Singular pairing: see 'metric' = 'metrică'."
+  },
+  "metric": {
+    "target": "metrică",
+    "note": "Plural: 'metrici'. 'Add Metric' = 'Adăugați o metrică'. Alternative 'indicator' also acceptable but keep one choice per product."
+  },
+  "overdue": {
+    "target": "întârziat",
+    "note": "Feminine: 'întârziată' ('actualizare întârziată' for 'Update overdue')."
+  },
+  "due date": {
+    "target": "dată scadentă",
+    "note": "'Due' alone = 'Scadent(ă)'; 'No due date' = 'Fără dată scadentă'."
+  },
+  "template": {
+    "target": "șablon",
+    "note": "Plural: 'șabloane'. 'Retrospective template' = 'șablon de retrospectivă'."
+  },
+  "timeline": {
+    "target": "cronologie",
+    "note": "'View Timeline' = 'Vizualizați cronologia'."
+  },
+  "stakeholder": {
+    "target": "parte interesată",
+    "note": "Plural: 'părți interesate'."
+  },
+  "assignee": {
+    "target": "persoană desemnată",
+    "note": "'Assigned to' = 'desemnat(ă) pentru'; plural 'persoane desemnate'."
+  },
+  "invitation": {
+    "target": "invitație",
+    "note": "'Invite participants' = 'Invitați participanții'; 'Disable invitation' = 'Dezactivați invitația'."
+  },
+  "filter": {
+    "target": "filtru",
+    "note": "Plural: 'filtre'. Verb: 'a filtra' ('Filtrați')."
+  },
+  "run channel": {
+    "target": "canalul rulării",
+    "note": "'Create a run channel' = 'Creați un canal pentru rulare'."
+  },
+  "broadcast": {
+    "target": "a difuza",
+    "note": "'Broadcast update' = 'Difuzați actualizarea' (posting status updates to additional channels)."
+  },
+  "condition": {
+    "target": "condiție",
+    "note": "Plural: 'condiții'. 'Add condition' = 'Adăugați o condiție'."
+  },
+  "attribute": {
+    "target": "atribut",
+    "note": "Plural: 'atribute'. Same rendering as core 'attribute'; 'Property Fields' = 'câmpuri de proprietăți'."
+  },
+  "section": {
+    "target": "secțiune",
+    "note": "'Section name' = 'numele secțiunii'; 'Add a section' = 'Adăugați o secțiune'."
+  },
+  "run summary": {
+    "target": "rezumatul rulării",
+    "note": "'Add a run summary' = 'Adăugați un rezumat al rulării'; standalone 'Summary' = 'Rezumat'."
+  }
+}

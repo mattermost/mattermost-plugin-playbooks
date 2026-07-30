@@ -1,0 +1,121 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "Playbook",
+    "note": "Neuter: das Playbook, Plural Playbooks. Kept English per Weblate glossary."
+  },
+  "run": {
+    "target": "Durchlauf",
+    "note": "Noun; masculine: der Durchlauf, Plural Durchläufe. Majority rendering (104 'Durchlauf' vs 35 'Lauf' occurrences — prefer Durchlauf and avoid 'Lauf'). Verb 'run a playbook' = 'Playbook ausführen'."
+  },
+  "finish a run": {
+    "target": "Durchlauf beenden",
+    "note": "'Finished' state = 'Beendet'."
+  },
+  "resume a run": {
+    "target": "Durchlauf fortsetzen",
+    "note": "No established rendering; 'Restart' alias = 'neu starten'."
+  },
+  "checklist": {
+    "target": "Checkliste",
+    "note": "Feminine: die Checkliste. Checklist item = Checklistenpunkt (existing rendering)."
+  },
+  "task": {
+    "target": "Aufgabe",
+    "note": "Feminine: die Aufgabe."
+  },
+  "status update": {
+    "target": "Statusaktualisierung",
+    "note": "Existing strings mix 'Statusaktualisierung' and 'Status-Update'; prefer Statusaktualisierung. 'Post update' = 'Aktualisierung veröffentlichen'."
+  },
+  "retrospective": {
+    "target": "Retrospektive",
+    "note": "Feminine: die Retrospektive. Consistent existing rendering."
+  },
+  "owner": {
+    "target": "Besitzer",
+    "note": "Run owner = 'Besitzer des Durchlaufs' (existing rendering)."
+  },
+  "participant": {
+    "target": "Teilnehmer",
+    "note": "Consistent existing rendering."
+  },
+  "follower": {
+    "target": "Follower",
+    "note": "No existing rendering in Playbooks; keep the established social-software loanword (verb 'follow' = folgen, 'unfollow' = nicht mehr folgen, consistent with core product)."
+  },
+  "trigger": {
+    "target": "Auslöser",
+    "note": "Existing rendering; consistent with 'trigger word' = Auslösewort in core."
+  },
+  "action": {
+    "target": "Aktion",
+    "note": "'Task Actions' = 'Aufgaben-Aktionen', 'Run Actions' = 'Durchlauf-Aktionen'."
+  },
+  "key metrics": {
+    "target": "Wichtige Metriken",
+    "note": "No existing rendering; keeps consistency with metric = Metrik (avoid 'Kennzahlen', which would break that pairing)."
+  },
+  "metric": {
+    "target": "Metrik",
+    "note": "Feminine: die Metrik. Existing rendering ('Metrik hinzufügen')."
+  },
+  "overdue": {
+    "target": "überfällig",
+    "note": "'Update overdue' = 'Aktualisierung überfällig' (existing rendering)."
+  },
+  "due date": {
+    "target": "Fälligkeitsdatum",
+    "note": "'No due date' = 'Kein Fälligkeitsdatum'; bare 'Due' = 'Fällig'."
+  },
+  "template": {
+    "target": "Vorlage",
+    "note": "'Retrospective template' = 'Vorlage für die Retrospektive' (existing: 'Vorlage Retrospektive')."
+  },
+  "timeline": {
+    "target": "Zeitleiste",
+    "note": "Majority rendering; one string uses 'Zeitplan' (inconsistent, avoid — Zeitplan means schedule)."
+  },
+  "stakeholder": {
+    "target": "Stakeholder",
+    "note": "Existing strings keep the loanword; 'Beteiligte' appears once as a paraphrase."
+  },
+  "assignee": {
+    "target": "Bearbeiter",
+    "note": "Majority rendering; 'Verantwortlicher' appears once (inconsistent). Prefer Bearbeiter."
+  },
+  "invitation": {
+    "target": "Einladung",
+    "note": "'Invite participants' = 'Teilnehmer einladen' (existing rendering)."
+  },
+  "filter": {
+    "target": "Filter",
+    "note": "Masculine: der Filter. Verb: filtern ('Einträge filtern')."
+  },
+  "run channel": {
+    "target": "Durchlauf-Kanal",
+    "note": "Existing strings mix 'Durchlauf-Kanal', 'Durchlaufkanal', and 'Kanal für den Durchlauf'; prefer the hyphenated form for readability."
+  },
+  "broadcast": {
+    "target": "senden an",
+    "note": "Existing rendering paraphrases: 'Broadcast update to selected channels' = 'Aktualisierungen an ausgewählte Kanäle senden'. Avoid literal 'übertragen'."
+  },
+  "condition": {
+    "target": "Bedingung",
+    "note": "'Add condition' = 'Bedingung hinzufügen'."
+  },
+  "attribute": {
+    "target": "Attribut",
+    "note": "Consistent with core product; 'Property Fields' also renders as Attribute/Eigenschaftsfelder in newer strings."
+  },
+  "section": {
+    "target": "Abschnitt",
+    "note": "Masculine: der Abschnitt. 'Add a section' = 'Abschnitt hinzufügen' (existing rendering)."
+  },
+  "run summary": {
+    "target": "Durchlauf-Zusammenfassung",
+    "note": "Existing renderings: 'Durchlauf-Zusammenfassung' and 'Zusammenfassung des Laufs'; prefer the compound with Durchlauf for consistency with run = Durchlauf."
+  }
+}

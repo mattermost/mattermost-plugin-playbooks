@@ -1,0 +1,118 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "плейбук",
+    "note": "No uk file exists for the Playbooks plugin. Existing webapp strings keep English 'Playbook' inline and mobile once uses 'Плейбуків'; the declinable transliteration 'плейбук' (masculine, genitive 'плейбука') reads more naturally in running text."
+  },
+  "run": {
+    "target": "запуск (ім.) / запустити (дієсл.)",
+    "note": "Noun = one execution of a playbook: 'запуск', plural 'запуски'. Verb 'Run playbook' = 'Запустити плейбук' (grounded in webapp: 'Запустити playbooks')."
+  },
+  "finish a run": {
+    "target": "завершити запуск",
+    "note": "'Finished' status = 'Завершено'."
+  },
+  "resume a run": {
+    "target": "відновити запуск",
+    "note": "'Restart' = 'Перезапустити'."
+  },
+  "checklist": {
+    "target": "контрольний список",
+    "note": "Grounded in mobile: 'Контрольний список Playbook'."
+  },
+  "task": {
+    "target": "завдання",
+    "note": "Neuter; identical singular/plural nominative. Grounded in mobile."
+  },
+  "status update": {
+    "target": "оновлення статусу",
+    "note": "'Post update' = 'Опублікувати оновлення' (mobile renders it 'Оновлення допису', which misreads the English — avoid)."
+  },
+  "retrospective": {
+    "target": "ретроспектива",
+    "note": "Grounded in mobile: 'Ретроспектива'."
+  },
+  "owner": {
+    "target": "власник",
+    "note": "Grounded in mobile: 'Owner' -> 'Власник'. 'Run owner' = 'власник запуску'."
+  },
+  "participant": {
+    "target": "учасник"
+  },
+  "follower": {
+    "target": "підписник",
+    "note": "Person receiving updates without participating; 'Follow/Unfollow' buttons follow the core glossary ('стежити' / 'припинити стежити')."
+  },
+  "trigger": {
+    "target": "тригер",
+    "note": "Masculine. Single 'г': 'тригер', not 'триггер'."
+  },
+  "action": {
+    "target": "дія",
+    "note": "Feminine. 'Run Actions' = 'дії запуску', 'Channel Actions' = 'дії каналу'."
+  },
+  "key metrics": {
+    "target": "ключові метрики"
+  },
+  "metric": {
+    "target": "метрика",
+    "note": "Feminine. Grounded: 'Метрика навантаження' in webapp admin strings."
+  },
+  "overdue": {
+    "target": "прострочений",
+    "note": "'Update overdue' = 'Оновлення прострочено'. Mobile's 'Оновлення запізнилося' is a looser variant."
+  },
+  "due date": {
+    "target": "термін виконання",
+    "note": "Mobile renders the field label as 'Термін до'; 'No due date' = 'Без терміну виконання'."
+  },
+  "template": {
+    "target": "шаблон",
+    "note": "Masculine."
+  },
+  "timeline": {
+    "target": "хронологія",
+    "note": "The chronological event record of a run; 'часова шкала' would suggest a scrubber UI."
+  },
+  "stakeholder": {
+    "target": "зацікавлена сторона",
+    "note": "Plural 'зацікавлені сторони'."
+  },
+  "assignee": {
+    "target": "виконавець",
+    "note": "Mobile's existing 'Правонаступник' (legal successor) is a mistranslation — do not reuse it."
+  },
+  "invitation": {
+    "target": "запрошення",
+    "note": "'Invite participants' = 'Запросити учасників'."
+  },
+  "filter": {
+    "target": "фільтр (ім.) / фільтрувати (дієсл.)"
+  },
+  "run channel": {
+    "target": "канал запуску",
+    "note": "'Create a run channel' = 'Створити канал запуску'."
+  },
+  "broadcast": {
+    "target": "транслювати",
+    "note": "'Broadcast update' = 'Транслювати оновлення' (to additional channels)."
+  },
+  "condition": {
+    "target": "умова",
+    "note": "Feminine. 'Add condition' = 'Додати умову'."
+  },
+  "attribute": {
+    "target": "атрибут",
+    "note": "Same rendering as user profile attributes in core; context distinguishes playbook property fields."
+  },
+  "section": {
+    "target": "розділ",
+    "note": "Grounded in mobile: 'Назва розділу' = 'Section name'."
+  },
+  "run summary": {
+    "target": "опис запуску",
+    "note": "This is the run's editable description, so 'опис' fits better than 'підсумок' (reserved for AI/meeting summaries)."
+  }
+}

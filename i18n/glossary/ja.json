@@ -1,0 +1,109 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "Playbook",
+    "note": "Existing Japanese translations keep even the common noun in English with a capital P (Playbook名, Playbookを実行する). Do not use プレイブック."
+  },
+  "run": {
+    "target": "実行",
+    "note": "Noun (a run): 実行. Verb (run a playbook): Playbookを実行する. Rerun: 再実行. 実行 is used for both singular and plural."
+  },
+  "finish a run": {
+    "target": "実行を完了する",
+    "note": "Finished (state): 完了; Run finished: 実行完了."
+  },
+  "resume a run": {
+    "target": "実行を再開する",
+    "note": "No existing translation for Resume/Restart strings; 再開する fits the 'reopen a finished run' meaning. Related existing term: 再実行 (Rerun)."
+  },
+  "checklist": {
+    "target": "チェックリスト"
+  },
+  "task": {
+    "target": "タスク"
+  },
+  "status update": {
+    "target": "ステータス更新",
+    "note": "In Playbooks, ステータス refers to run progress, not user availability. Post update: ステータスの更新を投稿する."
+  },
+  "retrospective": {
+    "target": "レトロスペクティブ"
+  },
+  "owner": {
+    "target": "オーナー",
+    "note": "Make run owner: 実行のオーナーにする."
+  },
+  "participant": {
+    "target": "参加者"
+  },
+  "follower": {
+    "target": "フォロワー"
+  },
+  "trigger": {
+    "target": "トリガー"
+  },
+  "action": {
+    "target": "アクション",
+    "note": "Channel Actions: チャンネルアクション; Task actions: タスクアクション. Note existing 'Run Actions' → アクションの実行 is a mistranslation (should be 実行アクション); prefer 実行アクション for new strings."
+  },
+  "key metrics": {
+    "target": "キーメトリクス"
+  },
+  "metric": {
+    "target": "メトリクス",
+    "note": "メトリクス is used for both singular and plural in existing translations."
+  },
+  "overdue": {
+    "target": "期限切れ",
+    "note": "Majority rendering; one string uses 期限超過. Prefer 期限切れ."
+  },
+  "due date": {
+    "target": "期限",
+    "note": "No due date: 期限なし."
+  },
+  "template": {
+    "target": "テンプレート"
+  },
+  "timeline": {
+    "target": "タイムライン"
+  },
+  "stakeholder": {
+    "target": "ステークホルダー",
+    "note": "Existing usage mixes ステークホルダー and 関係者; prefer ステークホルダー as the glossary term, 関係者 acceptable in flowing prose."
+  },
+  "assignee": {
+    "target": "担当者"
+  },
+  "invitation": {
+    "target": "招待",
+    "note": "Invite participants: 参加者を招待する; Disable invitation: 招待を無効にする."
+  },
+  "filter": {
+    "target": "フィルター"
+  },
+  "run channel": {
+    "target": "実行チャンネル",
+    "note": "No direct existing translation; composed from 実行 (run) + チャンネル (channel), consistent with 実行タイムライン (run timeline)."
+  },
+  "broadcast": {
+    "target": "配信する",
+    "note": "Existing: 選択したチャンネルに更新内容を配信する (Broadcast update to selected channels)."
+  },
+  "condition": {
+    "target": "条件",
+    "note": "No existing translation (new feature); 条件 is the standard term. Add condition: 条件を追加."
+  },
+  "attribute": {
+    "target": "属性"
+  },
+  "section": {
+    "target": "セクション",
+    "note": "No existing translation (new feature); standard katakana loanword. Section name: セクション名."
+  },
+  "run summary": {
+    "target": "実行概要",
+    "note": "Existing: 実行概要を追加 (Add a run summary), 実行概要テンプレート. Standalone Summary: 概要."
+  }
+}

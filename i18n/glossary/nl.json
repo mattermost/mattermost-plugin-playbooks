@@ -1,0 +1,121 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "playbook",
+    "note": "Kept in English per Weblate glossary and majority usage; plural 'playbooks'. One legacy webapp string uses 'afspeelboek' — do not follow it."
+  },
+  "run": {
+    "target": "uitvoering",
+    "note": "Noun (a run) = 'uitvoering', plural 'uitvoeringen'; verb (run a playbook) = 'uitvoeren' ('een playbook uitvoeren'). 'Run channel' compounds use 'uitvoerings-'."
+  },
+  "finish a run": {
+    "target": "een uitvoering beëindigen",
+    "note": "Existing 'Finish run' = 'Uitvoering beëindigen'; state 'Finished' = 'Beëindigd'."
+  },
+  "resume a run": {
+    "target": "een uitvoering hervatten",
+    "note": "No established repo rendering; 'hervatten' for resume, 'opnieuw starten' for restart."
+  },
+  "checklist": {
+    "target": "checklist",
+    "note": "Kept in English (consistent existing usage); plural 'checklists'."
+  },
+  "task": {
+    "target": "taak",
+    "note": "Plural 'taken'."
+  },
+  "status update": {
+    "target": "statusupdate",
+    "note": "Majority closed-compound spelling (8 vs 3 for 'status update'); 'Post update' = 'Update plaatsen'."
+  },
+  "retrospective": {
+    "target": "terugblik",
+    "note": "Majority rendering (25 vs 3 for 'retrospectief'); standardize on 'terugblik'."
+  },
+  "owner": {
+    "target": "eigenaar",
+    "note": "'Run owner' = 'eigenaar van de uitvoering' (existing)."
+  },
+  "participant": {
+    "target": "deelnemer",
+    "note": "Plural 'deelnemers'; caps label 'DEELNEMERS'."
+  },
+  "follower": {
+    "target": "volger",
+    "note": "Plural 'volgers' (existing); 'Follow' = 'Volgen', 'Unfollow' = 'Niet langer volgen'."
+  },
+  "trigger": {
+    "target": "trigger",
+    "note": "Kept in English as in existing strings ('triggerwoord', 'triggertrefwoord'); plural 'triggers'."
+  },
+  "action": {
+    "target": "actie",
+    "note": "Plural 'acties'; 'Run Actions' = 'Uitvoeringsacties' (existing also has 'Run-acties'), 'Task Actions' = 'Taakacties', 'Channel Actions' = 'Kanaalacties'."
+  },
+  "key metrics": {
+    "target": "belangrijkste meetwaarden",
+    "note": "Follows 'metric' = 'meetwaarde'."
+  },
+  "metric": {
+    "target": "meetwaarde",
+    "note": "Majority rendering (7) over 'statistiek' (2) and 'metriek' (1); 'Add Metric' = 'Meetwaarde toevoegen'."
+  },
+  "overdue": {
+    "target": "achterstallig",
+    "note": "Majority rendering ('Achterstallige update'); 'laattijdig' and 'overtijd' occur sporadically — standardize on 'achterstallig'."
+  },
+  "due date": {
+    "target": "vervaldatum",
+    "note": "'No due date' = 'Geen vervaldatum' (existing)."
+  },
+  "template": {
+    "target": "sjabloon",
+    "note": "Plural 'sjablonen'; 'Retrospective template' = 'Sjabloon voor terugblik' (existing)."
+  },
+  "timeline": {
+    "target": "tijdlijn",
+    "note": "'View Timeline' = 'Tijdlijn bekijken'."
+  },
+  "stakeholder": {
+    "target": "belanghebbende",
+    "note": "No established repo rendering; standard Dutch term, plural 'belanghebbenden'."
+  },
+  "assignee": {
+    "target": "toegewezen persoon",
+    "note": "Existing UI labels use 'Toegewezen aan' for the Assignee field and 'Aan niemand toegewezen' for 'No Assignee'; avoid the legacy 'Aangeduide'/'Verantwoordelijke'."
+  },
+  "invitation": {
+    "target": "uitnodiging",
+    "note": "'Invite participants' = 'Deelnemers uitnodigen'; 'Disable invitation' = 'Uitnodiging uitschakelen'."
+  },
+  "filter": {
+    "target": "filter",
+    "note": "Noun 'filter' (plural 'filters'); verb 'filteren'."
+  },
+  "run channel": {
+    "target": "uitvoeringskanaal",
+    "note": "Existing rendering ('naar het uitvoeringskanaal gestuurd')."
+  },
+  "broadcast": {
+    "target": "versturen naar geselecteerde kanalen",
+    "note": "Existing: 'Broadcast update to selected channels' = 'Verstuur update naar geselecteerde kanalen'; avoid literal 'uitzenden'."
+  },
+  "condition": {
+    "target": "voorwaarde",
+    "note": "'Add condition' = 'Voorwaarde toevoegen'; existing: 'Aan voorwaarde wordt niet meer voldaan'."
+  },
+  "attribute": {
+    "target": "attribuut",
+    "note": "Plural 'attributen'; 'Property Fields' = 'eigenschapsvelden'."
+  },
+  "section": {
+    "target": "sectie",
+    "note": "'Section name' = 'Sectienaam'; 'Add a section' = 'Een sectie toevoegen'."
+  },
+  "run summary": {
+    "target": "samenvatting van de uitvoering",
+    "note": "Existing: 'Add a run summary template' = 'Voeg een samenvattingsjabloon voor de uitvoering toe'; plain 'Summary' = 'Samenvatting'."
+  }
+}

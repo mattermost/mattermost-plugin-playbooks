@@ -1,0 +1,118 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "плейбук",
+    "note": "No Bulgarian file exists for the Playbooks plugin. Transliteration keeps the association with the untranslated product name; 'сценарий' is a possible native alternative but loses that link. Plural: плейбукове."
+  },
+  "run": {
+    "target": "изпълнение",
+    "note": "Noun ('a run of a playbook'). Verb: 'изпълни' / 'стартирай' ('Изпълни плейбука' for Run playbook). Plural: изпълнения."
+  },
+  "finish a run": {
+    "target": "завършване на изпълнението",
+    "note": "Button: 'Завърши'; state: 'Завършено'."
+  },
+  "resume a run": {
+    "target": "възобновяване на изпълнението",
+    "note": "Button: 'Възобнови'."
+  },
+  "checklist": {
+    "target": "контролен списък",
+    "note": "Plural: контролни списъци."
+  },
+  "task": {
+    "target": "задача",
+    "note": "Plural: задачи."
+  },
+  "status update": {
+    "target": "актуализация на състоянието",
+    "note": "Status = 'състояние' and update = 'актуализация' per established webapp usage. Post update = 'Публикувай актуализация'."
+  },
+  "retrospective": {
+    "target": "ретроспектива",
+    "note": "Standard Bulgarian agile term ('ретроспектива на спринта')."
+  },
+  "owner": {
+    "target": "собственик",
+    "note": "Run owner = 'собственик на изпълнението'."
+  },
+  "participant": {
+    "target": "участник",
+    "note": "Plural: участници."
+  },
+  "follower": {
+    "target": "последовател",
+    "note": "Follow/Unfollow buttons: 'Следвай' (established in webapp) / 'Спри да следваш'."
+  },
+  "trigger": {
+    "target": "тригер",
+    "note": "Noun. Related established term: trigger word = 'задействаща дума' (webapp); verb 'задейства'. 'тригер' is the common Bulgarian IT noun."
+  },
+  "action": {
+    "target": "действие",
+    "note": "Run/Task/Channel Actions = 'Действия при изпълнение/задача/канал'."
+  },
+  "key metrics": {
+    "target": "ключови показатели"
+  },
+  "metric": {
+    "target": "показател",
+    "note": "'метрика' is a common alternative in analytics contexts; use 'показател' consistently with 'ключови показатели'."
+  },
+  "overdue": {
+    "target": "просрочен",
+    "note": "Update overdue = 'просрочена актуализация'."
+  },
+  "due date": {
+    "target": "краен срок",
+    "note": "No due date = 'без краен срок'; Due = 'срок'."
+  },
+  "template": {
+    "target": "шаблон",
+    "note": "Plural: шаблони."
+  },
+  "timeline": {
+    "target": "хронология"
+  },
+  "stakeholder": {
+    "target": "заинтересована страна",
+    "note": "Plural: заинтересовани страни."
+  },
+  "assignee": {
+    "target": "отговорник",
+    "note": "'изпълнител' is also natural but collides with run = 'изпълнение'; use 'отговорник' to keep the two distinct."
+  },
+  "invitation": {
+    "target": "покана",
+    "note": "Invite participants = 'Покани участници'."
+  },
+  "filter": {
+    "target": "филтър",
+    "note": "Verb: 'филтриране' (established: 'Филтриране по непрочетени')."
+  },
+  "run channel": {
+    "target": "канал на изпълнението"
+  },
+  "broadcast": {
+    "target": "излъчване",
+    "note": "Broadcast update = 'излъчване на актуализацията' (posting to additional channels)."
+  },
+  "condition": {
+    "target": "условие",
+    "note": "Add condition = 'Добави условие'."
+  },
+  "attribute": {
+    "target": "атрибут",
+    "note": "Property fields on a playbook; same word as profile attributes — context disambiguates."
+  },
+  "section": {
+    "target": "раздел",
+    "note": "Add a section = 'Добавяне на раздел'."
+  },
+  "run summary": {
+    "target": "резюме на изпълнението",
+    "note": "'резюме' for the editable description; keep 'обобщение' for AI-generated summaries (recap, meeting summary)."
+  }
+}

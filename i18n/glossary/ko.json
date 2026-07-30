@@ -1,0 +1,103 @@
+{
+  "Playbooks": {
+    "target": "Playbooks"
+  },
+  "playbook": {
+    "target": "플레이북"
+  },
+  "run": {
+    "target": "실행",
+    "note": "Noun (a run) and verb (run a playbook = 플레이북 실행) are both 실행 in existing strings; disambiguate with particles (이 실행, 실행을 시작하다) when needed."
+  },
+  "finish a run": {
+    "target": "실행 완료",
+    "note": "Verb: 실행을 완료하다."
+  },
+  "resume a run": {
+    "target": "실행 재개",
+    "note": "No existing translation; verb 실행을 재개하다. Restart = 다시 시작."
+  },
+  "checklist": {
+    "target": "체크리스트"
+  },
+  "task": {
+    "target": "작업"
+  },
+  "status update": {
+    "target": "상태 업데이트"
+  },
+  "retrospective": {
+    "target": "회고",
+    "note": "A few strings mistranslate as 소급/회고록 — always 회고."
+  },
+  "owner": {
+    "target": "소유자"
+  },
+  "participant": {
+    "target": "참가자"
+  },
+  "follower": {
+    "target": "팔로워"
+  },
+  "trigger": {
+    "target": "트리거"
+  },
+  "action": {
+    "target": "액션",
+    "note": "Existing strings use 작업, which collides with task = 작업 (e.g. Task actions became 작업 작업). Use 액션 for automation actions."
+  },
+  "key metrics": {
+    "target": "주요 지표"
+  },
+  "metric": {
+    "target": "지표",
+    "note": "Existing splits between 지표 and 메트릭; standardize on 지표 (matches 주요 지표)."
+  },
+  "overdue": {
+    "target": "기한 초과",
+    "note": "Update overdue = 업데이트 기한 초과 (existing)."
+  },
+  "due date": {
+    "target": "마감일"
+  },
+  "template": {
+    "target": "템플릿"
+  },
+  "timeline": {
+    "target": "타임라인"
+  },
+  "stakeholder": {
+    "target": "이해 관계자"
+  },
+  "assignee": {
+    "target": "담당자",
+    "note": "One legacy string mistranslates as 양수인 (legal assignee) — always 담당자."
+  },
+  "invitation": {
+    "target": "초대",
+    "note": "Disable invitation = 초대 비활성화 (existing)."
+  },
+  "filter": {
+    "target": "필터",
+    "note": "Verb: 필터링하다."
+  },
+  "run channel": {
+    "target": "실행 채널"
+  },
+  "broadcast": {
+    "target": "브로드캐스트",
+    "note": "Verb: 브로드캐스트하다. One legacy string mistranslates as 생방송 (live broadcast) — avoid."
+  },
+  "condition": {
+    "target": "조건"
+  },
+  "attribute": {
+    "target": "속성"
+  },
+  "section": {
+    "target": "섹션"
+  },
+  "run summary": {
+    "target": "실행 요약"
+  }
+}
