@@ -1,0 +1,214 @@
+[
+  {
+    "id": "app.command.execute.error",
+    "translation": "Impossibile eseguire il comando."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Aggiornamenti di stato in ritardo"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "Hai {{.Count}} esecuzione in ritardo con l'aggiornamento di stato:",
+      "other": "Hai {{.Count}} esecuzioni in ritardo con l'aggiornamento di stato:"
+    }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "Hai 0 esecuzioni in ritardo."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Esecuzioni in corso"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "one": "Hai {{.Count}} esecuzione attualmente in corso:",
+      "other": "Hai {{.Count}} esecuzioni attualmente in corso:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "Hai 0 esecuzioni attualmente in corso."
+  },
+  {
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "Usa `/playbook todo` per vedere tutte le tue attività."
+  },
+  {
+    "id": "app.user.digest.tasks.due_after_today",
+    "translation": {
+      "one": "Hai **{{.Count}} attività assegnata in scadenza dopo oggi**.",
+      "other": "Hai **{{.Count}} attività assegnate in scadenza dopo oggi**."
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "one": "Scade tra {{.Count}} giorno",
+      "other": "Scade tra {{.Count}} giorni"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "Scade oggi"
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "Scaduta {{.Count}} giorni fa"
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "Scaduta ieri"
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Le tue attività assegnate"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "one": "Hai {{.Count}} attività assegnata:",
+      "other": "Hai {{.Count}} attività assegnate in totale:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "one": "Hai {{.Count}} attività assegnata che è ora in scadenza:",
+      "other": "Hai {{.Count}} attività assegnate che sono ora in scadenza:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "Hai 0 attività assegnate."
+  },
+  {
+    "id": "app.user.new_run.intro",
+    "translation": "**Proprietario** {{.Username}}"
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "Playbook"
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "Nome dell'esecuzione"
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "Avvia esecuzione"
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "Esegui playbook"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "Descrizione"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "Nome"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "Aggiungi attività"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "Aggiungi nuova attività"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "Esecuzione del playbook"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "Aggiungi alla cronologia dell'esecuzione"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "Riepilogo"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "Max 64 caratteri"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "Breve riepilogo mostrato nella cronologia"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "Aggiungi alla cronologia dell'esecuzione"
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "one": "C'è **{{.Count}} attività in sospeso**. Vuoi davvero terminare *{{.RunName}}* per tutti i partecipanti?",
+      "other": "Ci sono **{{.Count}} attività in sospeso**. Vuoi davvero terminare *{{.RunName}}* per tutti i partecipanti?"
+    }
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "Termina"
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "Conferma la conclusione"
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} è un partecipante all'esecuzione e vuole unirsi a questo canale. Qualsiasi membro del canale può invitarlo.\n"
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} ha richiesto un aggiornamento di stato per [{{.RunName}}]({{.RunURL}}). \n"
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} ha disabilitato gli aggiornamenti di stato per [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} ha abilitato gli aggiornamenti di stato per [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "Cambiamenti dall'ultimo aggiornamento"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "Termina esecuzione"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "Contrassegna anche l'esecuzione come terminata"
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "one": "Fornisci un aggiornamento agli stakeholder. Questa pubblicazione verrà trasmessa a {{.Count}} canale.",
+      "other": "Fornisci un aggiornamento agli stakeholder. Questa pubblicazione verrà trasmessa a {{.Count}} canali."
+    }
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "Promemoria per il prossimo aggiornamento"
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "Pubblica"
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "Aggiornamento di stato"
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "mostrata perché l'attività è stata modificata"
+  }
+]

@@ -1,210 +1,214 @@
 [
-    {
-        "id": "app.user.digest.tasks.due_in_x_days",
-        "translation": {
-            "one": "Due in {{.Count}} day",
-            "other": "Due in {{.Count}} days"
-        }
-    },
-    {
-        "id": "app.user.digest.overdue_status_updates.zero_overdue",
-        "translation": "You have 0 runs overdue."
-    },
-    {
-        "id": "app.user.digest.runs_in_progress.heading",
-        "translation": "Runs in Progress"
-    },
-    {
-        "id": "app.user.digest.runs_in_progress.zero_in_progress",
-        "translation": "You have 0 runs currently in progress."
-    },
-    {
-        "id": "app.user.digest.tasks.all_tasks_command",
-        "translation": "Please use `/playbook todo` to see all your tasks."
-    },
-    {
-        "id": "app.user.digest.tasks.due_today",
-        "translation": "Due today"
-    },
-    {
-        "id": "app.user.digest.tasks.due_x_days_ago",
-        "translation": "Due {{.Count}} days ago"
-    },
-    {
-        "id": "app.user.digest.tasks.due_yesterday",
-        "translation": "Due yesterday"
-    },
-    {
-        "id": "app.user.digest.tasks.heading",
-        "translation": "Your assigned tasks"
-    },
-    {
-        "id": "app.user.digest.tasks.zero_assigned",
-        "translation": "You have 0 assigned tasks."
-    },
-    {
-        "id": "app.user.new_run.intro",
-        "translation": "**Owner** {{.Username}}"
-    },
-    {
-        "id": "app.command.execute.error",
-        "translation": "Unable to execute command."
-    },
-    {
-        "id": "app.user.digest.overdue_status_updates.heading",
-        "translation": "Overdue Status Updates"
-    },
-    {
-        "id": "app.user.run.add_to_timeline.playbook_run",
-        "translation": "Playbook Run"
-    },
-    {
-        "id": "app.user.new_run.submit_label",
-        "translation": "Start run"
-    },
-    {
-        "id": "app.user.new_run.title",
-        "translation": "Run playbook"
-    },
-    {
-        "id": "app.user.run.add_to_timeline.submit_label",
-        "translation": "Add to run timeline"
-    },
-    {
-        "id": "app.user.run.add_to_timeline.summary",
-        "translation": "Summary"
-    },
-    {
-        "id": "app.user.run.add_to_timeline.summary.help",
-        "translation": "Max 64 chars"
-    },
-    {
-        "id": "app.user.run.add_to_timeline.summary.placeholder",
-        "translation": "Short summary shown in the timeline"
-    },
-    {
-        "id": "app.user.run.add_to_timeline.title",
-        "translation": "Add to run timeline"
-    },
-    {
-        "id": "app.user.run.confirm_finish.num_outstanding",
-        "translation": {
-            "one": "There is **{{.Count}} outstanding task**. Are you sure you want to finish the run *{{.RunName}}* for all participants?",
-            "other": "There are **{{.Count}} outstanding tasks**. Are you sure you want to finish the run *{{.RunName}}* for all participants?"
-        }
-    },
-    {
-        "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "Finish run"
-    },
-    {
-        "id": "app.user.digest.tasks.num_assigned_due_until_today",
-        "translation": {
-            "one": "You have {{.Count}} assigned task that is now due:",
-            "other": "You have {{.Count}} assigned tasks that are now due:"
-        }
-    },
-    {
-        "id": "app.user.run.request_join_channel",
-        "translation": "@{{.Name}} is a run participant and wants join this channel. Any member of the channel can invite them.\n"
-    },
-    {
-        "id": "app.user.run.request_update",
-        "translation": "@here — @{{.Name}} requested a status update for [{{.RunName}}]({{.RunURL}}). \n"
-    },
-    {
-        "id": "app.user.run.status_disable",
-        "translation": "@{{.Username}} disabled the status updates for [{{.RunName}}]({{.RunURL}})"
-    },
-    {
-        "id": "app.user.run.status_enable",
-        "translation": "@{{.Username}} enabled the status updates for [{{.RunName}}]({{.RunURL}})"
-    },
-    {
-        "id": "app.user.run.update_status.change_since_last_update",
-        "translation": "Change since last update"
-    },
-    {
-        "id": "app.user.run.update_status.finish_run",
-        "translation": "Finish run"
-    },
-    {
-        "id": "app.user.run.update_status.finish_run.placeholder",
-        "translation": "Also mark the run as finished"
-    },
-    {
-        "id": "app.user.digest.overdue_status_updates.num_overdue",
-        "translation": {
-            "one": "You have {{.Count}} run overdue for a status update:",
-            "other": "You have {{.Count}} runs overdue for a status update:"
-        }
-    },
-    {
-        "id": "app.user.digest.runs_in_progress.num_in_progress",
-        "translation": {
-            "one": "You have {{.Count}} run currently in progress:",
-            "other": "You have {{.Count}} runs currently in progress:"
-        }
-    },
-    {
-        "id": "app.user.digest.tasks.due_after_today",
-        "translation": {
-            "one": "You have **{{.Count}} assigned task due after today**.",
-            "other": "You have **{{.Count}} assigned tasks due after today**."
-        }
-    },
-    {
-        "id": "app.user.new_run.playbook",
-        "translation": "Playbook"
-    },
-    {
-        "id": "app.user.run.add_checklist_item.description",
-        "translation": "Description"
-    },
-    {
-        "id": "app.user.run.add_checklist_item.name",
-        "translation": "Name"
-    },
-    {
-        "id": "app.user.run.add_checklist_item.submit_label",
-        "translation": "Add task"
-    },
-    {
-        "id": "app.user.run.add_checklist_item.title",
-        "translation": "Add new task"
-    },
-    {
-        "id": "app.user.run.update_status.reminder_for_next_update",
-        "translation": "Reminder for next update"
-    },
-    {
-        "id": "app.user.run.update_status.submit_label",
-        "translation": "Update status"
-    },
-    {
-        "id": "app.user.run.update_status.title",
-        "translation": "Status update"
-    },
-    {
-        "id": "app.user.digest.tasks.num_assigned",
-        "translation": {
-            "one": "You have {{.Count}} assigned task:",
-            "other": "You have {{.Count}} total assigned tasks:"
-        }
-    },
-    {
-        "id": "app.user.new_run.run_name",
-        "translation": "Run name"
-    },
-    {
-        "id": "app.user.run.confirm_finish.title",
-        "translation": "Confirm finish run"
-    },
-    {
-        "id": "app.user.run.update_status.num_channel",
-        "translation": {
-            "one": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channel.",
-            "other": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channels."
-        }
+  {
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "one": "سررسید در {{.Count}} روز",
+      "other": "سررسید در {{.Count}} روز"
     }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "شما 0 اجرای عقب‌افتاده دارید."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "اجراهای در حال انجام"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "شما 0 اجرای در حال انجام دارید."
+  },
+  {
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "لطفاً برای مشاهدهٔ همهٔ وظایف خود از `/playbook todo` استفاده کنید."
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "سررسید امروز"
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "سررسید {{.Count}} روز پیش"
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "سررسید دیروز"
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "وظایف محول‌شده به شما"
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "شما 0 وظیفهٔ محول‌شده دارید."
+  },
+  {
+    "id": "app.user.new_run.intro",
+    "translation": "**مالک** {{.Username}}"
+  },
+  {
+    "id": "app.command.execute.error",
+    "translation": "اجرای فرمان امکان‌پذیر نیست."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "به‌روزرسانی‌های وضعیت عقب‌افتاده"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "اجرای پلی‌بوک"
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "شروع اجرا"
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "اجرای پلی‌بوک"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "افزودن به خط زمانی اجرا"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "خلاصه"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "حداکثر ۶۴ نویسه"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "خلاصهٔ کوتاهی که در خط زمانی نمایش داده می‌شود"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "افزودن به خط زمانی اجرا"
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "one": "**{{.Count}} وظیفهٔ باقی‌مانده** وجود دارد. آیا مطمئنید که می‌خواهید *{{.RunName}}* را برای همهٔ شرکت‌کنندگان پایان دهید؟",
+      "other": "**{{.Count}} وظیفهٔ باقی‌مانده** وجود دارد. آیا مطمئنید که می‌خواهید *{{.RunName}}* را برای همهٔ شرکت‌کنندگان پایان دهید؟"
+    }
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "پایان"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "one": "شما {{.Count}} وظیفهٔ محول‌شده دارید که اکنون سررسید شده است:",
+      "other": "شما {{.Count}} وظیفهٔ محول‌شده دارید که اکنون سررسید شده‌اند:"
+    }
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} یکی از شرکت‌کنندگان اجرا است و می‌خواهد به این کانال بپیوندد. هر عضوی از کانال می‌تواند او را دعوت کند.\n"
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} یک به‌روزرسانی وضعیت برای [{{.RunName}}]({{.RunURL}}) درخواست کرد. \n"
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} به‌روزرسانی‌های وضعیت را برای [{{.RunName}}]({{.RunURL}}) غیرفعال کرد"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} به‌روزرسانی‌های وضعیت را برای [{{.RunName}}]({{.RunURL}}) فعال کرد"
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "تغییرات از آخرین به‌روزرسانی"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "پایان اجرا"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "اجرا نیز به‌عنوان پایان‌یافته علامت‌گذاری شود"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "شما {{.Count}} اجرا دارید که به‌روزرسانی وضعیت آن عقب افتاده است:",
+      "other": "شما {{.Count}} اجرا دارید که به‌روزرسانی وضعیت آن‌ها عقب افتاده است:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "one": "شما {{.Count}} اجرای در حال انجام دارید:",
+      "other": "شما {{.Count}} اجرای در حال انجام دارید:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_after_today",
+    "translation": {
+      "one": "شما **{{.Count}} وظیفهٔ محول‌شده با سررسید بعد از امروز** دارید.",
+      "other": "شما **{{.Count}} وظیفهٔ محول‌شده با سررسید بعد از امروز** دارید."
+    }
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "پلی‌بوک"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "توضیحات"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "نام"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "افزودن وظیفه"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "افزودن وظیفهٔ جدید"
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "یادآور به‌روزرسانی بعدی"
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "ارسال"
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "به‌روزرسانی وضعیت"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "one": "شما {{.Count}} وظیفهٔ محول‌شده دارید:",
+      "other": "شما در مجموع {{.Count}} وظیفهٔ محول‌شده دارید:"
+    }
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "نام اجرا"
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "تأیید پایان"
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "one": "به‌روزرسانی‌ای را در اختیار ذی‌نفعان قرار دهید. این پست به {{.Count}} کانال مخابره می‌شود.",
+      "other": "به‌روزرسانی‌ای را در اختیار ذی‌نفعان قرار دهید. این پست به {{.Count}} کانال مخابره می‌شود."
+    }
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "نمایش داده شده چون وظیفه تغییر کرده است"
+  }
 ]

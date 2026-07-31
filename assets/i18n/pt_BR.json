@@ -1,0 +1,214 @@
+[
+  {
+    "id": "app.command.execute.error",
+    "translation": "Não foi possível executar o comando."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Atualizações de Status Atrasadas"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "Você tem {{.Count}} execução com atualização de status atrasada:",
+      "other": "Você tem {{.Count}} execuções com atualização de status atrasada:"
+    }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "Você tem 0 execuções atrasadas."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Execuções em Andamento"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "one": "Você tem {{.Count}} execução em andamento no momento:",
+      "other": "Você tem {{.Count}} execuções em andamento no momento:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "Você tem 0 execuções em andamento no momento."
+  },
+  {
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "Use `/playbook todo` para ver todas as suas tarefas."
+  },
+  {
+    "id": "app.user.digest.tasks.due_after_today",
+    "translation": {
+      "one": "Você tem **{{.Count}} tarefa atribuída com prazo após hoje**.",
+      "other": "Você tem **{{.Count}} tarefas atribuídas com prazo após hoje**."
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "one": "Vence em {{.Count}} dia",
+      "other": "Vence em {{.Count}} dias"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "Vence hoje"
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "Venceu há {{.Count}} dias"
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "Venceu ontem"
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Suas tarefas atribuídas"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "one": "Você tem {{.Count}} tarefa atribuída:",
+      "other": "Você tem {{.Count}} tarefas atribuídas no total:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "one": "Você tem {{.Count}} tarefa atribuída com prazo vencendo:",
+      "other": "Você tem {{.Count}} tarefas atribuídas com prazo vencendo:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "Você tem 0 tarefas atribuídas."
+  },
+  {
+    "id": "app.user.new_run.intro",
+    "translation": "**Proprietário** {{.Username}}"
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "Playbook"
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "Nome da execução"
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "Iniciar execução"
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "Executar playbook"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "Descrição"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "Nome"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "Adicionar tarefa"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "Adicionar nova tarefa"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "Execução de Playbook"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "Adicionar à linha do tempo da execução"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "Resumo"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "Máx. 64 caracteres"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "Resumo curto exibido na linha do tempo"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "Adicionar à linha do tempo da execução"
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "one": "Há **{{.Count}} tarefa pendente**. Tem certeza de que deseja concluir *{{.RunName}}* para todos os participantes?",
+      "other": "Há **{{.Count}} tarefas pendentes**. Tem certeza de que deseja concluir *{{.RunName}}* para todos os participantes?"
+    }
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "Concluir"
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "Confirmar conclusão"
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} é participante da execução e deseja entrar neste canal. Qualquer membro do canal pode convidá-lo.\n"
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} solicitou uma atualização de status para [{{.RunName}}]({{.RunURL}}). \n"
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} desativou as atualizações de status para [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} ativou as atualizações de status para [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "Mudanças desde a última atualização"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "Concluir execução"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "Também marcar a execução como concluída"
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "one": "Forneça uma atualização às partes interessadas. Esta publicação será transmitida para {{.Count}} canal.",
+      "other": "Forneça uma atualização às partes interessadas. Esta publicação será transmitida para {{.Count}} canais."
+    }
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "Lembrete para a próxima atualização"
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "Publicar"
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "Atualização de status"
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "exibida porque a tarefa foi modificada"
+  }
+]

@@ -1,0 +1,222 @@
+[
+  {
+    "id": "app.command.execute.error",
+    "translation": "Comanda nu a putut fi executată."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Actualizări de stare întârziate"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "Aveți {{.Count}} rulare cu actualizarea de stare întârziată:",
+      "few": "Aveți {{.Count}} rulări cu actualizarea de stare întârziată:",
+      "other": "Aveți {{.Count}} de rulări cu actualizarea de stare întârziată:"
+    }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "Aveți 0 rulări întârziate."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Rulări în desfășurare"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "one": "Aveți {{.Count}} rulare în desfășurare în acest moment:",
+      "few": "Aveți {{.Count}} rulări în desfășurare în acest moment:",
+      "other": "Aveți {{.Count}} de rulări în desfășurare în acest moment:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "Aveți 0 rulări în desfășurare în acest moment."
+  },
+  {
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "Folosiți `/playbook todo` pentru a vedea toate sarcinile dumneavoastră."
+  },
+  {
+    "id": "app.user.digest.tasks.due_after_today",
+    "translation": {
+      "one": "Aveți **{{.Count}} sarcină atribuită scadentă după ziua de azi**.",
+      "few": "Aveți **{{.Count}} sarcini atribuite scadente după ziua de azi**.",
+      "other": "Aveți **{{.Count}} de sarcini atribuite scadente după ziua de azi**."
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "one": "Scadentă în {{.Count}} zi",
+      "few": "Scadentă în {{.Count}} zile",
+      "other": "Scadentă în {{.Count}} de zile"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "Scadentă azi"
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "Scadentă acum {{.Count}} zile"
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "Scadentă ieri"
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Sarcinile dumneavoastră atribuite"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "one": "Aveți {{.Count}} sarcină atribuită:",
+      "few": "Aveți în total {{.Count}} sarcini atribuite:",
+      "other": "Aveți în total {{.Count}} de sarcini atribuite:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "one": "Aveți {{.Count}} sarcină atribuită care este acum scadentă:",
+      "few": "Aveți {{.Count}} sarcini atribuite care sunt acum scadente:",
+      "other": "Aveți {{.Count}} de sarcini atribuite care sunt acum scadente:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "Aveți 0 sarcini atribuite."
+  },
+  {
+    "id": "app.user.new_run.intro",
+    "translation": "**Proprietar** {{.Username}}"
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "Playbook"
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "Numele rulării"
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "Începe rularea"
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "Rulează un playbook"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "Descriere"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "Nume"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "Adaugă sarcina"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "Adaugă o sarcină nouă"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "Rulare de playbook"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "Adaugă la cronologia rulării"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "Rezumat"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "Max. 64 de caractere"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "Rezumat scurt afișat în cronologie"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "Adaugă la cronologia rulării"
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "one": "Există **{{.Count}} sarcină nefinalizată**. Sigur doriți să finalizați *{{.RunName}}* pentru toți participanții?",
+      "few": "Există **{{.Count}} sarcini nefinalizate**. Sigur doriți să finalizați *{{.RunName}}* pentru toți participanții?",
+      "other": "Există **{{.Count}} de sarcini nefinalizate**. Sigur doriți să finalizați *{{.RunName}}* pentru toți participanții?"
+    }
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "Finalizează"
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "Confirmă finalizarea"
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} este participant la rulare și dorește să se alăture acestui canal. Orice membru al canalului îl poate invita.\n"
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} a solicitat o actualizare de stare pentru [{{.RunName}}]({{.RunURL}}). \n"
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} a dezactivat actualizările de stare pentru [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} a activat actualizările de stare pentru [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "Modificări de la ultima actualizare"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "Finalizează rularea"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "Marchează, de asemenea, rularea ca finalizată"
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "one": "Oferiți o actualizare părților interesate. Această postare va fi difuzată în {{.Count}} canal.",
+      "few": "Oferiți o actualizare părților interesate. Această postare va fi difuzată în {{.Count}} canale.",
+      "other": "Oferiți o actualizare părților interesate. Această postare va fi difuzată în {{.Count}} de canale."
+    }
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "Memento pentru următoarea actualizare"
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "Postează"
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "Actualizare de stare"
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "afișată deoarece sarcina a fost modificată"
+  }
+]

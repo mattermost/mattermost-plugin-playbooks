@@ -1,0 +1,206 @@
+[
+  {
+    "id": "app.command.execute.error",
+    "translation": "Không thể thực thi lệnh."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Cập nhật trạng thái quá hạn"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "other": "Bạn có {{.Count}} lần chạy quá hạn cập nhật trạng thái:"
+    }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "Bạn có 0 lần chạy quá hạn."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Lần chạy đang diễn ra"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "other": "Bạn có {{.Count}} lần chạy hiện đang diễn ra:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "Bạn có 0 lần chạy hiện đang diễn ra."
+  },
+  {
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "Vui lòng sử dụng `/playbook todo` để xem tất cả nhiệm vụ của bạn."
+  },
+  {
+    "id": "app.user.digest.tasks.due_after_today",
+    "translation": {
+      "other": "Bạn có **{{.Count}} nhiệm vụ được giao đến hạn sau hôm nay**."
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "other": "Đến hạn sau {{.Count}} ngày"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "Đến hạn hôm nay"
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "Đến hạn {{.Count}} ngày trước"
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "Đến hạn hôm qua"
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Nhiệm vụ được giao cho bạn"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "other": "Bạn có tổng cộng {{.Count}} nhiệm vụ được giao:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "other": "Bạn có {{.Count}} nhiệm vụ được giao hiện đã đến hạn:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "Bạn có 0 nhiệm vụ được giao."
+  },
+  {
+    "id": "app.user.new_run.intro",
+    "translation": "**Người phụ trách** {{.Username}}"
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "Playbook"
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "Tên lần chạy"
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "Bắt đầu lần chạy"
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "Chạy playbook"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "Mô tả"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "Tên"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "Thêm nhiệm vụ"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "Thêm nhiệm vụ mới"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "Lần chạy playbook"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "Thêm vào dòng thời gian lần chạy"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "Tóm tắt"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "Tối đa 64 ký tự"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "Tóm tắt ngắn hiển thị trong dòng thời gian"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "Thêm vào dòng thời gian lần chạy"
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "other": "Có **{{.Count}} nhiệm vụ chưa hoàn thành**. Bạn có chắc chắn muốn hoàn thành *{{.RunName}}* cho tất cả người tham gia không?"
+    }
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "Hoàn thành"
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "Xác nhận hoàn thành"
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} là người tham gia lần chạy và muốn tham gia kênh này. Bất kỳ thành viên nào của kênh đều có thể mời họ.\n"
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} đã yêu cầu cập nhật trạng thái cho [{{.RunName}}]({{.RunURL}}). \n"
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} đã tắt cập nhật trạng thái cho [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} đã bật cập nhật trạng thái cho [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "Thay đổi kể từ lần cập nhật trước"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "Hoàn thành lần chạy"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "Đồng thời đánh dấu lần chạy là đã hoàn thành"
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "other": "Cung cấp thông tin cập nhật cho các bên liên quan. Bài đăng này sẽ được phát tới {{.Count}} kênh."
+    }
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "Nhắc nhở cho lần cập nhật tiếp theo"
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "Đăng"
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "Cập nhật trạng thái"
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "hiển thị vì nhiệm vụ đã được sửa đổi"
+  }
+]

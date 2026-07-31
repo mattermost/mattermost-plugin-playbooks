@@ -1,0 +1,214 @@
+[
+  {
+    "id": "app.command.execute.error",
+    "translation": "Командата не може да бъде изпълнена."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Просрочени актуализации на състоянието"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "Имате {{.Count}} изпълнение с просрочена актуализация на състоянието:",
+      "other": "Имате {{.Count}} изпълнения с просрочена актуализация на състоянието:"
+    }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "Имате 0 просрочени изпълнения."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Изпълнения в ход"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "one": "Имате {{.Count}} изпълнение в ход в момента:",
+      "other": "Имате {{.Count}} изпълнения в ход в момента:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "Имате 0 изпълнения в ход в момента."
+  },
+  {
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "Моля, използвайте `/playbook todo`, за да видите всички свои задачи."
+  },
+  {
+    "id": "app.user.digest.tasks.due_after_today",
+    "translation": {
+      "one": "Имате **{{.Count}} възложена задача със срок след днешния ден**.",
+      "other": "Имате **{{.Count}} възложени задачи със срок след днешния ден**."
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "one": "Срок след {{.Count}} ден",
+      "other": "Срок след {{.Count}} дни"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "Срок днес"
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "Срок преди {{.Count}} дни"
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "Срок вчера"
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Вашите възложени задачи"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "one": "Имате {{.Count}} възложена задача:",
+      "other": "Имате общо {{.Count}} възложени задачи:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "one": "Имате {{.Count}} възложена задача, чийто срок е настъпил:",
+      "other": "Имате {{.Count}} възложени задачи, чийто срок е настъпил:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "Имате 0 възложени задачи."
+  },
+  {
+    "id": "app.user.new_run.intro",
+    "translation": "**Собственик** {{.Username}}"
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "Плейбук"
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "Име на изпълнението"
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "Започни изпълнение"
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "Изпълняване на плейбук"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "Описание"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "Име"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "Добави задача"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "Добавяне на нова задача"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "Изпълнение на плейбук"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "Добави към хронологията на изпълнението"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "Резюме"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "Макс. 64 знака"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "Кратко резюме, показвано в хронологията"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "Добавяне към хронологията на изпълнението"
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "one": "Има **{{.Count}} неизпълнена задача**. Сигурни ли сте, че искате да завършите *{{.RunName}}* за всички участници?",
+      "other": "Има **{{.Count}} неизпълнени задачи**. Сигурни ли сте, че искате да завършите *{{.RunName}}* за всички участници?"
+    }
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "Завърши"
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "Потвърждаване на завършването"
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} е участник в изпълнението и иска да се присъедини към този канал. Всеки член на канала може да го покани.\n"
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} поиска актуализация на състоянието за [{{.RunName}}]({{.RunURL}}). \n"
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} изключи актуализациите на състоянието за [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} включи актуализациите на състоянието за [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "Промени от последната актуализация"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "Завършване на изпълнението"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "Отбележи също изпълнението като завършено"
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "one": "Предоставете актуализация на заинтересованите страни. Тази публикация ще бъде излъчена в {{.Count}} канал.",
+      "other": "Предоставете актуализация на заинтересованите страни. Тази публикация ще бъде излъчена в {{.Count}} канала."
+    }
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "Напомняне за следващата актуализация"
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "Публикувай"
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "Актуализация на състоянието"
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "показва се, защото задачата беше променена"
+  }
+]

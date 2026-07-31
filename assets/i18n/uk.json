@@ -1,0 +1,230 @@
+[
+  {
+    "id": "app.command.execute.error",
+    "translation": "Не вдалося виконати команду."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Прострочені оновлення статусу"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "У вас {{.Count}} запуск, у якому прострочено оновлення статусу:",
+      "few": "У вас {{.Count}} запуски, у яких прострочено оновлення статусу:",
+      "many": "У вас {{.Count}} запусків, у яких прострочено оновлення статусу:",
+      "other": "У вас {{.Count}} запуску, у яких прострочено оновлення статусу:"
+    }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "У вас 0 запусків із простроченим оновленням статусу."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Запуски в процесі виконання"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "one": "У вас зараз {{.Count}} запуск у процесі виконання:",
+      "few": "У вас зараз {{.Count}} запуски в процесі виконання:",
+      "many": "У вас зараз {{.Count}} запусків у процесі виконання:",
+      "other": "У вас зараз {{.Count}} запуску в процесі виконання:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "У вас зараз 0 запусків у процесі виконання."
+  },
+  {
+    "id": "app.user.digest.tasks.all_tasks_command",
+    "translation": "Будь ласка, використайте `/playbook todo`, щоб переглянути всі ваші завдання."
+  },
+  {
+    "id": "app.user.digest.tasks.due_after_today",
+    "translation": {
+      "one": "У вас **{{.Count}} призначене завдання з терміном виконання після сьогоднішнього дня**.",
+      "few": "У вас **{{.Count}} призначені завдання з терміном виконання після сьогоднішнього дня**.",
+      "many": "У вас **{{.Count}} призначених завдань із терміном виконання після сьогоднішнього дня**.",
+      "other": "У вас **{{.Count}} призначеного завдання з терміном виконання після сьогоднішнього дня**."
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_in_x_days",
+    "translation": {
+      "one": "Термін: через {{.Count}} день",
+      "few": "Термін: через {{.Count}} дні",
+      "many": "Термін: через {{.Count}} днів",
+      "other": "Термін: через {{.Count}} дня"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.due_today",
+    "translation": "Термін: сьогодні"
+  },
+  {
+    "id": "app.user.digest.tasks.due_x_days_ago",
+    "translation": "Термін: {{.Count}} дн. тому"
+  },
+  {
+    "id": "app.user.digest.tasks.due_yesterday",
+    "translation": "Термін: учора"
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Ваші призначені завдання"
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned",
+    "translation": {
+      "one": "У вас {{.Count}} призначене завдання:",
+      "few": "У вас {{.Count}} призначені завдання:",
+      "many": "У вас {{.Count}} призначених завдань:",
+      "other": "У вас {{.Count}} призначеного завдання:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.num_assigned_due_until_today",
+    "translation": {
+      "one": "У вас {{.Count}} призначене завдання, термін виконання якого настав:",
+      "few": "У вас {{.Count}} призначені завдання, термін виконання яких настав:",
+      "many": "У вас {{.Count}} призначених завдань, термін виконання яких настав:",
+      "other": "У вас {{.Count}} призначеного завдання, термін виконання яких настав:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_assigned",
+    "translation": "У вас 0 призначених завдань."
+  },
+  {
+    "id": "app.user.new_run.intro",
+    "translation": "**Власник** {{.Username}}"
+  },
+  {
+    "id": "app.user.new_run.playbook",
+    "translation": "Плейбук"
+  },
+  {
+    "id": "app.user.new_run.run_name",
+    "translation": "Назва запуску"
+  },
+  {
+    "id": "app.user.new_run.submit_label",
+    "translation": "Розпочати запуск"
+  },
+  {
+    "id": "app.user.new_run.title",
+    "translation": "Запустити плейбук"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.description",
+    "translation": "Опис"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.name",
+    "translation": "Назва"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.submit_label",
+    "translation": "Додати завдання"
+  },
+  {
+    "id": "app.user.run.add_checklist_item.title",
+    "translation": "Додати нове завдання"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.playbook_run",
+    "translation": "Запуск плейбука"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.submit_label",
+    "translation": "Додати до хронології запуску"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary",
+    "translation": "Короткий опис"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.help",
+    "translation": "Макс. 64 символи"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.summary.placeholder",
+    "translation": "Короткий опис, що відображається в хронології"
+  },
+  {
+    "id": "app.user.run.add_to_timeline.title",
+    "translation": "Додати до хронології запуску"
+  },
+  {
+    "id": "app.user.run.confirm_finish.num_outstanding",
+    "translation": {
+      "one": "Є **{{.Count}} невиконане завдання**. Ви впевнені, що хочете завершити *{{.RunName}}* для всіх учасників?",
+      "few": "Є **{{.Count}} невиконані завдання**. Ви впевнені, що хочете завершити *{{.RunName}}* для всіх учасників?",
+      "many": "Є **{{.Count}} невиконаних завдань**. Ви впевнені, що хочете завершити *{{.RunName}}* для всіх учасників?",
+      "other": "Є **{{.Count}} невиконаного завдання**. Ви впевнені, що хочете завершити *{{.RunName}}* для всіх учасників?"
+    }
+  },
+  {
+    "id": "app.user.run.confirm_finish.submit_label",
+    "translation": "Завершити"
+  },
+  {
+    "id": "app.user.run.confirm_finish.title",
+    "translation": "Підтвердити завершення"
+  },
+  {
+    "id": "app.user.run.request_join_channel",
+    "translation": "@{{.Name}} є учасником запуску і хоче приєднатися до цього каналу. Будь-який учасник каналу може запросити його.\n"
+  },
+  {
+    "id": "app.user.run.request_update",
+    "translation": "@here — @{{.Name}} запитав(ла) оновлення статусу для [{{.RunName}}]({{.RunURL}}). \n"
+  },
+  {
+    "id": "app.user.run.status_disable",
+    "translation": "@{{.Username}} вимкнув(ла) оновлення статусу для [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.status_enable",
+    "translation": "@{{.Username}} увімкнув(ла) оновлення статусу для [{{.RunName}}]({{.RunURL}})"
+  },
+  {
+    "id": "app.user.run.update_status.change_since_last_update",
+    "translation": "Зміни з часу останнього оновлення"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run",
+    "translation": "Завершити запуск"
+  },
+  {
+    "id": "app.user.run.update_status.finish_run.placeholder",
+    "translation": "Також позначити запуск як завершений"
+  },
+  {
+    "id": "app.user.run.update_status.num_channel",
+    "translation": {
+      "one": "Надайте оновлення зацікавленим сторонам. Цей допис буде транслюватися в {{.Count}} канал.",
+      "few": "Надайте оновлення зацікавленим сторонам. Цей допис буде транслюватися в {{.Count}} канали.",
+      "many": "Надайте оновлення зацікавленим сторонам. Цей допис буде транслюватися в {{.Count}} каналів.",
+      "other": "Надайте оновлення зацікавленим сторонам. Цей допис буде транслюватися в {{.Count}} каналу."
+    }
+  },
+  {
+    "id": "app.user.run.update_status.reminder_for_next_update",
+    "translation": "Нагадування про наступне оновлення"
+  },
+  {
+    "id": "app.user.run.update_status.submit_label",
+    "translation": "Опублікувати"
+  },
+  {
+    "id": "app.user.run.update_status.title",
+    "translation": "Оновлення статусу"
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "показано, оскільки завдання було змінено"
+  }
+]
