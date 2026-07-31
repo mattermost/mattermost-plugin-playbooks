@@ -5703,11 +5703,14 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		require.NoError(t, err, "setting a user-type property to a team member must succeed")
 	})
 
-	// participant cannot add new member: setting a user-type field auto-adds the chosen user
-	// as a run participant, so only the run owner or a system admin may trigger that side effect.
-	t.Run("participant cannot add new member", func(t *testing.T) {
+	// participant can add new member: setting a user-type field auto-adds the chosen user as a
+	// run participant. Any actor already authorized to modify the run (owner, any participant,
+	// or admin — the same RunManageProperties check gating the endpoint itself) can trigger this
+	// side effect, matching the parity already available via the explicit AddRunParticipants
+	// invite flow (MM-70073).
+	t.Run("participant can add new member", func(t *testing.T) {
 		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-			Title:  "Participant Cannot Add Member Playbook",
+			Title:  "Participant Can Add Member Playbook",
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
@@ -5738,7 +5741,7 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		require.NoError(t, err)
 
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-			Name:        "Participant Cannot Add Member Run",
+			Name:        "Participant Can Add Member Run",
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  pbID,
@@ -5778,8 +5781,8 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
-		require.NotContains(t, run.ParticipantIDs, targetUser.Id,
-			"non-owner participant must not be able to add a new member to the run via property assignment")
+		require.Contains(t, run.ParticipantIDs, targetUser.Id,
+			"non-owner participant must be able to add a new member to the run via property assignment, matching the parity already available via the explicit invite flow")
 
 		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
 			context.Background(),
@@ -5801,5 +5804,189 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, run.ParticipantIDs, targetUser.Id,
 			"run owner must be able to add a new member to the run via property assignment")
+	})
+}
+
+// TestAssigneeAutoAddParticipant covers the fix for MM-70073: any actor already authorized to
+// change a task's assignee (not just the run owner or a system admin) can trigger the resulting
+// participant-add / channel-add / DM side effect, matching the parity already available via the
+// explicit AddRunParticipants invite flow. It also covers the narrower DM-notification fix that
+// ships alongside it: the DM must not leak run details to a target who was silently dropped for
+// failing team-membership validation, while the two paths that never call AddParticipants
+// (assigning to the owner, or to an existing participant) must keep sending the DM unchanged.
+func TestAssigneeAutoAddParticipant(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	botID := e.Srv.Config().PluginSettings.Plugins[manifest.Id]["BotUserID"].(string)
+
+	// receivedDM returns true if the bot's DM channel with userID contains a post matching both
+	// the #taskassigned marker and the specific run's name, so a stale DM from an earlier subtest
+	// in the same channel can't produce a false positive.
+	receivedDM := func(t *testing.T, userID, runName string) bool {
+		t.Helper()
+		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), botID, userID)
+		require.NoError(t, err)
+		posts, _, err := e.ServerAdminClient.GetPostsForChannel(context.Background(), dmChannel.Id, 0, 100, "", false, false)
+		require.NoError(t, err)
+		for _, id := range posts.Order {
+			message := posts.Posts[id].Message
+			if strings.Contains(message, "#taskassigned") && strings.Contains(message, runName) {
+				return true
+			}
+		}
+		return false
+	}
+
+	newChecklistRun := func(t *testing.T, ownerID string) *client.PlaybookRun {
+		t.Helper()
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Assignee Auto-Add Run " + model.NewId(),
+			OwnerUserID: ownerID,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "Tasks",
+			Items: []client.ChecklistItem{{Title: "Task"}},
+		})
+		require.NoError(t, err)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		return run
+	}
+
+	t.Run("non-owner participant assigning a new team member adds them as participant and sends the DM", func(t *testing.T) {
+		run := newChecklistRun(t, e.RegularUser.Id)
+
+		addResp, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		require.Empty(t, addResp.Errors)
+
+		targetUser, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+			Email:    "target-" + model.NewId() + "@example.com",
+			Username: "target" + model.NewId(),
+			Password: testUserPassword,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, targetUser.Id)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, targetUser.Id)
+		require.NoError(t, err, "non-owner participant must be allowed to assign a task to a non-participant")
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Contains(t, run.ParticipantIDs, targetUser.Id,
+			"assigning a task to a non-participant must auto-add them as a run participant, regardless of who performed the assignment")
+		assert.True(t, receivedDM(t, targetUser.Id, run.Name), "newly-added assignee must receive the assignment DM")
+	})
+
+	t.Run("non-owner participant assigning the creator role adds a non-participant reporter as participant", func(t *testing.T) {
+		// Create as admin (reporter) while assigning ownership to RegularUser, so reporter !=
+		// owner and the reporter is auto-added as a participant at creation time (existing
+		// behavior) — then explicitly removed below so SetRoleAssignee's creator branch has to
+		// re-add them rather than finding them already present.
+		run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Creator Role Auto-Add Run " + model.NewId(),
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "Tasks",
+			Items: []client.ChecklistItem{{Title: "Task"}},
+		})
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.AdminUser.Id, run.ReporterUserID, "run created by the admin client must record the admin as reporter")
+		require.Contains(t, run.ParticipantIDs, e.AdminUser.Id, "reporter differing from owner is auto-added as a participant at creation")
+
+		removeResp, err := removeParticipants(e.PlaybooksClient, run.ID, []string{e.AdminUser.Id})
+		require.NoError(t, err)
+		require.Empty(t, removeResp.Errors)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotContains(t, run.ParticipantIDs, e.AdminUser.Id)
+
+		addResp, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		require.Empty(t, addResp.Errors)
+
+		// RegularUser2 (a non-owner participant) sets the task's assignee to the "creator" role
+		// via a raw request, since the Go test client has no wrapper for assignee_type.
+		actorClient := model.NewAPIv4Client(e.ServerClient.URL)
+		_, _, err = actorClient.Login(context.Background(), e.RegularUser2.Email, testUserPassword)
+		require.NoError(t, err)
+
+		body, err := json.Marshal(map[string]string{"assignee_type": app.AssigneeTypeCreator})
+		require.NoError(t, err)
+		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, url, bytes.NewReader(body))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set(model.HeaderAuth, actorClient.AuthType+" "+actorClient.AuthToken)
+		resp, err := actorClient.HTTPClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Contains(t, run.ParticipantIDs, e.AdminUser.Id,
+			"assigning the creator role must auto-add the non-participant reporter")
+		assert.True(t, receivedDM(t, e.AdminUser.Id, run.Name), "reporter must receive the assignment DM")
+	})
+
+	// The actor here is deliberately the run OWNER, not a non-owner participant. Both the old
+	// and new permission gate already allow the owner, so this isolates the narrower
+	// DM-suppression fix from the permission-widening fix: under the old code, a non-owner
+	// actor would have been denied by the (removed) owner/admin-only check before ever reaching
+	// AddParticipants, which would make this assertion pass even without the DM-suppression fix.
+	t.Run("target failing team membership validation is not added and does not receive the DM", func(t *testing.T) {
+		run := newChecklistRun(t, e.RegularUser.Id)
+
+		// A valid Mattermost user deliberately NOT added to BasicTeam, so AddParticipants'
+		// team-membership validation silently drops them into usersFailedToInvite.
+		outsider, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+			Email:    "outsider-" + model.NewId() + "@example.com",
+			Username: "outsider" + model.NewId(),
+			Password: testUserPassword,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, outsider.Id)
+		require.NoError(t, err, "the assignee_id write itself succeeds even though the auto-add side effect is dropped")
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, run.ParticipantIDs, outsider.Id,
+			"a target who fails team-membership validation must not be added as a run participant")
+		assert.False(t, receivedDM(t, outsider.Id, run.Name),
+			"a target who fails team-membership validation must not receive the assignment DM, which would otherwise leak the run name and URL")
+	})
+
+	t.Run("DM still sent when assigning to the owner or to an existing participant", func(t *testing.T) {
+		run := newChecklistRun(t, e.RegularUser.Id)
+
+		addResp, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		require.Empty(t, addResp.Errors)
+
+		// Assign to the owner: addAssigneeParticipantAndDM never calls AddParticipants for this
+		// case (resolvedUserID == ownerUserID), so the DM must still fire unchanged.
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+		assert.True(t, receivedDM(t, e.RegularUser.Id, run.Name), "assigning a task to the run owner must still send the DM")
+
+		// Assign to an existing participant: addAssigneeParticipantAndDM never calls
+		// AddParticipants here either (already in participantIDs), so the DM must still fire.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+		assert.True(t, receivedDM(t, e.RegularUser2.Id, run.Name), "assigning a task to an existing participant must still send the DM")
 	})
 }

@@ -5842,23 +5842,44 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 	}
 	if resolvedUserID != ownerUserID {
 		if !slices.Contains(participantIDs, resolvedUserID) {
-			// Only the run owner or a system admin may auto-add the assigned user
-			// as a run participant. Without this check, any participant could set a
-			// user-type property field to invite arbitrary team members into the run.
-			if actorUserID == ownerUserID || IsSystemAdmin(actorUserID, s.pluginAPI) {
-				if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
-					logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
-					return
-				}
-			} else {
-				// Actor lacks permission to add resolvedUserID; skip DM to avoid leaking run details.
+			// Anyone authorized to set the assignee in the first place (run owner, any
+			// participant, admin, or channel-post-permission holder for channelChecklist/DM-GM
+			// runs) is also authorized to trigger this auto-add — matching the same gate already
+			// enforced at every HTTP/GraphQL entry point that reaches this helper, and matching
+			// the explicit AddRunParticipants invite flow, which permits the identical outcome.
+			logFields := logrus.Fields{
+				"actor_user_id":   actorUserID,
+				"target_user_id":  resolvedUserID,
+				"playbook_run_id": playbookRunID,
+			}
+			if err := s.permissions.RunManageProperties(actorUserID, playbookRunID); err != nil {
+				logrus.WithError(err).WithFields(logFields).Warn("actor lacks permission to add assignee as run participant")
+				return
+			}
+			if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
+				logrus.WithError(err).WithFields(logFields).Warn("failed to add assignee as participant")
+				return
+			}
+			// AddParticipants silently drops a target who fails team/DM-channel membership
+			// validation into usersFailedToInvite instead of returning an error, so confirm
+			// the target actually landed before sending a DM that would otherwise leak the
+			// run name and URL to someone who was never added.
+			refreshedRun, err := s.GetPlaybookRun(playbookRunID)
+			if err != nil {
+				logrus.WithError(err).WithFields(logFields).Warn("failed to refresh run after adding assignee as participant")
+				return
+			}
+			if !slices.Contains(refreshedRun.ParticipantIDs, resolvedUserID) {
 				return
 			}
 		}
 	}
 	if dmMessage != "" && resolvedUserID != actorUserID {
 		if err := s.poster.DM(resolvedUserID, &model.Post{Message: dmMessage}); err != nil {
-			logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to send DM to property_user assignee")
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"target_user_id":  resolvedUserID,
+				"playbook_run_id": playbookRunID,
+			}).Warn("failed to send DM to property_user assignee")
 		}
 	}
 }
