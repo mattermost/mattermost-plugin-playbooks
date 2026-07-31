@@ -90,22 +90,6 @@
     "translation": "@here — @{{.Name}} hat eine Statusaktualisierung für [{{.RunName}}]({{.RunURL}}) angefordert. \n"
   },
   {
-    "id": "app.user.run.request_get_involved",
-    "translation": "@here - @{{.Name}} möchten an diesem Durchlauf teilnehmen. Um sie als Teilnehmer hinzuzufügen, füge sie bitte diesem Kanal hinzu.\n"
-  },
-  {
-    "id": "app.user.run.retro_publish",
-    "translation": "@{{.Name}} hat eine Retrospektive veröffentlicht\n[Ganze Retrospektive ansehen]({{.URL}})\n"
-  },
-  {
-    "id": "app.user.run.joined_run_channel_private_participate",
-    "translation": "@{{.Name}} nimmt am Durchlauf teil. @{{.Name}} wurde nicht automatisch zu diesem privaten Kanal hinzugefügt, aber jedes Mitglied kann @{{.Name}} hinzufügen.\n"
-  },
-  {
-    "id": "app.user.run.joined_run_channel_private_add_participant",
-    "translation": "@{{.Name}} wurde zum Durchlauf von @{{.RequesterName}} hinzugefügt. @{{.Name}} wurde nicht zum Kanal hinzugefügt, da @{{.RequesterName}} kein Mitglied des privaten Kanals ist.\n"
-  },
-  {
     "id": "app.user.run.request_join_channel",
     "translation": "@{{.Name}} ist Teilnehmer des Durchlaufs und möchte diesem Kanal beitreten. Jedes Mitglied des Kanals kann ihn einladen.\n"
   },
@@ -218,10 +202,6 @@
   {
     "id": "app.user.new_run.playbook",
     "translation": "Playbook"
-  },
-  {
-    "id": "app.user.new_run.new_playbook",
-    "translation": "[Klicke hier]({{.RunURL}}), um dein eigenes Playbook zu erstellen."
   },
   {
     "id": "app.user.new_run.intro",

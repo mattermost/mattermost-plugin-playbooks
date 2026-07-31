@@ -1,17 +1,5 @@
 [
   {
-    "id": "app.user.digest.tasks.zero_outstanding",
-    "translation": "У вас 0 нерешенных задач."
-  },
-  {
-    "id": "app.user.digest.tasks.num_outstanding",
-    "translation": {
-      "one": "У вас {{.Count}} нерешенная задача:",
-      "few": "У вас {{.Count}} нерешенных задачи:",
-      "many": "У вас {{.Count}} нерешенных задач:"
-    }
-  },
-  {
     "id": "app.user.digest.tasks.heading",
     "translation": "Ваши назначенные задачи"
   },

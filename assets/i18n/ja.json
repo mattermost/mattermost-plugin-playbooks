@@ -116,10 +116,6 @@
     "translation": "Playbook"
   },
   {
-    "id": "app.user.new_run.new_playbook",
-    "translation": "[ここ]({{.RunURL}}) をクリックして、独自のPlaybookを作成することができます。"
-  },
-  {
     "id": "app.user.new_run.intro",
     "translation": "**オーナー** {{.Username}}"
   },

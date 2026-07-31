@@ -102,22 +102,6 @@
     "translation": "@here — @{{.Name}} poprosił o aktualizację statusu dla [{{.RunName}}]({{.RunURL}}). \n"
   },
   {
-    "id": "app.user.run.request_get_involved",
-    "translation": "@here - @{.Name}} chce wziąć udział w tym uruchomieniu. Aby uwzględnić ich jako uczestników, dodaj ich do tego kanału.\n"
-  },
-  {
-    "id": "app.user.run.retro_publish",
-    "translation": "@{.Name}} opublikował retrospektywę\n[Zobacz pełną retrospektywę]({{.URL}}).\n"
-  },
-  {
-    "id": "app.user.run.joined_run_channel_private_participate",
-    "translation": "@{{.Name}} dołączył do przebiegu. Nie zostali oni automatycznie dodani do tego prywatnego kanału, ale każdy członek kanału może ich zaprosić do przyłączenia się.\n"
-  },
-  {
-    "id": "app.user.run.joined_run_channel_private_add_participant",
-    "translation": "@{{.Name}} został dodany do przebiegu przez @{{.RequesterName}}. Nie zostali oni automatycznie dodani do kanału, ponieważ @{{.RequesterName}} nie jest członkiem kanału, a kanał jest prywatny.\n"
-  },
-  {
     "id": "app.user.run.request_join_channel",
     "translation": "@{{.Name}} jest uczestnikiem uruchomienia i chce dołączyć do tego kanału. Każdy członek kanału może go zaprosić.\n"
   },
@@ -234,10 +218,6 @@
   {
     "id": "app.user.new_run.run_name",
     "translation": "Nazwa uruchomienia"
-  },
-  {
-    "id": "app.user.new_run.new_playbook",
-    "translation": "[Kliknij tutaj]({{.RunURL}}), aby stworzyć własny playbook."
   },
   {
     "id": "app.user.new_run.intro",

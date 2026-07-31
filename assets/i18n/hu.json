@@ -28,10 +28,6 @@
     }
   },
   {
-    "id": "app.user.run.request_get_involved",
-    "translation": "@here — @{{.Name}} részt szeretne venni ebben a futásban. Ahhoz, hogy résztvevők lehessenek, adja hozzá őket ehhez a csatornához.\n"
-  },
-  {
     "id": "app.user.run.request_update",
     "translation": "@here — @{{.Name}} állapotfrissítést kért a [{{.RunName}}]({{.RunURL}}) futáshoz. \n"
   },
@@ -94,20 +90,8 @@
     "translation": "Futások folyamatban"
   },
   {
-    "id": "app.user.run.retro_publish",
-    "translation": "@{{.Name}} közzétett egy visszatekintőt\n[A teljes visszatekintő megtekintése]({{.URL}})\n"
-  },
-  {
     "id": "app.user.run.request_join_channel",
     "translation": "@{{.Name}} egy futás résztvevője, és csatlakozni szeretne ehhez a csatornához. A csatorna bármelyik tagja meghívhatja.\n"
-  },
-  {
-    "id": "app.user.run.joined_run_channel_private_add_participant",
-    "translation": "@{{.Name}} a @{{.RequesterName}} által hozzá lett adva a futáshoz. Nem kerültek automatikusan hozzá a csatornához, mivel @{{.RequesterName}} nem tagja a csatornának, és a csatorna privát.\n"
-  },
-  {
-    "id": "app.user.run.joined_run_channel_private_participate",
-    "translation": "@{{.Name}} csatlakozott a futáshoz. Nem kerültek automatikusan hozzádásra a privát csatornához, de a csatorna bármelyik tagja meghívhatja őket, hogy csatlakozzanak.\n"
   },
   {
     "id": "app.user.run.status_enable",

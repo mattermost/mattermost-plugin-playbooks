@@ -170,10 +170,6 @@
     "translation": "Playbook"
   },
   {
-    "id": "app.user.new_run.new_playbook",
-    "translation": "[Klik hier]({{.RunURL}}) om je eigen playbook te maken."
-  },
-  {
     "id": "app.user.new_run.intro",
     "translation": "**Eigenaar** {{.Username}}"
   },
