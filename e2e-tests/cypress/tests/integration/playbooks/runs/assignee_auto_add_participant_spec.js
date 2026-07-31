@@ -77,9 +77,14 @@ describe('runs > assignee auto-add participant (MM-70073)', {testIsolation: true
             // # Visit the run details page as the non-owner participant
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
 
-            // # Assign the task to the non-participant target user via the real UI flow
-            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.findByTestId('assignee-profile-selector').click();
+            // # Assign the task to the non-participant target user via the real UI flow.
+            // The assignee-profile-selector testid must be scoped to this checklist item:
+            // the RHS Info panel's Owner row renders an identically-testid'd selector that's
+            // on screen by default, so an unscoped findByTestId would match two elements.
+            getChecklistTasks().eq(0).within(() => {
+                cy.findByTestId('hover-menu-edit-button').click();
+                cy.findByTestId('assignee-profile-selector').click();
+            });
             cy.contains('.playbook-react-select__option', '@' + testTarget.username).click();
 
             cy.wait('@setAssignee');

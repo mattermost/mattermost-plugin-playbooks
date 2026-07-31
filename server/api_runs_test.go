@@ -5792,6 +5792,16 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 		)
 		require.NoError(t, err)
 
+		// targetUser is already a participant from the non-owner assignment above, so remove
+		// them first — otherwise the re-assignment below short-circuits on the "already a
+		// participant" check and never actually exercises the owner-driven auto-add path.
+		removeResp, err := removeParticipants(e.PlaybooksClient, run.ID, []string{targetUser.Id})
+		require.NoError(t, err)
+		require.Empty(t, removeResp.Errors)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotContains(t, run.ParticipantIDs, targetUser.Id)
+
 		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
 			context.Background(),
 			run.ID,
@@ -5817,6 +5827,7 @@ func TestSetRunPropertyValue_UserField(t *testing.T) {
 func TestAssigneeAutoAddParticipant(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
+	e.SetEnterpriseLicence()
 
 	botID := e.Srv.Config().PluginSettings.Plugins[manifest.Id]["BotUserID"].(string)
 
@@ -5917,23 +5928,9 @@ func TestAssigneeAutoAddParticipant(t *testing.T) {
 		require.NoError(t, err)
 		require.Empty(t, addResp.Errors)
 
-		// RegularUser2 (a non-owner participant) sets the task's assignee to the "creator" role
-		// via a raw request, since the Go test client has no wrapper for assignee_type.
-		actorClient := model.NewAPIv4Client(e.ServerClient.URL)
-		_, _, err = actorClient.Login(context.Background(), e.RegularUser2.Email, testUserPassword)
-		require.NoError(t, err)
-
-		body, err := json.Marshal(map[string]string{"assignee_type": app.AssigneeTypeCreator})
-		require.NoError(t, err)
-		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, url, bytes.NewReader(body))
-		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set(model.HeaderAuth, actorClient.AuthType+" "+actorClient.AuthToken)
-		resp, err := actorClient.HTTPClient.Do(req)
-		require.NoError(t, err)
-		defer resp.Body.Close()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		// RegularUser2 (a non-owner participant) sets the task's assignee to the "creator" role.
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, app.AssigneeTypeCreator)
+		require.NoError(t, err, "non-owner participant must be allowed to set a role-based assignee")
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
@@ -5988,5 +5985,84 @@ func TestAssigneeAutoAddParticipant(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
 		require.NoError(t, err)
 		assert.True(t, receivedDM(t, e.RegularUser2.Id, run.Name), "assigning a task to an existing participant must still send the DM")
+	})
+
+	// This covers SetPropertyUserAssignee directly (assignee_property_field_id on the assignee
+	// endpoint) — distinct from SetRunPropertyValue's re-resolution path already covered in
+	// TestSetRunPropertyValue_UserField.
+	t.Run("non-owner participant assigning via a user-type property field adds the resolved user as participant", func(t *testing.T) {
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Property Assignee Auto-Add Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			pbID,
+			client.PropertyFieldRequest{Name: "Manager", Type: "user"},
+		)
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Property Assignee Auto-Add Run " + model.NewId(),
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "Tasks",
+			Items: []client.ChecklistItem{{Title: "Task"}},
+		})
+		require.NoError(t, err)
+
+		addResp, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+		require.NoError(t, err)
+		require.Empty(t, addResp.Errors)
+
+		targetUser, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+			Email:    "target-" + model.NewId() + "@example.com",
+			Username: "target" + model.NewId(),
+			Password: testUserPassword,
+		})
+		require.NoError(t, err)
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, targetUser.Id)
+		require.NoError(t, err)
+
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runFieldID string
+		for _, f := range runFields {
+			if f.Name == "Manager" && f.Type == "user" {
+				runFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runFieldID, "run-level Manager field not found")
+
+		// Set the field's current value to targetUser as the owner, so the field already
+		// resolves to a non-participant before the non-owner participant assigns via it.
+		_, err = e.PlaybooksClient.PlaybookRuns.SetPropertyValue(
+			context.Background(),
+			run.ID,
+			runFieldID,
+			client.PropertyValueRequest{Value: []byte(`"` + targetUser.Id + `"`)},
+		)
+		require.NoError(t, err)
+		_, err = removeParticipants(e.PlaybooksClient, run.ID, []string{targetUser.Id})
+		require.NoError(t, err)
+
+		// Non-owner participant assigns the task via the property field directly.
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runFieldID)
+		require.NoError(t, err, "non-owner participant must be allowed to assign via a user-type property field")
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, targetUser.Id, run.Checklists[0].Items[0].AssigneeID)
+		assert.Contains(t, run.ParticipantIDs, targetUser.Id,
+			"assigning via SetPropertyUserAssignee must auto-add the resolved user as a run participant")
+		assert.True(t, receivedDM(t, targetUser.Id, run.Name), "resolved user must receive the assignment DM")
 	})
 }
