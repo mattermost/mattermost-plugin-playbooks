@@ -6051,8 +6051,12 @@ func TestAssigneeAutoAddParticipant(t *testing.T) {
 			client.PropertyValueRequest{Value: []byte(`"` + targetUser.Id + `"`)},
 		)
 		require.NoError(t, err)
-		_, err = removeParticipants(e.PlaybooksClient, run.ID, []string{targetUser.Id})
+		removeResp, err := removeParticipants(e.PlaybooksClient, run.ID, []string{targetUser.Id})
 		require.NoError(t, err)
+		require.Empty(t, removeResp.Errors)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotContains(t, run.ParticipantIDs, targetUser.Id)
 
 		// Non-owner participant assigns the task via the property field directly.
 		err = e.PlaybooksClient2.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, runFieldID)
