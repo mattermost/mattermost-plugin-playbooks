@@ -5863,12 +5863,10 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 			addedUserIDs, err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false)
 			if err != nil {
 				logrus.WithError(err).WithFields(logFields).Warn("failed to add assignee as participant")
-				return
 			}
-			// AddParticipants silently drops a target who fails team/DM-channel membership
-			// validation into usersFailedToInvite instead of returning an error, so confirm
-			// the target is actually among the users it reports having added before sending a
-			// DM that would otherwise leak the run name and URL to someone who was never added.
+			// Check membership by result, not by error: AddParticipants can return a
+			// non-empty result alongside an error (DB write succeeded, a later step
+			// didn't), and can silently drop a target who fails membership validation.
 			if !slices.Contains(addedUserIDs, resolvedUserID) {
 				return
 			}
