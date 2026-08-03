@@ -199,8 +199,8 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                         <AutomationTitle>
                             <InputLabel htmlFor='channel-access-run-number-prefix'>{formatMessage({defaultMessage: 'Run number prefix'})}</InputLabel>
                         </AutomationTitle>
-                        <PrefixInputWrapper>
-                            <BaseInput
+                        <SelectorWrapper>
+                            <PrefixInput
                                 id='channel-access-run-number-prefix'
                                 data-testid='channel-access-run-number-prefix'
                                 type='text'
@@ -209,7 +209,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                                 onChange={(e) => handleRunNumberPrefixChange(e.target.value)}
                                 placeholder={formatMessage({defaultMessage: 'e.g. INC-'})}
                             />
-                        </PrefixInputWrapper>
+                        </SelectorWrapper>
                     </AutomationHeader>
                     <AutomationHeader id={'run-name-template'}>
                         <AutomationTitle style={{alignSelf: 'flex-start'}}>
@@ -344,13 +344,8 @@ const RunNamingBlock = styled.div`
     gap: 16px;
 `;
 
-const PrefixInputWrapper = styled.div`
-    flex: 1;
-    max-width: 460px;
-
-    input {
-        width: 100%;
-    }
+const PrefixInput = styled(BaseInput)`
+    width: 100%;
 `;
 
 const TemplateInputWrapper = styled.div`
