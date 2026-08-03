@@ -81,6 +81,7 @@ describe('runs > assignee auto-add participant (MM-70073)', {testIsolation: true
             // The assignee-profile-selector testid must be scoped to this checklist item:
             // the RHS Info panel's Owner row renders an identically-testid'd selector that's
             // on screen by default, so an unscoped findByTestId would match two elements.
+            getChecklistTasks().eq(0).trigger('mouseover');
             getChecklistTasks().eq(0).within(() => {
                 cy.findByTestId('hover-menu-edit-button').click();
                 cy.findByTestId('assignee-profile-selector').click();
