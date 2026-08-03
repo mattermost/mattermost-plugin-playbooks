@@ -391,6 +391,7 @@ const InsertVariableButton = styled.button`
 `;
 
 const TemplateLockedCheckbox = styled(CheckboxInput)`
+    align-self: flex-end;
     padding: 6px 0;
     margin-top: 4px;
 
