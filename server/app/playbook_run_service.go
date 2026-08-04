@@ -2280,6 +2280,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	type Details struct {
 		Action string `json:"action,omitempty"`
 		Task   string `json:"task,omitempty"`
+		ItemID string `json:"item_id,omitempty"`
 	}
 
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
@@ -2310,6 +2311,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	details := Details{
 		Action: "check",
 		Task:   stripmd.Strip(itemToCheck.Title),
+		ItemID: itemToCheck.ID,
 	}
 
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
