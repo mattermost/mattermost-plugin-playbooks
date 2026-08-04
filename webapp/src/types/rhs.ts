@@ -80,6 +80,10 @@ export interface UserJoinedLeftDetails {
 export interface TaskStateModifiedDetails {
     action: string | 'check' | 'uncheck' | 'skip' | 'restore';
     task: string;
+
+    // Stable checklist-item id, added so attribution can join event→item by identity instead of the
+    // timestamp+title heuristic. Absent on events created before this field was introduced.
+    item_id?: string;
 }
 
 export interface PropertyChangedDetails {

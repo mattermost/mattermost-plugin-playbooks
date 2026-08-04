@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import renderer from 'react-test-renderer';
+import renderer, {act} from 'react-test-renderer';
 import {IntlProvider} from 'react-intl';
 
 const capturedProps: Array<Record<string, unknown>> = [];
@@ -55,6 +55,7 @@ describe('CreateAChannel — run number prefix input', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_locked: false,
             delete_at: 0,
             channel_mode: 'create_new_channel' as const,
             channel_id: '',
@@ -79,6 +80,7 @@ describe('CreateAChannel — run number prefix input', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_locked: false,
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
@@ -103,6 +105,7 @@ describe('CreateAChannel — run number prefix input', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_locked: false,
             delete_at: 0,
             channel_mode: 'create_new_channel' as const,
             channel_id: '',
@@ -128,6 +131,228 @@ describe('CreateAChannel — run number prefix input', () => {
     });
 });
 
+describe('CreateAChannel — lock run name checkbox', () => {
+    const checkboxTestId = 'channel-access-run-name-template-locked';
+
+    it('is unchecked by default when not locked', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_locked: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        expect(checkbox?.props.checked).toBe(false);
+    });
+
+    it('is checked when locked', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_locked: true,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        expect(checkbox?.props.checked).toBe(true);
+    });
+
+    it('calls onChannelNameTemplateLockedChange with the new value when toggled', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_locked: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const onChannelNameTemplateLockedChange = jest.fn();
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+                onChannelNameTemplateLockedChange={onChannelNameTemplateLockedChange}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        checkbox.props.onChange(true);
+
+        expect(onChannelNameTemplateLockedChange).toHaveBeenCalledWith(true);
+    });
+
+    it('disables the checkbox when channel_mode is link_existing_channel', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_locked: false,
+            delete_at: 0,
+            channel_mode: 'link_existing_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        expect(checkbox?.props.disabled).toBe(true);
+    });
+
+    it('keeps the checkbox enabled for a literal template and respects the stored value', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident War Room',
+            channel_name_template_locked: true,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        expect(checkbox?.props.disabled).toBe(false);
+        expect(checkbox?.props.checked).toBe(true);
+    });
+
+    it('keeps the checkbox enabled for an unrecognized placeholder and respects the stored value', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '{notARealVariable}',
+            channel_name_template_locked: false,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+                fieldNames={['Zone']}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        expect(checkbox?.props.disabled).toBe(false);
+        expect(checkbox?.props.checked).toBe(false);
+    });
+
+    it('keeps the checkbox enabled and respects the stored value when the template references a known property field', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '{Zone} Incident',
+            channel_name_template_locked: true,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+                fieldNames={['Zone']}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        expect(checkbox?.props.disabled).toBe(false);
+        expect(checkbox?.props.checked).toBe(true);
+    });
+
+    it('does not fire onChannelNameTemplateLockedChange on mount and reflects the stored value', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '{Zone} Incident',
+            channel_name_template_locked: true,
+            delete_at: 0,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const onChannelNameTemplateLockedChange = jest.fn();
+
+        let component: ReturnType<typeof renderWithIntl>;
+        act(() => {
+            component = renderWithIntl(
+                <CreateAChannel
+                    playbook={playbook}
+                    setPlaybook={jest.fn()}
+                    onChannelNameTemplateLockedChange={onChannelNameTemplateLockedChange}
+                />,
+            );
+        });
+
+        expect(onChannelNameTemplateLockedChange).not.toHaveBeenCalled();
+
+        const [checkbox] = component!.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        expect(checkbox?.props.disabled).toBe(false);
+        expect(checkbox?.props.checked).toBe(true);
+    });
+});
+
 describe('CreateAChannel — link-existing channel selector', () => {
     beforeEach(() => {
         capturedProps.length = 0;
@@ -137,6 +362,7 @@ describe('CreateAChannel — link-existing channel selector', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_locked: false,
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
@@ -165,6 +391,7 @@ describe('CreateAChannel — link-existing channel selector', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
+            channel_name_template_locked: false,
             delete_at: 0,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',

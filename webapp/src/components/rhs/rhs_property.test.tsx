@@ -29,7 +29,12 @@ jest.mock('react-intl', () => {
 
 jest.mock('./properties/property_text', () => ({
     __esModule: true,
-    default: () => <div data-testid='mock-text-property'/>,
+    default: (props: {readOnly?: boolean}) => (
+        <div
+            data-testid='mock-text-property'
+            data-readonly={props.readOnly}
+        />
+    ),
 }));
 
 jest.mock('./properties/property_select', () => ({
@@ -149,5 +154,17 @@ describe('RHSProperty', () => {
                 'mock-user-property', 'mock-multiuser-property', 'mock-date-property'].includes(n.props['data-testid']),
         );
         expect(valueComponents.length).toBe(0);
+    });
+
+    it('passes readOnly to property components', () => {
+        const component = renderer.create(
+            <RHSProperty
+                field={makeField('text')}
+                runID='run-1'
+                readOnly={true}
+            />,
+        );
+        const instance = component.root;
+        expect(instance.findByProps({'data-testid': 'mock-text-property'}).props['data-readonly']).toBe(true);
     });
 });

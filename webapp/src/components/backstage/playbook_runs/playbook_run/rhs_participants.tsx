@@ -26,7 +26,7 @@ import {useManageRunMembership} from 'src/graphql/hooks';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
 import {SendMessageButton} from './send_message_button';
 import AddParticipantsModal from './add_participant_modal';
@@ -74,6 +74,8 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
         }
         return true;
     };
+
+    const isFinished = playbookRun.current_status === PlaybookRunStatus.Finished;
 
     const manageParticipantsSection = () => {
         if (manageMode) {
@@ -126,7 +128,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                     )}
                 </ParticipantsNumber>
 
-                {role === Role.Participant && manageParticipantsSection()}
+                {role === Role.Participant && !isFinished && manageParticipantsSection()}
 
             </HeaderSection>
 

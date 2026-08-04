@@ -38,6 +38,8 @@ import {
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
+import {TimelineEvent} from 'src/types/rhs';
+import CheckedChip, {shouldShowCheckedChip} from 'src/components/checklist_item/checked_chip';
 import {formatConditionExpr} from 'src/utils/condition_format';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -83,6 +85,7 @@ interface ChecklistItemProps {
     playbookId?: string;
     teamId?: string;
     channelId?: string;
+    timelineEvents?: TimelineEvent[];
     onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
@@ -485,6 +488,19 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         );
     };
 
+    const renderCheckedChip = (): null | React.ReactNode => {
+        if (!shouldShowCheckedChip(props.checklistItem)) {
+            return null;
+        }
+        return (
+            <CheckedChip
+                item={props.checklistItem}
+                timelineEvents={props.timelineEvents}
+                compact={true}
+            />
+        );
+    };
+
     const handleSave = () => {
         setIsEditing(false);
         const finalTitle = titleValue.trim() || 'Untitled task';
@@ -537,6 +553,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         const haveTaskActions = taskActions?.length > 0;
         if (
             !isEditing &&
+            !shouldShowCheckedChip(props.checklistItem) &&
             !assigneeID &&
             !hasRoleAssignee &&
             !command &&
@@ -548,9 +565,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
         return (
             <Row>
+                {renderCheckedChip()}
                 {renderAssignTo()}
-                {renderCommand()}
                 {renderDueDate()}
+                {renderCommand()}
                 {renderTaskActions()}
             </Row>
         );

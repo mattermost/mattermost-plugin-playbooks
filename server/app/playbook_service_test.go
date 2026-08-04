@@ -450,6 +450,34 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultID)
 	})
+
+	t.Run("clears the run number prefix, channel name template, and its lock", func(t *testing.T) {
+		lockedPlaybook := originalPlaybook
+		lockedPlaybook.RunNumberPrefix = "INC"
+		lockedPlaybook.ChannelNameTemplate = "{Zone} Incident"
+		lockedPlaybook.ChannelNameTemplateLocked = true
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				assert.Equal(t, "", pb.RunNumberPrefix)
+				assert.Equal(t, "", pb.ChannelNameTemplate)
+				assert.False(t, pb.ChannelNameTemplateLocked, "a duplicate must not inherit locked=true against a cleared template")
+				return model.NewId(), nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(nil, errors.New("property copy failed"))
+
+		resultID, err := service.Duplicate(lockedPlaybook, userID)
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, resultID)
+	})
 }
 
 func TestPlaybookService_Import(t *testing.T) {

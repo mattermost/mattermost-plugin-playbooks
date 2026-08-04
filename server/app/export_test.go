@@ -200,3 +200,22 @@ func TestExportConditionUnmarshalNullExpr(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, ec.ConditionExpr)
 }
+
+func TestExportConditionUnmarshalNull(t *testing.T) {
+	t.Run("null condition returns error", func(t *testing.T) {
+		var ec ExportCondition
+		err := json.Unmarshal([]byte(`null`), &ec)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "condition cannot be null")
+	})
+
+	t.Run("null element in conditions array returns error", func(t *testing.T) {
+		var importBlock struct {
+			Version    int               `json:"version"`
+			Conditions []ExportCondition `json:"conditions,omitempty"`
+		}
+		err := json.Unmarshal([]byte(`{"version":1,"conditions":[null]}`), &importBlock)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "condition cannot be null")
+	})
+}
