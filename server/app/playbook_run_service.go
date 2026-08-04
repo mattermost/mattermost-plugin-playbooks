@@ -3296,6 +3296,9 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	timestamp := model.GetMillis()
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = timestamp
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
+	// StateModified is what clients read to show when a task last changed state; without it a skip
+	// leaves behind the timestamp of an earlier check/uncheck.
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].StateModified = timestamp
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp)
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -3303,7 +3306,50 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+	if err := s.createTaskStateModifiedEvent(playbookRunID, userID, "skip", "skipped", playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp); err != nil {
+		return err
+	}
+
+	// Pass a nil current run so the run is refetched and the WS payload carries the timeline event
+	// created just above; passing the in-memory run would broadcast a stale event list, as
+	// ModifyCheckedState's nil argument already accounts for.
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	return nil
+}
+
+// createTaskStateModifiedEvent records a task_state_modified timeline event for a checklist item
+// state change, so clients can attribute the change to a user and a time. ModifyCheckedState builds
+// the same event inline for check/uncheck.
+func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, userID, action, pastTense string, item ChecklistItem, timestamp int64) error {
+	details := struct {
+		Action string `json:"action,omitempty"`
+		Task   string `json:"task,omitempty"`
+		ItemID string `json:"item_id,omitempty"`
+	}{
+		Action: action,
+		Task:   stripmd.Strip(item.Title),
+		ItemID: item.ID,
+	}
+
+	detailsJSON, err := json.Marshal(details)
+	if err != nil {
+		return errors.Wrap(err, "failed to encode timeline event details")
+	}
+
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      timestamp,
+		EventAt:       timestamp,
+		EventType:     TaskStateModified,
+		Summary:       fmt.Sprintf("%s checklist item **%v**", pastTense, stripmd.Strip(item.Title)),
+		SubjectUserID: userID,
+		Details:       string(detailsJSON),
+	}
+
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
 
 	return nil
 }
@@ -3320,15 +3366,24 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 		originalRun = playbookRunToModify.Clone()
 	}
 
+	timestamp := model.GetMillis()
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
-	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
+	// Without StateModified a restore is indistinguishable from the state the task was in before it
+	// was skipped, and clients would report the earlier check/uncheck time instead.
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].StateModified = timestamp
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp)
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+	if err := s.createTaskStateModifiedEvent(playbookRunID, userID, "restore", "restored", playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp); err != nil {
+		return err
+	}
+
+	// See the note in SkipChecklistItem: nil forces a refetch so the new timeline event ships.
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	return nil
 }
