@@ -95,7 +95,7 @@ func TestNotifyAdmins(t *testing.T) {
 				require.NotEmpty(t, attachments[0].Title, "title must not be blank")
 				require.NotEmpty(t, attachments[0].Text, "text must not be blank")
 			case <-time.After(5 * time.Second):
-				t.Fatal("timed out waiting for the admin DM to be created")
+				require.FailNow(t, "timed out waiting for the admin DM to be created")
 			}
 		})
 	}
