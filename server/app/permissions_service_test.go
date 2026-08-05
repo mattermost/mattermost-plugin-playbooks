@@ -607,7 +607,7 @@ func (s *stubRunService) RequestJoinChannel(string, string) error {
 func (s *stubRunService) RemoveParticipants(string, []string, string) error {
 	panic("stubRunService: RemoveParticipants not implemented")
 }
-func (s *stubRunService) AddParticipants(string, []string, string, bool, bool) error {
+func (s *stubRunService) AddParticipants(string, []string, string, bool, bool) ([]string, error) {
 	panic("stubRunService: AddParticipants not implemented")
 }
 func (s *stubRunService) GetPlaybookRunIDsForUser(string) ([]string, error) {

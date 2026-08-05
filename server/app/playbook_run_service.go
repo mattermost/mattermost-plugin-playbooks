@@ -667,7 +667,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
-	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
+	_, err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
 	if err != nil {
 		logrus.WithError(err).WithFields(map[string]any{
 			"playbookRunId":  playbookRun.ID,
@@ -2165,7 +2165,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	// add owner as user
-	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false, false)
+	_, err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
@@ -3811,7 +3811,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		participants = append(participants, playbookRun.ReporterUserID)
 	}
-	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false, true)
+	_, err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner/reporter as a participant")
 	}
@@ -4621,7 +4621,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 }
 
-func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool, sendWebsocket bool) error {
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool, sendWebsocket bool) ([]string, error) {
 	auditRec := plugin.MakeAuditRecord("addPlaybookRunParticipants", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -4637,12 +4637,12 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	if len(userIDs) == 0 {
 		auditRec.Success()
-		return nil
+		return nil, nil
 	}
 
 	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get run %s", playbookRunID)
+		return nil, errors.Wrapf(err, "failed to get run %s", playbookRunID)
 	}
 
 	// Add current run context to audit
@@ -4674,7 +4674,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	}
 
 	if err = s.store.AddParticipants(playbookRun.ID, usersToInvite); err != nil {
-		return errors.Wrapf(err, "users `%+v` failed to participate in run `%s`", usersToInvite, playbookRun.ID)
+		return nil, errors.Wrapf(err, "users `%+v` failed to participate in run `%s`", usersToInvite, playbookRun.ID)
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -4685,7 +4685,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get requester user")
+		return usersToInvite, errors.Wrap(err, "failed to get requester user")
 	}
 
 	shouldAddToChannel := false
@@ -4706,7 +4706,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		if userID != requesterUserID {
 			user, err = s.pluginAPI.User.Get(userID)
 			if err != nil {
-				return errors.Wrapf(err, "failed to get user %s", userID)
+				return usersToInvite, errors.Wrapf(err, "failed to get user %s", userID)
 			}
 		}
 		users = append(users, user)
@@ -4717,20 +4717,20 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 		// Participate implies following the run
 		if err = s.Follow(playbookRunID, userID); err != nil {
-			return errors.Wrap(err, "failed to make participant follow run")
+			return usersToInvite, errors.Wrap(err, "failed to make participant follow run")
 		}
 	}
 
 	err = s.changeParticipantsTimeline(playbookRun.ID, requesterUser, users, "joined")
 	if err != nil {
-		return err
+		return usersToInvite, err
 	}
 
 	// ws send run
 	if len(usersToInvite) > 0 && sendWebsocket {
 		playbookRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
-			return errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
+			return usersToInvite, errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
 		}
 
 		combinedUserIDs := append(usersToInvite, requesterUserID)
@@ -4747,7 +4747,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		auditRec.AddEventResultState(*playbookRun)
 	}
 
-	return nil
+	return usersToInvite, nil
 }
 
 // changeParticipantsTimeline handles timeline event creation for run participation change triggers:
@@ -5844,23 +5844,42 @@ func (s *PlaybookRunServiceImpl) addAssigneeParticipantAndDM(playbookRunID, acto
 	}
 	if resolvedUserID != ownerUserID {
 		if !slices.Contains(participantIDs, resolvedUserID) {
-			// Only the run owner or a system admin may auto-add the assigned user
-			// as a run participant. Without this check, any participant could set a
-			// user-type property field to invite arbitrary team members into the run.
-			if actorUserID == ownerUserID || IsSystemAdmin(actorUserID, s.pluginAPI) {
-				if err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false); err != nil {
-					logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to add assignee as participant")
-					return
+			// Anyone authorized to set the assignee in the first place (run owner, any
+			// participant, admin, or channel-post-permission holder for channelChecklist/DM-GM
+			// runs) is also authorized to trigger this auto-add — matching the same gate already
+			// enforced at every HTTP/GraphQL entry point that reaches this helper, and matching
+			// the explicit AddRunParticipants invite flow, which permits the identical outcome.
+			logFields := logrus.Fields{
+				"actor_user_id":   actorUserID,
+				"target_user_id":  resolvedUserID,
+				"playbook_run_id": playbookRunID,
+			}
+			if err := s.permissions.RunManageProperties(actorUserID, playbookRunID); err != nil {
+				if errors.Is(err, ErrNoPermissions) {
+					logrus.WithError(err).WithFields(logFields).Warn("actor lacks permission to add assignee as run participant")
+				} else {
+					logrus.WithError(err).WithFields(logFields).Warn("failed to determine actor's permission to add assignee as run participant")
 				}
-			} else {
-				// Actor lacks permission to add resolvedUserID; skip DM to avoid leaking run details.
+				return
+			}
+			addedUserIDs, err := s.AddParticipants(playbookRunID, []string{resolvedUserID}, actorUserID, false, false)
+			if err != nil {
+				logrus.WithError(err).WithFields(logFields).Warn("failed to add assignee as participant")
+			}
+			// Check membership by result, not by error: AddParticipants can return a
+			// non-empty result alongside an error (DB write succeeded, a later step
+			// didn't), and can silently drop a target who fails membership validation.
+			if !slices.Contains(addedUserIDs, resolvedUserID) {
 				return
 			}
 		}
 	}
 	if dmMessage != "" && resolvedUserID != actorUserID {
 		if err := s.poster.DM(resolvedUserID, &model.Post{Message: dmMessage}); err != nil {
-			logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to send DM to property_user assignee")
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"target_user_id":  resolvedUserID,
+				"playbook_run_id": playbookRunID,
+			}).Warn("failed to send DM to property_user assignee")
 		}
 	}
 }
