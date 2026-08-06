@@ -240,6 +240,11 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to set due dates on checklist items.", author.Username)
 		title = "Work more effectively"
 		text = "Assign due dates to tasks so assignees can prioritize and get things done.\n" + footer
+	default:
+		logrus.WithField("message_type", messageType).Warn("NotifyAdmins received an unrecognized message type; sending a generic upgrade notice")
+		message = fmt.Sprintf("@%s requested access to a Professional feature.", author.Username)
+		title = "Upgrade to unlock this feature"
+		text = "This feature requires a Professional plan or higher.\n" + footer
 	}
 
 	actions := []*model.PostAction{

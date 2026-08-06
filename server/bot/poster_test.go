@@ -50,6 +50,10 @@ var allAdminNotificationMessageTypes = []string{
 	"start_trial_to_access_metrics",
 	"start_trial_to_set_checklist_item_due_date",
 	"start_trial_to_request_update",
+	// Not a real AdminNotificationType: exercises the default case for any
+	// message type the frontend enum and this switch fall out of sync on
+	// (or any caller hitting the endpoint directly with an arbitrary string).
+	"some_future_message_type_nobody_added_a_case_for",
 }
 
 func TestNotifyAdmins(t *testing.T) {
