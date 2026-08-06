@@ -90,6 +90,8 @@ func TestBotConnect(t *testing.T) {
 	})
 
 	t.Run("no digest due immediately after the first connect", func(t *testing.T) {
+		require.NotNil(t, digestPost, "expected the first subtest to have found a digest post")
+
 		// The first subtest's connect() call already persisted LastDailyTodoDMAt = now,
 		// so calling connect() again moments later deterministically finds both
 		// ShouldSendWeeklyDigestMessage (same ISO week) and ShouldSendDailyDigestMessage
@@ -100,7 +102,7 @@ func TestBotConnect(t *testing.T) {
 
 		// GetPostsSince is exclusive (server queries UpdateAt > since), so digestPost
 		// itself won't reappear here.
-		sincePosts, _, err := e.ServerClient.GetPostsSince(context.Background(), dmChannel.Id, digestPost.CreateAt, false)
+		sincePosts, _, err := e.ServerClient.GetPostsSince(context.Background(), dmChannel.Id, digestPost.UpdateAt, false)
 		require.NoError(t, err)
 		assert.Empty(t, sincePosts.Order, "expected no digest on the second immediate connect")
 	})
