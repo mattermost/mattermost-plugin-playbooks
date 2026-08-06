@@ -486,6 +486,262 @@ func TestToolRemovePlaybookTaskGetsAndPutsMutatedPlaybook(t *testing.T) {
 	assert.Equal(t, "preserve task field", remainingTask["custom_task_field"])
 }
 
+func TestToolAddPlaybookSectionGetsAndPutsMutatedPlaybook(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	existingUserID := "bcdefghijklmnopqrstuvwxyza"
+	assigneeID := "cdefghijklmnopqrstuvwxyzab"
+	insertAt := 1
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":                   playbookID,
+			"title":                "Incident Response",
+			"custom_field":         "preserve me",
+			"invited_user_ids":     []any{existingUserID},
+			"invite_users_enabled": false,
+			"checklists": []any{
+				map[string]any{
+					"title":                  "Triage",
+					"custom_checklist_field": "preserve checklist field",
+					"items": []any{
+						map[string]any{"id": "task-id-1", "title": "Existing task", "custom_task_field": "preserve task field"},
+					},
+				},
+				map[string]any{
+					"title": "Follow-up",
+					"items": []any{},
+				},
+			},
+		},
+	}
+
+	result, err := toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
+		PlaybookID:      playbookID,
+		ChecklistNumber: &insertAt,
+		Title:           "  Remediation  ",
+		Items: []CreatePlaybookItem{
+			{
+				Title:       "  Verify fix  ",
+				Description: "Confirm the incident is resolved.",
+				Command:     "/verify",
+				AssigneeID:  assigneeID,
+				DueDate:     86400000,
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.Contains(t, result, "Added section \"Remediation\"")
+	assert.Contains(t, result, "Assigned users were added to invited_user_ids")
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "Incident Response", body["title"])
+	assert.Equal(t, "preserve me", body["custom_field"])
+	assert.Equal(t, true, body["invite_users_enabled"])
+	invited := body["invited_user_ids"].([]any)
+	assert.Contains(t, invited, existingUserID)
+	assert.Contains(t, invited, assigneeID)
+
+	checklists := requirePlaybookChecklists(t, body)
+	require.Len(t, checklists, 3)
+	assert.Equal(t, "Triage", checklists[0].(map[string]any)["title"])
+	assert.Equal(t, "Remediation", checklists[1].(map[string]any)["title"])
+	assert.Equal(t, "Follow-up", checklists[2].(map[string]any)["title"])
+
+	existingChecklist := checklists[0].(map[string]any)
+	assert.Equal(t, "preserve checklist field", existingChecklist["custom_checklist_field"])
+	existingItems := requirePlaybookItems(t, body, 0)
+	require.Len(t, existingItems, 1)
+	assert.Equal(t, "preserve task field", existingItems[0].(map[string]any)["custom_task_field"])
+
+	addedItems := requirePlaybookItems(t, body, 1)
+	require.Len(t, addedItems, 1)
+	addedTask := addedItems[0].(map[string]any)
+	assert.Equal(t, "Verify fix", addedTask["title"])
+	assert.Equal(t, "Confirm the incident is resolved.", addedTask["description"])
+	assert.Equal(t, "/verify", addedTask["command"])
+	assert.Equal(t, assigneeID, addedTask["assignee_id"])
+	assert.Equal(t, int64(86400000), addedTask["due_date"])
+}
+
+func TestToolAddPlaybookSectionAppendsWhenIndexOmitted(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id": playbookID,
+		},
+	}
+
+	_, err := toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
+		PlaybookID: playbookID,
+		Title:      "New section",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	checklists := requirePlaybookChecklists(t, body)
+	require.Len(t, checklists, 1)
+	assert.Equal(t, "New section", checklists[0].(map[string]any)["title"])
+	assert.Equal(t, []any{}, checklists[0].(map[string]any)["items"])
+}
+
+func TestToolRenamePlaybookSectionGetsAndPutsMutatedPlaybook(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":           playbookID,
+			"title":        "Incident Response",
+			"custom_field": "preserve me",
+			"checklists": []any{
+				map[string]any{
+					"title":                  "Triage",
+					"custom_checklist_field": "preserve checklist field",
+					"items":                  []any{map[string]any{"id": "task-id-1", "title": "Existing task"}},
+				},
+			},
+		},
+	}
+
+	_, err := toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{
+		PlaybookID:      playbookID,
+		ChecklistNumber: 0,
+		Title:           "  Initial response  ",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "preserve me", body["custom_field"])
+	checklist := requirePlaybookChecklist(t, body, 0)
+	assert.Equal(t, "Initial response", checklist["title"])
+	assert.Equal(t, "preserve checklist field", checklist["custom_checklist_field"])
+	items := requirePlaybookItems(t, body, 0)
+	require.Len(t, items, 1)
+	assert.Equal(t, "Existing task", items[0].(map[string]any)["title"])
+}
+
+func TestToolRemovePlaybookSectionGetsAndPutsMutatedPlaybook(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":           playbookID,
+			"title":        "Incident Response",
+			"custom_field": "preserve me",
+			"checklists": []any{
+				map[string]any{"title": "Triage", "items": []any{map[string]any{"title": "Remove with section"}}},
+				map[string]any{"title": "Follow-up", "custom_checklist_field": "preserve checklist field", "items": []any{}},
+			},
+		},
+	}
+
+	_, err := toolRemovePlaybookSection(context.Background(), client, RemovePlaybookSectionArgs{
+		PlaybookID:      playbookID,
+		ChecklistNumber: 0,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "preserve me", body["custom_field"])
+	checklists := requirePlaybookChecklists(t, body)
+	require.Len(t, checklists, 1)
+	remainingChecklist := checklists[0].(map[string]any)
+	assert.Equal(t, "Follow-up", remainingChecklist["title"])
+	assert.Equal(t, "preserve checklist field", remainingChecklist["custom_checklist_field"])
+}
+
+func TestToolMovePlaybookSectionGetsAndPutsMutatedPlaybook(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":           playbookID,
+			"title":        "Incident Response",
+			"custom_field": "preserve me",
+			"checklists": []any{
+				map[string]any{"title": "Triage", "items": []any{map[string]any{"title": "First"}}},
+				map[string]any{"title": "Remediation", "custom_checklist_field": "preserve checklist field", "items": []any{}},
+				map[string]any{"title": "Follow-up", "items": []any{}},
+			},
+		},
+	}
+
+	_, err := toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{
+		PlaybookID:         playbookID,
+		SourceChecklistIdx: 2,
+		DestChecklistIdx:   0,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "preserve me", body["custom_field"])
+	checklists := requirePlaybookChecklists(t, body)
+	require.Len(t, checklists, 3)
+	assert.Equal(t, "Follow-up", checklists[0].(map[string]any)["title"])
+	assert.Equal(t, "Triage", checklists[1].(map[string]any)["title"])
+	assert.Equal(t, "Remediation", checklists[2].(map[string]any)["title"])
+	assert.Equal(t, "preserve checklist field", checklists[2].(map[string]any)["custom_checklist_field"])
+	items := requirePlaybookItems(t, body, 1)
+	require.Len(t, items, 1)
+	assert.Equal(t, "First", items[0].(map[string]any)["title"])
+}
+
+func TestToolMovePlaybookSectionMovesEarlierSectionLater(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{
+			"id":           playbookID,
+			"custom_field": "preserve me",
+			"checklists": []any{
+				map[string]any{"title": "Triage", "custom_checklist_field": "preserve checklist field", "items": []any{map[string]any{"title": "First"}}},
+				map[string]any{"title": "Remediation", "items": []any{}},
+				map[string]any{"title": "Follow-up", "items": []any{}},
+			},
+		},
+	}
+
+	_, err := toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{
+		PlaybookID:         playbookID,
+		SourceChecklistIdx: 0,
+		DestChecklistIdx:   2,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+	body := requirePlaybookPutBody(t, client)
+	assert.Equal(t, "preserve me", body["custom_field"])
+	checklists := requirePlaybookChecklists(t, body)
+	require.Len(t, checklists, 3)
+	assert.Equal(t, "Remediation", checklists[0].(map[string]any)["title"])
+	assert.Equal(t, "Follow-up", checklists[1].(map[string]any)["title"])
+	assert.Equal(t, "Triage", checklists[2].(map[string]any)["title"])
+	assert.Equal(t, "preserve checklist field", checklists[2].(map[string]any)["custom_checklist_field"])
+	items := requirePlaybookItems(t, body, 2)
+	require.Len(t, items, 1)
+	assert.Equal(t, "First", items[0].(map[string]any)["title"])
+}
+
+func TestToolMovePlaybookSectionSameIndexDoesNotPut(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{playbook: playbookWithOneEmptyChecklist(playbookID)}
+
+	result, err := toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{
+		PlaybookID:         playbookID,
+		SourceChecklistIdx: 0,
+		DestChecklistIdx:   0,
+	})
+	require.NoError(t, err)
+	assert.Contains(t, result, "already at destination")
+	assert.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	assert.Empty(t, client.putEndpoint)
+}
+
 func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 	playbookID := "abcdefghijklmnopqrstuvwxyz"
 	tests := []struct {
@@ -618,6 +874,175 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			wantNoPut:   true,
 			playbook:    playbookWithOneEmptyChecklist(playbookID),
 		},
+		{
+			name: "add section invalid playbook ID",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{PlaybookID: "bad", Title: "New section"})
+			},
+			want:      "playbook_id must be a valid Mattermost ID",
+			wantNoPut: true,
+		},
+		{
+			name: "add section negative checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				checklistNumber := -1
+				return toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: &checklistNumber, Title: "New section"})
+			},
+			want:      "checklist_number must be a non-negative integer",
+			wantNoPut: true,
+		},
+		{
+			name: "add section blank title",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{PlaybookID: playbookID, Title: "   "})
+			},
+			want:      "title is required",
+			wantNoPut: true,
+		},
+		{
+			name: "add section blank initial item title",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
+					PlaybookID: playbookID,
+					Title:      "New section",
+					Items:      []CreatePlaybookItem{{Title: " "}},
+				})
+			},
+			want:      "items[0].title is required",
+			wantNoPut: true,
+		},
+		{
+			name: "add section invalid initial item assignee",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
+					PlaybookID: playbookID,
+					Title:      "New section",
+					Items:      []CreatePlaybookItem{{Title: "Task", AssigneeID: "bad"}},
+				})
+			},
+			want:      "items[0].assignee_id must be a valid Mattermost ID",
+			wantNoPut: true,
+		},
+		{
+			name: "add section out-of-range insertion index",
+			run: func(client *fakeAPIClient) (string, error) {
+				checklistNumber := 2
+				return toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: &checklistNumber, Title: "New section"})
+			},
+			want:        "checklist_number 2 is out of range",
+			wantDetails: []string{"Available sections:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
+		},
+		{
+			name: "rename section invalid playbook ID",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{PlaybookID: "bad", ChecklistNumber: 0, Title: "Renamed"})
+			},
+			want:      "playbook_id must be a valid Mattermost ID",
+			wantNoPut: true,
+		},
+		{
+			name: "rename section negative checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: -1, Title: "Renamed"})
+			},
+			want:      "checklist_number must be a non-negative integer",
+			wantNoPut: true,
+		},
+		{
+			name: "rename section blank title",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: 0, Title: "   "})
+			},
+			want:      "title is required",
+			wantNoPut: true,
+		},
+		{
+			name: "rename section out-of-range checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: 1, Title: "Renamed"})
+			},
+			want:        "checklist_number 1 is out of range",
+			wantDetails: []string{"Available sections:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
+		},
+		{
+			name: "remove section invalid playbook ID",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRemovePlaybookSection(context.Background(), client, RemovePlaybookSectionArgs{PlaybookID: "bad", ChecklistNumber: 0})
+			},
+			want:      "playbook_id must be a valid Mattermost ID",
+			wantNoPut: true,
+		},
+		{
+			name: "remove section negative checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRemovePlaybookSection(context.Background(), client, RemovePlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: -1})
+			},
+			want:      "checklist_number must be a non-negative integer",
+			wantNoPut: true,
+		},
+		{
+			name: "remove section out-of-range checklist index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolRemovePlaybookSection(context.Background(), client, RemovePlaybookSectionArgs{PlaybookID: playbookID, ChecklistNumber: 1})
+			},
+			want:        "checklist_number 1 is out of range",
+			wantDetails: []string{"Available sections:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
+		},
+		{
+			name: "move section invalid playbook ID",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{PlaybookID: "bad", SourceChecklistIdx: 0, DestChecklistIdx: 0})
+			},
+			want:      "playbook_id must be a valid Mattermost ID",
+			wantNoPut: true,
+		},
+		{
+			name: "move section negative source index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{PlaybookID: playbookID, SourceChecklistIdx: -1, DestChecklistIdx: 0})
+			},
+			want:      "source_checklist_idx must be a non-negative integer",
+			wantNoPut: true,
+		},
+		{
+			name: "move section negative destination index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{PlaybookID: playbookID, SourceChecklistIdx: 0, DestChecklistIdx: -1})
+			},
+			want:      "dest_checklist_idx must be a non-negative integer",
+			wantNoPut: true,
+		},
+		{
+			name: "move section out-of-range source index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{PlaybookID: playbookID, SourceChecklistIdx: 1, DestChecklistIdx: 0})
+			},
+			want:        "source_checklist_idx 1 is out of range",
+			wantDetails: []string{"Available sections:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
+		},
+		{
+			name: "move section out-of-range destination index",
+			run: func(client *fakeAPIClient) (string, error) {
+				return toolMovePlaybookSection(context.Background(), client, MovePlaybookSectionArgs{PlaybookID: playbookID, SourceChecklistIdx: 0, DestChecklistIdx: 1})
+			},
+			want:        "dest_checklist_idx 1 is out of range",
+			wantDetails: []string{"Available sections:", "[0] Triage", "(no tasks)"},
+			wantGet:     true,
+			wantNoPut:   true,
+			playbook:    playbookWithOneEmptyChecklist(playbookID),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -678,6 +1103,43 @@ func TestPlaybookTaskOutOfRangeErrorsListAvailableTaskIndexes(t *testing.T) {
 	assert.Empty(t, client.putEndpoint)
 }
 
+func TestToolPlaybookSectionUnexpectedFormatErrorsDescribeExpectedShape(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+
+	t.Run("checklists not an array", func(t *testing.T) {
+		client := &fakeAPIClient{
+			playbook: map[string]any{
+				"id":         playbookID,
+				"checklists": "not-an-array",
+			},
+		}
+		_, err := toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
+			PlaybookID: playbookID,
+			Title:      "New section",
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "expected a JSON array of sections, got string")
+		assert.Empty(t, client.putEndpoint)
+	})
+
+	t.Run("section not an object", func(t *testing.T) {
+		client := &fakeAPIClient{
+			playbook: map[string]any{
+				"id":         playbookID,
+				"checklists": []any{"not-an-object"},
+			},
+		}
+		_, err := toolRenamePlaybookSection(context.Background(), client, RenamePlaybookSectionArgs{
+			PlaybookID:      playbookID,
+			ChecklistNumber: 0,
+			Title:           "Renamed",
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "expected a JSON object, got string")
+		assert.Empty(t, client.putEndpoint)
+	})
+}
+
 func playbookWithOneEmptyChecklist(playbookID string) map[string]any {
 	return map[string]any{
 		"id":    playbookID,
@@ -698,10 +1160,16 @@ func requirePlaybookPutBody(t *testing.T, client *fakeAPIClient) map[string]any 
 	return body
 }
 
-func requirePlaybookChecklist(t *testing.T, playbook map[string]any, checklistNumber int) map[string]any {
+func requirePlaybookChecklists(t *testing.T, playbook map[string]any) []any {
 	t.Helper()
 	checklists, ok := playbook["checklists"].([]any)
 	require.Truef(t, ok, "unexpected checklists type %T", playbook["checklists"])
+	return checklists
+}
+
+func requirePlaybookChecklist(t *testing.T, playbook map[string]any, checklistNumber int) map[string]any {
+	t.Helper()
+	checklists := requirePlaybookChecklists(t, playbook)
 	require.Greater(t, len(checklists), checklistNumber)
 	checklist, ok := checklists[checklistNumber].(map[string]any)
 	require.Truef(t, ok, "unexpected checklist type %T", checklists[checklistNumber])
