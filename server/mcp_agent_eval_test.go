@@ -549,6 +549,50 @@ func evalScenarios() []evalScenario {
 		scenarioRunPlaybookFull(),
 		scenarioStatusHistoryNowWorks(),
 		scenarioRunPlaybookLinkedChannel(),
+		scenarioAssignTaskByUsername(),
+	}
+}
+
+func scenarioAssignTaskByUsername() evalScenario {
+	const taskTitle = "Draft the customer comms"
+
+	return evalScenario{
+		name: "assign_task_by_username",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Status page outage")
+			sc.PlaybookID = s.Playbook("Status Page Template", sc.Channel.Id,
+				evalChecklist("Response", taskTitle, "Restore the status page"))
+			sc.RunID = s.Run("Status page outage", sc.PlaybookID, sc.Channel.Id).ID
+			sc.Values["username"] = s.e.RegularUser2.Username
+			sc.Values["userID"] = s.e.RegularUser2.Id
+		},
+		prompt: func(sc *evalScenarioContext) string {
+			return fmt.Sprintf("Assign the '%s' task to @%s.", taskTitle, sc.Values["username"])
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			run := snapshotRun(e, sc.RunID)
+			if run == nil {
+				return outcomeError, []string{"could not read the seeded run"}
+			}
+
+			_, _, item, found := findChecklistItem(run.Checklists, taskTitle)
+			if !found {
+				return outcomeError, []string{"seeded task is gone from the run"}
+			}
+
+			assigned := item.AssigneeID == sc.Values["userID"]
+			if !assigned {
+				notes = append(notes, fmt.Sprintf("assignee_id is %q, want %q", item.AssigneeID, sc.Values["userID"]))
+			}
+			for _, args := range tr.CallArgs("set_checklist_item_assignee") {
+				if containsFold(args, sc.Values["username"]) {
+					notes = append(notes, "passed the @username as assignee_id")
+					break
+				}
+			}
+			return verdict(assigned, tr, notes...)
+		},
 	}
 }
 
@@ -574,14 +618,27 @@ func scenarioAddParticipantNatural() evalScenario {
 			}
 
 			added := evalContainsID(run.ParticipantIDs, sc.Values["userID"])
-			for _, args := range tr.CallArgs("add_run_participants") {
+
+			// The prompt only ever gives the agent a @username, so a pass has
+			// to come from the tool resolving it. If the model somehow supplied
+			// the raw ID instead, this scenario did not exercise resolution and
+			// the pass means less than it looks like.
+			calls := tr.CallArgs("add_run_participants")
+			passedUsername := false
+			for _, args := range calls {
 				if containsFold(args, sc.Values["username"]) {
-					notes = append(notes, "passed the @username where a 26-char user ID was expected — no user-lookup tool exists in this MCP server")
-					break
+					passedUsername = true
 				}
 			}
-			if !added && len(tr.CallArgs("add_run_participants")) == 0 {
+			switch {
+			case len(calls) == 0:
 				notes = append(notes, "never called add_run_participants")
+			case passedUsername && added:
+				notes = append(notes, "passed the @username and the tool resolved it to a user ID")
+			case passedUsername:
+				notes = append(notes, "passed the @username but the user is still not a participant — username resolution did not take effect")
+			case added:
+				notes = append(notes, "supplied a raw user ID rather than the @username — username resolution was not exercised")
 			}
 			return verdict(added, tr, notes...)
 		},
