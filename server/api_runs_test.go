@@ -6070,3 +6070,303 @@ func TestAssigneeAutoAddParticipant(t *testing.T) {
 		assert.True(t, receivedDM(t, targetUser.Id, run.Name), "resolved user must receive the assignment DM")
 	})
 }
+
+// createParticipantsRun creates a run owned by RegularUser off the basic public playbook so
+// each participant test case starts from an independent membership list.
+func createParticipantsRun(t *testing.T, e *TestEnvironment, name string) *client.PlaybookRun {
+	t.Helper()
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        name,
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, run)
+
+	return run
+}
+
+// loginClient4As returns a Mattermost API client authenticated as the given user, for the raw
+// REST calls the typed Playbooks client does not cover.
+func loginClient4As(t *testing.T, e *TestEnvironment, user *model.User) *model.Client4 {
+	t.Helper()
+
+	c := model.NewAPIv4Client(fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port))
+	_, _, err := c.Login(context.Background(), user.Email, testUserPassword)
+	require.NoError(t, err)
+
+	return c
+}
+
+// followRunAs makes the client's user follow the run via PUT /runs/{id}/followers.
+func followRunAs(t *testing.T, e *TestEnvironment, c *model.Client4, runID string) {
+	t.Helper()
+
+	resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), c, http.MethodPut, "/api/v0/runs/"+runID+"/followers", "", nil)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+// runFollowers returns the run's followers via GET /runs/{id}/followers.
+func runFollowers(t *testing.T, e *TestEnvironment, c *model.Client4, runID string) []string {
+	t.Helper()
+
+	resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), c, http.MethodGet, "/api/v0/runs/"+runID+"/followers", "", nil)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	var followers []string
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&followers))
+
+	return followers
+}
+
+// TestRESTAddRunParticipants covers POST /runs/{id}/participants, the REST counterpart of the
+// addRunParticipants GraphQL mutation.
+func TestRESTAddRunParticipants(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	for _, tc := range []struct {
+		name string
+		// actor is the client issuing the request.
+		actor   *client.Client
+		userIDs []string
+		// expectedStatus is zero when the request is expected to succeed.
+		expectedStatus int
+	}{
+		{
+			name:    "owner adds another user",
+			actor:   e.PlaybooksClient,
+			userIDs: []string{e.RegularUser2.Id},
+		},
+		{
+			name:    "user with only run view access joins the run",
+			actor:   e.PlaybooksClient2,
+			userIDs: []string{e.RegularUser2.Id},
+		},
+		{
+			name:    "system admin adds another user",
+			actor:   e.PlaybooksAdminClient,
+			userIDs: []string{e.RegularUser2.Id},
+		},
+		{
+			name:           "non-participant cannot add somebody else",
+			actor:          e.PlaybooksClient2,
+			userIDs:        []string{e.AdminUser.Id},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name:           "user outside the team cannot join the run",
+			actor:          e.PlaybooksClientNotInTeam,
+			userIDs:        []string{e.RegularUserNotInTeam.Id},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name:           "malformed user id is rejected",
+			actor:          e.PlaybooksClient,
+			userIDs:        []string{"not-a-valid-user-id"},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "empty user id list is rejected",
+			actor:          e.PlaybooksClient,
+			userIDs:        []string{},
+			expectedStatus: http.StatusBadRequest,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			run := createParticipantsRun(t, e, "add participants - "+tc.name)
+
+			err := tc.actor.PlaybookRuns.AddParticipants(context.Background(), run.ID, tc.userIDs, false)
+
+			updated, getErr := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, getErr)
+
+			if tc.expectedStatus != 0 {
+				requireErrorWithStatusCode(t, err, tc.expectedStatus)
+				assert.ElementsMatch(t, []string{e.RegularUser.Id}, updated.ParticipantIDs,
+					"a rejected request must not change the run's participants")
+				return
+			}
+
+			require.NoError(t, err)
+			for _, userID := range tc.userIDs {
+				assert.Contains(t, updated.ParticipantIDs, userID)
+			}
+		})
+	}
+
+	t.Run("adding a user who already participates is a no-op", func(t *testing.T) {
+		run := createParticipantsRun(t, e, "add participants - already a participant")
+
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false))
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false))
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t, []string{e.RegularUser.Id, e.RegularUser2.Id}, updated.ParticipantIDs)
+	})
+
+	t.Run("a well-formed but unknown user id is silently skipped", func(t *testing.T) {
+		run := createParticipantsRun(t, e, "add participants - unknown user")
+
+		err := e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{model.NewId()}, false)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t, []string{e.RegularUser.Id}, updated.ParticipantIDs)
+	})
+
+	t.Run("adding somebody else to a finished run is rejected", func(t *testing.T) {
+		run := createParticipantsRun(t, e, "add participants - finished run")
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		err := e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("joining a finished run is allowed", func(t *testing.T) {
+		// The finished-run guard only covers managing somebody else's membership, matching
+		// the addRunParticipants mutation.
+		run := createParticipantsRun(t, e, "add participants - join finished run")
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		require.NoError(t, e.PlaybooksClient2.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false))
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Contains(t, updated.ParticipantIDs, e.RegularUser2.Id)
+	})
+
+	t.Run("a body that is not valid json is rejected", func(t *testing.T) {
+		run := createParticipantsRun(t, e, "add participants - malformed body")
+
+		resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, http.MethodPost,
+			"/api/v0/runs/"+run.ID+"/participants", "{not json", map[string]string{"Content-Type": "application/json"})
+		require.Error(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+}
+
+// TestRESTRemoveRunParticipant covers DELETE /runs/{id}/participants/{user_id}, the REST
+// counterpart of the removeRunParticipants GraphQL mutation.
+func TestRESTRemoveRunParticipant(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	for _, tc := range []struct {
+		name string
+		// actor is the client issuing the request.
+		actor    *client.Client
+		targetID string
+		// expectedStatus is zero when the request is expected to succeed.
+		expectedStatus int
+	}{
+		{
+			name:     "owner removes another participant",
+			actor:    e.PlaybooksClient,
+			targetID: e.RegularUser2.Id,
+		},
+		{
+			name:     "participant leaves the run",
+			actor:    e.PlaybooksClient2,
+			targetID: e.RegularUser2.Id,
+		},
+		{
+			name:     "system admin removes a participant",
+			actor:    e.PlaybooksAdminClient,
+			targetID: e.RegularUser2.Id,
+		},
+		{
+			name:           "user outside the team cannot remove a participant",
+			actor:          e.PlaybooksClientNotInTeam,
+			targetID:       e.RegularUser2.Id,
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name:           "the run owner cannot be removed",
+			actor:          e.PlaybooksClient,
+			targetID:       e.RegularUser.Id,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "malformed user id is rejected",
+			actor:          e.PlaybooksClient,
+			targetID:       strings.Repeat("a", 25),
+			expectedStatus: http.StatusBadRequest,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			run := createParticipantsRun(t, e, "remove participant - "+tc.name)
+			require.NoError(t, e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false))
+
+			err := tc.actor.PlaybookRuns.RemoveParticipant(context.Background(), run.ID, tc.targetID)
+
+			updated, getErr := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, getErr)
+
+			if tc.expectedStatus != 0 {
+				requireErrorWithStatusCode(t, err, tc.expectedStatus)
+				assert.ElementsMatch(t, []string{e.RegularUser.Id, e.RegularUser2.Id}, updated.ParticipantIDs,
+					"a rejected request must not change the run's participants")
+				return
+			}
+
+			require.NoError(t, err)
+			assert.NotContains(t, updated.ParticipantIDs, tc.targetID)
+		})
+	}
+
+	t.Run("removing a participant also stops them following the run", func(t *testing.T) {
+		run := createParticipantsRun(t, e, "remove participant - unfollow")
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false))
+
+		followRunAs(t, e, loginClient4As(t, e, e.RegularUser2), run.ID)
+		require.Contains(t, runFollowers(t, e, e.ServerClient, run.ID), e.RegularUser2.Id)
+
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.RemoveParticipant(context.Background(), run.ID, e.RegularUser2.Id))
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, updated.ParticipantIDs, e.RegularUser2.Id)
+		assert.NotContains(t, runFollowers(t, e, e.ServerClient, run.ID), e.RegularUser2.Id)
+	})
+
+	t.Run("removing a user who does not participate is a no-op", func(t *testing.T) {
+		run := createParticipantsRun(t, e, "remove participant - not a participant")
+
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.RemoveParticipant(context.Background(), run.ID, e.RegularUser2.Id))
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t, []string{e.RegularUser.Id}, updated.ParticipantIDs)
+	})
+
+	t.Run("removing somebody else from a finished run is rejected", func(t *testing.T) {
+		run := createParticipantsRun(t, e, "remove participant - finished run")
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false))
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		err := e.PlaybooksClient.PlaybookRuns.RemoveParticipant(context.Background(), run.ID, e.RegularUser2.Id)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("leaving a finished run is allowed", func(t *testing.T) {
+		// The finished-run guard only covers managing somebody else's membership, matching
+		// the removeRunParticipants mutation.
+		run := createParticipantsRun(t, e, "remove participant - leave finished run")
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false))
+		require.NoError(t, e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID))
+
+		require.NoError(t, e.PlaybooksClient2.PlaybookRuns.RemoveParticipant(context.Background(), run.ID, e.RegularUser2.Id))
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.NotContains(t, updated.ParticipantIDs, e.RegularUser2.Id)
+	})
+}

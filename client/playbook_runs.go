@@ -223,6 +223,36 @@ func (s *PlaybookRunService) Restore(ctx context.Context, playbookRunID string) 
 	return nil
 }
 
+// AddParticipants adds the given users to the playbook run. Passing only the requesting
+// user's own ID joins the run, which needs no more than view access to it; adding anybody
+// else requires permission to manage the run's properties.
+func (s *PlaybookRunService) AddParticipants(ctx context.Context, playbookRunID string, userIDs []string, forceAddToChannel bool) error {
+	participantsURL := fmt.Sprintf("runs/%s/participants", playbookRunID)
+	req, err := s.client.newAPIRequest(http.MethodPost, participantsURL, struct {
+		UserIDs           []string `json:"user_ids"`
+		ForceAddToChannel bool     `json:"force_add_to_channel"`
+	}{UserIDs: userIDs, ForceAddToChannel: forceAddToChannel})
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+// RemoveParticipant removes a user from the playbook run and stops them following it.
+// Passing the requesting user's own ID leaves the run, which needs no more than view
+// access to it; removing anybody else requires permission to manage the run's properties.
+func (s *PlaybookRunService) RemoveParticipant(ctx context.Context, playbookRunID, userID string) error {
+	participantURL := fmt.Sprintf("runs/%s/participants/%s", playbookRunID, userID)
+	req, err := s.client.newAPIRequest(http.MethodDelete, participantURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
 
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
 	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
