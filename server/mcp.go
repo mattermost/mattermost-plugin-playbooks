@@ -100,6 +100,10 @@ func (c *pluginMCPClient) Put(ctx context.Context, endpoint string, body any, re
 	return c.do(ctx, http.MethodPut, endpoint, body, result)
 }
 
+func (c *pluginMCPClient) Patch(ctx context.Context, endpoint string, body any, result any) error {
+	return c.do(ctx, http.MethodPatch, endpoint, body, result)
+}
+
 func (c *pluginMCPClient) Delete(ctx context.Context, endpoint string) error {
 	return c.do(ctx, http.MethodDelete, endpoint, nil, nil)
 }
@@ -113,6 +117,12 @@ func (c *pluginMCPClient) GetCurrentUserID(context.Context) (string, error) {
 
 func (c *pluginMCPClient) GetPlaybookURL(playbookID string) string {
 	return strings.TrimRight(c.siteURL, "/") + "/playbooks/playbooks/" + playbookID
+}
+
+// GetRunURL mirrors app.GetRunDetailsRelativeURL ("/playbooks/runs/{id}"), the
+// route the webapp serves the run overview from.
+func (c *pluginMCPClient) GetRunURL(runID string) string {
+	return strings.TrimRight(c.siteURL, "/") + "/playbooks/runs/" + runID
 }
 
 func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body any, result any) error {

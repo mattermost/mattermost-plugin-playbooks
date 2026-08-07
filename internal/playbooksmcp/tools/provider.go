@@ -17,9 +17,11 @@ type APIClient interface {
 	Get(ctx context.Context, endpoint string, params url.Values, result any) error
 	Post(ctx context.Context, endpoint string, body any, result any) error
 	Put(ctx context.Context, endpoint string, body any, result any) error
+	Patch(ctx context.Context, endpoint string, body any, result any) error
 	Delete(ctx context.Context, endpoint string) error
 	GetCurrentUserID(ctx context.Context) (string, error)
 	GetPlaybookURL(playbookID string) string
+	GetRunURL(runID string) string
 }
 
 // ClientFactory creates an APIClient for the current MCP request context.

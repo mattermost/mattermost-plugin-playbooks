@@ -31,11 +31,11 @@ type FindChecklistItemArgs struct {
 
 func (p *PlaybooksToolProvider) addMCPHelperResolveTools(server *mcphelper.Server) {
 	addMCPHelperTool(server, p.clientFactory, "resolve_channel_context",
-		"Resolve the runs and checklist items that live in a Mattermost channel. Use this first, passing the channel the agent is operating in, to discover the run_id and the zero-based checklist/item indexes before calling check_item (or any other item tool). Returns each run with its checklist items formatted as [checklist_number][item_number] title (state). Example: {\"channel_id\": \"abc123...\"}",
+		"Find which playbook runs and checklists live in a Mattermost channel — answers \"what run is this channel about?\". Use this first, passing the channel the agent is operating in, to discover the run_id and the zero-based checklist/item indexes before calling check_item or any other run task tool. Returns each run with its checklist items formatted as [checklist_number][item_number] title (state). Example: {\"channel_id\": \"abc123...\"}",
 		toolResolveChannelContext)
 
 	addMCPHelperTool(server, p.clientFactory, "find_checklist_item",
-		"Find a checklist item by matching text against item titles, so you can mark it done without knowing its indexes. Pass channel_id (the channel the agent is operating in) to search that channel's runs first. Returns the matching item(s) with run_id and the zero-based checklist_number/item_number to feed into check_item. Example: {\"query\": \"deploy to staging\", \"channel_id\": \"abc123...\"}",
+		"Find a task in a playbook run by matching text against task titles, so you can mark it done without knowing its indexes — \"tick off the deploy task\". Pass channel_id (the channel the agent is operating in) to search that channel's runs first, or run_id to search one run. Returns the matching task(s) with run_id and the zero-based checklist_number/item_number to feed into check_item. Example: {\"query\": \"deploy to staging\", \"channel_id\": \"abc123...\"}",
 		toolFindChecklistItem)
 }
 

@@ -17,7 +17,7 @@ type CheckItemArgs struct {
 	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
 	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist"`
 	ItemNumber      int    `json:"item_number" jsonschema:"The zero-based index of the item within the checklist"`
-	NewState        string `json:"new_state,omitempty" jsonschema:"The new state for the item: open, closed, or skipped (default: closed)"`
+	NewState        string `json:"new_state,omitempty" jsonschema:"The new state for the item: open, in_progress, closed, or skipped (default: closed)"`
 }
 
 type AddChecklistItemArgs struct {
@@ -68,8 +68,19 @@ type MoveChecklistItemArgs struct {
 }
 
 type AddSectionArgs struct {
-	RunID string `json:"run_id" jsonschema:"The ID of the playbook run"`
-	Title string `json:"title" jsonschema:"Title of the new section"`
+	RunID string                `json:"run_id" jsonschema:"The ID of the playbook run"`
+	Title string                `json:"title" jsonschema:"Title of the new section"`
+	Items []CreateChecklistItem `json:"items,omitempty" jsonschema:"Optional initial tasks for the section, same shape as create_checklist section items. Item due_date is an absolute Unix timestamp in milliseconds because this is a run, not a template."`
+}
+
+type SkipSectionArgs struct {
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the section to skip"`
+}
+
+type RestoreSectionArgs struct {
+	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
+	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the section to un-skip"`
 }
 
 type RenameSectionArgs struct {
@@ -93,47 +104,55 @@ type MoveSectionArgs struct {
 
 func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Server) {
 	addMCPHelperTool(server, p.clientFactory, "check_item",
-		"Change the state of a checklist item in a playbook run. Use new_state='closed' to check it off or 'open' to uncheck it. Checklist and item numbers are zero-based indexes. If you do not already know the run_id and the exact indexes, do NOT guess them: first call resolve_channel_context (passing the channel the agent is operating in) or find_checklist_item to look them up. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2, \"new_state\": \"closed\"}",
+		"Check off, uncheck, skip, or start a task in a playbook run — \"mark that task done\", \"tick it off\", \"mark it in progress\", \"skip that step\". new_state is one of closed (done, the default), open (not started), in_progress (being worked on), or skipped (does not apply). This edits a task inside a live run, not a playbook template. Checklist and item numbers are zero-based indexes; if you do not already know the run_id and the exact indexes, do NOT guess them: call resolve_channel_context (passing the channel the agent is operating in), find_checklist_item, or get_run first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2, \"new_state\": \"closed\"}",
 		toolCheckItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_checklist_item",
-		"Add a new item to an existing checklist in a playbook run. The checklist_number is a zero-based index; if you don't know it, call resolve_channel_context first. due_date is an optional Unix timestamp in milliseconds. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\", \"due_date\": 1717200000000}",
+		"Add a task to an existing checklist section in a playbook run (a live run, not a playbook template — use add_playbook_task for templates). The checklist_number is a zero-based index; if you don't know it, call resolve_channel_context or get_run first. due_date is an absolute Unix timestamp in milliseconds because this is a run. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\", \"due_date\": 1717200000000}",
 		toolAddChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "set_checklist_item_due_date",
-		"Set or clear the due date for an existing checklist item in a playbook run. due_date is a Unix timestamp in milliseconds; use 0 to clear. Checklist and item numbers are zero-based indexes; if you don't know them, call resolve_channel_context or find_checklist_item first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"due_date\": 1717200000000}",
+		"Set or clear the due date/deadline of a task in a playbook run. due_date is an absolute Unix timestamp in milliseconds (runs use absolute dates; playbook templates use relative offsets); use 0 to clear. Checklist and item numbers are zero-based indexes; if you don't know them, call resolve_channel_context, find_checklist_item, or get_run first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"due_date\": 1717200000000}",
 		toolSetChecklistItemDueDate)
 
 	addMCPHelperTool(server, p.clientFactory, "edit_checklist_item",
-		"Edit the title, description, slash command, or due date of an existing checklist item. Only provided fields are updated. due_date is a Unix timestamp in milliseconds; use 0 to clear. If you don't know the indexes, call resolve_channel_context or find_checklist_item first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\", \"due_date\": 1717200000000}",
+		"Edit the title, description, slash command, or due date of a task in a playbook run. Only provided fields change; the rest are preserved. due_date is an absolute Unix timestamp in milliseconds; use 0 to clear. To change whether the task is done use check_item instead. If you don't know the indexes, call resolve_channel_context, find_checklist_item, or get_run first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task title\", \"due_date\": 1717200000000}",
 		toolEditChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "set_checklist_item_assignee",
-		"Assign or clear the assignee for an existing checklist item. Omit assignee_id or set it to an empty string to clear the assignee. If you don't know the indexes, call resolve_channel_context or find_checklist_item first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"assignee_id\": \"user123...\"}",
+		"Assign a task in a playbook run to someone, or clear its assignee — \"give that task to Alice\", \"unassign it\". Omit assignee_id or set it to an empty string to clear. If you don't know the indexes, call resolve_channel_context, find_checklist_item, or get_run first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"assignee_id\": \"user123...\"}",
 		toolSetChecklistItemAssignee)
 
 	addMCPHelperTool(server, p.clientFactory, "remove_checklist_item",
-		"Remove a checklist item from a playbook run. This permanently deletes the item, so confirm the indexes first — if unsure, call resolve_channel_context or find_checklist_item. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}",
+		"Delete a task from a playbook run permanently. Prefer check_item with new_state='skipped' when the task simply does not apply. This is destructive, so confirm the indexes first — call resolve_channel_context, find_checklist_item, or get_run if unsure. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}",
 		toolRemoveChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "move_checklist_item",
-		"Move a checklist item within or between sections in a playbook run. Source and destination indexes are zero-based. The destination item index is an insertion position: within the same section it must be an existing item index (0..item count-1); when moving to a different section you may also use the item count itself to append. If you don't know the indexes, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 0, \"source_item_idx\": 2, \"dest_checklist_idx\": 1, \"dest_item_idx\": 0}",
+		"Reorder a task within a playbook run, or move it to a different checklist section. Source and destination indexes are zero-based. The destination item index is an insertion position: within the same section it must be an existing item index (0..item count-1); when moving to a different section you may also use the item count itself to append. If you don't know the indexes, call resolve_channel_context or get_run first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 0, \"source_item_idx\": 2, \"dest_checklist_idx\": 1, \"dest_item_idx\": 0}",
 		toolMoveChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_section",
-		"Add a new section (checklist group) to a playbook run. Sections organize tasks into logical groups. Example: {\"run_id\": \"abc123...\", \"title\": \"Post-incident review\"}",
+		"Add a checklist section (task group, stage) to a playbook run, optionally with its initial tasks in the same call. Sections group tasks in a live run; to add a section to a reusable playbook template use add_playbook_section. Example: {\"run_id\": \"abc123...\", \"title\": \"Post-incident review\", \"items\": [{\"title\": \"Schedule retrospective\"}]}",
 		toolAddSection)
 
 	addMCPHelperTool(server, p.clientFactory, "rename_section",
-		"Rename an existing section in a playbook run. The checklist_number is a zero-based index; if you don't know it, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Updated section name\"}",
+		"Rename a checklist section in a playbook run. The checklist_number is a zero-based index; if you don't know it, call resolve_channel_context or get_run first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Updated section name\"}",
 		toolRenameSection)
 
 	addMCPHelperTool(server, p.clientFactory, "remove_section",
-		"Remove an entire section and all its items from a playbook run. This is permanent, so confirm the index first — if unsure, call resolve_channel_context. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 1}",
+		"Delete a whole checklist section and all its tasks from a playbook run permanently. Prefer skip_section when the section simply does not apply this time. This is destructive, so confirm the index first — call resolve_channel_context or get_run if unsure. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 1}",
 		toolRemoveSection)
 
+	addMCPHelperTool(server, p.clientFactory, "skip_section",
+		"Skip an entire checklist section in a playbook run — \"this whole stage doesn't apply this time\" — without deleting it. To skip one individual task instead, call check_item with new_state='skipped'. Un-skip with restore_section. The checklist_number is a zero-based index; call resolve_channel_context or get_run if you don't know it. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 1}",
+		toolSkipSection)
+
+	addMCPHelperTool(server, p.clientFactory, "restore_section",
+		"Un-skip a previously skipped checklist section in a playbook run, bringing its tasks back into play. This is the inverse of skip_section. The checklist_number is a zero-based index; call resolve_channel_context or get_run if you don't know it. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 1}",
+		toolRestoreSection)
+
 	addMCPHelperTool(server, p.clientFactory, "move_section",
-		"Move a section within a playbook run. Source and destination indexes are zero-based existing section indexes (0 = first, section count-1 = last). If you don't know the indexes, call resolve_channel_context first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}",
+		"Reorder a checklist section within a playbook run. Source and destination indexes are zero-based existing section indexes (0 = first, section count-1 = last). If you don't know the indexes, call resolve_channel_context or get_run first. Example: {\"run_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}",
 		toolMoveSection)
 }
 
@@ -161,11 +180,9 @@ func toolCheckItem(ctx context.Context, client APIClient, args CheckItemArgs) (s
 		// The Playbooks API uses an empty new_state to reopen an item. This is distinct
 		// from the omitted MCP argument above, which defaults the tool action to closed.
 		apiState = ""
-	case "closed", "skipped":
-	case "in_progress":
-		return "", fmt.Errorf("new_state %q is not supported by this tool; use open, closed, or skipped", state)
+	case "in_progress", "closed", "skipped":
 	default:
-		return "", fmt.Errorf("new_state must be one of open, closed, or skipped")
+		return "", fmt.Errorf("new_state must be one of open, in_progress, closed, or skipped")
 	}
 
 	// Fetch the run first so we can give an actionable error (listing the real
@@ -215,8 +232,10 @@ func fetchRunForBounds(ctx context.Context, client APIClient, runID string) (pla
 }
 
 // checkChecklistIndex verifies a checklist (section) index exists in the run.
+// It rejects negatives itself rather than trusting every caller to have run
+// validateIndex first, since indexing a slice with one would panic.
 func checkChecklistIndex(run playbookRunDetail, idx int, field string) error {
-	if idx >= len(run.Checklists) {
+	if idx < 0 || idx >= len(run.Checklists) {
 		return outOfRangeError(field, idx, run)
 	}
 	return nil
@@ -230,7 +249,7 @@ func checkItemIndex(run playbookRunDetail, checklistIdx, itemIdx int, checklistF
 	if err := checkChecklistIndex(run, checklistIdx, checklistField); err != nil {
 		return err
 	}
-	if itemIdx >= len(run.Checklists[checklistIdx].Items) {
+	if itemIdx < 0 || itemIdx >= len(run.Checklists[checklistIdx].Items) {
 		return outOfRangeError(itemField, itemIdx, run)
 	}
 	return nil
@@ -245,6 +264,9 @@ func checkMoveItemDest(run playbookRunDetail, sourceChecklistIdx, destChecklistI
 		return err
 	}
 	lenDest := len(run.Checklists[destChecklistIdx].Items)
+	if destItemIdx < 0 {
+		return outOfRangeError("dest_item_idx", destItemIdx, run)
+	}
 	if sourceChecklistIdx == destChecklistIdx {
 		if destItemIdx >= lenDest {
 			return outOfRangeError("dest_item_idx", destItemIdx, run)
@@ -521,9 +543,20 @@ func toolAddSection(ctx context.Context, client APIClient, args AddSectionArgs) 
 	if title == "" {
 		return "", fmt.Errorf("title is required")
 	}
+	if err := validateChecklistItems(args.Items, "items"); err != nil {
+		return "", err
+	}
 
-	body := map[string]string{
+	// The endpoint decodes a full app.Checklist, so the section and its tasks
+	// can be created in one round trip.
+	items := make([]CreateChecklistItem, 0, len(args.Items))
+	for _, item := range args.Items {
+		item.Title = strings.TrimSpace(item.Title)
+		items = append(items, item)
+	}
+	body := map[string]any{
 		"title": title,
+		"items": items,
 	}
 
 	endpoint := fmt.Sprintf("runs/%s/checklists", args.RunID)
@@ -531,7 +564,48 @@ func toolAddSection(ctx context.Context, client APIClient, args AddSectionArgs) 
 		return "", fmt.Errorf("failed to add section: %w", err)
 	}
 
+	if len(items) > 0 {
+		return fmt.Sprintf("Added section '%s' with %d task(s) to run %s.", title, len(items), args.RunID), nil
+	}
 	return fmt.Sprintf("Added section '%s' to run %s.", title, args.RunID), nil
+}
+
+func toolSkipSection(ctx context.Context, client APIClient, args SkipSectionArgs) (string, error) {
+	return setSectionSkipped(ctx, client, args.RunID, args.ChecklistNumber, true)
+}
+
+func toolRestoreSection(ctx context.Context, client APIClient, args RestoreSectionArgs) (string, error) {
+	return setSectionSkipped(ctx, client, args.RunID, args.ChecklistNumber, false)
+}
+
+func setSectionSkipped(ctx context.Context, client APIClient, runID string, checklistNumber int, skip bool) (string, error) {
+	if err := validateID(runID, "run_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(checklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
+
+	run, err := fetchRunForBounds(ctx, client, runID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkChecklistIndex(run, checklistNumber, "checklist_number"); err != nil {
+		return "", err
+	}
+	title := run.Checklists[checklistNumber].Title
+
+	action, verb := "restore", "restored"
+	if skip {
+		action, verb = "skip", "skipped"
+	}
+
+	endpoint := fmt.Sprintf("runs/%s/checklists/%d/%s", runID, checklistNumber, action)
+	if err := client.Put(ctx, endpoint, nil, nil); err != nil {
+		return "", fmt.Errorf("failed to %s section %d in run %s: %w", action, checklistNumber, runID, err)
+	}
+
+	return fmt.Sprintf("Section %d (%q) in run %s %s.", checklistNumber, title, runID, verb), nil
 }
 
 func toolRenameSection(ctx context.Context, client APIClient, args RenameSectionArgs) (string, error) {

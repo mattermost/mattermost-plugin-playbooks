@@ -35,8 +35,8 @@ type CreatePlaybookArgs struct {
 	ReminderTimerDefaultSeconds  int64                     `json:"reminder_timer_default_seconds,omitempty" jsonschema:"Default status update reminder interval in seconds. Defaults to 86400."`
 	StatusUpdateEnabled          *bool                     `json:"status_update_enabled,omitempty" jsonschema:"Whether status updates are enabled for runs"`
 	Metrics                      []CreatePlaybookMetric    `json:"metrics,omitempty" jsonschema:"Optional key metrics, maximum 4"`
-	ChannelID                    string                    `json:"channel_id,omitempty" jsonschema:"Existing channel to link to new runs when channel_mode links an existing channel"`
-	ChannelMode                  *int                      `json:"channel_mode,omitempty" jsonschema:"Run channel mode. 0=create new channel, 1=link existing channel"`
+	ChannelID                    string                    `json:"channel_id,omitempty" jsonschema:"Existing channel to link to new runs when channel_mode is link_existing_channel"`
+	ChannelMode                  string                    `json:"channel_mode,omitempty" jsonschema:"How runs of this playbook get a channel: create_new_channel (default) or link_existing_channel. When link_existing_channel, also set channel_id."`
 	WebhookOnCreationURLs        []string                  `json:"webhook_on_creation_urls,omitempty" jsonschema:"HTTP/HTTPS URLs to call when a run is created from this playbook"`
 	WebhookOnCreationEnabled     *bool                     `json:"webhook_on_creation_enabled,omitempty" jsonschema:"Whether creation webhooks are enabled. Defaults to true when webhook_on_creation_urls is provided."`
 	WebhookOnStatusUpdateURLs    []string                  `json:"webhook_on_status_update_urls,omitempty" jsonschema:"HTTP/HTTPS URLs to call when a run status is updated"`
@@ -95,6 +95,16 @@ type ListPlaybooksArgs struct {
 
 type GetPlaybookArgs struct {
 	PlaybookID string `json:"playbook_id" jsonschema:"The ID of the playbook template to retrieve"`
+}
+
+type PlaybookIDArgs struct {
+	PlaybookID string `json:"playbook_id" jsonschema:"The ID of the playbook template"`
+}
+
+type UpdatePlaybookArgs struct {
+	PlaybookID  string  `json:"playbook_id" jsonschema:"The ID of the playbook template to edit"`
+	Title       *string `json:"title,omitempty" jsonschema:"New title for the playbook template. Must not be empty."`
+	Description *string `json:"description,omitempty" jsonschema:"New description for the playbook template (supports Markdown). Send an empty string to clear it."`
 }
 
 type AddPlaybookTaskArgs struct {
@@ -169,17 +179,21 @@ type listPlaybooksResponse struct {
 }
 
 func (p *PlaybooksToolProvider) addMCPHelperPlaybookTools(server *mcphelper.Server) {
-	addMCPHelperTool(server, p.clientFactory, "create_playbook", "Create a Mattermost Playbook in a team with optional stages/checklists, tasks, members, invitations, default owner, broadcast settings, metrics, run channel options, and webhooks. Returns the created playbook and browser URL.", toolCreatePlaybook)
-	addMCPHelperTool(server, p.clientFactory, "list_playbooks", "List playbook templates with optional team and search filters. Use this first when you know a template title or team but do not yet know the playbook_id. Example: {\"team_id\": \"team123...\", \"search_term\": \"Incident\", \"per_page\": 10}", toolListPlaybooks)
-	addMCPHelperTool(server, p.clientFactory, "get_playbook", "Get full details for a playbook template, including checklists and task indexes. Use this to confirm the playbook_id and the zero-based checklist_number/item_number values before mutating tasks. Example: {\"playbook_id\": \"abc123...\"}", toolGetPlaybook)
-	addMCPHelperTool(server, p.clientFactory, "create_playbook_attribute", "Create an attribute/property field on an existing playbook template. If you do not already know the playbook_id, call list_playbooks first. Supported types are text, select, multiselect, date, user, and multiuser. Select and multiselect attributes require attrs.options. Returns the created field as formatted JSON. Example: {\"playbook_id\": \"abc123...\", \"name\": \"Severity\", \"type\": \"select\", \"attrs\": {\"visibility\": \"always\", \"sort_order\": 1, \"options\": [{\"name\": \"High\", \"color\": \"red\"}]}}", toolCreatePlaybookAttribute)
-	addMCPHelperTool(server, p.clientFactory, "add_playbook_task", "Add a task to an existing playbook template checklist. The checklist_number is a zero-based index. If you do not already know the playbook_id and checklist_number, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist indexes. This fetches the playbook, preserves its existing fields, mutates only checklists, and saves the full playbook. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix\", \"assignee_id\": \"user123...\"}", toolAddPlaybookTask)
-	addMCPHelperTool(server, p.clientFactory, "edit_playbook_task", "Edit a task in an existing playbook template. Checklist and item numbers are zero-based indexes, and only provided task fields are updated. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This preserves all other playbook and task fields. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task\"}", toolEditPlaybookTask)
-	addMCPHelperTool(server, p.clientFactory, "remove_playbook_task", "Remove a task from an existing playbook template. Checklist and item numbers are zero-based indexes. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This fetches and saves the full playbook while mutating only checklists. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}", toolRemovePlaybookTask)
-	addMCPHelperTool(server, p.clientFactory, "add_playbook_section", "Add a new section/checklist to an existing playbook template. The optional checklist_number is a zero-based insertion index; omit it to append. If you do not already know the playbook_id or section indexes, call list_playbooks, then get_playbook first. Initial items use the same shape as create_playbook checklist items, and assignees are invited automatically. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 1, \"title\": \"Post-incident review\", \"items\": [{\"title\": \"Schedule retrospective\"}]}", toolAddPlaybookSection)
-	addMCPHelperTool(server, p.clientFactory, "rename_playbook_section", "Rename an existing section/checklist in a playbook template. The checklist_number is a zero-based index. If you do not already know the playbook_id and checklist_number, call list_playbooks, then get_playbook first. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Updated section name\"}", toolRenamePlaybookSection)
-	addMCPHelperTool(server, p.clientFactory, "remove_playbook_section", "Remove an entire section/checklist and all its tasks from a playbook template. The checklist_number is a zero-based index; confirm it with get_playbook before using this destructive tool. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 1}", toolRemovePlaybookSection)
-	addMCPHelperTool(server, p.clientFactory, "move_playbook_section", "Move a section/checklist within a playbook template. Source and destination indexes are zero-based existing section indexes (0 = first, section count-1 = last). If you do not already know the playbook_id and indexes, call list_playbooks, then get_playbook first. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}", toolMovePlaybookSection)
+	addMCPHelperTool(server, p.clientFactory, "create_playbook", "Create a new playbook template (a reusable checklist blueprint for incidents, releases, onboarding) in a team, with optional stages/checklists, tasks, members, invitations, default owner, broadcast settings, metrics, run channel options, and webhooks. This creates the template only — it does not start anything; to start a run from a template (\"start/run the playbook\") call run_playbook. Returns the created playbook template and its browser URL. Example: {\"title\": \"Sev1 Incident\", \"team_id\": \"team123...\", \"checklists\": [{\"title\": \"Triage\", \"items\": [{\"title\": \"Page the on-call\"}]}]}", toolCreatePlaybook)
+	addMCPHelperTool(server, p.clientFactory, "list_playbooks", "List and search playbook templates (reusable run blueprints) by team, title, or archived state. Use this first whenever you know a playbook's name but not its playbook_id — for example before run_playbook starts a run from it. This lists templates, not active runs; call list_runs for runs in progress. Example: {\"team_id\": \"team123...\", \"search_term\": \"Incident\", \"per_page\": 10}", toolListPlaybooks)
+	addMCPHelperTool(server, p.clientFactory, "get_playbook", "Get full details for one playbook template, including its checklists and zero-based task indexes. Use this to confirm the playbook_id and the checklist_number/item_number values before editing template tasks. This reads a template, not a live run — use get_run for a run. Example: {\"playbook_id\": \"abc123...\"}", toolGetPlaybook)
+	addMCPHelperTool(server, p.clientFactory, "update_playbook", "Rename a playbook template or edit its description. Provide title, description, or both — at least one is required. This edits the reusable template, so it does not change runs already started from it; use update_run to rename a run. If you do not know the playbook_id, call list_playbooks first. Example: {\"playbook_id\": \"abc123...\", \"title\": \"Sev1 Incident Response\"}", toolUpdatePlaybook)
+	addMCPHelperTool(server, p.clientFactory, "archive_playbook", "Archive (delete, retire) a playbook template so no new runs can be started from it. Runs already started keep working, and restore_playbook can bring the template back. This is destructive: confirm you have the right template with list_playbooks or get_playbook before calling, because titles are often similar. Example: {\"playbook_id\": \"abc123...\"}", toolArchivePlaybook)
+	addMCPHelperTool(server, p.clientFactory, "restore_playbook", "Restore (un-archive, bring back) an archived playbook template so runs can be started from it again. Archived templates are hidden by default: call list_playbooks with with_archived=true to find the playbook_id. Example: {\"playbook_id\": \"abc123...\"}", toolRestorePlaybook)
+	addMCPHelperTool(server, p.clientFactory, "duplicate_playbook", "Duplicate (copy, clone) a playbook template into a new template you can then edit, which is far cheaper than rebuilding one with create_playbook. The copy keeps the original's checklists and settings. Call list_playbooks first if you do not know the playbook_id. Returns the new template's title, ID, and browser URL. Example: {\"playbook_id\": \"abc123...\"}", toolDuplicatePlaybook)
+	addMCPHelperTool(server, p.clientFactory, "create_playbook_attribute", "Create a custom attribute/property field (for example Severity or Service) on a playbook template, so runs started from it can carry that value. If you do not already know the playbook_id, call list_playbooks first. Supported types are text, select, multiselect, date, user, and multiuser. Select and multiselect attributes require attrs.options. Returns the created field as formatted JSON. Example: {\"playbook_id\": \"abc123...\", \"name\": \"Severity\", \"type\": \"select\", \"attrs\": {\"visibility\": \"always\", \"sort_order\": 1, \"options\": [{\"name\": \"High\", \"color\": \"red\"}]}}", toolCreatePlaybookAttribute)
+	addMCPHelperTool(server, p.clientFactory, "add_playbook_task", "Add a task to a checklist in a playbook template, so every future run started from it includes that task (use add_checklist_item to add a task to a live run instead). The checklist_number is a zero-based index. If you do not already know the playbook_id and checklist_number, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist indexes. This fetches the playbook, preserves its existing fields, mutates only checklists, and saves the full playbook. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix\", \"assignee_id\": \"user123...\"}", toolAddPlaybookTask)
+	addMCPHelperTool(server, p.clientFactory, "edit_playbook_task", "Edit a task in a playbook template — its title, description, slash command, assignee, or relative due date (use edit_checklist_item for a task in a live run). Checklist and item numbers are zero-based indexes, and only provided task fields are updated. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This preserves all other playbook and task fields. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task\"}", toolEditPlaybookTask)
+	addMCPHelperTool(server, p.clientFactory, "remove_playbook_task", "Delete a task from a playbook template so future runs no longer include it (use remove_checklist_item for a task in a live run). Checklist and item numbers are zero-based indexes. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This fetches and saves the full playbook while mutating only checklists. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}", toolRemovePlaybookTask)
+	addMCPHelperTool(server, p.clientFactory, "add_playbook_section", "Add a checklist section (stage, task group) to a playbook template, optionally with its initial tasks (use add_section for a live run). The optional checklist_number is a zero-based insertion index; omit it to append. If you do not already know the playbook_id or section indexes, call list_playbooks, then get_playbook first. Initial items use the same shape as create_playbook checklist items, and assignees are invited automatically. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 1, \"title\": \"Post-incident review\", \"items\": [{\"title\": \"Schedule retrospective\"}]}", toolAddPlaybookSection)
+	addMCPHelperTool(server, p.clientFactory, "rename_playbook_section", "Rename a checklist section in a playbook template (use rename_section for a live run). The checklist_number is a zero-based index. If you do not already know the playbook_id and checklist_number, call list_playbooks, then get_playbook first. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Updated section name\"}", toolRenamePlaybookSection)
+	addMCPHelperTool(server, p.clientFactory, "remove_playbook_section", "Delete a whole checklist section and all its tasks from a playbook template (use remove_section for a live run). The checklist_number is a zero-based index; confirm it with get_playbook before using this destructive tool. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 1}", toolRemovePlaybookSection)
+	addMCPHelperTool(server, p.clientFactory, "move_playbook_section", "Reorder a checklist section within a playbook template (use move_section for a live run). Source and destination indexes are zero-based existing section indexes (0 = first, section count-1 = last). If you do not already know the playbook_id and indexes, call list_playbooks, then get_playbook first. This preserves all other playbook fields. Example: {\"playbook_id\": \"abc123...\", \"source_checklist_idx\": 1, \"dest_checklist_idx\": 0}", toolMovePlaybookSection)
 }
 
 func toolCreatePlaybook(ctx context.Context, client APIClient, args CreatePlaybookArgs) (string, error) {
@@ -243,8 +257,10 @@ func toolCreatePlaybook(ctx context.Context, client APIClient, args CreatePlaybo
 	if args.CreatePublicPlaybookRun != nil {
 		body["create_public_playbook_run"] = *args.CreatePublicPlaybookRun
 	}
-	if args.ChannelMode != nil {
-		body["channel_mode"] = *args.ChannelMode
+	if args.ChannelMode != "" {
+		// app.ChannelPlaybookMode only implements UnmarshalText, so the server
+		// rejects the whole create request unless this is sent as a string.
+		body["channel_mode"] = args.ChannelMode
 	}
 	if args.StatusUpdateEnabled != nil {
 		body["status_update_enabled"] = *args.StatusUpdateEnabled
@@ -349,6 +365,104 @@ func toolGetPlaybook(ctx context.Context, client APIClient, args GetPlaybookArgs
 		return "", err
 	}
 	return string(data), nil
+}
+
+func toolUpdatePlaybook(ctx context.Context, client APIClient, args UpdatePlaybookArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+	if args.Title == nil && args.Description == nil {
+		return "", fmt.Errorf("at least one field (title or description) must be provided")
+	}
+	var title string
+	if args.Title != nil {
+		title = strings.TrimSpace(*args.Title)
+		if title == "" {
+			return "", fmt.Errorf("title must not be empty")
+		}
+	}
+
+	// Templates have no granular update endpoint, so mutate only the requested
+	// keys of the raw playbook map and PUT the whole thing back.
+	playbook, err := fetchPlaybookForMutation(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	if args.Title != nil {
+		playbook["title"] = title
+	}
+	if args.Description != nil {
+		playbook["description"] = *args.Description
+	}
+
+	if err := putMutatedPlaybook(ctx, client, args.PlaybookID, playbook); err != nil {
+		return "", err
+	}
+
+	switch {
+	case args.Title != nil && args.Description != nil:
+		return fmt.Sprintf("Renamed playbook template %s to %q and updated its description.", args.PlaybookID, title), nil
+	case args.Title != nil:
+		return fmt.Sprintf("Renamed playbook template %s to %q.", args.PlaybookID, title), nil
+	default:
+		return fmt.Sprintf("Updated the description of playbook template %s.", args.PlaybookID), nil
+	}
+}
+
+func toolArchivePlaybook(ctx context.Context, client APIClient, args PlaybookIDArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+
+	// Read before archiving so the confirmation names the playbook that was
+	// actually affected, and a wrong ID fails before anything is destroyed.
+	playbook, err := fetchPlaybookForMutation(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", fmt.Errorf("%w (if you are unsure of the playbook_id, call list_playbooks)", err)
+	}
+	title, _ := playbook["title"].(string)
+
+	if err := client.Delete(ctx, fmt.Sprintf("playbooks/%s", args.PlaybookID)); err != nil {
+		return "", fmt.Errorf("failed to archive playbook %s: %w", args.PlaybookID, err)
+	}
+
+	return fmt.Sprintf("Archived playbook template %q (%s). No new runs can be started from it; call restore_playbook to bring it back.", title, args.PlaybookID), nil
+}
+
+func toolRestorePlaybook(ctx context.Context, client APIClient, args PlaybookIDArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+
+	if err := client.Put(ctx, fmt.Sprintf("playbooks/%s/restore", args.PlaybookID), nil, nil); err != nil {
+		return "", fmt.Errorf("failed to restore playbook %s: %w (list archived templates with list_playbooks and with_archived=true)", args.PlaybookID, err)
+	}
+
+	return fmt.Sprintf("Restored playbook template %s. Runs can be started from it again with run_playbook.", args.PlaybookID), nil
+}
+
+func toolDuplicatePlaybook(ctx context.Context, client APIClient, args PlaybookIDArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+
+	var created struct {
+		ID string `json:"id"`
+	}
+	if err := client.Post(ctx, fmt.Sprintf("playbooks/%s/duplicate", args.PlaybookID), nil, &created); err != nil {
+		return "", fmt.Errorf("failed to duplicate playbook %s: %w (if you are unsure of the playbook_id, call list_playbooks)", args.PlaybookID, err)
+	}
+	if created.ID == "" {
+		return "", fmt.Errorf("failed to duplicate playbook %s: response missing id", args.PlaybookID)
+	}
+
+	duplicate, err := fetchPlaybookForMutation(ctx, client, created.ID)
+	if err != nil {
+		return "", fmt.Errorf("duplicated playbook %s into %s, but failed to fetch the copy: %w", args.PlaybookID, created.ID, err)
+	}
+	title, _ := duplicate["title"].(string)
+
+	return fmt.Sprintf("Duplicated playbook template %s into %q (playbook_id: %s).\nURL: %s", args.PlaybookID, title, created.ID, client.GetPlaybookURL(created.ID)), nil
 }
 
 func toolCreatePlaybookAttribute(ctx context.Context, client APIClient, args CreatePlaybookAttributeArgs) (string, error) {
@@ -1037,6 +1151,11 @@ func validateCreatePlaybookItems(items []CreatePlaybookItem, field string) error
 func validateCreatePlaybookArgs(args CreatePlaybookArgs) error {
 	if args.ReminderTimerDefaultSeconds < 0 {
 		return fmt.Errorf("reminder_timer_default_seconds must be non-negative")
+	}
+	switch args.ChannelMode {
+	case "", channelModeCreateNew, channelModeLinkExisting:
+	default:
+		return fmt.Errorf("channel_mode must be one of %s or %s", channelModeCreateNew, channelModeLinkExisting)
 	}
 	if args.DefaultOwnerID != "" {
 		if err := validateID(args.DefaultOwnerID, "default_owner_id"); err != nil {
