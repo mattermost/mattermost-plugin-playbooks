@@ -131,7 +131,7 @@ func TestToolCreatePlaybookAttributePostsPropertyField(t *testing.T) {
 			SortOrder:  2,
 			Options: []CreatePlaybookAttributeOption{
 				{Name: "  High  ", Color: "red"},
-				{ID: "option-id", Name: "Low"},
+				{Name: "Low"},
 			},
 		},
 	})
@@ -148,7 +148,7 @@ func TestToolCreatePlaybookAttributePostsPropertyField(t *testing.T) {
 	options := attrs["options"].([]map[string]any)
 	require.Len(t, options, 2)
 	assert.Equal(t, map[string]any{"name": "High", "color": "red"}, options[0])
-	assert.Equal(t, map[string]any{"name": "Low", "id": "option-id"}, options[1])
+	assert.Equal(t, map[string]any{"name": "Low"}, options[1])
 
 	var decoded map[string]any
 	require.NoError(t, json.Unmarshal([]byte(result), &decoded))

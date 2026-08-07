@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 const defaultReminderTimerSeconds int64 = 86400
@@ -79,7 +81,6 @@ type CreatePlaybookAttributeAttrs struct {
 }
 
 type CreatePlaybookAttributeOption struct {
-	ID    string `json:"id,omitempty" jsonschema:"Optional option ID"`
 	Name  string `json:"name" jsonschema:"Option display name"`
 	Color string `json:"color,omitempty" jsonschema:"Optional option color"`
 }
@@ -961,7 +962,7 @@ func buildCreatePlaybookAttributeAttrs(args CreatePlaybookAttributeAttrs, attrTy
 
 	if visibility := strings.TrimSpace(args.Visibility); visibility != "" {
 		switch visibility {
-		case "hidden", "when_set", "always":
+		case app.PropertyFieldVisibilityHidden, app.PropertyFieldVisibilityWhenSet, app.PropertyFieldVisibilityAlways:
 			attrs["visibility"] = visibility
 		default:
 			return nil, fmt.Errorf("attrs.visibility must be one of: hidden, when_set, always")
@@ -991,9 +992,6 @@ func buildCreatePlaybookAttributeAttrs(args CreatePlaybookAttributeAttrs, attrTy
 				return nil, fmt.Errorf("attrs.options[%d].name is required", i)
 			}
 			out := map[string]any{"name": name}
-			if id := strings.TrimSpace(option.ID); id != "" {
-				out["id"] = id
-			}
 			if color := strings.TrimSpace(option.Color); color != "" {
 				out["color"] = color
 			}
@@ -1008,8 +1006,9 @@ func buildCreatePlaybookAttributeAttrs(args CreatePlaybookAttributeAttrs, attrTy
 }
 
 func isSupportedPlaybookAttributeType(attrType string) bool {
-	switch attrType {
-	case "text", "select", "multiselect", "date", "user", "multiuser":
+	switch model.PropertyFieldType(attrType) {
+	case model.PropertyFieldTypeText, model.PropertyFieldTypeSelect, model.PropertyFieldTypeMultiselect,
+		model.PropertyFieldTypeDate, model.PropertyFieldTypeUser, model.PropertyFieldTypeMultiuser:
 		return true
 	default:
 		return false
@@ -1017,7 +1016,8 @@ func isSupportedPlaybookAttributeType(attrType string) bool {
 }
 
 func attributeTypeRequiresOptions(attrType string) bool {
-	return attrType == "select" || attrType == "multiselect"
+	return model.PropertyFieldType(attrType) == model.PropertyFieldTypeSelect ||
+		model.PropertyFieldType(attrType) == model.PropertyFieldTypeMultiselect
 }
 
 func validateCreatePlaybookItems(items []CreatePlaybookItem, field string) error {
