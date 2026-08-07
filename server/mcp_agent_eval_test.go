@@ -477,10 +477,9 @@ func destructiveChangeNotes(e *TestEnvironment, sc *evalScenarioContext) []strin
 
 	if sc.BeforeRun != nil {
 		after := snapshotRun(e, sc.RunID)
-		switch {
-		case after == nil:
+		if after == nil {
 			notes = append(notes, "DESTRUCTIVE: seeded run is no longer readable")
-		default:
+		} else {
 			if len(after.Checklists) < len(sc.BeforeRun.Checklists) {
 				notes = append(notes, fmt.Sprintf("DESTRUCTIVE: run sections %d→%d", len(sc.BeforeRun.Checklists), len(after.Checklists)))
 			}
