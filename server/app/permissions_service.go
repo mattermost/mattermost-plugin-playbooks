@@ -148,69 +148,44 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create playbook", userID)
 }
 
-// PlaybookCreateWithMembers checks that a client-supplied members list on playbook creation is
-// permitted. An empty list is always allowed (the caller then defaults to making the creator the
-// sole admin), as is a list where the creator is the only member and only assigns themselves the
-// default self-admin role (or plain membership). Any other non-empty list requires ManageMembers,
-// and assigning any member a role other than a plain "playbook_member" additionally requires
-// ManageRoles. Checked directly at team level (not via getPlaybookRole).
+// PlaybookCreateWithMembers authorizes a client-supplied members list on playbook creation with
+// the same rules the update path applies: the list is diffed against the membership the server
+// assigns by default (the creator as sole admin) and checked by noAddedMembersWithoutPermission.
+//
+// Members, SchemeRoles and the DefaultPlaybook*Role fields all come from the request body and are
+// read by getPlaybookRole, so the permission scope is built from the team's scheme rather than
+// from the submitted playbook.
 func (p *PermissionsService) PlaybookCreateWithMembers(userID string, playbook Playbook) error {
 	if len(playbook.Members) == 0 {
 		return nil
 	}
 
+	// No more than the server's own default: equivalent to omitting the list.
 	if isSelfOnlyDefaultMembership(userID, playbook.Members) {
 		return nil
 	}
 
-	if err := p.teamLevelPlaybookManageMembers(userID, playbook); err != nil {
-		return err
+	schemeRoles, err := p.playbookService.GetTeamPlaybookSchemeRoles(playbook.TeamID)
+	if err != nil {
+		return errors.Wrapf(err, "unable to resolve playbook scheme roles for team `%s`", playbook.TeamID)
 	}
 
-	for _, member := range playbook.Members {
-		if len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember {
-			continue
-		}
-		if err := p.teamLevelPlaybookManageRoles(userID, playbook); err != nil {
-			return err
-		}
-		break
-	}
+	defaultMembers := []PlaybookMember{{
+		UserID:      userID,
+		Roles:       []string{PlaybookRoleMember, PlaybookRoleAdmin},
+		SchemeRoles: []string{schemeRoles.AdminRole, schemeRoles.MemberRole},
+	}}
 
-	return nil
+	permCheckPlaybook := playbook
+	permCheckPlaybook.Members = defaultMembers
+	permCheckPlaybook.DefaultPlaybookAdminRole = schemeRoles.AdminRole
+	permCheckPlaybook.DefaultPlaybookMemberRole = schemeRoles.MemberRole
+
+	return p.noAddedMembersWithoutPermission(userID, permCheckPlaybook, defaultMembers, playbook.Members)
 }
 
-// teamLevelPlaybookManageMembers checks ManageMembers at the team level only.
-func (p *PermissionsService) teamLevelPlaybookManageMembers(userID string, playbook Playbook) error {
-	permission := model.PermissionPrivatePlaybookManageMembers
-	if p.PlaybookIsPublic(playbook) {
-		permission = model.PermissionPublicPlaybookManageMembers
-	}
-
-	if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission) {
-		return nil
-	}
-
-	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage members for playbook `%s`", userID, playbook.ID)
-}
-
-// teamLevelPlaybookManageRoles checks ManageRoles at the team level only.
-func (p *PermissionsService) teamLevelPlaybookManageRoles(userID string, playbook Playbook) error {
-	permission := model.PermissionPrivatePlaybookManageRoles
-	if p.PlaybookIsPublic(playbook) {
-		permission = model.PermissionPublicPlaybookManageRoles
-	}
-
-	if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission) {
-		return nil
-	}
-
-	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage roles for playbook `%s`", userID, playbook.ID)
-}
-
-// isSelfOnlyDefaultMembership reports whether members consists solely of the requesting user,
-// assigned either the default self-admin roles (playbook_member + playbook_admin) or a plain
-// playbook_member role - i.e. no more than what the server would assign automatically.
+// isSelfOnlyDefaultMembership reports whether members is just the requesting user with either the
+// default self-admin roles or a plain playbook_member role.
 func isSelfOnlyDefaultMembership(userID string, members []PlaybookMember) bool {
 	if len(members) != 1 || members[0].UserID != userID {
 		return false
@@ -446,10 +421,10 @@ func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID st
 	return nil
 }
 
-// noAddedMembersWithoutPermission checks that changing oldMembers to newMembers is permitted:
-// any change to the member list requires ManageMembers, and assigning a member a role other than
-// a plain new "playbook_member" additionally requires ManageRoles. permCheckPlaybook is used to
-// resolve the permission scope (playbook-level role if it exists, else team-level).
+// noAddedMembersWithoutPermission checks that changing oldMembers to newMembers is permitted: any
+// change to the list requires ManageMembers, and assigning a role other than a plain new
+// "playbook_member" additionally requires ManageRoles. permCheckPlaybook resolves the permission
+// scope (playbook-level role if it exists, else team-level).
 func (p *PermissionsService) noAddedMembersWithoutPermission(userID string, permCheckPlaybook Playbook, oldMembers, newMembers []PlaybookMember) error {
 	if (len(oldMembers) == 0 && len(newMembers) == 0) || reflect.DeepEqual(oldMembers, newMembers) {
 		return nil

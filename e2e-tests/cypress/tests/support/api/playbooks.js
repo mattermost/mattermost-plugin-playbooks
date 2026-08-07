@@ -295,17 +295,6 @@ Cypress.Commands.add('apiCreatePlaybook', (
         ownerGroupOnlyActions,
         autoArchiveChannel = false,
     }) => {
-    const buildMembers = (ids) => ids?.map((userId) => ({
-        user_id: userId,
-        roles: ['playbook_member', 'playbook_admin'],
-    }));
-
-    // Playbook creation rejects client-supplied multi-member lists unless the caller has
-    // manage-members permission. Create with the server default (creator-only membership),
-    // then patch the full member list as the playbook admin.
-    const needsDeferredMembers = memberIDs && memberIDs.length > 1;
-    const createMemberIDs = needsDeferredMembers ? undefined : memberIDs;
-
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/playbooks/api/v0/playbooks',
@@ -319,7 +308,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             remove_channel_member_on_removed_participant: removeChannelMemberOnRemovedParticipant,
             checklists,
             public: makePublic,
-            members: buildMembers(createMemberIDs),
+            members: memberIDs?.map((val) => ({user_id: val, roles: ['playbook_member', 'playbook_admin']})),
             broadcast_enabled: broadcastEnabled,
             broadcast_channel_ids: broadcastChannelIds,
             reminder_message_template: reminderMessageTemplate,
@@ -353,19 +342,14 @@ Cypress.Commands.add('apiCreatePlaybook', (
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
-        return cy.request({
-            url: response.headers.location,
+        cy.wrap(response.headers.location);
+    }).then((location) => {
+        cy.request({
+            url: location,
             method: 'GET',
+        }).then((response) => {
+            cy.wrap(response.body);
         });
-    }).then((response) => {
-        const playbook = response.body;
-        if (!needsDeferredMembers) {
-            return cy.wrap(playbook);
-        }
-
-        return cy.apiPatchPlaybook(playbook.id, {
-            members: buildMembers(memberIDs),
-        }).then(() => cy.apiGetPlaybook(playbook.id));
     });
 });
 

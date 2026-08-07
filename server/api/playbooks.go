@@ -200,8 +200,8 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	// A client-supplied members list can assign roles (e.g. playbook_admin) to arbitrary users,
-	// so it needs the same authorization as modifying members on an existing playbook.
+	// Authorize any client-supplied members list with the same rules the update path applies.
+	// Must run before the default-membership assignment below, which it is diffed against.
 	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreateWithMembers(userID, playbook)) {
 		return
 	}
