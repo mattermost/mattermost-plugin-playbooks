@@ -133,9 +133,10 @@ func runEvalScenario(t *testing.T, agent evalAgent, e *TestEnvironment, scenario
 
 	sc.BeforeRun = snapshotRun(e, sc.RunID)
 	sc.BeforePlaybook = snapshotPlaybook(e, sc.PlaybookID)
+	sc.RunIDsAtSeed = evalRunIDSet(e)
 
 	harness, err := newEvalMCPHarness(ctx, e.RegularUser.Id, func(context.Context) (pbtools.APIClient, error) {
-		return newEvalAPIClient(e.ServerClient.URL, e.ServerClient.AuthToken, e.RegularUser.Id), nil
+		return evalRESTClient(e), nil
 	})
 	require.NoError(t, err, "failed to build MCP harness")
 	defer harness.Close()
@@ -176,6 +177,9 @@ type evalScenarioContext struct {
 	Values         map[string]string
 	BeforeRun      *client.PlaybookRun
 	BeforePlaybook *client.Playbook
+	// RunIDsAtSeed lets a scenario tell the run the agent just created apart
+	// from an identically-named run an earlier scenario left behind.
+	RunIDsAtSeed map[string]bool
 }
 
 type evalScenario struct {
@@ -278,6 +282,18 @@ func (s *evalSeeder) StatusUpdate(runID, message string) {
 	require.NoError(s.t, s.e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), runID, message, 3600))
 }
 
+func (s *evalSeeder) Finish(runID string) {
+	s.t.Helper()
+	require.NoError(s.t, s.e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), runID))
+}
+
+// Unfollow drops the auto-follow that comes with being a run participant, so a
+// follow scenario starts from a state where following is actually a change.
+func (s *evalSeeder) Unfollow(runID string) {
+	s.t.Helper()
+	require.NoError(s.t, evalRESTClient(s.e).Delete(context.Background(), "runs/"+runID+"/followers"))
+}
+
 func evalChecklist(title string, items ...string) client.Checklist {
 	checklist := client.Checklist{Title: title}
 	for _, item := range items {
@@ -308,6 +324,39 @@ func snapshotPlaybook(e *TestEnvironment, playbookID string) *client.Playbook {
 		return nil
 	}
 	return playbook
+}
+
+// evalRESTClient is the acting user's HTTP client for the plugin REST API. The
+// harness hands the same client to the MCP tools, and verification uses it for
+// endpoints the Go client does not wrap (followers).
+func evalRESTClient(e *TestEnvironment) *evalAPIClient {
+	return newEvalAPIClient(e.ServerClient.URL, e.ServerClient.AuthToken, e.RegularUser.Id)
+}
+
+func evalRunFollowers(e *TestEnvironment, runID string) []string {
+	var followers []string
+	if err := evalRESTClient(e).Get(context.Background(), "runs/"+runID+"/followers", nil, &followers); err != nil {
+		return nil
+	}
+	return followers
+}
+
+func evalRunIDSet(e *TestEnvironment) map[string]bool {
+	set := map[string]bool{}
+	for _, run := range listTeamRuns(e) {
+		set[run.ID] = true
+	}
+	return set
+}
+
+func runsCreatedDuringScenario(e *TestEnvironment, sc *evalScenarioContext) []client.PlaybookRun {
+	var created []client.PlaybookRun
+	for _, run := range listTeamRuns(e) {
+		if !sc.RunIDsAtSeed[run.ID] {
+			created = append(created, run)
+		}
+	}
+	return created
 }
 
 func listTeamRuns(e *TestEnvironment) []client.PlaybookRun {
@@ -347,6 +396,31 @@ func findTeamPlaybook(e *TestEnvironment, title string) *client.Playbook {
 		}
 	}
 	return nil
+}
+
+func evalFindPlaybooksContaining(e *TestEnvironment, substr string) []client.Playbook {
+	results, err := e.PlaybooksAdminClient.Playbooks.List(context.Background(), e.BasicTeam.Id, 0, 200, client.PlaybookListOptions{
+		WithArchived: true,
+	})
+	if err != nil {
+		return nil
+	}
+	var matches []client.Playbook
+	for i := range results.Items {
+		if containsFold(results.Items[i].Title, substr) {
+			matches = append(matches, results.Items[i])
+		}
+	}
+	return matches
+}
+
+func evalContainsID(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
 }
 
 func findChecklistItem(checklists []client.Checklist, title string) (int, int, client.ChecklistItem, bool) {
@@ -460,6 +534,498 @@ func evalScenarios() []evalScenario {
 		scenarioArchivePlaybook(),
 		scenarioTemplateVsRunDisambiguation(),
 		scenarioSkipTask(),
+
+		// Scenarios below cover capabilities added after the baseline. The 12
+		// above are unchanged so the before/after comparison stays honest.
+		scenarioAddParticipantNatural(),
+		scenarioAddParticipantWithID(),
+		scenarioFollowRunNatural(),
+		scenarioReopenRun(),
+		scenarioDuplicatePlaybookNatural(),
+		scenarioUpdatePlaybookDescription(),
+		scenarioSkipSectionNatural(),
+		scenarioSectionThenItem(),
+		scenarioMistypedReferenceResilience(),
+		scenarioRunPlaybookFull(),
+		scenarioStatusHistoryNowWorks(),
+		scenarioRunPlaybookLinkedChannel(),
+	}
+}
+
+func scenarioAddParticipantNatural() evalScenario {
+	return evalScenario{
+		name: "add_participant_natural",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Cache eviction storm")
+			sc.PlaybookID = s.Playbook("Cache Incident Template", sc.Channel.Id,
+				evalChecklist("Response", "Flush the hot keys", "Confirm hit rate recovered"))
+			sc.RunID = s.Run("Cache eviction storm", sc.PlaybookID, sc.Channel.Id).ID
+			sc.Values["username"] = s.e.RegularUser2.Username
+			sc.Values["userID"] = s.e.RegularUser2.Id
+		},
+		prompt: func(sc *evalScenarioContext) string {
+			return fmt.Sprintf("Add @%s to this run.", sc.Values["username"])
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			run := snapshotRun(e, sc.RunID)
+			if run == nil {
+				return outcomeError, []string{"could not read the seeded run"}
+			}
+
+			added := evalContainsID(run.ParticipantIDs, sc.Values["userID"])
+			for _, args := range tr.CallArgs("add_run_participants") {
+				if containsFold(args, sc.Values["username"]) {
+					notes = append(notes, "passed the @username where a 26-char user ID was expected — no user-lookup tool exists in this MCP server")
+					break
+				}
+			}
+			if !added && len(tr.CallArgs("add_run_participants")) == 0 {
+				notes = append(notes, "never called add_run_participants")
+			}
+			return verdict(added, tr, notes...)
+		},
+	}
+}
+
+func scenarioAddParticipantWithID() evalScenario {
+	return evalScenario{
+		name: "add_participant_with_id",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Queue backlog growth")
+			sc.PlaybookID = s.Playbook("Queue Incident Template", sc.Channel.Id,
+				evalChecklist("Response", "Scale the consumers", "Confirm backlog draining"))
+			sc.RunID = s.Run("Queue backlog growth", sc.PlaybookID, sc.Channel.Id).ID
+			sc.Values["username"] = s.e.RegularUser2.Username
+			sc.Values["userID"] = s.e.RegularUser2.Id
+		},
+		prompt: func(sc *evalScenarioContext) string {
+			return fmt.Sprintf("Add %s (user ID %s) to this run.", sc.Values["username"], sc.Values["userID"])
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			run := snapshotRun(e, sc.RunID)
+			if run == nil {
+				return outcomeError, []string{"could not read the seeded run"}
+			}
+			return verdict(evalContainsID(run.ParticipantIDs, sc.Values["userID"]), tr)
+		},
+	}
+}
+
+func scenarioFollowRunNatural() evalScenario {
+	return evalScenario{
+		name: "follow_run_natural",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("CDN purge rollout")
+			sc.PlaybookID = s.Playbook("CDN Rollout Template", sc.Channel.Id,
+				evalChecklist("Rollout", "Purge the edge cache", "Verify asset versions"))
+			sc.RunID = s.Run("CDN purge rollout", sc.PlaybookID, sc.Channel.Id).ID
+			s.Unfollow(sc.RunID)
+			sc.Values["actingUserID"] = s.e.RegularUser.Id
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "Keep me posted on this run — follow it for me."
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			followers := evalRunFollowers(e, sc.RunID)
+			following := evalContainsID(followers, sc.Values["actingUserID"])
+			if !following {
+				notes = append(notes, fmt.Sprintf("followers after run: %v", followers))
+			}
+			return verdict(following, tr, notes...)
+		},
+	}
+}
+
+func scenarioReopenRun() evalScenario {
+	return evalScenario{
+		name: "reopen_run",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("TLS certificate expiry")
+			sc.PlaybookID = s.Playbook("Certificate Incident Template", sc.Channel.Id,
+				evalChecklist("Response", "Reissue the certificate", "Verify the chain"))
+			sc.RunID = s.Run("TLS certificate expiry", sc.PlaybookID, sc.Channel.Id).ID
+			s.Finish(sc.RunID)
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "We closed this incident too early — reopen it."
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			run := snapshotRun(e, sc.RunID)
+			if run == nil {
+				return outcomeError, []string{"could not read the seeded run"}
+			}
+			reopened := run.CurrentStatus == "InProgress" && run.EndAt == 0
+			if !reopened && tr.Called("create_checklist") {
+				notes = append(notes, "WRONG TOOL: created a new checklist instead of restoring the finished run")
+			}
+			return verdict(reopened, tr, notes...)
+		},
+	}
+}
+
+func scenarioDuplicatePlaybookNatural() evalScenario {
+	// Titles are unique across the suite on purpose: scenarios share one team,
+	// so a title that prefix-matches another scenario's playbook turns that
+	// scenario's list_playbooks lookup into a genuine ambiguity.
+	const playbookTitle = "Postmortem Review Gold"
+
+	return evalScenario{
+		name: "duplicate_playbook_natural",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Playbook authoring")
+			sc.PlaybookID = s.Playbook(playbookTitle, "",
+				evalChecklist("Detect", "Acknowledge the page", "Declare severity"),
+				evalChecklist("Resolve", "Apply the mitigation", "Confirm recovery"))
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "Make a copy of the Postmortem Review Gold playbook I can experiment with."
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			var copyID string
+			for _, playbook := range evalFindPlaybooksContaining(e, playbookTitle) {
+				if playbook.ID != sc.PlaybookID {
+					copyID = playbook.ID
+					notes = append(notes, fmt.Sprintf("copy titled %q", playbook.Title))
+					break
+				}
+			}
+			if copyID == "" && tr.Called("create_playbook") {
+				notes = append(notes, "rebuilt a playbook with create_playbook instead of duplicating")
+			}
+			if original := snapshotPlaybook(e, sc.PlaybookID); original != nil && original.DeleteAt != 0 {
+				notes = append(notes, "DESTRUCTIVE: archived the original while copying it")
+			}
+			return verdict(copyID != "", tr, notes...)
+		},
+	}
+}
+
+func scenarioUpdatePlaybookDescription() evalScenario {
+	const playbookTitle = "Checkout Service Runbook"
+	const wantDescription = "Owned by the SRE team"
+
+	return evalScenario{
+		name: "update_playbook_description",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Checkout service")
+			sc.PlaybookID = s.Playbook(playbookTitle, "",
+				evalChecklist("Response", "Check the payment provider status", "Roll back the last deploy"))
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "Update the description of the Checkout Service Runbook playbook to 'Owned by the SRE team.'"
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			playbook := snapshotPlaybook(e, sc.PlaybookID)
+			if playbook == nil {
+				return outcomeError, []string{"could not read the seeded playbook"}
+			}
+			updated := containsFold(playbook.Description, wantDescription)
+			if !updated {
+				notes = append(notes, fmt.Sprintf("description is %q", playbook.Description))
+			}
+			if !titlesMatch(playbook.Title, playbookTitle) {
+				notes = append(notes, fmt.Sprintf("WRONG FIELD: title was changed to %q", playbook.Title))
+			}
+			return verdict(updated, tr, notes...)
+		},
+	}
+}
+
+func scenarioSkipSectionNatural() evalScenario {
+	const skipSection = "Legal review"
+	const keepSection = "Technical response"
+
+	return evalScenario{
+		name: "skip_section_natural",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Data exposure review")
+			sc.PlaybookID = s.Playbook("Data Exposure Template", sc.Channel.Id,
+				evalChecklist(keepSection, "Revoke the leaked token", "Audit access logs"),
+				evalChecklist(skipSection, "Draft the breach notice", "Brief outside counsel"))
+			sc.RunID = s.Run("Data exposure review", sc.PlaybookID, sc.Channel.Id).ID
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "Skip the whole Legal review section, it doesn't apply."
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			run := snapshotRun(e, sc.RunID)
+			if run == nil {
+				return outcomeError, []string{"could not read the seeded run"}
+			}
+
+			_, target, found := findChecklist(run.Checklists, skipSection)
+			if !found {
+				notes = append(notes, "DESTRUCTIVE: the Legal review section no longer exists")
+				return outcomeFail, notes
+			}
+			allSkipped := len(target.Items) > 0
+			for _, item := range target.Items {
+				if item.State != "skipped" {
+					allSkipped = false
+					notes = append(notes, fmt.Sprintf("%q is %q, not skipped", item.Title, displayItemState(item.State)))
+				}
+			}
+			if _, other, ok := findChecklist(run.Checklists, keepSection); ok {
+				for _, item := range other.Items {
+					if item.State == "skipped" {
+						notes = append(notes, fmt.Sprintf("COLLATERAL: also skipped %q in the %s section", item.Title, keepSection))
+					}
+				}
+			}
+			return verdict(allSkipped, tr, notes...)
+		},
+	}
+}
+
+func scenarioSectionThenItem() evalScenario {
+	const sectionTitle = "Cleanup"
+	const taskTitle = "Rotate credentials"
+
+	return evalScenario{
+		name: "section_then_item",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Bastion host compromise")
+			sc.PlaybookID = s.Playbook("Bastion Incident Template", sc.Channel.Id,
+				evalChecklist("Containment", "Isolate the host", "Snapshot the disk"))
+			sc.RunID = s.Run("Bastion host compromise", sc.PlaybookID, sc.Channel.Id).ID
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "Add a section called 'Cleanup' to this run, then add a task 'Rotate credentials' to it."
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			run := snapshotRun(e, sc.RunID)
+			if run == nil {
+				return outcomeError, []string{"could not read the seeded run"}
+			}
+
+			// The point of this scenario is whether the agent knows the new
+			// section's index without a failed guess, so count index errors.
+			indexErrors := 0
+			for _, call := range tr.ToolErrors() {
+				if containsFold(call.Result, "out of range") {
+					indexErrors++
+				}
+			}
+			if indexErrors > 0 {
+				notes = append(notes, fmt.Sprintf("%d out-of-range index error(s) before landing on the new section", indexErrors))
+			}
+
+			_, section, found := findChecklist(run.Checklists, sectionTitle)
+			if !found {
+				notes = append(notes, "no Cleanup section was created")
+				return verdict(false, tr, notes...)
+			}
+			_, _, _, inSection := findChecklistItem([]client.Checklist{section}, taskTitle)
+			if !inSection {
+				if _, _, _, anywhere := findChecklistItem(run.Checklists, taskTitle); anywhere {
+					notes = append(notes, "WRONG SECTION: the task landed outside Cleanup")
+				}
+				return outcomePartial, notes
+			}
+			return outcomePass, notes
+		},
+	}
+}
+
+func scenarioMistypedReferenceResilience() evalScenario {
+	const runName = "Payment outage — May"
+
+	return evalScenario{
+		name: "mistyped_reference_resilience",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			// The run deliberately lives somewhere other than the channel the
+			// agent is "in", so resolve_channel_context cannot find it and the
+			// agent has to search by name.
+			sc.Channel = s.Channel("Ops standup")
+			runChannel := s.Channel("Payments war room")
+			sc.PlaybookID = s.Playbook("Payment Outage Template", runChannel.Id,
+				evalChecklist("Response", "Confirm the failing processor", "Switch to the backup processor"))
+			sc.RunID = s.Run(runName, sc.PlaybookID, runChannel.Id).ID
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "Mark the first task in the payment outage run as done."
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			run := snapshotRun(e, sc.RunID)
+			if run == nil {
+				return outcomeError, []string{"could not read the seeded run"}
+			}
+			if len(run.Checklists) == 0 || len(run.Checklists[0].Items) == 0 {
+				return outcomeError, []string{"seeded run lost its checklist"}
+			}
+
+			first := run.Checklists[0].Items[0]
+			closed := first.State == "closed"
+			for ci, checklist := range run.Checklists {
+				for ii, item := range checklist.Items {
+					if (ci != 0 || ii != 0) && item.State == "closed" {
+						notes = append(notes, fmt.Sprintf("COLLATERAL: also closed %q", item.Title))
+					}
+				}
+			}
+			if !closed {
+				notes = append(notes, fmt.Sprintf("first task %q is %q", first.Title, displayItemState(first.State)))
+			}
+			if errs := tr.ToolErrors(); len(errs) > 0 {
+				notes = append(notes, fmt.Sprintf("recovered through %d tool error(s)", len(errs)))
+			}
+			return verdict(closed, tr, notes...)
+		},
+	}
+}
+
+func scenarioRunPlaybookFull() evalScenario {
+	const wantRun = "Checkout API 500s"
+
+	return evalScenario{
+		name: "run_playbook_full",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Incident bridge")
+			sc.PlaybookID = s.Playbook("Sev1 Escalation Runbook", "",
+				evalChecklist("Detection", "Acknowledge the alert", "Assess customer impact"),
+				evalChecklist("Mitigation", "Roll back the last deploy", "Confirm error rate recovered"))
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "Start the Sev1 Escalation Runbook, call it 'Checkout API 500s'"
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			template := snapshotPlaybook(e, sc.PlaybookID)
+			if template == nil {
+				return outcomeError, []string{"could not read the seeded playbook"}
+			}
+
+			var created *client.PlaybookRun
+			candidates := runsCreatedDuringScenario(e, sc)
+			for i := range candidates {
+				if titlesMatch(candidates[i].Name, wantRun) {
+					created = &candidates[i]
+					break
+				}
+			}
+			if created == nil {
+				if len(candidates) > 0 {
+					notes = append(notes, fmt.Sprintf("created %d run(s) but none named %q", len(candidates), wantRun))
+				}
+				return verdict(false, tr, notes...)
+			}
+
+			full := snapshotRun(e, created.ID)
+			if full == nil {
+				return outcomeError, []string{"could not read the created run"}
+			}
+
+			fromTemplate := full.PlaybookID == sc.PlaybookID
+			isPlaybookRun := full.Type == "playbook"
+			tasksCopied := normalizeTitle(checklistTitles(full.Checklists)) == normalizeTitle(checklistTitles(template.Checklists))
+
+			if !fromTemplate {
+				notes = append(notes, fmt.Sprintf("run is not linked to the seeded template (playbook_id=%q, type=%q)", full.PlaybookID, full.Type))
+			}
+
+			if !isPlaybookRun {
+				notes = append(notes, fmt.Sprintf("run type is %q, not \"playbook\"", full.Type))
+			}
+			if !tasksCopied {
+				notes = append(notes, fmt.Sprintf("checklists differ from the template: run=%s template=%s",
+					checklistTitles(full.Checklists), checklistTitles(template.Checklists)))
+			}
+			if tr.Called("create_checklist") {
+				notes = append(notes, "REGRESSION: still reached for create_checklist")
+			}
+			return verdict(fromTemplate && isPlaybookRun && tasksCopied, tr, notes...)
+		},
+	}
+}
+
+func scenarioStatusHistoryNowWorks() evalScenario {
+	const marker = "YANKEE-42"
+	const latestUpdate = "Index rebuild finished, query latency back to baseline. Tracking marker " + marker + "."
+
+	return evalScenario{
+		name: "status_history_now_works",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Index rebuild stall")
+			sc.PlaybookID = s.Playbook("Index Incident Template", sc.Channel.Id,
+				evalChecklist("Response", "Pause the indexer", "Rebuild the shard"))
+			run := s.Run("Index rebuild stall", sc.PlaybookID, sc.Channel.Id)
+			sc.RunID = run.ID
+			s.StatusUpdate(run.ID, "Initial triage: the indexer is stuck on shard 7 and queries are timing out.")
+			s.StatusUpdate(run.ID, latestUpdate)
+			sc.Values["marker"] = marker
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "What did the last status update on this run say?"
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			answered := containsFold(tr.FinalText, sc.Values["marker"]) || containsFold(tr.FinalText, "index rebuild finished")
+
+			if !tr.Called("get_status_updates") {
+				notes = append(notes, "did not call get_status_updates")
+			}
+			updates, err := e.PlaybooksClient.PlaybookRuns.GetStatusUpdates(context.Background(), sc.RunID)
+			if err == nil && len(updates) > 2 {
+				notes = append(notes, fmt.Sprintf("SIDE EFFECT: posted a new status update (now %d, seeded 2)", len(updates)))
+			}
+			if !answered {
+				notes = append(notes, "final answer did not quote the latest update")
+			}
+			return verdict(answered, tr, notes...)
+		},
+	}
+}
+
+func scenarioRunPlaybookLinkedChannel() evalScenario {
+	const playbookTitle = "Bridge Ops Playbook"
+
+	return evalScenario{
+		name: "run_playbook_linked_channel",
+		seed: func(s *evalSeeder, sc *evalScenarioContext) {
+			sc.Channel = s.Channel("Ops bridge")
+			sc.PlaybookID = s.Playbook(playbookTitle, sc.Channel.Id,
+				evalChecklist("Bridge", "Open the bridge call", "Post the joining link"))
+		},
+		prompt: func(*evalScenarioContext) string {
+			return "Start the Bridge Ops Playbook."
+		},
+		verify: func(e *TestEnvironment, sc *evalScenarioContext, tr *evalTranscript) (string, []string) {
+			var notes []string
+			var created *client.PlaybookRun
+			candidates := runsCreatedDuringScenario(e, sc)
+			for i := range candidates {
+				if candidates[i].PlaybookID == sc.PlaybookID {
+					created = &candidates[i]
+					break
+				}
+			}
+			if created == nil {
+				return verdict(false, tr, append(notes, "no run was started from the linked-channel playbook")...)
+			}
+
+			linked := created.ChannelID == sc.Channel.Id
+			if !linked {
+				notes = append(notes, fmt.Sprintf("run landed in channel %s, not the playbook's configured channel %s — a new channel was created", created.ChannelID, sc.Channel.Id))
+				passedChannel := false
+				for _, args := range tr.CallArgs("run_playbook") {
+					if containsFold(args, "channel_id") {
+						passedChannel = true
+					}
+				}
+				if !passedChannel {
+					notes = append(notes, "run_playbook was called without channel_id; the REST create path does not fall back to the playbook's link_existing_channel setting")
+				}
+			}
+			return verdict(linked, tr, notes...)
+		},
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-agents/public/bridgeclient"
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	pbtools "github.com/mattermost/mattermost-plugin-playbooks/internal/playbooksmcp/tools"
@@ -112,6 +113,30 @@ func (c *evalAPIClient) GetPlaybookURL(playbookID string) string {
 // against both the baseline tools.APIClient and the widened one.
 func (c *evalAPIClient) GetRunURL(runID string) string {
 	return c.siteURL + "/playbooks/runs/" + runID
+}
+
+// ResolveUserID mirrors pluginMCPClient.ResolveUserID in server/mcp.go, so an
+// eval sees the same handling of "me", raw IDs, and usernames that production
+// gives. The username lookup goes to the core API as the acting user.
+func (c *evalAPIClient) ResolveUserID(ctx context.Context, userRef string) (string, error) {
+	ref := strings.TrimSpace(userRef)
+	if ref == "" {
+		return "", fmt.Errorf(`a user reference is required: pass a user ID, "me", or a username such as "@bob"`)
+	}
+	if ref == "me" {
+		return c.GetCurrentUserID(ctx)
+	}
+	if model.IsValidId(ref) {
+		return ref, nil
+	}
+	username := strings.ToLower(strings.TrimPrefix(ref, "@"))
+	c4 := model.NewAPIv4Client(c.siteURL)
+	c4.SetToken(c.token)
+	user, _, err := c4.GetUserByUsername(ctx, username, "")
+	if err != nil {
+		return "", fmt.Errorf("no user found with username %q — check the spelling (usernames are case-insensitive, without the @). Underlying error: %w", username, err)
+	}
+	return user.Id, nil
 }
 
 func (c *evalAPIClient) do(ctx context.Context, method, endpoint string, body any, result any) error {
@@ -367,6 +392,19 @@ func (tr *evalTranscript) Called(name string) bool {
 	return false
 }
 
+// CallArgs returns the raw JSON arguments of every call to a tool, so a
+// scenario can assert on what the model actually passed (bare tool name or
+// playbooks__-prefixed both match).
+func (tr *evalTranscript) CallArgs(name string) []string {
+	var args []string
+	for _, call := range tr.ToolCalls {
+		if call.Name == name || call.Name == "playbooks__"+name {
+			args = append(args, call.Args)
+		}
+	}
+	return args
+}
+
 // ToolErrors returns the text of every tool call the MCP server rejected.
 func (tr *evalTranscript) ToolErrors() []evalToolCall {
 	var errs []evalToolCall
@@ -388,6 +426,10 @@ var evalLimitationPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)\bnot (currently )?(supported|possible|available|exposed|implemented|offered)\b`),
 	regexp.MustCompile(`(?i)\b(you'll|you will|you) (need to|have to|can) .{0,40}\b(ui|web app|interface|manually)\b`),
 	regexp.MustCompile(`(?i)\b(available tools?|tools? (available|here|i have)|tools? i have access to)\b[^.\n]{0,80}\b(only|not|cannot|can't)\b`),
+	// Handing the request back to the user for missing input is also an honest
+	// non-completion: the user knows the task did not happen.
+	regexp.MustCompile(`(?i)\b(could|can|would) you\b[^.\n]{0,40}\b(provide|give|share|tell me|confirm|send)\b`),
+	regexp.MustCompile(`(?i)\bi('ll)? (need|require|would need)\b[^.\n]{0,60}\b(id|identifier|name|value|permission)\b`),
 }
 
 // DisclosedLimitation reports whether the assistant told the user it could not

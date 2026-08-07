@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -117,7 +118,7 @@ func TestNewPlaybooksMCPServerRegistersExposeExternal(t *testing.T) {
 		requestCh: make(chan *http.Request, 1),
 		bodyCh:    make(chan []byte, 1),
 	}
-	server, err := newPlaybooksMCPServer(api, http.NotFoundHandler(), true, "https://mattermost.example.com")
+	server, err := newPlaybooksMCPServer(api, http.NotFoundHandler(), true, "https://mattermost.example.com", nil)
 	require.NoError(t, err)
 
 	require.NoError(t, server.Register())
@@ -235,4 +236,117 @@ func TestServeMCPIfMatchServesToolCall(t *testing.T) {
 	mu.Lock()
 	defer mu.Unlock()
 	assert.Equal(t, "user-id", capturedUserID)
+}
+
+func TestPluginMCPClientResolveUserID(t *testing.T) {
+	const (
+		currentUserID = "abcdefghijklmnopqrstuvwxy0"
+		bobUserID     = "bcdefghijklmnopqrstuvwxyz1"
+	)
+
+	for _, tc := range []struct {
+		name           string
+		ref            string
+		resolver       usernameResolver
+		wantID         string
+		wantErr        string
+		wantLookedUpAs string
+	}{
+		{
+			name:   "me resolves to the acting user without a lookup",
+			ref:    "me",
+			wantID: currentUserID,
+		},
+		{
+			name:   "a well-formed ID is returned as-is without a lookup",
+			ref:    bobUserID,
+			wantID: bobUserID,
+		},
+		{
+			name:           "a bare username is looked up",
+			ref:            "bob",
+			wantID:         bobUserID,
+			wantLookedUpAs: "bob",
+		},
+		{
+			name:           "a leading @ is stripped before lookup",
+			ref:            "@bob",
+			wantID:         bobUserID,
+			wantLookedUpAs: "bob",
+		},
+		{
+			name:           "lookup is case-folded",
+			ref:            "@Bob",
+			wantID:         bobUserID,
+			wantLookedUpAs: "bob",
+		},
+		{
+			name:           "surrounding whitespace is trimmed",
+			ref:            "  @bob  ",
+			wantID:         bobUserID,
+			wantLookedUpAs: "bob",
+		},
+		{
+			name: "an unknown username names the reference",
+			ref:  "@nobody",
+			resolver: func(context.Context, string) (string, error) {
+				return "", errors.New("Unable to find the user")
+			},
+			wantErr:        `no user found with username "nobody"`,
+			wantLookedUpAs: "nobody",
+		},
+		{
+			name:    "an empty reference is rejected",
+			ref:     "   ",
+			wantErr: "a user reference is required",
+		},
+		{
+			name:    "a bare @ is rejected",
+			ref:     "@",
+			wantErr: "not a valid user reference",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var lookedUpAs string
+			resolver := tc.resolver
+			if resolver == nil {
+				resolver = func(_ context.Context, username string) (string, error) {
+					return bobUserID, nil
+				}
+			}
+			wrapped := func(ctx context.Context, username string) (string, error) {
+				lookedUpAs = username
+				return resolver(ctx, username)
+			}
+
+			c := &pluginMCPClient{userID: currentUserID, resolveUsername: wrapped}
+			got, err := c.ResolveUserID(context.Background(), tc.ref)
+
+			if tc.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.wantID, got)
+			}
+			assert.Equal(t, tc.wantLookedUpAs, lookedUpAs)
+		})
+	}
+}
+
+// A nil resolver is what ensureMCPServer passes before the plugin API exists,
+// so it has to fail with advice rather than panic.
+func TestPluginMCPClientResolveUserIDWithoutResolver(t *testing.T) {
+	c := &pluginMCPClient{userID: "abcdefghijklmnopqrstuvwxy0"}
+
+	got, err := c.ResolveUserID(context.Background(), "@bob")
+	require.Error(t, err)
+	assert.Empty(t, got)
+	assert.Contains(t, err.Error(), "user lookup unavailable")
+	assert.Contains(t, err.Error(), "26-character user ID")
+
+	// The short-circuits still work without a resolver.
+	got, err = c.ResolveUserID(context.Background(), "me")
+	require.NoError(t, err)
+	assert.Equal(t, "abcdefghijklmnopqrstuvwxy0", got)
 }

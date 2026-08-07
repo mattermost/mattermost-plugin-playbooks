@@ -192,7 +192,7 @@ func TestToolCreatePlaybookAttributeWrapsPostErrors(t *testing.T) {
 		Type:       "text",
 	})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to create playbook attribute")
+	assert.Contains(t, err.Error(), "failed to create an attribute on playbook template")
 	assert.Contains(t, err.Error(), "boom")
 	assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields", client.postEndpoint)
 }
@@ -985,11 +985,11 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			wantNoPut: true,
 		},
 		{
-			name: "add invalid assignee ID",
+			name: "add unresolvable assignee",
 			run: func(client *fakeAPIClient) (string, error) {
-				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, Title: "New task", AssigneeID: "bad"})
+				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, Title: "New task", AssigneeID: "@nobody"})
 			},
-			want:      "assignee_id must be a valid Mattermost ID",
+			want:      `assignee_id: no user found with username "nobody"`,
 			wantNoPut: true,
 		},
 		{
@@ -1010,12 +1010,12 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			wantNoPut: true,
 		},
 		{
-			name: "edit invalid assignee ID",
+			name: "edit unresolvable assignee",
 			run: func(client *fakeAPIClient) (string, error) {
-				assigneeID := "bad"
+				assigneeID := "@nobody"
 				return toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: 0, AssigneeID: &assigneeID})
 			},
-			want:      "assignee_id must be a valid Mattermost ID",
+			want:      `assignee_id: no user found with username "nobody"`,
 			wantNoPut: true,
 		},
 		{
@@ -1127,15 +1127,15 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			wantNoPut: true,
 		},
 		{
-			name: "add section invalid initial item assignee",
+			name: "add section unresolvable initial item assignee",
 			run: func(client *fakeAPIClient) (string, error) {
 				return toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
 					PlaybookID: playbookID,
 					Title:      "New section",
-					Items:      []CreatePlaybookItem{{Title: "Task", AssigneeID: "bad"}},
+					Items:      []CreatePlaybookItem{{Title: "Task", AssigneeID: "@nobody"}},
 				})
 			},
-			want:      "items[0].assignee_id must be a valid Mattermost ID",
+			want:      `items[0].assignee_id: no user found with username "nobody"`,
 			wantNoPut: true,
 		},
 		{

@@ -105,7 +105,7 @@ func candidateRuns(ctx context.Context, client APIClient, runID, channelID strin
 	if runID != "" {
 		var run playbookRunDetail
 		if err := client.Get(ctx, fmt.Sprintf("runs/%s", runID), nil, &run); err != nil {
-			return nil, fmt.Errorf("failed to get run: %w", err)
+			return nil, wrapRunError(err, runID, "get")
 		}
 		return []playbookRunDetail{run}, nil
 	}
@@ -179,7 +179,7 @@ func fetchRunDetails(ctx context.Context, client APIClient, params url.Values) (
 		for _, summary := range resp.Items {
 			var run playbookRunDetail
 			if err := client.Get(ctx, fmt.Sprintf("runs/%s", summary.ID), nil, &run); err != nil {
-				return nil, fmt.Errorf("failed to get run %s: %w", summary.ID, err)
+				return nil, wrapRunError(err, summary.ID, "get")
 			}
 			runs = append(runs, run)
 		}

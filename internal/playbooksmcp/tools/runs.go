@@ -15,11 +15,6 @@ import (
 )
 
 const (
-	// meUserID is the literal the Playbooks API accepts in place of a user ID
-	// for the acting user. Tools resolve it client-side for endpoints that do
-	// not, so the same convention works everywhere.
-	meUserID = "me"
-
 	runTypePlaybook         = "playbook"
 	runTypeChannelChecklist = "channelChecklist"
 
@@ -36,8 +31,8 @@ type ListRunsArgs struct {
 	TeamID        string   `json:"team_id,omitempty" jsonschema:"Filter by team ID (26-char Mattermost ID)"`
 	ChannelID     string   `json:"channel_id,omitempty" jsonschema:"Filter by channel ID (26-char Mattermost ID). If the agent is operating within a channel, set this to that channel's ID to see only its runs."`
 	Status        string   `json:"status,omitempty" jsonschema:"Filter by status: InProgress or Finished"`
-	OwnerUserID   string   `json:"owner_user_id,omitempty" jsonschema:"Filter by the run owner's user ID. Use 'me' for the current user."`
-	ParticipantID string   `json:"participant_id,omitempty" jsonschema:"Filter to runs this user participates in. Use 'me' for the current user (answers 'which runs am I on?'). Combined with owner_user_id this is an AND, not an OR."`
+	OwnerUserID   string   `json:"owner_user_id,omitempty" jsonschema:"Filter by run owner. Accepts a user ID, 'me' for the current user, or a username with or without @ (for example '@bob')."`
+	ParticipantID string   `json:"participant_id,omitempty" jsonschema:"Filter to runs this user participates in. Accepts a user ID, 'me' for the current user (answers 'which runs am I on?'), or a username with or without @. Combined with owner_user_id this is an AND, not an OR."`
 	PlaybookID    string   `json:"playbook_id,omitempty" jsonschema:"Filter to runs started from this playbook template (26-char ID). Call list_playbooks first if you only know the template's title."`
 	SearchTerm    string   `json:"search_term,omitempty" jsonschema:"Free-text search over run names. Use this to find a run by name instead of paging through everything."`
 	OmitEnded     bool     `json:"omit_ended,omitempty" jsonschema:"If true, exclude finished runs."`
@@ -62,7 +57,7 @@ type CreateChecklistSection struct {
 type CreateChecklistItem struct {
 	Title       string `json:"title" jsonschema:"Item title"`
 	Description string `json:"description,omitempty" jsonschema:"Optional item description (supports Markdown)"`
-	AssigneeID  string `json:"assignee_id,omitempty" jsonschema:"Optional user ID to assign the item to"`
+	AssigneeID  string `json:"assignee_id,omitempty" jsonschema:"Optional user to assign the item to. Accepts a user ID, 'me' for the current user, or a username with or without @ (for example '@bob')."`
 	Command     string `json:"command,omitempty" jsonschema:"Optional slash command to associate with the item"`
 	DueDate     int64  `json:"due_date,omitempty" jsonschema:"Optional due date as Unix timestamp in milliseconds"`
 }
@@ -84,13 +79,13 @@ type FinishRunArgs struct {
 
 type ChangeRunOwnerArgs struct {
 	RunID   string `json:"run_id" jsonschema:"The ID of the playbook run"`
-	OwnerID string `json:"owner_id" jsonschema:"The user ID of the new owner"`
+	OwnerID string `json:"owner_id" jsonschema:"The new owner. Accepts a user ID, 'me' for the current user, or a username with or without @ (for example '@bob')."`
 }
 
 type RunPlaybookArgs struct {
 	PlaybookID      string `json:"playbook_id" jsonschema:"The 26-char ID of the playbook template to start a run from. Call list_playbooks first if you only know its title."`
 	Name            string `json:"name,omitempty" jsonschema:"Name for the new run. Required for most playbooks. Omit it only when the playbook has a locked channel-name template (the server then generates the name) or when channel_id links an existing channel; if the server rejects the call for a missing name, retry with one."`
-	OwnerUserID     string `json:"owner_user_id,omitempty" jsonschema:"User ID to own the run. Use 'me' for the current user. Omit to let the server pick (the playbook's default owner, else the caller)."`
+	OwnerUserID     string `json:"owner_user_id,omitempty" jsonschema:"User to own the run. Accepts a user ID, 'me' for the current user, or a username with or without @ (for example '@bob'). Omit to let the server pick (the playbook's default owner, else the caller)."`
 	TeamID          string `json:"team_id,omitempty" jsonschema:"Team to create the run in. Omit to use the playbook's own team."`
 	ChannelID       string `json:"channel_id,omitempty" jsonschema:"Link the run to this existing channel instead of creating a new one. Omit to follow the playbook's own channel setting."`
 	Summary         string `json:"summary,omitempty" jsonschema:"Optional run summary shown on the run overview (supports Markdown)"`
@@ -113,14 +108,14 @@ type GetStatusUpdatesArgs struct {
 }
 
 type AddRunParticipantsArgs struct {
-	UserIDs           []string `json:"user_ids" jsonschema:"User IDs to add to the run. Use 'me' to add the current user (join the run)."`
+	UserIDs           []string `json:"user_ids" jsonschema:"Users to add to the run. Each entry accepts a user ID, 'me' for the current user (join the run), or a username with or without @ — pass '@bob' directly, no lookup step is needed."`
 	RunID             string   `json:"run_id" jsonschema:"The ID of the playbook run"`
 	ForceAddToChannel bool     `json:"force_add_to_channel,omitempty" jsonschema:"If true, also add the users to the run's channel even when the run does not sync channel membership."`
 }
 
 type RemoveRunParticipantArgs struct {
 	RunID  string `json:"run_id" jsonschema:"The ID of the playbook run"`
-	UserID string `json:"user_id" jsonschema:"User ID to remove from the run. Use 'me' to remove the current user (leave the run)."`
+	UserID string `json:"user_id" jsonschema:"User to remove from the run. Accepts a user ID, 'me' for the current user (leave the run), or a username with or without @ (for example '@bob')."`
 }
 
 // --- API response types (subset of fields for formatting) ---
@@ -247,15 +242,15 @@ type runMetadata struct {
 
 func (p *PlaybooksToolProvider) addMCPHelperRunTools(server *mcphelper.Server) {
 	addMCPHelperTool(server, p.clientFactory, "run_playbook",
-		"Start a playbook run from a playbook template — users say \"start the incident playbook\", \"run/launch/kick off a playbook\", \"begin a new incident\". Creates the active run, its channel, and copies the playbook's checklists. A playbook is a reusable template; a run is one active instance of it, so this tool is how a template becomes something people work in. If you do not know the playbook_id, call list_playbooks first — never guess it. owner_user_id accepts 'me'. Omit name only when the playbook generates it from a locked channel-name template; otherwise supply one. Returns the new run's name, ID, run number, channel, owner, and browser URL. Example: {\"playbook_id\": \"abc123...\", \"name\": \"Sev1 — checkout 500s\", \"owner_user_id\": \"me\", \"summary\": \"Checkout is returning 500s for ~5% of requests.\"}",
+		"Start a playbook run from a playbook template — users say \"start the incident playbook\", \"run/launch/kick off a playbook\", \"begin a new incident\". Creates the active run, its channel, and copies the playbook's checklists. A playbook is a reusable template; a run is one active instance of it, so this tool is how a template becomes something people work in. If you do not know the playbook_id, call list_playbooks first — never guess it. owner_user_id accepts a username with or without @, 'me', or a user ID. Omit name only when the playbook generates it from a locked channel-name template; otherwise supply one. Returns the new run's name, ID, run number, channel, owner, and browser URL. Example: {\"playbook_id\": \"abc123...\", \"name\": \"Sev1 — checkout 500s\", \"owner_user_id\": \"me\", \"summary\": \"Checkout is returning 500s for ~5% of requests.\"}",
 		toolRunPlaybook)
 
 	addMCPHelperTool(server, p.clientFactory, "list_runs",
-		"List and search playbook runs (active playbook instances, incidents, ongoing checklists) with filters for team, channel, owner, participant, playbook template, status, and free-text name search. Use this to find a run_id before acting on a run. status='InProgress' shows active runs; participant_id='me' shows runs the current user is on; playbook_id restricts to runs of one playbook template; types=[\"channelChecklist\"] shows standalone channel checklists. To start a new run from a template use run_playbook instead. Example: {\"status\": \"InProgress\", \"participant_id\": \"me\", \"search_term\": \"checkout\", \"per_page\": 5}",
+		"List and search playbook runs (active playbook instances, incidents, ongoing checklists) with filters for team, channel, owner, participant, playbook template, status, and free-text name search. Use this to find a run_id before acting on a run. status='InProgress' shows active runs; participant_id='me' shows runs the current user is on and also accepts a username such as '@bob'; playbook_id restricts to runs of one playbook template; types=[\"channelChecklist\"] shows standalone channel checklists. To start a new run from a template use run_playbook instead. Example: {\"status\": \"InProgress\", \"participant_id\": \"me\", \"search_term\": \"checkout\", \"per_page\": 5}",
 		toolListRuns)
 
 	addMCPHelperTool(server, p.clientFactory, "create_checklist",
-		"Create a standalone channel checklist (a playbook run with no playbook template behind it) in an existing Mattermost channel. Use this for ad-hoc task lists; to start a run from an existing playbook template use run_playbook instead. The authenticated user becomes the owner. Optionally include initial sections and items. Example: {\"name\": \"Release checklist\", \"channel_id\": \"abc123...\", \"sections\": [{\"title\": \"Pre-release\", \"items\": [{\"title\": \"Confirm changelog\"}]}]}",
+		"Create a standalone ad-hoc channel checklist in an existing Mattermost channel — a playbook run with NO playbook template behind it, which copies no checklists, tasks, or settings from any playbook. This is NOT a way to start a playbook: if the user named a playbook (\"start the incident playbook\"), call run_playbook, which copies the template's content; using this tool instead silently produces an empty run with none of it. Use this only for a task list typed out from scratch. The authenticated user becomes the owner, and you may include initial sections and items; item assignee_id accepts a username with or without @, 'me', or a user ID. Example: {\"name\": \"Release checklist\", \"channel_id\": \"abc123...\", \"sections\": [{\"title\": \"Pre-release\", \"items\": [{\"title\": \"Confirm changelog\"}]}]}",
 		toolCreateChecklist)
 
 	addMCPHelperTool(server, p.clientFactory, "get_run",
@@ -291,15 +286,15 @@ func (p *PlaybooksToolProvider) addMCPHelperRunTools(server *mcphelper.Server) {
 		toolRestoreRun)
 
 	addMCPHelperTool(server, p.clientFactory, "change_run_owner",
-		"Change the owner (lead, commander) of a playbook run. The new owner must be a Mattermost user, and if they are not already in the run's channel you need permission to add channel members — otherwise the server rejects the change. The run must still be in progress. Example: {\"run_id\": \"abc123...\", \"owner_id\": \"def456...\"}",
+		"Change the owner (lead, commander) of a playbook run — \"hand this run to @alice\". owner_id accepts a username with or without @, 'me', or a 26-character user ID. If the new owner is not already in the run's channel you need permission to add channel members, otherwise the server rejects the change. The run must still be in progress. Example: {\"run_id\": \"abc123...\", \"owner_id\": \"@alice\"}",
 		toolChangeRunOwner)
 
 	addMCPHelperTool(server, p.clientFactory, "add_run_participants",
-		"Add people to a playbook run, or join a run yourself — \"add Alice to this run\", \"put me on the incident\". Participants show up on the run and can be assigned tasks. Use 'me' in user_ids to join. Set force_add_to_channel=true to also add them to the run's channel when the run does not sync channel membership. Example: {\"run_id\": \"abc123...\", \"user_ids\": [\"me\", \"def456...\"], \"force_add_to_channel\": true}",
+		"Add people to a playbook run, or join a run yourself — \"add @alice to this run\", \"put me on the incident\". Pass usernames directly in user_ids: each entry accepts a username with or without @, 'me' for the current user, or a 26-character user ID. There is no separate user-lookup tool and you do not need one. Participants show up on the run and can be assigned tasks. Set force_add_to_channel=true to also add them to the run's channel when the run does not sync channel membership. Example: {\"run_id\": \"abc123...\", \"user_ids\": [\"@alice\", \"me\"], \"force_add_to_channel\": true}",
 		toolAddRunParticipants)
 
 	addMCPHelperTool(server, p.clientFactory, "remove_run_participant",
-		"Remove someone from a playbook run, or leave a run yourself — \"take Bob off this run\", \"remove me from the incident\". The removed user also stops following the run. Use 'me' to leave. The run's owner cannot be removed: hand the run over with change_run_owner first. Example: {\"run_id\": \"abc123...\", \"user_id\": \"def456...\"}",
+		"Remove someone from a playbook run, or leave a run yourself — \"take @bob off this run\", \"remove me from the incident\". user_id accepts a username with or without @, 'me' to leave, or a 26-character user ID. The removed user also stops following the run. The run's owner cannot be removed: hand the run over with change_run_owner first. Example: {\"run_id\": \"abc123...\", \"user_id\": \"@bob\"}",
 		toolRemoveRunParticipant)
 
 	addMCPHelperTool(server, p.clientFactory, "follow_run",
@@ -330,13 +325,17 @@ func toolListRuns(ctx context.Context, client APIClient, args ListRunsArgs) (str
 	if args.Status != "" {
 		params.Add("statuses", args.Status)
 	}
-	if args.OwnerUserID != "" {
-		params.Set("owner_user_id", args.OwnerUserID)
+	// The list endpoint resolves the literal "me" itself but knows nothing of
+	// usernames, so resolve both filters here for one consistent convention.
+	if owner, err := resolveUserRef(ctx, client, args.OwnerUserID, "owner_user_id"); err != nil {
+		return "", err
+	} else if owner != "" {
+		params.Set("owner_user_id", owner)
 	}
-	// The list endpoint resolves the literal "me" for owner_user_id and
-	// participant_id itself, so both are forwarded verbatim.
-	if args.ParticipantID != "" {
-		params.Set("participant_id", args.ParticipantID)
+	if participant, err := resolveUserRef(ctx, client, args.ParticipantID, "participant_id"); err != nil {
+		return "", err
+	} else if participant != "" {
+		params.Set("participant_id", participant)
 	}
 	if args.PlaybookID != "" {
 		if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
@@ -388,7 +387,8 @@ func toolCreateChecklist(ctx context.Context, client APIClient, args CreateCheck
 			return "", err
 		}
 	}
-	if err := validateInitialSections(args.Sections); err != nil {
+	sections, err := resolveInitialSections(ctx, client, args.Sections)
+	if err != nil {
 		return "", err
 	}
 
@@ -415,21 +415,17 @@ func toolCreateChecklist(ctx context.Context, client APIClient, args CreateCheck
 		return "", fmt.Errorf("failed to create checklist: %w", err)
 	}
 
-	for i, section := range args.Sections {
-		items := append([]CreateChecklistItem(nil), section.Items...)
-		for j := range items {
-			items[j].Title = strings.TrimSpace(items[j].Title)
-		}
+	for i, section := range sections {
 		sectionBody := map[string]any{
-			"title": strings.TrimSpace(section.Title),
-			"items": items,
+			"title": section.Title,
+			"items": section.Items,
 		}
 		if err := client.Post(ctx, fmt.Sprintf("runs/%s/checklists", run.ID), sectionBody, nil); err != nil {
 			return "", fmt.Errorf("created checklist run %s, but failed to add section %d: %w", run.ID, i, err)
 		}
 	}
 
-	if len(args.Sections) > 0 {
+	if len(sections) > 0 {
 		if err := client.Get(ctx, fmt.Sprintf("runs/%s", run.ID), nil, &run); err != nil {
 			return "", fmt.Errorf("created checklist run %s, but failed to fetch updated details: %w", run.ID, err)
 		}
@@ -445,7 +441,7 @@ func toolGetRun(ctx context.Context, client APIClient, args GetRunArgs) (string,
 
 	var run playbookRunDetail
 	if err := client.Get(ctx, fmt.Sprintf("runs/%s", args.RunID), nil, &run); err != nil {
-		return "", fmt.Errorf("failed to get run: %w", err)
+		return "", wrapRunError(err, args.RunID, "get")
 	}
 
 	return formatRunDetail(run), nil
@@ -482,7 +478,7 @@ func toolUpdateRunStatus(ctx context.Context, client APIClient, args UpdateRunSt
 	}
 
 	if err := client.Post(ctx, fmt.Sprintf("runs/%s/status", args.RunID), body, nil); err != nil {
-		return "", fmt.Errorf("failed to update status: %w", err)
+		return "", wrapRunError(err, args.RunID, "post a status update to")
 	}
 
 	return fmt.Sprintf("Status update posted to run %s.", args.RunID), nil
@@ -494,7 +490,7 @@ func toolFinishRun(ctx context.Context, client APIClient, args FinishRunArgs) (s
 	}
 
 	if err := client.Put(ctx, fmt.Sprintf("runs/%s/finish", args.RunID), nil, nil); err != nil {
-		return "", fmt.Errorf("failed to finish run: %w", err)
+		return "", wrapRunError(err, args.RunID, "finish")
 	}
 
 	return fmt.Sprintf("Run %s has been finished.", args.RunID), nil
@@ -504,19 +500,23 @@ func toolChangeRunOwner(ctx context.Context, client APIClient, args ChangeRunOwn
 	if err := validateID(args.RunID, "run_id"); err != nil {
 		return "", err
 	}
-	if err := validateID(args.OwnerID, "owner_id"); err != nil {
+	ownerID, err := resolveUserRef(ctx, client, args.OwnerID, "owner_id")
+	if err != nil {
 		return "", err
+	}
+	if ownerID == "" {
+		return "", fmt.Errorf("owner_id is required")
 	}
 
 	body := map[string]string{
-		"owner_id": args.OwnerID,
+		"owner_id": ownerID,
 	}
 
 	if err := client.Post(ctx, fmt.Sprintf("runs/%s/owner", args.RunID), body, nil); err != nil {
-		return "", fmt.Errorf("failed to change owner: %w", err)
+		return "", wrapRunError(err, args.RunID, "change the owner of")
 	}
 
-	return fmt.Sprintf("Owner of run %s changed to %s.", args.RunID, args.OwnerID), nil
+	return fmt.Sprintf("Owner of run %s changed to %s.", args.RunID, ownerID), nil
 }
 
 // defaultReminderSecondsForRun picks the reminder interval to send with a
@@ -550,7 +550,7 @@ func toolRunPlaybook(ctx context.Context, client APIClient, args RunPlaybookArgs
 		}
 	}
 
-	ownerUserID, err := resolveUserID(ctx, client, args.OwnerUserID, "owner_user_id")
+	ownerUserID, err := resolveUserRef(ctx, client, args.OwnerUserID, "owner_user_id")
 	if err != nil {
 		return "", err
 	}
@@ -560,7 +560,7 @@ func toolRunPlaybook(ctx context.Context, client APIClient, args RunPlaybookArgs
 	// deliberately does not read (the webapp resolves it client-side too).
 	var playbook playbookForRun
 	if err := client.Get(ctx, fmt.Sprintf("playbooks/%s", args.PlaybookID), nil, &playbook); err != nil {
-		return "", fmt.Errorf("failed to get playbook %s: %w (if you are unsure of the playbook_id, call list_playbooks)", args.PlaybookID, err)
+		return "", wrapPlaybookError(err, args.PlaybookID, "start a run from")
 	}
 	if playbook.DeleteAt != 0 {
 		return "", fmt.Errorf("playbook %s (%q) is archived and cannot be used to start a run; call list_playbooks to pick an active playbook, or restore_playbook to un-archive this one", args.PlaybookID, playbook.Title)
@@ -632,7 +632,7 @@ func toolUpdateRun(ctx context.Context, client APIClient, args UpdateRunArgs) (s
 	}
 
 	if err := client.Patch(ctx, fmt.Sprintf("runs/%s", args.RunID), body, nil); err != nil {
-		return "", fmt.Errorf("failed to update run %s: %w (finished runs cannot be edited — call restore_run first)", args.RunID, err)
+		return "", wrapRunError(err, args.RunID, "update", "Finished runs cannot be edited — call restore_run first.")
 	}
 
 	switch {
@@ -650,7 +650,7 @@ func toolRestoreRun(ctx context.Context, client APIClient, args RunIDArgs) (stri
 		return "", err
 	}
 	if err := client.Put(ctx, fmt.Sprintf("runs/%s/restore", args.RunID), nil, nil); err != nil {
-		return "", fmt.Errorf("failed to restore run %s: %w (restoring can require being the run owner or a system admin)", args.RunID, err)
+		return "", wrapRunError(err, args.RunID, "restore", "Restoring can require being the run owner or a system admin.")
 	}
 	return fmt.Sprintf("Run %s reopened and is In Progress again.", args.RunID), nil
 }
@@ -660,7 +660,7 @@ func toolRequestStatusUpdate(ctx context.Context, client APIClient, args RunIDAr
 		return "", err
 	}
 	if err := client.Post(ctx, fmt.Sprintf("runs/%s/request-update", args.RunID), nil, nil); err != nil {
-		return "", fmt.Errorf("failed to request a status update for run %s: %w", args.RunID, err)
+		return "", wrapRunError(err, args.RunID, "request a status update for")
 	}
 	return fmt.Sprintf("Requested a status update from the owner of run %s.", args.RunID), nil
 }
@@ -670,7 +670,7 @@ func toolFollowRun(ctx context.Context, client APIClient, args RunIDArgs) (strin
 		return "", err
 	}
 	if err := client.Put(ctx, fmt.Sprintf("runs/%s/followers", args.RunID), nil, nil); err != nil {
-		return "", fmt.Errorf("failed to follow run %s: %w", args.RunID, err)
+		return "", wrapRunError(err, args.RunID, "follow")
 	}
 	return fmt.Sprintf("Now following run %s; you will be notified about its status updates.", args.RunID), nil
 }
@@ -680,7 +680,7 @@ func toolUnfollowRun(ctx context.Context, client APIClient, args RunIDArgs) (str
 		return "", err
 	}
 	if err := client.Delete(ctx, fmt.Sprintf("runs/%s/followers", args.RunID)); err != nil {
-		return "", fmt.Errorf("failed to unfollow run %s: %w", args.RunID, err)
+		return "", wrapRunError(err, args.RunID, "unfollow")
 	}
 	return fmt.Sprintf("No longer following run %s.", args.RunID), nil
 }
@@ -699,7 +699,7 @@ func toolGetStatusUpdates(ctx context.Context, client APIClient, args GetStatusU
 
 	var updates []runStatusUpdate
 	if err := client.Get(ctx, fmt.Sprintf("runs/%s/status-updates", args.RunID), nil, &updates); err != nil {
-		return "", fmt.Errorf("failed to get status updates for run %s: %w", args.RunID, err)
+		return "", wrapRunError(err, args.RunID, "get status updates for")
 	}
 
 	return formatStatusUpdates(args.RunID, updates, limit), nil
@@ -712,7 +712,7 @@ func toolGetRunMetadata(ctx context.Context, client APIClient, args RunIDArgs) (
 
 	var metadata runMetadata
 	if err := client.Get(ctx, fmt.Sprintf("runs/%s/metadata", args.RunID), nil, &metadata); err != nil {
-		return "", fmt.Errorf("failed to get metadata for run %s: %w", args.RunID, err)
+		return "", wrapRunError(err, args.RunID, "get metadata for")
 	}
 
 	var sb strings.Builder
@@ -739,19 +739,12 @@ func toolAddRunParticipants(ctx context.Context, client APIClient, args AddRunPa
 		return "", err
 	}
 	if len(args.UserIDs) == 0 {
-		return "", fmt.Errorf("user_ids is required; pass 'me' to join the run yourself")
+		return "", fmt.Errorf("user_ids is required; pass 'me' to join the run yourself, or a username such as '@bob'")
 	}
 
-	userIDs := make([]string, 0, len(args.UserIDs))
-	for i, rawID := range args.UserIDs {
-		userID, err := resolveUserID(ctx, client, rawID, fmt.Sprintf("user_ids[%d]", i))
-		if err != nil {
-			return "", err
-		}
-		if userID == "" {
-			return "", fmt.Errorf("user_ids[%d] is required", i)
-		}
-		userIDs = appendUnique(userIDs, userID)
+	userIDs, err := resolveUserRefs(ctx, client, args.UserIDs, "user_ids")
+	if err != nil {
+		return "", err
 	}
 
 	body := map[string]any{
@@ -759,7 +752,8 @@ func toolAddRunParticipants(ctx context.Context, client APIClient, args AddRunPa
 		"force_add_to_channel": args.ForceAddToChannel,
 	}
 	if err := client.Post(ctx, fmt.Sprintf("runs/%s/participants", args.RunID), body, nil); err != nil {
-		return "", fmt.Errorf("failed to add participants to run %s: %w (adding someone other than yourself requires run-manage permission and an in-progress run)", args.RunID, err)
+		return "", wrapRunError(err, args.RunID, "add participants to",
+			"Adding someone other than yourself requires run-manage permission and an in-progress run.")
 	}
 
 	return fmt.Sprintf("Added %d participant(s) to run %s: %s.", len(userIDs), args.RunID, strings.Join(userIDs, ", ")), nil
@@ -769,12 +763,12 @@ func toolRemoveRunParticipant(ctx context.Context, client APIClient, args Remove
 	if err := validateID(args.RunID, "run_id"); err != nil {
 		return "", err
 	}
-	userID, err := resolveUserID(ctx, client, args.UserID, "user_id")
+	userID, err := resolveUserRef(ctx, client, args.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}
 	if userID == "" {
-		return "", fmt.Errorf("user_id is required; pass 'me' to leave the run yourself")
+		return "", fmt.Errorf("user_id is required; pass 'me' to leave the run yourself, or a username such as '@bob'")
 	}
 
 	// Fetch first so removing a non-participant reports the actual roster
@@ -792,31 +786,11 @@ func toolRemoveRunParticipant(ctx context.Context, client APIClient, args Remove
 	}
 
 	if err := client.Delete(ctx, fmt.Sprintf("runs/%s/participants/%s", args.RunID, userID)); err != nil {
-		return "", fmt.Errorf("failed to remove participant %s from run %s: %w (removing someone other than yourself requires run-manage permission and an in-progress run)", userID, args.RunID, err)
+		return "", wrapRunError(err, args.RunID, fmt.Sprintf("remove participant %s from", userID),
+			"Removing someone other than yourself requires run-manage permission and an in-progress run.")
 	}
 
 	return fmt.Sprintf("Removed user %s from run %s; they no longer follow the run.", userID, args.RunID), nil
-}
-
-// resolveUserID turns the literal "me" into the acting user's ID and validates
-// anything else as a Mattermost ID. An empty value stays empty so callers can
-// treat it as "not provided".
-func resolveUserID(ctx context.Context, client APIClient, rawID, field string) (string, error) {
-	trimmed := strings.TrimSpace(rawID)
-	if trimmed == "" {
-		return "", nil
-	}
-	if trimmed == meUserID {
-		userID, err := client.GetCurrentUserID(ctx)
-		if err != nil {
-			return "", fmt.Errorf("failed to resolve %q for %s: %w", meUserID, field, err)
-		}
-		return userID, nil
-	}
-	if err := validateID(trimmed, field); err != nil {
-		return "", err
-	}
-	return trimmed, nil
 }
 
 func containsString(values []string, want string) bool {
@@ -837,30 +811,42 @@ func validateRunType(runType string) error {
 	}
 }
 
-func validateInitialSections(sections []CreateChecklistSection) error {
+// resolveInitialSections validates section titles and returns a copy whose
+// item assignees are resolved to user IDs, so a caller may write
+// "assignee_id": "@bob" the same way it can everywhere else.
+func resolveInitialSections(ctx context.Context, client APIClient, sections []CreateChecklistSection) ([]CreateChecklistSection, error) {
+	resolved := make([]CreateChecklistSection, 0, len(sections))
 	for i, section := range sections {
-		if strings.TrimSpace(section.Title) == "" {
-			return fmt.Errorf("sections[%d].title is required", i)
+		title := strings.TrimSpace(section.Title)
+		if title == "" {
+			return nil, fmt.Errorf("sections[%d].title is required", i)
 		}
-		if err := validateChecklistItems(section.Items, fmt.Sprintf("sections[%d].items", i)); err != nil {
-			return err
+		items, err := resolveChecklistItems(ctx, client, section.Items, fmt.Sprintf("sections[%d].items", i))
+		if err != nil {
+			return nil, err
 		}
+		resolved = append(resolved, CreateChecklistSection{Title: title, Items: items})
 	}
-	return nil
+	return resolved, nil
 }
 
-func validateChecklistItems(items []CreateChecklistItem, field string) error {
+// resolveChecklistItems trims titles and resolves assignee references,
+// returning a copy so the caller's arguments are left untouched.
+func resolveChecklistItems(ctx context.Context, client APIClient, items []CreateChecklistItem, field string) ([]CreateChecklistItem, error) {
+	resolved := make([]CreateChecklistItem, 0, len(items))
 	for i, item := range items {
-		if strings.TrimSpace(item.Title) == "" {
-			return fmt.Errorf("%s[%d].title is required", field, i)
+		item.Title = strings.TrimSpace(item.Title)
+		if item.Title == "" {
+			return nil, fmt.Errorf("%s[%d].title is required", field, i)
 		}
-		if item.AssigneeID != "" {
-			if err := validateID(item.AssigneeID, fmt.Sprintf("%s[%d].assignee_id", field, i)); err != nil {
-				return err
-			}
+		assignee, err := resolveUserRef(ctx, client, item.AssigneeID, fmt.Sprintf("%s[%d].assignee_id", field, i))
+		if err != nil {
+			return nil, err
 		}
+		item.AssigneeID = assignee
+		resolved = append(resolved, item)
 	}
-	return nil
+	return resolved, nil
 }
 
 // --- Formatting helpers ---
@@ -970,8 +956,15 @@ func formatStartedRun(client APIClient, playbook playbookForRun, run playbookRun
 	fmt.Fprintf(&sb, "- Channel: %s (%s)\n", displayOrNone(run.ChannelID), channelNote)
 	total, completed := runTaskProgress(run)
 	fmt.Fprintf(&sb, "- Checklists: %d, tasks: %d/%d complete\n", len(run.Checklists), completed, total)
-	fmt.Fprintf(&sb, "- URL: %s", client.GetRunURL(run.ID))
-	return sb.String()
+	fmt.Fprintf(&sb, "- URL: %s\n", client.GetRunURL(run.ID))
+
+	// The checklists copied from the playbook are what the caller acts on
+	// next, so surface their indexes here rather than making them call
+	// get_run just to learn a checklist_number.
+	sb.WriteString("\nSections copied from the playbook:\n")
+	writeRunSectionIndexes(&sb, run, -1)
+
+	return strings.TrimRight(sb.String(), "\n")
 }
 
 func formatStatusUpdates(runID string, updates []runStatusUpdate, limit int) string {

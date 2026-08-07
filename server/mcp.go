@@ -14,8 +14,10 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-agents/public/mcphelper"
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/internal/playbooksmcp/tools"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,10 +26,16 @@ const (
 	playbooksLocalAPIBase = "/api/v0/"
 )
 
+// usernameResolver looks a username up and returns its user ID. It is passed
+// in rather than reached for through the Plugin struct so newPlaybooksMCPServer
+// stays constructible in tests.
+type usernameResolver func(ctx context.Context, username string) (string, error)
+
 type pluginMCPClient struct {
-	handler http.Handler
-	userID  string
-	siteURL string
+	handler         http.Handler
+	userID          string
+	siteURL         string
+	resolveUsername usernameResolver
 }
 
 type pluginMCPRegistrationAPI struct {
@@ -115,6 +123,42 @@ func (c *pluginMCPClient) GetCurrentUserID(context.Context) (string, error) {
 	return c.userID, nil
 }
 
+// ResolveUserID accepts any of the three forms a model realistically produces
+// for a person: "me", a raw user ID, or a username (with or without the "@"
+// Mattermost renders). Only the last needs a lookup, so the short-circuits live
+// here — every APIClient implementation then agrees on the semantics and only
+// has to supply the username lookup itself.
+func (c *pluginMCPClient) ResolveUserID(ctx context.Context, userRef string) (string, error) {
+	ref := strings.TrimSpace(userRef)
+	if ref == "" {
+		return "", fmt.Errorf("a user reference is required: pass a user ID, %q, or a username such as \"@bob\"", client.Me)
+	}
+	if ref == client.Me {
+		return c.GetCurrentUserID(ctx)
+	}
+	if model.IsValidId(ref) {
+		return ref, nil
+	}
+
+	// Mattermost usernames are stored lowercase, so folding the case here is
+	// what makes the "case-insensitive" promise in the error below true.
+	username := strings.ToLower(strings.TrimPrefix(ref, "@"))
+	if username == "" {
+		return "", fmt.Errorf("%q is not a valid user reference: pass a user ID, %q, or a username such as \"@bob\"", userRef, client.Me)
+	}
+	if c.resolveUsername == nil {
+		return "", fmt.Errorf("user lookup unavailable: cannot resolve username %q to a user ID; pass the 26-character user ID instead", username)
+	}
+	userID, err := c.resolveUsername(ctx, username)
+	if err != nil {
+		return "", fmt.Errorf("no user found with username %q — check the spelling (usernames are case-insensitive, without the @). Underlying error: %w", username, err)
+	}
+	if userID == "" {
+		return "", fmt.Errorf("no user found with username %q — check the spelling (usernames are case-insensitive, without the @)", username)
+	}
+	return userID, nil
+}
+
 func (c *pluginMCPClient) GetPlaybookURL(playbookID string) string {
 	return strings.TrimRight(c.siteURL, "/") + "/playbooks/playbooks/" + playbookID
 }
@@ -168,7 +212,7 @@ func (c *pluginMCPClient) do(ctx context.Context, method, endpoint string, body 
 	return nil
 }
 
-func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, exposeExternal bool, siteURL string) (*mcphelper.Server, error) {
+func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, exposeExternal bool, siteURL string, resolveUsername usernameResolver) (*mcphelper.Server, error) {
 	server := mcphelper.NewServer(newPluginMCPRegistrationAPI(api, manifest.Id), mcphelper.PluginMCPServer{
 		PluginID:       manifest.Id,
 		Name:           "Playbooks MCP",
@@ -181,7 +225,7 @@ func newPlaybooksMCPServer(api mcphelper.PluginAPI, handler http.Handler, expose
 		if userID == "" {
 			return nil, fmt.Errorf("missing Mattermost user ID")
 		}
-		return &pluginMCPClient{handler: handler, userID: userID, siteURL: siteURL}, nil
+		return &pluginMCPClient{handler: handler, userID: userID, siteURL: siteURL, resolveUsername: resolveUsername}, nil
 	}
 	provider, err := tools.NewPlaybooksToolProvider(factory)
 	if err != nil {
@@ -201,7 +245,7 @@ func (p *Plugin) ensureMCPServer() error {
 	}
 	p.mcpMu.RUnlock()
 
-	server, err := newPlaybooksMCPServer(p.API, p.handler, exposeExternal, p.currentSiteURL())
+	server, err := newPlaybooksMCPServer(p.API, p.handler, exposeExternal, p.currentSiteURL(), p.usernameResolver())
 	if err != nil {
 		return err
 	}
@@ -222,6 +266,23 @@ func (p *Plugin) ensureMCPServer() error {
 		}
 	}
 	return nil
+}
+
+// usernameResolver returns nil when the plugin API is not available yet, which
+// pluginMCPClient.ResolveUserID reports as "user lookup unavailable" rather
+// than panicking mid-request.
+func (p *Plugin) usernameResolver() usernameResolver {
+	pluginAPI := p.pluginAPI
+	if pluginAPI == nil {
+		return nil
+	}
+	return func(_ context.Context, username string) (string, error) {
+		user, err := pluginAPI.User.GetByUsername(username)
+		if err != nil {
+			return "", err
+		}
+		return user.Id, nil
+	}
 }
 
 func (p *Plugin) currentMCPExposeExternal() bool {

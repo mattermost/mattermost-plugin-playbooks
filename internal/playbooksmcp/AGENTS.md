@@ -113,6 +113,43 @@ must make the distinction unambiguous:
 - For destructive tools, tell the model to confirm indexes first.
 - Name the discovery tool to call when an ID or index is unknown.
 
+## Every run/playbook API error goes through the wrapping helpers
+
+The Playbooks API answers **403 "Not authorized" for an object that does not
+exist** as well as one the caller may not see. Passed through raw, a model that
+mistypes one character of a run_id reads a permission wall and abandons the task
+— this was observed in an eval run. So never return a bare API error from a call
+that takes a caller-supplied `run_id` or `playbook_id`:
+
+- Wrap with `wrapRunError(err, runID, action, hints...)` or
+  `wrapPlaybookError(...)` in `tools/apierror.go`. On 403/404 they name both
+  possibilities and the discovery tool to call (`resolve_channel_context` /
+  `list_runs`, or `list_playbooks` with `with_archived=true`); on anything else
+  they stay terse. `action` is a verb phrase ("finish", "post a status update
+  to"), and `hints` carry tool-specific causes worth adding.
+- This applies to **mutations that never fetch first** (`finish_run`,
+  `follow_run`, `update_run_status`, …) just as much as to the fetch helpers —
+  those are exactly where the ambiguity reaches the model unmediated.
+- `isUnknownOrForbidden` recovers the status by parsing the error text, because
+  `APIClient` passes plain errors. Both implementations format failures as
+  `API error (status %d)`; if that ever changes, `apierror_test.go` fails.
+
+## Report the index a mutation just created
+
+A tool that creates an indexed object must say where it landed, or the model
+guesses the index for its next call and fails (observed with `add_section` →
+`add_checklist_item`). Both run-side add endpoints **append**:
+`AddChecklist` and `AddChecklistItem` in `server/app/playbook_run_service.go`.
+
+- `add_checklist_item` reads the pre-add item count from the bounds fetch it
+  already does. Capture it *before* the POST, not after.
+- `add_section` has no prior fetch and the endpoint returns 201 with no body, so
+  it reads the run back afterwards and reports `len(checklists)-1` plus every
+  section's index via `writeRunSectionIndexes`. A failed read-back must still
+  report success — the section exists by then.
+- Tools that create a whole run (`run_playbook`, `create_checklist`) render the
+  resulting checklist indexes too, so no follow-up `get_run` is needed.
+
 ## Render results, don't dump JSON
 
 Tool output is model input, so it competes for context. Do not `json.MarshalIndent` an
@@ -140,12 +177,43 @@ stable once added. Current URL helpers mirror the webapp routes:
 `GetPlaybookURL` → `/playbooks/playbooks/{id}`, `GetRunURL` → `/playbooks/runs/{id}`
 (matching `app.GetRunDetailsRelativeURL`).
 
-## "me" resolution
+`ResolveUserID` is the one method whose semantics live in the implementations rather
+than in the tools layer, and all three must agree: `me` → the acting user, a valid
+26-character ID → returned unchanged, anything else → a case-folded username lookup with
+one optional leading `@` stripped. `pluginMCPClient` takes the lookup itself as a
+`usernameResolver` func injected by `newPlaybooksMCPServer` (backed by
+`pluginAPI.User.GetByUsername`), which keeps the server constructible in tests; a nil
+resolver reports "user lookup unavailable" instead of panicking.
 
-The list endpoint resolves the literal `me` for `owner_user_id` and `participant_id`
-server-side (`parsePlaybookRunsFilterOptions`), so those are forwarded verbatim. Every
-other endpoint requires a real ID: resolve `me` client-side with `resolveUserID`, which
-calls `GetCurrentUserID` and validates anything else as a Mattermost ID.
+## User references: always `resolveUserRef`, never `validateID`
+
+People are the one kind of object a model usually knows by name rather than by ID:
+"add @bob to this run" is the canonical phrasing, and a tool that only takes a
+26-character ID leaves the model stuck (Anthropic models invent a user-lookup tool that
+does not exist). So **every argument that names a user goes through
+`resolveUserRef(ctx, client, ref, field)`** — `tools/users.go` — and none of them is
+validated with `validateID`. Lists use `resolveUserRefs`, which also reports the failing
+index and deduplicates references that landed on the same user.
+
+`resolveUserRef` delegates to `APIClient.ResolveUserID`, which accepts `me`, a raw ID
+(returned as-is, no lookup), or a username with or without a leading `@`. The empty
+string stays empty so callers can distinguish "not provided" from a bad reference; where
+an empty value means "clear the assignee", pass it through unchanged rather than
+special-casing it earlier. Resolve **before** any mutation so an unknown username fails
+without half-applying a change, and before `fetchPlaybookForMutation` in the playbook
+tools.
+
+Non-user IDs — team, channel, run, playbook — keep strict `validateID`. There is no
+name-based lookup for those, so a loose value there is a genuine argument error.
+
+Each user-reference `jsonschema` tag and the tool's description must both say that a
+user ID, `me`, or a username (with or without `@`) is accepted; `userRefSchemaHint` in
+`tools/users.go` is the canonical wording (struct tags cannot reference it, so it is
+spelled out at each site).
+
+`list_runs`' `owner_user_id` and `participant_id` are resolved client-side even though
+the list endpoint understands `me` itself (`parsePlaybookRunsFilterOptions`), so
+usernames work there too and the convention has no exceptions.
 
 ## Run participants
 

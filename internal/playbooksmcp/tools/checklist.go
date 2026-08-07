@@ -25,7 +25,7 @@ type AddChecklistItemArgs struct {
 	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist to add the item to"`
 	Title           string `json:"title" jsonschema:"Title of the new checklist item"`
 	Description     string `json:"description,omitempty" jsonschema:"Optional description for the item (supports Markdown)"`
-	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"Optional user ID to assign the item to"`
+	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"Optional user to assign the item to. Accepts a user ID, 'me' for the current user, or a username with or without @ (for example '@bob')."`
 	DueDate         int64  `json:"due_date,omitempty" jsonschema:"Optional due date as Unix timestamp in milliseconds"`
 }
 
@@ -50,7 +50,7 @@ type SetChecklistItemAssigneeArgs struct {
 	RunID           string `json:"run_id" jsonschema:"The ID of the playbook run"`
 	ChecklistNumber int    `json:"checklist_number" jsonschema:"The zero-based index of the checklist"`
 	ItemNumber      int    `json:"item_number" jsonschema:"The zero-based index of the item within the checklist"`
-	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"Optional user ID to assign the item to; omit or send an empty string to clear the assignee"`
+	AssigneeID      string `json:"assignee_id,omitempty" jsonschema:"User to assign the item to. Accepts a user ID, 'me' for the current user, or a username with or without @ (for example '@bob'). Omit or send an empty string to clear the assignee."`
 }
 
 type RemoveChecklistItemArgs struct {
@@ -108,7 +108,7 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolCheckItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_checklist_item",
-		"Add a task to an existing checklist section in a playbook run (a live run, not a playbook template — use add_playbook_task for templates). The checklist_number is a zero-based index; if you don't know it, call resolve_channel_context or get_run first. due_date is an absolute Unix timestamp in milliseconds because this is a run. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\", \"due_date\": 1717200000000}",
+		"Add a task to an existing checklist section in a playbook run (a live run, not a playbook template — use add_playbook_task for templates). The checklist_number is a zero-based index; if you don't know it, call resolve_channel_context or get_run first. assignee_id accepts a username with or without @, 'me', or a user ID. due_date is an absolute Unix timestamp in milliseconds because this is a run. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix in staging\", \"assignee_id\": \"@alice\", \"due_date\": 1717200000000}",
 		toolAddChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "set_checklist_item_due_date",
@@ -120,7 +120,7 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolEditChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "set_checklist_item_assignee",
-		"Assign a task in a playbook run to someone, or clear its assignee — \"give that task to Alice\", \"unassign it\". Omit assignee_id or set it to an empty string to clear. If you don't know the indexes, call resolve_channel_context, find_checklist_item, or get_run first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"assignee_id\": \"user123...\"}",
+		"Assign a task in a playbook run to someone, or clear its assignee — \"give that task to @alice\", \"unassign it\". assignee_id accepts a username with or without @, 'me', or a 26-character user ID; omit it or set it to an empty string to clear. If you don't know the indexes, call resolve_channel_context, find_checklist_item, or get_run first. Example: {\"run_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"assignee_id\": \"@alice\"}",
 		toolSetChecklistItemAssignee)
 
 	addMCPHelperTool(server, p.clientFactory, "remove_checklist_item",
@@ -132,7 +132,7 @@ func (p *PlaybooksToolProvider) addMCPHelperChecklistTools(server *mcphelper.Ser
 		toolMoveChecklistItem)
 
 	addMCPHelperTool(server, p.clientFactory, "add_section",
-		"Add a checklist section (task group, stage) to a playbook run, optionally with its initial tasks in the same call. Sections group tasks in a live run; to add a section to a reusable playbook template use add_playbook_section. Example: {\"run_id\": \"abc123...\", \"title\": \"Post-incident review\", \"items\": [{\"title\": \"Schedule retrospective\"}]}",
+		"Add a checklist section (task group, stage) to a playbook run, optionally with its initial tasks in the same call. Sections group tasks in a live run; to add a section to a reusable playbook template use add_playbook_section. The new section is appended last, and the result reports its zero-based checklist_number along with every section's index — use that number for add_checklist_item rather than guessing it. Example: {\"run_id\": \"abc123...\", \"title\": \"Post-incident review\", \"items\": [{\"title\": \"Schedule retrospective\"}]}",
 		toolAddSection)
 
 	addMCPHelperTool(server, p.clientFactory, "rename_section",
@@ -226,7 +226,7 @@ func outOfRangeError(field string, value int, run playbookRunDetail) error {
 func fetchRunForBounds(ctx context.Context, client APIClient, runID string) (playbookRunDetail, error) {
 	var run playbookRunDetail
 	if err := client.Get(ctx, fmt.Sprintf("runs/%s", runID), nil, &run); err != nil {
-		return playbookRunDetail{}, fmt.Errorf("failed to get run: %w", err)
+		return playbookRunDetail{}, wrapRunError(err, runID, "get")
 	}
 	return run, nil
 }
@@ -290,10 +290,9 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 	if title == "" {
 		return "", fmt.Errorf("title is required")
 	}
-	if args.AssigneeID != "" {
-		if err := validateID(args.AssigneeID, "assignee_id"); err != nil {
-			return "", err
-		}
+	assigneeID, err := resolveUserRef(ctx, client, args.AssigneeID, "assignee_id")
+	if err != nil {
+		return "", err
 	}
 
 	run, err := fetchRunForBounds(ctx, client, args.RunID)
@@ -303,6 +302,11 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 	if err := checkChecklistIndex(run, args.ChecklistNumber, "checklist_number"); err != nil {
 		return "", err
 	}
+	// AddChecklistItem appends, so the new task lands at the pre-add count.
+	// Read it before the POST, while it is unambiguously the prior state.
+	// Reporting it saves a get_run round trip before assigning the task or
+	// setting its due date.
+	itemNumber := len(run.Checklists[args.ChecklistNumber].Items)
 
 	body := map[string]any{
 		"title": title,
@@ -310,8 +314,8 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 	if args.Description != "" {
 		body["description"] = args.Description
 	}
-	if args.AssigneeID != "" {
-		body["assignee_id"] = args.AssigneeID
+	if assigneeID != "" {
+		body["assignee_id"] = assigneeID
 	}
 	if args.DueDate != 0 {
 		body["due_date"] = args.DueDate
@@ -319,10 +323,11 @@ func toolAddChecklistItem(ctx context.Context, client APIClient, args AddCheckli
 
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d/add", args.RunID, args.ChecklistNumber)
 	if err := client.Post(ctx, endpoint, body, nil); err != nil {
-		return "", fmt.Errorf("failed to add checklist item: %w", err)
+		return "", wrapRunError(err, args.RunID, fmt.Sprintf("add a task to checklist %d of", args.ChecklistNumber))
 	}
 
-	return fmt.Sprintf("Added item '%s' to checklist %d in run %s.", title, args.ChecklistNumber, args.RunID), nil
+	return fmt.Sprintf("Added task %q to run %s as [%d][%d] (checklist_number %d, item_number %d).",
+		title, args.RunID, args.ChecklistNumber, itemNumber, args.ChecklistNumber, itemNumber), nil
 }
 
 func toolSetChecklistItemDueDate(ctx context.Context, client APIClient, args SetChecklistItemDueDateArgs) (string, error) {
@@ -435,10 +440,11 @@ func toolSetChecklistItemAssignee(ctx context.Context, client APIClient, args Se
 	if err := validateIndex(args.ItemNumber, "item_number"); err != nil {
 		return "", err
 	}
-	if args.AssigneeID != "" {
-		if err := validateID(args.AssigneeID, "assignee_id"); err != nil {
-			return "", err
-		}
+	// An empty assignee_id clears the assignee, so it stays empty rather than
+	// being treated as a reference to resolve.
+	assigneeID, err := resolveUserRef(ctx, client, args.AssigneeID, "assignee_id")
+	if err != nil {
+		return "", err
 	}
 
 	run, err := fetchRunForBounds(ctx, client, args.RunID)
@@ -450,7 +456,7 @@ func toolSetChecklistItemAssignee(ctx context.Context, client APIClient, args Se
 	}
 
 	body := map[string]string{
-		"assignee_id": args.AssigneeID,
+		"assignee_id": assigneeID,
 	}
 
 	endpoint := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", args.RunID, args.ChecklistNumber, args.ItemNumber)
@@ -458,10 +464,10 @@ func toolSetChecklistItemAssignee(ctx context.Context, client APIClient, args Se
 		return "", fmt.Errorf("failed to set checklist item assignee: %w", err)
 	}
 
-	if args.AssigneeID == "" {
+	if assigneeID == "" {
 		return fmt.Sprintf("Cleared assignee for checklist item [%d][%d] in run %s.", args.ChecklistNumber, args.ItemNumber, args.RunID), nil
 	}
-	return fmt.Sprintf("Set assignee for checklist item [%d][%d] in run %s to user %s.", args.ChecklistNumber, args.ItemNumber, args.RunID, args.AssigneeID), nil
+	return fmt.Sprintf("Set assignee for checklist item [%d][%d] in run %s to user %s.", args.ChecklistNumber, args.ItemNumber, args.RunID, assigneeID), nil
 }
 
 func toolRemoveChecklistItem(ctx context.Context, client APIClient, args RemoveChecklistItemArgs) (string, error) {
@@ -543,16 +549,11 @@ func toolAddSection(ctx context.Context, client APIClient, args AddSectionArgs) 
 	if title == "" {
 		return "", fmt.Errorf("title is required")
 	}
-	if err := validateChecklistItems(args.Items, "items"); err != nil {
-		return "", err
-	}
-
 	// The endpoint decodes a full app.Checklist, so the section and its tasks
 	// can be created in one round trip.
-	items := make([]CreateChecklistItem, 0, len(args.Items))
-	for _, item := range args.Items {
-		item.Title = strings.TrimSpace(item.Title)
-		items = append(items, item)
+	items, err := resolveChecklistItems(ctx, client, args.Items, "items")
+	if err != nil {
+		return "", err
 	}
 	body := map[string]any{
 		"title": title,
@@ -561,13 +562,50 @@ func toolAddSection(ctx context.Context, client APIClient, args AddSectionArgs) 
 
 	endpoint := fmt.Sprintf("runs/%s/checklists", args.RunID)
 	if err := client.Post(ctx, endpoint, body, nil); err != nil {
-		return "", fmt.Errorf("failed to add section: %w", err)
+		return "", wrapRunError(err, args.RunID, "add a section to")
 	}
 
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "Added section %q to run %s", title, args.RunID)
 	if len(items) > 0 {
-		return fmt.Sprintf("Added section '%s' with %d task(s) to run %s.", title, len(items), args.RunID), nil
+		fmt.Fprintf(&sb, " with %d task(s)", len(items))
 	}
-	return fmt.Sprintf("Added section '%s' to run %s.", title, args.RunID), nil
+	sb.WriteString(".\n")
+
+	// The endpoint returns 201 with no body, so the only way to report the
+	// index the caller needs next is to read the run back. Without it the
+	// model has to guess checklist_number for add_checklist_item.
+	run, err := fetchRunForBounds(ctx, client, args.RunID)
+	if err != nil {
+		fmt.Fprintf(&sb, "Could not read the run back to report the new section's checklist_number (%v). Call get_run to get it before adding tasks.", err)
+		return sb.String(), nil
+	}
+
+	// AddChecklist appends (server/app/playbook_run_service.go), so the new
+	// section is always last.
+	newIndex := len(run.Checklists) - 1
+	fmt.Fprintf(&sb, "Its checklist_number is %d — pass that to add_checklist_item to add tasks to it.\n\n", newIndex)
+	sb.WriteString("Sections in this run now:\n")
+	writeRunSectionIndexes(&sb, run, newIndex)
+
+	return strings.TrimRight(sb.String(), "\n"), nil
+}
+
+// writeRunSectionIndexes lists a run's sections against the zero-based
+// checklist_number the item tools take, using the same index-first framing as
+// writeRunChecklists. highlight marks a section as just added; pass -1 for none.
+func writeRunSectionIndexes(sb *strings.Builder, run playbookRunDetail, highlight int) {
+	if len(run.Checklists) == 0 {
+		sb.WriteString("  (no sections)\n")
+		return
+	}
+	for ci, cl := range run.Checklists {
+		fmt.Fprintf(sb, "  checklist_number %d: %q (%d task(s))", ci, cl.Title, len(cl.Items))
+		if ci == highlight {
+			sb.WriteString("  <- the section just added")
+		}
+		sb.WriteString("\n")
+	}
 }
 
 func toolSkipSection(ctx context.Context, client APIClient, args SkipSectionArgs) (string, error) {

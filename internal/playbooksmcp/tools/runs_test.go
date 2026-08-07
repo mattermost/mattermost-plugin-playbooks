@@ -153,9 +153,9 @@ func TestToolRunPlaybookRejectsBadInput(t *testing.T) {
 			wantErr: "channel_id must be a valid Mattermost ID",
 		},
 		{
-			name:    "rejects an invalid owner id",
-			args:    RunPlaybookArgs{PlaybookID: testPlaybookID, OwnerUserID: "invalid"},
-			wantErr: "owner_user_id must be a valid Mattermost ID",
+			name:    "rejects an unresolvable owner",
+			args:    RunPlaybookArgs{PlaybookID: testPlaybookID, OwnerUserID: "@nobody"},
+			wantErr: `owner_user_id: no user found with username "nobody"`,
 		},
 		{
 			name:     "rejects an archived playbook",
@@ -214,6 +214,48 @@ func TestToolRunPlaybookReturnsRunSummaryAndURL(t *testing.T) {
 	assert.Contains(t, out, testUserID)
 	assert.Contains(t, out, "1/2 complete")
 	assert.Contains(t, out, "https://mattermost.example.com/playbooks/runs/"+testRunID)
+}
+
+// The checklists copied from the playbook are what the caller acts on next, so
+// the indexes must be in this output rather than behind another get_run.
+func TestToolRunPlaybookOutputCarriesChecklistIndexes(t *testing.T) {
+	client := &fakeAPIClient{
+		runPlaybook: playbookForRun{ID: testPlaybookID, Title: "Sev1 Incident", TeamID: testTeamID},
+		run: playbookRunDetail{
+			ID:   testRunID,
+			Name: "Sev1 — checkout 500s",
+			Checklists: []checklist{
+				{Title: "Triage", Items: []checklistItem{{Title: "Page on-call"}}},
+				{Title: "Mitigation", Items: []checklistItem{{Title: "Roll back"}}},
+			},
+		},
+	}
+
+	out, err := toolRunPlaybook(context.Background(), client, RunPlaybookArgs{PlaybookID: testPlaybookID, Name: "Sev1 — checkout 500s"})
+	require.NoError(t, err)
+
+	assert.Contains(t, out, `checklist_number 0: "Triage"`)
+	assert.Contains(t, out, `checklist_number 1: "Mitigation"`)
+}
+
+func TestToolCreateChecklistOutputCarriesChecklistIndexes(t *testing.T) {
+	client := &fakeAPIClient{
+		run: playbookRunDetail{
+			ID:   testRunID,
+			Name: "Release checklist",
+			Checklists: []checklist{
+				{Title: "Pre-release", Items: []checklistItem{{Title: "Confirm changelog"}}},
+			},
+		},
+	}
+
+	out, err := toolCreateChecklist(context.Background(), client, CreateChecklistArgs{
+		Name:      "Release checklist",
+		ChannelID: testRunChannelID,
+	})
+	require.NoError(t, err)
+
+	assert.Contains(t, out, "[0][0] Confirm changelog")
 }
 
 func TestToolUpdateRunPatchesProvidedFields(t *testing.T) {
@@ -482,19 +524,19 @@ func TestToolAddRunParticipantsValidation(t *testing.T) {
 			name:    "requires at least one user",
 			client:  &fakeAPIClient{},
 			args:    AddRunParticipantsArgs{RunID: testRunID},
-			wantErr: "user_ids is required; pass 'me' to join the run yourself",
+			wantErr: "user_ids is required; pass 'me' to join the run yourself, or a username such as '@bob'",
 		},
 		{
-			name:    "rejects an invalid user id",
+			name:    "rejects an unknown username",
 			client:  &fakeAPIClient{},
-			args:    AddRunParticipantsArgs{RunID: testRunID, UserIDs: []string{"invalid"}},
-			wantErr: "user_ids[0] must be a valid Mattermost ID",
+			args:    AddRunParticipantsArgs{RunID: testRunID, UserIDs: []string{"@nobody"}},
+			wantErr: `user_ids[0]: no user found with username "nobody" — check the spelling (usernames are case-insensitive, without the @)`,
 		},
 		{
 			name:    "surfaces a failure to resolve the current user",
 			client:  &fakeAPIClient{currentUserErr: errors.New("missing Mattermost user ID")},
 			args:    AddRunParticipantsArgs{RunID: testRunID, UserIDs: []string{"me"}},
-			wantErr: `failed to resolve "me" for user_ids[0]: missing Mattermost user ID`,
+			wantErr: `user_ids[0]: missing Mattermost user ID`,
 		},
 	}
 
@@ -542,7 +584,7 @@ func TestToolRemoveRunParticipant(t *testing.T) {
 		client := &fakeAPIClient{}
 
 		_, err := toolRemoveRunParticipant(context.Background(), client, RemoveRunParticipantArgs{RunID: testRunID})
-		require.EqualError(t, err, "user_id is required; pass 'me' to leave the run yourself")
+		require.EqualError(t, err, "user_id is required; pass 'me' to leave the run yourself, or a username such as '@bob'")
 		assert.Empty(t, client.deleteEndpoint)
 	})
 }
@@ -634,9 +676,9 @@ func TestToolListRunsForwardsFilters(t *testing.T) {
 	assert.Equal(t, testTeamID, params.Get("team_id"))
 	assert.Equal(t, testRunChannelID, params.Get("channel_id"))
 	assert.Equal(t, "InProgress", params.Get("statuses"))
-	// The list endpoint resolves "me" itself for both user filters.
-	assert.Equal(t, "me", params.Get("owner_user_id"))
-	assert.Equal(t, "me", params.Get("participant_id"))
+	// Both user filters are resolved client-side so usernames work too.
+	assert.Equal(t, testCurrentUser, params.Get("owner_user_id"))
+	assert.Equal(t, testCurrentUser, params.Get("participant_id"))
 	assert.Equal(t, testPlaybookID, params.Get("playbook_id"))
 	assert.Equal(t, "checkout", params.Get("search_term"))
 	assert.Equal(t, "true", params.Get("omit_ended"))
