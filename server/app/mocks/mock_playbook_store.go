@@ -282,6 +282,21 @@ func (mr *MockPlaybookStoreMockRecorder) GetPlaybooksWithKeywords(arg0 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksWithKeywords", reflect.TypeOf((*MockPlaybookStore)(nil).GetPlaybooksWithKeywords), arg0)
 }
 
+// GetTeamPlaybookSchemeRoles mocks base method.
+func (m *MockPlaybookStore) GetTeamPlaybookSchemeRoles(arg0 string) (app.PlaybookSchemeRoles, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTeamPlaybookSchemeRoles", arg0)
+	ret0, _ := ret[0].(app.PlaybookSchemeRoles)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTeamPlaybookSchemeRoles indicates an expected call of GetTeamPlaybookSchemeRoles.
+func (mr *MockPlaybookStoreMockRecorder) GetTeamPlaybookSchemeRoles(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTeamPlaybookSchemeRoles", reflect.TypeOf((*MockPlaybookStore)(nil).GetTeamPlaybookSchemeRoles), arg0)
+}
+
 // GetTimeLastUpdated mocks base method.
 func (m *MockPlaybookStore) GetTimeLastUpdated(arg0 bool) (int64, error) {
 	m.ctrl.T.Helper()
