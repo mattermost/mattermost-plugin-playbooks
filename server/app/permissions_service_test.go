@@ -22,8 +22,9 @@ import (
 // plugintest.API so tests can assert behavior of PlaybookEdit, IsPlaybookAdmin,
 // and PlaybookModifyWithFixes without standing up the full app stack.
 type permissionsTestFixture struct {
-	api *plugintest.API
-	svc *PermissionsService
+	api       *plugintest.API
+	svc       *PermissionsService
+	playbooks *stubPlaybookService
 }
 
 // allowAllLicenseChecker is a LicenseChecker stub that permits all features.
@@ -40,12 +41,14 @@ func (allowAllLicenseChecker) ConditionalPlaybooksAllowed() bool { return true }
 func newPermissionsFixture(t *testing.T) *permissionsTestFixture {
 	t.Helper()
 	api := &plugintest.API{}
+	playbooks := &stubPlaybookService{}
 	svc := &PermissionsService{
-		pluginAPI:      pluginapi.NewClient(api, nil),
-		licenseChecker: allowAllLicenseChecker{},
+		playbookService: playbooks,
+		pluginAPI:       pluginapi.NewClient(api, nil),
+		licenseChecker:  allowAllLicenseChecker{},
 	}
 	t.Cleanup(func() { api.AssertExpectations(t) })
-	return &permissionsTestFixture{api: api, svc: svc}
+	return &permissionsTestFixture{api: api, svc: svc, playbooks: playbooks}
 }
 
 // allowSysadmin marks userID as a system admin (HasPermissionTo ManageSystem == true).
@@ -388,6 +391,207 @@ func TestPlaybookModifyWithFixes_AdminOnlyEditFlip(t *testing.T) {
 	})
 }
 
+func TestPlaybookCreateWithMembers(t *testing.T) {
+	const (
+		teamID    = "team-1"
+		creatorID = "u-creator"
+		targetID  = "u-target"
+	)
+
+	makePlaybook := func(members []PlaybookMember) Playbook {
+		return Playbook{
+			TeamID:  teamID,
+			Public:  false,
+			Members: members,
+		}
+	}
+
+	// Lets the creator pass canViewTeam while denying every other team-scoped permission, so
+	// anything allowed comes from their playbook role rather than from the team.
+	allowCreatorTeamView := func(f *permissionsTestFixture) {
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, mock.Anything).Return(false).Maybe()
+	}
+
+	t.Run("empty members list is always allowed (creator auto-assigned later)", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		// No mocks configured: the strict mock fails on any permission lookup.
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, makePlaybook(nil)))
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, makePlaybook([]PlaybookMember{})))
+	})
+
+	t.Run("creator self-assigning as sole admin is always allowed (mirrors default assignment)", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		// No mocks configured: this mirrors the server's own default assignment.
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+
+		pbReversed := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pbReversed))
+	})
+
+	t.Run("creator self-assigning as plain member only is always allowed", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		// No mocks configured: less privileged than the default self-admin assignment.
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleMember}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
+
+	t.Run("creator can pre-assign members their playbook admin role would let them add anyway", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		allowCreatorTeamView(f)
+		// Default configuration: the creator's playbook_admin role grants ManageMembers and
+		// ManageRoles, so creation allows what the update path would allow.
+		f.api.On("RolesGrantPermission", []string{PlaybookRoleAdmin, PlaybookRoleMember}, model.PermissionPrivatePlaybookManageMembers.Id).Return(true)
+		f.api.On("RolesGrantPermission", []string{PlaybookRoleAdmin, PlaybookRoleMember}, model.PermissionPrivatePlaybookManageRoles.Id).Return(true)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: creatorID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+			{UserID: targetID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
+
+	t.Run("playbook admin role stripped of ManageMembers blocks adding another user", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		allowCreatorTeamView(f)
+		// ManageMembers revoked from the playbook roles: neither path may add anyone.
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+		})
+		assert.ErrorIs(t, f.svc.PlaybookCreateWithMembers(creatorID, pb), ErrNoPermissions)
+	})
+
+	t.Run("playbook admin role without ManageRoles cannot pre-assign another admin", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		allowCreatorTeamView(f)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), model.PermissionPrivatePlaybookManageMembers.Id).Return(true)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), model.PermissionPrivatePlaybookManageRoles.Id).Return(false)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+		})
+		assert.ErrorIs(t, f.svc.PlaybookCreateWithMembers(creatorID, pb), ErrNoPermissions)
+	})
+
+	t.Run("adding a plain member needs ManageMembers but not ManageRoles", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		allowCreatorTeamView(f)
+		// ManageRoles left unmocked: the strict mock fails if the check asks for it.
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), model.PermissionPrivatePlaybookManageMembers.Id).Return(true)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
+
+	t.Run("team-level ManageMembers still authorizes creation with members", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		// Playbook roles grant nothing; the permission cascades from the team.
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false)
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", creatorID, teamID, model.PermissionPrivatePlaybookManageMembers).Return(true)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+		})
+		assert.NoError(t, f.svc.PlaybookCreateWithMembers(creatorID, pb))
+	})
+
+	t.Run("the creator's role is resolved from the team scheme, not the built-in role", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.playbooks.schemeRoles = PlaybookSchemeRoles{AdminRole: "custom_pb_admin", MemberRole: "custom_pb_member"}
+		allowCreatorTeamView(f)
+		// A team override scheme without ManageMembers blocks the request even though the
+		// built-in playbook_admin role would allow it.
+		f.api.On("RolesGrantPermission", []string{"custom_pb_admin", "custom_pb_member"}, model.PermissionPrivatePlaybookManageMembers.Id).Return(false)
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+		})
+		assert.ErrorIs(t, f.svc.PlaybookCreateWithMembers(creatorID, pb), ErrNoPermissions)
+	})
+
+	t.Run("client-supplied roles cannot authorize the request", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		allowCreatorTeamView(f)
+		// Members, SchemeRoles and DefaultPlaybook*Role come from the request body; only the
+		// server-resolved scheme roles may be evaluated.
+		f.api.On("RolesGrantPermission", []string{PlaybookRoleAdmin, PlaybookRoleMember}, model.PermissionPublicPlaybookManageMembers.Id).Return(false)
+
+		pb := Playbook{
+			TeamID:                    teamID,
+			Public:                    true,
+			DefaultPlaybookAdminRole:  "attacker_supplied_admin_role",
+			DefaultPlaybookMemberRole: "attacker_supplied_member_role",
+			Members: []PlaybookMember{
+				{UserID: creatorID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}, SchemeRoles: []string{"attacker_supplied_admin_role"}},
+				{UserID: targetID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+			},
+		}
+		assert.ErrorIs(t, f.svc.PlaybookCreateWithMembers(creatorID, pb), ErrNoPermissions)
+	})
+
+	t.Run("a failure resolving the scheme roles denies the request", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.playbooks.schemeErr = errors.New("db is down")
+
+		pb := makePlaybook([]PlaybookMember{
+			{UserID: targetID, Roles: []string{PlaybookRoleMember}},
+		})
+		err := f.svc.PlaybookCreateWithMembers(creatorID, pb)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "db is down")
+	})
+}
+
+func TestNoAddedMembersWithoutPermission(t *testing.T) {
+	const (
+		teamID   = "team-1"
+		editorID = "u-editor"
+	)
+
+	makePlaybook := func(members []PlaybookMember) Playbook {
+		return Playbook{
+			TeamID:  teamID,
+			Public:  false,
+			Members: members,
+		}
+	}
+
+	t.Run("nil and empty member lists are treated as equivalent", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		assert.NoError(t, f.svc.noAddedMembersWithoutPermission(editorID, makePlaybook(nil), nil, nil))
+		assert.NoError(t, f.svc.noAddedMembersWithoutPermission(editorID, makePlaybook(nil), nil, []PlaybookMember{}))
+		assert.NoError(t, f.svc.noAddedMembersWithoutPermission(editorID, makePlaybook(nil), []PlaybookMember{}, nil))
+	})
+
+	t.Run("reordered roles do not require ManageRoles", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(false).Maybe()
+		f.api.On("HasPermissionToTeam", editorID, teamID, model.PermissionViewTeam).Return(true).Maybe()
+		f.api.On("HasPermissionToTeam", editorID, teamID, model.PermissionPrivatePlaybookManageMembers).Return(true)
+
+		oldMembers := []PlaybookMember{
+			{UserID: editorID, Roles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
+		}
+		newMembers := []PlaybookMember{
+			{UserID: editorID, Roles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
+		}
+
+		assert.NoError(t, f.svc.noAddedMembersWithoutPermission(editorID, makePlaybook(oldMembers), oldMembers, newMembers))
+	})
+}
+
 // ---------------------------------------------------------------------------
 // stubRunService — minimal implementation of PlaybookRunService.
 // Only GetPlaybookRun is exercised by the permission helpers.
@@ -632,12 +836,26 @@ func (s *stubRunService) ToggleRetrospectiveEnabled(string, string, bool) error 
 // ---------------------------------------------------------------------------
 
 type stubPlaybookService struct {
-	playbook Playbook
-	err      error
+	playbook    Playbook
+	err         error
+	schemeRoles PlaybookSchemeRoles
+	schemeErr   error
 }
 
 func (s *stubPlaybookService) Get(id string) (Playbook, error) {
 	return s.playbook, s.err
+}
+
+// GetTeamPlaybookSchemeRoles defaults to the built-in roles. Set schemeRoles to emulate a
+// team override scheme.
+func (s *stubPlaybookService) GetTeamPlaybookSchemeRoles(string) (PlaybookSchemeRoles, error) {
+	if s.schemeErr != nil {
+		return PlaybookSchemeRoles{}, s.schemeErr
+	}
+	if s.schemeRoles == (PlaybookSchemeRoles{}) {
+		return PlaybookSchemeRoles{AdminRole: PlaybookRoleAdmin, MemberRole: PlaybookRoleMember}, nil
+	}
+	return s.schemeRoles, nil
 }
 
 func (s *stubPlaybookService) Create(Playbook, string) (string, error) {

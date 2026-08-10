@@ -282,6 +282,21 @@ func (mr *MockPlaybookStoreMockRecorder) GetPlaybooksWithKeywords(arg0 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksWithKeywords", reflect.TypeOf((*MockPlaybookStore)(nil).GetPlaybooksWithKeywords), arg0)
 }
 
+// GetTeamPlaybookSchemeRoles mocks base method.
+func (m *MockPlaybookStore) GetTeamPlaybookSchemeRoles(arg0 string) (app.PlaybookSchemeRoles, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTeamPlaybookSchemeRoles", arg0)
+	ret0, _ := ret[0].(app.PlaybookSchemeRoles)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTeamPlaybookSchemeRoles indicates an expected call of GetTeamPlaybookSchemeRoles.
+func (mr *MockPlaybookStoreMockRecorder) GetTeamPlaybookSchemeRoles(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTeamPlaybookSchemeRoles", reflect.TypeOf((*MockPlaybookStore)(nil).GetTeamPlaybookSchemeRoles), arg0)
+}
+
 // GetTimeLastUpdated mocks base method.
 func (m *MockPlaybookStore) GetTimeLastUpdated(arg0 bool) (int64, error) {
 	m.ctrl.T.Helper()
@@ -341,21 +356,6 @@ func (mr *MockPlaybookStoreMockRecorder) GraphqlUpdate(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GraphqlUpdate", reflect.TypeOf((*MockPlaybookStore)(nil).GraphqlUpdate), arg0, arg1)
 }
 
-// IsRunNumberPrefixUsed mocks base method.
-func (m *MockPlaybookStore) IsRunNumberPrefixUsed(arg0, arg1, arg2 string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRunNumberPrefixUsed", arg0, arg1, arg2)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsRunNumberPrefixUsed indicates an expected call of IsRunNumberPrefixUsed.
-func (mr *MockPlaybookStoreMockRecorder) IsRunNumberPrefixUsed(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunNumberPrefixUsed", reflect.TypeOf((*MockPlaybookStore)(nil).IsRunNumberPrefixUsed), arg0, arg1, arg2)
-}
-
 // IncrementRunNumber mocks base method.
 func (m *MockPlaybookStore) IncrementRunNumber(arg0 string) (int64, error) {
 	m.ctrl.T.Helper()
@@ -369,6 +369,21 @@ func (m *MockPlaybookStore) IncrementRunNumber(arg0 string) (int64, error) {
 func (mr *MockPlaybookStoreMockRecorder) IncrementRunNumber(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementRunNumber", reflect.TypeOf((*MockPlaybookStore)(nil).IncrementRunNumber), arg0)
+}
+
+// IsRunNumberPrefixUsed mocks base method.
+func (m *MockPlaybookStore) IsRunNumberPrefixUsed(arg0, arg1, arg2 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRunNumberPrefixUsed", arg0, arg1, arg2)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsRunNumberPrefixUsed indicates an expected call of IsRunNumberPrefixUsed.
+func (mr *MockPlaybookStoreMockRecorder) IsRunNumberPrefixUsed(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunNumberPrefixUsed", reflect.TypeOf((*MockPlaybookStore)(nil).IsRunNumberPrefixUsed), arg0, arg1, arg2)
 }
 
 // RemovePlaybookMember mocks base method.
@@ -411,20 +426,6 @@ func (m *MockPlaybookStore) Update(arg0 app.Playbook) error {
 func (mr *MockPlaybookStoreMockRecorder) Update(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPlaybookStore)(nil).Update), arg0)
-}
-
-// UpdateRunNumberPrefix mocks base method.
-func (m *MockPlaybookStore) UpdateRunNumberPrefix(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateRunNumberPrefix", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateRunNumberPrefix indicates an expected call of UpdateRunNumberPrefix.
-func (mr *MockPlaybookStoreMockRecorder) UpdateRunNumberPrefix(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRunNumberPrefix", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateRunNumberPrefix), arg0, arg1)
 }
 
 // UpdateChannelNameTemplate mocks base method.
@@ -482,4 +483,18 @@ func (m *MockPlaybookStore) UpdateMetric(arg0 string, arg1 map[string]interface{
 func (mr *MockPlaybookStoreMockRecorder) UpdateMetric(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetric", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateMetric), arg0, arg1)
+}
+
+// UpdateRunNumberPrefix mocks base method.
+func (m *MockPlaybookStore) UpdateRunNumberPrefix(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRunNumberPrefix", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRunNumberPrefix indicates an expected call of UpdateRunNumberPrefix.
+func (mr *MockPlaybookStoreMockRecorder) UpdateRunNumberPrefix(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRunNumberPrefix", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateRunNumberPrefix), arg0, arg1)
 }
