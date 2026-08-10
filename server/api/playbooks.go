@@ -200,6 +200,12 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Authorize any client-supplied members list with the same rules the update path applies.
+	// Must run before the default-membership assignment below, which it is diffed against.
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreateWithMembers(userID, playbook)) {
+		return
+	}
+
 	// If not specified make the creator the sole admin
 	if len(playbook.Members) == 0 {
 		playbook.Members = []app.PlaybookMember{

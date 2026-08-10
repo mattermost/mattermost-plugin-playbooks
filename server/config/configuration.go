@@ -25,7 +25,8 @@ type Configuration struct {
 	// EnableIncrementalUpdates controls whether the server sends incremental WebSocket updates
 	// instead of full playbook run objects. When enabled, the server compares previous and current
 	// states to determine what fields changed and only sends those changes.
-	// This is set to false by default for backward compatibility.
+	// Defaults to true (see plugin.json): incremental updates avoid broken syncing on large
+	// playbook run updates, and the feature has been stable since its July 2025 release.
 	EnableIncrementalUpdates bool `json:"enableincrementalupdates"`
 
 	// EnableExperimentalFeatures controls whether experimental features are enabled in the plugin.

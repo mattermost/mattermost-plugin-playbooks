@@ -9,11 +9,14 @@ import {TaskRequirement} from 'src/types/playbook';
 
 type Props = {
     requirements: TaskRequirement[];
+
     /** When true, show labels only (playbook editor). When false, show filled values (run). */
     editMode?: boolean;
     isTaskComplete?: boolean;
+
     /** Shown on runs when values can be edited. */
     onEditValues?: () => void;
+
     /** Shown on runs when the task is not yet complete. */
     onComplete?: () => void;
     readOnly?: boolean;
@@ -37,16 +40,25 @@ const RequirementsAccordion = ({
     const filledCount = requirements.filter((r) => (r.value || '').trim() !== '').length;
     const showValues = !editMode && filledCount > 0;
 
-    const headerLabel = editMode ? formatMessage(
-        {defaultMessage: '{count, plural, one {# requirement} other {# requirements}}'},
-        {count: requirements.length},
-    ) : showValues ? formatMessage(
-        {defaultMessage: '{count, plural, one {# required field} other {# required fields}}'},
-        {count: requirements.length},
-    ) : formatMessage(
-        {defaultMessage: '{count, plural, one {# requirement} other {# requirements}}'},
-        {count: requirements.length},
-    );
+    let headerLabel: string;
+    if (editMode) {
+        headerLabel = formatMessage(
+            {defaultMessage: '{count, plural, one {# requirement} other {# requirements}}'},
+            {count: requirements.length},
+        );
+    } else if (showValues) {
+        headerLabel = formatMessage(
+            {defaultMessage: '{count, plural, one {# required field} other {# required fields}}'},
+            {count: requirements.length},
+        );
+    } else {
+        headerLabel = formatMessage(
+            {defaultMessage: '{count, plural, one {# requirement} other {# requirements}}'},
+            {count: requirements.length},
+        );
+    }
+
+    const emptyValuePlaceholder = formatMessage({defaultMessage: '—'});
 
     return (
         <Container data-testid='task-requirements-accordion'>
@@ -84,22 +96,31 @@ const RequirementsAccordion = ({
             </HeaderRow>
             {expanded && (
                 <Body>
-                    {requirements.map((req) => (
-                        <Field key={req.id}>
-                            <ReqLabel>{req.label}</ReqLabel>
-                            {showValues || (!editMode && (req.value || '').trim() !== '') ? (
-                                <ReqValue>{req.value || '—'}</ReqValue>
-                            ) : editMode ? (
+                    {requirements.map((req) => {
+                        const hasValue = (req.value || '').trim() !== '';
+                        let body: React.ReactNode;
+                        if (showValues || (!editMode && hasValue)) {
+                            body = <ReqValue>{req.value || emptyValuePlaceholder}</ReqValue>;
+                        } else if (editMode) {
+                            body = (
                                 <Placeholder>
                                     {formatMessage({defaultMessage: 'Text input — filled when the task is checked off'})}
                                 </Placeholder>
-                            ) : (
+                            );
+                        } else {
+                            body = (
                                 <Placeholder>
                                     {formatMessage({defaultMessage: 'Not filled yet'})}
                                 </Placeholder>
-                            )}
-                        </Field>
-                    ))}
+                            );
+                        }
+                        return (
+                            <Field key={req.id}>
+                                <ReqLabel>{req.label}</ReqLabel>
+                                {body}
+                            </Field>
+                        );
+                    })}
                 </Body>
             )}
         </Container>

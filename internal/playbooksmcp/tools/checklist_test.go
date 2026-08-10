@@ -17,8 +17,10 @@ import (
 )
 
 type fakeAPIClient struct {
-	run      playbookRunDetail
-	listRuns listRunsResponse
+	run           playbookRunDetail
+	listRuns      listRunsResponse
+	playbook      map[string]any
+	listPlaybooks listPlaybooksResponse
 	// listPages, when set, returns a distinct listRunsResponse per page index
 	// so pagination can be exercised.
 	listPages []listRunsResponse
@@ -40,6 +42,10 @@ type fakeAPIClient struct {
 	postEndpoint string
 	postBody     any
 	postResult   any
+	postErr      error
+
+	postMapResult    map[string]any
+	postMapResultSet bool
 
 	putEndpoint  string
 	putBody      any
@@ -74,8 +80,14 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 		}
 		f.listParams = params
 		f.listCalls = append(f.listCalls, cloneValues(params))
+	case *listPlaybooksResponse:
+		*v = f.listPlaybooks
 	case *map[string]any:
-		*v = map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Created playbook"}
+		if f.playbook != nil {
+			*v = cloneMapAny(f.playbook)
+		} else {
+			*v = map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Created playbook"}
+		}
 	default:
 		return fmt.Errorf("unexpected get result type %T", result)
 	}
@@ -86,6 +98,9 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 	f.postEndpoint = endpoint
 	f.postBody = body
 	f.postResult = result
+	if f.postErr != nil {
+		return f.postErr
+	}
 	if run, ok := result.(*playbookRunDetail); ok {
 		*run = f.run
 	}
@@ -93,6 +108,19 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 		ID string `json:"id"`
 	}); ok {
 		created.ID = "abcdefghijklmnopqrstuvwxyz"
+	}
+	if created, ok := result.(*map[string]any); ok {
+		if f.postMapResultSet {
+			if f.postMapResult == nil {
+				*created = nil
+				return nil
+			}
+			*created = cloneMapAny(f.postMapResult)
+			return nil
+		}
+		bodyMap, _ := body.(map[string]any)
+		*created = cloneMapAny(bodyMap)
+		(*created)["id"] = "bcdefghijklmnopqrstuvwxyza"
 	}
 	return nil
 }
@@ -132,6 +160,29 @@ func cloneValues(v url.Values) url.Values {
 		out[k] = append([]string(nil), vals...)
 	}
 	return out
+}
+
+func cloneMapAny(in map[string]any) map[string]any {
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		out[k] = cloneAny(v)
+	}
+	return out
+}
+
+func cloneAny(in any) any {
+	switch v := in.(type) {
+	case map[string]any:
+		return cloneMapAny(v)
+	case []any:
+		out := make([]any, len(v))
+		for i := range v {
+			out[i] = cloneAny(v[i])
+		}
+		return out
+	default:
+		return v
+	}
 }
 
 // fixtureRun builds a run with the given number of sections and items per

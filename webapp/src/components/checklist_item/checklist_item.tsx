@@ -39,6 +39,8 @@ import {
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
+import {TimelineEvent} from 'src/types/rhs';
+import CheckedChip, {shouldShowCheckedChip} from 'src/components/checklist_item/checked_chip';
 import {formatConditionExpr} from 'src/utils/condition_format';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -89,6 +91,7 @@ interface ChecklistItemProps {
     playbookId?: string;
     teamId?: string;
     channelId?: string;
+    timelineEvents?: TimelineEvent[];
     onChange?: (item: ChecklistItemState, requirementValues?: Record<string, string>) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
@@ -497,6 +500,19 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         );
     };
 
+    const renderCheckedChip = (): null | React.ReactNode => {
+        if (!shouldShowCheckedChip(props.checklistItem)) {
+            return null;
+        }
+        return (
+            <CheckedChip
+                item={props.checklistItem}
+                timelineEvents={props.timelineEvents}
+                compact={true}
+            />
+        );
+    };
+
     const handleSave = () => {
         setIsEditing(false);
         const finalTitle = titleValue.trim() || 'Untitled task';
@@ -550,6 +566,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         const haveTaskActions = taskActions?.length > 0;
         if (
             !isEditing &&
+            !shouldShowCheckedChip(props.checklistItem) &&
             !assigneeID &&
             !hasRoleAssignee &&
             !command &&
@@ -561,9 +578,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
         return (
             <Row>
+                {renderCheckedChip()}
                 {renderAssignTo()}
-                {renderCommand()}
                 {renderDueDate()}
+                {renderCommand()}
                 {renderTaskActions()}
             </Row>
         );
@@ -730,16 +748,30 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     requirements={requirements}
                     editMode={fillRequirementsEditMode}
                     isTaskComplete={props.checklistItem.state === ChecklistItemState.Closed}
-                    onSave={(values: Record<string, string>) => {
-                        setShowFillRequirementsModal(false);
-                        setFillRequirementsEditMode(false);
+                    onSave={async (values: Record<string, string>) => {
                         const currentState = (props.checklistItem.state || ChecklistItemState.Open) as ChecklistItemState;
-                        props.onChange?.(currentState, values);
-                    }}
-                    onSaveAndComplete={(values: Record<string, string>) => {
+                        const response = await props.onChange?.(currentState, values);
+                        if (response?.error) {
+                            toaster.add({
+                                content: formatMessage({defaultMessage: 'Failed to save requirements.'}),
+                                toastStyle: ToastStyle.Failure,
+                            });
+                            throw response.error;
+                        }
                         setShowFillRequirementsModal(false);
                         setFillRequirementsEditMode(false);
-                        props.onChange?.(ChecklistItemState.Closed, values);
+                    }}
+                    onSaveAndComplete={async (values: Record<string, string>) => {
+                        const response = await props.onChange?.(ChecklistItemState.Closed, values);
+                        if (response?.error) {
+                            toaster.add({
+                                content: formatMessage({defaultMessage: 'Failed to save requirements.'}),
+                                toastStyle: ToastStyle.Failure,
+                            });
+                            throw response.error;
+                        }
+                        setShowFillRequirementsModal(false);
+                        setFillRequirementsEditMode(false);
                     }}
                     onCancel={() => {
                         setShowFillRequirementsModal(false);

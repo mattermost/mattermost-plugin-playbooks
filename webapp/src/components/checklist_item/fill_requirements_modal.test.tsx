@@ -27,19 +27,21 @@ jest.mock('src/components/widgets/generic_modal', () => {
 });
 
 jest.mock('src/components/assets/buttons', () => ({
-    PrimaryButton: ({children, onClick, ...rest}: any) => (
+    PrimaryButton: ({children, onClick, disabled, ...rest}: any) => (
         <button
             type='button'
             onClick={onClick}
+            disabled={disabled}
             {...rest}
         >
             {children}
         </button>
     ),
-    TertiaryButton: ({children, onClick, ...rest}: any) => (
+    TertiaryButton: ({children, onClick, disabled, ...rest}: any) => (
         <button
             type='button'
             onClick={onClick}
+            disabled={disabled}
             {...rest}
         >
             {children}
@@ -53,9 +55,9 @@ const requirements = [
 ];
 
 describe('FillRequirementsModal', () => {
-    it('Save allows partial values', () => {
-        const onSave = jest.fn();
-        const onSaveAndComplete = jest.fn();
+    it('Save allows partial values', async () => {
+        const onSave = jest.fn().mockResolvedValue(undefined);
+        const onSaveAndComplete = jest.fn().mockResolvedValue(undefined);
         const component = renderer.create(
             <FillRequirementsModal
                 taskTitle='My task'
@@ -72,17 +74,17 @@ describe('FillRequirementsModal', () => {
         });
 
         const save = component.root.findByProps({'data-testid': 'modal-save-requirements'});
-        act(() => {
-            save.props.onClick();
+        await act(async () => {
+            await save.props.onClick();
         });
 
         expect(onSave).toHaveBeenCalledWith({r1: 'https://example.com', r2: ''});
         expect(onSaveAndComplete).not.toHaveBeenCalled();
     });
 
-    it('Save and mark complete shows errors when fields are empty', () => {
-        const onSave = jest.fn();
-        const onSaveAndComplete = jest.fn();
+    it('Save and mark complete shows errors when fields are empty', async () => {
+        const onSave = jest.fn().mockResolvedValue(undefined);
+        const onSaveAndComplete = jest.fn().mockResolvedValue(undefined);
         const component = renderer.create(
             <FillRequirementsModal
                 taskTitle='My task'
@@ -94,8 +96,8 @@ describe('FillRequirementsModal', () => {
         );
 
         const complete = component.root.findByProps({'data-testid': 'modal-save-and-complete'});
-        act(() => {
-            complete.props.onClick();
+        await act(async () => {
+            await complete.props.onClick();
         });
 
         expect(onSaveAndComplete).not.toHaveBeenCalled();
@@ -103,13 +105,13 @@ describe('FillRequirementsModal', () => {
         expect(component.root.findByProps({'data-testid': 'requirement-error-r2'})).toBeTruthy();
     });
 
-    it('Save and mark complete succeeds when all fields are filled', () => {
-        const onSaveAndComplete = jest.fn();
+    it('Save and mark complete succeeds when all fields are filled', async () => {
+        const onSaveAndComplete = jest.fn().mockResolvedValue(undefined);
         const component = renderer.create(
             <FillRequirementsModal
                 taskTitle='My task'
                 requirements={requirements}
-                onSave={jest.fn()}
+                onSave={jest.fn().mockResolvedValue(undefined)}
                 onSaveAndComplete={onSaveAndComplete}
                 onCancel={jest.fn()}
             />,
@@ -120,10 +122,31 @@ describe('FillRequirementsModal', () => {
             component.root.findByProps({'data-testid': 'requirement-value-r2'}).props.onChange({target: {value: 'cause'}});
         });
 
-        act(() => {
-            component.root.findByProps({'data-testid': 'modal-save-and-complete'}).props.onClick();
+        await act(async () => {
+            await component.root.findByProps({'data-testid': 'modal-save-and-complete'}).props.onClick();
         });
 
         expect(onSaveAndComplete).toHaveBeenCalledWith({r1: 'url', r2: 'cause'});
+    });
+
+    it('keeps modal open when Save rejects', async () => {
+        const onSave = jest.fn().mockRejectedValue(new Error('network'));
+        const component = renderer.create(
+            <FillRequirementsModal
+                taskTitle='My task'
+                requirements={requirements}
+                onSave={onSave}
+                onSaveAndComplete={jest.fn().mockResolvedValue(undefined)}
+                onCancel={jest.fn()}
+            />,
+        );
+
+        await act(async () => {
+            await component.root.findByProps({'data-testid': 'modal-save-requirements'}).props.onClick();
+        });
+
+        expect(onSave).toHaveBeenCalled();
+        expect(component.root.findByProps({'data-testid': 'fill-requirements-modal'})).toBeTruthy();
+        expect(component.root.findByProps({'data-testid': 'modal-save-requirements'}).props.disabled).toBe(false);
     });
 });

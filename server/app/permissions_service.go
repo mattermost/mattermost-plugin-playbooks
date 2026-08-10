@@ -6,7 +6,6 @@ package app
 import (
 	"reflect"
 	"slices"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -149,6 +148,63 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create playbook", userID)
 }
 
+// PlaybookCreateWithMembers authorizes a client-supplied members list on playbook creation with
+// the same rules the update path applies: the list is diffed against the membership the server
+// assigns by default (the creator as sole admin) and checked by noAddedMembersWithoutPermission.
+//
+// Members, SchemeRoles and the DefaultPlaybook*Role fields all come from the request body and are
+// read by getPlaybookRole, so the permission scope is built from the team's scheme rather than
+// from the submitted playbook.
+func (p *PermissionsService) PlaybookCreateWithMembers(userID string, playbook Playbook) error {
+	if len(playbook.Members) == 0 {
+		return nil
+	}
+
+	// No more than the server's own default: equivalent to omitting the list.
+	if isSelfOnlyDefaultMembership(userID, playbook.Members) {
+		return nil
+	}
+
+	schemeRoles, err := p.playbookService.GetTeamPlaybookSchemeRoles(playbook.TeamID)
+	if err != nil {
+		return errors.Wrapf(err, "unable to resolve playbook scheme roles for team `%s`", playbook.TeamID)
+	}
+
+	defaultMembers := []PlaybookMember{{
+		UserID:      userID,
+		Roles:       []string{PlaybookRoleMember, PlaybookRoleAdmin},
+		SchemeRoles: []string{schemeRoles.AdminRole, schemeRoles.MemberRole},
+	}}
+
+	permCheckPlaybook := playbook
+	permCheckPlaybook.Members = defaultMembers
+	permCheckPlaybook.DefaultPlaybookAdminRole = schemeRoles.AdminRole
+	permCheckPlaybook.DefaultPlaybookMemberRole = schemeRoles.MemberRole
+
+	return p.noAddedMembersWithoutPermission(userID, permCheckPlaybook, defaultMembers, playbook.Members)
+}
+
+// isSelfOnlyDefaultMembership reports whether members is just the requesting user with either the
+// default self-admin roles or a plain playbook_member role.
+func isSelfOnlyDefaultMembership(userID string, members []PlaybookMember) bool {
+	if len(members) != 1 || members[0].UserID != userID {
+		return false
+	}
+
+	roles := members[0].Roles
+	if len(roles) == 1 && roles[0] == PlaybookRoleMember {
+		return true
+	}
+
+	if len(roles) == 2 &&
+		((roles[0] == PlaybookRoleMember && roles[1] == PlaybookRoleAdmin) ||
+			(roles[0] == PlaybookRoleAdmin && roles[1] == PlaybookRoleMember)) {
+		return true
+	}
+
+	return false
+}
+
 func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Playbook) error {
 	permission := model.PermissionPrivatePlaybookManageProperties
 	if p.PlaybookIsPublic(playbook) {
@@ -258,28 +314,8 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 	}
 
 	// Check if we have changed members, if so check that permission.
-	if !reflect.DeepEqual(oldPlaybook.Members, playbook.Members) {
-		if err := p.PlaybookManageMembers(userID, oldPlaybook); err != nil {
-			return errors.Wrap(err, "attempted to modify members without permissions")
-		}
-
-		oldMemberRoles := map[string]string{}
-		for _, member := range oldPlaybook.Members {
-			oldMemberRoles[member.UserID] = strings.Join(member.Roles, ",")
-		}
-
-		// Also need to check if roles changed. If so we need to check manage roles permission.
-		for _, member := range playbook.Members {
-			oldRoles, memberExisted := oldMemberRoles[member.UserID]
-			userAddedAsMember := !memberExisted && len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember
-			rolesHaveNotChanged := memberExisted && strings.Join(member.Roles, ",") == oldRoles
-			if !userAddedAsMember && !rolesHaveNotChanged {
-				if err := p.PlaybookManageRoles(userID, oldPlaybook); err != nil {
-					return errors.Wrap(err, "attempted to modify members without permissions")
-				}
-				break
-			}
-		}
+	if err := p.noAddedMembersWithoutPermission(userID, oldPlaybook, oldPlaybook.Members, playbook.Members); err != nil {
+		return err
 	}
 
 	// Check if team is being changed
@@ -383,6 +419,53 @@ func (p *PermissionsService) NoAddedBroadcastChannelsWithoutPermission(userID st
 	}
 
 	return nil
+}
+
+// noAddedMembersWithoutPermission checks that changing oldMembers to newMembers is permitted: any
+// change to the list requires ManageMembers, and assigning a role other than a plain new
+// "playbook_member" additionally requires ManageRoles. permCheckPlaybook resolves the permission
+// scope (playbook-level role if it exists, else team-level).
+func (p *PermissionsService) noAddedMembersWithoutPermission(userID string, permCheckPlaybook Playbook, oldMembers, newMembers []PlaybookMember) error {
+	if (len(oldMembers) == 0 && len(newMembers) == 0) || reflect.DeepEqual(oldMembers, newMembers) {
+		return nil
+	}
+
+	if err := p.PlaybookManageMembers(userID, permCheckPlaybook); err != nil {
+		return errors.Wrap(err, "attempted to modify members without permissions")
+	}
+
+	oldMemberRoles := map[string][]string{}
+	for _, member := range oldMembers {
+		oldMemberRoles[member.UserID] = member.Roles
+	}
+
+	// Also need to check if roles changed. If so we need to check manage roles permission.
+	for _, member := range newMembers {
+		oldRoles, memberExisted := oldMemberRoles[member.UserID]
+		userAddedAsMember := !memberExisted && len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember
+		rolesHaveNotChanged := memberExisted && sameRoleSet(member.Roles, oldRoles)
+		if !userAddedAsMember && !rolesHaveNotChanged {
+			if err := p.PlaybookManageRoles(userID, permCheckPlaybook); err != nil {
+				return errors.Wrap(err, "attempted to modify members without permissions")
+			}
+			break
+		}
+	}
+
+	return nil
+}
+
+func sameRoleSet(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+
+	leftCopy := append([]string(nil), left...)
+	rightCopy := append([]string(nil), right...)
+	slices.Sort(leftCopy)
+	slices.Sort(rightCopy)
+
+	return slices.Equal(leftCopy, rightCopy)
 }
 
 func (p *PermissionsService) PlaybookManageMembers(userID string, playbook Playbook) error {

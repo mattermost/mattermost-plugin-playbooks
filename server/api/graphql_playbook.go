@@ -228,18 +228,18 @@ func (c UpdateChecklist) GetItems() []app.ChecklistItemCommon {
 }
 
 type UpdateChecklistItem struct {
-	Title                   string            `json:"title"`
-	State                   string            `json:"state"`
-	StateModified           float64           `json:"state_modified"`
-	AssigneeID              string            `json:"assignee_id"`
-	AssigneeModified        float64           `json:"assignee_modified"`
-	AssigneeType            *string           `json:"assignee_type"`
-	AssigneePropertyFieldID *string           `json:"assignee_property_field_id"`
-	Command                 string            `json:"command"`
-	CommandLastRun          float64           `json:"command_last_run"`
-	Description             string            `json:"description"`
-	LastSkipped             float64           `json:"delete_at"`
-	DueDate                 float64           `json:"due_date"`
+	Title                   string                 `json:"title"`
+	State                   string                 `json:"state"`
+	StateModified           float64                `json:"state_modified"`
+	AssigneeID              string                 `json:"assignee_id"`
+	AssigneeModified        float64                `json:"assignee_modified"`
+	AssigneeType            *string                `json:"assignee_type"`
+	AssigneePropertyFieldID *string                `json:"assignee_property_field_id"`
+	Command                 string                 `json:"command"`
+	CommandLastRun          float64                `json:"command_last_run"`
+	Description             string                 `json:"description"`
+	LastSkipped             float64                `json:"delete_at"`
+	DueDate                 float64                `json:"due_date"`
 	TaskActions             *[]app.TaskAction      `json:"task_actions"`
 	ConditionID             string                 `json:"condition_id"`
 	Requirements            *[]app.TaskRequirement `json:"requirements"`
@@ -263,4 +263,13 @@ func (ci *UpdateChecklistItem) SetStateModified(modified int64) {
 
 func (ci *UpdateChecklistItem) SetCommandLastRun(lastRun int64) {
 	ci.CommandLastRun = float64(lastRun)
+}
+
+func (ci *UpdateChecklistItem) ClearRequirementValues() {
+	if ci.Requirements == nil {
+		return
+	}
+	for i := range *ci.Requirements {
+		(*ci.Requirements)[i].Value = ""
+	}
 }

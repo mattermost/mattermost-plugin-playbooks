@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import renderer, {act, ReactTestRendererJSON} from 'react-test-renderer';
+import renderer, {ReactTestRendererJSON, act} from 'react-test-renderer';
 
 import BetaFeaturesSetting from './beta_features_setting';
 

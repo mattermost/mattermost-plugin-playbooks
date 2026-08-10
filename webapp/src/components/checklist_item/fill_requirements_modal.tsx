@@ -12,12 +12,14 @@ import GenericModal from 'src/components/widgets/generic_modal';
 type Props = {
     taskTitle: string;
     requirements: TaskRequirement[];
+
     /** When true, user opened via Edit; when false, via Complete / checkbox. */
     editMode?: boolean;
+
     /** When true, task is already checked off — hide "mark complete". */
     isTaskComplete?: boolean;
-    onSave: (values: Record<string, string>) => void;
-    onSaveAndComplete: (values: Record<string, string>) => void;
+    onSave: (values: Record<string, string>) => Promise<void>;
+    onSaveAndComplete: (values: Record<string, string>) => Promise<void>;
     onCancel: () => void;
 };
 
@@ -39,6 +41,7 @@ const FillRequirementsModal = ({
         return initial;
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [saving, setSaving] = useState(false);
 
     const getTrimmedValues = () => {
         const trimmed: Record<string, string> = {};
@@ -59,17 +62,37 @@ const FillRequirementsModal = ({
         return Object.keys(nextErrors).length === 0;
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (saving) {
+            return;
+        }
         setErrors({});
-        onSave(getTrimmedValues());
+        setSaving(true);
+        try {
+            await onSave(getTrimmedValues());
+        } catch {
+            // Parent shows failure toast; keep modal open.
+        } finally {
+            setSaving(false);
+        }
     };
 
-    const handleSaveAndComplete = () => {
+    const handleSaveAndComplete = async () => {
+        if (saving) {
+            return;
+        }
         const trimmed = getTrimmedValues();
         if (!validateAllFilled(trimmed)) {
             return;
         }
-        onSaveAndComplete(trimmed);
+        setSaving(true);
+        try {
+            await onSaveAndComplete(trimmed);
+        } catch {
+            // Parent shows failure toast; keep modal open.
+        } finally {
+            setSaving(false);
+        }
     };
 
     const showMarkComplete = !isTaskComplete;
@@ -87,6 +110,7 @@ const FillRequirementsModal = ({
                         type='button'
                         data-testid='modal-cancel-button'
                         onClick={onCancel}
+                        disabled={saving}
                     >
                         {formatMessage({defaultMessage: 'Cancel'})}
                     </TertiaryButton>
@@ -94,6 +118,7 @@ const FillRequirementsModal = ({
                         type='button'
                         data-testid='modal-save-requirements'
                         onClick={handleSave}
+                        disabled={saving}
                     >
                         {formatMessage({defaultMessage: 'Save'})}
                     </TertiaryButton>
@@ -102,6 +127,7 @@ const FillRequirementsModal = ({
                             type='button'
                             data-testid='modal-save-and-complete'
                             onClick={handleSaveAndComplete}
+                            disabled={saving}
                         >
                             {formatMessage({defaultMessage: 'Save and mark complete'})}
                         </PrimaryButton>
@@ -132,12 +158,14 @@ const FillRequirementsModal = ({
                                 type='text'
                                 $hasError={hasError}
                                 value={values[req.id] || ''}
+                                disabled={saving}
                                 onChange={(e) => {
                                     const next = e.target.value;
                                     setValues((prev) => ({...prev, [req.id]: next}));
                                     if (errors[req.id] && next.trim()) {
                                         setErrors((prev) => {
-                                            const {[req.id]: _, ...rest} = prev;
+                                            const rest = {...prev};
+                                            delete rest[req.id];
                                             return rest;
                                         });
                                     }

@@ -1483,6 +1483,10 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 	}
 
 	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, opts...); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to modify checklist item state", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
