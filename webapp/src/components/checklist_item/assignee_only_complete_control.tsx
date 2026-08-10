@@ -62,9 +62,12 @@ export const AssigneeOnlyCompleteControl = (ownProps: ControlProps<Option, boole
                 </AssigneeOnlyCompleteRow>
             )}
             {ownProps.selectProps.showCustomReset && (
-                <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
+                <ControlComponentButton
+                    type='button'
+                    onClick={ownProps.selectProps.onCustomReset}
+                >
                     <FormattedMessage defaultMessage='No Assignee'/>
-                </ControlComponentAnchor>
+                </ControlComponentButton>
             )}
         </div>
     );
@@ -92,11 +95,16 @@ const AssigneeOnlyCompleteLabel = styled.span`
     color: var(--center-channel-color);
 `;
 
-const ControlComponentAnchor = styled.a`
+const ControlComponentButton = styled.button`
     position: relative;
     top: -4px;
     display: inline-block;
+    padding: 0;
+    border: 0;
     margin: 0 0 8px 12px;
+    background: transparent;
+    cursor: pointer;
     font-size: 12px;
     font-weight: 600;
+    color: inherit;
 `;
