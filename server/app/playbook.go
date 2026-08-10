@@ -114,6 +114,13 @@ type PlaybookMember struct {
 	SchemeRoles []string `json:"scheme_roles"`
 }
 
+// PlaybookSchemeRoles holds the playbook role names a team's scheme assigns. Teams without a
+// scheme fall back to the built-in PlaybookRoleAdmin/PlaybookRoleMember.
+type PlaybookSchemeRoles struct {
+	AdminRole  string
+	MemberRole string
+}
+
 type PlaybookMetricConfig struct {
 	ID          string   `json:"id" export:"-"`
 	PlaybookID  string   `json:"playbook_id" export:"-"`
@@ -478,6 +485,10 @@ type PlaybookService interface {
 
 	// UpdateChannelNameTemplate updates only the channel name template for a playbook.
 	UpdateChannelNameTemplate(playbookID, template, userID string) error
+
+	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
+	// falling back to the built-in roles when the team has no scheme.
+	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -575,6 +586,10 @@ type PlaybookStore interface {
 
 	// UpdateChannelNameTemplate updates only the ChannelNameTemplate column for the given playbook.
 	UpdateChannelNameTemplate(id, template string) error
+
+	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
+	// falling back to the built-in roles when the team has no scheme.
+	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
 }
 
 const (
