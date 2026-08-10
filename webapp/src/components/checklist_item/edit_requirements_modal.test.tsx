@@ -3,6 +3,7 @@
 
 import React from 'react';
 import renderer, {act} from 'react-test-renderer';
+import {generateId} from 'mattermost-redux/utils/helpers';
 
 import EditRequirementsModal from './edit_requirements_modal';
 
@@ -45,9 +46,8 @@ jest.mock('src/components/widgets/generic_modal', () => {
 
 describe('EditRequirementsModal', () => {
     beforeEach(() => {
-        const {generateId} = require('mattermost-redux/utils/helpers');
         let n = 0;
-        generateId.mockImplementation(() => {
+        (generateId as jest.Mock).mockImplementation(() => {
             n += 1;
             return `generated-id-${n}`;
         });

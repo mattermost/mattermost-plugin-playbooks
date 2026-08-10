@@ -385,6 +385,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else {
             const newItem = {...props.checklistItem};
             newItem.task_actions = newTaskActions;
+
             // Requirements and mark-as-done message triggers are mutually exclusive.
             if (haveAtleastOneEnabledAction(newTaskActions) && (newItem.requirements?.length || 0) > 0) {
                 newItem.requirements = [];
@@ -751,6 +752,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                             ...props.checklistItem,
                             requirements: nextRequirements,
                         };
+
                         // Requirements and mark-as-done message triggers are mutually exclusive.
                         if (nextRequirements.length > 0 && haveAtleastOneEnabledAction(taskActions)) {
                             nextItem.task_actions = [];
