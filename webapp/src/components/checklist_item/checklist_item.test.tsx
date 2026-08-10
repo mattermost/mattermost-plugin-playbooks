@@ -34,6 +34,7 @@ jest.mock('src/graphql/hooks', () => ({
 
 jest.mock('src/client', () => ({
     setAssignee: jest.fn(async () => ({})),
+    setAssigneeOnlyComplete: jest.fn(async () => ({})),
     setRoleAssignee: jest.fn(async () => ({})),
     setPropertyUserAssignee: jest.fn(async () => ({})),
     clientEditChecklistItem: jest.fn(),
@@ -55,6 +56,10 @@ jest.mock('src/components/backstage/toast', () => ({
 jest.mock('src/hooks', () => ({
     useProfilesInTeam: jest.fn(() => []),
     useProfilesForRun: jest.fn(() => []),
+}));
+
+jest.mock('src/hooks/redux', () => ({
+    useAppSelector: () => 'current-user-id',
 }));
 
 jest.mock('src/components/checklists/assignee_dropdown', () => ({
@@ -92,7 +97,13 @@ jest.mock('./description', () => ({
 
 jest.mock('./inputs', () => ({
     CancelSaveButtons: () => null,
-    CheckBoxButton: () => null,
+    CheckBoxButton: ({disabled}: {disabled?: boolean}) => (
+        <input
+            data-testid='checklist-item-checkbox'
+            type='checkbox'
+            disabled={disabled}
+        />
+    ),
 }));
 
 jest.mock('./duedate', () => ({
@@ -199,5 +210,51 @@ describe('ChecklistItem › onExtraOptionSelected', () => {
         expect(mockToasterAdd).toHaveBeenCalledWith(expect.objectContaining({
             toastStyle: 'failure',
         }));
+    });
+});
+
+describe('ChecklistItem › assignee_only_complete checkbox', () => {
+    const findCheckbox = (component: renderer.ReactTestRenderer) => {
+        const nodes = component.root.findAll(
+            (node) => node.props['data-testid'] === 'checklist-item-checkbox',
+        );
+        expect(nodes.length).toBeGreaterThan(0);
+        return nodes[0];
+    };
+
+    it('disables checkbox for non-assignee when locked', () => {
+        const component = renderItem({
+            playbookRunId: 'run-1',
+            checklistItem: makeItem({
+                assignee_id: 'other-user',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(findCheckbox(component).props.disabled).toBe(true);
+    });
+
+    it('allows assignee to complete when locked', () => {
+        const component = renderItem({
+            playbookRunId: 'run-1',
+            checklistItem: makeItem({
+                assignee_id: 'current-user-id',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(findCheckbox(component).props.disabled).toBe(false);
+    });
+
+    it('allows anyone when locked but unassigned', () => {
+        const component = renderItem({
+            playbookRunId: 'run-1',
+            checklistItem: makeItem({
+                assignee_id: '',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(findCheckbox(component).props.disabled).toBe(false);
     });
 });

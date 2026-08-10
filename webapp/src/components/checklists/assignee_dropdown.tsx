@@ -3,12 +3,9 @@
 
 import React, {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
-import {FormattedMessage, useIntl} from 'react-intl';
-import {ControlProps, components} from 'react-select';
+import {useIntl} from 'react-intl';
 
-import {LockOutlineIcon} from '@mattermost/compass-icons/components';
-
-import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
+import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
 import {
     AssigneeTypeCreator,
@@ -19,6 +16,7 @@ import {
 } from 'src/types/playbook';
 
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
+import {AssigneeOnlyCompleteControl} from 'src/components/checklist_item/assignee_only_complete_control';
 
 const ROLE_NONE = 'none';
 
@@ -164,7 +162,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                     defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
                     subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
                 }}
-                customControl={editable ? ControlComponent : undefined}
+                customControl={editable ? AssigneeOnlyCompleteControl : undefined}
                 customControlProps={editable ? {
                     showAssigneeOnlyComplete: true,
                     assigneeOnlyComplete: Boolean(checklistItem.assignee_only_complete),
@@ -217,39 +215,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         </Container>
     );
 };
-
-const ControlComponent = (ownProps: ControlProps<Option, boolean>) => (
-    <div>
-        <components.Control {...ownProps}/>
-        {ownProps.selectProps.showAssigneeOnlyComplete && (
-            <AssigneeOnlyCompleteRow
-                data-testid='assignee-only-complete-toggle'
-                onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }}
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    ownProps.selectProps.onAssigneeOnlyCompleteChange?.(
-                        !ownProps.selectProps.assigneeOnlyComplete,
-                    );
-                }}
-            >
-                <AssigneeOnlyCompleteCheckbox
-                    type='checkbox'
-                    checked={Boolean(ownProps.selectProps.assigneeOnlyComplete)}
-                    readOnly={true}
-                    tabIndex={-1}
-                />
-                <LockOutlineIcon size={14}/>
-                <AssigneeOnlyCompleteLabel>
-                    <FormattedMessage defaultMessage='Only the assignee can complete the task'/>
-                </AssigneeOnlyCompleteLabel>
-            </AssigneeOnlyCompleteRow>
-        )}
-    </div>
-);
 
 const Container = styled.div`
     display: flex;
@@ -324,28 +289,6 @@ const RoleBadge = styled.span`
     border-radius: 4px;
     padding: 2px 6px;
     white-space: nowrap;
-`;
-
-const AssigneeOnlyCompleteRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 12px 10px;
-    cursor: pointer;
-    user-select: none;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-`;
-
-const AssigneeOnlyCompleteCheckbox = styled.input`
-    margin: 0;
-    cursor: pointer;
-`;
-
-const AssigneeOnlyCompleteLabel = styled.span`
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 16px;
-    color: var(--center-channel-color);
 `;
 
 export default AssigneeDropdown;

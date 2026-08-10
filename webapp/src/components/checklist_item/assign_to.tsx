@@ -3,20 +3,21 @@
 
 import React, {useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
-import {FormattedMessage, useIntl} from 'react-intl';
-import {ControlProps, components} from 'react-select';
+import {useIntl} from 'react-intl';
 import {UserProfile} from '@mattermost/types/users';
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {Placement} from '@floating-ui/react';
 
-import {AccountOutlineIcon, LockOutlineIcon} from '@mattermost/compass-icons/components';
+import {AccountOutlineIcon} from '@mattermost/compass-icons/components';
 
 import Profile from 'src/components/profile/profile';
-import ProfileSelector, {type ExtraSection, Option} from 'src/components/profile/profile_selector';
+import ProfileSelector, {type ExtraSection} from 'src/components/profile/profile_selector';
 import {useProfilesForRun} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {AssigneeTypeOwner, AssigneeTypePropertyUser, isRoleBasedAssigneeType} from 'src/types/playbook';
 import {PropertyField, PropertyValue} from 'src/types/properties';
+
+import {AssigneeOnlyCompleteControl} from './assignee_only_complete_control';
 
 export const EXTRA_OPTION_PREFIX_ROLE = 'role:';
 export const EXTRA_OPTION_PREFIX_PROPERTY_USER = 'property_user:';
@@ -215,7 +216,7 @@ const AssignTo = (props: AssignedToProps) => {
                 onExtraOptionSelected={props.onExtraOptionSelected}
                 extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
-                customControl={ControlComponent}
+                customControl={AssigneeOnlyCompleteControl}
                 customControlProps={customControlProps}
                 controlledOpenToggle={profileSelectorToggle}
                 placement={props.placement}
@@ -264,7 +265,7 @@ const AssignTo = (props: AssignedToProps) => {
                 onExtraOptionSelected={props.onExtraOptionSelected}
                 extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
-                customControl={ControlComponent}
+                customControl={AssigneeOnlyCompleteControl}
                 customControlProps={customControlProps}
                 customDropdownArrow={dropdownArrow}
                 placement={props.placement}
@@ -288,44 +289,6 @@ const AssignTo = (props: AssignedToProps) => {
 };
 
 export default AssignTo;
-
-const ControlComponent = (ownProps: ControlProps<Option, boolean>) => (
-    <div>
-        <components.Control {...ownProps}/>
-        {ownProps.selectProps.showAssigneeOnlyComplete && (
-            <AssigneeOnlyCompleteRow
-                data-testid='assignee-only-complete-toggle'
-                onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }}
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    ownProps.selectProps.onAssigneeOnlyCompleteChange?.(
-                        !ownProps.selectProps.assigneeOnlyComplete,
-                    );
-                }}
-            >
-                <AssigneeOnlyCompleteCheckbox
-                    type='checkbox'
-                    checked={Boolean(ownProps.selectProps.assigneeOnlyComplete)}
-                    readOnly={true}
-                    tabIndex={-1}
-                />
-                <LockOutlineIcon size={14}/>
-                <AssigneeOnlyCompleteLabel>
-                    <FormattedMessage defaultMessage='Only the assignee can complete the task'/>
-                </AssigneeOnlyCompleteLabel>
-            </AssigneeOnlyCompleteRow>
-        )}
-        {ownProps.selectProps.showCustomReset && (
-            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
-                <FormattedMessage defaultMessage='No Assignee'/>
-            </ControlComponentAnchor>
-        )}
-    </div>
-);
 
 const StyledProfileSelector = styled(ProfileSelector).attrs({
     dropdownContainerStyles: assigneeDropdownContainerStyles,
@@ -423,37 +386,6 @@ const AssignToIcon = styled.i`
 
 export const AssignToContainer = styled.div`
     display: flex;
-`;
-
-const ControlComponentAnchor = styled.a`
-    position: relative;
-    top: -4px;
-    display: inline-block;
-    margin: 0 0 8px 12px;
-    font-size: 12px;
-    font-weight: 600;
-`;
-
-const AssigneeOnlyCompleteRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 12px 10px;
-    cursor: pointer;
-    user-select: none;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-`;
-
-const AssigneeOnlyCompleteCheckbox = styled.input`
-    margin: 0;
-    cursor: pointer;
-`;
-
-const AssigneeOnlyCompleteLabel = styled.span`
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 16px;
-    color: var(--center-channel-color);
 `;
 
 export const DropdownArrow = styled.i`

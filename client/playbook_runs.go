@@ -223,7 +223,6 @@ func (s *PlaybookRunService) Restore(ctx context.Context, playbookRunID string) 
 	return nil
 }
 
-
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
 	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
 	req, err := s.client.newAPIRequest(http.MethodPost, createURL, checklist)
@@ -360,6 +359,21 @@ func (s *PlaybookRunService) SetItemAssigneeOnlyComplete(ctx context.Context, pl
 	req, err := s.client.newAPIRequest(http.MethodPut, url, struct {
 		AssigneeOnlyComplete bool `json:"assignee_only_complete"`
 	}{assigneeOnlyComplete})
+	if err != nil {
+		return err
+	}
+	resp, err := s.client.do(ctx, req, nil)
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
+	}
+	return err
+}
+
+func (s *PlaybookRunService) SetItemState(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, newState string) error {
+	url := fmt.Sprintf("runs/%s/checklists/%d/item/%d/state", playbookRunID, checklistIdx, itemIdx)
+	req, err := s.client.newAPIRequest(http.MethodPut, url, struct {
+		NewState string `json:"new_state"`
+	}{newState})
 	if err != nil {
 		return err
 	}

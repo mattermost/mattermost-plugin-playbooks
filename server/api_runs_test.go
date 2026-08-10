@@ -2400,6 +2400,124 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 	})
 }
 
+func TestChecklistItem_AssigneeOnlyComplete(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRunWithItem := func(t *testing.T) *client.PlaybookRun {
+		t.Helper()
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Assignee only complete run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "Test Checklist",
+			Items: []client.ChecklistItem{{Title: "Test Item"}},
+		})
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.Checklists, 1)
+		require.Len(t, run.Checklists[0].Items, 1)
+		return run
+	}
+
+	t.Run("set and idempotent no-op", func(t *testing.T) {
+		run := createRunWithItem(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.True(t, run.Checklists[0].Items[0].AssigneeOnlyComplete)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, false)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.False(t, run.Checklists[0].Items[0].AssigneeOnlyComplete)
+	})
+
+	t.Run("malformed JSON returns 400", func(t *testing.T) {
+		run := createRunWithItem(t)
+
+		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee_only_complete"
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, url, strings.NewReader("{not-json"))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set(model.HeaderAuth, e.ServerClient.AuthType+" "+e.ServerClient.AuthToken)
+
+		resp, err := e.ServerClient.HTTPClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("invalid checklist index returns error", func(t *testing.T) {
+		run := createRunWithItem(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 99, 0, true)
+		require.Error(t, err)
+	})
+
+	t.Run("user without manage permission returns 403", func(t *testing.T) {
+		run := createRunWithItem(t)
+
+		err := e.PlaybooksClientNotInTeam.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("blocks non-assignee from completing locked task", func(t *testing.T) {
+		run := createRunWithItem(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		require.NoError(t, err)
+
+		// Owner / non-assignee cannot complete
+		err = e.PlaybooksClient.PlaybookRuns.SetItemState(context.Background(), run.ID, 0, 0, app.ChecklistItemStateClosed)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEqual(t, app.ChecklistItemStateClosed, run.Checklists[0].Items[0].State)
+
+		// Assignee can complete
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemState(context.Background(), run.ID, 0, 0, app.ChecklistItemStateClosed)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.ChecklistItemStateClosed, run.Checklists[0].Items[0].State)
+	})
+
+	t.Run("allows anyone when locked but unassigned", func(t *testing.T) {
+		run := createRunWithItem(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemState(context.Background(), run.ID, 0, 0, app.ChecklistItemStateClosed)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.ChecklistItemStateClosed, run.Checklists[0].Items[0].State)
+	})
+}
+
 // TestSetAssignee_ClearsRoleType verifies that calling SetItemAssignee with a concrete user ID
 // on an item that previously had a role-based assignee type (owner / creator / property_user)
 // clears AssigneeType and AssigneePropertyFieldID. Without this, the role badge would persist

@@ -20,10 +20,10 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {
     clientAddChecklistItem,
     clientEditChecklistItem,
+    setAssigneeOnlyComplete as clientSetAssigneeOnlyComplete,
     clientSetChecklistItemCommand,
     setDueDate as clientSetDueDate,
     setAssignee,
-    setAssigneeOnlyComplete as clientSetAssigneeOnlyComplete,
     setChecklistItemState,
     setPropertyUserAssignee,
     setRoleAssignee,
