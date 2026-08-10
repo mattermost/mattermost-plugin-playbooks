@@ -148,15 +148,9 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 {props.playbookRunId === undefined && props.onAddRequirement &&
                     <StyledDropdownMenuItem
                         data-testid='task-menu-add-requirement'
-                        title={props.requirementsDisabledReason}
+                        disabledAltText={props.requirementsDisabledReason}
                         disabled={Boolean(props.requirementsDisabledReason)}
-                        onClick={() => {
-                            if (props.requirementsDisabledReason) {
-                                return;
-                            }
-                            props.onAddRequirement?.();
-                        }}
-                        style={props.requirementsDisabledReason ? {opacity: 0.5, cursor: 'not-allowed'} : undefined}
+                        onClick={() => props.onAddRequirement?.()}
                     >
                         <DropdownIcon className='icon-check-circle-outline icon-16'/>
                         {props.hasRequirements ? formatMessage({defaultMessage: 'Edit requirements'}) : formatMessage({defaultMessage: 'Add a requirement'})}
