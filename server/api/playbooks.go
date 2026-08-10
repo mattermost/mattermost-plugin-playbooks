@@ -166,8 +166,13 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 
 	for listIndex := range playbook.Checklists {
 		for itemIndex := range playbook.Checklists[listIndex].Items {
-			if err := validateTaskActions(playbook.Checklists[listIndex].Items[itemIndex].TaskActions); err != nil {
+			item := playbook.Checklists[listIndex].Items[itemIndex]
+			if err := validateTaskActions(item.TaskActions); err != nil {
 				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid task actions", err)
+				return false
+			}
+			if err := app.ValidateRequirementsExclusiveOfTaskActions(item.Requirements, item.TaskActions); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid checklist item", err)
 				return false
 			}
 		}

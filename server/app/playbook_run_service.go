@@ -2785,6 +2785,11 @@ func (s *PlaybookRunServiceImpl) SetTaskActionsToChecklistItem(playbookRunID, us
 		return errors.New("invalid checklist item indices")
 	}
 
+	item := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	if err := ValidateRequirementsExclusiveOfTaskActions(item.Requirements, taskActions); err != nil {
+		return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+	}
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
@@ -5314,6 +5319,10 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(post *model.Post) {
 
 		for checklistNum, checklist := range run.Checklists {
 			for itemNum, item := range checklist.Items {
+				if len(item.Requirements) > 0 {
+					// Requirements and mark-as-done message triggers are mutually exclusive.
+					continue
+				}
 				for _, ta := range item.TaskActions {
 					if ta.Trigger.Type == KeywordsByUsersTriggerType {
 						t, err := NewKeywordsByUsersTrigger(ta.Trigger)

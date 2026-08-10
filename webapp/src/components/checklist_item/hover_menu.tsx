@@ -62,6 +62,7 @@ export interface Props {
     isChannelChecklist?: boolean;
     onAddRequirement?: () => void;
     hasRequirements?: boolean;
+    requirementsDisabledReason?: string;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -147,7 +148,15 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 {props.playbookRunId === undefined && props.onAddRequirement &&
                     <StyledDropdownMenuItem
                         data-testid='task-menu-add-requirement'
-                        onClick={() => props.onAddRequirement?.()}
+                        title={props.requirementsDisabledReason}
+                        disabled={Boolean(props.requirementsDisabledReason)}
+                        onClick={() => {
+                            if (props.requirementsDisabledReason) {
+                                return;
+                            }
+                            props.onAddRequirement?.();
+                        }}
+                        style={props.requirementsDisabledReason ? {opacity: 0.5, cursor: 'not-allowed'} : undefined}
                     >
                         <DropdownIcon className='icon-check-circle-outline icon-16'/>
                         {props.hasRequirements ? formatMessage({defaultMessage: 'Edit requirements'}) : formatMessage({defaultMessage: 'Add a requirement'})}

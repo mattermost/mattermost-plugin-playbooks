@@ -385,6 +385,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else {
             const newItem = {...props.checklistItem};
             newItem.task_actions = newTaskActions;
+            // Requirements and mark-as-done message triggers are mutually exclusive.
+            if (haveAtleastOneEnabledAction(newTaskActions) && (newItem.requirements?.length || 0) > 0) {
+                newItem.requirements = [];
+            }
             props.onUpdateChecklistItem?.(newItem);
         }
     };
@@ -490,12 +494,17 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return null;
         }
 
+        const taskActionsDisabledReason = isPlaybookEditor && betaFeaturesEnabled && requirements.length > 0 ?
+            formatMessage({defaultMessage: 'Remove task requirements before adding a message trigger.'}) :
+            undefined;
+
         return (
             <TaskActions
                 editable={isEditing || (!props.readOnly && !isSkipped())}
                 taskActions={taskActions}
                 onTaskActionsChange={onTaskActionsChange}
                 isEditing={isEditing}
+                disabledReason={taskActionsDisabledReason}
             />
         );
     };
@@ -642,6 +651,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         isChannelChecklist={props.isChannelChecklist}
                         onAddRequirement={isPlaybookEditor && betaFeaturesEnabled ? () => setShowAddRequirementModal(true) : undefined}
                         hasRequirements={requirements.length > 0}
+                        requirementsDisabledReason={
+                            isPlaybookEditor && betaFeaturesEnabled && haveAtleastOneEnabledAction(taskActions) && requirements.length === 0 ?
+                                formatMessage({defaultMessage: 'Disable the message trigger before adding task requirements.'}) :
+                                undefined
+                        }
                     />
                     }
                     <DragButton
@@ -733,10 +747,16 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 <EditRequirementsModal
                     initialRequirements={requirements}
                     onConfirm={(nextRequirements: TaskRequirement[]) => {
-                        props.onUpdateChecklistItem?.({
+                        const nextItem = {
                             ...props.checklistItem,
                             requirements: nextRequirements,
-                        });
+                        };
+                        // Requirements and mark-as-done message triggers are mutually exclusive.
+                        if (nextRequirements.length > 0 && haveAtleastOneEnabledAction(taskActions)) {
+                            nextItem.task_actions = [];
+                            setTaskActions([]);
+                        }
+                        props.onUpdateChecklistItem?.(nextItem);
                         setShowAddRequirementModal(false);
                     }}
                     onCancel={() => setShowAddRequirementModal(false)}
