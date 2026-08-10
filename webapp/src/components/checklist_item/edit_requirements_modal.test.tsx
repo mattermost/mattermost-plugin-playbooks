@@ -15,15 +15,9 @@ jest.mock('react-intl', () => {
     };
 });
 
-jest.mock('mattermost-redux/utils/helpers', () => {
-    let n = 0;
-    return {
-        generateId: jest.fn(() => {
-            n += 1;
-            return `generated-id-${n}`;
-        }),
-    };
-});
+jest.mock('mattermost-redux/utils/helpers', () => ({
+    generateId: jest.fn(() => 'generated-id'),
+}));
 
 jest.mock('src/components/widgets/generic_modal', () => {
     return function MockGenericModal({
@@ -50,6 +44,15 @@ jest.mock('src/components/widgets/generic_modal', () => {
 });
 
 describe('EditRequirementsModal', () => {
+    beforeEach(() => {
+        const {generateId} = require('mattermost-redux/utils/helpers');
+        let n = 0;
+        generateId.mockImplementation(() => {
+            n += 1;
+            return `generated-id-${n}`;
+        });
+    });
+
     it('disables save when adding with empty labels', () => {
         const onConfirm = jest.fn();
         const component = renderer.create(
