@@ -35,7 +35,7 @@ func TestSerializeIncludesBetaFeatures(t *testing.T) {
 	raw, ok := serialized["BetaFeatures"]
 	require.True(t, ok, "serialize() must include BetaFeatures key matching plugin.json")
 
-	beta, ok := raw.(BetaFeaturesConfig)
-	require.True(t, ok)
-	assert.True(t, beta.TaskRequirements)
+	beta, ok := raw.(map[string]any)
+	require.True(t, ok, "BetaFeatures must serialize as map[string]any for plugin RPC/gob")
+	assert.Equal(t, true, beta["task_requirements"])
 }

@@ -65,7 +65,11 @@ func (c *Configuration) serialize() map[string]any {
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	ret["enableincrementalupdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
-	ret["BetaFeatures"] = c.BetaFeatures
+	// Store as a plain map so SavePluginConfig can gob-encode across plugin RPC
+	// without registering a custom type.
+	ret["BetaFeatures"] = map[string]any{
+		"task_requirements": c.BetaFeatures.TaskRequirements,
+	}
 	ret["ExposeMCPExternal"] = c.ExposeMCPExternal
 	return ret
 }
