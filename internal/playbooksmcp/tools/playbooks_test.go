@@ -321,6 +321,251 @@ func TestToolCreatePlaybookAttributeRejectsInvalidInput(t *testing.T) {
 	}
 }
 
+func TestToolUpdatePlaybookAttributePutsPropertyField(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		putMapResultSet: true,
+		putMapResult: map[string]any{
+			"id":   fieldID,
+			"name": "Priority",
+			"type": "multiselect",
+			"attrs": map[string]any{
+				"visibility": "always",
+			},
+		},
+	}
+
+	result, err := toolUpdatePlaybookAttribute(context.Background(), client, UpdatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		FieldID:    fieldID,
+		Name:       "  Priority  ",
+		Type:       "MultiSelect",
+		Attrs: &CreatePlaybookAttributeAttrs{
+			Visibility: "always",
+			SortOrder:  3,
+			Options: []CreatePlaybookAttributeOption{
+				{Name: "  Blocker  ", Color: "red"},
+				{Name: "Normal"},
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/"+fieldID, client.putEndpoint)
+
+	body := client.putBody.(map[string]any)
+	assert.Equal(t, "Priority", body["name"])
+	assert.Equal(t, "multiselect", body["type"])
+
+	attrs := body["attrs"].(map[string]any)
+	assert.Equal(t, "always", attrs["visibility"])
+	assert.Equal(t, float64(3), attrs["sort_order"])
+	options := attrs["options"].([]map[string]any)
+	require.Len(t, options, 2)
+	assert.Equal(t, map[string]any{"name": "Blocker", "color": "red"}, options[0])
+	assert.Equal(t, map[string]any{"name": "Normal"}, options[1])
+
+	var decoded map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result), &decoded))
+	assert.True(t, strings.HasPrefix(result, "{\n"))
+	assert.Contains(t, result, "\n  ")
+	assert.Equal(t, fieldID, decoded["id"])
+	assert.Equal(t, "Priority", decoded["name"])
+	assert.Equal(t, "multiselect", decoded["type"])
+}
+
+func TestToolUpdatePlaybookAttributeWrapsPutErrors(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{putErr: errors.New("boom")}
+
+	_, err := toolUpdatePlaybookAttribute(context.Background(), client, UpdatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		FieldID:    fieldID,
+		Name:       "Impact",
+		Type:       "text",
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to update playbook attribute")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/"+fieldID, client.putEndpoint)
+}
+
+func TestToolUpdatePlaybookAttributeRejectsEmptyOrUnidentifiedResponse(t *testing.T) {
+	tests := []struct {
+		name         string
+		putMapResult map[string]any
+		want         string
+	}{
+		{
+			name: "nil response",
+			want: "response was empty",
+		},
+		{
+			name:         "empty object",
+			putMapResult: map[string]any{},
+			want:         "response was empty",
+		},
+		{
+			name:         "missing id",
+			putMapResult: map[string]any{"name": "Impact", "type": "text"},
+			want:         "response missing id",
+		},
+		{
+			name:         "blank id",
+			putMapResult: map[string]any{"id": "   ", "name": "Impact"},
+			want:         "response missing id",
+		},
+		{
+			name:         "non-string id",
+			putMapResult: map[string]any{"id": float64(1), "name": "Impact"},
+			want:         "response missing id",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{
+				putMapResultSet: true,
+				putMapResult:    tt.putMapResult,
+			}
+
+			_, err := toolUpdatePlaybookAttribute(context.Background(), client, UpdatePlaybookAttributeArgs{
+				PlaybookID: "abcdefghijklmnopqrstuvwxyz",
+				FieldID:    "bcdefghijklmnopqrstuvwxyza",
+				Name:       "Impact",
+				Type:       "text",
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "failed to update playbook attribute")
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields/bcdefghijklmnopqrstuvwxyza", client.putEndpoint)
+		})
+	}
+}
+
+func TestToolUpdatePlaybookAttributeRejectsInvalidInput(t *testing.T) {
+	tests := []struct {
+		name string
+		args UpdatePlaybookAttributeArgs
+		want string
+	}{
+		{
+			name: "invalid field id",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bad", Name: "Severity", Type: "text"},
+			want: "field_id must be a valid Mattermost ID",
+		},
+		{
+			name: "invalid playbook id",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "bad", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "text"},
+			want: "playbook_id must be a valid Mattermost ID",
+		},
+		{
+			name: "select missing options",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "select"},
+			want: "attrs.options is required for select attributes",
+		},
+		{
+			name: "invalid value type",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Link", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{ValueType: "email"}},
+			want: "attrs.value_type must be url when provided",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolUpdatePlaybookAttribute(context.Background(), client, tt.args)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Empty(t, client.postEndpoint)
+			assert.Empty(t, client.getEndpoint)
+			assert.Empty(t, client.putEndpoint)
+			assert.Empty(t, client.deleteEndpoint)
+		})
+	}
+}
+
+func TestToolReorderPlaybookAttributePostsReorderRequest(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		postMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority", "sort_order": float64(0)},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity", "sort_order": float64(1)},
+		},
+	}
+
+	result, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        fieldID,
+		TargetPosition: 0,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/reorder", client.postEndpoint)
+	assert.Equal(t, map[string]any{"field_id": fieldID, "target_position": 0}, client.postBody)
+
+	var decoded []map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result), &decoded))
+	assert.True(t, strings.HasPrefix(result, "[\n"))
+	require.Len(t, decoded, 2)
+	assert.Equal(t, fieldID, decoded[0]["id"])
+	assert.Equal(t, "Priority", decoded[0]["name"])
+}
+
+func TestToolReorderPlaybookAttributeWrapsPostErrors(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{postErr: errors.New("boom")}
+
+	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        fieldID,
+		TargetPosition: 1,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to reorder playbook attribute")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/reorder", client.postEndpoint)
+}
+
+func TestToolReorderPlaybookAttributeRejectsInvalidInput(t *testing.T) {
+	tests := []struct {
+		name string
+		args ReorderPlaybookAttributeArgs
+		want string
+	}{
+		{
+			name: "invalid playbook id",
+			args: ReorderPlaybookAttributeArgs{PlaybookID: "bad", FieldID: "bcdefghijklmnopqrstuvwxyza"},
+			want: "playbook_id must be a valid Mattermost ID",
+		},
+		{
+			name: "invalid field id",
+			args: ReorderPlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bad"},
+			want: "field_id must be a valid Mattermost ID",
+		},
+		{
+			name: "negative target position",
+			args: ReorderPlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", TargetPosition: -1},
+			want: "target_position must be a non-negative integer",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolReorderPlaybookAttribute(context.Background(), client, tt.args)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Empty(t, client.postEndpoint)
+			assert.Empty(t, client.getEndpoint)
+			assert.Empty(t, client.putEndpoint)
+			assert.Empty(t, client.deleteEndpoint)
+		})
+	}
+}
+
 func TestToolCreatePlaybookRejectsInvalidInput(t *testing.T) {
 	tests := []struct {
 		name string
