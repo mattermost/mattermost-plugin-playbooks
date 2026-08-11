@@ -44,9 +44,10 @@ type fakeAPIClient struct {
 	postResult   any
 	postErr      error
 
-	postMapResult     map[string]any
-	postMapResultSet  bool
-	postMapListResult []map[string]any
+	postMapResult        map[string]any
+	postMapResultSet     bool
+	postMapListResult    []map[string]any
+	postMapListResultSet bool
 
 	putEndpoint  string
 	putBody      any
@@ -128,6 +129,14 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 		(*created)["id"] = "bcdefghijklmnopqrstuvwxyza"
 	}
 	if fields, ok := result.(*[]map[string]any); ok {
+		if f.postMapListResultSet {
+			if f.postMapListResult == nil {
+				*fields = nil
+				return nil
+			}
+			*fields = cloneMapAnySlice(f.postMapListResult)
+			return nil
+		}
 		*fields = cloneMapAnySlice(f.postMapListResult)
 	}
 	return nil

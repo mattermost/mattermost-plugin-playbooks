@@ -466,6 +466,36 @@ func TestToolUpdatePlaybookAttributeRejectsInvalidInput(t *testing.T) {
 			want: "attrs.options is required for select attributes",
 		},
 		{
+			name: "blank name",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: " ", Type: "text"},
+			want: "name is required",
+		},
+		{
+			name: "reserved name",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: " owner ", Type: "text"},
+			want: `name "owner" is reserved`,
+		},
+		{
+			name: "unsupported type",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "checkbox"},
+			want: "type must be one of",
+		},
+		{
+			name: "invalid visibility",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{Visibility: "sometimes"}},
+			want: "attrs.visibility must be one of",
+		},
+		{
+			name: "blank option name",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "select", Attrs: &CreatePlaybookAttributeAttrs{Options: []CreatePlaybookAttributeOption{{Name: " "}}}},
+			want: "attrs.options[0].name is required",
+		},
+		{
+			name: "invalid parent id",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity detail", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{ParentID: "bad"}},
+			want: "attrs.parent_id must be a valid Mattermost ID",
+		},
+		{
 			name: "invalid value type",
 			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Link", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{ValueType: "email"}},
 			want: "attrs.value_type must be url when provided",
@@ -511,6 +541,18 @@ func TestToolReorderPlaybookAttributePostsReorderRequest(t *testing.T) {
 	require.Len(t, decoded, 2)
 	assert.Equal(t, fieldID, decoded[0]["id"])
 	assert.Equal(t, "Priority", decoded[0]["name"])
+}
+
+func TestToolReorderPlaybookAttributeFormatsNilResponseAsEmptyList(t *testing.T) {
+	client := &fakeAPIClient{postMapListResultSet: true}
+
+	result, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     "abcdefghijklmnopqrstuvwxyz",
+		FieldID:        "bcdefghijklmnopqrstuvwxyza",
+		TargetPosition: 0,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "[]", result)
 }
 
 func TestToolReorderPlaybookAttributeWrapsPostErrors(t *testing.T) {
