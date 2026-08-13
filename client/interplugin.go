@@ -64,6 +64,15 @@ type interPluginTransport struct {
 func (t *interPluginTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := req.Context()
 
+	// Fail fast if the context is already done: skip invoking the calling plugin's handler entirely
+	// rather than starting the goroutine below only to discard whatever it returns.
+	if err := ctx.Err(); err != nil {
+		if req.Body != nil {
+			req.Body.Close()
+		}
+		return nil, err
+	}
+
 	// RoundTrip must not modify the original request, so operate on a clone. The clone shares the
 	// original's Body, so closing it below also discharges RoundTrip's duty to close req.Body.
 	outReq := req.Clone(ctx)
@@ -92,9 +101,14 @@ func (t *interPluginTransport) RoundTrip(req *http.Request) (*http.Response, err
 
 	select {
 	case <-ctx.Done():
-		// The goroutine above is abandoned: it keeps running PluginHTTP to completion and, on
-		// success, its response body is never closed. That's an accepted leak on the cancellation
-		// path, not something this layer can fix without PluginHTTP itself observing a context.
+		// The goroutine above is abandoned: it keeps running PluginHTTP to completion regardless,
+		// since PluginHTTP itself never observes ctx. Wait for its result on another goroutine so a
+		// response that does eventually arrive still has its body closed instead of leaking.
+		go func() {
+			if resp := <-respCh; resp != nil && resp.Body != nil {
+				resp.Body.Close()
+			}
+		}()
 		return nil, ctx.Err()
 	case resp := <-respCh:
 		if resp == nil {

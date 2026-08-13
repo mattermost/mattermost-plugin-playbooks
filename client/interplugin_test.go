@@ -85,7 +85,9 @@ func TestNewInterPluginClient(t *testing.T) {
 		// Create sends a JSON-encoded body, unlike the other subtests' bodyless GETs, so this is
 		// the one that exercises the goroutine's outReq.Body.Close() under the race detector.
 		var gotBody []byte
+		closed := make(chan struct{})
 		do := func(req *http.Request) *http.Response {
+			req.Body = &closeTrackingReadCloser{ReadCloser: req.Body, closed: closed}
 			gotBody, _ = io.ReadAll(req.Body)
 			return &http.Response{
 				StatusCode: http.StatusCreated,
@@ -101,18 +103,43 @@ func TestNewInterPluginClient(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "run123", run.ID)
 		require.Contains(t, string(gotBody), "test run")
+
+		select {
+		case <-closed:
+		case <-time.After(time.Second):
+			t.Fatal("RoundTrip did not close the request body")
+		}
+	})
+
+	t.Run("returns immediately without invoking PluginHTTP when the context is already canceled", func(t *testing.T) {
+		called := false
+		do := func(*http.Request) *http.Response {
+			called = true
+			return nil
+		}
+
+		c, err := client.NewInterPluginClient(do, "user_abc")
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		_, err = c.PlaybookRuns.Get(ctx, "run123")
+		require.Error(t, err)
+		require.True(t, errors.Is(err, context.Canceled))
+		require.False(t, called)
 	})
 
 	t.Run("returns promptly when the context expires mid-call, instead of blocking", func(t *testing.T) {
 		release := make(chan struct{})
-		defer close(release)
+		respBodyClosed := make(chan struct{})
 
 		do := func(*http.Request) *http.Response {
 			<-release
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Header:     http.Header{"Content-Type": []string{"application/json"}},
-				Body:       io.NopCloser(strings.NewReader(`{"id":"run123"}`)),
+				Body:       &closeTrackingReadCloser{ReadCloser: io.NopCloser(strings.NewReader(`{"id":"run123"}`)), closed: respBodyClosed},
 			}
 		}
 
@@ -125,5 +152,27 @@ func TestNewInterPluginClient(t *testing.T) {
 		_, err = c.PlaybookRuns.Get(ctx, "run123")
 		require.Error(t, err)
 		require.True(t, errors.Is(err, context.DeadlineExceeded))
+
+		// The call above only abandons the in-flight PluginHTTP call; it keeps running underneath.
+		// Release it and confirm its late response body still gets closed instead of leaking.
+		close(release)
+		select {
+		case <-respBodyClosed:
+		case <-time.After(time.Second):
+			t.Fatal("late response body was never closed")
+		}
 	})
+}
+
+// closeTrackingReadCloser wraps an io.ReadCloser and signals closed when Close is called, so tests
+// can assert that a body was actually closed rather than just read.
+type closeTrackingReadCloser struct {
+	io.ReadCloser
+	closed chan struct{}
+}
+
+func (c *closeTrackingReadCloser) Close() error {
+	err := c.ReadCloser.Close()
+	close(c.closed)
+	return err
 }
