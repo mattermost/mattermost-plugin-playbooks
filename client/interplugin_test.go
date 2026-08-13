@@ -131,10 +131,12 @@ func TestNewInterPluginClient(t *testing.T) {
 	})
 
 	t.Run("returns promptly when the context expires mid-call, instead of blocking", func(t *testing.T) {
+		started := make(chan struct{})
 		release := make(chan struct{})
 		respBodyClosed := make(chan struct{})
 
 		do := func(*http.Request) *http.Response {
+			close(started)
 			<-release
 			return &http.Response{
 				StatusCode: http.StatusOK,
@@ -149,9 +151,33 @@ func TestNewInterPluginClient(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		_, err = c.PlaybookRuns.Get(ctx, "run123")
-		require.Error(t, err)
-		require.True(t, errors.Is(err, context.DeadlineExceeded))
+		// Run Get on its own goroutine and bound every wait below: if a regression ever made
+		// RoundTrip stop honoring ctx, this test fails fast with a clear message instead of
+		// hanging until the suite's global timeout.
+		getErr := make(chan error, 1)
+		go func() {
+			_, err := c.PlaybookRuns.Get(ctx, "run123")
+			getErr <- err
+		}()
+
+		// Confirm PluginHTTP actually entered its blocking call before judging Get's behavior, so
+		// this proves the context wins a real race against an in-flight call, not that the handler
+		// simply never ran.
+		select {
+		case <-started:
+		case <-time.After(time.Second):
+			close(release)
+			t.Fatal("PluginHTTP was never invoked")
+		}
+
+		select {
+		case err := <-getErr:
+			require.Error(t, err)
+			require.True(t, errors.Is(err, context.DeadlineExceeded))
+		case <-time.After(time.Second):
+			close(release)
+			t.Fatal("Get did not return promptly once its context expired")
+		}
 
 		// The call above only abandons the in-flight PluginHTTP call; it keeps running underneath.
 		// Release it and confirm its late response body still gets closed instead of leaking.
