@@ -62,30 +62,53 @@ type interPluginTransport struct {
 }
 
 func (t *interPluginTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	ctx := req.Context()
+
 	// RoundTrip must not modify the original request, so operate on a clone. The clone shares the
 	// original's Body, so closing it below also discharges RoundTrip's duty to close req.Body.
-	outReq := req.Clone(req.Context())
+	outReq := req.Clone(ctx)
 	outReq.Header.Set(actingUserIDHeader, t.actingUserID)
 
-	// RoundTrip must always close the request body. PluginHTTP's buffered path closes and nils the
-	// body itself, but its streaming path does not, so close whatever remains once the call returns.
-	defer func() {
-		if outReq.Body != nil {
-			outReq.Body.Close()
-		}
+	// PluginHTTP is a synchronous in-process call that never looks at ctx, so it cannot be
+	// interrupted directly. Run it on a goroutine and race it against ctx.Done() so a canceled or
+	// timed-out context still lets RoundTrip return promptly, instead of blocking forever. This
+	// cannot abort the calling plugin's handler, which keeps running to completion regardless; it
+	// only stops this method from waiting on it.
+	//
+	// The goroutine owns outReq for its entire lifetime, including closing its body: RoundTrip may
+	// return on the ctx path while t.do is still running, so nothing on this side of the select may
+	// touch outReq after starting the goroutine.
+	respCh := make(chan *http.Response, 1)
+	go func() {
+		// RoundTrip must always close the request body. PluginHTTP's buffered path closes and nils
+		// the body itself, but its streaming path does not, so close whatever remains.
+		defer func() {
+			if outReq.Body != nil {
+				outReq.Body.Close()
+			}
+		}()
+		respCh <- t.do(outReq)
 	}()
 
-	resp := t.do(outReq)
-	if resp == nil {
-		return nil, errors.Errorf("no response from the %s plugin; is it installed and enabled?", manifestID)
-	}
+	select {
+	case <-ctx.Done():
+		// The goroutine above is abandoned: it keeps running PluginHTTP to completion and, on
+		// success, its response body is never closed. That's an accepted leak on the cancellation
+		// path, not something this layer can fix without PluginHTTP itself observing a context.
+		return nil, ctx.Err()
+	case resp := <-respCh:
+		if resp == nil {
+			return nil, errors.Errorf("no response from the %s plugin; is it installed and enabled?", manifestID)
+		}
 
-	// PluginHTTP does not populate Response.Request, but the client dereferences it when building
-	// error responses for non-2xx replies. Set it as net/http's Transport does for real network
-	// requests, so a non-2xx response yields an error rather than a nil-pointer panic.
-	if resp.Request == nil {
-		resp.Request = outReq
-	}
+		// PluginHTTP does not populate Response.Request, but the client dereferences it when
+		// building error responses for non-2xx replies. Set it as net/http's Transport does for
+		// real network requests, so a non-2xx response yields an error rather than a nil-pointer
+		// panic.
+		if resp.Request == nil {
+			resp.Request = outReq
+		}
 
-	return resp, nil
+		return resp, nil
+	}
 }

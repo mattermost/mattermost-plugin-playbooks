@@ -5,10 +5,12 @@ package client_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -77,5 +79,51 @@ func TestNewInterPluginClient(t *testing.T) {
 
 		_, err = c.PlaybookRuns.Get(context.Background(), "run123")
 		require.Error(t, err)
+	})
+
+	t.Run("closes a body-bearing request on the success path", func(t *testing.T) {
+		// Create sends a JSON-encoded body, unlike the other subtests' bodyless GETs, so this is
+		// the one that exercises the goroutine's outReq.Body.Close() under the race detector.
+		var gotBody []byte
+		do := func(req *http.Request) *http.Response {
+			gotBody, _ = io.ReadAll(req.Body)
+			return &http.Response{
+				StatusCode: http.StatusCreated,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body:       io.NopCloser(strings.NewReader(`{"id":"run123"}`)),
+			}
+		}
+
+		c, err := client.NewInterPluginClient(do, "user_abc")
+		require.NoError(t, err)
+
+		run, err := c.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{Name: "test run"})
+		require.NoError(t, err)
+		require.Equal(t, "run123", run.ID)
+		require.Contains(t, string(gotBody), "test run")
+	})
+
+	t.Run("returns promptly when the context expires mid-call, instead of blocking", func(t *testing.T) {
+		release := make(chan struct{})
+		defer close(release)
+
+		do := func(*http.Request) *http.Response {
+			<-release
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body:       io.NopCloser(strings.NewReader(`{"id":"run123"}`)),
+			}
+		}
+
+		c, err := client.NewInterPluginClient(do, "user_abc")
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		_, err = c.PlaybookRuns.Get(ctx, "run123")
+		require.Error(t, err)
+		require.True(t, errors.Is(err, context.DeadlineExceeded))
 	})
 }
