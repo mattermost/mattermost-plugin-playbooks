@@ -2618,6 +2618,66 @@ func TestChecklisItem_SetCommand(t *testing.T) {
 	})
 }
 
+func TestChecklistItem_RunCommandRequiresChannelPostPermission(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:                               "Public playbook private run",
+		TeamID:                              e.BasicTeam.Id,
+		Public:                              true,
+		CreatePublicPlaybookRun:             false,
+		CreateChannelMemberOnNewParticipant: false,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+	})
+	require.NoError(t, err)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Private channel run",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  playbookID,
+	})
+	require.NoError(t, err)
+
+	err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+		Title: "Test Checklist",
+		Items: []client.ChecklistItem{{Title: "Test Item"}},
+	})
+	require.NoError(t, err)
+
+	err = e.PlaybooksClient.PlaybookRuns.SetItemCommand(context.Background(), run.ID, 0, 0, "/playbook todo")
+	require.NoError(t, err)
+
+	response, err := addParticipants(e.PlaybooksClient, run.ID, []string{e.RegularUser2.Id})
+	require.NoError(t, err)
+	require.Empty(t, response.Errors)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id)
+
+	_, _, err = e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser2.Id, "")
+	require.Error(t, err)
+
+	t.Run("participant without channel membership cannot run slash command", func(t *testing.T) {
+		err = e.PlaybooksClient2.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 0)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("channel member can still run slash command", func(t *testing.T) {
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 0)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotZero(t, run.Checklists[0].Items[0].CommandLastRun)
+	})
+}
+
 func TestGetByChannelID(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
