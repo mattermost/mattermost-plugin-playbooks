@@ -449,6 +449,14 @@ func toolReorderPlaybookAttribute(ctx context.Context, client APIClient, args Re
 		return "", err
 	}
 
+	fields, err := fetchPlaybookAttributes(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkPlaybookAttributeReorder(fields, args.PlaybookID, args.FieldID, args.TargetPosition); err != nil {
+		return "", err
+	}
+
 	body := map[string]any{
 		"field_id":        args.FieldID,
 		"target_position": args.TargetPosition,
@@ -474,10 +482,9 @@ func toolListPlaybookAttributes(ctx context.Context, client APIClient, args List
 		return "", err
 	}
 
-	var fields []map[string]any
-	endpoint := fmt.Sprintf("playbooks/%s/property_fields", args.PlaybookID)
-	if err := client.Get(ctx, endpoint, nil, &fields); err != nil {
-		return "", fmt.Errorf("failed to list playbook attributes: %w", err)
+	fields, err := fetchPlaybookAttributes(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
 	}
 	if fields == nil {
 		fields = []map[string]any{}
@@ -488,6 +495,54 @@ func toolListPlaybookAttributes(ctx context.Context, client APIClient, args List
 		return "", err
 	}
 	return string(data), nil
+}
+
+func fetchPlaybookAttributes(ctx context.Context, client APIClient, playbookID string) ([]map[string]any, error) {
+	var fields []map[string]any
+	endpoint := fmt.Sprintf("playbooks/%s/property_fields", playbookID)
+	if err := client.Get(ctx, endpoint, nil, &fields); err != nil {
+		return nil, fmt.Errorf("failed to list playbook attributes: %w", err)
+	}
+	return fields, nil
+}
+
+func checkPlaybookAttributeReorder(fields []map[string]any, playbookID, fieldID string, targetPosition int) error {
+	found := false
+	for _, field := range fields {
+		if id, _ := field["id"].(string); id == fieldID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return playbookAttributeOutOfRangeError(fmt.Sprintf("field_id %q not found in playbook %s", fieldID, playbookID), playbookID, fields)
+	}
+	if targetPosition >= len(fields) {
+		return playbookAttributeOutOfRangeError(fmt.Sprintf("target_position %d is out of range for playbook %s", targetPosition, playbookID), playbookID, fields)
+	}
+	return nil
+}
+
+func playbookAttributeOutOfRangeError(message, playbookID string, fields []map[string]any) error {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "%s. Available attributes:\n", message)
+	writePlaybookAttributes(&sb, playbookID, fields)
+	return fmt.Errorf("%s", sb.String())
+}
+
+func writePlaybookAttributes(sb *strings.Builder, playbookID string, fields []map[string]any) {
+	if len(fields) == 0 {
+		fmt.Fprintf(sb, "  (playbook %s has no attributes)\n", playbookID)
+		return
+	}
+	for i, field := range fields {
+		name, _ := field["name"].(string)
+		if strings.TrimSpace(name) == "" {
+			name = "(unnamed attribute)"
+		}
+		id, _ := field["id"].(string)
+		fmt.Fprintf(sb, "  [%d] %s (field_id: %s)\n", i, name, id)
+	}
 }
 
 func toolAddPlaybookTask(ctx context.Context, client APIClient, args AddPlaybookTaskArgs) (string, error) {

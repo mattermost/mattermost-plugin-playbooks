@@ -520,6 +520,11 @@ func TestToolReorderPlaybookAttributePostsReorderRequest(t *testing.T) {
 	playbookID := "abcdefghijklmnopqrstuvwxyz"
 	fieldID := "bcdefghijklmnopqrstuvwxyza"
 	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority", "sort_order": float64(0)},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity", "sort_order": float64(1)},
+		},
 		postMapListResult: []map[string]any{
 			{"id": fieldID, "name": "Priority", "sort_order": float64(0)},
 			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity", "sort_order": float64(1)},
@@ -532,6 +537,7 @@ func TestToolReorderPlaybookAttributePostsReorderRequest(t *testing.T) {
 		TargetPosition: 0,
 	})
 	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
 	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/reorder", client.postEndpoint)
 	assert.Equal(t, map[string]any{"field_id": fieldID, "target_position": 0}, client.postBody)
 
@@ -544,11 +550,18 @@ func TestToolReorderPlaybookAttributePostsReorderRequest(t *testing.T) {
 }
 
 func TestToolReorderPlaybookAttributeFormatsNilResponseAsEmptyList(t *testing.T) {
-	client := &fakeAPIClient{postMapListResultSet: true}
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority"},
+		},
+		postMapListResultSet: true,
+	}
 
 	result, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
 		PlaybookID:     "abcdefghijklmnopqrstuvwxyz",
-		FieldID:        "bcdefghijklmnopqrstuvwxyza",
+		FieldID:        fieldID,
 		TargetPosition: 0,
 	})
 	require.NoError(t, err)
@@ -558,7 +571,14 @@ func TestToolReorderPlaybookAttributeFormatsNilResponseAsEmptyList(t *testing.T)
 func TestToolReorderPlaybookAttributeWrapsPostErrors(t *testing.T) {
 	playbookID := "abcdefghijklmnopqrstuvwxyz"
 	fieldID := "bcdefghijklmnopqrstuvwxyza"
-	client := &fakeAPIClient{postErr: errors.New("boom")}
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority"},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity"},
+		},
+		postErr: errors.New("boom"),
+	}
 
 	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
 		PlaybookID:     playbookID,
@@ -569,6 +589,71 @@ func TestToolReorderPlaybookAttributeWrapsPostErrors(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to reorder playbook attribute")
 	assert.Contains(t, err.Error(), "boom")
 	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/reorder", client.postEndpoint)
+}
+
+func TestToolReorderPlaybookAttributeWrapsListErrors(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{getErr: errors.New("boom")}
+
+	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        fieldID,
+		TargetPosition: 0,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to list playbook attributes")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+	assert.Empty(t, client.postEndpoint)
+}
+
+func TestToolReorderPlaybookAttributeRejectsUnknownFieldID(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Priority"},
+			{"id": "defghijklmnopqrstuvwxyzabc", "name": "Severity"},
+		},
+	}
+
+	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        "bcdefghijklmnopqrstuvwxyza",
+		TargetPosition: 0,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `field_id "bcdefghijklmnopqrstuvwxyza" not found in playbook `+playbookID)
+	assert.Contains(t, err.Error(), "Available attributes:")
+	assert.Contains(t, err.Error(), "[0] Priority (field_id: cdefghijklmnopqrstuvwxyzab)")
+	assert.Contains(t, err.Error(), "[1] Severity (field_id: defghijklmnopqrstuvwxyzabc)")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+	assert.Empty(t, client.postEndpoint)
+}
+
+func TestToolReorderPlaybookAttributeRejectsOutOfRangeTargetPosition(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority"},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity"},
+		},
+	}
+
+	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        fieldID,
+		TargetPosition: 2,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "target_position 2 is out of range for playbook "+playbookID)
+	assert.Contains(t, err.Error(), "Available attributes:")
+	assert.Contains(t, err.Error(), "[0] Priority (field_id: "+fieldID+")")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+	assert.Empty(t, client.postEndpoint)
 }
 
 func TestToolReorderPlaybookAttributeRejectsInvalidInput(t *testing.T) {
