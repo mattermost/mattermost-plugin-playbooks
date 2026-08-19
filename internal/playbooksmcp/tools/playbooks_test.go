@@ -192,7 +192,7 @@ func TestToolCreatePlaybookAttributeWrapsPostErrors(t *testing.T) {
 		Type:       "text",
 	})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to create playbook attribute")
+	assert.Contains(t, err.Error(), "failed to create an attribute on playbook template")
 	assert.Contains(t, err.Error(), "boom")
 	assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields", client.postEndpoint)
 }
@@ -985,11 +985,11 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			wantNoPut: true,
 		},
 		{
-			name: "add invalid assignee ID",
+			name: "add unresolvable assignee",
 			run: func(client *fakeAPIClient) (string, error) {
-				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, Title: "New task", AssigneeID: "bad"})
+				return toolAddPlaybookTask(context.Background(), client, AddPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, Title: "New task", AssigneeID: "@nobody"})
 			},
-			want:      "assignee_id must be a valid Mattermost ID",
+			want:      `assignee_id: no user found with username "nobody"`,
 			wantNoPut: true,
 		},
 		{
@@ -1010,12 +1010,12 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			wantNoPut: true,
 		},
 		{
-			name: "edit invalid assignee ID",
+			name: "edit unresolvable assignee",
 			run: func(client *fakeAPIClient) (string, error) {
-				assigneeID := "bad"
+				assigneeID := "@nobody"
 				return toolEditPlaybookTask(context.Background(), client, EditPlaybookTaskArgs{PlaybookID: playbookID, ChecklistNumber: 0, ItemNumber: 0, AssigneeID: &assigneeID})
 			},
-			want:      "assignee_id must be a valid Mattermost ID",
+			want:      `assignee_id: no user found with username "nobody"`,
 			wantNoPut: true,
 		},
 		{
@@ -1127,15 +1127,15 @@ func TestToolPlaybookTaskValidationErrors(t *testing.T) {
 			wantNoPut: true,
 		},
 		{
-			name: "add section invalid initial item assignee",
+			name: "add section unresolvable initial item assignee",
 			run: func(client *fakeAPIClient) (string, error) {
 				return toolAddPlaybookSection(context.Background(), client, AddPlaybookSectionArgs{
 					PlaybookID: playbookID,
 					Title:      "New section",
-					Items:      []CreatePlaybookItem{{Title: "Task", AssigneeID: "bad"}},
+					Items:      []CreatePlaybookItem{{Title: "Task", AssigneeID: "@nobody"}},
 				})
 			},
-			want:      "items[0].assignee_id must be a valid Mattermost ID",
+			want:      `items[0].assignee_id: no user found with username "nobody"`,
 			wantNoPut: true,
 		},
 		{
@@ -1353,6 +1353,207 @@ func TestToolPlaybookSectionUnexpectedFormatErrorsDescribeExpectedShape(t *testi
 		assert.Contains(t, err.Error(), "expected a JSON object, got string")
 		assert.Empty(t, client.putEndpoint)
 	})
+}
+
+func TestToolCreatePlaybookSendsChannelModeAsString(t *testing.T) {
+	// app.ChannelPlaybookMode only implements UnmarshalText, so a numeric
+	// channel_mode fails to decode and the playbook is never created.
+	tests := []struct {
+		name        string
+		channelMode string
+		channelID   string
+		wantMode    any
+		wantErr     string
+	}{
+		{
+			name:        "forwards link_existing_channel verbatim",
+			channelMode: "link_existing_channel",
+			channelID:   "bcdefghijklmnopqrstuvwxyza",
+			wantMode:    "link_existing_channel",
+		},
+		{
+			name:        "forwards create_new_channel verbatim",
+			channelMode: "create_new_channel",
+			wantMode:    "create_new_channel",
+		},
+		{
+			name:     "omits channel_mode when not provided",
+			wantMode: nil,
+		},
+		{
+			name:        "rejects an unknown mode",
+			channelMode: "1",
+			wantErr:     "channel_mode must be one of create_new_channel or link_existing_channel",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			args := CreatePlaybookArgs{
+				Title:       "Incident Response",
+				TeamID:      "abcdefghijklmnopqrstuvwxyz",
+				ChannelMode: tt.channelMode,
+				ChannelID:   tt.channelID,
+			}
+
+			_, err := toolCreatePlaybook(context.Background(), client, args)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+				assert.Empty(t, client.postEndpoint, "expected no playbook to be created")
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, "playbooks", client.postEndpoint)
+			body := client.postBody.(map[string]any)
+			if tt.wantMode == nil {
+				assert.NotContains(t, body, "channel_mode")
+				return
+			}
+			assert.Equal(t, tt.wantMode, body["channel_mode"])
+		})
+	}
+}
+
+func TestToolUpdatePlaybookMutatesOnlyProvidedKeys(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	newTitle := "  Sev1 Incident Response  "
+	emptyDescription := ""
+
+	tests := []struct {
+		name            string
+		args            UpdatePlaybookArgs
+		wantTitle       string
+		wantDescription string
+	}{
+		{
+			name:            "renames without touching the description",
+			args:            UpdatePlaybookArgs{PlaybookID: playbookID, Title: &newTitle},
+			wantTitle:       "Sev1 Incident Response",
+			wantDescription: "Original description",
+		},
+		{
+			name:            "clears the description without touching the title",
+			args:            UpdatePlaybookArgs{PlaybookID: playbookID, Description: &emptyDescription},
+			wantTitle:       "Incident Response",
+			wantDescription: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{
+				playbook: map[string]any{
+					"id":           playbookID,
+					"title":        "Incident Response",
+					"description":  "Original description",
+					"public":       false,
+					"custom_field": "preserve me",
+					"checklists":   []any{map[string]any{"title": "Triage", "items": []any{}}},
+				},
+			}
+
+			_, err := toolUpdatePlaybook(context.Background(), client, tt.args)
+			require.NoError(t, err)
+			require.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+			require.Equal(t, "playbooks/"+playbookID, client.putEndpoint)
+
+			body := requirePlaybookPutBody(t, client)
+			assert.Equal(t, tt.wantTitle, body["title"])
+			assert.Equal(t, tt.wantDescription, body["description"])
+			assert.Equal(t, false, body["public"])
+			assert.Equal(t, "preserve me", body["custom_field"])
+			assert.Len(t, body["checklists"], 1)
+		})
+	}
+}
+
+func TestToolUpdatePlaybookValidation(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	blank := "   "
+
+	tests := []struct {
+		name    string
+		args    UpdatePlaybookArgs
+		wantErr string
+	}{
+		{
+			name:    "rejects an invalid playbook id",
+			args:    UpdatePlaybookArgs{PlaybookID: "invalid"},
+			wantErr: "playbook_id must be a valid Mattermost ID",
+		},
+		{
+			name:    "requires at least one field",
+			args:    UpdatePlaybookArgs{PlaybookID: playbookID},
+			wantErr: "at least one field (title or description) must be provided",
+		},
+		{
+			name:    "rejects a blank title",
+			args:    UpdatePlaybookArgs{PlaybookID: playbookID, Title: &blank},
+			wantErr: "title must not be empty",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolUpdatePlaybook(context.Background(), client, tt.args)
+			require.EqualError(t, err, tt.wantErr)
+			assert.Empty(t, client.getEndpoint, "expected validation to fail before fetching")
+			assert.Empty(t, client.putEndpoint, "expected no update call")
+		})
+	}
+}
+
+func TestToolArchivePlaybookFetchesBeforeDeleting(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{"id": playbookID, "title": "Incident Response"},
+	}
+
+	out, err := toolArchivePlaybook(context.Background(), client, PlaybookIDArgs{PlaybookID: playbookID})
+	require.NoError(t, err)
+
+	assert.Equal(t, "playbooks/"+playbookID, client.getEndpoint)
+	assert.Equal(t, "playbooks/"+playbookID, client.deleteEndpoint)
+	assert.Contains(t, out, "Incident Response")
+	assert.Contains(t, out, "restore_playbook")
+}
+
+func TestToolArchivePlaybookRejectsInvalidIDBeforeDeleting(t *testing.T) {
+	client := &fakeAPIClient{}
+
+	_, err := toolArchivePlaybook(context.Background(), client, PlaybookIDArgs{PlaybookID: "invalid"})
+	require.EqualError(t, err, "playbook_id must be a valid Mattermost ID")
+	assert.Empty(t, client.getEndpoint)
+	assert.Empty(t, client.deleteEndpoint, "expected no delete on validation failure")
+}
+
+func TestToolRestorePlaybookPutsRestore(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{}
+
+	_, err := toolRestorePlaybook(context.Background(), client, PlaybookIDArgs{PlaybookID: playbookID})
+	require.NoError(t, err)
+
+	assert.Equal(t, "playbooks/"+playbookID+"/restore", client.putEndpoint)
+	assert.Nil(t, client.putBody)
+}
+
+func TestToolDuplicatePlaybookFetchesTheCopy(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		playbook: map[string]any{"id": "abcdefghijklmnopqrstuvwxyz", "title": "Copy of Incident Response"},
+	}
+
+	out, err := toolDuplicatePlaybook(context.Background(), client, PlaybookIDArgs{PlaybookID: playbookID})
+	require.NoError(t, err)
+
+	assert.Equal(t, "playbooks/"+playbookID+"/duplicate", client.postEndpoint)
+	assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz", client.getEndpoint)
+	assert.Contains(t, out, "Copy of Incident Response")
+	assert.Contains(t, out, "https://mattermost.example.com/playbooks/playbooks/abcdefghijklmnopqrstuvwxyz")
 }
 
 func playbookWithOneEmptyChecklist(playbookID string) map[string]any {

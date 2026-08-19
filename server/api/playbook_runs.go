@@ -145,6 +145,12 @@ func NewPlaybookRunHandler(
 	followersRouter.HandleFunc("", withContext(handler.unfollow)).Methods(http.MethodDelete)
 	followersRouter.HandleFunc("", withContext(handler.getFollowers)).Methods(http.MethodGet)
 
+	// Deliberately not on playbookRunRouterAuthorized: joining and leaving a run must stay
+	// available to a user who only has RunView, which checkEditPermissions would reject.
+	participantsRouter := playbookRunRouter.PathPrefix("/participants").Subrouter()
+	participantsRouter.HandleFunc("", withContext(handler.addParticipants)).Methods(http.MethodPost)
+	participantsRouter.HandleFunc("/{user_id:[A-Za-z0-9]+}", withContext(handler.removeParticipant)).Methods(http.MethodDelete)
+
 	propertyFieldsRouter := playbookRunRouter.PathPrefix("/property_fields").Subrouter()
 	propertyFieldsRouter.HandleFunc("", withContext(handler.getRunPropertyFields)).Methods(http.MethodGet)
 	propertyFieldsRouter.HandleFunc("/{fieldID:[A-Za-z0-9]+}/value", withContext(handler.setRunPropertyValue)).Methods(http.MethodPut)
@@ -2156,6 +2162,125 @@ func (h *PlaybookRunHandler) getFollowers(c *Context, w http.ResponseWriter, r *
 	}
 
 	ReturnJSON(w, followers, http.StatusOK)
+}
+
+// AddParticipantsRequest is the body of POST /runs/{id}/participants.
+type AddParticipantsRequest struct {
+	UserIDs           []string `json:"user_ids"`
+	ForceAddToChannel bool     `json:"force_add_to_channel"`
+}
+
+// addParticipants handles the POST /runs/{id}/participants endpoint. It is the REST
+// equivalent of the addRunParticipants GraphQL mutation: a user adding only themselves is
+// joining the run, which needs no more than RunView, while adding anybody else requires
+// RunManageProperties on a run that is still active.
+func (h *PlaybookRunHandler) addParticipants(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var request AddParticipantsRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	if len(request.UserIDs) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "user_ids must not be empty", nil)
+		return
+	}
+
+	for _, participantID := range request.UserIDs {
+		if !model.IsValidId(participantID) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "user_ids must only contain valid user IDs", nil)
+			return
+		}
+	}
+
+	if updatesOnlyRequesterMembership(userID, request.UserIDs) {
+		if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+			return
+		}
+	} else {
+		if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+			return
+		}
+
+		playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+		if err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+		if err := app.EnsureRunIsActive(playbookRun); err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+			return
+		}
+	}
+
+	if _, err := h.playbookRunService.AddParticipants(playbookRunID, request.UserIDs, userID, request.ForceAddToChannel, true); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]string{"status": "OK"}, http.StatusOK)
+}
+
+// removeParticipant handles the DELETE /runs/{id}/participants/{user_id} endpoint. It is the
+// REST equivalent of the removeRunParticipants GraphQL mutation for a single user: a user
+// removing themselves is leaving the run, which needs no more than RunView, while removing
+// anybody else requires RunManageProperties on a run that is still active. The removed user
+// also stops following the run, matching the mutation.
+func (h *PlaybookRunHandler) removeParticipant(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	participantID := vars["user_id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !model.IsValidId(participantID) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "user_id must be a valid user ID", nil)
+		return
+	}
+
+	isLeavingRun := participantID == userID
+	if isLeavingRun {
+		if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+			return
+		}
+	} else {
+		if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+			return
+		}
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if !isLeavingRun {
+		if err := app.EnsureRunIsActive(playbookRun); err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+			return
+		}
+	}
+
+	// The app layer refuses this too, but only with an opaque error that would surface as a 500.
+	if playbookRun.OwnerUserID == participantID {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "the run owner cannot be removed from the run", nil)
+		return
+	}
+
+	if err := h.playbookRunService.RemoveParticipants(playbookRunID, []string{participantID}, userID); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if err := h.playbookRunService.Unfollow(playbookRunID, participantID); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // parsePlaybookRunsFilterOptions is only for parsing. Put validation logic in app.validateOptions.

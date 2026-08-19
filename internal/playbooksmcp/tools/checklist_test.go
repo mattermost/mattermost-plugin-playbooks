@@ -5,6 +5,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,6 +23,10 @@ type fakeAPIClient struct {
 	listRuns      listRunsResponse
 	playbook      map[string]any
 	listPlaybooks listPlaybooksResponse
+	// runPlaybook backs the typed playbook fetch that run_playbook performs.
+	runPlaybook   playbookForRun
+	statusUpdates []runStatusUpdate
+	metadata      runMetadata
 	// listPages, when set, returns a distinct listRunsResponse per page index
 	// so pagination can be exercised.
 	listPages []listRunsResponse
@@ -33,11 +39,17 @@ type fakeAPIClient struct {
 	currentUserID  string
 	currentUserErr error
 
+	// usersByUsername backs ResolveUserID's username lookup; every reference
+	// the tools resolve is recorded in resolvedRefs.
+	usersByUsername map[string]string
+	resolvedRefs    []string
+
 	getEndpoint  string
 	getParams    url.Values
 	getEndpoints []string
 	listParams   url.Values
 	listCalls    []url.Values
+	getErr       error
 
 	postEndpoint string
 	postBody     any
@@ -51,14 +63,24 @@ type fakeAPIClient struct {
 	putBody      any
 	putEndpoints []string
 	putBodies    []any
+	putErr       error
 
-	deleteEndpoint string
+	patchEndpoint string
+	patchBody     any
+	patchErr      error
+
+	deleteEndpoint  string
+	deleteEndpoints []string
+	deleteErr       error
 }
 
 func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Values, result any) error {
 	f.getEndpoint = endpoint
 	f.getParams = params
 	f.getEndpoints = append(f.getEndpoints, endpoint)
+	if f.getErr != nil {
+		return f.getErr
+	}
 	switch v := result.(type) {
 	case *playbookRunDetail:
 		*v = f.run
@@ -82,6 +104,12 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 		f.listCalls = append(f.listCalls, cloneValues(params))
 	case *listPlaybooksResponse:
 		*v = f.listPlaybooks
+	case *playbookForRun:
+		*v = f.runPlaybook
+	case *[]runStatusUpdate:
+		*v = f.statusUpdates
+	case *runMetadata:
+		*v = f.metadata
 	case *map[string]any:
 		if f.playbook != nil {
 			*v = cloneMapAny(f.playbook)
@@ -122,7 +150,42 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 		*created = cloneMapAny(bodyMap)
 		(*created)["id"] = "bcdefghijklmnopqrstuvwxyza"
 	}
+	f.applyChecklistWrite(endpoint, body)
 	return nil
+}
+
+// applyChecklistWrite mirrors the server's insert position for the two "add"
+// endpoints so tools that read a run back after mutating it see what the real
+// API would return. Both append: AddChecklist and AddChecklistItem end with
+// `append(...)` in server/app/playbook_run_service.go.
+func (f *fakeAPIClient) applyChecklistWrite(endpoint string, body any) {
+	bodyMap, ok := body.(map[string]any)
+	if !ok {
+		return
+	}
+	parts := strings.Split(endpoint, "/")
+	title, _ := bodyMap["title"].(string)
+
+	// runs/{id}/checklists
+	if len(parts) == 3 && parts[0] == "runs" && parts[2] == "checklists" {
+		added := checklist{Title: title}
+		if items, ok := bodyMap["items"].([]CreateChecklistItem); ok {
+			for _, item := range items {
+				added.Items = append(added.Items, checklistItem{Title: item.Title, AssigneeID: item.AssigneeID, DueDate: item.DueDate})
+			}
+		}
+		f.run.Checklists = append(f.run.Checklists, added)
+		return
+	}
+
+	// runs/{id}/checklists/{n}/add
+	if len(parts) == 5 && parts[0] == "runs" && parts[2] == "checklists" && parts[4] == "add" {
+		idx, err := strconv.Atoi(parts[3])
+		if err != nil || idx < 0 || idx >= len(f.run.Checklists) {
+			return
+		}
+		f.run.Checklists[idx].Items = append(f.run.Checklists[idx].Items, checklistItem{Title: title})
+	}
 }
 
 func (f *fakeAPIClient) Put(_ context.Context, endpoint string, body any, _ any) error {
@@ -130,12 +193,19 @@ func (f *fakeAPIClient) Put(_ context.Context, endpoint string, body any, _ any)
 	f.putBody = body
 	f.putEndpoints = append(f.putEndpoints, endpoint)
 	f.putBodies = append(f.putBodies, body)
-	return nil
+	return f.putErr
+}
+
+func (f *fakeAPIClient) Patch(_ context.Context, endpoint string, body any, _ any) error {
+	f.patchEndpoint = endpoint
+	f.patchBody = body
+	return f.patchErr
 }
 
 func (f *fakeAPIClient) Delete(_ context.Context, endpoint string) error {
 	f.deleteEndpoint = endpoint
-	return nil
+	f.deleteEndpoints = append(f.deleteEndpoints, endpoint)
+	return f.deleteErr
 }
 
 func (f *fakeAPIClient) GetCurrentUserID(context.Context) (string, error) {
@@ -148,8 +218,33 @@ func (f *fakeAPIClient) GetCurrentUserID(context.Context) (string, error) {
 	return "abcdefghijklmnopqrstuvwxy0", nil
 }
 
+// ResolveUserID mirrors pluginMCPClient.ResolveUserID in server/mcp.go: "me"
+// and well-formed IDs short-circuit, everything else is a username lookup.
+func (f *fakeAPIClient) ResolveUserID(ctx context.Context, userRef string) (string, error) {
+	ref := strings.TrimSpace(userRef)
+	f.resolvedRefs = append(f.resolvedRefs, ref)
+	if ref == "" {
+		return "", fmt.Errorf("a user reference is required")
+	}
+	if ref == meUserID {
+		return f.GetCurrentUserID(ctx)
+	}
+	if model.IsValidId(ref) {
+		return ref, nil
+	}
+	username := strings.ToLower(strings.TrimPrefix(ref, "@"))
+	if userID, ok := f.usersByUsername[username]; ok {
+		return userID, nil
+	}
+	return "", fmt.Errorf("no user found with username %q — check the spelling (usernames are case-insensitive, without the @)", username)
+}
+
 func (f *fakeAPIClient) GetPlaybookURL(playbookID string) string {
 	return "https://mattermost.example.com/playbooks/playbooks/" + playbookID
+}
+
+func (f *fakeAPIClient) GetRunURL(runID string) string {
+	return "https://mattermost.example.com/playbooks/runs/" + runID
 }
 
 // cloneValues snapshots query params, since fetchRunDetails mutates the same
@@ -223,6 +318,296 @@ func TestToolCheckItemOpenTranslatesToEmptyAPIState(t *testing.T) {
 	body, ok := client.putBody.(map[string]string)
 	require.Truef(t, ok, "unexpected body type %T", client.putBody)
 	assert.Empty(t, body["new_state"], "expected open state to be sent as empty string")
+}
+
+func TestToolCheckItemStates(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+
+	tests := []struct {
+		name         string
+		newState     string
+		currentState string
+		wantAPIState string
+		wantErr      string
+		wantNoOp     bool
+	}{
+		{name: "defaults to closed", newState: "", wantAPIState: "closed"},
+		{name: "closed", newState: "closed", wantAPIState: "closed"},
+		{name: "open sends an empty state", newState: "open", currentState: "closed", wantAPIState: ""},
+		{name: "in_progress is accepted", newState: "in_progress", wantAPIState: "in_progress"},
+		{name: "skipped", newState: "skipped", wantAPIState: "skipped"},
+		{name: "already in state is a no-op", newState: "in_progress", currentState: "in_progress", wantNoOp: true},
+		{
+			name:     "rejects an unknown state",
+			newState: "done",
+			wantErr:  "new_state must be one of open, in_progress, closed, or skipped",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{
+				run: playbookRunDetail{
+					ID:         runID,
+					Checklists: []checklist{{Items: []checklistItem{{Title: "Deploy", State: tt.currentState}}}},
+				},
+			}
+
+			_, err := toolCheckItem(context.Background(), client, CheckItemArgs{
+				RunID:           runID,
+				ChecklistNumber: 0,
+				ItemNumber:      0,
+				NewState:        tt.newState,
+			})
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+				assert.Empty(t, client.putEndpoint)
+				return
+			}
+			require.NoError(t, err)
+			if tt.wantNoOp {
+				assert.Empty(t, client.putEndpoint, "expected no state change")
+				return
+			}
+			require.Equal(t, "runs/"+runID+"/checklists/0/item/0/state", client.putEndpoint)
+			require.IsType(t, map[string]string{}, client.putBody)
+			assert.Equal(t, tt.wantAPIState, client.putBody.(map[string]string)["new_state"])
+		})
+	}
+}
+
+func TestToolAddSectionSendsItems(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+	const assigneeID = "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{}
+
+	_, err := toolAddSection(context.Background(), client, AddSectionArgs{
+		RunID: runID,
+		Title: " Post-incident review ",
+		Items: []CreateChecklistItem{
+			{Title: " Schedule retrospective ", AssigneeID: assigneeID, DueDate: 1717200000000},
+			{Title: "Write summary", Description: "Two paragraphs"},
+		},
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, "runs/"+runID+"/checklists", client.postEndpoint)
+	require.IsType(t, map[string]any{}, client.postBody)
+	body := client.postBody.(map[string]any)
+	assert.Equal(t, "Post-incident review", body["title"])
+	items, ok := body["items"].([]CreateChecklistItem)
+	require.True(t, ok, "unexpected items type %T", body["items"])
+	require.Len(t, items, 2)
+	assert.Equal(t, "Schedule retrospective", items[0].Title)
+	assert.Equal(t, assigneeID, items[0].AssigneeID)
+	assert.Equal(t, int64(1717200000000), items[0].DueDate)
+	assert.Equal(t, "Write summary", items[1].Title)
+}
+
+// A model that adds a section immediately needs its checklist_number for
+// add_checklist_item; eval runs showed it guessing and failing. AddChecklist
+// appends (server/app/playbook_run_service.go), so the new index is always the
+// old section count, and the fake reproduces that append.
+func TestToolAddSectionReportsNewChecklistNumber(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+
+	tests := []struct {
+		name          string
+		existing      playbookRunDetail
+		items         []CreateChecklistItem
+		wantIndex     int
+		wantInMessage []string
+	}{
+		{
+			name:      "first section in an empty run",
+			existing:  playbookRunDetail{ID: runID},
+			wantIndex: 0,
+		},
+		{
+			name:      "appends after existing sections",
+			existing:  fixtureRun(runID, 3, 2),
+			wantIndex: 3,
+			wantInMessage: []string{
+				`checklist_number 0: "Section 0"`,
+				`checklist_number 2: "Section 2"`,
+			},
+		},
+		{
+			name:      "reports the index when created with tasks",
+			existing:  fixtureRun(runID, 1, 1),
+			items:     []CreateChecklistItem{{Title: "Schedule retrospective"}},
+			wantIndex: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{run: tt.existing}
+
+			out, err := toolAddSection(context.Background(), client, AddSectionArgs{
+				RunID: runID,
+				Title: "Post-incident review",
+				Items: tt.items,
+			})
+			require.NoError(t, err)
+
+			assert.Equal(t, "runs/"+runID+"/checklists", client.postEndpoint)
+			assert.Equal(t, "runs/"+runID, client.getEndpoint, "expected the run to be read back for the index")
+
+			assert.Contains(t, out, fmt.Sprintf("Its checklist_number is %d", tt.wantIndex))
+			assert.Contains(t, out, fmt.Sprintf(`checklist_number %d: "Post-incident review"`, tt.wantIndex))
+			assert.Contains(t, out, "the section just added")
+			assert.Contains(t, out, "add_checklist_item")
+			for _, want := range tt.wantInMessage {
+				assert.Contains(t, out, want)
+			}
+		})
+	}
+}
+
+// The section exists at this point, so a read-back failure must not read as
+// the add having failed.
+func TestToolAddSectionStillReportsSuccessWhenReadBackFails(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{getErr: errors.New("connection refused")}
+
+	out, err := toolAddSection(context.Background(), client, AddSectionArgs{RunID: runID, Title: "Post-incident review"})
+	require.NoError(t, err)
+
+	assert.Contains(t, out, "Added section")
+	assert.Contains(t, out, "get_run")
+}
+
+func TestToolAddChecklistItemReportsNewItemNumber(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+
+	tests := []struct {
+		name            string
+		run             playbookRunDetail
+		checklistNumber int
+		wantItemNumber  int
+	}{
+		{
+			name:            "first task in an empty section",
+			run:             fixtureRun(runID, 2, 0),
+			checklistNumber: 1,
+			wantItemNumber:  0,
+		},
+		{
+			name:            "appends after existing tasks",
+			run:             fixtureRun(runID, 2, 3),
+			checklistNumber: 0,
+			wantItemNumber:  3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{run: tt.run}
+
+			out, err := toolAddChecklistItem(context.Background(), client, AddChecklistItemArgs{
+				RunID:           runID,
+				ChecklistNumber: tt.checklistNumber,
+				Title:           "Verify fix",
+			})
+			require.NoError(t, err)
+
+			assert.Contains(t, out, fmt.Sprintf("[%d][%d]", tt.checklistNumber, tt.wantItemNumber))
+			assert.Contains(t, out, fmt.Sprintf("item_number %d", tt.wantItemNumber))
+		})
+	}
+}
+
+func TestToolAddSectionValidatesItems(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+
+	tests := []struct {
+		name    string
+		args    AddSectionArgs
+		wantErr string
+	}{
+		{
+			name:    "rejects a blank item title",
+			args:    AddSectionArgs{RunID: runID, Title: "Section", Items: []CreateChecklistItem{{Title: "  "}}},
+			wantErr: "items[0].title is required",
+		},
+		{
+			name:    "rejects an unresolvable item assignee",
+			args:    AddSectionArgs{RunID: runID, Title: "Section", Items: []CreateChecklistItem{{Title: "Task", AssigneeID: "nobody"}}},
+			wantErr: `items[0].assignee_id: no user found with username "nobody" — check the spelling (usernames are case-insensitive, without the @)`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolAddSection(context.Background(), client, tt.args)
+			require.EqualError(t, err, tt.wantErr)
+			assert.Empty(t, client.postEndpoint, "expected no section to be created")
+		})
+	}
+}
+
+func TestToolSkipAndRestoreSection(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+	fixture := fixtureRun(runID, 2, 2)
+
+	t.Run("skip section", func(t *testing.T) {
+		client := &fakeAPIClient{run: fixture}
+		out, err := toolSkipSection(context.Background(), client, SkipSectionArgs{RunID: runID, ChecklistNumber: 1})
+		require.NoError(t, err)
+		assert.Equal(t, "runs/"+runID, client.getEndpoint)
+		assert.Equal(t, "runs/"+runID+"/checklists/1/skip", client.putEndpoint)
+		assert.Nil(t, client.putBody)
+		assert.Contains(t, out, `"Section 1"`)
+	})
+
+	t.Run("restore section", func(t *testing.T) {
+		client := &fakeAPIClient{run: fixture}
+		_, err := toolRestoreSection(context.Background(), client, RestoreSectionArgs{RunID: runID, ChecklistNumber: 0})
+		require.NoError(t, err)
+		assert.Equal(t, "runs/"+runID+"/checklists/0/restore", client.putEndpoint)
+	})
+}
+
+func TestToolSkipSectionValidation(t *testing.T) {
+	const runID = "abcdefghijklmnopqrstuvwxyz"
+
+	tests := []struct {
+		name    string
+		client  *fakeAPIClient
+		args    SkipSectionArgs
+		wantErr string
+	}{
+		{
+			name:    "rejects an invalid run id",
+			client:  &fakeAPIClient{},
+			args:    SkipSectionArgs{RunID: "invalid", ChecklistNumber: 0},
+			wantErr: "run_id must be a valid Mattermost ID",
+		},
+		{
+			name:    "rejects a negative index",
+			client:  &fakeAPIClient{},
+			args:    SkipSectionArgs{RunID: runID, ChecklistNumber: -1},
+			wantErr: "checklist_number must be a non-negative integer, got -1",
+		},
+		{
+			name:    "rejects an out-of-range index",
+			client:  &fakeAPIClient{run: fixtureRun(runID, 2, 2)},
+			args:    SkipSectionArgs{RunID: runID, ChecklistNumber: 5},
+			wantErr: "checklist_number 5 is out of range",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := toolSkipSection(context.Background(), tt.client, tt.args)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+			assert.Empty(t, tt.client.putEndpoint, "expected no skip call")
+		})
+	}
 }
 
 func TestToolEditChecklistItemPreservesOmittedFields(t *testing.T) {
@@ -424,39 +809,29 @@ func TestToolEditChecklistItemUpdatesFieldsAndDueDate(t *testing.T) {
 	assert.Equal(t, int64(1717200000000), dueDateBody["due_date"])
 }
 
-func TestToolAddChecklistItemRejectsInvalidAssignee(t *testing.T) {
+func TestToolAddChecklistItemRejectsUnresolvableAssignee(t *testing.T) {
 	client := &fakeAPIClient{}
 	args := AddChecklistItemArgs{
 		RunID:           "abcdefghijklmnopqrstuvwxyz",
 		ChecklistNumber: 0,
 		Title:           "New item",
-		AssigneeID:      "invalid",
+		AssigneeID:      "@nobody",
 	}
 
-	if _, err := toolAddChecklistItem(context.Background(), client, args); err == nil || err.Error() != "assignee_id must be a valid Mattermost ID" {
-		t.Fatalf("expected assignee validation error, got %v", err)
-	}
-
-	if client.postEndpoint != "" {
-		t.Fatalf("expected validation to fail before API call, got endpoint %q", client.postEndpoint)
-	}
+	_, err := toolAddChecklistItem(context.Background(), client, args)
+	require.EqualError(t, err, `assignee_id: no user found with username "nobody" — check the spelling (usernames are case-insensitive, without the @)`)
+	assert.Empty(t, client.postEndpoint, "expected resolution to fail before the API call")
 }
 
 func TestToolListRunsAddsTypeFilter(t *testing.T) {
 	client := &fakeAPIClient{}
-	args := ListRunsArgs{Type: "channelChecklist", Types: []string{"playbook"}}
+	args := ListRunsArgs{Types: []string{"channelChecklist", "playbook"}}
 
-	if _, err := toolListRuns(context.Background(), client, args); err != nil {
-		t.Fatalf("toolListRuns returned error: %v", err)
-	}
+	_, err := toolListRuns(context.Background(), client, args)
+	require.NoError(t, err)
 
-	if client.getEndpoint != "runs" {
-		t.Fatalf("unexpected get endpoint: %s", client.getEndpoint)
-	}
-	gotTypes := client.getParams["types"]
-	if len(gotTypes) != 2 || gotTypes[0] != "channelChecklist" || gotTypes[1] != "playbook" {
-		t.Fatalf("unexpected type filters: %#v", gotTypes)
-	}
+	require.Equal(t, "runs", client.getEndpoint)
+	assert.Equal(t, []string{"channelChecklist", "playbook"}, client.getParams["types"])
 }
 
 func TestToolCreateChecklistUsesCurrentUserAsOwner(t *testing.T) {
@@ -679,19 +1054,13 @@ func TestChecklistStructureToolEndpointsAndBodies(t *testing.T) {
 
 	t.Run("add section", func(t *testing.T) {
 		client := newClient()
-		if _, err := toolAddSection(context.Background(), client, AddSectionArgs{RunID: runID, Title: " Section "}); err != nil {
-			t.Fatalf("toolAddSection returned error: %v", err)
-		}
-		if client.postEndpoint != "runs/abcdefghijklmnopqrstuvwxyz/checklists" {
-			t.Fatalf("unexpected endpoint: %s", client.postEndpoint)
-		}
-		body, ok := client.postBody.(map[string]string)
-		if !ok {
-			t.Fatalf("unexpected body type %T", client.postBody)
-		}
-		if body["title"] != "Section" {
-			t.Fatalf("unexpected body: %#v", body)
-		}
+		_, err := toolAddSection(context.Background(), client, AddSectionArgs{RunID: runID, Title: " Section "})
+		require.NoError(t, err)
+		require.Equal(t, "runs/abcdefghijklmnopqrstuvwxyz/checklists", client.postEndpoint)
+		require.IsType(t, map[string]any{}, client.postBody)
+		body := client.postBody.(map[string]any)
+		assert.Equal(t, "Section", body["title"])
+		assert.Empty(t, body["items"])
 	})
 
 	t.Run("rename section", func(t *testing.T) {
@@ -923,6 +1292,38 @@ func TestChecklistToolsOutOfRangeIndexes(t *testing.T) {
 	}
 }
 
+// The bounds helpers are shared by every index-based run tool, and each one
+// currently rejects negatives via validateIndex before reaching them. Assert
+// the helpers refuse negatives on their own so a future tool that forgets that
+// call returns an error instead of panicking on a negative slice index.
+func TestBoundsHelpersRejectNegativeIndexes(t *testing.T) {
+	fixture := fixtureRun("abcdefghijklmnopqrstuvwxyz", 2, 2)
+
+	tests := []struct {
+		name  string
+		check func() error
+	}{
+		{
+			name:  "negative checklist index",
+			check: func() error { return checkChecklistIndex(fixture, -1, "checklist_number") },
+		},
+		{
+			name:  "negative item index",
+			check: func() error { return checkItemIndex(fixture, 0, -1, "checklist_number", "item_number") },
+		},
+		{
+			name:  "negative move destination item index",
+			check: func() error { return checkMoveItemDest(fixture, 0, 1, -1) },
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Error(t, tt.check())
+		})
+	}
+}
+
 func TestToolSetChecklistItemAssigneeValidation(t *testing.T) {
 	const runID = "abcdefghijklmnopqrstuvwxyz"
 	const assigneeID = "bcdefghijklmnopqrstuvwxyza"
@@ -948,9 +1349,9 @@ func TestToolSetChecklistItemAssigneeValidation(t *testing.T) {
 			wantErr: "item_number must be a non-negative integer, got -1",
 		},
 		{
-			name:    "rejects invalid assignee id",
-			args:    SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 1, AssigneeID: "invalid"},
-			wantErr: "assignee_id must be a valid Mattermost ID",
+			name:    "rejects an unresolvable assignee",
+			args:    SetChecklistItemAssigneeArgs{RunID: runID, ChecklistNumber: 0, ItemNumber: 1, AssigneeID: "@nobody"},
+			wantErr: `assignee_id: no user found with username "nobody" — check the spelling (usernames are case-insensitive, without the @)`,
 		},
 	}
 

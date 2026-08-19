@@ -17,9 +17,17 @@ type APIClient interface {
 	Get(ctx context.Context, endpoint string, params url.Values, result any) error
 	Post(ctx context.Context, endpoint string, body any, result any) error
 	Put(ctx context.Context, endpoint string, body any, result any) error
+	Patch(ctx context.Context, endpoint string, body any, result any) error
 	Delete(ctx context.Context, endpoint string) error
 	GetCurrentUserID(ctx context.Context) (string, error)
+	// ResolveUserID turns any user reference a model might produce into a user
+	// ID: "me" for the acting user, a 26-character ID returned as-is, or a
+	// username with or without a leading "@". Not found is an error naming the
+	// reference. Models overwhelmingly say "@bob" rather than an opaque ID, so
+	// every user-taking argument goes through this.
+	ResolveUserID(ctx context.Context, userRef string) (string, error)
 	GetPlaybookURL(playbookID string) string
+	GetRunURL(runID string) string
 }
 
 // ClientFactory creates an APIClient for the current MCP request context.
