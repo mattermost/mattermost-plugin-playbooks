@@ -36,8 +36,12 @@ type fakeAPIClient struct {
 	getEndpoint  string
 	getParams    url.Values
 	getEndpoints []string
+	getErr       error
 	listParams   url.Values
 	listCalls    []url.Values
+
+	getMapListResult    []map[string]any
+	getMapListResultSet bool
 
 	postEndpoint string
 	postBody     any
@@ -65,6 +69,9 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 	f.getEndpoint = endpoint
 	f.getParams = params
 	f.getEndpoints = append(f.getEndpoints, endpoint)
+	if f.getErr != nil {
+		return f.getErr
+	}
 	switch v := result.(type) {
 	case *playbookRunDetail:
 		*v = f.run
@@ -88,6 +95,12 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 		f.listCalls = append(f.listCalls, cloneValues(params))
 	case *listPlaybooksResponse:
 		*v = f.listPlaybooks
+	case *[]map[string]any:
+		if f.getMapListResultSet && f.getMapListResult == nil {
+			*v = nil
+		} else {
+			*v = cloneMapAnySlice(f.getMapListResult)
+		}
 	case *map[string]any:
 		if f.playbook != nil {
 			*v = cloneMapAny(f.playbook)
