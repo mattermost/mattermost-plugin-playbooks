@@ -2282,6 +2282,10 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		return "", err
 	}
 
+	if !CanPostToChannel(userID, playbookRun.ChannelID, s.pluginAPI) {
+		return "", errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to post in run channel `%s`", userID, playbookRun.ChannelID)
+	}
+
 	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklistNumber, itemNumber) {
 		return "", errors.New("invalid checklist item indices")
 	}
