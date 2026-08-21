@@ -78,7 +78,7 @@ export interface UserJoinedLeftDetails {
 }
 
 export interface TaskStateModifiedDetails {
-    action: string | 'check' | 'uncheck' | 'skip' | 'restore';
+    action: string | 'check' | 'uncheck' | 'skip' | 'restore' | 'requirements_updated';
     task: string;
 
     // Stable checklist-item id, added so attribution can join event→item by identity instead of the

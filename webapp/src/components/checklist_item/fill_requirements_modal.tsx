@@ -9,6 +9,8 @@ import {TaskRequirement} from 'src/types/playbook';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import GenericModal from 'src/components/widgets/generic_modal';
 
+export const MAX_REQUIREMENT_VALUE_LENGTH = 1024;
+
 type Props = {
     taskTitle: string;
     requirements: TaskRequirement[];
@@ -98,7 +100,7 @@ const FillRequirementsModal = ({
     const showMarkComplete = !isTaskComplete;
 
     return (
-        <GenericModal
+        <StyledModal
             id='playbooks-fill-requirements-modal'
             modalHeaderText={editMode || isTaskComplete ? formatMessage({defaultMessage: 'Edit requirements'}) : formatMessage({defaultMessage: 'Complete requirements'})}
             onHide={onCancel}
@@ -157,10 +159,11 @@ const FillRequirementsModal = ({
                                 data-testid={`requirement-value-${req.id}`}
                                 type='text'
                                 $hasError={hasError}
+                                maxLength={MAX_REQUIREMENT_VALUE_LENGTH}
                                 value={values[req.id] || ''}
                                 disabled={saving}
                                 onChange={(e) => {
-                                    const next = e.target.value;
+                                    const next = e.target.value.slice(0, MAX_REQUIREMENT_VALUE_LENGTH);
                                     setValues((prev) => ({...prev, [req.id]: next}));
                                     if (errors[req.id] && next.trim()) {
                                         setErrors((prev) => {
@@ -180,9 +183,21 @@ const FillRequirementsModal = ({
                     );
                 })}
             </Fields>
-        </GenericModal>
+        </StyledModal>
     );
 };
+
+const StyledModal = styled(GenericModal)`
+    .modal-content {
+        max-height: calc(100vh - 32px);
+    }
+
+    .modal-body {
+        overflow-y: auto;
+        min-height: 0;
+        max-height: calc(100vh - 180px);
+    }
+`;
 
 const Description = styled.p`
     margin: 0 0 16px;

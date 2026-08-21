@@ -962,6 +962,68 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, p
 	return nil
 }
 
+// maxInteractiveDialogRequirements is Mattermost's interactive dialog element limit.
+const maxInteractiveDialogRequirements = 5
+
+func (s *PlaybookRunServiceImpl) OpenFillRequirementsDialog(triggerID, userID, playbookRunID string, checklist, item int) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get playbook run")
+	}
+	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklist, item) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	checklistItem := playbookRun.Checklists[checklist].Items[item]
+	if len(checklistItem.Requirements) == 0 {
+		return errors.New("checklist item has no requirements")
+	}
+	if len(checklistItem.Requirements) > maxInteractiveDialogRequirements {
+		return errors.Errorf("too many requirements for interactive dialog (max %d)", maxInteractiveDialogRequirements)
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+	T := i18n.GetUserTranslations(user.Locale)
+
+	elements := make([]model.DialogElement, 0, len(checklistItem.Requirements))
+	for _, req := range checklistItem.Requirements {
+		elements = append(elements, model.DialogElement{
+			DisplayName: req.Label,
+			Name:        req.ID,
+			Type:        "text",
+			Default:     req.Value,
+			Optional:    false,
+			MaxLength:   MaxTaskRequirementValueLength,
+		})
+	}
+
+	dialog := &model.Dialog{
+		Title: T("app.user.run.fill_requirements.title"),
+		IntroductionText: T("app.user.run.fill_requirements.intro", map[string]interface{}{
+			"Task": checklistItem.Title,
+		}),
+		Elements:       elements,
+		SubmitLabel:    T("app.user.run.fill_requirements.submit_label"),
+		NotifyOnCancel: false,
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/checklists/%v/item/%v/fill-requirements-dialog",
+			s.configService.GetManifest().Id, playbookRunID, checklist, item),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open fill requirements dialog")
+	}
+
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, userID string, post *model.Post, summary string) error {
 	auditRec := plugin.MakeAuditRecord("addPostToTimeline", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
@@ -2323,6 +2385,9 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 				}
 			}
 		}
+		if err := ValidateTaskRequirements(itemToCheck.Requirements); err != nil {
+			return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+		}
 	}
 
 	// Always require all fields when the item is closed while beta features are enabled,
@@ -2391,6 +2456,28 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 			Details:       string(detailsJSON),
 		}
 
+		if _, err = s.store.CreateTimelineEvent(event); err != nil {
+			return errors.Wrap(err, "failed to create timeline event")
+		}
+	} else if requirementsChanged {
+		reqDetails := Details{
+			Action: "requirements_updated",
+			Task:   stripmd.Strip(itemToCheck.Title),
+			ItemID: itemToCheck.ID,
+		}
+		detailsJSON, err := json.Marshal(reqDetails)
+		if err != nil {
+			return errors.Wrap(err, "failed to encode timeline event details")
+		}
+		event := &TimelineEvent{
+			PlaybookRunID: playbookRunID,
+			CreateAt:      timestamp,
+			EventAt:       timestamp,
+			EventType:     TaskStateModified,
+			Summary:       fmt.Sprintf("updated requirements for checklist item **%v**", stripmd.Strip(itemToCheck.Title)),
+			SubjectUserID: userID,
+			Details:       string(detailsJSON),
+		}
 		if _, err = s.store.CreateTimelineEvent(event); err != nil {
 			return errors.Wrap(err, "failed to create timeline event")
 		}

@@ -10,6 +10,9 @@ import {generateId} from 'mattermost-redux/utils/helpers';
 import {TaskRequirement} from 'src/types/playbook';
 import GenericModal from 'src/components/widgets/generic_modal';
 
+export const MAX_REQUIREMENT_LABEL_LENGTH = 128;
+export const MAX_REQUIREMENTS_PER_ITEM = 20;
+
 type DraftRequirement = {
     id: string;
     label: string;
@@ -39,12 +42,16 @@ const EditRequirementsModal = ({initialRequirements = [], onConfirm, onCancel}: 
 
     // When adding for the first time, require at least one. When editing, allow clearing all.
     const canSave = isEditing || trimmed.length > 0;
+    const canAddAnother = drafts.length < MAX_REQUIREMENTS_PER_ITEM;
 
     const updateLabel = (id: string, value: string) => {
-        setDrafts((prev) => prev.map((d) => (d.id === id ? {...d, label: value} : d)));
+        setDrafts((prev) => prev.map((d) => (d.id === id ? {...d, label: value.slice(0, MAX_REQUIREMENT_LABEL_LENGTH)} : d)));
     };
 
     const addField = () => {
+        if (!canAddAnother) {
+            return;
+        }
         setDrafts((prev) => [...prev, {id: generateId(), label: '', isNew: true}]);
     };
 
@@ -65,7 +72,7 @@ const EditRequirementsModal = ({initialRequirements = [], onConfirm, onCancel}: 
     };
 
     return (
-        <GenericModal
+        <StyledModal
             id='playbooks-edit-requirements-modal'
             modalHeaderText={isEditing ? formatMessage({defaultMessage: 'Edit requirements'}) : formatMessage({defaultMessage: 'Add requirements'})}
             confirmButtonText={isEditing ? formatMessage({defaultMessage: 'Save'}) : formatMessage({defaultMessage: 'Add'})}
@@ -95,6 +102,7 @@ const EditRequirementsModal = ({initialRequirements = [], onConfirm, onCancel}: 
                                 data-testid={index === 0 ? 'requirement-label-input' : `requirement-label-input-${index}`}
                                 type='text'
                                 autoFocus={index === 0}
+                                maxLength={MAX_REQUIREMENT_LABEL_LENGTH}
                                 value={draft.label}
                                 placeholder={formatMessage({defaultMessage: 'e.g. Ticket URL, Root cause'})}
                                 onChange={(e) => updateLabel(draft.id, e.target.value)}
@@ -113,17 +121,31 @@ const EditRequirementsModal = ({initialRequirements = [], onConfirm, onCancel}: 
                     </Field>
                 ))}
             </Fields>
-            <AddAnother
-                type='button'
-                onClick={addField}
-                data-testid='add-another-requirement'
-            >
-                <i className='icon icon-plus'/>
-                {formatMessage({defaultMessage: 'Add another requirement'})}
-            </AddAnother>
-        </GenericModal>
+            {canAddAnother && (
+                <AddAnother
+                    type='button'
+                    onClick={addField}
+                    data-testid='add-another-requirement'
+                >
+                    <i className='icon icon-plus'/>
+                    {formatMessage({defaultMessage: 'Add another requirement'})}
+                </AddAnother>
+            )}
+        </StyledModal>
     );
 };
+
+const StyledModal = styled(GenericModal)`
+    .modal-content {
+        max-height: calc(100vh - 32px);
+    }
+
+    .modal-body {
+        overflow-y: auto;
+        min-height: 0;
+        max-height: calc(100vh - 180px);
+    }
+`;
 
 const Description = styled.p`
     margin: 0 0 16px;

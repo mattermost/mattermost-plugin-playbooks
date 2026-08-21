@@ -142,7 +142,9 @@ func TestModifyCheckedState_Requirements(t *testing.T) {
 		item := store.updatedRun.Checklists[0].Items[0]
 		assert.Equal(t, ChecklistItemStateOpen, item.State)
 		assert.Equal(t, "https://example.com", item.Requirements[0].Value)
-		assert.Empty(t, store.timelineEvents)
+		require.Len(t, store.timelineEvents, 1)
+		assert.Equal(t, TaskStateModified, store.timelineEvents[0].EventType)
+		assert.Contains(t, store.timelineEvents[0].Details, "requirements_updated")
 	})
 
 	t.Run("rejects clearing requirements on already-closed item when beta enabled", func(t *testing.T) {

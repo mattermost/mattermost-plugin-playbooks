@@ -366,11 +366,36 @@ type ChecklistItem struct {
 	ConditionReason string `json:"condition_reason" export:"-"`
 }
 
+const (
+	// MaxTaskRequirementLabelLength is the max length for a requirement label.
+	MaxTaskRequirementLabelLength = 128
+	// MaxTaskRequirementValueLength is the max length for a filled requirement value.
+	MaxTaskRequirementValueLength = 1024
+	// MaxTaskRequirementsPerItem is the max number of requirements on a single checklist item.
+	MaxTaskRequirementsPerItem = 20
+)
+
 // TaskRequirement is a labeled field that must be completed when checking off a task.
 type TaskRequirement struct {
 	ID    string `json:"id" export:"id"`
 	Label string `json:"label" export:"label"`
 	Value string `json:"value" export:"-"`
+}
+
+// ValidateTaskRequirements checks count and character limits for requirement labels/values.
+func ValidateTaskRequirements(requirements []TaskRequirement) error {
+	if len(requirements) > MaxTaskRequirementsPerItem {
+		return errors.Errorf("checklist item cannot have more than %d requirements", MaxTaskRequirementsPerItem)
+	}
+	for _, req := range requirements {
+		if utf8.RuneCountInString(req.Label) > MaxTaskRequirementLabelLength {
+			return errors.Errorf("requirement label exceeds maximum length of %d characters", MaxTaskRequirementLabelLength)
+		}
+		if utf8.RuneCountInString(req.Value) > MaxTaskRequirementValueLength {
+			return errors.Errorf("requirement value exceeds maximum length of %d characters", MaxTaskRequirementValueLength)
+		}
+	}
+	return nil
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {

@@ -625,6 +625,9 @@ func (s *stubRunService) OpenAddToTimelineDialog(RequesterInfo, string, string, 
 func (s *stubRunService) OpenAddChecklistItemDialog(string, string, string, int) error {
 	panic("stubRunService: OpenAddChecklistItemDialog not implemented")
 }
+func (s *stubRunService) OpenFillRequirementsDialog(string, string, string, int, int) error {
+	panic("stubRunService: OpenFillRequirementsDialog not implemented")
+}
 func (s *stubRunService) AddPostToTimeline(*PlaybookRun, string, *model.Post, string) error {
 	panic("stubRunService: AddPostToTimeline not implemented")
 }

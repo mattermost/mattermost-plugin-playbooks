@@ -308,6 +308,9 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
 			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
 		}
+		if err := validateUpdateTaskRequirements(*args.Updates.Checklists); err != nil {
+			return "", errors.Wrapf(err, "failed to validate checklist item requirements for playbook id: '%s'", args.ID)
+		}
 		if err := validateUpdateRequirementsExclusiveOfTaskActions(*args.Updates.Checklists); err != nil {
 			return "", errors.Wrapf(err, "failed to validate checklist item exclusivity for playbook id: '%s'", args.ID)
 		}
@@ -573,6 +576,20 @@ func validateUpdateRequirementsExclusiveOfTaskActions(checklists []UpdateCheckli
 				taskActions = *item.TaskActions
 			}
 			if err := app.ValidateRequirementsExclusiveOfTaskActions(requirements, taskActions); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateUpdateTaskRequirements(checklists []UpdateChecklist) error {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			if item.Requirements == nil {
+				continue
+			}
+			if err := app.ValidateTaskRequirements(*item.Requirements); err != nil {
 				return err
 			}
 		}

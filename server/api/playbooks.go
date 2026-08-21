@@ -171,6 +171,10 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid task actions", err)
 				return false
 			}
+			if err := app.ValidateTaskRequirements(item.Requirements); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid checklist item requirements", err)
+				return false
+			}
 			if err := app.ValidateRequirementsExclusiveOfTaskActions(item.Requirements, item.TaskActions); err != nil {
 				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid checklist item", err)
 				return false

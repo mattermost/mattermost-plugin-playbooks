@@ -1286,8 +1286,12 @@ type PlaybookRunService interface {
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
 	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
 
-	// OpenAddChecklistItemDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
+	// OpenAddChecklistItemDialog opens an interactive dialog so the user can add a checklist item.
 	OpenAddChecklistItemDialog(triggerID, userID, playbookRunID string, checklist int) error
+
+	// OpenFillRequirementsDialog opens an interactive dialog so the user can fill task requirements
+	// and mark the checklist item complete (used from slash commands).
+	OpenFillRequirementsDialog(triggerID, userID, playbookRunID string, checklist, item int) error
 
 	// AddPostToTimeline adds an event based on a post to a playbook run's timeline.
 	AddPostToTimeline(playbookRun *PlaybookRun, userID string, post *model.Post, summary string) error
