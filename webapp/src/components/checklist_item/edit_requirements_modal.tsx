@@ -136,18 +136,35 @@ const EditRequirementsModal = ({initialRequirements = [], onConfirm, onCancel}: 
 };
 
 const StyledModal = styled(GenericModal)`
-    .modal-content {
-        max-height: calc(100vh - 32px);
-    }
+    &&&& {
+        .modal-dialog {
+            margin: 0 auto !important;
+        }
 
-    .modal-body {
-        overflow-y: auto;
-        min-height: 0;
-        max-height: calc(100vh - 180px);
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 32px);
+            overflow: hidden;
+        }
+
+        .modal-header,
+        .modal-footer {
+            flex-shrink: 0;
+        }
+
+        .modal-body {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden !important;
+        }
     }
 `;
 
 const Description = styled.p`
+    flex-shrink: 0;
     margin: 0 0 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 14px;
@@ -156,8 +173,14 @@ const Description = styled.p`
 
 const Fields = styled.div`
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
     gap: 16px;
+    min-height: 0;
+    max-height: min(360px, calc(100vh - 280px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 4px;
 `;
 
 const Field = styled.div`
@@ -220,6 +243,7 @@ const RemoveButton = styled.button`
 
 const AddAnother = styled.button`
     display: inline-flex;
+    flex-shrink: 0;
     align-items: center;
     gap: 4px;
     margin-top: 16px;
