@@ -82,9 +82,9 @@ describe('playbooks > task requirements', {testIsolation: true}, () => {
             cy.findByTestId('task-requirements-accordion').find('button').first().click();
             cy.findByTestId('task-requirements-accordion').should('contain', 'Ticket URL');
 
-            // * Persists after reload
+            // * Persists after reload (outline opens on Summary; scroll Tasks into view)
             cy.reload();
-            cy.findByTestId('task-requirements-accordion').should('be.visible');
+            cy.findByTestId('task-requirements-accordion').scrollIntoView().should('be.visible');
             cy.findByTestId('task-requirements-accordion').find('button').first().click();
             cy.findByTestId('task-requirements-accordion').should('contain', 'Ticket URL');
 
