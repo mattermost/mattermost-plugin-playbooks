@@ -72,6 +72,20 @@ type CreatePlaybookAttributeArgs struct {
 	Attrs      *CreatePlaybookAttributeAttrs `json:"attrs,omitempty" jsonschema:"Optional attribute metadata such as visibility, sort_order, options, parent_id, and value_type"`
 }
 
+type UpdatePlaybookAttributeArgs struct {
+	PlaybookID string                        `json:"playbook_id" jsonschema:"The ID of the playbook template that owns the attribute/property field"`
+	FieldID    string                        `json:"field_id" jsonschema:"The ID of the attribute/property field to update"`
+	Name       string                        `json:"name" jsonschema:"Updated attribute name"`
+	Type       string                        `json:"type" jsonschema:"Updated attribute type. Supported values: text, select, multiselect, date, user, multiuser"`
+	Attrs      *UpdatePlaybookAttributeAttrs `json:"attrs,omitempty" jsonschema:"Optional updated attribute metadata such as visibility, sort_order, options, parent_id, and value_type"`
+}
+
+type ReorderPlaybookAttributeArgs struct {
+	PlaybookID     string `json:"playbook_id" jsonschema:"The ID of the playbook template that owns the attribute/property field"`
+	FieldID        string `json:"field_id" jsonschema:"The ID of the attribute/property field to move"`
+	TargetPosition int    `json:"target_position" jsonschema:"The zero-based position to move the attribute to"`
+}
+
 type CreatePlaybookAttributeAttrs struct {
 	Visibility string                          `json:"visibility,omitempty" jsonschema:"Optional visibility: hidden, when_set, or always. Defaults to when_set."`
 	SortOrder  float64                         `json:"sort_order,omitempty" jsonschema:"Optional sort order for display"`
@@ -83,6 +97,24 @@ type CreatePlaybookAttributeAttrs struct {
 type CreatePlaybookAttributeOption struct {
 	Name  string `json:"name" jsonschema:"Option display name"`
 	Color string `json:"color,omitempty" jsonschema:"Optional option color"`
+}
+
+type UpdatePlaybookAttributeAttrs struct {
+	Visibility string                          `json:"visibility,omitempty" jsonschema:"Optional visibility: hidden, when_set, or always. Defaults to when_set."`
+	SortOrder  float64                         `json:"sort_order,omitempty" jsonschema:"Optional sort order for display"`
+	Options    []UpdatePlaybookAttributeOption `json:"options,omitempty" jsonschema:"Options for select or multiselect attributes. Send the full option list; include each existing option's id to preserve it and omit id only for genuinely new options."`
+	ParentID   string                          `json:"parent_id,omitempty" jsonschema:"Optional parent property field ID"`
+	ValueType  string                          `json:"value_type,omitempty" jsonschema:"Optional value type. Use url for URL text attributes."`
+}
+
+type UpdatePlaybookAttributeOption struct {
+	ID    string `json:"id,omitempty" jsonschema:"The existing option ID from list_playbook_attributes. Include it to preserve the option (keeping its stored values); omit it to create a new option."`
+	Name  string `json:"name" jsonschema:"Option display name"`
+	Color string `json:"color,omitempty" jsonschema:"Optional option color"`
+}
+
+type ListPlaybookAttributesArgs struct {
+	PlaybookID string `json:"playbook_id" jsonschema:"The ID of the playbook template whose attributes/property fields to list"`
 }
 
 type ListPlaybooksArgs struct {
@@ -173,6 +205,9 @@ func (p *PlaybooksToolProvider) addMCPHelperPlaybookTools(server *mcphelper.Serv
 	addMCPHelperTool(server, p.clientFactory, "list_playbooks", "List playbook templates with optional team and search filters. Use this first when you know a template title or team but do not yet know the playbook_id. Example: {\"team_id\": \"team123...\", \"search_term\": \"Incident\", \"per_page\": 10}", toolListPlaybooks)
 	addMCPHelperTool(server, p.clientFactory, "get_playbook", "Get full details for a playbook template, including checklists and task indexes. Use this to confirm the playbook_id and the zero-based checklist_number/item_number values before mutating tasks. Example: {\"playbook_id\": \"abc123...\"}", toolGetPlaybook)
 	addMCPHelperTool(server, p.clientFactory, "create_playbook_attribute", "Create an attribute/property field on an existing playbook template. If you do not already know the playbook_id, call list_playbooks first. Supported types are text, select, multiselect, date, user, and multiuser. Select and multiselect attributes require attrs.options. Returns the created field as formatted JSON. Example: {\"playbook_id\": \"abc123...\", \"name\": \"Severity\", \"type\": \"select\", \"attrs\": {\"visibility\": \"always\", \"sort_order\": 1, \"options\": [{\"name\": \"High\", \"color\": \"red\"}]}}", toolCreatePlaybookAttribute)
+	addMCPHelperTool(server, p.clientFactory, "list_playbook_attributes", "List the attributes/property fields on a playbook template in display order. get_playbook does NOT include property fields, so use this to discover field_id values, each field's zero-based position (its index in the returned array), and existing select/multiselect option IDs before calling update_playbook_attribute or reorder_playbook_attribute. If you do not already know the playbook_id, call list_playbooks first. Returns the fields as formatted JSON. Example: {\"playbook_id\": \"abc123...\"}", toolListPlaybookAttributes)
+	addMCPHelperTool(server, p.clientFactory, "update_playbook_attribute", "Update an attribute/property field on an existing playbook template. If you do not already know the playbook_id or field_id, call list_playbooks then list_playbook_attributes first. Supported types are text, select, multiselect, date, user, and multiuser. Select and multiselect attributes require attrs.options: send the full option list, and include each existing option's id (from list_playbook_attributes) to preserve it — options sent without an id are treated as new and replace the originals. Returns the updated field as formatted JSON. Example: {\"playbook_id\": \"abc123...\", \"field_id\": \"field123...\", \"name\": \"Priority\", \"type\": \"select\", \"attrs\": {\"visibility\": \"always\", \"sort_order\": 0, \"options\": [{\"id\": \"opt123...\", \"name\": \"High\", \"color\": \"red\"}]}}", toolUpdatePlaybookAttribute)
+	addMCPHelperTool(server, p.clientFactory, "reorder_playbook_attribute", "Move an attribute/property field to a zero-based position on an existing playbook template. If you do not already know the playbook_id, field_id, or the target_position, call list_playbooks then list_playbook_attributes first; target_position is the zero-based index in that field ordering. Returns the reordered fields as formatted JSON. Example: {\"playbook_id\": \"abc123...\", \"field_id\": \"field123...\", \"target_position\": 0}", toolReorderPlaybookAttribute)
 	addMCPHelperTool(server, p.clientFactory, "add_playbook_task", "Add a task to an existing playbook template checklist. The checklist_number is a zero-based index. If you do not already know the playbook_id and checklist_number, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist indexes. This fetches the playbook, preserves its existing fields, mutates only checklists, and saves the full playbook. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"title\": \"Verify fix\", \"assignee_id\": \"user123...\"}", toolAddPlaybookTask)
 	addMCPHelperTool(server, p.clientFactory, "edit_playbook_task", "Edit a task in an existing playbook template. Checklist and item numbers are zero-based indexes, and only provided task fields are updated. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This preserves all other playbook and task fields. due_date is a relative offset from run start in milliseconds. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 1, \"title\": \"Updated task\"}", toolEditPlaybookTask)
 	addMCPHelperTool(server, p.clientFactory, "remove_playbook_task", "Remove a task from an existing playbook template. Checklist and item numbers are zero-based indexes. If you do not already know the playbook_id and indexes, do NOT guess them: first call list_playbooks to find the template by team/title, then get_playbook to confirm the checklist_number and item_number. This fetches and saves the full playbook while mutating only checklists. Example: {\"playbook_id\": \"abc123...\", \"checklist_number\": 0, \"item_number\": 2}", toolRemovePlaybookTask)
@@ -375,6 +410,139 @@ func toolCreatePlaybookAttribute(ctx context.Context, client APIClient, args Cre
 		return "", err
 	}
 	return string(data), nil
+}
+
+func toolUpdatePlaybookAttribute(ctx context.Context, client APIClient, args UpdatePlaybookAttributeArgs) (string, error) {
+	body, err := buildUpdatePlaybookAttributeBody(args)
+	if err != nil {
+		return "", err
+	}
+
+	var updated map[string]any
+	endpoint := fmt.Sprintf("playbooks/%s/property_fields/%s", args.PlaybookID, args.FieldID)
+	if err := client.Put(ctx, endpoint, body, &updated); err != nil {
+		return "", fmt.Errorf("failed to update playbook attribute: %w", err)
+	}
+	if len(updated) == 0 {
+		return "", fmt.Errorf("failed to update playbook attribute: response was empty")
+	}
+	id, ok := updated["id"].(string)
+	if !ok || strings.TrimSpace(id) == "" {
+		return "", fmt.Errorf("failed to update playbook attribute: response missing id")
+	}
+
+	data, err := json.MarshalIndent(updated, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func toolReorderPlaybookAttribute(ctx context.Context, client APIClient, args ReorderPlaybookAttributeArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+	if err := validateID(args.FieldID, "field_id"); err != nil {
+		return "", err
+	}
+	if err := validateIndex(args.TargetPosition, "target_position"); err != nil {
+		return "", err
+	}
+
+	fields, err := fetchPlaybookAttributes(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkPlaybookAttributeReorder(fields, args.PlaybookID, args.FieldID, args.TargetPosition); err != nil {
+		return "", err
+	}
+
+	body := map[string]any{
+		"field_id":        args.FieldID,
+		"target_position": args.TargetPosition,
+	}
+	var reordered []map[string]any
+	endpoint := fmt.Sprintf("playbooks/%s/property_fields/reorder", args.PlaybookID)
+	if err := client.Post(ctx, endpoint, body, &reordered); err != nil {
+		return "", fmt.Errorf("failed to reorder playbook attribute: %w", err)
+	}
+	if reordered == nil {
+		reordered = []map[string]any{}
+	}
+
+	data, err := json.MarshalIndent(reordered, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func toolListPlaybookAttributes(ctx context.Context, client APIClient, args ListPlaybookAttributesArgs) (string, error) {
+	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+		return "", err
+	}
+
+	fields, err := fetchPlaybookAttributes(ctx, client, args.PlaybookID)
+	if err != nil {
+		return "", err
+	}
+	if fields == nil {
+		fields = []map[string]any{}
+	}
+
+	data, err := json.MarshalIndent(fields, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func fetchPlaybookAttributes(ctx context.Context, client APIClient, playbookID string) ([]map[string]any, error) {
+	var fields []map[string]any
+	endpoint := fmt.Sprintf("playbooks/%s/property_fields", playbookID)
+	if err := client.Get(ctx, endpoint, nil, &fields); err != nil {
+		return nil, fmt.Errorf("failed to list playbook attributes: %w", err)
+	}
+	return fields, nil
+}
+
+func checkPlaybookAttributeReorder(fields []map[string]any, playbookID, fieldID string, targetPosition int) error {
+	found := false
+	for _, field := range fields {
+		if id, _ := field["id"].(string); id == fieldID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return playbookAttributeOutOfRangeError(fmt.Sprintf("field_id %q not found in playbook %s", fieldID, playbookID), playbookID, fields)
+	}
+	if targetPosition >= len(fields) {
+		return playbookAttributeOutOfRangeError(fmt.Sprintf("target_position %d is out of range for playbook %s", targetPosition, playbookID), playbookID, fields)
+	}
+	return nil
+}
+
+func playbookAttributeOutOfRangeError(message, playbookID string, fields []map[string]any) error {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "%s. Available attributes:\n", message)
+	writePlaybookAttributes(&sb, playbookID, fields)
+	return fmt.Errorf("%s", sb.String())
+}
+
+func writePlaybookAttributes(sb *strings.Builder, playbookID string, fields []map[string]any) {
+	if len(fields) == 0 {
+		fmt.Fprintf(sb, "  (playbook %s has no attributes)\n", playbookID)
+		return
+	}
+	for i, field := range fields {
+		name, _ := field["name"].(string)
+		if strings.TrimSpace(name) == "" {
+			name = "(unnamed attribute)"
+		}
+		id, _ := field["id"].(string)
+		fmt.Fprintf(sb, "  [%d] %s (field_id: %s)\n", i, name, id)
+	}
 }
 
 func toolAddPlaybookTask(ctx context.Context, client APIClient, args AddPlaybookTaskArgs) (string, error) {
@@ -918,12 +1086,59 @@ func hasAssignedCreatePlaybookItems(items []CreatePlaybookItem) bool {
 	return false
 }
 
+type playbookAttributeAttrs struct {
+	Visibility string
+	SortOrder  float64
+	Options    []playbookAttributeOption
+	ParentID   string
+	ValueType  string
+}
+
+type playbookAttributeOption struct {
+	ID    string
+	Name  string
+	Color string
+}
+
+func (a *CreatePlaybookAttributeAttrs) normalize() *playbookAttributeAttrs {
+	if a == nil {
+		return nil
+	}
+	options := make([]playbookAttributeOption, 0, len(a.Options))
+	for _, option := range a.Options {
+		options = append(options, playbookAttributeOption{Name: option.Name, Color: option.Color})
+	}
+	return &playbookAttributeAttrs{Visibility: a.Visibility, SortOrder: a.SortOrder, Options: options, ParentID: a.ParentID, ValueType: a.ValueType}
+}
+
+func (a *UpdatePlaybookAttributeAttrs) normalize() *playbookAttributeAttrs {
+	if a == nil {
+		return nil
+	}
+	options := make([]playbookAttributeOption, 0, len(a.Options))
+	for _, option := range a.Options {
+		options = append(options, playbookAttributeOption(option))
+	}
+	return &playbookAttributeAttrs{Visibility: a.Visibility, SortOrder: a.SortOrder, Options: options, ParentID: a.ParentID, ValueType: a.ValueType}
+}
+
 func buildCreatePlaybookAttributeBody(args CreatePlaybookAttributeArgs) (map[string]any, error) {
-	if err := validateID(args.PlaybookID, "playbook_id"); err != nil {
+	return buildPlaybookAttributeBody(args.PlaybookID, args.Name, args.Type, args.Attrs.normalize())
+}
+
+func buildUpdatePlaybookAttributeBody(args UpdatePlaybookAttributeArgs) (map[string]any, error) {
+	if err := validateID(args.FieldID, "field_id"); err != nil {
+		return nil, err
+	}
+	return buildPlaybookAttributeBody(args.PlaybookID, args.Name, args.Type, args.Attrs.normalize())
+}
+
+func buildPlaybookAttributeBody(playbookID, rawName, rawType string, attrsInput *playbookAttributeAttrs) (map[string]any, error) {
+	if err := validateID(playbookID, "playbook_id"); err != nil {
 		return nil, err
 	}
 
-	name := strings.TrimSpace(args.Name)
+	name := strings.TrimSpace(rawName)
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -933,7 +1148,7 @@ func buildCreatePlaybookAttributeBody(args CreatePlaybookAttributeArgs) (map[str
 		}
 	}
 
-	attrType := strings.ToLower(strings.TrimSpace(args.Type))
+	attrType := strings.ToLower(strings.TrimSpace(rawType))
 	if !isSupportedPlaybookAttributeType(attrType) {
 		return nil, fmt.Errorf("type must be one of: text, select, multiselect, date, user, multiuser")
 	}
@@ -942,8 +1157,8 @@ func buildCreatePlaybookAttributeBody(args CreatePlaybookAttributeArgs) (map[str
 		"name": name,
 		"type": attrType,
 	}
-	if args.Attrs != nil {
-		attrs, err := buildCreatePlaybookAttributeAttrs(*args.Attrs, attrType)
+	if attrsInput != nil {
+		attrs, err := buildPlaybookAttributeAttrs(*attrsInput, attrType)
 		if err != nil {
 			return nil, err
 		}
@@ -957,7 +1172,7 @@ func buildCreatePlaybookAttributeBody(args CreatePlaybookAttributeArgs) (map[str
 	return body, nil
 }
 
-func buildCreatePlaybookAttributeAttrs(args CreatePlaybookAttributeAttrs, attrType string) (map[string]any, error) {
+func buildPlaybookAttributeAttrs(args playbookAttributeAttrs, attrType string) (map[string]any, error) {
 	attrs := map[string]any{}
 
 	if visibility := strings.TrimSpace(args.Visibility); visibility != "" {
@@ -992,6 +1207,9 @@ func buildCreatePlaybookAttributeAttrs(args CreatePlaybookAttributeAttrs, attrTy
 				return nil, fmt.Errorf("attrs.options[%d].name is required", i)
 			}
 			out := map[string]any{"name": name}
+			if id := strings.TrimSpace(option.ID); id != "" {
+				out["id"] = id
+			}
 			if color := strings.TrimSpace(option.Color); color != "" {
 				out["color"] = color
 			}
