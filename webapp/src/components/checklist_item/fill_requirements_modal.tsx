@@ -230,8 +230,7 @@ const Fields = styled.div`
     gap: 16px;
     min-height: 0;
     max-height: min(360px, calc(100vh - 280px));
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden auto;
     padding-right: 4px;
 `;
 

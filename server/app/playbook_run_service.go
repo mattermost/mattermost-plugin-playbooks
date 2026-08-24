@@ -3091,6 +3091,19 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 	// Add current context to audit
 	model.AddEventParameterToAuditRec(auditRec, "currentChecklistCount", len(playbookRunToModify.Checklists))
 
+	for _, item := range checklist.Items {
+		if err := ValidateTaskRequirements(item.Requirements); err != nil {
+			err := errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+			auditRec.AddErrorDesc(err.Error())
+			return err
+		}
+		if err := ValidateRequirementsExclusiveOfTaskActions(item.Requirements, item.TaskActions); err != nil {
+			err := errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+			auditRec.AddErrorDesc(err.Error())
+			return err
+		}
+	}
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
@@ -3277,6 +3290,17 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 	currentChecklist := playbookRunToModify.Checklists[checklistNumber]
 	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", currentChecklist.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentItemCount", len(currentChecklist.Items))
+
+	if err := ValidateTaskRequirements(checklistItem.Requirements); err != nil {
+		err := errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+	if err := ValidateRequirementsExclusiveOfTaskActions(checklistItem.Requirements, checklistItem.TaskActions); err != nil {
+		err := errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {

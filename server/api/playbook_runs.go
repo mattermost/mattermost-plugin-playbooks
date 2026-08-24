@@ -1723,6 +1723,10 @@ func (h *PlaybookRunHandler) addChecklist(c *Context, w http.ResponseWriter, r *
 	}
 
 	if err := h.playbookRunService.AddChecklist(id, userID, checklist); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid checklist", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1790,6 +1794,10 @@ func (h *PlaybookRunHandler) addChecklistItem(c *Context, w http.ResponseWriter,
 	}
 
 	if err := h.playbookRunService.AddChecklistItem(id, userID, checklistNum, checklistItem); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid checklist item", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1841,6 +1849,10 @@ func (h *PlaybookRunHandler) addChecklistItemDialog(c *Context, w http.ResponseW
 	}
 
 	if err := h.playbookRunService.AddChecklistItem(playbookRunID, userID, checklistNum, checklistItem); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid checklist item", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

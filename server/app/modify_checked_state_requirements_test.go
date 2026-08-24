@@ -187,3 +187,55 @@ func TestCleanUpChecklists_ClearsRequirementValues(t *testing.T) {
 	assert.Equal(t, "Ticket URL", checklists[0].Items[0].Requirements[0].Label)
 	assert.Equal(t, "", checklists[0].Items[0].Requirements[0].Value)
 }
+
+func TestAddChecklist_RequirementsValidation(t *testing.T) {
+	t.Run("rejects adding checklist item with requirements and enabled task actions", func(t *testing.T) {
+		run := baseRunWithRequirement("")
+		run.Checklists = nil
+		svc, store := newModifyCheckedStateHarness(t, run, true)
+		enabledTaskActions := []TaskAction{{
+			Trigger: Trigger{Type: KeywordsByUsersTriggerType, Payload: `{"keywords":["resolved"],"user_ids":[]}`},
+			Actions: []Action{{Type: MarkItemAsDoneActionType, Payload: `{"enabled":true}`}},
+		}}
+
+		err := svc.AddChecklist(run.ID, "user-1", Checklist{
+			Title: "Tasks",
+			Items: []ChecklistItem{{
+				Title: "Task",
+				Requirements: []TaskRequirement{{
+					ID:    "req-1",
+					Label: "Ticket URL",
+				}},
+				TaskActions: enabledTaskActions,
+			}},
+		})
+
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+		assert.Equal(t, 0, store.updateCalls)
+	})
+}
+
+func TestAddChecklistItem_RequirementsValidation(t *testing.T) {
+	t.Run("rejects adding item with requirements and enabled task actions", func(t *testing.T) {
+		run := baseRunWithRequirement("")
+		svc, store := newModifyCheckedStateHarness(t, run, true)
+		enabledTaskActions := []TaskAction{{
+			Trigger: Trigger{Type: KeywordsByUsersTriggerType, Payload: `{"keywords":["resolved"],"user_ids":[]}`},
+			Actions: []Action{{Type: MarkItemAsDoneActionType, Payload: `{"enabled":true}`}},
+		}}
+
+		err := svc.AddChecklistItem(run.ID, "user-1", 0, ChecklistItem{
+			Title: "Task",
+			Requirements: []TaskRequirement{{
+				ID:    "req-1",
+				Label: "Ticket URL",
+			}},
+			TaskActions: enabledTaskActions,
+		})
+
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+		assert.Equal(t, 0, store.updateCalls)
+	})
+}
