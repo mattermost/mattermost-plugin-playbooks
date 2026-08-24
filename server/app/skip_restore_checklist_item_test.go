@@ -235,6 +235,20 @@ func TestRestoreChecklistItem(t *testing.T) {
 		assert.Equal(t, model.AuditStatusSuccess, h.api.auditRecs[0].Status)
 	})
 
+	t.Run("restoring a non-skipped item is a no-op", func(t *testing.T) {
+		for _, state := range []string{ChecklistItemStateClosed, ChecklistItemStateInProgress} {
+			item := openItem()
+			item.State = state
+			h := newTaskStateService(t, item)
+
+			require.NoError(t, h.svc.RestoreChecklistItem("run1", "user1", 0, 0))
+
+			assert.Equal(t, state, h.store.item().State, "restore undoes a skip, not a check")
+			assert.Zero(t, h.store.updates)
+			assert.Empty(t, h.store.events, "%q -> open is an uncheck, and an event calling it a restore is what makes clients render the wrong verb", state)
+		}
+	})
+
 	t.Run("restore after skip leaves exactly one event per transition", func(t *testing.T) {
 		h := newTaskStateService(t, openItem())
 

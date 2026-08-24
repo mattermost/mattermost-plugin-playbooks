@@ -3303,8 +3303,6 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToSkip.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentState", itemToSkip.State)
 
-	// Without this guard a repeated skip writes a second timeline event and moves the timestamp
-	// forward, which clients render as a task that was skipped twice.
 	if itemToSkip.State == ChecklistItemStateSkipped {
 		auditRec.Success()
 		return nil
@@ -3398,8 +3396,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToRestore.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentState", itemToRestore.State)
 
-	// A repeat call would otherwise duplicate the timeline event.
-	if itemToRestore.State == ChecklistItemStateOpen {
+	if itemToRestore.State != ChecklistItemStateSkipped {
 		auditRec.Success()
 		return nil
 	}
