@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
@@ -204,6 +205,81 @@ func TestGraphQLRunList(t *testing.T) {
 		assert.Len(t, rResultTest.Data.Runs.Edges, 1)
 		assert.Equal(t, 3, rResultTest.Data.Runs.TotalCount)
 		assert.False(t, rResultTest.Data.Runs.PageInfo.HasNextPage)
+	})
+}
+
+func TestGraphQLRunListRecordBudget(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Seeding a handful of runs keeps the alias count needed to exhaust the
+	// server's per-request budget small enough to send in one query.
+	const seededRuns = 10
+	for i := 1; i < seededRuns; i++ {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        fmt.Sprintf("Budget run %d", i),
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+	}
+
+	// aliasedRunsQuery repeats the runs field under distinct aliases, which is the
+	// breadth that MaxDepth and the request body limit leave unconstrained.
+	aliasedRunsQuery := func(aliases int) string {
+		var query strings.Builder
+		query.WriteString("query Runs($userID: String!) {\n")
+		for i := range aliases {
+			fmt.Fprintf(&query, "\trun%d: runs(participantOrFollowerID: $userID) { edges { node { id } } }\n", i)
+		}
+		query.WriteString("}")
+
+		return query.String()
+	}
+
+	type runsResult struct {
+		Data map[string]struct {
+			Edges []struct {
+				Node struct {
+					ID string
+				}
+			}
+		}
+		Errors []struct {
+			Message string
+		}
+	}
+
+	t.Run("a query repeating runs under a few aliases resolves in full", func(t *testing.T) {
+		var result runsResult
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         aliasedRunsQuery(3),
+			OperationName: "Runs",
+			Variables:     map[string]any{"userID": "me"},
+		}, &result)
+		require.NoError(t, err)
+
+		require.Empty(t, result.Errors)
+		require.Len(t, result.Data, 3)
+		for alias, connection := range result.Data {
+			assert.Len(t, connection.Edges, seededRuns, "alias %s returned a short listing", alias)
+		}
+	})
+
+	t.Run("a query repeating runs under many aliases is rejected", func(t *testing.T) {
+		// 600 aliases over 10 seeded runs asks for 6000 records, past the budget.
+		var result runsResult
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         aliasedRunsQuery(600),
+			OperationName: "Runs",
+			Variables:     map[string]any{"userID": "me"},
+		}, &result)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, result.Errors)
+		assert.Contains(t, result.Errors[0].Message, "records per request")
 	})
 }
 

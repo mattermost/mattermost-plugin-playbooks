@@ -26,6 +26,10 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
+	if err = c.recordBudget.check(); err != nil {
+		return nil, err
+	}
+
 	if err = c.permissions.PlaybookView(userID, playbookID); err != nil {
 		return nil, err
 	}
@@ -34,6 +38,7 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 	if err != nil {
 		return nil, err
 	}
+	c.recordBudget.record(1)
 
 	return &PlaybookResolver{playbook}, nil
 }
@@ -58,6 +63,10 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 		return nil, err
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err = c.recordBudget.check(); err != nil {
+		return nil, err
+	}
 
 	if args.TeamID != "" {
 		if err = c.permissions.PlaybookList(userID, args.TeamID); err != nil {
@@ -90,6 +99,7 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 	if err != nil {
 		return nil, err
 	}
+	c.recordBudget.record(len(playbookResults.Items))
 
 	filteredItems := c.permissions.FilterPlaybooksByViewPermission(userID, playbookResults.Items)
 
