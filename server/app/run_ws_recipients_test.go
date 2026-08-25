@@ -33,6 +33,7 @@ const (
 // membership, and a real PermissionsService over a stubbed playbook.
 type runWSFixture struct {
 	api              *plugintest.API
+	playbooks        *stubPlaybookService
 	svc              *PlaybookRunServiceImpl
 	usersNotified    []string
 	channelBroadcast []string
@@ -43,7 +44,10 @@ func newRunWSFixture(t *testing.T, playbook Playbook, playbookErr error) *runWSF
 
 	api := &plugintest.API{}
 	poster := mock_bot.NewMockPoster(gomock.NewController(t))
-	f := &runWSFixture{api: api}
+	f := &runWSFixture{
+		api:       api,
+		playbooks: &stubPlaybookService{playbook: playbook, err: playbookErr},
+	}
 
 	poster.EXPECT().
 		PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -63,7 +67,7 @@ func newRunWSFixture(t *testing.T, playbook Playbook, playbookErr error) *runWSF
 		pluginAPI: client,
 		poster:    poster,
 		permissions: &PermissionsService{
-			playbookService: &stubPlaybookService{playbook: playbook, err: playbookErr},
+			playbookService: f.playbooks,
 			pluginAPI:       client,
 			licenseChecker:  allowAllLicenseChecker{},
 		},
@@ -250,6 +254,25 @@ func TestPublishRunEventToViewers_UnresolvablePlaybookKeepsParticipants(t *testi
 
 	assert.Empty(t, f.channelBroadcast)
 	assert.ElementsMatch(t, []string{wsOwnerID, wsParticipantID}, f.usersNotified)
+}
+
+// TestPublishRunEventToViewers_PlaybookIsReadOncePerEvent guards the cost of the fan-out: a
+// run channel can hold thousands of members, so the parent playbook must be read once per
+// event rather than once per recipient — including when that read fails.
+func TestPublishRunEventToViewers_PlaybookIsReadOncePerEvent(t *testing.T) {
+	for name, playbookErr := range map[string]error{"readable playbook": nil, "unreadable playbook": ErrNotFound} {
+		t.Run(name, func(t *testing.T) {
+			f := newRunWSFixture(t, privatePlaybook(), playbookErr)
+			f.setChannelMembers(wsPBMemberID, wsGuestID, wsStrangerID)
+			f.allowTeamView(wsOwnerID, wsParticipantID, wsPBMemberID, wsGuestID, wsStrangerID)
+			f.grantPlaybookMemberView()
+
+			run := privatePlaybookRun()
+			f.svc.PublishRunEventToViewers(playbookRunUpdatedWSEvent, run, run)
+
+			assert.Equal(t, 1, f.playbooks.getCalls)
+		})
+	}
 }
 
 // TestPublishRunEventToViewers_ChannelListingFailureKeepsParticipants checks that a failure to

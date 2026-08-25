@@ -843,9 +843,13 @@ type stubPlaybookService struct {
 	err         error
 	schemeRoles PlaybookSchemeRoles
 	schemeErr   error
+
+	// getCalls counts Get calls so tests can assert how often the playbook is read.
+	getCalls int
 }
 
 func (s *stubPlaybookService) Get(id string) (Playbook, error) {
+	s.getCalls++
 	return s.playbook, s.err
 }
 

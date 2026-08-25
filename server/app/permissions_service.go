@@ -6,6 +6,7 @@ package app
 import (
 	"reflect"
 	"slices"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -631,13 +632,15 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	return p.runViewWithPlaybook(userID, run, nil)
+	return p.runViewWithPlaybook(userID, run, func() (Playbook, error) {
+		return p.playbookService.Get(run.PlaybookID)
+	})
 }
 
-// runViewWithPlaybook checks view access to an already-loaded run. A nil playbook is resolved
-// on demand; callers checking many users against the same run should pass it in so the parent
-// playbook is fetched once rather than once per user.
-func (p *PermissionsService) runViewWithPlaybook(userID string, run *PlaybookRun, playbook *Playbook) error {
+// runViewWithPlaybook checks view access to an already-loaded run. getPlaybook is only called
+// for users whose access depends on the parent playbook; callers checking many users against
+// the same run should memoize it so the playbook is read at most once.
+func (p *PermissionsService) runViewWithPlaybook(userID string, run *PlaybookRun, getPlaybook func() (Playbook, error)) error {
 	// For DM/GM runs (empty TeamID), skip team check and use channel-based permissions
 	if run.TeamID != "" && !p.canViewTeam(userID, run.TeamID) {
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
@@ -665,11 +668,12 @@ func (p *PermissionsService) runViewWithPlaybook(userID string, run *PlaybookRun
 	}
 
 	// Or has view access to the playbook that created it
-	if playbook != nil {
-		return p.PlaybookViewWithPlaybook(userID, *playbook)
+	playbook, err := getPlaybook()
+	if err != nil {
+		return errors.Wrapf(err, "Unable to get playbook to determine permissions, playbook id `%s`", run.PlaybookID)
 	}
 
-	return p.PlaybookView(userID, run.PlaybookID)
+	return p.PlaybookViewWithPlaybook(userID, playbook)
 }
 
 // RunViewIsChannelScoped reports whether access to the run's channel is by itself enough to
@@ -680,26 +684,26 @@ func (p *PermissionsService) RunViewIsChannelScoped(run *PlaybookRun) bool {
 }
 
 // FilterRunViewers returns the subset of userIDs allowed to view the run, applying the same
-// predicate as RunView. The parent playbook is resolved once for the whole batch.
+// predicate as RunView. The parent playbook is read at most once for the whole batch, whether
+// or not that read succeeds: a run channel can hold thousands of candidates, and retrying a
+// failed read per candidate would multiply one bad read across every websocket event.
 func (p *PermissionsService) FilterRunViewers(userIDs []string, run *PlaybookRun) []string {
-	var playbook *Playbook
-	if !p.RunViewIsChannelScoped(run) && run.PlaybookID != "" {
-		loaded, err := p.playbookService.Get(run.PlaybookID)
+	getPlaybook := sync.OnceValues(func() (Playbook, error) {
+		playbook, err := p.playbookService.Get(run.PlaybookID)
 		if err != nil {
-			// Leave playbook nil so each check resolves it itself; the run's owner and
-			// participants still pass without needing the playbook at all.
+			// Only the run's owner and participants pass from here on; they need no playbook.
 			logrus.WithError(err).WithFields(logrus.Fields{
 				"playbook_id":     run.PlaybookID,
 				"playbook_run_id": run.ID,
 			}).Warn("failed to get playbook while filtering run viewers")
-		} else {
-			playbook = &loaded
 		}
-	}
+
+		return playbook, err
+	})
 
 	viewers := make([]string, 0, len(userIDs))
 	for _, userID := range userIDs {
-		if p.runViewWithPlaybook(userID, run, playbook) == nil {
+		if p.runViewWithPlaybook(userID, run, getPlaybook) == nil {
 			viewers = append(viewers, userID)
 		}
 	}
