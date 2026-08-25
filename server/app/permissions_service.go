@@ -631,19 +631,26 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
+	return p.runViewWithPlaybook(userID, run, nil)
+}
+
+// runViewWithPlaybook checks view access to an already-loaded run. A nil playbook is resolved
+// on demand; callers checking many users against the same run should pass it in so the parent
+// playbook is fetched once rather than once per user.
+func (p *PermissionsService) runViewWithPlaybook(userID string, run *PlaybookRun, playbook *Playbook) error {
 	// For DM/GM runs (empty TeamID), skip team check and use channel-based permissions
 	if run.TeamID != "" && !p.canViewTeam(userID, run.TeamID) {
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
 	// For channelChecklists (including DM/GM runs), use channel-based permissions
-	if p.isChannelChecklist(run) || run.TeamID == "" {
+	if p.RunViewIsChannelScoped(run) {
 		// Check if user has permission to read the channel
 		if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
 			return nil
 		}
 
-		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have channel access to view channelChecklist `%s`", userID, runID)
+		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have channel access to view channelChecklist `%s`", userID, run.ID)
 	}
 
 	// For playbook-based runs, use existing logic
@@ -658,7 +665,46 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 	}
 
 	// Or has view access to the playbook that created it
+	if playbook != nil {
+		return p.PlaybookViewWithPlaybook(userID, *playbook)
+	}
+
 	return p.PlaybookView(userID, run.PlaybookID)
+}
+
+// RunViewIsChannelScoped reports whether access to the run's channel is by itself enough to
+// view the run. When it is not, membership of the run's channel says nothing about who may see
+// the run's contents.
+func (p *PermissionsService) RunViewIsChannelScoped(run *PlaybookRun) bool {
+	return p.isChannelChecklist(run) || run.TeamID == ""
+}
+
+// FilterRunViewers returns the subset of userIDs allowed to view the run, applying the same
+// predicate as RunView. The parent playbook is resolved once for the whole batch.
+func (p *PermissionsService) FilterRunViewers(userIDs []string, run *PlaybookRun) []string {
+	var playbook *Playbook
+	if !p.RunViewIsChannelScoped(run) && run.PlaybookID != "" {
+		loaded, err := p.playbookService.Get(run.PlaybookID)
+		if err != nil {
+			// Leave playbook nil so each check resolves it itself; the run's owner and
+			// participants still pass without needing the playbook at all.
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id":     run.PlaybookID,
+				"playbook_run_id": run.ID,
+			}).Warn("failed to get playbook while filtering run viewers")
+		} else {
+			playbook = &loaded
+		}
+	}
+
+	viewers := make([]string, 0, len(userIDs))
+	for _, userID := range userIDs {
+		if p.runViewWithPlaybook(userID, run, playbook) == nil {
+			viewers = append(viewers, userID)
+		}
+	}
+
+	return viewers
 }
 
 func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error {

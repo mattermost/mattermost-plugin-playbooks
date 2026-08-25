@@ -613,6 +613,9 @@ func (s *stubRunService) GetPlaybookRuns(RequesterInfo, PlaybookRunFilterOptions
 func (s *stubRunService) CreatePlaybookRun(*PlaybookRun, *Playbook, string, bool, string, map[string]json.RawMessage) (*PlaybookRun, error) {
 	panic("stubRunService: CreatePlaybookRun not implemented")
 }
+func (s *stubRunService) PublishRunEventToViewers(string, interface{}, *PlaybookRun, ...string) {
+	panic("stubRunService: PublishRunEventToViewers not implemented")
+}
 func (s *stubRunService) OpenCreatePlaybookRunDialog(string, string, string, string, string, []Playbook) error {
 	panic("stubRunService: OpenCreatePlaybookRunDialog not implemented")
 }
