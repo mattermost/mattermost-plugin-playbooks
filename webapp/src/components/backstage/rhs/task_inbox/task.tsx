@@ -23,19 +23,30 @@ interface Props {
 const Task = (props: Props) => {
     const [removed, setRemoved] = useState(false);
 
-    // Handles onchange with animation
-    // if state changes from open to closed, set removed state and waits for 1 sec
-    const onChangeState = (newState: ChecklistItemState) => {
-        let prom;
-        if (props.enableAnimation && props.item.state === ChecklistItemState.Open && newState === ChecklistItemState.Closed) {
+    // Animate away only after a successful open→closed update (including requirement values).
+    const onChangeState = async (
+        newState: ChecklistItemState,
+        requirementValues?: Record<string, string>,
+    ) => {
+        const shouldAnimate =
+            props.enableAnimation &&
+            props.item.state === ChecklistItemState.Open &&
+            newState === ChecklistItemState.Closed;
+
+        const response = await setChecklistItemState(
+            props.item.playbook_run_id,
+            props.item.checklist_num,
+            props.item.item_num,
+            newState,
+            props.item.id,
+            requirementValues,
+        );
+
+        if (!response?.error && shouldAnimate) {
             setRemoved(true);
-            setTimeout(() => {
-                prom = setChecklistItemState(props.item.playbook_run_id, props.item.checklist_num, props.item.item_num, newState);
-            }, 500);
-        } else {
-            prom = setChecklistItemState(props.item.playbook_run_id, props.item.checklist_num, props.item.item_num, newState);
         }
-        return prom;
+
+        return response;
     };
 
     return (
@@ -102,16 +113,6 @@ const Container = styled.div`
         }
     }
 
-    @keyframes disapear{
-        50% {
-            transform: translateX(-5%);
-        }
-
-        100% {
-            transform: translateX(200%);
-        }
-    }
-
     &:not(:first-child) {
         border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
     }
@@ -160,4 +161,3 @@ const Body = styled.div`
         }
     }
 `;
-

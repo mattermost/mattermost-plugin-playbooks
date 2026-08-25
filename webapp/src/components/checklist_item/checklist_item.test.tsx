@@ -32,6 +32,10 @@ jest.mock('src/graphql/hooks', () => ({
     useUpdateRunItemTaskActions: jest.fn(() => ({updateRunTaskActions: jest.fn()})),
 }));
 
+jest.mock('src/hooks/redux', () => ({
+    useAppSelector: jest.fn(() => false),
+}));
+
 jest.mock('src/client', () => ({
     setAssignee: jest.fn(async () => ({})),
     setRoleAssignee: jest.fn(async () => ({})),

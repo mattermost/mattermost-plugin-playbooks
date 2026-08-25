@@ -117,6 +117,13 @@ input ChecklistItemUpdates {
 	dueDate: Float!
 	taskActions: [TaskActionUpdates!]
 	conditionID: String!
+	requirements: [TaskRequirementUpdates!]
+}
+
+input TaskRequirementUpdates {
+	id: String!
+	label: String!
+	value: String!
 }
 
 input TaskActionUpdates {
@@ -214,6 +221,13 @@ type ChecklistItem {
 	conditionID: String!
 	conditionAction: String!
 	conditionReason: String!
+	requirements: [TaskRequirement!]!
+}
+
+type TaskRequirement {
+	id: String!
+	label: String!
+	value: String!
 }
 
 type TaskAction {
