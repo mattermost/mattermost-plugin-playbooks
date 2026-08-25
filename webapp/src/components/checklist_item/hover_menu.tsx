@@ -23,7 +23,7 @@ import {Mode} from 'src/components/datetime_input';
 import {PropertyField} from 'src/types/properties';
 import {formatConditionExpr} from 'src/utils/condition_format';
 
-import {clientDuplicateChecklistItem, clientRestoreChecklistItem, clientSkipChecklistItem} from 'src/client';
+import {clientDuplicateChecklistItem} from 'src/client';
 import {Condition} from 'src/types/conditions';
 
 import AssignTo, {RoleOption} from './assign_to';
@@ -202,19 +202,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 )}
                 {props.playbookRunId !== undefined &&
                     <StyledDropdownMenuItem
-                        onClick={() => {
-                            if (props.isSkipped) {
-                                clientRestoreChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
-                                if (props.onChange) {
-                                    props.onChange(ChecklistItemState.Open);
-                                }
-                            } else {
-                                clientSkipChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
-                                if (props.onChange) {
-                                    props.onChange(ChecklistItemState.Skip);
-                                }
-                            }
-                        }}
+                        onClick={() => props.onChange?.(props.isSkipped ? ChecklistItemState.Open : ChecklistItemState.Skip)}
                     >
                         <DropdownIcon className={props.isSkipped ? 'icon-refresh icon-16 btn-icon' : 'icon-close icon-16 btn-icon'}/>
                         {props.isSkipped ? formatMessage({defaultMessage: 'Restore task'}) : formatMessage({defaultMessage: 'Skip task'})}
