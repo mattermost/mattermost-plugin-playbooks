@@ -236,6 +236,15 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to ask for status updates in playbook runs", author.Username)
 		title = "Try request update with a free trial"
 		text = "Request updates for playbook runs in a single click and get notified directly when an update is posted. Start a free, 30-day trial to try it out.\n" + footer
+	case "start_trial_to_set_checklist_item_due_date":
+		message = fmt.Sprintf("@%s requested access to set due dates on checklist items.", author.Username)
+		title = "Work more effectively"
+		text = "Assign due dates to tasks so assignees can prioritize and get things done.\n" + footer
+	default:
+		logrus.WithField("message_type", messageType).Warn("NotifyAdmins received an unrecognized message type; sending a generic upgrade notice")
+		message = fmt.Sprintf("@%s requested access to a Professional feature.", author.Username)
+		title = "Upgrade to unlock this feature"
+		text = "This feature requires a Professional plan or higher.\n" + footer
 	}
 
 	actions := []*model.PostAction{
