@@ -15,26 +15,40 @@ import (
 // aliases would otherwise multiply the work of one small request without bound.
 const maxRecordsPerRequest = 5000
 
-// recordBudget tracks the records hydrated so far by a single GraphQL request.
-// Fields resolve in parallel, so the running total is kept atomically.
+// recordBudget tracks the records a single GraphQL request has claimed. Capacity
+// is claimed before a listing is fetched rather than charged afterwards: fields
+// resolve in parallel, so admitting a listing on the records hydrated so far
+// would let concurrent fields read the same remaining capacity and exceed the
+// limit together.
 type recordBudget struct {
 	limit int64
 	used  atomic.Int64
 }
 
-// check reports an error once previously resolved fields have used up the
-// request's budget, stopping an over-budget request before it hydrates more.
-func (b *recordBudget) check() error {
-	if b.used.Load() >= b.limit {
-		return newGraphQLError(errors.Errorf("query exceeds the limit of %d records per request", b.limit))
+// reserve claims capacity for the n records a listing may return, erroring
+// unless the whole page fits in what the request has left.
+func (b *recordBudget) reserve(n int) error {
+	if n <= 0 {
+		return nil
 	}
 
-	return nil
+	for {
+		used := b.used.Load()
+		if used+int64(n) > b.limit {
+			return newGraphQLError(errors.Errorf("query exceeds the limit of %d records per request", b.limit))
+		}
+
+		if b.used.CompareAndSwap(used, used+int64(n)) {
+			return nil
+		}
+	}
 }
 
-// record charges n hydrated records against the budget. Charging what was
-// actually fetched rather than the requested page size keeps requests that ask
-// for a large page but match few records from being rejected.
-func (b *recordBudget) record(n int) {
-	b.used.Add(int64(n))
+// release returns capacity a listing reserved but did not use, so that a request
+// asking for a large page and matching few records keeps its budget for the
+// fields it has left to resolve.
+func (b *recordBudget) release(n int) {
+	if n > 0 {
+		b.used.Add(-int64(n))
+	}
 }

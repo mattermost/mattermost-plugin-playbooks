@@ -269,7 +269,8 @@ func TestGraphQLRunListRecordBudget(t *testing.T) {
 	})
 
 	t.Run("a query repeating runs under many aliases is rejected", func(t *testing.T) {
-		// 600 aliases over 10 seeded runs asks for 6000 records, past the budget.
+		// 600 aliases over 10 seeded runs asks for 6000 records, past the budget,
+		// so the request is refused part way through rather than resolving in full.
 		var result runsResult
 		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 			Query:         aliasedRunsQuery(600),
@@ -280,6 +281,48 @@ func TestGraphQLRunListRecordBudget(t *testing.T) {
 
 		require.NotEmpty(t, result.Errors)
 		assert.Contains(t, result.Errors[0].Message, "records per request")
+	})
+
+	t.Run("a query listing both runs and playbooks resolves in full", func(t *testing.T) {
+		// The shape of the webapp's largest query. Each listing claims its whole
+		// page before fetching, so all three pages have to fit in one budget.
+		var result struct {
+			Data struct {
+				ChannelRuns struct {
+					Edges []struct {
+						Node struct {
+							ID string
+						}
+					}
+				}
+				YourPlaybooks []struct {
+					ID string
+				}
+				AllPlaybooks []struct {
+					ID string
+				}
+			}
+			Errors []struct {
+				Message string
+			}
+		}
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query: `
+			query Runs($teamID: String!) {
+				channelRuns: runs(teamID: $teamID, first: 1000) { edges { node { id } } }
+				yourPlaybooks: playbooks(teamID: $teamID, withMembershipOnly: true) { id }
+				allPlaybooks: playbooks(teamID: $teamID, withMembershipOnly: false) { id }
+			}
+			`,
+			OperationName: "Runs",
+			Variables:     map[string]any{"teamID": e.BasicTeam.Id},
+		}, &result)
+		require.NoError(t, err)
+
+		require.Empty(t, result.Errors)
+		assert.Len(t, result.Data.ChannelRuns.Edges, seededRuns)
+		assert.NotEmpty(t, result.Data.YourPlaybooks)
+		assert.NotEmpty(t, result.Data.AllPlaybooks)
 	})
 }
 

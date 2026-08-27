@@ -42,11 +42,11 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err = c.recordBudget.check(); err != nil {
+	if err = c.permissions.RunView(userID, args.ID); err != nil {
 		return nil, err
 	}
 
-	if err = c.permissions.RunView(userID, args.ID); err != nil {
+	if err = c.recordBudget.reserve(1); err != nil {
 		return nil, err
 	}
 
@@ -54,7 +54,6 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 	if err != nil {
 		return nil, err
 	}
-	c.recordBudget.record(1)
 
 	return &RunResolver{*run}, nil
 }
@@ -77,10 +76,6 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		return nil, err
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
-
-	if err = c.recordBudget.check(); err != nil {
-		return nil, err
-	}
 
 	requesterInfo, err := app.GetRequesterInfo(userID, c.pluginAPI)
 	if err != nil {
@@ -117,11 +112,16 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		OmitEnded:               args.OmitEnded,
 	}
 
-	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
-	if err != nil {
+	if err = c.recordBudget.reserve(perPage); err != nil {
 		return nil, err
 	}
-	c.recordBudget.record(len(runResults.Items))
+
+	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
+	if err != nil {
+		c.recordBudget.release(perPage)
+		return nil, err
+	}
+	c.recordBudget.release(perPage - len(runResults.Items))
 
 	return &RunConnectionResolver{results: *runResults, page: page}, nil
 }
