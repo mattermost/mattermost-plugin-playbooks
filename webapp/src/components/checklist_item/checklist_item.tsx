@@ -46,8 +46,6 @@ import CheckedChip, {shouldShowCheckedChip} from 'src/components/checklist_item/
 import {formatConditionExpr} from 'src/utils/condition_format';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {useAppSelector} from 'src/hooks/redux';
-
 import {DateTimeOption} from 'src/components/datetime_selector';
 
 import {Mode} from 'src/components/datetime_input';
