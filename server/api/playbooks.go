@@ -166,8 +166,17 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 
 	for listIndex := range playbook.Checklists {
 		for itemIndex := range playbook.Checklists[listIndex].Items {
-			if err := validateTaskActions(playbook.Checklists[listIndex].Items[itemIndex].TaskActions); err != nil {
+			item := playbook.Checklists[listIndex].Items[itemIndex]
+			if err := validateTaskActions(item.TaskActions); err != nil {
 				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid task actions", err)
+				return false
+			}
+			if err := app.ValidateTaskRequirements(item.Requirements); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid checklist item requirements", err)
+				return false
+			}
+			if err := app.ValidateRequirementsExclusiveOfTaskActions(item.Requirements, item.TaskActions); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid checklist item", err)
 				return false
 			}
 		}
@@ -197,6 +206,12 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreate(userID, playbook)) {
+		return
+	}
+
+	// Authorize any client-supplied members list with the same rules the update path applies.
+	// Must run before the default-membership assignment below, which it is diffed against.
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreateWithMembers(userID, playbook)) {
 		return
 	}
 

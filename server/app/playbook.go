@@ -115,6 +115,13 @@ type PlaybookMember struct {
 	SchemeRoles []string `json:"scheme_roles"`
 }
 
+// PlaybookSchemeRoles holds the playbook role names a team's scheme assigns. Teams without a
+// scheme fall back to the built-in PlaybookRoleAdmin/PlaybookRoleMember.
+type PlaybookSchemeRoles struct {
+	AdminRole  string
+	MemberRole string
+}
+
 type PlaybookMetricConfig struct {
 	ID          string   `json:"id" export:"-"`
 	PlaybookID  string   `json:"playbook_id" export:"-"`
@@ -291,6 +298,7 @@ type ChecklistItemCommon interface {
 	SetState(state string)
 	SetStateModified(modified int64)
 	SetCommandLastRun(lastRun int64)
+	ClearRequirementValues()
 }
 
 // ChecklistItem represents an item in a checklist.
@@ -346,6 +354,9 @@ type ChecklistItem struct {
 	// TaskActions is an array of all the task actions associated with this task.
 	TaskActions []TaskAction `json:"task_actions" export:"-"`
 
+	// Requirements are fields that must be filled when checking off this task in a run.
+	Requirements []TaskRequirement `json:"requirements" export:"requirements"`
+
 	// UpdateAt is when this checklist item was last modified
 	UpdateAt int64 `json:"update_at" export:"-"`
 
@@ -357,6 +368,38 @@ type ChecklistItem struct {
 
 	// ConditionReason is a string representation of the condition.
 	ConditionReason string `json:"condition_reason" export:"-"`
+}
+
+const (
+	// MaxTaskRequirementLabelLength is the max length for a requirement label.
+	MaxTaskRequirementLabelLength = 128
+	// MaxTaskRequirementValueLength is the max length for a filled requirement value.
+	MaxTaskRequirementValueLength = 1024
+	// MaxTaskRequirementsPerItem is the max number of requirements on a single checklist item.
+	MaxTaskRequirementsPerItem = 20
+)
+
+// TaskRequirement is a labeled field that must be completed when checking off a task.
+type TaskRequirement struct {
+	ID    string `json:"id" export:"id"`
+	Label string `json:"label" export:"label"`
+	Value string `json:"value" export:"-"`
+}
+
+// ValidateTaskRequirements checks count and character limits for requirement labels/values.
+func ValidateTaskRequirements(requirements []TaskRequirement) error {
+	if len(requirements) > MaxTaskRequirementsPerItem {
+		return errors.Errorf("checklist item cannot have more than %d requirements", MaxTaskRequirementsPerItem)
+	}
+	for _, req := range requirements {
+		if utf8.RuneCountInString(req.Label) > MaxTaskRequirementLabelLength {
+			return errors.Errorf("requirement label exceeds maximum length of %d characters", MaxTaskRequirementLabelLength)
+		}
+		if utf8.RuneCountInString(req.Value) > MaxTaskRequirementValueLength {
+			return errors.Errorf("requirement value exceeds maximum length of %d characters", MaxTaskRequirementValueLength)
+		}
+	}
+	return nil
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {
@@ -381,6 +424,12 @@ func (ci *ChecklistItem) SetStateModified(modified int64) {
 func (ci *ChecklistItem) SetCommandLastRun(lastRun int64) {
 	ci.CommandLastRun = lastRun
 	ci.UpdateAt = lastRun
+}
+
+func (ci *ChecklistItem) ClearRequirementValues() {
+	for i := range ci.Requirements {
+		ci.Requirements[i].Value = ""
+	}
 }
 
 type GetPlaybooksResults struct {
@@ -487,6 +536,10 @@ type PlaybookService interface {
 	// UpdateChannelNameTemplateLocked updates only the channel name template lock
 	// setting for a playbook.
 	UpdateChannelNameTemplateLocked(playbookID string, locked bool, userID string) error
+
+	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
+	// falling back to the built-in roles when the team has no scheme.
+	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -588,6 +641,10 @@ type PlaybookStore interface {
 	// UpdateChannelNameTemplateLocked updates only the ChannelNameTemplateLocked
 	// column for the given playbook.
 	UpdateChannelNameTemplateLocked(id string, templateLocked bool) error
+
+	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
+	// falling back to the built-in roles when the team has no scheme.
+	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
 }
 
 const (
@@ -765,6 +822,7 @@ func CleanUpChecklists[T ChecklistCommon](checklists []T) {
 			items[itemIndex].SetState("")
 			items[itemIndex].SetStateModified(0)
 			items[itemIndex].SetCommandLastRun(0)
+			items[itemIndex].ClearRequirementValues()
 		}
 	}
 }

@@ -47,7 +47,7 @@
         "type": "bool",
         "display_name": "Enable Incremental Updates",
         "help_text": "When enabled, sends incremental WebSocket updates instead of full playbook run objects for better performance.",
-        "default": false
+        "default": true
       },
       {
         "key": "ExposeMCPExternal",
@@ -55,6 +55,15 @@
         "display_name": "Expose Playbooks MCP tools externally (experimental)",
         "help_text": "Requires Enable Experimental Features to be enabled. When enabled, allows the Agents plugin to expose Playbooks MCP tools through its external MCP endpoint. The Agents plugin admin settings must also allow and enable the server/tools.",
         "default": false
+      },
+      {
+        "key": "BetaFeatures",
+        "type": "custom",
+        "display_name": "Beta Features",
+        "help_text": "Opt-in beta features. Expand the section to enable individual features.",
+        "default": {
+          "task_requirements": false
+        }
       }
     ]
   }

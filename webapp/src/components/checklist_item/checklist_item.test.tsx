@@ -32,6 +32,10 @@ jest.mock('src/graphql/hooks', () => ({
     useUpdateRunItemTaskActions: jest.fn(() => ({updateRunTaskActions: jest.fn()})),
 }));
 
+jest.mock('src/hooks/redux', () => ({
+    useAppSelector: jest.fn(() => false),
+}));
+
 jest.mock('src/client', () => ({
     setAssignee: jest.fn(async () => ({})),
     setAssigneeOnlyComplete: jest.fn(async () => ({})),
@@ -117,6 +121,12 @@ jest.mock('./command', () => ({
 
 jest.mock('./condition_indicator', () => ({
     __esModule: true,
+    default: () => null,
+}));
+
+jest.mock('./checked_chip', () => ({
+    __esModule: true,
+    ...jest.requireActual('./checked_chip'),
     default: () => null,
 }));
 

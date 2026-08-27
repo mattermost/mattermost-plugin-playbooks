@@ -36,17 +36,31 @@ type fakeAPIClient struct {
 	getEndpoint  string
 	getParams    url.Values
 	getEndpoints []string
+	getErr       error
 	listParams   url.Values
 	listCalls    []url.Values
+
+	getMapListResult    []map[string]any
+	getMapListResultSet bool
 
 	postEndpoint string
 	postBody     any
 	postResult   any
+	postErr      error
+
+	postMapResult        map[string]any
+	postMapResultSet     bool
+	postMapListResult    []map[string]any
+	postMapListResultSet bool
 
 	putEndpoint  string
 	putBody      any
 	putEndpoints []string
 	putBodies    []any
+	putErr       error
+
+	putMapResult    map[string]any
+	putMapResultSet bool
 
 	deleteEndpoint string
 }
@@ -55,6 +69,9 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 	f.getEndpoint = endpoint
 	f.getParams = params
 	f.getEndpoints = append(f.getEndpoints, endpoint)
+	if f.getErr != nil {
+		return f.getErr
+	}
 	switch v := result.(type) {
 	case *playbookRunDetail:
 		*v = f.run
@@ -78,6 +95,12 @@ func (f *fakeAPIClient) Get(_ context.Context, endpoint string, params url.Value
 		f.listCalls = append(f.listCalls, cloneValues(params))
 	case *listPlaybooksResponse:
 		*v = f.listPlaybooks
+	case *[]map[string]any:
+		if f.getMapListResultSet && f.getMapListResult == nil {
+			*v = nil
+		} else {
+			*v = cloneMapAnySlice(f.getMapListResult)
+		}
 	case *map[string]any:
 		if f.playbook != nil {
 			*v = cloneMapAny(f.playbook)
@@ -94,6 +117,9 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 	f.postEndpoint = endpoint
 	f.postBody = body
 	f.postResult = result
+	if f.postErr != nil {
+		return f.postErr
+	}
 	if run, ok := result.(*playbookRunDetail); ok {
 		*run = f.run
 	}
@@ -102,14 +128,54 @@ func (f *fakeAPIClient) Post(_ context.Context, endpoint string, body any, resul
 	}); ok {
 		created.ID = "abcdefghijklmnopqrstuvwxyz"
 	}
+	if created, ok := result.(*map[string]any); ok {
+		if f.postMapResultSet {
+			if f.postMapResult == nil {
+				*created = nil
+				return nil
+			}
+			*created = cloneMapAny(f.postMapResult)
+			return nil
+		}
+		bodyMap, _ := body.(map[string]any)
+		*created = cloneMapAny(bodyMap)
+		(*created)["id"] = "bcdefghijklmnopqrstuvwxyza"
+	}
+	if fields, ok := result.(*[]map[string]any); ok {
+		if f.postMapListResultSet {
+			if f.postMapListResult == nil {
+				*fields = nil
+				return nil
+			}
+			*fields = cloneMapAnySlice(f.postMapListResult)
+			return nil
+		}
+		*fields = cloneMapAnySlice(f.postMapListResult)
+	}
 	return nil
 }
 
-func (f *fakeAPIClient) Put(_ context.Context, endpoint string, body any, _ any) error {
+func (f *fakeAPIClient) Put(_ context.Context, endpoint string, body any, result any) error {
 	f.putEndpoint = endpoint
 	f.putBody = body
 	f.putEndpoints = append(f.putEndpoints, endpoint)
 	f.putBodies = append(f.putBodies, body)
+	if f.putErr != nil {
+		return f.putErr
+	}
+	if updated, ok := result.(*map[string]any); ok {
+		if f.putMapResultSet {
+			if f.putMapResult == nil {
+				*updated = nil
+				return nil
+			}
+			*updated = cloneMapAny(f.putMapResult)
+			return nil
+		}
+		bodyMap, _ := body.(map[string]any)
+		*updated = cloneMapAny(bodyMap)
+		(*updated)["id"] = "bcdefghijklmnopqrstuvwxyza"
+	}
 	return nil
 }
 
@@ -146,6 +212,14 @@ func cloneMapAny(in map[string]any) map[string]any {
 	out := make(map[string]any, len(in))
 	for k, v := range in {
 		out[k] = cloneAny(v)
+	}
+	return out
+}
+
+func cloneMapAnySlice(in []map[string]any) []map[string]any {
+	out := make([]map[string]any, len(in))
+	for i := range in {
+		out[i] = cloneMapAny(in[i])
 	}
 	return out
 }

@@ -389,11 +389,19 @@ export async function setDueDate(playbookRunId: string, checklistNum: number, it
     }
 }
 
-export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState, itemID?: string) {
+export async function setChecklistItemState(
+    playbookRunID: string,
+    checklistNum: number,
+    itemNum: number,
+    newState: ChecklistItemState,
+    itemID?: string,
+    requirementValues?: Record<string, string>,
+) {
     // Include item ID in request body when available (for incremental updates)
     const body = JSON.stringify({
         new_state: newState,
         ...(itemID && {item_id: itemID}),
+        ...(requirementValues && {requirement_values: requirementValues}),
     });
     try {
         return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`, body);
@@ -416,13 +424,6 @@ export async function clientDeleteChecklistItem(playbookRunID: string, checklist
     });
 }
 
-export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
-    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
-        method: 'put',
-        body: '',
-    });
-}
-
 export async function clientSkipChecklist(playbookRunID: string, checklistNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/skip`, {
         method: 'PUT',
@@ -433,13 +434,6 @@ export async function clientSkipChecklist(playbookRunID: string, checklistNum: n
 export async function clientRestoreChecklist(playbookRunID: string, checklistNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/restore`, {
         method: 'PUT',
-        body: '',
-    });
-}
-
-export async function clientRestoreChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
-    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/restore`, {
-        method: 'put',
         body: '',
     });
 }

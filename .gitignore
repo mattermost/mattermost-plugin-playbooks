@@ -43,3 +43,6 @@ CLAUDE.md
 .cursor/scripts/*
 !.cursor/scripts/cloud-agent-install.sh
 !.cursor/scripts/cloud-agent-start.sh
+
+# Playwright MCP scratch artifacts (screenshots, snapshots, console logs)
+.playwright-mcp/

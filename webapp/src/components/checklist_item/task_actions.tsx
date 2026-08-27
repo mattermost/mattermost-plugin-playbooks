@@ -18,6 +18,7 @@ interface TaskActionsProps {
     onTaskActionsChange: (newTaskActions: TaskActionType[]) => void;
     editable: boolean;
     isEditing?: boolean;
+    disabledReason?: string;
 }
 
 const TaskActions = (props: TaskActionsProps) => {
@@ -25,6 +26,7 @@ const TaskActions = (props: TaskActionsProps) => {
     const {formatMessage} = useIntl();
     const lenTasks = props.taskActions ? props.taskActions.length : 0;
     const hasEnabledActions = haveAtleastOneEnabledAction(props.taskActions);
+    const isDisabled = Boolean(props.disabledReason);
 
     const label = (
         <FormattedMessage
@@ -36,10 +38,11 @@ const TaskActions = (props: TaskActionsProps) => {
     let taskActionsButton = (
         <TaskActionsContainer
             data-testid='task-actions-button'
-            $editable={props.editable}
+            $editable={props.editable && !isDisabled}
             $isPlaceholder={!hasEnabledActions}
+            $disabled={isDisabled}
             onClick={() => {
-                if (props.editable) {
+                if (props.editable && !isDisabled) {
                     dispatch(openTaskActionsModal(props.onTaskActionsChange, props.taskActions));
                 }
             }}
@@ -53,10 +56,10 @@ const TaskActions = (props: TaskActionsProps) => {
         </TaskActionsContainer>
     );
 
-    const tooltipText = formatMessage({defaultMessage: 'Task Actions'});
+    const tooltipText = props.disabledReason || formatMessage({defaultMessage: 'Task Actions'});
 
-    // when no actions, add tooltip
-    if (!hasEnabledActions) {
+    // when no actions, or disabled, add tooltip
+    if (!hasEnabledActions || isDisabled) {
         taskActionsButton = (
             <WithTooltip
                 id='task-actions-tooltip'
@@ -72,7 +75,7 @@ const TaskActions = (props: TaskActionsProps) => {
 
 export default TaskActions;
 
-const TaskActionsContainer = styled.div<{$editable: boolean; $isPlaceholder: boolean;}>`
+const TaskActionsContainer = styled.div<{$editable: boolean; $isPlaceholder: boolean; $disabled?: boolean;}>`
     align-items: center;
     background: ${({$isPlaceholder}) => ($isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     border-radius: 13px;
@@ -84,15 +87,19 @@ const TaskActionsContainer = styled.div<{$editable: boolean; $isPlaceholder: boo
     max-width: 100%;
     min-width: 24px;
     justify-content: center;
+    opacity: ${({$disabled}) => ($disabled ? 0.5 : 1)};
     ${({$isPlaceholder}) => !$isPlaceholder && css`
         padding: 2px 4px;
     `}
-    ${({$editable}) => $editable && css`
+    ${({$editable, $disabled}) => $editable && !$disabled && css`
         &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);
             color: var(--center-channel-color);
             cursor: pointer;
         }
+    `}
+    ${({$disabled}) => $disabled && css`
+        cursor: not-allowed;
     `}
 `;
 
