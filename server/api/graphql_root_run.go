@@ -52,6 +52,7 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 
 	run, err := c.playbookRunService.GetPlaybookRun(args.ID)
 	if err != nil {
+		c.recordBudget.release(1)
 		return nil, err
 	}
 

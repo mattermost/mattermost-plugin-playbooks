@@ -42,6 +42,7 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 
 	playbook, err := c.playbookService.Get(playbookID)
 	if err != nil {
+		c.recordBudget.release(1)
 		return nil, err
 	}
 
