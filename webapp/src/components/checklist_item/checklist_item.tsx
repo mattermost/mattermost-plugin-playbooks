@@ -796,6 +796,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         $isDragging={props.dragging}
                     />
                     {isAssigneeOnlyLocked ? (
+
                         // Disabled inputs don't fire pointer events; wrap so the reason is still discoverable on hover.
                         <WithTooltip
                             id='assignee-only-complete-checkbox-tooltip'
@@ -841,7 +842,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         editMode={isPlaybookEditor}
                         isTaskComplete={props.checklistItem.state === ChecklistItemState.Closed}
                         readOnly={props.readOnly || isSkipped()}
-                        onComplete={!isPlaybookEditor && props.playbookRunId ? () => {
+                        onComplete={!isPlaybookEditor && props.playbookRunId && !isAssigneeOnlyLocked ? () => {
                             setFillRequirementsEditMode(false);
                             setShowFillRequirementsModal(true);
                         } : undefined}

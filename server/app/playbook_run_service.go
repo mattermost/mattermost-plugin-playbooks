@@ -2757,7 +2757,7 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 		originalRun = playbookRun.Clone()
 	}
 
-	noChangeNeeded := propertyFieldID == itemToCheck.AssigneePropertyFieldID &&
+	noChangeNeeded := runFieldID == itemToCheck.AssigneePropertyFieldID &&
 		itemToCheck.AssigneeType == AssigneeTypePropertyUser &&
 		resolvedUserID == itemToCheck.AssigneeID
 	if noChangeNeeded {
