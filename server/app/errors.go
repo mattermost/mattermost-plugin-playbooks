@@ -19,6 +19,10 @@ var ErrOwnerGroupOnlyAction = errors.Wrap(ErrNoPermissions, "action restricted t
 // ErrAssigneeOnlyComplete is returned when a checklist item is locked so only its assignee can complete it.
 var ErrAssigneeOnlyComplete = errors.Wrap(ErrNoPermissions, "only the assignee can complete this task")
 
+// ErrAssigneeOnlyChangeAssignee is returned when a locked checklist item's assignee (or lock)
+// may only be changed by the assignee or the run owner.
+var ErrAssigneeOnlyChangeAssignee = errors.Wrap(ErrNoPermissions, "only the assignee or run owner can change the assignee of this task")
+
 // ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
 var ErrLicensedFeature = errors.New("not covered by current server license")
 

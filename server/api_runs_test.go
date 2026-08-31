@@ -2516,6 +2516,65 @@ func TestChecklistItem_AssigneeOnlyComplete(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, app.ChecklistItemStateClosed, run.Checklists[0].Items[0].State)
 	})
+
+	t.Run("restricts assignee changes when locked", func(t *testing.T) {
+		run := createRunWithItem(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		require.NoError(t, err)
+
+		// Owner can change assignee while locked
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+
+		// Re-assign to user2 (still as owner)
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		// Assignee can change assignee while locked
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+
+		// Former assignee (not owner) cannot change assignee while locked
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+
+		// Former assignee cannot unlock either
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, false)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("blocks non-owner from assigning when locked and unassigned", func(t *testing.T) {
+		run := createRunWithItem(t)
+
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneeID)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+	})
 }
 
 // TestSetAssignee_ClearsRoleType verifies that calling SetItemAssignee with a concrete user ID

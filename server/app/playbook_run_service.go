@@ -2526,6 +2526,22 @@ func checkAssigneeOnlyComplete(item ChecklistItem, userID string) error {
 	return ErrAssigneeOnlyComplete
 }
 
+// checkAssigneeOnlyChangeAssignee returns ErrAssigneeOnlyChangeAssignee when the item is locked
+// and the acting user is neither the assignee nor the run owner. Locked but unassigned items
+// may only be changed by the run owner.
+func checkAssigneeOnlyChangeAssignee(item ChecklistItem, userID, ownerUserID string) error {
+	if !item.AssigneeOnlyComplete {
+		return nil
+	}
+	if userID == ownerUserID {
+		return nil
+	}
+	if item.AssigneeID != "" && item.AssigneeID == userID {
+		return nil
+	}
+	return ErrAssigneeOnlyChangeAssignee
+}
+
 // SetAssigneeOnlyComplete sets whether only the assignee may check/uncheck the checklist item.
 func (s *PlaybookRunServiceImpl) SetAssigneeOnlyComplete(playbookRunID, userID string, checklistNumber, itemNumber int, assigneeOnlyComplete bool) error {
 	auditRec := plugin.MakeAuditRecord("setChecklistItemAssigneeOnlyComplete", model.AuditStatusFail)
@@ -2548,6 +2564,11 @@ func (s *PlaybookRunServiceImpl) SetAssigneeOnlyComplete(playbookRunID, userID s
 	if itemToCheck.AssigneeOnlyComplete == assigneeOnlyComplete {
 		auditRec.Success()
 		return nil
+	}
+
+	// When already locked, only the assignee or run owner may change (including unlock) the lock.
+	if err := checkAssigneeOnlyChangeAssignee(*itemToCheck, userID, playbookRunToModify.OwnerUserID); err != nil {
+		return err
 	}
 
 	var originalRun *PlaybookRun
@@ -2605,6 +2626,10 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	if applyAssigneeUpdate(itemToCheck, assigneeID) {
 		auditRec.Success()
 		return nil
+	}
+
+	if err := checkAssigneeOnlyChangeAssignee(*itemToCheck, userID, playbookRunToModify.OwnerUserID); err != nil {
+		return err
 	}
 
 	newAssigneeUserAtMention := noAssigneeName
@@ -2732,11 +2757,19 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 		originalRun = playbookRun.Clone()
 	}
 
-	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, runFieldID, resolvedUserID)
+	noChangeNeeded := propertyFieldID == itemToCheck.AssigneePropertyFieldID &&
+		itemToCheck.AssigneeType == AssigneeTypePropertyUser &&
+		resolvedUserID == itemToCheck.AssigneeID
 	if noChangeNeeded {
 		auditRec.Success()
 		return nil
 	}
+
+	if err := checkAssigneeOnlyChangeAssignee(*itemToCheck, userID, playbookRun.OwnerUserID); err != nil {
+		return err
+	}
+
+	applyPropertyUserAssigneeUpdate(itemToCheck, runFieldID, resolvedUserID)
 
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeModified = timestamp
@@ -2816,6 +2849,10 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 	if itemToCheck.AssigneeType == assigneeType && itemToCheck.AssigneeID == resolvedAssigneeID && itemToCheck.AssigneePropertyFieldID == "" {
 		auditRec.Success()
 		return nil
+	}
+
+	if err := checkAssigneeOnlyChangeAssignee(*itemToCheck, userID, playbookRunToModify.OwnerUserID); err != nil {
+		return err
 	}
 
 	var originalRun *PlaybookRun

@@ -23,6 +23,7 @@ const ROLE_NONE = 'none';
 interface Props {
     checklistItem: ChecklistItem;
     editable: boolean;
+    disabledReason?: string;
     onChanged: (item: ChecklistItem) => void;
     participantUserIds: string[];
     runOwnerUserId?: string;
@@ -32,7 +33,7 @@ interface Props {
     propertyValues?: PropertyValue[];
 }
 
-const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserIds, runOwnerUserId, runCreatorUserId, mode, propertyFields, propertyValues}: Props) => {
+const AssigneeDropdown = ({checklistItem, editable, disabledReason, onChanged, participantUserIds, runOwnerUserId, runCreatorUserId, mode, propertyFields, propertyValues}: Props) => {
     const {formatMessage} = useIntl();
     const profilesInTeam = useProfilesInTeam();
     const [pendingPropertyUser, setPendingPropertyUser] = useState<boolean>(false);
@@ -148,6 +149,11 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
     return (
         <Container>
+            {!editable && disabledReason && (
+                <DisabledReasonBanner data-testid='assignee-locked-reason'>
+                    {disabledReason}
+                </DisabledReasonBanner>
+            )}
             <SectionLabel>{formatMessage({defaultMessage: 'ASSIGN TO A PERSON'})}</SectionLabel>
             <ProfileSelector
                 testId={'assignee-profile-selector'}
@@ -220,6 +226,16 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     gap: 4px;
+`;
+
+const DisabledReasonBanner = styled.div`
+    margin: 0 8px 4px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 12px;
+    line-height: 16px;
 `;
 
 const SectionLabel = styled.div`

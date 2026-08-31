@@ -99,6 +99,14 @@ jest.mock('./description', () => ({
     default: () => null,
 }));
 
+jest.mock('@mattermost/shared/components/tooltip', () => ({
+    WithTooltip: ({children, title}: {children: React.ReactNode; title: string}) => (
+        <div data-testid='with-tooltip' data-title={title}>
+            {children}
+        </div>
+    ),
+}));
+
 jest.mock('./inputs', () => ({
     CancelSaveButtons: () => null,
     CheckBoxButton: ({disabled}: {disabled?: boolean}) => (
@@ -242,6 +250,8 @@ describe('ChecklistItem › assignee_only_complete checkbox', () => {
         });
 
         expect(findCheckbox(component).props.disabled).toBe(true);
+        const tooltips = component.root.findAllByProps({'data-testid': 'with-tooltip'});
+        expect(tooltips.some((node) => node.props['data-title'] === 'Only the assignee can complete the task')).toBe(true);
     });
 
     it('allows assignee to complete when locked', () => {
@@ -254,6 +264,7 @@ describe('ChecklistItem › assignee_only_complete checkbox', () => {
         });
 
         expect(findCheckbox(component).props.disabled).toBe(false);
+        expect(component.root.findAllByProps({'data-testid': 'with-tooltip'})).toHaveLength(0);
     });
 
     it('allows anyone when locked but unassigned', () => {
@@ -266,5 +277,52 @@ describe('ChecklistItem › assignee_only_complete checkbox', () => {
         });
 
         expect(findCheckbox(component).props.disabled).toBe(false);
+        expect(component.root.findAllByProps({'data-testid': 'with-tooltip'})).toHaveLength(0);
+    });
+
+    it('disables assignee edits for non-owner non-assignee when locked', () => {
+        MockHoverMenu.mockClear();
+        renderItem({
+            playbookRunId: 'run-1',
+            runOwnerId: 'run-owner-id',
+            checklistItem: makeItem({
+                assignee_id: 'other-user',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(MockHoverMenu.mock.calls[0][0].assigneeEditable).toBe(false);
+        expect(MockHoverMenu.mock.calls[0][0].assigneeDisabledReason).toBe(
+            'Only the assignee or run owner can change the assignee',
+        );
+    });
+
+    it('allows run owner to edit assignee when locked', () => {
+        MockHoverMenu.mockClear();
+        renderItem({
+            playbookRunId: 'run-1',
+            runOwnerId: 'current-user-id',
+            checklistItem: makeItem({
+                assignee_id: 'other-user',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(MockHoverMenu.mock.calls[0][0].assigneeEditable).toBe(true);
+        expect(MockHoverMenu.mock.calls[0][0].assigneeDisabledReason).toBeUndefined();
+    });
+
+    it('allows assignee to edit assignee when locked', () => {
+        MockHoverMenu.mockClear();
+        renderItem({
+            playbookRunId: 'run-1',
+            runOwnerId: 'run-owner-id',
+            checklistItem: makeItem({
+                assignee_id: 'current-user-id',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(MockHoverMenu.mock.calls[0][0].assigneeEditable).toBe(true);
     });
 });

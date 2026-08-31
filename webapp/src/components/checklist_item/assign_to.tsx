@@ -63,6 +63,7 @@ interface AssignedToProps {
     editable: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
+    disabledReason?: string;
     onSelectedChange?: (user?: UserProfile) => void;
     onExtraOptionSelected?: (value: string) => void;
     onAssigneeOnlyCompleteChange?: (value: boolean) => void;
@@ -191,7 +192,7 @@ const AssignTo = (props: AssignedToProps) => {
     };
 
     if (props.inHoverMenu) {
-        return (
+        const hoverMenuSelector = (
             <ProfileSelector
                 key={profilesKey}
                 {...profileSelectorProps}
@@ -203,7 +204,7 @@ const AssignTo = (props: AssignedToProps) => {
                         className={'icon-account-plus-outline icon-12 btn-icon'}
                     />
                 }
-                enableEdit={true}
+                enableEdit={props.editable}
                 userGroups={{
                     subsetUserIds: props.participantUserIds,
                     defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
@@ -216,13 +217,26 @@ const AssignTo = (props: AssignedToProps) => {
                 onExtraOptionSelected={props.onExtraOptionSelected}
                 extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
-                customControl={AssigneeOnlyCompleteControl}
-                customControlProps={customControlProps}
+                customControl={props.editable ? AssigneeOnlyCompleteControl : undefined}
+                customControlProps={props.editable ? customControlProps : undefined}
                 controlledOpenToggle={profileSelectorToggle}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
             />
         );
+
+        if (!props.editable && props.disabledReason) {
+            return (
+                <WithTooltip
+                    id='assignee-locked-tooltip'
+                    title={props.disabledReason}
+                >
+                    <span>{hoverMenuSelector}</span>
+                </WithTooltip>
+            );
+        }
+
+        return hoverMenuSelector;
     }
 
     const dropdownArrow = (
@@ -281,6 +295,15 @@ const AssignTo = (props: AssignedToProps) => {
                 title={formatMessage({defaultMessage: 'Assignee'})}
             >
                 {assignToButton}
+            </WithTooltip>
+        );
+    } else if (!props.editable && props.disabledReason) {
+        assignToButton = (
+            <WithTooltip
+                id='assignee-locked-tooltip'
+                title={props.disabledReason}
+            >
+                <span>{assignToButton}</span>
             </WithTooltip>
         );
     }

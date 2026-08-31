@@ -1552,7 +1552,9 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 			return
 		}
 		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
-			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			} else {
 				h.HandleError(w, c.logger, err)
@@ -1561,7 +1563,9 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 		}
 	case params.AssigneeType != "":
 		if err := h.playbookRunService.SetRoleAssignee(id, userID, params.AssigneeType, checklistNum, itemNum); err != nil {
-			if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else if errors.Is(err, app.ErrMalformedPlaybookRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			} else {
 				h.HandleError(w, c.logger, err)
@@ -1571,7 +1575,11 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	default:
 		// Empty body / empty assignee_id keeps the existing "clear assignee" semantics.
 		if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
-			h.HandleError(w, c.logger, err)
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
 			return
 		}
 	}
@@ -1603,6 +1611,10 @@ func (h *PlaybookRunHandler) itemSetAssigneeOnlyComplete(c *Context, w http.Resp
 	}
 
 	if err := h.playbookRunService.SetAssigneeOnlyComplete(id, userID, checklistNum, itemNum, params.AssigneeOnlyComplete); err != nil {
+		if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

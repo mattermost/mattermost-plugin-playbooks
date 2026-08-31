@@ -66,7 +66,7 @@ export const AssigneeOnlyCompleteControl = (ownProps: ControlProps<Option, boole
                     type='button'
                     onClick={ownProps.selectProps.onCustomReset}
                 >
-                    <FormattedMessage defaultMessage='No Assignee'/>
+                    <FormattedMessage defaultMessage='Remove assignee'/>
                 </ControlComponentButton>
             )}
         </div>
@@ -106,5 +106,5 @@ const ControlComponentButton = styled.button`
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
-    color: inherit;
+    color: var(--link-color);
 `;

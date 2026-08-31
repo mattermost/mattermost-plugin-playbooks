@@ -15,6 +15,7 @@ import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from '@mattermost/types/users';
 
 import {FloatingPortal} from '@floating-ui/react';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {
@@ -474,6 +475,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const hasRoleAssignee = isRoleBasedAssigneeType(assigneeType);
 
+    // In a run, locked tasks may only have their assignee changed by the assignee or run owner.
+    const canChangeAssignee = !props.playbookRunId || !assigneeOnlyComplete ||
+        currentUserId === props.runOwnerId ||
+        Boolean(assigneeID && assigneeID === currentUserId);
+    const assigneeDisabledReason = props.playbookRunId && assigneeOnlyComplete && !canChangeAssignee ?
+        formatMessage({defaultMessage: 'Only the assignee or run owner can change the assignee'}) :
+        undefined;
+
     // Renders the assignee editor above the toolbar — only when actively editing.
     // Kept separate from renderAssignTo so the toolbar Row remains unaffected.
     const renderAssigneeEditor = (): React.ReactNode => {
@@ -481,7 +490,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             <AssigneeEditorPanel>
                 <AssigneeDropdown
                     checklistItem={localChecklistItem}
-                    editable={true}
+                    editable={canChangeAssignee}
+                    disabledReason={assigneeDisabledReason}
                     onChanged={handleAssigneeDropdownChange}
                     participantUserIds={props.participantUserIds}
                     runOwnerUserId={props.runOwnerId}
@@ -510,10 +520,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 assignee_type={assigneeType}
                 assignee_property_field_id={assigneePropertyFieldID}
                 assignee_only_complete={assigneeOnlyComplete}
-                editable={!props.readOnly && !isSkipped()}
+                editable={canChangeAssignee && !props.readOnly && !isSkipped()}
+                disabledReason={assigneeDisabledReason}
                 onSelectedChange={onAssigneeChange}
                 onExtraOptionSelected={onExtraOptionSelected}
-                onAssigneeOnlyCompleteChange={onAssigneeOnlyCompleteChange}
+                onAssigneeOnlyCompleteChange={canChangeAssignee ? onAssigneeOnlyCompleteChange : undefined}
                 roleOptions={roleOptions}
                 propertyFields={props.propertyFields}
                 propertyValues={props.propertyValues}
@@ -678,6 +689,37 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         );
     };
 
+    const isAssigneeOnlyLocked = Boolean(
+        assigneeOnlyComplete && assigneeID && assigneeID !== currentUserId,
+    );
+
+    const checkBoxButton = (
+        <CheckBoxButton
+            readOnly={props.readOnly}
+            disabled={
+                isSkipped() ||
+                props.playbookRunId === undefined ||
+                props.newItem ||
+                isAssigneeOnlyLocked
+            }
+            item={props.checklistItem}
+            onChange={(item: ChecklistItemState) => {
+                if (
+                    betaFeaturesEnabled &&
+                    item === ChecklistItemState.Closed &&
+                    requirements.length > 0 &&
+                    props.playbookRunId
+                ) {
+                    setFillRequirementsEditMode(false);
+                    setShowFillRequirementsModal(true);
+                    return Promise.resolve({cancelled: true});
+                }
+                return props.onChange?.(item);
+            }}
+            onReadOnlyInteract={props.onReadOnlyInteract}
+        />
+    );
+
     const content = (
         <DraggableWrapper
             ref={props.draggableProvided?.innerRef}
@@ -719,8 +761,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         assignee_only_complete={assigneeOnlyComplete}
                         onAssigneeChange={onAssigneeChange}
                         onExtraOptionSelected={onExtraOptionSelected}
-                        onAssigneeOnlyCompleteChange={onAssigneeOnlyCompleteChange}
+                        onAssigneeOnlyCompleteChange={canChangeAssignee ? onAssigneeOnlyCompleteChange : undefined}
+                        assigneeEditable={canChangeAssignee}
+                        assigneeDisabledReason={assigneeDisabledReason}
                         roleOptions={roleOptions}
+                        runOwnerId={props.runOwnerId}
+                        runCreatorId={props.runCreatorId}
                         due_date={props.checklistItem.due_date}
                         onDueDateChange={onDueDateChange}
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
@@ -749,30 +795,17 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         $isVisible={!props.readOnly && !props.dragDisabled}
                         $isDragging={props.dragging}
                     />
-                    <CheckBoxButton
-                        readOnly={props.readOnly}
-                        disabled={
-                            isSkipped() ||
-                            props.playbookRunId === undefined ||
-                            props.newItem ||
-                            (assigneeOnlyComplete && Boolean(assigneeID) && assigneeID !== currentUserId)
-                        }
-                        item={props.checklistItem}
-                        onChange={(item: ChecklistItemState) => {
-                            if (
-                                betaFeaturesEnabled &&
-                                item === ChecklistItemState.Closed &&
-                                requirements.length > 0 &&
-                                props.playbookRunId
-                            ) {
-                                setFillRequirementsEditMode(false);
-                                setShowFillRequirementsModal(true);
-                                return Promise.resolve({cancelled: true});
-                            }
-                            return props.onChange?.(item);
-                        }}
-                        onReadOnlyInteract={props.onReadOnlyInteract}
-                    />
+                    {isAssigneeOnlyLocked ? (
+                        // Disabled inputs don't fire pointer events; wrap so the reason is still discoverable on hover.
+                        <WithTooltip
+                            id='assignee-only-complete-checkbox-tooltip'
+                            title={formatMessage({defaultMessage: 'Only the assignee can complete the task'})}
+                        >
+                            <AssigneeOnlyLockedCheckboxWrapper>
+                                {checkBoxButton}
+                            </AssigneeOnlyLockedCheckboxWrapper>
+                        </WithTooltip>
+                    ) : checkBoxButton}
                     <ConditionIndicator
                         checklistItem={props.checklistItem}
                         tooltipMessage={getConditionTooltip(props.checklistItem)}
@@ -898,6 +931,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     return content;
 };
+
+const AssigneeOnlyLockedCheckboxWrapper = styled.span`
+    display: inline-flex;
+`;
 
 export const CheckboxContainer = styled.div`
     position: relative;
