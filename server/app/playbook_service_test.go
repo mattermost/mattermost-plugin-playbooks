@@ -467,7 +467,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), teamID)
 
 		mockPropertyService.EXPECT().
 			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
