@@ -94,6 +94,11 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	return newID, nil
 }
 
+// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns.
+func (s *playbookService) GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error) {
+	return s.store.GetTeamPlaybookSchemeRoles(teamID)
+}
+
 func (s *playbookService) Import(data PlaybookImportData, userID string) (string, error) {
 	auditRec := s.auditor.MakeAuditRecord("importPlaybook", model.AuditStatusFail)
 	defer s.auditor.LogAuditRec(auditRec)

@@ -145,11 +145,18 @@ export interface ChecklistItem {
     command_last_run: number;
     due_date: number;
     task_actions: TaskAction[];
+    requirements?: TaskRequirement[];
     update_at?: number; // Timestamp for idempotency checks
     condition_id: string;
     condition_action: string;
     condition_reason: string;
     assignee_property_field_id?: string;
+}
+
+export interface TaskRequirement {
+    id: string;
+    label: string;
+    value: string;
 }
 
 export interface TaskAction {
@@ -262,6 +269,7 @@ export function emptyChecklistItem(): ChecklistItem {
         command_last_run: 0,
         due_date: 0,
         task_actions: [] as TaskAction[],
+        requirements: [] as TaskRequirement[],
         state_modified: 0,
         assignee_modified: 0,
         assignee_id: '',
@@ -281,6 +289,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state,
     due_date: 0,
     task_actions: [] as TaskAction[],
+    requirements: [] as TaskRequirement[],
     state_modified: 0,
     assignee_modified: 0,
     assignee_id: '',

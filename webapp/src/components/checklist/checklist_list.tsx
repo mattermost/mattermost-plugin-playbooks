@@ -98,6 +98,11 @@ export const mapChecklistItemToInput = (ci: ChecklistItem) => ({
     dueDate: ci.due_date,
     taskActions: ci.task_actions,
     conditionID: ci.condition_id,
+    requirements: (ci.requirements || []).map((r) => ({
+        id: r.id,
+        label: r.label,
+        value: r.value || '',
+    })),
 });
 
 const ChecklistList = ({
@@ -175,6 +180,7 @@ const ChecklistList = ({
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
                         assignee_property_field_id: ci.assignee_property_field_id || '',
+                        requirements: ci.requirements || [],
                     };
                 }),
             };

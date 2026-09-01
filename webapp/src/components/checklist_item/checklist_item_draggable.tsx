@@ -65,8 +65,15 @@ const DraggableChecklistItem = (props: Props) => {
                     channelId={props.playbookRun?.channel_id}
                     timelineEvents={props.playbookRun?.timeline_events}
                     participantUserIds={props.playbookRun?.participant_ids ?? []}
-                    onChange={(newState: ChecklistItemState) => {
-                        return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState, props.item.id);
+                    onChange={(newState: ChecklistItemState, requirementValues?: Record<string, string>) => {
+                        return props.playbookRun && setChecklistItemState(
+                            props.playbookRun.id,
+                            props.checklistIndex,
+                            props.itemIndex,
+                            newState,
+                            props.item.id,
+                            requirementValues,
+                        );
                     }}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}

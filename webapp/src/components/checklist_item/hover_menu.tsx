@@ -23,7 +23,7 @@ import {Mode} from 'src/components/datetime_input';
 import {PropertyField} from 'src/types/properties';
 import {formatConditionExpr} from 'src/utils/condition_format';
 
-import {clientDuplicateChecklistItem, clientRestoreChecklistItem, clientSkipChecklistItem} from 'src/client';
+import {clientDuplicateChecklistItem} from 'src/client';
 import {Condition} from 'src/types/conditions';
 
 import AssignTo, {RoleOption} from './assign_to';
@@ -60,6 +60,9 @@ export interface Props {
     availableConditions?: Condition[];
     propertyFields?: PropertyField[];
     isChannelChecklist?: boolean;
+    onAddRequirement?: () => void;
+    hasRequirements?: boolean;
+    requirementsDisabledReason?: string;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -142,6 +145,17 @@ const ChecklistItemHoverMenu = (props: Props) => {
                         {formatMessage({defaultMessage: 'Add condition'})}
                     </StyledDropdownMenuItem>
                 }
+                {props.playbookRunId === undefined && props.onAddRequirement &&
+                    <StyledDropdownMenuItem
+                        data-testid='task-menu-add-requirement'
+                        disabledAltText={props.requirementsDisabledReason}
+                        disabled={Boolean(props.requirementsDisabledReason)}
+                        onClick={() => props.onAddRequirement?.()}
+                    >
+                        <DropdownIcon className='icon-check-circle-outline icon-16'/>
+                        {props.hasRequirements ? formatMessage({defaultMessage: 'Edit requirements'}) : formatMessage({defaultMessage: 'Add a requirement'})}
+                    </StyledDropdownMenuItem>
+                }
                 {props.playbookRunId === undefined && props.hasCondition && props.onRemoveFromCondition &&
                     <StyledDropdownMenuItem
                         data-testid='task-menu-remove-condition'
@@ -188,19 +202,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 )}
                 {props.playbookRunId !== undefined &&
                     <StyledDropdownMenuItem
-                        onClick={() => {
-                            if (props.isSkipped) {
-                                clientRestoreChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
-                                if (props.onChange) {
-                                    props.onChange(ChecklistItemState.Open);
-                                }
-                            } else {
-                                clientSkipChecklistItem(props.playbookRunId || '', props.checklistNum, props.itemNum);
-                                if (props.onChange) {
-                                    props.onChange(ChecklistItemState.Skip);
-                                }
-                            }
-                        }}
+                        onClick={() => props.onChange?.(props.isSkipped ? ChecklistItemState.Open : ChecklistItemState.Skip)}
                     >
                         <DropdownIcon className={props.isSkipped ? 'icon-refresh icon-16 btn-icon' : 'icon-close icon-16 btn-icon'}/>
                         {props.isSkipped ? formatMessage({defaultMessage: 'Restore task'}) : formatMessage({defaultMessage: 'Skip task'})}
