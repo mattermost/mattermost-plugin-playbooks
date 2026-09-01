@@ -129,6 +129,9 @@ interface ChecklistItemProps {
     onItemSelect?: () => void;
 }
 
+const itemHasAssignee = (assigneeId?: string, type?: string) =>
+    Boolean(assigneeId) || isRoleBasedAssigneeType(type || '');
+
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
     const toaster = useToaster();
@@ -268,6 +271,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const assigneeCallSeqRef = useRef(0);
     const assigneeStateRef = useRef({id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID});
+    const assigneeOnlyCompleteRef = useRef(assigneeOnlyComplete);
     const checklistItemRef = useRef(props.checklistItem);
 
     useEffect(() => {
@@ -275,17 +279,39 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [assigneeID, assigneeType, assigneePropertyFieldID]);
 
     useEffect(() => {
+        assigneeOnlyCompleteRef.current = assigneeOnlyComplete;
+    }, [assigneeOnlyComplete]);
+
+    useEffect(() => {
         checklistItemRef.current = props.checklistItem;
     }, [props.checklistItem]);
 
+    const discardPendingLock = useCallback(() => {
+        const {id, type} = assigneeStateRef.current;
+        if (!itemHasAssignee(id, type) && assigneeOnlyCompleteRef.current) {
+            assigneeOnlyCompleteRef.current = false;
+            setAssigneeOnlyComplete(false);
+        }
+    }, []);
+
+    const onAssigneeMenuOpenChange = useCallback((isOpen: boolean) => {
+        if (!isOpen) {
+            discardPendingLock();
+        }
+    }, [discardPendingLock]);
+
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
-        const previousAssigneeOnlyComplete = assigneeOnlyComplete;
+        const previousAssigneeOnlyComplete = assigneeOnlyCompleteRef.current;
         const assigneeFieldsChanged =
             (updatedItem.assignee_id || '') !== assigneeStateRef.current.id ||
             (updatedItem.assignee_type || '') !== assigneeStateRef.current.type ||
             (updatedItem.assignee_property_field_id || '') !== assigneeStateRef.current.fieldID;
-        const lockChanged = Boolean(updatedItem.assignee_only_complete) !== previousAssigneeOnlyComplete;
+        const updatedHasAssignee = itemHasAssignee(updatedItem.assignee_id, updatedItem.assignee_type);
+        const localLock = Boolean(updatedItem.assignee_only_complete) && (updatedHasAssignee || !assigneeFieldsChanged);
+        const persistableLock = Boolean(updatedItem.assignee_only_complete) && updatedHasAssignee;
+        const persistedLock = Boolean(checklistItemRef.current.assignee_only_complete);
+        const lockChanged = persistableLock !== persistedLock;
 
         assigneeStateRef.current = {id: updatedItem.assignee_id || '', type: updatedItem.assignee_type || '', fieldID: updatedItem.assignee_property_field_id || ''};
         const rollback = () => {
@@ -296,6 +322,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 setAssigneeID(latest.assignee_id || '');
                 setAssigneeType(latest.assignee_type || '');
                 setAssigneePropertyFieldID(latest.assignee_property_field_id || '');
+                assigneeOnlyCompleteRef.current = Boolean(latest.assignee_only_complete);
                 setAssigneeOnlyComplete(Boolean(latest.assignee_only_complete));
             }
         };
@@ -311,7 +338,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         setAssigneeID(updatedItem.assignee_id || '');
         setAssigneeType(updatedItem.assignee_type || '');
         setAssigneePropertyFieldID(updatedItem.assignee_property_field_id || '');
-        setAssigneeOnlyComplete(Boolean(updatedItem.assignee_only_complete));
+        assigneeOnlyCompleteRef.current = localLock;
+        setAssigneeOnlyComplete(localLock);
         if (props.newItem) {
             return;
         }
@@ -327,6 +355,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
                     }
                     handleError(Boolean(response.error));
+                    if (response.error) {
+                        return;
+                    }
                 }
 
                 if (lockChanged) {
@@ -334,9 +365,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         props.playbookRunId,
                         props.checklistNum,
                         props.itemNum,
-                        Boolean(updatedItem.assignee_only_complete),
+                        persistableLock,
                     );
                     if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
+                        assigneeOnlyCompleteRef.current = previousAssigneeOnlyComplete;
                         setAssigneeOnlyComplete(previousAssigneeOnlyComplete);
                         toaster.add({
                             content: formatMessage({defaultMessage: 'Failed to update task lock.'}),
@@ -347,10 +379,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             } catch {
                 handleError(true);
             }
-        } else {
-            props.onUpdateChecklistItem?.(updatedItem);
+        } else if (assigneeFieldsChanged || persistableLock !== persistedLock) {
+            props.onUpdateChecklistItem?.({
+                ...updatedItem,
+                assignee_only_complete: persistableLock,
+            });
         }
-    }, [assigneeOnlyComplete, props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster]);
+    }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster]);
 
     const onAssigneeChange = useCallback((user?: UserProfile) => {
         handleAssigneeDropdownChange({
@@ -358,14 +393,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             assignee_id: user?.id || '',
             assignee_type: '',
             assignee_property_field_id: '',
-            assignee_only_complete: assigneeOnlyComplete,
+            assignee_only_complete: user?.id ? assigneeOnlyCompleteRef.current : false,
         });
-    }, [props.checklistItem, assigneeOnlyComplete, handleAssigneeDropdownChange]);
+    }, [props.checklistItem, handleAssigneeDropdownChange]);
 
     const onExtraOptionSelected = useCallback(async (value: string) => {
         const updatedItem = {
             ...props.checklistItem,
-            assignee_only_complete: assigneeOnlyComplete,
+            assignee_only_complete: assigneeOnlyCompleteRef.current,
         };
         updatedItem.assignee_id = '';
 
@@ -378,17 +413,28 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
 
         await handleAssigneeDropdownChange(updatedItem);
-    }, [props.checklistItem, assigneeOnlyComplete, handleAssigneeDropdownChange]);
+    }, [props.checklistItem, handleAssigneeDropdownChange]);
 
     const onAssigneeOnlyCompleteChange = useCallback(async (value: boolean) => {
-        const previous = assigneeOnlyComplete;
+        const previous = assigneeOnlyCompleteRef.current;
+        assigneeOnlyCompleteRef.current = value;
         setAssigneeOnlyComplete(value);
+
+        const hasAssigneeNow = itemHasAssignee(assigneeID, assigneeType);
+        if (value && !hasAssigneeNow) {
+            // Keep the lock pending until an assignee is chosen or the picker closes.
+            return;
+        }
+        if (!value && !props.checklistItem.assignee_only_complete) {
+            return;
+        }
         if (props.newItem) {
             return;
         }
         if (props.playbookRunId) {
             const response = await clientSetAssigneeOnlyComplete(props.playbookRunId, props.checklistNum, props.itemNum, value);
             if (response.error && isMounted.current) {
+                assigneeOnlyCompleteRef.current = previous;
                 setAssigneeOnlyComplete(previous);
                 toaster.add({
                     content: formatMessage({defaultMessage: 'Failed to update task lock.'}),
@@ -405,7 +451,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             });
         }
     }, [
-        assigneeOnlyComplete,
         assigneeID,
         assigneeType,
         assigneePropertyFieldID,
@@ -475,11 +520,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const hasRoleAssignee = isRoleBasedAssigneeType(assigneeType);
 
-    // In a run, locked tasks may only have their assignee changed by the assignee or run owner.
-    const canChangeAssignee = !props.playbookRunId || !assigneeOnlyComplete ||
+    // In a run, locked tasks with an assignee may only be reassigned by the assignee or run owner.
+    const hasAssignee = Boolean(assigneeID) || hasRoleAssignee;
+    const isLockedToAssignee = Boolean(assigneeOnlyComplete && hasAssignee);
+    const canChangeAssignee = !props.playbookRunId || !isLockedToAssignee ||
         currentUserId === props.runOwnerId ||
         Boolean(assigneeID && assigneeID === currentUserId);
-    const assigneeDisabledReason = props.playbookRunId && assigneeOnlyComplete && !canChangeAssignee ?
+    const assigneeDisabledReason = props.playbookRunId && isLockedToAssignee && !canChangeAssignee ?
         formatMessage({defaultMessage: 'Only the assignee or run owner can change the assignee'}) :
         undefined;
 
@@ -493,6 +540,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     editable={canChangeAssignee}
                     disabledReason={assigneeDisabledReason}
                     onChanged={handleAssigneeDropdownChange}
+                    onAssigneeMenuOpenChange={onAssigneeMenuOpenChange}
                     participantUserIds={props.participantUserIds}
                     runOwnerUserId={props.runOwnerId}
                     runCreatorUserId={props.runCreatorId}
@@ -525,6 +573,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 onSelectedChange={onAssigneeChange}
                 onExtraOptionSelected={onExtraOptionSelected}
                 onAssigneeOnlyCompleteChange={canChangeAssignee ? onAssigneeOnlyCompleteChange : undefined}
+                onOpenChange={onAssigneeMenuOpenChange}
                 roleOptions={roleOptions}
                 propertyFields={props.propertyFields}
                 propertyValues={props.propertyValues}
@@ -615,6 +664,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const handleSave = () => {
+        discardPendingLock();
         setIsEditing(false);
         const finalTitle = titleValue.trim() || 'Untitled task';
         if (props.newItem) {
@@ -628,7 +678,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 due_date: dueDate,
                 assignee_id: assigneeID,
                 assignee_type: assigneeType,
-                assignee_only_complete: assigneeOnlyComplete,
+                assignee_only_complete: Boolean(assigneeOnlyCompleteRef.current && itemHasAssignee(assigneeID, assigneeType)),
                 task_actions: taskActions,
                 requirements: props.checklistItem.requirements || [],
                 state_modified: 0,
@@ -771,7 +821,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onDueDateChange={onDueDateChange}
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                         onDeleteChecklistItem={props.onDeleteChecklistItem}
-                        onItemOpenChange={setIsHoverMenuItemOpen}
+                        onItemOpenChange={(isOpen) => {
+                            setIsHoverMenuItemOpen(isOpen);
+                            onAssigneeMenuOpenChange(isOpen);
+                        }}
                         onAddConditional={props.onAddConditional}
                         hasCondition={Boolean(props.checklistItem.condition_id)}
                         onRemoveFromCondition={props.onRemoveFromCondition}
@@ -860,6 +913,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         setIsEditing(false);
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
+                        discardPendingLock();
                         props.cancelAddingItem?.();
                     }}
                     onSave={handleSave}

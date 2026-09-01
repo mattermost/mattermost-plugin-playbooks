@@ -2527,19 +2527,28 @@ func checkAssigneeOnlyComplete(item ChecklistItem, userID string) error {
 }
 
 // checkAssigneeOnlyChangeAssignee returns ErrAssigneeOnlyChangeAssignee when the item is locked
-// and the acting user is neither the assignee nor the run owner. Locked but unassigned items
-// may only be changed by the run owner.
+// to an assignee and the acting user is neither that assignee nor the run owner.
+// Locked but unassigned items are not restricted.
 func checkAssigneeOnlyChangeAssignee(item ChecklistItem, userID, ownerUserID string) error {
-	if !item.AssigneeOnlyComplete {
+	if !item.AssigneeOnlyComplete || item.AssigneeID == "" {
 		return nil
 	}
 	if userID == ownerUserID {
 		return nil
 	}
-	if item.AssigneeID != "" && item.AssigneeID == userID {
+	if item.AssigneeID == userID {
 		return nil
 	}
 	return ErrAssigneeOnlyChangeAssignee
+}
+
+func itemHasAssignee(item ChecklistItem) bool {
+	if item.AssigneeID != "" {
+		return true
+	}
+	return item.AssigneeType == AssigneeTypeOwner ||
+		item.AssigneeType == AssigneeTypeCreator ||
+		item.AssigneeType == AssigneeTypePropertyUser
 }
 
 // SetAssigneeOnlyComplete sets whether only the assignee may check/uncheck the checklist item.
@@ -2564,6 +2573,10 @@ func (s *PlaybookRunServiceImpl) SetAssigneeOnlyComplete(playbookRunID, userID s
 	if itemToCheck.AssigneeOnlyComplete == assigneeOnlyComplete {
 		auditRec.Success()
 		return nil
+	}
+
+	if assigneeOnlyComplete && !itemHasAssignee(*itemToCheck) {
+		return ErrAssigneeRequiredForLock
 	}
 
 	// When already locked, only the assignee or run owner may change (including unlock) the lock.
@@ -2623,7 +2636,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	// Only skip the store write if BOTH the assignee AND the type are already correct.
 	// If AssigneeType is still a role-based value ("owner"/"creator"), we MUST fall through
 	// to the store write to persist the clear.
-	if applyAssigneeUpdate(itemToCheck, assigneeID) {
+	if applyAssigneeUpdate(itemToCheck, assigneeID) && (assigneeID != "" || !itemToCheck.AssigneeOnlyComplete) {
 		auditRec.Success()
 		return nil
 	}
@@ -2653,6 +2666,9 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	}
 
 	itemToCheck.AssigneeID = assigneeID
+	if assigneeID == "" {
+		itemToCheck.AssigneeOnlyComplete = false
+	}
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeModified = timestamp
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)

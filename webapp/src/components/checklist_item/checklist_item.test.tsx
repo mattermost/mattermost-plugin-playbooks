@@ -283,6 +283,21 @@ describe('ChecklistItem › assignee_only_complete checkbox', () => {
         expect(component.root.findAllByProps({'data-testid': 'with-tooltip'})).toHaveLength(0);
     });
 
+    it('allows assignee edits when locked but unassigned', () => {
+        MockHoverMenu.mockClear();
+        renderItem({
+            playbookRunId: 'run-1',
+            runOwnerId: 'run-owner-id',
+            checklistItem: makeItem({
+                assignee_id: '',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(MockHoverMenu.mock.calls[0][0].assigneeEditable).toBe(true);
+        expect(MockHoverMenu.mock.calls[0][0].assigneeDisabledReason).toBeUndefined();
+    });
+
     it('disables assignee edits for non-owner non-assignee when locked', () => {
         MockHoverMenu.mockClear();
         renderItem({

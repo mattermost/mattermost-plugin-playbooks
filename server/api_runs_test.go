@@ -2430,7 +2430,10 @@ func TestChecklistItem_AssigneeOnlyComplete(t *testing.T) {
 	t.Run("set and idempotent no-op", func(t *testing.T) {
 		run := createRunWithItem(t)
 
-		err := e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
 		require.NoError(t, err)
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
@@ -2503,18 +2506,15 @@ func TestChecklistItem_AssigneeOnlyComplete(t *testing.T) {
 		require.Equal(t, app.ChecklistItemStateClosed, run.Checklists[0].Items[0].State)
 	})
 
-	t.Run("allows anyone when locked but unassigned", func(t *testing.T) {
+	t.Run("rejects enabling lock without an assignee", func(t *testing.T) {
 		run := createRunWithItem(t)
 
 		err := e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
-		require.NoError(t, err)
-
-		err = e.PlaybooksClient.PlaybookRuns.SetItemState(context.Background(), run.ID, 0, 0, app.ChecklistItemStateClosed)
-		require.NoError(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
-		require.Equal(t, app.ChecklistItemStateClosed, run.Checklists[0].Items[0].State)
+		require.False(t, run.Checklists[0].Items[0].AssigneeOnlyComplete)
 	})
 
 	t.Run("restricts assignee changes when locked", func(t *testing.T) {
@@ -2559,20 +2559,24 @@ func TestChecklistItem_AssigneeOnlyComplete(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
-	t.Run("blocks non-owner from assigning when locked and unassigned", func(t *testing.T) {
+	t.Run("clearing assignee also clears the lock", func(t *testing.T) {
 		run := createRunWithItem(t)
 
-		err := e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		err := e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
 		require.NoError(t, err)
 
-		err = e.PlaybooksClient2.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssigneeOnlyComplete(context.Background(), run.ID, 0, 0, true)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, "")
+		require.NoError(t, err)
 
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.Empty(t, run.Checklists[0].Items[0].AssigneeID)
+		require.False(t, run.Checklists[0].Items[0].AssigneeOnlyComplete)
 
-		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		err = e.PlaybooksClient2.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
 		require.NoError(t, err)
 	})
 }

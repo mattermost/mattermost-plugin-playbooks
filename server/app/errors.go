@@ -23,6 +23,9 @@ var ErrAssigneeOnlyComplete = errors.Wrap(ErrNoPermissions, "only the assignee c
 // may only be changed by the assignee or the run owner.
 var ErrAssigneeOnlyChangeAssignee = errors.Wrap(ErrNoPermissions, "only the assignee or run owner can change the assignee of this task")
 
+// ErrAssigneeRequiredForLock is returned when enabling assignee-only completion without an assignee.
+var ErrAssigneeRequiredForLock = errors.New("assign someone before locking this task")
+
 // ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
 var ErrLicensedFeature = errors.New("not covered by current server license")
 

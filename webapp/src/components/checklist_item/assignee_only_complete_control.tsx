@@ -85,7 +85,7 @@ const AssigneeOnlyCompleteRow = styled.div`
 
 const AssigneeOnlyCompleteCheckbox = styled.input`
     margin: 0;
-    cursor: pointer;
+    cursor: inherit;
 `;
 
 const AssigneeOnlyCompleteLabel = styled.span`

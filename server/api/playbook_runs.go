@@ -1615,6 +1615,10 @@ func (h *PlaybookRunHandler) itemSetAssigneeOnlyComplete(c *Context, w http.Resp
 			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
 			return
 		}
+		if errors.Is(err, app.ErrAssigneeRequiredForLock) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assign someone before locking this task", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

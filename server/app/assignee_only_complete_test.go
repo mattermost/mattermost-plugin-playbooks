@@ -43,10 +43,9 @@ func TestCheckAssigneeOnlyChangeAssignee(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("blocks non-owner when locked and unassigned", func(t *testing.T) {
+	t.Run("allows non-owner when locked and unassigned", func(t *testing.T) {
 		err := checkAssigneeOnlyChangeAssignee(ChecklistItem{AssigneeOnlyComplete: true}, "user-2", "owner")
-		require.ErrorIs(t, err, ErrAssigneeOnlyChangeAssignee)
-		require.ErrorIs(t, err, ErrNoPermissions)
+		require.NoError(t, err)
 	})
 
 	t.Run("allows assignee when locked", func(t *testing.T) {
