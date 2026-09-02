@@ -293,7 +293,9 @@ func TestPublishRunEventToViewers_TeamViewCheckedOncePerUser(t *testing.T) {
 		if call.Method != "HasPermissionToTeam" {
 			continue
 		}
-		if call.Arguments.Get(0) == wsStrangerID && call.Arguments.Get(2) == model.PermissionViewTeam {
+		if call.Arguments.Get(0) == wsStrangerID &&
+			call.Arguments.Get(1) == wsTeamID &&
+			call.Arguments.Get(2) == model.PermissionViewTeam {
 			teamViewChecks++
 		}
 	}
