@@ -52,6 +52,32 @@ const (
 	maxRunAudienceMembers = 5000
 )
 
+// Actions recorded in a TaskStateModified timeline event's details.
+const (
+	taskStateActionCheck               = "check"
+	taskStateActionUncheck             = "uncheck"
+	taskStateActionSkip                = "skip"
+	taskStateActionRestore             = "restore"
+	taskStateActionRequirementsUpdated = "requirements_updated"
+)
+
+// taskStatePastTense gives the verb each action reads as in a timeline event summary.
+var taskStatePastTense = map[string]string{
+	taskStateActionCheck:               "checked off",
+	taskStateActionUncheck:             "unchecked",
+	taskStateActionSkip:                "skipped",
+	taskStateActionRestore:             "restored",
+	taskStateActionRequirementsUpdated: "updated requirements for",
+}
+
+// TaskStateModifiedDetails is the JSON payload of a task_state_modified timeline event. Clients read
+// action to label the task-activity chip and item_id to attach it to the right checklist item.
+type TaskStateModifiedDetails struct {
+	Action string `json:"action,omitempty"`
+	Task   string `json:"task,omitempty"`
+	ItemID string `json:"item_id,omitempty"`
+}
+
 // PropertyChangedDetails represents the details of a property change timeline event
 type PropertyChangedDetails struct {
 	PropertyFieldID   string          `json:"property_field_id"`
@@ -954,6 +980,68 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, p
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+// maxInteractiveDialogRequirements is Mattermost's interactive dialog element limit.
+const maxInteractiveDialogRequirements = 5
+
+func (s *PlaybookRunServiceImpl) OpenFillRequirementsDialog(triggerID, userID, playbookRunID string, checklist, item int) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get playbook run")
+	}
+	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklist, item) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	checklistItem := playbookRun.Checklists[checklist].Items[item]
+	if len(checklistItem.Requirements) == 0 {
+		return errors.New("checklist item has no requirements")
+	}
+	if len(checklistItem.Requirements) > maxInteractiveDialogRequirements {
+		return errors.Errorf("too many requirements for interactive dialog (max %d)", maxInteractiveDialogRequirements)
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+	T := i18n.GetUserTranslations(user.Locale)
+
+	elements := make([]model.DialogElement, 0, len(checklistItem.Requirements))
+	for _, req := range checklistItem.Requirements {
+		elements = append(elements, model.DialogElement{
+			DisplayName: req.Label,
+			Name:        req.ID,
+			Type:        "text",
+			Default:     req.Value,
+			Optional:    false,
+			MaxLength:   MaxTaskRequirementValueLength,
+		})
+	}
+
+	dialog := &model.Dialog{
+		Title: T("app.user.run.fill_requirements.title"),
+		IntroductionText: T("app.user.run.fill_requirements.intro", map[string]interface{}{
+			"Task": checklistItem.Title,
+		}),
+		Elements:       elements,
+		SubmitLabel:    T("app.user.run.fill_requirements.submit_label"),
+		NotifyOnCancel: false,
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/checklists/%v/item/%v/fill-requirements-dialog",
+			s.configService.GetManifest().Id, playbookRunID, checklist, item),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open fill requirements dialog")
 	}
 
 	return nil
@@ -2262,8 +2350,10 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 }
 
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
-// any action if the checklist item is already in the given checked state
-func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
+// any action if the checklist item is already in the given checked state.
+// When checking off a task that has requirements, opts may supply RequirementValues; all
+// requirements must have non-empty values or the call fails.
+func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int, opts ...ModifyCheckedStateOptions) error {
 	auditRec := plugin.MakeAuditRecord("modifyChecklistItemState", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -2273,12 +2363,6 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	model.AddEventParameterToAuditRec(auditRec, "newState", newState)
 	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
 	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
-
-	type Details struct {
-		Action string `json:"action,omitempty"`
-		Task   string `json:"task,omitempty"`
-		ItemID string `json:"item_id,omitempty"`
-	}
 
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
@@ -2300,34 +2384,71 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		originalRun = playbookRunToModify.Clone()
 	}
 
-	if newState == itemToCheck.State {
+	var requirementValues map[string]string
+	if len(opts) > 0 {
+		requirementValues = opts[0].RequirementValues
+	}
+
+	requirementsChanged := false
+	if len(itemToCheck.Requirements) > 0 && requirementValues != nil {
+		reqs := make([]TaskRequirement, len(itemToCheck.Requirements))
+		copy(reqs, itemToCheck.Requirements)
+		itemToCheck.Requirements = reqs
+		for i := range itemToCheck.Requirements {
+			if val, ok := requirementValues[itemToCheck.Requirements[i].ID]; ok {
+				if itemToCheck.Requirements[i].Value != val {
+					itemToCheck.Requirements[i].Value = val
+					requirementsChanged = true
+				}
+			}
+		}
+		if err := ValidateTaskRequirements(itemToCheck.Requirements); err != nil {
+			return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+		}
+	}
+
+	// Always require all fields when the item is closed while beta features are enabled,
+	// including re-saving an already-closed item. Saving values alone (open state) may leave fields empty.
+	if newState == ChecklistItemStateClosed && len(itemToCheck.Requirements) > 0 && s.configService.IsTaskRequirementsEnabled() {
+		for _, req := range itemToCheck.Requirements {
+			if strings.TrimSpace(req.Value) == "" {
+				return errors.Wrap(ErrMalformedPlaybookRun, "all task requirements must be filled before checking off")
+			}
+		}
+	}
+
+	if newState == itemToCheck.State && !requirementsChanged {
 		auditRec.Success()
 		return nil
 	}
 
-	details := Details{
-		Action: "check",
-		Task:   stripmd.Strip(itemToCheck.Title),
-		ItemID: itemToCheck.ID,
-	}
+	stateChanged := newState != itemToCheck.State
+	timestamp := model.GetMillis()
 
-	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+	action := taskStateActionCheck
 	if newState == ChecklistItemStateOpen {
-		details.Action = "uncheck"
-		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+		action = taskStateActionUncheck
 	}
 	if newState == ChecklistItemStateSkipped {
-		details.Action = "skip"
-		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+		action = taskStateActionSkip
 	}
 	if itemToCheck.State == ChecklistItemStateSkipped && newState == ChecklistItemStateOpen {
-		details.Action = "restore"
-		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+		action = taskStateActionRestore
+	}
+	if !stateChanged && requirementsChanged {
+		action = taskStateActionRequirementsUpdated
 	}
 
-	itemToCheck.State = newState
-	timestamp := model.GetMillis()
-	itemToCheck.StateModified = timestamp
+	if stateChanged {
+		itemToCheck.State = newState
+		itemToCheck.StateModified = timestamp
+		if newState == ChecklistItemStateSkipped {
+			// Keeps this endpoint a strict superset of SkipChecklistItem, which is the only other way to
+			// set LastSkipped. Deliberately not cleared on restore: the field means "last time this was
+			// skipped", and the delete_at wire alias is what makes it look like a deletion marker.
+			itemToCheck.LastSkipped = timestamp
+		}
+	}
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
@@ -2336,29 +2457,14 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return errors.Wrapf(err, "failed to update playbook run, is now in inconsistent state")
 	}
 
-	detailsJSON, err := json.Marshal(details)
-	if err != nil {
-		return errors.Wrap(err, "failed to encode timeline event details")
-	}
-
-	event := &TimelineEvent{
-		PlaybookRunID: playbookRunID,
-		CreateAt:      itemToCheck.StateModified,
-		EventAt:       itemToCheck.StateModified,
-		EventType:     TaskStateModified,
-		Summary:       modifyMessage,
-		SubjectUserID: userID,
-		Details:       string(detailsJSON),
-	}
-
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
+	if err := s.createTaskStateModifiedEvent(playbookRunID, userID, action, itemToCheck, timestamp); err != nil {
+		return err
 	}
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	// Mark success and add result state for audit
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "action", details.Action)
+	model.AddEventParameterToAuditRec(auditRec, "action", action)
 	model.AddEventParameterToAuditRec(auditRec, "finalState", newState)
 	auditRec.AddEventResultState(*playbookRunToModify)
 
@@ -2744,6 +2850,11 @@ func (s *PlaybookRunServiceImpl) SetTaskActionsToChecklistItem(playbookRunID, us
 		return errors.New("invalid checklist item indices")
 	}
 
+	item := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	if err := ValidateRequirementsExclusiveOfTaskActions(item.Requirements, taskActions); err != nil {
+		return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+	}
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
@@ -2958,6 +3069,19 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 	// Add current context to audit
 	model.AddEventParameterToAuditRec(auditRec, "currentChecklistCount", len(playbookRunToModify.Checklists))
 
+	for _, item := range checklist.Items {
+		if err := ValidateTaskRequirements(item.Requirements); err != nil {
+			err := errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+			auditRec.AddErrorDesc(err.Error())
+			return err
+		}
+		if err := ValidateRequirementsExclusiveOfTaskActions(item.Requirements, item.TaskActions); err != nil {
+			err := errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+			auditRec.AddErrorDesc(err.Error())
+			return err
+		}
+	}
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
@@ -3145,6 +3269,17 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", currentChecklist.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentItemCount", len(currentChecklist.Items))
 
+	if err := ValidateTaskRequirements(checklistItem.Requirements); err != nil {
+		err := errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+	if err := ValidateRequirementsExclusiveOfTaskActions(checklistItem.Requirements, checklistItem.TaskActions); err != nil {
+		err := errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
@@ -3284,9 +3419,29 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 
 // SkipChecklistItem skips the item at the given index from the given checklist
 func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	auditRec := plugin.MakeAuditRecord("skipChecklistItem", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
+	}
+
+	itemToSkip := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToSkip.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentState", itemToSkip.State)
+
+	if itemToSkip.State == ChecklistItemStateSkipped {
+		auditRec.Success()
+		return nil
 	}
 
 	var originalRun *PlaybookRun
@@ -3295,25 +3450,91 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	}
 
 	timestamp := model.GetMillis()
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = timestamp
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
-	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp)
+	itemToSkip.LastSkipped = timestamp
+	itemToSkip.State = ChecklistItemStateSkipped
+	itemToSkip.StateModified = timestamp
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToSkip, timestamp)
 
+	skippedItem := *itemToSkip
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+	if err := s.createTaskStateModifiedEvent(playbookRunID, userID, taskStateActionSkip, skippedItem, timestamp); err != nil {
+		return err
+	}
+
+	// Pass a nil current run so the run is refetched and the WS payload carries the timeline event
+	// created just above; passing the in-memory run would broadcast a stale event list.
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "action", taskStateActionSkip)
+	model.AddEventParameterToAuditRec(auditRec, "finalState", ChecklistItemStateSkipped)
+	auditRec.AddEventResultState(*playbookRunToModify)
+
+	return nil
+}
+
+// createTaskStateModifiedEvent records a task_state_modified timeline event for a checklist item
+// state change, so clients can attribute the change to a user and a time. action must be one of the
+// taskStateAction constants.
+func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, userID, action string, item ChecklistItem, timestamp int64) error {
+	title := stripmd.Strip(item.Title)
+
+	detailsJSON, err := json.Marshal(TaskStateModifiedDetails{
+		Action: action,
+		Task:   title,
+		ItemID: item.ID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to encode timeline event details")
+	}
+
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      timestamp,
+		EventAt:       timestamp,
+		EventType:     TaskStateModified,
+		Summary:       fmt.Sprintf("%s checklist item **%v**", taskStatePastTense[action], title),
+		SubjectUserID: userID,
+		Details:       string(detailsJSON),
+	}
+
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
 
 	return nil
 }
 
 // RestoreChecklistItem restores the item at the given index from the given checklist
 func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	auditRec := plugin.MakeAuditRecord("restoreChecklistItem", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
+	}
+
+	itemToRestore := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToRestore.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentState", itemToRestore.State)
+
+	if itemToRestore.State != ChecklistItemStateSkipped {
+		auditRec.Success()
+		return nil
 	}
 
 	var originalRun *PlaybookRun
@@ -3321,15 +3542,29 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 		originalRun = playbookRunToModify.Clone()
 	}
 
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
-	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
+	timestamp := model.GetMillis()
+	itemToRestore.State = ChecklistItemStateOpen
+	itemToRestore.StateModified = timestamp
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToRestore, timestamp)
 
+	restoredItem := *itemToRestore
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+	if err := s.createTaskStateModifiedEvent(playbookRunID, userID, taskStateActionRestore, restoredItem, timestamp); err != nil {
+		return err
+	}
+
+	// A nil current run forces a refetch so the new timeline event ships with the WS payload.
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "action", taskStateActionRestore)
+	model.AddEventParameterToAuditRec(auditRec, "finalState", ChecklistItemStateOpen)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
@@ -4093,14 +4328,15 @@ func withRunWSOptions(options *RunWSOptions) RunWSOption {
 // PublishRunEventToViewers sends a websocket event carrying run data to the users allowed to
 // view the run, plus any additionalUserIDs that pass the same check. Membership of the run's
 // channel does not by itself grant access to a playbook-based run, so recipients are filtered
-// with the predicate the REST API uses instead of broadcasting to the whole channel.
+// with the predicate the REST API uses instead of broadcasting to the whole channel. Run
+// payloads can exceed the best-effort UDP size cap, so delivery uses the reliable cluster path.
 func (s *PlaybookRunServiceImpl) PublishRunEventToViewers(event string, payload interface{}, run *PlaybookRun, additionalUserIDs ...string) {
 	var candidateUserIDs []string
 
 	if s.permissions.RunViewIsChannelScoped(run) {
 		// Access to a channel checklist is access to its channel, so broadcasting to the
 		// channel already matches who may view the run.
-		s.poster.PublishWebsocketEventToChannel(event, payload, run.ChannelID)
+		s.poster.PublishWebsocketEventToChannelReliable(event, payload, run.ChannelID)
 		if len(additionalUserIDs) == 0 {
 			return
 		}
@@ -4110,7 +4346,7 @@ func (s *PlaybookRunServiceImpl) PublishRunEventToViewers(event string, payload 
 	}
 
 	for _, userID := range s.permissions.FilterRunViewers(candidateUserIDs, run) {
-		s.poster.PublishWebsocketEventToUser(event, payload, userID)
+		s.poster.PublishWebsocketEventToUserReliable(event, payload, userID)
 	}
 }
 
@@ -5345,6 +5581,10 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(post *model.Post) {
 
 		for checklistNum, checklist := range run.Checklists {
 			for itemNum, item := range checklist.Items {
+				if len(item.Requirements) > 0 {
+					// Requirements and mark-as-done message triggers are mutually exclusive.
+					continue
+				}
 				for _, ta := range item.TaskActions {
 					if ta.Trigger.Type == KeywordsByUsersTriggerType {
 						t, err := NewKeywordsByUsersTrigger(ta.Trigger)

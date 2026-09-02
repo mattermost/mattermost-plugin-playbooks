@@ -628,6 +628,9 @@ func (s *stubRunService) OpenAddToTimelineDialog(RequesterInfo, string, string, 
 func (s *stubRunService) OpenAddChecklistItemDialog(string, string, string, int) error {
 	panic("stubRunService: OpenAddChecklistItemDialog not implemented")
 }
+func (s *stubRunService) OpenFillRequirementsDialog(string, string, string, int, int) error {
+	panic("stubRunService: OpenFillRequirementsDialog not implemented")
+}
 func (s *stubRunService) AddPostToTimeline(*PlaybookRun, string, *model.Post, string) error {
 	panic("stubRunService: AddPostToTimeline not implemented")
 }
@@ -664,7 +667,7 @@ func (s *stubRunService) IsOwner(string, string) bool {
 func (s *stubRunService) ChangeOwner(string, string, string) error {
 	panic("stubRunService: ChangeOwner not implemented")
 }
-func (s *stubRunService) ModifyCheckedState(string, string, string, int, int) error {
+func (s *stubRunService) ModifyCheckedState(string, string, string, int, int, ...ModifyCheckedStateOptions) error {
 	panic("stubRunService: ModifyCheckedState not implemented")
 }
 func (s *stubRunService) ToggleCheckedState(string, string, int, int) error {

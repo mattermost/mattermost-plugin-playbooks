@@ -235,6 +235,8 @@ const TimelineEventItem = (props: Props) => {
                 return formatMessage({defaultMessage: '{user} skipped checklist item "{name}"'}, {user, name});
             case 'restore':
                 return formatMessage({defaultMessage: '{user} restored checklist item "{name}"'}, {user, name});
+            case 'requirements_updated':
+                return formatMessage({defaultMessage: '{user} updated requirements for checklist item "{name}"'}, {user, name});
             default:
                 return (event.subject_display_name + ' ' + event.summary).replace(/\*\*/g, '"');
             }

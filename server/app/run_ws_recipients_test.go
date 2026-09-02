@@ -50,13 +50,13 @@ func newRunWSFixture(t *testing.T, playbook Playbook, playbookErr error) *runWSF
 	}
 
 	poster.EXPECT().
-		PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any()).
+		PublishWebsocketEventToUserReliable(gomock.Any(), gomock.Any(), gomock.Any()).
 		Do(func(_ string, _ interface{}, userID string) {
 			f.usersNotified = append(f.usersNotified, userID)
 		}).
 		AnyTimes()
 	poster.EXPECT().
-		PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any()).
+		PublishWebsocketEventToChannelReliable(gomock.Any(), gomock.Any(), gomock.Any()).
 		Do(func(_ string, _ interface{}, channelID string) {
 			f.channelBroadcast = append(f.channelBroadcast, channelID)
 		}).

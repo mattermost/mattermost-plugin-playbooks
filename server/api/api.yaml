@@ -1160,6 +1160,19 @@ paths:
                     - closed
                   example: closed
                   default: ""
+                requirement_values:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: |
+                    Optional map of requirement ID to filled value. When the task requirements
+                    beta feature is enabled and the item has requirements, closing the item
+                    requires every requirement to have a non-empty value (either already stored
+                    on the item or supplied here). Clients that cannot collect requirement
+                    values (for example mobile, until supported) will receive 400 when trying
+                    to close such items.
+                  example:
+                    req1abcxyz: "https://jira.example.com/browse/ABC-123"
               required:
                 - new_state
       x-codeSamples:
@@ -1167,7 +1180,7 @@ paths:
           source: |
             curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/state' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
-            -d '{"new_state": "closed"}'
+            -d '{"new_state": "closed", "requirement_values": {"req1abcxyz": "https://jira.example.com/browse/ABC-123"}}'
       responses:
         200:
           description: Item's state successfully updated.
@@ -2681,7 +2694,10 @@ components:
           example: 1607774621321
         task_actions:
           type: array
-          description: An array of all the task actions associated with this task.
+          description: |
+            An array of all the task actions associated with this task.
+            Enabled mark-as-done message triggers are mutually exclusive with requirements
+            on the same checklist item.
           items:
             type: object
             properties:
@@ -2693,6 +2709,15 @@ components:
                 description: The actions to be executed when the trigger is activated.
                 items:
                   type: object
+        requirements:
+          type: array
+          description: |
+            Labeled fields that must be filled when checking off this task in a run.
+            Only used when the task requirements beta feature is enabled. Mutually exclusive
+            with enabled mark-as-done message triggers on the same item. On playbook writes,
+            requirement values are cleared so templates do not prefill run values.
+          items:
+            $ref: "#/components/schemas/TaskRequirement"
         update_at:
           type: integer
           format: int64
@@ -2714,6 +2739,21 @@ components:
           type: string
           description: A string representation of the condition that affects this checklist item. Empty string if no condition is associated with this item.
           example: "Severity is Critical AND Status is not Closed"
+    TaskRequirement:
+      type: object
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the requirement field.
+          example: req1abcxyz
+        label:
+          type: string
+          description: The label shown to users when filling this requirement.
+          example: Ticket URL
+        value:
+          type: string
+          description: The filled value for this requirement on a run. Empty on playbook templates.
+          example: "https://jira.example.com/browse/ABC-123"
     Error:
       type: object
       required:
