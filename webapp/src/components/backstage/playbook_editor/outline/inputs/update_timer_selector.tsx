@@ -52,9 +52,14 @@ const UpdateTimer = (props: Props) => {
         return {options, value};
     }, [props.seconds, formatMessage]);
 
+    // The chip sits mid-sentence ("A status update is never expected."), so it renders lowercase,
+    // reusing the same message id as the read-only variant. The dropdown option stays capitalised.
+    const isNever = defaults.value?.value === null;
+    const placeholderLabel = isNever ? formatMessage({defaultMessage: 'never'}) : defaults.value?.label;
+
     return (
         <DateTimeSelector
-            placeholder={<Placeholder label={defaults.value?.label}/>}
+            placeholder={<Placeholder label={placeholderLabel}/>}
             date={props.seconds}
             mode={Mode.DurationValue}
             onlyPlaceholder={true}

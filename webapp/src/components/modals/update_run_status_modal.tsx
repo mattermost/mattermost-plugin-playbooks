@@ -497,7 +497,9 @@ const ReminderTimer = graphql(/* GraphQL */`
 export const isNeverOptionSelected = (value: Option | null | undefined): boolean =>
     value != null && value.value === null;
 
-const useReminderTimerOption = (
+// Exported for testing: the preselection rules below encode the "Never" (reminder 0) semantics,
+// where 0 is a deliberate choice rather than an absent value.
+export const useReminderTimerOption = (
     run: Maybe<ReminderTimerFragment>,
     disabled?: boolean,
     preselectedValue?: number,
@@ -515,8 +517,10 @@ const useReminderTimerOption = (
         ];
 
         let value: Option | undefined;
-        if (preselectedValue) {
-            value = makeOption({seconds: preselectedValue});
+        if (preselectedValue !== undefined) {
+            // 0 is a meaningful preselection ("Never"), so this must not be a truthiness check:
+            // the finish-run confirmation round-trips the current reminder back through here.
+            value = preselectedValue === 0 ? neverOption : makeOption({seconds: preselectedValue});
         }
         if (run) {
             if (!value && run.previousReminder) {
@@ -537,8 +541,10 @@ const useReminderTimerOption = (
                     // (the previous reminder timer specified take precedence)
                     value = defaultReminderOption;
                 }
-            } else if (!value && !hasActivePost) {
-                // playbook default is "Never" (0): preselect it when no update was posted yet
+            } else if (!value && !run.previousReminder) {
+                // Playbook default is "Never" (0) and no reminder is pending. That is an explicit
+                // choice rather than an absent value, so preselect it on every update -- not only
+                // the first one, which would leave later updates showing a validation error.
                 value = neverOption;
             }
         }
