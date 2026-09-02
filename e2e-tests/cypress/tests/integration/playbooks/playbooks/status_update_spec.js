@@ -231,11 +231,13 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-            // * Verify the text now reads "never expected" and the picker shows "Never"
+            // * Verify the sentence now reads "A status update is never expected."
+            // The chip renders lowercase mid-sentence, while the dropdown option stays capitalised.
             cy.findAllByTestId('status-update-section').within(() => {
                 cy.contains('A status update is expected every').should('not.exist');
+                cy.contains('A status update is');
                 cy.contains('expected');
-                cy.findByTestId('status-update-timer').contains('Never');
+                cy.findByTestId('status-update-timer').contains('never');
             });
 
             // # Reconfigure back to a duration
