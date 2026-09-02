@@ -275,6 +275,32 @@ func TestPublishRunEventToViewers_PlaybookIsReadOncePerEvent(t *testing.T) {
 	}
 }
 
+// TestPublishRunEventToViewers_TeamViewCheckedOncePerUser guards the fan-out cost: resolving one
+// candidate's run access re-checks team-view several times (runView, PlaybookView, and role
+// resolution), so without batch memoization a single event makes that call per user many times
+// over. The check must instead hit the plugin API once per user per event.
+func TestPublishRunEventToViewers_TeamViewCheckedOncePerUser(t *testing.T) {
+	f := newRunWSFixture(t, privatePlaybook(), nil)
+	f.setChannelMembers(wsStrangerID)
+	f.allowTeamView(wsStrangerID)
+	f.grantPlaybookMemberView()
+
+	run := privatePlaybookRun()
+	f.svc.PublishRunEventToViewers(playbookRunUpdatedWSEvent, run, run)
+
+	teamViewChecks := 0
+	for _, call := range f.api.Calls {
+		if call.Method != "HasPermissionToTeam" {
+			continue
+		}
+		if call.Arguments.Get(0) == wsStrangerID && call.Arguments.Get(2) == model.PermissionViewTeam {
+			teamViewChecks++
+		}
+	}
+
+	assert.Equal(t, 1, teamViewChecks, "team-view access should be resolved once per user per event, not re-checked for each permission")
+}
+
 // TestPublishRunEventToViewers_ChannelListingFailureKeepsParticipants checks that a failure to
 // enumerate the channel still delivers to the owner and participants.
 func TestPublishRunEventToViewers_ChannelListingFailureKeepsParticipants(t *testing.T) {

@@ -55,8 +55,33 @@ func (p *PermissionsService) PlaybookIsPublic(playbook Playbook) bool {
 	return playbook.Public
 }
 
+// teamPermCache memoizes HasPermissionToTeam lookups for the duration of a single operation.
+// A given (userID, teamID, permission) is otherwise re-evaluated several times while checking
+// one user's run access, and FilterRunViewers repeats that work for every channel member. A nil
+// cache disables memoization and reads through to the plugin API on every call.
+type teamPermCache map[string]bool
+
+func (p *PermissionsService) hasPermissionToTeam(cache teamPermCache, userID, teamID string, permission *model.Permission) bool {
+	if cache == nil {
+		return p.pluginAPI.User.HasPermissionToTeam(userID, teamID, permission)
+	}
+
+	key := userID + "\x1f" + teamID + "\x1f" + permission.Id
+	if allowed, ok := cache[key]; ok {
+		return allowed
+	}
+
+	allowed := p.pluginAPI.User.HasPermissionToTeam(userID, teamID, permission)
+	cache[key] = allowed
+	return allowed
+}
+
 func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) []string {
-	if !p.canViewTeam(userID, playbook.TeamID) {
+	return p.getPlaybookRoleCached(nil, userID, playbook)
+}
+
+func (p *PermissionsService) getPlaybookRoleCached(cache teamPermCache, userID string, playbook Playbook) []string {
+	if !p.canViewTeamCached(cache, userID, playbook.TeamID) {
 		return []string{}
 	}
 
@@ -69,7 +94,7 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	// Public playbooks
 	if playbook.Public {
 		// Public playbooks are public to those who can list channels on a team. (Not guests)
-		if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionListTeamChannels) {
+		if p.hasPermissionToTeam(cache, userID, playbook.TeamID, model.PermissionListTeamChannels) {
 			if playbook.DefaultPlaybookMemberRole == "" {
 				return []string{playbook.DefaultPlaybookMemberRole}
 			}
@@ -81,21 +106,29 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 }
 
 func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Playbook, permission *model.Permission) bool {
+	return p.hasPermissionsToPlaybookCached(nil, userID, playbook, permission)
+}
+
+func (p *PermissionsService) hasPermissionsToPlaybookCached(cache teamPermCache, userID string, playbook Playbook, permission *model.Permission) bool {
 	// Check at playbook level
-	if p.pluginAPI.User.RolesGrantPermission(p.getPlaybookRole(userID, playbook), permission.Id) {
+	if p.pluginAPI.User.RolesGrantPermission(p.getPlaybookRoleCached(cache, userID, playbook), permission.Id) {
 		return true
 	}
 
 	// Cascade normally to higher level permissions
-	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
+	return p.hasPermissionToTeam(cache, userID, playbook.TeamID, permission)
 }
 
 func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
+	return p.canViewTeamCached(nil, userID, teamID)
+}
+
+func (p *PermissionsService) canViewTeamCached(cache teamPermCache, userID string, teamID string) bool {
 	if teamID == "" || userID == "" {
 		return false
 	}
 
-	return p.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
+	return p.hasPermissionToTeam(cache, userID, teamID, model.PermissionViewTeam)
 }
 
 func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) error {
@@ -514,6 +547,10 @@ func (p *PermissionsService) PlaybookList(userID, teamID string) error {
 }
 
 func (p *PermissionsService) PlaybookViewWithPlaybook(userID string, playbook Playbook) error {
+	return p.playbookViewWithPlaybookCached(nil, userID, playbook)
+}
+
+func (p *PermissionsService) playbookViewWithPlaybookCached(cache teamPermCache, userID string, playbook Playbook) error {
 	noAccessErr := errors.Wrapf(
 		ErrNoPermissions,
 		"user `%s` to access playbook `%s`",
@@ -522,17 +559,17 @@ func (p *PermissionsService) PlaybookViewWithPlaybook(userID string, playbook Pl
 	)
 
 	// Playbooks are tied to teams. You must have permission to the team to have permission to the playbook.
-	if !p.canViewTeam(userID, playbook.TeamID) {
+	if !p.canViewTeamCached(cache, userID, playbook.TeamID) {
 		return errors.Wrapf(noAccessErr, "no playbook access; no team view permission for team `%s`", playbook.TeamID)
 	}
 
 	if p.PlaybookIsPublic(playbook) {
-		if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionPublicPlaybookView) {
+		if p.hasPermissionsToPlaybookCached(cache, userID, playbook, model.PermissionPublicPlaybookView) {
 			return nil
 		}
 	}
 
-	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionPrivatePlaybookView) {
+	if p.hasPermissionsToPlaybookCached(cache, userID, playbook, model.PermissionPrivatePlaybookView) {
 		return nil
 	}
 
@@ -632,17 +669,18 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	return p.runViewWithPlaybook(userID, run, func() (Playbook, error) {
+	return p.runViewWithPlaybook(nil, userID, run, func() (Playbook, error) {
 		return p.playbookService.Get(run.PlaybookID)
 	})
 }
 
 // runViewWithPlaybook checks view access to an already-loaded run. getPlaybook is only called
 // for users whose access depends on the parent playbook; callers checking many users against
-// the same run should memoize it so the playbook is read at most once.
-func (p *PermissionsService) runViewWithPlaybook(userID string, run *PlaybookRun, getPlaybook func() (Playbook, error)) error {
+// the same run should memoize it so the playbook is read at most once. A non-nil cache
+// deduplicates the team-permission lookups repeated across those users.
+func (p *PermissionsService) runViewWithPlaybook(cache teamPermCache, userID string, run *PlaybookRun, getPlaybook func() (Playbook, error)) error {
 	// For DM/GM runs (empty TeamID), skip team check and use channel-based permissions
-	if run.TeamID != "" && !p.canViewTeam(userID, run.TeamID) {
+	if run.TeamID != "" && !p.canViewTeamCached(cache, userID, run.TeamID) {
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
@@ -673,7 +711,7 @@ func (p *PermissionsService) runViewWithPlaybook(userID string, run *PlaybookRun
 		return errors.Wrapf(err, "Unable to get playbook to determine permissions, playbook id `%s`", run.PlaybookID)
 	}
 
-	return p.PlaybookViewWithPlaybook(userID, playbook)
+	return p.playbookViewWithPlaybookCached(cache, userID, playbook)
 }
 
 // RunViewIsChannelScoped reports whether access to the run's channel is by itself enough to
@@ -686,7 +724,8 @@ func (p *PermissionsService) RunViewIsChannelScoped(run *PlaybookRun) bool {
 // FilterRunViewers returns the subset of userIDs allowed to view the run, applying the same
 // predicate as RunView. The parent playbook is read at most once for the whole batch, whether
 // or not that read succeeds: a run channel can hold thousands of candidates, and retrying a
-// failed read per candidate would multiply one bad read across every websocket event.
+// failed read per candidate would multiply one bad read across every websocket event. The
+// team-permission lookups repeated for each candidate are likewise memoized for the batch.
 func (p *PermissionsService) FilterRunViewers(userIDs []string, run *PlaybookRun) []string {
 	getPlaybook := sync.OnceValues(func() (Playbook, error) {
 		playbook, err := p.playbookService.Get(run.PlaybookID)
@@ -701,9 +740,10 @@ func (p *PermissionsService) FilterRunViewers(userIDs []string, run *PlaybookRun
 		return playbook, err
 	})
 
+	cache := make(teamPermCache)
 	viewers := make([]string, 0, len(userIDs))
 	for _, userID := range userIDs {
-		if p.runViewWithPlaybook(userID, run, getPlaybook) == nil {
+		if p.runViewWithPlaybook(cache, userID, run, getPlaybook) == nil {
 			viewers = append(viewers, userID)
 		}
 	}
