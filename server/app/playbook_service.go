@@ -79,7 +79,7 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	}
 	playbook.ID = newID
 
-	s.poster.PublishWebsocketEventToTeam(playbookCreatedWSEvent, map[string]interface{}{
+	s.poster.PublishWebsocketEventToTeamReliable(playbookCreatedWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
 
@@ -370,7 +370,7 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 		s.metricsService.IncrementPlaybookArchivedCount(1)
 	}
 
-	s.poster.PublishWebsocketEventToTeam(playbookArchivedWSEvent, map[string]interface{}{
+	s.poster.PublishWebsocketEventToTeamReliable(playbookArchivedWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
 
@@ -415,7 +415,7 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 		s.metricsService.IncrementPlaybookRestoredCount(1)
 	}
 
-	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
+	s.poster.PublishWebsocketEventToTeamReliable(playbookRestoredWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
 
