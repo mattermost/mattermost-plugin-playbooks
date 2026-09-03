@@ -682,6 +682,9 @@ func (s *stubRunService) SetRoleAssignee(string, string, string, int, int) error
 func (s *stubRunService) SetPropertyUserAssignee(string, string, int, int, string) error {
 	panic("stubRunService: SetPropertyUserAssignee not implemented")
 }
+func (s *stubRunService) SetAssigneeOnlyComplete(string, string, int, int, bool) error {
+	panic("stubRunService: SetAssigneeOnlyComplete not implemented")
+}
 func (s *stubRunService) SetCommandToChecklistItem(string, string, int, int, string) error {
 	panic("stubRunService: SetCommandToChecklistItem not implemented")
 }

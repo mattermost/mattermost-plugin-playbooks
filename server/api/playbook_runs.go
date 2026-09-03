@@ -127,6 +127,7 @@ func NewPlaybookRunHandler(
 		checklistItem.HandleFunc("/restore", withContext(handler.itemRestore)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/state", withContext(handler.itemSetState)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/assignee_only_complete", withContext(handler.itemSetAssigneeOnlyComplete)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
 		checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
@@ -1484,6 +1485,10 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 	}
 
 	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, opts...); err != nil {
+		if errors.Is(err, app.ErrAssigneeOnlyComplete) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee can complete this task", err)
+			return
+		}
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to modify checklist item state", err)
 			return
@@ -1547,7 +1552,9 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 			return
 		}
 		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
-			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			} else {
 				h.HandleError(w, c.logger, err)
@@ -1556,7 +1563,9 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 		}
 	case params.AssigneeType != "":
 		if err := h.playbookRunService.SetRoleAssignee(id, userID, params.AssigneeType, checklistNum, itemNum); err != nil {
-			if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else if errors.Is(err, app.ErrMalformedPlaybookRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			} else {
 				h.HandleError(w, c.logger, err)
@@ -1566,9 +1575,52 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	default:
 		// Empty body / empty assignee_id keeps the existing "clear assignee" semantics.
 		if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
-			h.HandleError(w, c.logger, err)
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
 			return
 		}
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) itemSetAssigneeOnlyComplete(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		AssigneeOnlyComplete bool `json:"assignee_only_complete"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetAssigneeOnlyComplete(id, userID, checklistNum, itemNum, params.AssigneeOnlyComplete); err != nil {
+		if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			return
+		}
+		if errors.Is(err, app.ErrAssigneeRequiredForLock) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assign someone before locking this task", err)
+			return
+		}
+		h.HandleError(w, c.logger, err)
+		return
 	}
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)

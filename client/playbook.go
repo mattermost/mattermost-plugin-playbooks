@@ -76,6 +76,7 @@ type ChecklistItem struct {
 	AssigneeModified        int64        `json:"assignee_modified"`
 	AssigneeType            string       `json:"assignee_type"`
 	AssigneePropertyFieldID string       `json:"assignee_property_field_id"`
+	AssigneeOnlyComplete    bool         `json:"assignee_only_complete"`
 	Command                 string       `json:"command"`
 	CommandLastRun          int64        `json:"command_last_run"`
 	Description             string       `json:"description"`

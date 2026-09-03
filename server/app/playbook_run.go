@@ -780,6 +780,9 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if prev.AssigneePropertyFieldID != item.AssigneePropertyFieldID {
 				fields["assignee_property_field_id"] = item.AssigneePropertyFieldID
 			}
+			if prev.AssigneeOnlyComplete != item.AssigneeOnlyComplete {
+				fields["assignee_only_complete"] = item.AssigneeOnlyComplete
+			}
 			if prev.Command != item.Command {
 				fields["command"] = item.Command
 			}
@@ -1351,6 +1354,9 @@ type PlaybookRunService interface {
 	// SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
 	// property field resolves to on this run.
 	SetPropertyUserAssignee(playbookRunID, userID string, checklistNumber, itemNumber int, propertyFieldID string) error
+
+	// SetAssigneeOnlyComplete sets whether only the assignee may check/uncheck the checklist item.
+	SetAssigneeOnlyComplete(playbookRunID, userID string, checklistNumber, itemNumber int, assigneeOnlyComplete bool) error
 
 	// SetCommandToChecklistItem sets command to checklist item
 	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
