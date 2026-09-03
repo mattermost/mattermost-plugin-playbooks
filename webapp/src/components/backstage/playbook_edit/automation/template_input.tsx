@@ -432,6 +432,7 @@ const TextBox = styled(BaseInput)`
 const Preview = styled.div`
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     margin-top: 4px;
     font-size: 12px;
     line-height: 16px;
