@@ -151,7 +151,8 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
                 cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
 
                 cy.findByTestId('dropdownmenu').within(($dropdown) => {
-                    cy.wrap($dropdown).children().should('have.length', 2);
+                    // View all updates, Request update..., and Remove reminder (run has a scheduled reminder)
+                    cy.wrap($dropdown).children().should('have.length', 3);
 
                     // # Click on request update
                     cy.findByText('Request update...').click();
@@ -171,7 +172,8 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
                 // # Click on kebab menu
                 cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
                 cy.findByTestId('dropdownmenu').within(($dropdown) => {
-                    cy.wrap($dropdown).children().should('have.length', 2);
+                    // View all updates, Request update..., and Remove reminder (run has a scheduled reminder)
+                    cy.wrap($dropdown).children().should('have.length', 3);
 
                     // # Click on request update
                     cy.findByText('Request update...').click();
@@ -185,6 +187,33 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
 
                 // * Assert that message has not been sent
                 cy.getLastPost().should('not.contain', `${testUser.username} requested a status update for ${testRun.name}.`);
+            });
+        });
+
+        describe('remove reminder', () => {
+            it('clears a scheduled reminder from the kebab menu', () => {
+                // * A reminder is currently scheduled
+                cy.findByTestId('update-due-date-text').contains('Update due');
+
+                // # Open the kebab menu and click "Remove reminder"
+                cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+                cy.findByTestId('dropdownmenu').within(() => {
+                    cy.findByText('Remove reminder').click();
+                });
+
+                // # Confirm removal
+                cy.get('#confirmModalButton').click();
+
+                // * The widget no longer expects an update (reminder cleared, no error)
+                cy.findByTestId('update-due-date-text').contains('Last update');
+
+                // # Reopen the kebab menu
+                cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+
+                // * "Remove reminder" is gone now that no reminder is scheduled
+                cy.findByTestId('dropdownmenu').within(() => {
+                    cy.findByText('Remove reminder').should('not.exist');
+                });
             });
         });
     });

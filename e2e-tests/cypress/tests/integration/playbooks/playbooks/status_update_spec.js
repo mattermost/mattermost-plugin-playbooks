@@ -211,4 +211,49 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
             });
         });
     });
+
+    describe('status update reminder "Never"', () => {
+        it('can set the reminder to Never and reconfigure it back to a duration', () => {
+            // # Visit the selected playbook outline tab
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // * Verify the default reminder is a duration
+            cy.findAllByTestId('status-update-section').within(() => {
+                cy.contains('A status update is expected every');
+            });
+
+            // # Open the reminder timer dropdown and select "Never"
+            cy.findByTestId('status-update-timer').click();
+            cy.get('.playbook-react-select__option').contains('Never').click();
+
+            cy.wait(TWO_SEC);
+
+            // # Refresh the page
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // * Verify the sentence now reads "A status update is never expected."
+            // The chip renders lowercase mid-sentence, while the dropdown option stays capitalised.
+            cy.findAllByTestId('status-update-section').within(() => {
+                cy.contains('A status update is expected every').should('not.exist');
+                cy.contains('A status update is');
+                cy.contains('expected');
+                cy.findByTestId('status-update-timer').contains('never');
+            });
+
+            // # Reconfigure back to a duration
+            cy.findByTestId('status-update-timer').click();
+            cy.get('.playbook-react-select__option').contains('7 days').click();
+
+            cy.wait(TWO_SEC);
+
+            // # Refresh the page
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // * Verify the duration phrasing is restored
+            cy.findAllByTestId('status-update-section').within(() => {
+                cy.contains('A status update is expected every');
+                cy.contains('7 days');
+            });
+        });
+    });
 });
