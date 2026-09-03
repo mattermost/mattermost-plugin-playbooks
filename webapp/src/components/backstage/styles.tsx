@@ -128,6 +128,7 @@ const selectGlobalStyles = (classNamePrefix: string) => css`
 
 export const GlobalSelectStyle = createGlobalStyle`
     ${selectGlobalStyles('playbooks-rselect')}
+    ${selectGlobalStyles('playbook-react-select')}
     ${selectGlobalStyles('property-select')}
 `;
 
