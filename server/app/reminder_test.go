@@ -145,8 +145,17 @@ type fakeReminderPoster struct {
 	bot.Poster
 }
 
-func (f *fakeReminderPoster) PublishWebsocketEventToChannel(string, interface{}, string) {}
-func (f *fakeReminderPoster) PublishWebsocketEventToUser(string, interface{}, string)    {}
+// All websocket publishers are stubbed, not just the two this path currently uses. The embedded
+// interface is nil, so a publisher added or renamed upstream (as PublishWebsocketEventToChannel ->
+// ...Reliable was) would otherwise surface as a segfault rather than a readable failure.
+func (f *fakeReminderPoster) PublishWebsocketEventToTeam(string, interface{}, string)            {}
+func (f *fakeReminderPoster) PublishWebsocketEventToTeamReliable(string, interface{}, string)    {}
+func (f *fakeReminderPoster) PublishWebsocketEventToChannel(string, interface{}, string)         {}
+func (f *fakeReminderPoster) PublishWebsocketEventToChannelReliable(string, interface{}, string) {}
+func (f *fakeReminderPoster) PublishWebsocketEventToUser(string, interface{}, string)            {}
+func (f *fakeReminderPoster) PublishWebsocketEventToUserReliable(string, interface{}, string)    {}
+func (f *fakeReminderPoster) PublishWebsocketEventGlobal(string, interface{})                    {}
+func (f *fakeReminderPoster) PublishWebsocketEventGlobalReliable(string, interface{})            {}
 
 type fakeScheduler struct {
 	scheduledKeys []string
