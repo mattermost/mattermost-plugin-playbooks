@@ -78,6 +78,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", withContext(handler.getPlaybookRun)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", withContext(handler.getPlaybookRunMetadata)).Methods(http.MethodGet)
+	registerRunExportRoute(playbookRunRouter)
 	playbookRunRouter.HandleFunc("/status-updates", withContext(handler.getStatusUpdates)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
@@ -265,7 +266,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
-	fieldsToUpdate := map[string]interface{}{}
+	fieldsToUpdate := map[string]any{}
 
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
 		return
@@ -884,7 +885,7 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+	ReturnJSON(w, map[string]any{}, http.StatusOK)
 }
 
 // updateStatusD handles the POST /runs/{id}/status endpoint, user has edit permissions
@@ -1113,7 +1114,7 @@ func (h *PlaybookRunHandler) toggleStatusUpdates(c *Context, w http.ResponseWrit
 		return
 	}
 
-	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
+	ReturnJSON(w, map[string]any{"success": true}, http.StatusOK)
 
 }
 
@@ -1148,7 +1149,7 @@ func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWrit
 		return
 	}
 
-	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
+	ReturnJSON(w, map[string]any{"success": true}, http.StatusOK)
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a
@@ -1497,7 +1498,7 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 		return
 	}
 
-	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+	ReturnJSON(w, map[string]any{}, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -1584,7 +1585,7 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 		}
 	}
 
-	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+	ReturnJSON(w, map[string]any{}, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) itemSetAssigneeOnlyComplete(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -1659,7 +1660,7 @@ func (h *PlaybookRunHandler) itemSetDueDate(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+	ReturnJSON(w, map[string]any{}, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) itemSetCommand(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -1690,7 +1691,7 @@ func (h *PlaybookRunHandler) itemSetCommand(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+	ReturnJSON(w, map[string]any{}, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -1724,7 +1725,7 @@ func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.
 		return
 	}
 
-	ReturnJSON(w, map[string]interface{}{"trigger_id": triggerID}, http.StatusOK)
+	ReturnJSON(w, map[string]any{"trigger_id": triggerID}, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) itemDuplicate(c *Context, w http.ResponseWriter, r *http.Request) {

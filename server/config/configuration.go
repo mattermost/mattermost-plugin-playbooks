@@ -33,6 +33,30 @@ type Configuration struct {
 	// These features may have in-progress UI, bugs, and other issues.
 	EnableExperimentalFeatures bool `json:"enableexperimentalfeatures"`
 
+	// PDF Report export (MM-68715 epic).
+	EnablePDFReports            bool `json:"enablepdfreports"`
+	MaxRunReportPosts           int  `json:"maxrunreportposts"`
+	MaxRunReportBytes           int  `json:"maxrunreportbytes"`
+	MaxConcurrentReports        int  `json:"maxconcurrentreports"`
+	MaxResolverLookupsPerExport int  `json:"maxresolverlookupsperexport"`
+	ExportTranscriptDefault     bool `json:"exporttranscriptdefault"`
+	ShowChannelExportCSVTip     bool `json:"showchannelexportcsvtip"`
+
+	// Gotenberg renderer settings (MM-68715 v5.4).
+	// PdfRendererBackend selects the PDF rendering engine.
+	// "" means markdown+HTML+browser-print only; "gotenberg" enables server-rendered PDF.
+	PdfRendererBackend     string `json:"pdfrendererbackend"`
+	GotenbergURL           string `json:"gotenbergurl"`
+	GotenbergAuthHeader    string `json:"gotenbergauthheader"`
+	GotenbergTimeoutSec    int    `json:"gotenbergtimeoutsec"`
+	GotenbergMaxConcurrent int    `json:"gotenbergmaxconcurrent"`
+	// MaxGotenbergResponseBytes caps the PDF response body the plugin will buffer.
+	// 0 → default 100 MiB. Enforced via io.LimitReader in the Gotenberg client.
+	MaxGotenbergResponseBytes int64  `json:"maxgotenbergresponsebytes"`
+	PdfAFlavor                string `json:"pdafaflavor"`
+	// EnableReports is the master kill-switch for the /report.* surface.
+	// Falls back to EnablePDFReports for one release.
+	EnableReports bool `json:"enablereports"`
 	// BetaFeatures holds individual beta feature toggles (task requirements, etc.).
 	// Stored as a JSON object in plugin settings; disabled by default.
 	BetaFeatures BetaFeaturesConfig `json:"betafeatures"`
@@ -65,6 +89,21 @@ func (c *Configuration) serialize() map[string]any {
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	ret["enableincrementalupdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
+	ret["EnablePDFReports"] = c.EnablePDFReports
+	ret["MaxRunReportPosts"] = c.MaxRunReportPosts
+	ret["MaxRunReportBytes"] = c.MaxRunReportBytes
+	ret["MaxConcurrentReports"] = c.MaxConcurrentReports
+	ret["MaxResolverLookupsPerExport"] = c.MaxResolverLookupsPerExport
+	ret["ExportTranscriptDefault"] = c.ExportTranscriptDefault
+	ret["ShowChannelExportCSVTip"] = c.ShowChannelExportCSVTip
+	ret["PdfRendererBackend"] = c.PdfRendererBackend
+	ret["GotenbergURL"] = c.GotenbergURL
+	ret["GotenbergAuthHeader"] = c.GotenbergAuthHeader
+	ret["GotenbergTimeoutSec"] = c.GotenbergTimeoutSec
+	ret["GotenbergMaxConcurrent"] = c.GotenbergMaxConcurrent
+	ret["MaxGotenbergResponseBytes"] = c.MaxGotenbergResponseBytes
+	ret["PdfAFlavor"] = c.PdfAFlavor
+	ret["EnableReports"] = c.EnableReports
 	// Store as a plain map so SavePluginConfig can gob-encode across plugin RPC
 	// without registering a custom type.
 	ret["BetaFeatures"] = map[string]any{
