@@ -1,7 +1,7 @@
 # FIPS-compliant Linux/amd64 build. Linux/amd64 is the only platform
 # mattermost-server's FIPS release path supports.
 
-FIPS_IMAGE ?= cgr.dev/mattermost.com/go-msft-fips:1.26.3-dev@sha256:48ab99fede7fb33e132a0636072971e1ec4a69520865bfa1e4b517ee9cfdef34
+FIPS_IMAGE ?= cgr.dev/mattermost.com/go-msft-fips:1.26.7.1-dev@sha256:ae345a37a612265894a7e7f318be45680663346cb7992613916e196daf38e839
 # Same filename as the non-FIPS bundle on purpose: `make upload-to-server`
 # (called from .github/actions/e2e-test) expects `dist/$(BUNDLE_NAME)`. The
 # FIPS variant lives in dist-fips/, so there's no collision. delivery-platform's
