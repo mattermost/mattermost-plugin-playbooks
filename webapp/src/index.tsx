@@ -21,6 +21,7 @@ import {isConfiguredForDevelopment} from 'src/license';
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
 import LoginHook from 'src/components/login_hook';
+import BetaFeaturesSetting from 'src/components/backstage/beta_features_setting';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeWelcomeMessagePoster} from 'src/welcome_message_poster';
 import {makeSlashCommandHook} from 'src/slash_command';
@@ -217,6 +218,11 @@ export default class Plugin {
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
         registry.registerRootComponent(LoginHook);
+
+        // System Console: Beta Features accordion (must be last among plugin settings)
+        if (registry.registerAdminConsoleCustomSetting) {
+            registry.registerAdminConsoleCustomSetting('BetaFeatures', BetaFeaturesSetting, {showTitle: false});
+        }
 
         // App Bar icon
         if (registry.registerAppBarComponent) {

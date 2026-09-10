@@ -5,17 +5,15 @@ import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
-import {PropertyField, PropertyValue} from 'src/types/properties';
+import {PropertyComponentProps} from 'src/types/properties';
 
 import PropertySelectInput from './property_select_input';
 
 import PropertyChip from './property_chip';
 import EmptyState from './empty_state';
+import {readOnlyInteractiveStyles} from './property_styles';
 
-interface Props {
-    field: PropertyField;
-    value?: PropertyValue;
-    runID: string;
+interface Props extends PropertyComponentProps {
     onValueChange: (value: string[] | null) => void;
 }
 
@@ -36,6 +34,9 @@ const MultiselectProperty = (props: Props) => {
     };
 
     const handleStartEdit = () => {
+        if (props.readOnly) {
+            return;
+        }
         setIsEditing(true);
         setTempValue(displayValue ?? null);
     };
@@ -72,6 +73,7 @@ const MultiselectProperty = (props: Props) => {
         return (
             <EmptyMultiselectDisplay
                 onClick={handleStartEdit}
+                $readOnly={props.readOnly}
                 data-testid='property-value'
             >
                 <EmptyState/>
@@ -89,7 +91,7 @@ const MultiselectProperty = (props: Props) => {
                 <PropertyChip
                     key={index}
                     label={label!}
-                    onClick={handleStartEdit}
+                    onClick={props.readOnly ? undefined : handleStartEdit}
                 />
             ))}
         </ChipsContainer>
@@ -102,18 +104,12 @@ const ChipsContainer = styled.div`
     gap: 4px;
 `;
 
-const EmptyMultiselectDisplay = styled.div`
+const EmptyMultiselectDisplay = styled.div<{$readOnly?: boolean}>`
     flex: 1;
-    cursor: pointer;
     padding: 4px 0;
     min-height: 20px;
 
-    &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        border-radius: 4px;
-        margin: 0 -4px;
-        padding: 4px;
-    }
+    ${readOnlyInteractiveStyles}
 `;
 
 export default MultiselectProperty;

@@ -57,6 +57,9 @@ export const clientId = (state: GlobalState): string => pluginState(state).clien
 
 export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
 
+export const selectTaskRequirementsEnabled = (state: GlobalState): boolean =>
+    Boolean(globalSettings(state)?.enable_task_requirements);
+
 /**
  * @returns runs indexed by playbookRunId->playbookRun
  */

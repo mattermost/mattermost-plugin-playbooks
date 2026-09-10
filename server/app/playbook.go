@@ -63,6 +63,7 @@ type Playbook struct {
 	RunSummaryTemplateEnabled               bool                   `json:"run_summary_template_enabled" export:"run_summary_template_enabled"`
 	RunSummaryTemplate                      string                 `json:"run_summary_template" export:"run_summary_template"`
 	ChannelNameTemplate                     string                 `json:"channel_name_template" export:"channel_name_template"`
+	ChannelNameTemplateLocked               bool                   `json:"channel_name_template_locked" export:"channel_name_template_locked"`
 	DefaultPlaybookAdminRole                string                 `json:"default_playbook_admin_role" export:"-"`
 	DefaultPlaybookMemberRole               string                 `json:"default_playbook_member_role" export:"-"`
 	DefaultRunAdminRole                     string                 `json:"default_run_admin_role" export:"-"`
@@ -112,6 +113,13 @@ type PlaybookMember struct {
 	UserID      string   `json:"user_id"`
 	Roles       []string `json:"roles"`
 	SchemeRoles []string `json:"scheme_roles"`
+}
+
+// PlaybookSchemeRoles holds the playbook role names a team's scheme assigns. Teams without a
+// scheme fall back to the built-in PlaybookRoleAdmin/PlaybookRoleMember.
+type PlaybookSchemeRoles struct {
+	AdminRole  string
+	MemberRole string
 }
 
 type PlaybookMetricConfig struct {
@@ -290,6 +298,7 @@ type ChecklistItemCommon interface {
 	SetState(state string)
 	SetStateModified(modified int64)
 	SetCommandLastRun(lastRun int64)
+	ClearRequirementValues()
 }
 
 // ChecklistItem represents an item in a checklist.
@@ -319,6 +328,10 @@ type ChecklistItem struct {
 	// AssigneePropertyFieldID is the property field whose value is used when AssigneeType == AssigneeTypePropertyUser.
 	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"assignee_property_field_id"`
 
+	// AssigneeOnlyComplete, when true and an assignee is set, restricts checking/unchecking
+	// this item to the assignee. Anyone may still change the assignee.
+	AssigneeOnlyComplete bool `json:"assignee_only_complete" export:"assignee_only_complete"`
+
 	// Command, if not empty, is the slash command that can be run as part of this item.
 	Command string `json:"command" export:"command"`
 
@@ -341,6 +354,9 @@ type ChecklistItem struct {
 	// TaskActions is an array of all the task actions associated with this task.
 	TaskActions []TaskAction `json:"task_actions" export:"-"`
 
+	// Requirements are fields that must be filled when checking off this task in a run.
+	Requirements []TaskRequirement `json:"requirements" export:"requirements"`
+
 	// UpdateAt is when this checklist item was last modified
 	UpdateAt int64 `json:"update_at" export:"-"`
 
@@ -352,6 +368,38 @@ type ChecklistItem struct {
 
 	// ConditionReason is a string representation of the condition.
 	ConditionReason string `json:"condition_reason" export:"-"`
+}
+
+const (
+	// MaxTaskRequirementLabelLength is the max length for a requirement label.
+	MaxTaskRequirementLabelLength = 128
+	// MaxTaskRequirementValueLength is the max length for a filled requirement value.
+	MaxTaskRequirementValueLength = 1024
+	// MaxTaskRequirementsPerItem is the max number of requirements on a single checklist item.
+	MaxTaskRequirementsPerItem = 20
+)
+
+// TaskRequirement is a labeled field that must be completed when checking off a task.
+type TaskRequirement struct {
+	ID    string `json:"id" export:"id"`
+	Label string `json:"label" export:"label"`
+	Value string `json:"value" export:"-"`
+}
+
+// ValidateTaskRequirements checks count and character limits for requirement labels/values.
+func ValidateTaskRequirements(requirements []TaskRequirement) error {
+	if len(requirements) > MaxTaskRequirementsPerItem {
+		return errors.Errorf("checklist item cannot have more than %d requirements", MaxTaskRequirementsPerItem)
+	}
+	for _, req := range requirements {
+		if utf8.RuneCountInString(req.Label) > MaxTaskRequirementLabelLength {
+			return errors.Errorf("requirement label exceeds maximum length of %d characters", MaxTaskRequirementLabelLength)
+		}
+		if utf8.RuneCountInString(req.Value) > MaxTaskRequirementValueLength {
+			return errors.Errorf("requirement value exceeds maximum length of %d characters", MaxTaskRequirementValueLength)
+		}
+	}
+	return nil
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {
@@ -376,6 +424,12 @@ func (ci *ChecklistItem) SetStateModified(modified int64) {
 func (ci *ChecklistItem) SetCommandLastRun(lastRun int64) {
 	ci.CommandLastRun = lastRun
 	ci.UpdateAt = lastRun
+}
+
+func (ci *ChecklistItem) ClearRequirementValues() {
+	for i := range ci.Requirements {
+		ci.Requirements[i].Value = ""
+	}
 }
 
 type GetPlaybooksResults struct {
@@ -478,6 +532,14 @@ type PlaybookService interface {
 
 	// UpdateChannelNameTemplate updates only the channel name template for a playbook.
 	UpdateChannelNameTemplate(playbookID, template, userID string) error
+
+	// UpdateChannelNameTemplateLocked updates only the channel name template lock
+	// setting for a playbook.
+	UpdateChannelNameTemplateLocked(playbookID string, locked bool, userID string) error
+
+	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
+	// falling back to the built-in roles when the team has no scheme.
+	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -575,6 +637,14 @@ type PlaybookStore interface {
 
 	// UpdateChannelNameTemplate updates only the ChannelNameTemplate column for the given playbook.
 	UpdateChannelNameTemplate(id, template string) error
+
+	// UpdateChannelNameTemplateLocked updates only the ChannelNameTemplateLocked
+	// column for the given playbook.
+	UpdateChannelNameTemplateLocked(id string, templateLocked bool) error
+
+	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
+	// falling back to the built-in roles when the team has no scheme.
+	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
 }
 
 const (
@@ -752,6 +822,7 @@ func CleanUpChecklists[T ChecklistCommon](checklists []T) {
 			items[itemIndex].SetState("")
 			items[itemIndex].SetStateModified(0)
 			items[itemIndex].SetCommandLastRun(0)
+			items[itemIndex].ClearRequirementValues()
 		}
 	}
 }

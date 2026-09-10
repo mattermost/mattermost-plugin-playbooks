@@ -25,7 +25,12 @@ import {
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
-import {fetchPlaybookPropertyFields, updatePlaybookChannelNameTemplate, updatePlaybookRunNumberPrefix} from 'src/client';
+import {
+    fetchPlaybookPropertyFields,
+    updatePlaybookChannelNameTemplate,
+    updatePlaybookChannelNameTemplateLocked,
+    updatePlaybookRunNumberPrefix,
+} from 'src/client';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
@@ -61,11 +66,26 @@ interface Props {
 const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange}: Props) => {
     const [restPlaybookLocal] = useRestPlaybook(playbook.id);
     const restPlaybook = restPlaybookProp ?? restPlaybookLocal;
-    const [fieldNames, setFieldNames] = useState<string[]>([]);
+    const [fieldNames, setFieldNames] = useState<string[] | undefined>(undefined);
     useEffect(() => {
+        let cancelled = false;
+        setFieldNames(undefined);
         fetchPlaybookPropertyFields(playbook.id)
-            .then((fields) => setFieldNames(fields.map((f) => f.name)))
-            .catch(() => { /* ignore fetch errors — fieldNames stays empty */ });
+            .then((fields) => {
+                if (!cancelled) {
+                    setFieldNames(fields.map((f) => f.name));
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) {
+                    setFieldNames([]);
+                }
+                // eslint-disable-next-line no-console
+                console.error('Failed to fetch playbook property fields', err);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [playbook.id]);
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
@@ -90,12 +110,24 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
         setSavedPrefix(restPlaybook?.run_number_prefix ?? '');
     }, [restPlaybook?.run_number_prefix]);
 
+    // channel_name_template_locked is REST-only (not yet in the GraphQL query),
+    // tracked the same way as run_number_prefix.
+    const [savedTemplateLocked, setSavedTemplateLocked] = useState(restPlaybook?.channel_name_template_locked ?? false);
+    const savedTemplateLockedRef = useRef(savedTemplateLocked);
+    useEffect(() => {
+        savedTemplateLockedRef.current = savedTemplateLocked;
+    }, [savedTemplateLocked]);
+    useEffect(() => {
+        setSavedTemplateLocked(restPlaybook?.channel_name_template_locked ?? false);
+    }, [restPlaybook?.channel_name_template_locked]);
+
     // Merge GraphQL playbook with REST-only fields so CreateAChannel can display run_number_prefix.
     const channelPlaybookSource = useMemo(() => ({
         ...playbook,
         run_number_prefix: savedPrefix,
         next_run_number: restPlaybook?.next_run_number,
-    }), [playbook, savedPrefix, restPlaybook?.next_run_number]);
+        channel_name_template_locked: savedTemplateLocked,
+    }), [playbook, savedPrefix, restPlaybook?.next_run_number, savedTemplateLocked]);
 
     const [
         playbookForCreateChannel,
@@ -161,6 +193,34 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
     useEffect(() => {
         return () => handleChannelNameTemplateSave.flush();
     }, [handleChannelNameTemplateSave]);
+
+    // channel_name_template_locked: debounced the same way as the prefix/template saves above.
+    // Debouncing coalesces rapid toggles into a single request, which avoids two overlapping
+    // PATCHes resolving out of order — with two in flight at once, a slower one succeeding after
+    // a faster one already rolled back could leave the client permanently out of sync with the
+    // server until a full reload, since restPlaybook is fetched once and never refreshed.
+    const handleChannelNameTemplateLockedSave = useMemo(
+        () => debounce((locked: boolean) => {
+            updatePlaybookChannelNameTemplateLocked(playbook.id, locked)
+                .then(() => {
+                    setSavedTemplateLocked(locked);
+                })
+                .catch((err) => {
+                    setPlaybookForCreateChannel((prev) => ({...prev, channel_name_template_locked: savedTemplateLockedRef.current}));
+                    addToastRef.current({
+                        content: formatMessage({defaultMessage: 'Failed to save this setting. Please try again.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                    // eslint-disable-next-line no-console
+                    console.error('Failed to save channel name template locked', err);
+                });
+        }, 500),
+        [playbook.id, setPlaybookForCreateChannel, formatMessage],
+    );
+
+    useEffect(() => {
+        return () => handleChannelNameTemplateLockedSave.flush();
+    }, [handleChannelNameTemplateLockedSave]);
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);
@@ -271,6 +331,7 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                         disabled={disabled}
                         onRunNumberPrefixChange={handleRunNumberPrefixSave}
                         onChannelNameTemplateChange={handleChannelNameTemplateSave}
+                        onChannelNameTemplateLockedChange={handleChannelNameTemplateLockedSave}
                         newChannelOnly={newChannelOnly}
                     />
                 </Setting>

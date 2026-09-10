@@ -4,11 +4,13 @@
 export interface GlobalSettings {
     link_run_to_existing_channel_enabled: boolean;
     enable_experimental_features: boolean;
+    enable_task_requirements: boolean;
 }
 
 const defaults: GlobalSettings = {
     link_run_to_existing_channel_enabled: false,
     enable_experimental_features: false,
+    enable_task_requirements: false,
 };
 
 export function globalSettingsSetDefaults(

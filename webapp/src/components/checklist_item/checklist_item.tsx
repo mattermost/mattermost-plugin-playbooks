@@ -15,10 +15,13 @@ import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from '@mattermost/types/users';
 
 import {FloatingPortal} from '@floating-ui/react';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {
     clientAddChecklistItem,
     clientEditChecklistItem,
+    setAssigneeOnlyComplete as clientSetAssigneeOnlyComplete,
     clientSetChecklistItemCommand,
     setDueDate as clientSetDueDate,
     setAssignee,
@@ -33,20 +36,24 @@ import {
     ChecklistItemState,
     ChecklistItem as ChecklistItemType,
     TaskAction as TaskActionType,
+    TaskRequirement,
     isRoleBasedAssigneeType,
 } from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
+import {TimelineEvent} from 'src/types/rhs';
+import CheckedChip, {shouldShowCheckedChip} from 'src/components/checklist_item/checked_chip';
 import {formatConditionExpr} from 'src/utils/condition_format';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-
 import {DateTimeOption} from 'src/components/datetime_selector';
 
 import {Mode} from 'src/components/datetime_input';
 
 import AssigneeDropdown from 'src/components/checklists/assignee_dropdown';
+import {useAppSelector} from 'src/hooks/redux';
+import {selectTaskRequirementsEnabled} from 'src/selectors';
 
 import ChecklistItemHoverMenu, {HoverMenu} from './hover_menu';
 import ChecklistItemDescription from './description';
@@ -59,6 +66,9 @@ import ConditionIndicator from './condition_indicator';
 
 import TaskActions from './task_actions';
 import {haveAtleastOneEnabledAction} from './task_actions_modal';
+import EditRequirementsModal from './edit_requirements_modal';
+import FillRequirementsModal from './fill_requirements_modal';
+import RequirementsAccordion from './requirements_accordion';
 
 export enum ButtonsFormat {
 
@@ -83,7 +93,8 @@ interface ChecklistItemProps {
     playbookId?: string;
     teamId?: string;
     channelId?: string;
-    onChange?: (item: ChecklistItemState) => ReturnType<typeof setChecklistItemState> | undefined;
+    timelineEvents?: TimelineEvent[];
+    onChange?: (item: ChecklistItemState, requirementValues?: Record<string, string>) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     readOnly: boolean;
@@ -118,10 +129,15 @@ interface ChecklistItemProps {
     onItemSelect?: () => void;
 }
 
+const itemHasAssignee = (assigneeId?: string, type?: string) =>
+    Boolean(assigneeId) || isRoleBasedAssigneeType(type || '');
+
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
     const toaster = useToaster();
+    const currentUserId = useAppSelector(getCurrentUserId);
     const isPlaybookEditor = !props.playbookRunId;
+    const betaFeaturesEnabled = useAppSelector(selectTaskRequirementsEnabled);
     const isMounted = useRef(true);
     useEffect(() => {
         return () => {
@@ -168,8 +184,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [assigneeType, setAssigneeType] = useState(props.checklistItem.assignee_type || '');
     const [assigneePropertyFieldID, setAssigneePropertyFieldID] = useState(props.checklistItem.assignee_property_field_id || '');
+    const [assigneeOnlyComplete, setAssigneeOnlyComplete] = useState(Boolean(props.checklistItem.assignee_only_complete));
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
+    const [showAddRequirementModal, setShowAddRequirementModal] = useState(false);
+    const [showFillRequirementsModal, setShowFillRequirementsModal] = useState(false);
+    const [fillRequirementsEditMode, setFillRequirementsEditMode] = useState(false);
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
+
+    const requirements = props.checklistItem.requirements || [];
 
     const userPropertyFields = useMemo(
         () => props.propertyFields?.filter((f) => f.type === PropertyFieldType.User) ?? [],
@@ -197,7 +219,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         assignee_id: assigneeID,
         assignee_type: assigneeType,
         assignee_property_field_id: assigneePropertyFieldID,
-    }), [props.checklistItem, assigneeID, assigneeType, assigneePropertyFieldID]);
+        assignee_only_complete: assigneeOnlyComplete,
+    }), [props.checklistItem, assigneeID, assigneeType, assigneePropertyFieldID, assigneeOnlyComplete]);
 
     // Notify parent when editing state changes
     useUpdateEffect(() => {
@@ -235,6 +258,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [props.checklistItem.assignee_property_field_id]);
 
     useUpdateEffect(() => {
+        setAssigneeOnlyComplete(Boolean(props.checklistItem.assignee_only_complete));
+    }, [props.checklistItem.assignee_only_complete]);
+
+    useUpdateEffect(() => {
         setDueDate(props.checklistItem.due_date);
     }, [props.checklistItem.due_date]);
 
@@ -244,6 +271,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const assigneeCallSeqRef = useRef(0);
     const assigneeStateRef = useRef({id: assigneeID, type: assigneeType, fieldID: assigneePropertyFieldID});
+    const assigneeOnlyCompleteRef = useRef(assigneeOnlyComplete);
     const checklistItemRef = useRef(props.checklistItem);
 
     useEffect(() => {
@@ -251,11 +279,40 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [assigneeID, assigneeType, assigneePropertyFieldID]);
 
     useEffect(() => {
+        assigneeOnlyCompleteRef.current = assigneeOnlyComplete;
+    }, [assigneeOnlyComplete]);
+
+    useEffect(() => {
         checklistItemRef.current = props.checklistItem;
     }, [props.checklistItem]);
 
+    const discardPendingLock = useCallback(() => {
+        const {id, type} = assigneeStateRef.current;
+        if (!itemHasAssignee(id, type) && assigneeOnlyCompleteRef.current) {
+            assigneeOnlyCompleteRef.current = false;
+            setAssigneeOnlyComplete(false);
+        }
+    }, []);
+
+    const onAssigneeMenuOpenChange = useCallback((isOpen: boolean) => {
+        if (!isOpen) {
+            discardPendingLock();
+        }
+    }, [discardPendingLock]);
+
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
+        const previousAssigneeOnlyComplete = assigneeOnlyCompleteRef.current;
+        const assigneeFieldsChanged =
+            (updatedItem.assignee_id || '') !== assigneeStateRef.current.id ||
+            (updatedItem.assignee_type || '') !== assigneeStateRef.current.type ||
+            (updatedItem.assignee_property_field_id || '') !== assigneeStateRef.current.fieldID;
+        const updatedHasAssignee = itemHasAssignee(updatedItem.assignee_id, updatedItem.assignee_type);
+        const localLock = Boolean(updatedItem.assignee_only_complete) && (updatedHasAssignee || !assigneeFieldsChanged);
+        const persistableLock = Boolean(updatedItem.assignee_only_complete) && updatedHasAssignee;
+        const persistedLock = Boolean(checklistItemRef.current.assignee_only_complete);
+        const lockChanged = persistableLock !== persistedLock;
+
         assigneeStateRef.current = {id: updatedItem.assignee_id || '', type: updatedItem.assignee_type || '', fieldID: updatedItem.assignee_property_field_id || ''};
         const rollback = () => {
             if (isMounted.current && assigneeCallSeqRef.current === seq) {
@@ -265,6 +322,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 setAssigneeID(latest.assignee_id || '');
                 setAssigneeType(latest.assignee_type || '');
                 setAssigneePropertyFieldID(latest.assignee_property_field_id || '');
+                assigneeOnlyCompleteRef.current = Boolean(latest.assignee_only_complete);
+                setAssigneeOnlyComplete(Boolean(latest.assignee_only_complete));
             }
         };
         const handleError = (hasError: boolean) => {
@@ -279,25 +338,52 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         setAssigneeID(updatedItem.assignee_id || '');
         setAssigneeType(updatedItem.assignee_type || '');
         setAssigneePropertyFieldID(updatedItem.assignee_property_field_id || '');
+        assigneeOnlyCompleteRef.current = localLock;
+        setAssigneeOnlyComplete(localLock);
         if (props.newItem) {
             return;
         }
         if (props.playbookRunId) {
             try {
-                let response;
-                if (updatedItem.assignee_type === AssigneeTypeOwner || updatedItem.assignee_type === AssigneeTypeCreator) {
-                    response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
-                } else if (updatedItem.assignee_type === AssigneeTypePropertyUser && updatedItem.assignee_property_field_id) {
-                    response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
-                } else {
-                    response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
+                if (assigneeFieldsChanged) {
+                    let response;
+                    if (updatedItem.assignee_type === AssigneeTypeOwner || updatedItem.assignee_type === AssigneeTypeCreator) {
+                        response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
+                    } else if (updatedItem.assignee_type === AssigneeTypePropertyUser && updatedItem.assignee_property_field_id) {
+                        response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
+                    } else {
+                        response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
+                    }
+                    handleError(Boolean(response.error));
+                    if (response.error) {
+                        return;
+                    }
                 }
-                handleError(Boolean(response.error));
+
+                if (lockChanged) {
+                    const response = await clientSetAssigneeOnlyComplete(
+                        props.playbookRunId,
+                        props.checklistNum,
+                        props.itemNum,
+                        persistableLock,
+                    );
+                    if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
+                        assigneeOnlyCompleteRef.current = previousAssigneeOnlyComplete;
+                        setAssigneeOnlyComplete(previousAssigneeOnlyComplete);
+                        toaster.add({
+                            content: formatMessage({defaultMessage: 'Failed to update task lock.'}),
+                            toastStyle: ToastStyle.Failure,
+                        });
+                    }
+                }
             } catch {
                 handleError(true);
             }
-        } else {
-            props.onUpdateChecklistItem?.(updatedItem);
+        } else if (assigneeFieldsChanged || persistableLock !== persistedLock) {
+            props.onUpdateChecklistItem?.({
+                ...updatedItem,
+                assignee_only_complete: persistableLock,
+            });
         }
     }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster]);
 
@@ -307,11 +393,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             assignee_id: user?.id || '',
             assignee_type: '',
             assignee_property_field_id: '',
+            assignee_only_complete: user?.id ? assigneeOnlyCompleteRef.current : false,
         });
     }, [props.checklistItem, handleAssigneeDropdownChange]);
 
     const onExtraOptionSelected = useCallback(async (value: string) => {
-        const updatedItem = {...props.checklistItem};
+        const updatedItem = {
+            ...props.checklistItem,
+            assignee_only_complete: assigneeOnlyCompleteRef.current,
+        };
         updatedItem.assignee_id = '';
 
         if (value.startsWith(EXTRA_OPTION_PREFIX_ROLE)) {
@@ -324,6 +414,55 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         await handleAssigneeDropdownChange(updatedItem);
     }, [props.checklistItem, handleAssigneeDropdownChange]);
+
+    const onAssigneeOnlyCompleteChange = useCallback(async (value: boolean) => {
+        const previous = assigneeOnlyCompleteRef.current;
+        assigneeOnlyCompleteRef.current = value;
+        setAssigneeOnlyComplete(value);
+
+        const hasAssigneeNow = itemHasAssignee(assigneeID, assigneeType);
+        if (value && !hasAssigneeNow) {
+            // Keep the lock pending until an assignee is chosen or the picker closes.
+            return;
+        }
+        if (!value && !props.checklistItem.assignee_only_complete) {
+            return;
+        }
+        if (props.newItem) {
+            return;
+        }
+        if (props.playbookRunId) {
+            const response = await clientSetAssigneeOnlyComplete(props.playbookRunId, props.checklistNum, props.itemNum, value);
+            if (response.error && isMounted.current) {
+                assigneeOnlyCompleteRef.current = previous;
+                setAssigneeOnlyComplete(previous);
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'Failed to update task lock.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+            }
+        } else {
+            props.onUpdateChecklistItem?.({
+                ...props.checklistItem,
+                assignee_id: assigneeID,
+                assignee_type: assigneeType,
+                assignee_property_field_id: assigneePropertyFieldID,
+                assignee_only_complete: value,
+            });
+        }
+    }, [
+        assigneeID,
+        assigneeType,
+        assigneePropertyFieldID,
+        props.newItem,
+        props.playbookRunId,
+        props.checklistNum,
+        props.itemNum,
+        props.checklistItem,
+        props.onUpdateChecklistItem,
+        formatMessage,
+        toaster,
+    ]);
 
     const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
         let timestamp = 0;
@@ -370,11 +509,26 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else {
             const newItem = {...props.checklistItem};
             newItem.task_actions = newTaskActions;
+
+            // Requirements and mark-as-done message triggers are mutually exclusive.
+            if (haveAtleastOneEnabledAction(newTaskActions) && (newItem.requirements?.length || 0) > 0) {
+                newItem.requirements = [];
+            }
             props.onUpdateChecklistItem?.(newItem);
         }
     };
 
     const hasRoleAssignee = isRoleBasedAssigneeType(assigneeType);
+
+    // In a run, locked tasks with an assignee may only be reassigned by the assignee or run owner.
+    const hasAssignee = Boolean(assigneeID) || hasRoleAssignee;
+    const isLockedToAssignee = Boolean(assigneeOnlyComplete && hasAssignee);
+    const canChangeAssignee = !props.playbookRunId || !isLockedToAssignee ||
+        currentUserId === props.runOwnerId ||
+        Boolean(assigneeID && assigneeID === currentUserId);
+    const assigneeDisabledReason = props.playbookRunId && isLockedToAssignee && !canChangeAssignee ?
+        formatMessage({defaultMessage: 'Only the assignee or run owner can change the assignee'}) :
+        undefined;
 
     // Renders the assignee editor above the toolbar — only when actively editing.
     // Kept separate from renderAssignTo so the toolbar Row remains unaffected.
@@ -383,8 +537,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             <AssigneeEditorPanel>
                 <AssigneeDropdown
                     checklistItem={localChecklistItem}
-                    editable={true}
+                    editable={canChangeAssignee}
+                    disabledReason={assigneeDisabledReason}
                     onChanged={handleAssigneeDropdownChange}
+                    onAssigneeMenuOpenChange={onAssigneeMenuOpenChange}
                     participantUserIds={props.participantUserIds}
                     runOwnerUserId={props.runOwnerId}
                     runCreatorUserId={props.runCreatorId}
@@ -411,9 +567,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 assignee_id={assigneeID || ''}
                 assignee_type={assigneeType}
                 assignee_property_field_id={assigneePropertyFieldID}
-                editable={!props.readOnly && !isSkipped()}
+                assignee_only_complete={assigneeOnlyComplete}
+                editable={canChangeAssignee && !props.readOnly && !isSkipped()}
+                disabledReason={assigneeDisabledReason}
                 onSelectedChange={onAssigneeChange}
                 onExtraOptionSelected={onExtraOptionSelected}
+                onAssigneeOnlyCompleteChange={canChangeAssignee ? onAssigneeOnlyCompleteChange : undefined}
+                onOpenChange={onAssigneeMenuOpenChange}
                 roleOptions={roleOptions}
                 propertyFields={props.propertyFields}
                 propertyValues={props.propertyValues}
@@ -475,17 +635,36 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return null;
         }
 
+        const taskActionsDisabledReason = isPlaybookEditor && betaFeaturesEnabled && requirements.length > 0 ?
+            formatMessage({defaultMessage: 'Remove task requirements before adding a message trigger.'}) :
+            undefined;
+
         return (
             <TaskActions
                 editable={isEditing || (!props.readOnly && !isSkipped())}
                 taskActions={taskActions}
                 onTaskActionsChange={onTaskActionsChange}
                 isEditing={isEditing}
+                disabledReason={taskActionsDisabledReason}
+            />
+        );
+    };
+
+    const renderCheckedChip = (): null | React.ReactNode => {
+        if (!shouldShowCheckedChip(props.checklistItem)) {
+            return null;
+        }
+        return (
+            <CheckedChip
+                item={props.checklistItem}
+                timelineEvents={props.timelineEvents}
+                compact={true}
             />
         );
     };
 
     const handleSave = () => {
+        discardPendingLock();
         setIsEditing(false);
         const finalTitle = titleValue.trim() || 'Untitled task';
         if (props.newItem) {
@@ -499,7 +678,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 due_date: dueDate,
                 assignee_id: assigneeID,
                 assignee_type: assigneeType,
+                assignee_only_complete: Boolean(assigneeOnlyCompleteRef.current && itemHasAssignee(assigneeID, assigneeType)),
                 task_actions: taskActions,
+                requirements: props.checklistItem.requirements || [],
                 state_modified: 0,
                 assignee_modified: 0,
                 condition_id: '',
@@ -537,6 +718,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         const haveTaskActions = taskActions?.length > 0;
         if (
             !isEditing &&
+            !shouldShowCheckedChip(props.checklistItem) &&
             !assigneeID &&
             !hasRoleAssignee &&
             !command &&
@@ -548,13 +730,45 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
         return (
             <Row>
+                {renderCheckedChip()}
                 {renderAssignTo()}
-                {renderCommand()}
                 {renderDueDate()}
+                {renderCommand()}
                 {renderTaskActions()}
             </Row>
         );
     };
+
+    const isAssigneeOnlyLocked = Boolean(
+        assigneeOnlyComplete && assigneeID && assigneeID !== currentUserId,
+    );
+
+    const checkBoxButton = (
+        <CheckBoxButton
+            readOnly={props.readOnly}
+            disabled={
+                isSkipped() ||
+                props.playbookRunId === undefined ||
+                props.newItem ||
+                isAssigneeOnlyLocked
+            }
+            item={props.checklistItem}
+            onChange={(item: ChecklistItemState) => {
+                if (
+                    betaFeaturesEnabled &&
+                    item === ChecklistItemState.Closed &&
+                    requirements.length > 0 &&
+                    props.playbookRunId
+                ) {
+                    setFillRequirementsEditMode(false);
+                    setShowFillRequirementsModal(true);
+                    return Promise.resolve({cancelled: true});
+                }
+                return props.onChange?.(item);
+            }}
+            onReadOnlyInteract={props.onReadOnlyInteract}
+        />
+    );
 
     const content = (
         <DraggableWrapper
@@ -594,14 +808,23 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         toggleDescription={toggleDescription}
                         assignee_id={assigneeID || ''}
                         assignee_type={assigneeType}
+                        assignee_only_complete={assigneeOnlyComplete}
                         onAssigneeChange={onAssigneeChange}
                         onExtraOptionSelected={onExtraOptionSelected}
+                        onAssigneeOnlyCompleteChange={canChangeAssignee ? onAssigneeOnlyCompleteChange : undefined}
+                        assigneeEditable={canChangeAssignee}
+                        assigneeDisabledReason={assigneeDisabledReason}
                         roleOptions={roleOptions}
+                        runOwnerId={props.runOwnerId}
+                        runCreatorId={props.runCreatorId}
                         due_date={props.checklistItem.due_date}
                         onDueDateChange={onDueDateChange}
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                         onDeleteChecklistItem={props.onDeleteChecklistItem}
-                        onItemOpenChange={setIsHoverMenuItemOpen}
+                        onItemOpenChange={(isOpen) => {
+                            setIsHoverMenuItemOpen(isOpen);
+                            onAssigneeMenuOpenChange(isOpen);
+                        }}
                         onAddConditional={props.onAddConditional}
                         hasCondition={Boolean(props.checklistItem.condition_id)}
                         onRemoveFromCondition={props.onRemoveFromCondition}
@@ -609,6 +832,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         availableConditions={props.availableConditions}
                         propertyFields={props.propertyFields}
                         isChannelChecklist={props.isChannelChecklist}
+                        onAddRequirement={isPlaybookEditor && betaFeaturesEnabled ? () => setShowAddRequirementModal(true) : undefined}
+                        hasRequirements={requirements.length > 0}
+                        requirementsDisabledReason={
+                            isPlaybookEditor && betaFeaturesEnabled && haveAtleastOneEnabledAction(taskActions) && requirements.length === 0 ?
+                                formatMessage({defaultMessage: 'Disable the message trigger before adding task requirements.'}) :
+                                undefined
+                        }
                     />
                     }
                     <DragButton
@@ -618,13 +848,18 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         $isVisible={!props.readOnly && !props.dragDisabled}
                         $isDragging={props.dragging}
                     />
-                    <CheckBoxButton
-                        readOnly={props.readOnly}
-                        disabled={isSkipped() || props.playbookRunId === undefined || props.newItem}
-                        item={props.checklistItem}
-                        onChange={(item: ChecklistItemState) => props.onChange?.(item)}
-                        onReadOnlyInteract={props.onReadOnlyInteract}
-                    />
+                    {isAssigneeOnlyLocked ? (
+
+                        // Disabled inputs don't fire pointer events; wrap so the reason is still discoverable on hover.
+                        <WithTooltip
+                            id='assignee-only-complete-checkbox-tooltip'
+                            title={formatMessage({defaultMessage: 'Only the assignee can complete the task'})}
+                        >
+                            <AssigneeOnlyLockedCheckboxWrapper>
+                                {checkBoxButton}
+                            </AssigneeOnlyLockedCheckboxWrapper>
+                        </WithTooltip>
+                    ) : checkBoxButton}
                     <ConditionIndicator
                         checklistItem={props.checklistItem}
                         tooltipMessage={getConditionTooltip(props.checklistItem)}
@@ -654,6 +889,22 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     title={titleValue}
                 />
                 }
+                {betaFeaturesEnabled && requirements.length > 0 && (
+                    <RequirementsAccordion
+                        requirements={requirements}
+                        editMode={isPlaybookEditor}
+                        isTaskComplete={props.checklistItem.state === ChecklistItemState.Closed}
+                        readOnly={props.readOnly || isSkipped()}
+                        onComplete={!isPlaybookEditor && props.playbookRunId && !isAssigneeOnlyLocked ? () => {
+                            setFillRequirementsEditMode(false);
+                            setShowFillRequirementsModal(true);
+                        } : undefined}
+                        onEditValues={!isPlaybookEditor && props.playbookRunId ? () => {
+                            setFillRequirementsEditMode(true);
+                            setShowFillRequirementsModal(true);
+                        } : undefined}
+                    />
+                )}
                 {isEditing && renderAssigneeEditor()}
                 {renderRow()}
                 {isEditing &&
@@ -662,12 +913,70 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         setIsEditing(false);
                         setTitleValue(props.checklistItem.title);
                         setDescValue(props.checklistItem.description);
+                        discardPendingLock();
                         props.cancelAddingItem?.();
                     }}
                     onSave={handleSave}
                 />
                 }
             </ItemContainer>
+            {showAddRequirementModal && betaFeaturesEnabled && (
+                <EditRequirementsModal
+                    initialRequirements={requirements}
+                    onConfirm={(nextRequirements: TaskRequirement[]) => {
+                        const nextItem = {
+                            ...props.checklistItem,
+                            requirements: nextRequirements,
+                        };
+
+                        // Requirements and mark-as-done message triggers are mutually exclusive.
+                        if (nextRequirements.length > 0 && haveAtleastOneEnabledAction(taskActions)) {
+                            nextItem.task_actions = [];
+                            setTaskActions([]);
+                        }
+                        props.onUpdateChecklistItem?.(nextItem);
+                        setShowAddRequirementModal(false);
+                    }}
+                    onCancel={() => setShowAddRequirementModal(false)}
+                />
+            )}
+            {showFillRequirementsModal && betaFeaturesEnabled && (
+                <FillRequirementsModal
+                    taskTitle={props.checklistItem.title}
+                    requirements={requirements}
+                    editMode={fillRequirementsEditMode}
+                    isTaskComplete={props.checklistItem.state === ChecklistItemState.Closed}
+                    onSave={async (values: Record<string, string>) => {
+                        const currentState = (props.checklistItem.state || ChecklistItemState.Open) as ChecklistItemState;
+                        const response = await props.onChange?.(currentState, values);
+                        if (response?.error) {
+                            toaster.add({
+                                content: formatMessage({defaultMessage: 'Failed to save requirements.'}),
+                                toastStyle: ToastStyle.Failure,
+                            });
+                            throw response.error;
+                        }
+                        setShowFillRequirementsModal(false);
+                        setFillRequirementsEditMode(false);
+                    }}
+                    onSaveAndComplete={async (values: Record<string, string>) => {
+                        const response = await props.onChange?.(ChecklistItemState.Closed, values);
+                        if (response?.error) {
+                            toaster.add({
+                                content: formatMessage({defaultMessage: 'Failed to save requirements.'}),
+                                toastStyle: ToastStyle.Failure,
+                            });
+                            throw response.error;
+                        }
+                        setShowFillRequirementsModal(false);
+                        setFillRequirementsEditMode(false);
+                    }}
+                    onCancel={() => {
+                        setShowFillRequirementsModal(false);
+                        setFillRequirementsEditMode(false);
+                    }}
+                />
+            )}
         </DraggableWrapper>
     );
 
@@ -677,6 +986,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     return content;
 };
+
+const AssigneeOnlyLockedCheckboxWrapper = styled.span`
+    display: inline-flex;
+`;
 
 export const CheckboxContainer = styled.div`
     position: relative;

@@ -3,8 +3,7 @@
 
 import React, {useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
-import {FormattedMessage, useIntl} from 'react-intl';
-import {ControlProps, components} from 'react-select';
+import {useIntl} from 'react-intl';
 import {UserProfile} from '@mattermost/types/users';
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {Placement} from '@floating-ui/react';
@@ -12,11 +11,13 @@ import {Placement} from '@floating-ui/react';
 import {AccountOutlineIcon} from '@mattermost/compass-icons/components';
 
 import Profile from 'src/components/profile/profile';
-import ProfileSelector, {type ExtraSection, Option} from 'src/components/profile/profile_selector';
+import ProfileSelector, {type ExtraSection} from 'src/components/profile/profile_selector';
 import {useProfilesForRun} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {AssigneeTypeOwner, AssigneeTypePropertyUser, isRoleBasedAssigneeType} from 'src/types/playbook';
 import {PropertyField, PropertyValue} from 'src/types/properties';
+
+import {AssigneeOnlyCompleteControl} from './assignee_only_complete_control';
 
 export const EXTRA_OPTION_PREFIX_ROLE = 'role:';
 export const EXTRA_OPTION_PREFIX_PROPERTY_USER = 'property_user:';
@@ -57,12 +58,15 @@ interface AssignedToProps {
     assignee_id: string;
     assignee_type?: string;
     assignee_property_field_id?: string;
+    assignee_only_complete?: boolean;
     participantUserIds: string[];
     editable: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
+    disabledReason?: string;
     onSelectedChange?: (user?: UserProfile) => void;
     onExtraOptionSelected?: (value: string) => void;
+    onAssigneeOnlyCompleteChange?: (value: boolean) => void;
     onOpenChange?: (isOpen: boolean) => void;
     isEditing?: boolean;
     roleOptions?: RoleOption[];
@@ -179,8 +183,16 @@ const AssignTo = (props: AssignedToProps) => {
         assignedDisplay: roleAssigneeDisplay ?? undefined,
     };
 
+    const customControlProps = {
+        showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
+        onCustomReset: resetAssignee,
+        showAssigneeOnlyComplete: Boolean(props.onAssigneeOnlyCompleteChange),
+        assigneeOnlyComplete: Boolean(props.assignee_only_complete),
+        onAssigneeOnlyCompleteChange: props.onAssigneeOnlyCompleteChange,
+    };
+
     if (props.inHoverMenu) {
-        return (
+        const hoverMenuSelector = (
             <ProfileSelector
                 key={profilesKey}
                 {...profileSelectorProps}
@@ -192,7 +204,7 @@ const AssignTo = (props: AssignedToProps) => {
                         className={'icon-account-plus-outline icon-12 btn-icon'}
                     />
                 }
-                enableEdit={true}
+                enableEdit={props.editable}
                 userGroups={{
                     subsetUserIds: props.participantUserIds,
                     defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
@@ -205,16 +217,26 @@ const AssignTo = (props: AssignedToProps) => {
                 onExtraOptionSelected={props.onExtraOptionSelected}
                 extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
-                customControl={ControlComponent}
-                customControlProps={{
-                    showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
-                    onCustomReset: resetAssignee,
-                }}
+                customControl={props.editable ? AssigneeOnlyCompleteControl : undefined}
+                customControlProps={props.editable ? customControlProps : undefined}
                 controlledOpenToggle={profileSelectorToggle}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
             />
         );
+
+        if (!props.editable && props.disabledReason) {
+            return (
+                <WithTooltip
+                    id='assignee-locked-tooltip'
+                    title={props.disabledReason}
+                >
+                    <span>{hoverMenuSelector}</span>
+                </WithTooltip>
+            );
+        }
+
+        return hoverMenuSelector;
     }
 
     const dropdownArrow = (
@@ -257,11 +279,8 @@ const AssignTo = (props: AssignedToProps) => {
                 onExtraOptionSelected={props.onExtraOptionSelected}
                 extraSections={extraSections.length > 0 ? extraSections : undefined}
                 selfIsFirstOption={true}
-                customControl={ControlComponent}
-                customControlProps={{
-                    showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
-                    onCustomReset: resetAssignee,
-                }}
+                customControl={AssigneeOnlyCompleteControl}
+                customControlProps={customControlProps}
                 customDropdownArrow={dropdownArrow}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
@@ -278,23 +297,21 @@ const AssignTo = (props: AssignedToProps) => {
                 {assignToButton}
             </WithTooltip>
         );
+    } else if (!props.editable && props.disabledReason) {
+        assignToButton = (
+            <WithTooltip
+                id='assignee-locked-tooltip'
+                title={props.disabledReason}
+            >
+                <span>{assignToButton}</span>
+            </WithTooltip>
+        );
     }
 
     return assignToButton;
 };
 
 export default AssignTo;
-
-const ControlComponent = (ownProps: ControlProps<Option, boolean>) => (
-    <div>
-        <components.Control {...ownProps}/>
-        {ownProps.selectProps.showCustomReset && (
-            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
-                <FormattedMessage defaultMessage='No Assignee'/>
-            </ControlComponentAnchor>
-        )}
-    </div>
-);
 
 const StyledProfileSelector = styled(ProfileSelector).attrs({
     dropdownContainerStyles: assigneeDropdownContainerStyles,
@@ -392,15 +409,6 @@ const AssignToIcon = styled.i`
 
 export const AssignToContainer = styled.div`
     display: flex;
-`;
-
-const ControlComponentAnchor = styled.a`
-    position: relative;
-    top: -4px;
-    display: inline-block;
-    margin: 0 0 8px 12px;
-    font-size: 12px;
-    font-weight: 600;
 `;
 
 export const DropdownArrow = styled.i`

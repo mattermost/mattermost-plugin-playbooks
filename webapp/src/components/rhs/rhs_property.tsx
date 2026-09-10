@@ -21,6 +21,7 @@ interface Props {
     field: PropertyField;
     value?: PropertyValue;
     runID: string;
+    readOnly?: boolean;
 }
 
 const RHSProperty = (props: Props) => {
@@ -48,6 +49,7 @@ const RHSProperty = (props: Props) => {
             field: props.field,
             value: props.value,
             runID: props.runID,
+            readOnly: props.readOnly,
         };
 
         switch (props.field.type) {

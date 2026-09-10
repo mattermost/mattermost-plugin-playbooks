@@ -47,7 +47,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         cy.viewport('macbook-13');
 
         // # Reset mutable fields so each test starts from a clean state
-        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: '', channel_name_template: ''});
+        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: '', channel_name_template: '', channel_name_template_locked: false});
     });
 
     it('shows run naming fields inside the Actions section', () => {
@@ -57,6 +57,79 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // * Assert run number prefix and run name template inputs exist in the Actions section
         cy.findByTestId('channel-access-run-number-prefix').should('exist');
         cy.findByTestId('channel-access-run-name-template-input').should('exist');
+    });
+
+    it('shows the "Lock run name" checkbox, unchecked by default', () => {
+        // # Set a template with a valid variable so the checkbox is actionable
+        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: TOKEN_SEQ}).then(() => {
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
+
+            // * Checkbox exists, is enabled, and unchecked by default
+            cy.findByTestId('channel-access-run-name-template-locked').should('exist');
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.enabled');
+        });
+    });
+
+    it('checking the lock checkbox persists after reload', () => {
+        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: TOKEN_SEQ}).then(() => {
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
+
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
+
+            // # Intercept the REST PATCH so we can wait for the save before asserting server state
+            cy.playbooksInterceptPatchPlaybook();
+
+            // # Check the lock box
+            cy.findByTestId('channel-access-run-name-template-locked').click();
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
+
+            // # Wait for the save to reach the server before asserting persisted state
+            cy.wait('@PatchPlaybook');
+
+            // * Persisted server-side
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.channel_name_template_locked).to.equal(true);
+            });
+
+            // * Survives reload
+            cy.reload();
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
+        });
+    });
+
+    it('defaults a template playbook to unlocked when created via raw REST without the flag', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'DefaultUnlocked PB ' + getRandomId(),
+            memberIDs: [testUser.id],
+        }).then((pb) => {
+            cy.apiPatchPlaybook(pb.id, {channel_name_template: '{OWNER} - Incident'});
+            cy.apiGetPlaybook(pb.id).then((fetched) => {
+                expect(fetched.channel_name_template_locked).to.equal(false);
+            });
+            cy.apiArchivePlaybook(pb.id);
+        });
+    });
+
+    it('allows locking a literal template and persists after reload', () => {
+        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident War Room'}).then(() => {
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
+
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
+
+            cy.playbooksInterceptPatchPlaybook();
+            cy.findByTestId('channel-access-run-name-template-locked').click();
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
+            cy.wait('@PatchPlaybook');
+
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.channel_name_template_locked).to.equal(true);
+            });
+
+            cy.reload();
+            cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
+        });
     });
 
     it('saves prefix and template values and shows preview', () => {
@@ -179,18 +252,19 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         });
     });
 
-    it('run started from a playbook with SEQ template gets the resolved sequential ID in its name', () => {
-        // # Set prefix and template via API
-        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'SEQ', channel_name_template: `${TOKEN_SEQ} - Convention`}).then(() => {
+    it('run started from a locked playbook with SEQ template gets the resolved sequential ID in its name', () => {
+        // # Set prefix and template via API, with override NOT allowed (locked) so the
+        // # template is authoritative and the run-name field is read-only in the modal.
+        cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'SEQ', channel_name_template: `${TOKEN_SEQ} - Convention`, channel_name_template_locked: true}).then(() => {
             // # Open the Run playbook modal from the outline editor
             cy.playbooksVisitEditor(testPlaybook.id, 'outline');
             cy.findByTestId('channel-access-run-name-template-input').should('exist');
             cy.findByTestId('run-playbook').click();
 
             cy.get('#root-portal.modal-open').within(() => {
-                // * Assert the run name input is pre-filled with the template (modal initializes
-                // # it to the channel_name_template so the user can see and edit it)
+                // * Assert the run name input is read-only and pre-filled with the raw template
                 cy.findByTestId('run-name-input').should('have.value', `${TOKEN_SEQ} - Convention`);
+                cy.findByTestId('run-name-input').should('have.attr', 'readonly');
 
                 // * Assert the name preview shows the resolved value (SEQ-N - Convention)
                 cy.findByTestId('run-name-preview').should('exist');

@@ -92,12 +92,18 @@ export const mapChecklistItemToInput = (ci: ChecklistItem) => ({
     assigneeID: ci.assignee_id || '',
     assigneeType: ci.assignee_type || '',
     assigneePropertyFieldID: ci.assignee_property_field_id || '',
+    assigneeOnlyComplete: Boolean(ci.assignee_only_complete),
     assigneeModified: ci.assignee_modified || 0,
     command: ci.command,
     commandLastRun: ci.command_last_run,
     dueDate: ci.due_date,
     taskActions: ci.task_actions,
     conditionID: ci.condition_id,
+    requirements: (ci.requirements || []).map((r) => ({
+        id: r.id,
+        label: r.label,
+        value: r.value || '',
+    })),
 });
 
 const ChecklistList = ({
@@ -175,6 +181,8 @@ const ChecklistList = ({
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
                         assignee_property_field_id: ci.assignee_property_field_id || '',
+                        assignee_only_complete: Boolean(ci.assignee_only_complete),
+                        requirements: ci.requirements || [],
                     };
                 }),
             };

@@ -28,3 +28,5 @@ Otherwise, link the Jira ticket.
 <!-- Check off items as they are completed. ~~Strike through~~ items if they don't apply -->
 - [ ] Gated by experimental feature flag
 - [ ] Unit tests updated
+<!-- For bugfixes, security fixes, or other changes that need backporting, list target release branches. Strike through if no cherry picks are needed. -->
+- [ ] Planned cherry-picks: `release-X.Y`

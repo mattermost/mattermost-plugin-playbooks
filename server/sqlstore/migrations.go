@@ -1799,4 +1799,14 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.68.0"),
+		toVersion:   semver.MustParse("0.69.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Playbook", "ChannelNameTemplateLocked", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column ChannelNameTemplateLocked to IR_Playbook")
+			}
+			return nil
+		},
+	},
 }

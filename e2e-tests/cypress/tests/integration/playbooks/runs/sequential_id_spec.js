@@ -288,10 +288,12 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
         });
 
-        // # Set prefix and name template
+        // # Set prefix and name template, locked so the template is authoritative and the
+        // # {SEQ} token actually gets resolved instead of the run names passed below.
         cy.then(() => cy.apiPatchPlaybook(seqPlaybook.id, {
             run_number_prefix: 'OLD',
             channel_name_template: '{SEQ}',
+            channel_name_template_locked: true,
         }));
 
         // # Start run 1 — {SEQ} resolves with the 'OLD' prefix

@@ -392,8 +392,49 @@ func (r *Runner) actionCheck(args []string) {
 		return
 	}
 
+	runObj := playbookRuns[run]
+	if checklist < 0 || checklist >= len(runObj.Checklists) || item < 0 || item >= len(runObj.Checklists[checklist].Items) {
+		r.postCommandResponse("Invalid checklist or item number.")
+		return
+	}
+
+	checklistItem := runObj.Checklists[checklist].Items[item]
+	if r.configService.IsTaskRequirementsEnabled() &&
+		checklistItem.State != app.ChecklistItemStateClosed &&
+		checklistItem.State != app.ChecklistItemStateSkipped &&
+		len(checklistItem.Requirements) > 0 {
+		needsFill := false
+		for _, req := range checklistItem.Requirements {
+			if strings.TrimSpace(req.Value) == "" {
+				needsFill = true
+				break
+			}
+		}
+		if needsFill {
+			if len(checklistItem.Requirements) <= 5 {
+				if dialogErr := r.playbookRunService.OpenFillRequirementsDialog(r.args.TriggerId, r.args.UserId, runObj.ID, checklist, item); dialogErr == nil {
+					return
+				}
+			}
+			r.postCommandResponse(fmt.Sprintf(
+				"This task has required fields that must be filled before it can be checked off. Open the run to complete them: [%s](%s)",
+				runObj.Name,
+				app.GetRunDetailsRelativeURL(runObj.ID),
+			))
+			return
+		}
+	}
+
 	err = r.playbookRunService.ToggleCheckedState(playbookRuns[run].ID, r.args.UserId, checklist, item)
 	if err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			r.postCommandResponse(fmt.Sprintf(
+				"This task has required fields that must be filled before it can be checked off. Open the run to complete them: [%s](%s)",
+				runObj.Name,
+				app.GetRunDetailsRelativeURL(runObj.ID),
+			))
+			return
+		}
 		r.warnUserAndLogErrorf("Error checking/unchecking item: %v", err)
 	}
 }

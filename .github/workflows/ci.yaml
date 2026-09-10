@@ -16,26 +16,31 @@ env:
   IS_NOT_FORK: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
 
 jobs:
-  go:
-    name: Compute Go Version
+  buildenv:
+    name: Build Environment
     runs-on: ubuntu-22.04
     outputs:
-      version: ${{ steps.calculate.outputs.GO_VERSION }}
+      go-version: ${{ steps.calculate.outputs.GO_VERSION }}
+      build-server-tag: ${{ steps.calculate.outputs.BUILD_SERVER_TAG }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: "0"
-      - name: Calculate version
+      - name: Calculate build image tag
         id: calculate
-        run: echo "GO_VERSION=$(tr -d '[:space:]' < .go-version)" >> "${GITHUB_OUTPUT}"
+        run: |
+          go_version=$(tr -d '[:space:]' < .go-version)
+          node_version=$(tr -d '[:space:]' < .nvmrc)
+          echo "GO_VERSION=${go_version}" >> "${GITHUB_OUTPUT}"
+          echo "BUILD_SERVER_TAG=go${go_version}-node${node_version}" >> "${GITHUB_OUTPUT}"
 
   lint-web:
     runs-on: ubuntu-22.04
     needs:
-      - go
+      - buildenv
     container:
-      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.buildenv.outputs.build-server-tag }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -123,9 +128,9 @@ jobs:
   lint-go:
     runs-on: ubuntu-22.04
     needs:
-      - go
+      - buildenv
     container:
-      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.buildenv.outputs.build-server-tag }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -145,9 +150,9 @@ jobs:
         with:
           path: |
             bin
-          key: ${{ runner.os }}-go-tools-${{ needs.go.outputs.version }}-${{ hashFiles('Makefile') }}
+          key: ${{ runner.os }}-go-tools-${{ needs.buildenv.outputs.go-version }}-${{ hashFiles('Makefile') }}
           restore-keys: |
-            ${{ runner.os }}-go-tools-${{ needs.go.outputs.version }}-
+            ${{ runner.os }}-go-tools-${{ needs.buildenv.outputs.go-version }}-
 
       - name: ci/cache-go-build
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -156,10 +161,10 @@ jobs:
             ~/.cache/go-build
             ~/.cache/golangci-lint
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-lint-${{ needs.go.outputs.version }}-${{ hashFiles('go.sum', '.golangci.yml') }}-${{ github.run_id }}
+          key: ${{ runner.os }}-go-lint-${{ needs.buildenv.outputs.go-version }}-${{ hashFiles('go.sum', '.golangci.yml') }}-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-go-lint-${{ needs.go.outputs.version }}-${{ hashFiles('go.sum', '.golangci.yml') }}-
-            ${{ runner.os }}-go-lint-${{ needs.go.outputs.version }}-
+            ${{ runner.os }}-go-lint-${{ needs.buildenv.outputs.go-version }}-${{ hashFiles('go.sum', '.golangci.yml') }}-
+            ${{ runner.os }}-go-lint-${{ needs.buildenv.outputs.go-version }}-
 
       - name: ci/checking-code-style-server
         run: make check-style-server
@@ -195,10 +200,10 @@ jobs:
   dist:
     runs-on: ubuntu-22.04
     needs:
-      - go
+      - buildenv
       - lint
     container:
-      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.buildenv.outputs.build-server-tag }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -232,7 +237,7 @@ jobs:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
-      - go
+      - buildenv
       - lint
     permissions:
       contents: read
@@ -245,7 +250,7 @@ jobs:
       - name: ci/setup-go
         uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
-          go-version: ${{ needs.go.outputs.version }}
+          go-version: ${{ needs.buildenv.outputs.go-version }}
       - name: ci/setup-node
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
@@ -331,9 +336,9 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - lint
-      - go
+      - buildenv
     container:
-      image: mattermost/mattermost-build-server:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server:${{ needs.buildenv.outputs.build-server-tag }}
     services:
       postgres:
         image: postgres:14
@@ -371,9 +376,9 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - lint
-      - go
+      - buildenv
     container:
-      image: mattermost/mattermost-build-server-fips:${{ needs.go.outputs.version }}
+      image: mattermost/mattermost-build-server-fips:${{ needs.buildenv.outputs.build-server-tag }}
       credentials:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -427,12 +432,12 @@ jobs:
   e2e-cypress-tests:
     runs-on: ubuntu-22.04
     needs:
-      - go
+      - buildenv
       - lint
       - generate-specs
       - dist
     env:
-      GO_VERSION: ${{ needs.go.outputs.version }}
+      GO_VERSION: ${{ needs.buildenv.outputs.go-version }}
     name: e2e-cypress-tests-run-${{ matrix.runId }}
     strategy:
       fail-fast: false
@@ -538,12 +543,12 @@ jobs:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
-      - go
+      - buildenv
       - lint
       - generate-specs
       - dist-fips
     env:
-      GO_VERSION: ${{ needs.go.outputs.version }}
+      GO_VERSION: ${{ needs.buildenv.outputs.go-version }}
     name: e2e-cypress-tests-fips-run-${{ matrix.runId }}
     strategy:
       fail-fast: false
@@ -649,11 +654,11 @@ jobs:
   e2e-playwright-tests:
     runs-on: ubuntu-22.04
     needs:
-      - go
+      - buildenv
       - lint
       - dist
     env:
-      GO_VERSION: ${{ needs.go.outputs.version }}
+      GO_VERSION: ${{ needs.buildenv.outputs.go-version }}
     name: e2e-playwright-tests
     services:
       postgres:

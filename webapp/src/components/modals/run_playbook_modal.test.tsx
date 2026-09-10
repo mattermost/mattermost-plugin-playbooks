@@ -218,6 +218,7 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {usePlaybook, usePlaybookAttributes} from 'src/hooks';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {createPlaybookRun} from 'src/client';
 import {useUserDisplayNameMap} from 'src/hooks/general';
 import {findNodeByTestId} from 'src/utils/test_helpers';
@@ -231,6 +232,7 @@ const mockUseUserDisplayNameMap = useUserDisplayNameMap as jest.Mock;
 const mockDisplayUsername = displayUsername as jest.Mock;
 
 const mockUsePlaybook = usePlaybook as jest.Mock;
+const mockUseRestPlaybook = useRestPlaybook as jest.Mock;
 const mockUsePlaybookAttributes = usePlaybookAttributes as jest.Mock;
 const mockCreatePlaybookRun = createPlaybookRun as jest.Mock;
 
@@ -290,6 +292,16 @@ describe('RunPlaybookModal — template mode', () => {
             }
             return 'mock-user-id';
         });
+
+        // Default to override-not-allowed (locked) so this describe block's tests exercise the
+        // "template is authoritative, name is read-only" behavior. Tests for the override-allowed
+        // (default product) behavior live in their own describe block below with their own mock.
+        //
+        // Mock implementation echoes back whatever id was queried (matching the real hook, which
+        // returns data keyed by id) instead of a fixed literal — the component now guards against
+        // a stale restPlaybook by comparing its id to the currently selected playbook, so a mock
+        // that ignores the id argument would look "stale" forever and the modal would spin.
+        mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: true, id}]);
     });
 
     const playbookWithTemplate = {
@@ -309,6 +321,10 @@ describe('RunPlaybookModal — template mode', () => {
     describe('name field behavior', () => {
         beforeEach(() => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+
+            // Severity must be loaded as a known property field so its token resolves in the
+            // preview and its input renders below the run-name field.
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
         });
 
         it('still shows the run name input when template is set', () => {
@@ -368,6 +384,185 @@ describe('RunPlaybookModal — template mode', () => {
 
             nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
             expect(nameInput.props.value).toBe('{Severity} - Updated Incident');
+        });
+    });
+
+    describe('name field behavior — override allowed (default)', () => {
+        beforeEach(() => {
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: false, id}]);
+        });
+
+        it('shows the run name input as editable, not read-only', () => {
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
+            expect(nameInput.props.readOnly).toBe(false);
+            expect(nameInput.props.$readOnly).toBe(false);
+        });
+
+        it('prefills the name field with the raw template, editable, as a suggestion', () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+            const nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            expect(nameInput.props.value).toBe('{Severity} - Incident');
+        });
+
+        it('requires an explicit name and disables submit when cleared, even with required fields filled', () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const fieldInput = findNodeByTestId(component!.toJSON(), 'property-field-field-sev');
+            act(() => {
+                fieldInput.props.onChange({target: {value: 'Critical'}});
+            });
+
+            const nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            act(() => {
+                nameInput.props.onChange({target: {value: ''}});
+            });
+
+            const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
+            expect(btn.props.disabled).toBe(true);
+        });
+
+        it('enables submit right away with the prefilled template name, once required fields are filled', () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const fieldInput = findNodeByTestId(component!.toJSON(), 'property-field-field-sev');
+            act(() => {
+                fieldInput.props.onChange({target: {value: 'Critical'}});
+            });
+
+            const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
+            expect(btn.props.disabled).toBe(false);
+        });
+
+        it('submits the user-typed name instead of the raw template', async () => {
+            mockCreatePlaybookRun.mockResolvedValue({id: 'run-1', channel_id: 'ch-1'});
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const fieldInput = findNodeByTestId(component!.toJSON(), 'property-field-field-sev');
+            act(() => {
+                fieldInput.props.onChange({target: {value: 'Critical'}});
+            });
+
+            const nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            act(() => {
+                nameInput.props.onChange({target: {value: 'My Custom Run Name'}});
+            });
+
+            const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
+            expect(btn.props.disabled).toBe(false);
+
+            await act(async () => {
+                btn.props.onClick();
+            });
+
+            expect(mockCreatePlaybookRun).toHaveBeenCalledTimes(1);
+            const args = mockCreatePlaybookRun.mock.calls[0];
+
+            // args: playbookId, userId, teamId, name, ...
+            expect(args[3]).toBe('My Custom Run Name');
+        });
+
+        it('shows no preview while the typed name has no token', () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            act(() => {
+                nameInput.props.onChange({target: {value: 'Just a plain name'}});
+            });
+
+            expect(findNodeByTestId(component!.toJSON(), 'run-name-preview')).toBeNull();
+        });
+
+        it('shows a live preview reflecting a token typed into the name, resolved from a filled property field', () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const fieldInput = findNodeByTestId(component!.toJSON(), 'property-field-field-sev');
+            act(() => {
+                fieldInput.props.onChange({target: {value: 'Critical'}});
+            });
+
+            const nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            act(() => {
+                nameInput.props.onChange({target: {value: 'Release {Severity} rollout'}});
+            });
+
+            const preview = findNodeByTestId(component!.toJSON(), 'run-name-preview');
+            expect(preview).not.toBeNull();
+            expect(JSON.stringify(preview)).toContain('Release Critical rollout');
+        });
+    });
+
+    describe('name field behavior — locked template', () => {
+        beforeEach(() => {
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: true, id}]);
+        });
+
+        it('is read-only for a literal template with no placeholder', () => {
+            const pb = {...basePlaybook, channel_name_template: 'Incident War Room'};
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
+
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
+            expect(nameInput.props.readOnly).toBe(true);
+        });
+
+        it('is read-only when the template only references an unrecognized placeholder', () => {
+            const pb = {...basePlaybook, channel_name_template: '{notARealVariable}'};
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue([]);
+
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
+            expect(nameInput.props.readOnly).toBe(true);
+        });
+    });
+
+    describe('restPlaybook loading state', () => {
+        it('shows the loading spinner instead of an editable field while restPlaybook is still loading', () => {
+            const pb = {...basePlaybook, channel_name_template: 'Incident War Room'};
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
+
+            // Simulate the pending-fetch window: restPlaybook is still undefined even though the
+            // GraphQL playbook has already resolved.
+            mockUseRestPlaybook.mockReturnValue([undefined, {isFetching: true}]);
+
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            const tree = component.toJSON();
+
+            expect(findNodeByTestId(tree, 'run-name-input')).toBeNull();
+            expect(JSON.stringify(tree)).toContain('Loading playbook details');
+        });
+
+        it('shows the read-only, locked field once restPlaybook resolves', () => {
+            const pb = {...basePlaybook, channel_name_template: 'Incident War Room'};
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: true, id}]);
+
+            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
+            expect(nameInput).not.toBeNull();
+            expect(nameInput.props.readOnly).toBe(true);
         });
     });
 
@@ -454,13 +649,21 @@ describe('RunPlaybookModal — template mode', () => {
     describe('name preview', () => {
         beforeEach(() => {
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+
+            // Severity must be loaded as a known property field so its token actually resolves
+            // in the preview — the preview shows whenever the run-name field contains a {token},
+            // whether the template is locked or not.
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
         });
 
         it('shows name preview when template is set', () => {
-            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
 
             // Preview shows with unresolved placeholders initially
-            expect(toJson(component)).toContain('run-name-preview');
+            expect(toJson(component!)).toContain('run-name-preview');
         });
 
         it('does not show name preview when no template', () => {
@@ -470,8 +673,11 @@ describe('RunPlaybookModal — template mode', () => {
         });
 
         it('preview is a div (read-only), not an input', () => {
-            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
-            const tree = component.toJSON();
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+            const tree = component!.toJSON();
             const preview = findNodeByTestId(tree, 'run-name-preview');
             expect(preview).not.toBeNull();
             expect(preview.type).toBe('div');
@@ -490,8 +696,11 @@ describe('RunPlaybookModal — template mode', () => {
             mockUseUserDisplayNameMap.mockReturnValue({'mock-user-id': 'Jane Doe'});
             mockDisplayUsername.mockReturnValue('Jane Doe');
 
-            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
-            const tree = component.toJSON();
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+            const tree = component!.toJSON();
             const preview = findNodeByTestId(tree, 'run-name-preview');
             expect(preview).not.toBeNull();
             expect(JSON.stringify(preview)).toContain('Jane Doe');
@@ -506,8 +715,11 @@ describe('RunPlaybookModal — template mode', () => {
             mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
             mockUseUserDisplayNameMap.mockReturnValue({});
 
-            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
-            const tree = component.toJSON();
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+            const tree = component!.toJSON();
             const preview = findNodeByTestId(tree, 'run-name-preview');
             expect(JSON.stringify(preview)).toContain("Owner's name");
         });
@@ -739,7 +951,10 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('namePreviewTooLong', () => {
         it('shows error and disables confirm button when resolved name exceeds 64 chars', () => {
-            const longTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1);
+            // Includes {SEQ} so the run name contains a token and the resolved preview is
+            // computed and checked against the length limit (locked is set in the outer
+            // beforeEach; this describe block doesn't need the checkbox, just the resolution).
+            const longTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1) + '{SEQ}';
             const pbLongName = {
                 ...basePlaybook,
                 channel_name_template: longTemplate,
@@ -747,13 +962,72 @@ describe('RunPlaybookModal — template mode', () => {
             };
             mockUsePlaybook.mockReturnValue([pbLongName, {isFetching: false, error: undefined}]);
 
-            const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
-            const json = toJson(component);
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+            const json = toJson(component!);
+
+            expect(json).toContain('Shorten the field values used in the template');
+
+            const tree = component!.toJSON();
+            const btn = findNodeByTestId(tree, 'confirm-button');
+            expect(btn).not.toBeNull();
+            expect(btn.props.disabled).toBe(true);
+        });
+
+        it('shows unlocked copy when override is allowed and the resolved preview is too long', () => {
+            // The raw typed name is short (freeNameValid would pass on its own), but the property
+            // value it references is long enough that the resolved preview exceeds the limit —
+            // this must still block submission, since the channel display name is silently
+            // truncated to 64 runes server-side while the run's stored name is not, and that
+            // divergence is exactly what the "exceeds" warning is telling the user about.
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: false, id}]);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            const fieldInput = findNodeByTestId(component!.toJSON(), 'property-field-field-sev');
+            act(() => {
+                fieldInput.props.onChange({target: {value: 'A'.repeat(RUN_NAME_MAX_LENGTH + 1)}});
+            });
+
+            const nameInput = findNodeByTestId(component!.toJSON(), 'run-name-input');
+            act(() => {
+                nameInput.props.onChange({target: {value: '{Severity}'}});
+            });
+
+            const json = toJson(component!);
+            expect(json).toContain('Shorten the name or use fewer fields');
+
+            const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
+            expect(btn.props.disabled).toBe(true);
+        });
+
+        it('shows error and disables confirm button for a locked literal template with no token that exceeds 64 chars', () => {
+            // No {token} at all — the raw template text IS the final resolved value. Locked is
+            // set in the outer beforeEach.
+            const longLiteralTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1);
+            const pbLongLiteral = {
+                ...basePlaybook,
+                channel_name_template: longLiteralTemplate,
+                propertyFields: [],
+            };
+            mockUsePlaybook.mockReturnValue([pbLongLiteral, {isFetching: false, error: undefined}]);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+            const json = toJson(component!);
 
             expect(json).toContain('exceeds');
 
-            const tree = component.toJSON();
-            const btn = findNodeByTestId(tree, 'confirm-button');
+            const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
             expect(btn).not.toBeNull();
             expect(btn.props.disabled).toBe(true);
         });
@@ -847,6 +1121,7 @@ describe('RunPlaybookModal — no template (free-text mode)', () => {
             return 'mock-user-id';
         });
         mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
+        mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: false, id}]);
     });
 
     it('shows the free-text run name input', () => {

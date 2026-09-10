@@ -199,8 +199,6 @@ func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request)
 	} else if app.ShouldSendDailyDigestMessage(info, timezone, currentTime) {
 		sendRegularDigest(DigestSenderParams{isWeekly: false})
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *BotHandler) createDigestSender(c *Context, w http.ResponseWriter, userID string, userInfo *app.UserInfo) func(DigestSenderParams) {

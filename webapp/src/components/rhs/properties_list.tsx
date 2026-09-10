@@ -13,6 +13,7 @@ interface Props {
     propertyValues?: PropertyValue[];
     runID: string;
     className?: string;
+    readOnly?: boolean;
 }
 
 const PropertiesList = (props: Props) => {
@@ -47,6 +48,7 @@ const PropertiesList = (props: Props) => {
                     field={field}
                     value={value}
                     runID={props.runID}
+                    readOnly={props.readOnly}
                 />
             ))}
         </div>

@@ -32,8 +32,13 @@ jest.mock('src/graphql/hooks', () => ({
     useUpdateRunItemTaskActions: jest.fn(() => ({updateRunTaskActions: jest.fn()})),
 }));
 
+jest.mock('src/hooks/redux', () => ({
+    useAppSelector: jest.fn(() => false),
+}));
+
 jest.mock('src/client', () => ({
     setAssignee: jest.fn(async () => ({})),
+    setAssigneeOnlyComplete: jest.fn(async () => ({})),
     setRoleAssignee: jest.fn(async () => ({})),
     setPropertyUserAssignee: jest.fn(async () => ({})),
     clientEditChecklistItem: jest.fn(),
@@ -55,6 +60,10 @@ jest.mock('src/components/backstage/toast', () => ({
 jest.mock('src/hooks', () => ({
     useProfilesInTeam: jest.fn(() => []),
     useProfilesForRun: jest.fn(() => []),
+}));
+
+jest.mock('src/hooks/redux', () => ({
+    useAppSelector: () => 'current-user-id',
 }));
 
 jest.mock('src/components/checklists/assignee_dropdown', () => ({
@@ -90,9 +99,26 @@ jest.mock('./description', () => ({
     default: () => null,
 }));
 
+jest.mock('@mattermost/shared/components/tooltip', () => ({
+    WithTooltip: ({children, title}: {children: React.ReactNode; title: string}) => (
+        <div
+            data-testid='with-tooltip'
+            data-title={title}
+        >
+            {children}
+        </div>
+    ),
+}));
+
 jest.mock('./inputs', () => ({
     CancelSaveButtons: () => null,
-    CheckBoxButton: () => null,
+    CheckBoxButton: ({disabled}: {disabled?: boolean}) => (
+        <input
+            data-testid='checklist-item-checkbox'
+            type='checkbox'
+            disabled={disabled}
+        />
+    ),
 }));
 
 jest.mock('./duedate', () => ({
@@ -106,6 +132,12 @@ jest.mock('./command', () => ({
 
 jest.mock('./condition_indicator', () => ({
     __esModule: true,
+    default: () => null,
+}));
+
+jest.mock('./checked_chip', () => ({
+    __esModule: true,
+    ...jest.requireActual('./checked_chip'),
     default: () => null,
 }));
 
@@ -199,5 +231,116 @@ describe('ChecklistItem › onExtraOptionSelected', () => {
         expect(mockToasterAdd).toHaveBeenCalledWith(expect.objectContaining({
             toastStyle: 'failure',
         }));
+    });
+});
+
+describe('ChecklistItem › assignee_only_complete checkbox', () => {
+    const findCheckbox = (component: renderer.ReactTestRenderer) => {
+        const nodes = component.root.findAll(
+            (node) => node.props['data-testid'] === 'checklist-item-checkbox',
+        );
+        expect(nodes.length).toBeGreaterThan(0);
+        return nodes[0];
+    };
+
+    it('disables checkbox for non-assignee when locked', () => {
+        const component = renderItem({
+            playbookRunId: 'run-1',
+            checklistItem: makeItem({
+                assignee_id: 'other-user',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(findCheckbox(component).props.disabled).toBe(true);
+        const tooltips = component.root.findAllByProps({'data-testid': 'with-tooltip'});
+        expect(tooltips.some((node) => node.props['data-title'] === 'Only the assignee can complete the task')).toBe(true);
+    });
+
+    it('allows assignee to complete when locked', () => {
+        const component = renderItem({
+            playbookRunId: 'run-1',
+            checklistItem: makeItem({
+                assignee_id: 'current-user-id',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(findCheckbox(component).props.disabled).toBe(false);
+        expect(component.root.findAllByProps({'data-testid': 'with-tooltip'})).toHaveLength(0);
+    });
+
+    it('allows anyone when locked but unassigned', () => {
+        const component = renderItem({
+            playbookRunId: 'run-1',
+            checklistItem: makeItem({
+                assignee_id: '',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(findCheckbox(component).props.disabled).toBe(false);
+        expect(component.root.findAllByProps({'data-testid': 'with-tooltip'})).toHaveLength(0);
+    });
+
+    it('allows assignee edits when locked but unassigned', () => {
+        MockHoverMenu.mockClear();
+        renderItem({
+            playbookRunId: 'run-1',
+            runOwnerId: 'run-owner-id',
+            checklistItem: makeItem({
+                assignee_id: '',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(MockHoverMenu.mock.calls[0][0].assigneeEditable).toBe(true);
+        expect(MockHoverMenu.mock.calls[0][0].assigneeDisabledReason).toBeUndefined();
+    });
+
+    it('disables assignee edits for non-owner non-assignee when locked', () => {
+        MockHoverMenu.mockClear();
+        renderItem({
+            playbookRunId: 'run-1',
+            runOwnerId: 'run-owner-id',
+            checklistItem: makeItem({
+                assignee_id: 'other-user',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(MockHoverMenu.mock.calls[0][0].assigneeEditable).toBe(false);
+        expect(MockHoverMenu.mock.calls[0][0].assigneeDisabledReason).toBe(
+            'Only the assignee or run owner can change the assignee',
+        );
+    });
+
+    it('allows run owner to edit assignee when locked', () => {
+        MockHoverMenu.mockClear();
+        renderItem({
+            playbookRunId: 'run-1',
+            runOwnerId: 'current-user-id',
+            checklistItem: makeItem({
+                assignee_id: 'other-user',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(MockHoverMenu.mock.calls[0][0].assigneeEditable).toBe(true);
+        expect(MockHoverMenu.mock.calls[0][0].assigneeDisabledReason).toBeUndefined();
+    });
+
+    it('allows assignee to edit assignee when locked', () => {
+        MockHoverMenu.mockClear();
+        renderItem({
+            playbookRunId: 'run-1',
+            runOwnerId: 'run-owner-id',
+            checklistItem: makeItem({
+                assignee_id: 'current-user-id',
+                assignee_only_complete: true,
+            }),
+        });
+
+        expect(MockHoverMenu.mock.calls[0][0].assigneeEditable).toBe(true);
     });
 });

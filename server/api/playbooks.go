@@ -167,8 +167,17 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 
 	for listIndex := range playbook.Checklists {
 		for itemIndex := range playbook.Checklists[listIndex].Items {
-			if err := validateTaskActions(playbook.Checklists[listIndex].Items[itemIndex].TaskActions); err != nil {
+			item := playbook.Checklists[listIndex].Items[itemIndex]
+			if err := validateTaskActions(item.TaskActions); err != nil {
 				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid task actions", err)
+				return false
+			}
+			if err := app.ValidateTaskRequirements(item.Requirements); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid checklist item requirements", err)
+				return false
+			}
+			if err := app.ValidateRequirementsExclusiveOfTaskActions(item.Requirements, item.TaskActions); err != nil {
+				h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid checklist item", err)
 				return false
 			}
 		}
@@ -198,6 +207,12 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreate(userID, playbook)) {
+		return
+	}
+
+	// Authorize any client-supplied members list with the same rules the update path applies.
+	// Must run before the default-membership assignment below, which it is diffed against.
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreateWithMembers(userID, playbook)) {
 		return
 	}
 
@@ -298,6 +313,9 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	if _, ok := rawFields["admin_only_edit"]; !ok {
 		playbook.AdminOnlyEdit = oldPlaybook.AdminOnlyEdit
 	}
+	if _, ok := rawFields["channel_name_template_locked"]; !ok {
+		playbook.ChannelNameTemplateLocked = oldPlaybook.ChannelNameTemplateLocked
+	}
 
 	if err = h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
@@ -379,8 +397,9 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
 
 	var body struct {
-		RunNumberPrefix     *string `json:"run_number_prefix"`
-		ChannelNameTemplate *string `json:"channel_name_template"`
+		RunNumberPrefix           *string `json:"run_number_prefix"`
+		ChannelNameTemplate       *string `json:"channel_name_template"`
+		ChannelNameTemplateLocked *bool   `json:"channel_name_template_locked"`
 	}
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
@@ -389,8 +408,8 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 		return
 	}
 
-	// These two updates are not atomic: if the prefix succeeds but the template fails,
-	// the prefix change is persisted. Clients that need consistency should send them
+	// These three updates are not atomic: if an earlier field succeeds but a later one fails,
+	// the earlier change is persisted. Clients that need consistency should send them
 	// in separate requests.
 	if body.RunNumberPrefix != nil {
 		if err = h.playbookService.UpdateRunNumberPrefix(playbookID, *body.RunNumberPrefix, userID); err != nil {
@@ -401,6 +420,13 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 
 	if body.ChannelNameTemplate != nil {
 		if err = h.playbookService.UpdateChannelNameTemplate(playbookID, *body.ChannelNameTemplate, userID); err != nil {
+			h.handlePlaybookWriteError(w, c.logger, err)
+			return
+		}
+	}
+
+	if body.ChannelNameTemplateLocked != nil {
+		if err = h.playbookService.UpdateChannelNameTemplateLocked(playbookID, *body.ChannelNameTemplateLocked, userID); err != nil {
 			h.handlePlaybookWriteError(w, c.logger, err)
 			return
 		}

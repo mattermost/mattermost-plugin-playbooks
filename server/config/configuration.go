@@ -25,7 +25,8 @@ type Configuration struct {
 	// EnableIncrementalUpdates controls whether the server sends incremental WebSocket updates
 	// instead of full playbook run objects. When enabled, the server compares previous and current
 	// states to determine what fields changed and only sends those changes.
-	// This is set to false by default for backward compatibility.
+	// Defaults to true (see plugin.json): incremental updates avoid broken syncing on large
+	// playbook run updates, and the feature has been stable since its July 2025 release.
 	EnableIncrementalUpdates bool `json:"enableincrementalupdates"`
 
 	// EnableExperimentalFeatures controls whether experimental features are enabled in the plugin.
@@ -56,10 +57,18 @@ type Configuration struct {
 	// EnableReports is the master kill-switch for the /report.* surface.
 	// Falls back to EnablePDFReports for one release.
 	EnableReports bool `json:"enablereports"`
+	// BetaFeatures holds individual beta feature toggles (task requirements, etc.).
+	// Stored as a JSON object in plugin settings; disabled by default.
+	BetaFeatures BetaFeaturesConfig `json:"betafeatures"`
 
 	// ExposeMCPExternal controls whether the Playbooks MCP tools may be exposed
 	// through the Agents plugin's external MCP endpoint.
 	ExposeMCPExternal bool `json:"exposemcpexternal"`
+}
+
+// BetaFeaturesConfig stores per-feature beta toggles from the System Console accordion.
+type BetaFeaturesConfig struct {
+	TaskRequirements bool `json:"task_requirements"`
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -95,6 +104,11 @@ func (c *Configuration) serialize() map[string]any {
 	ret["MaxGotenbergResponseBytes"] = c.MaxGotenbergResponseBytes
 	ret["PdfAFlavor"] = c.PdfAFlavor
 	ret["EnableReports"] = c.EnableReports
+	// Store as a plain map so SavePluginConfig can gob-encode across plugin RPC
+	// without registering a custom type.
+	ret["BetaFeatures"] = map[string]any{
+		"task_requirements": c.BetaFeatures.TaskRequirements,
+	}
 	ret["ExposeMCPExternal"] = c.ExposeMCPExternal
 	return ret
 }

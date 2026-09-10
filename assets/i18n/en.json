@@ -122,6 +122,18 @@
     "translation": "Add new task"
   },
   {
+    "id": "app.user.run.fill_requirements.intro",
+    "translation": "Fill in the required fields for \"{{.Task}}\" to mark it complete."
+  },
+  {
+    "id": "app.user.run.fill_requirements.submit_label",
+    "translation": "Save and mark complete"
+  },
+  {
+    "id": "app.user.run.fill_requirements.title",
+    "translation": "Complete requirements"
+  },
+  {
     "id": "app.user.run.add_to_timeline.playbook_run",
     "translation": "Playbook Run"
   },

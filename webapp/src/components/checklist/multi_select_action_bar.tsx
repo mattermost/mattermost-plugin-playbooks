@@ -441,7 +441,7 @@ const BulkAssignControlComponent = (ownProps: ControlProps<Option, boolean>) => 
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
             <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
-                <FormattedMessage defaultMessage='No Assignee'/>
+                <FormattedMessage defaultMessage='Remove assignee'/>
             </ControlComponentAnchor>
         )}
     </div>

@@ -185,6 +185,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		RunSummaryTemplateEnabled               *bool
 		RunSummaryTemplate                      *string
 		ChannelNameTemplate                     *string
+		ChannelNameTemplateLocked               *bool
 		Checklists                              *[]UpdateChecklist
 		CreateChannelMemberOnNewParticipant     *bool
 		RemoveChannelMemberOnRemovedParticipant *bool
@@ -297,6 +298,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "RunSummaryTemplateEnabled", args.Updates.RunSummaryTemplateEnabled)
 	addToSetmap(setmap, "RunSummaryTemplate", args.Updates.RunSummaryTemplate)
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
+	addToSetmap(setmap, "ChannelNameTemplateLocked", args.Updates.ChannelNameTemplateLocked)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 
@@ -305,6 +307,12 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		app.CleanUpChecklists(*args.Updates.Checklists)
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
 			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
+		}
+		if err := validateUpdateTaskRequirements(*args.Updates.Checklists); err != nil {
+			return "", errors.Wrapf(err, "failed to validate checklist item requirements for playbook id: '%s'", args.ID)
+		}
+		if err := validateUpdateRequirementsExclusiveOfTaskActions(*args.Updates.Checklists); err != nil {
+			return "", errors.Wrapf(err, "failed to validate checklist item exclusivity for playbook id: '%s'", args.ID)
 		}
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
@@ -550,6 +558,39 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 						}
 					}
 				}
+			}
+		}
+	}
+	return nil
+}
+
+func validateUpdateRequirementsExclusiveOfTaskActions(checklists []UpdateChecklist) error {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			var requirements []app.TaskRequirement
+			if item.Requirements != nil {
+				requirements = *item.Requirements
+			}
+			var taskActions []app.TaskAction
+			if item.TaskActions != nil {
+				taskActions = *item.TaskActions
+			}
+			if err := app.ValidateRequirementsExclusiveOfTaskActions(requirements, taskActions); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateUpdateTaskRequirements(checklists []UpdateChecklist) error {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			if item.Requirements == nil {
+				continue
+			}
+			if err := app.ValidateTaskRequirements(*item.Requirements); err != nil {
+				return err
 			}
 		}
 	}

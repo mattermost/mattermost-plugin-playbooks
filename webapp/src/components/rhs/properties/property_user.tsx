@@ -48,12 +48,22 @@ const UserProperty = (props: Props) => {
 
     const fetchUsersInTeam = useCallback(async () => profilesInTeam, [profilesInTeam]);
 
+    const handleClick = useCallback(() => {
+        if (props.readOnly) {
+            return;
+        }
+        setIsEditing(true);
+    }, [props.readOnly]);
+
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
+        if (props.readOnly) {
+            return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsEditing(true);
         }
-    }, []);
+    }, [props.readOnly]);
 
     const handleSelectedChange = useCallback((user?: UserProfile) => {
         const newValue = user?.id ?? null;
@@ -96,7 +106,8 @@ const UserProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
-            onClick={() => setIsEditing(true)}
+            $readOnly={props.readOnly}
+            onClick={handleClick}
             onKeyDown={handleActivateKey}
             data-testid='property-value'
         >
@@ -131,12 +142,22 @@ export const MultiuserProperty = (props: Props) => {
 
     const fetchUsersInTeam = useCallback(async () => profilesInTeam, [profilesInTeam]);
 
+    const handleClick = useCallback(() => {
+        if (props.readOnly) {
+            return;
+        }
+        setIsEditing(true);
+    }, [props.readOnly]);
+
     const handleActivateKey = useCallback((e: KeyboardEvent) => {
+        if (props.readOnly) {
+            return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsEditing(true);
         }
-    }, []);
+    }, [props.readOnly]);
 
     const applyNewValues = useCallback((newValues: string[]) => {
         const seq = ++callSeqRef.current;
@@ -209,7 +230,8 @@ export const MultiuserProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
-            onClick={() => setIsEditing(true)}
+            $readOnly={props.readOnly}
+            onClick={handleClick}
             onKeyDown={handleActivateKey}
             data-testid='property-value'
         >

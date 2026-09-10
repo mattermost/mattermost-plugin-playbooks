@@ -24,8 +24,9 @@ import ClearIndicator from 'src/components/backstage/playbook_edit/automation/cl
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 import {TemplateInput} from 'src/components/backstage/playbook_edit/automation/template_input';
 import {BaseInput} from 'src/components/assets/inputs';
+import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 
-type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
+type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'channel_name_template_locked' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
 
 interface Props {
     playbook: PlaybookSubset;
@@ -35,16 +36,18 @@ interface Props {
     disabled?: boolean;
     onRunNumberPrefixChange?: (prefix: string) => void;
     onChannelNameTemplateChange?: (template: string) => void;
+    onChannelNameTemplateLockedChange?: (locked: boolean) => void;
     newChannelOnly?: boolean;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange, newChannelOnly = false}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp, onRunNumberPrefixChange, onChannelNameTemplateChange, onChannelNameTemplateLockedChange, newChannelOnly = false}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const teamId = useAppSelector(getCurrentTeamId);
     const disabled = disabledProp || playbook.delete_at !== 0;
     const [insertCounter, setInsertCounter] = useState(0);
     const templateEnabled = !disabled && playbook.channel_mode === 'create_new_channel';
+    const templateLockedChecked = playbook.channel_name_template_locked ?? false;
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -61,6 +64,15 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
         });
         setChangesMade?.(true);
         onChannelNameTemplateChange?.(channelNameTemplate);
+    };
+
+    const handleChannelNameTemplateLockedChange = (locked: boolean) => {
+        setPlaybook({
+            ...playbook,
+            channel_name_template_locked: locked,
+        });
+        setChangesMade?.(true);
+        onChannelNameTemplateLockedChange?.(locked);
     };
 
     const handleRunNumberPrefixChange = (runNumberPrefix: string) => {
@@ -203,6 +215,13 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                             testId='channel-access-run-name-template'
                             openInsertToggle={insertCounter}
                         />
+                        <TemplateLockedCheckbox
+                            testId='channel-access-run-name-template-locked'
+                            text={formatMessage({defaultMessage: 'Lock run name'})}
+                            checked={templateLockedChecked}
+                            disabled={!templateEnabled}
+                            onChange={handleChannelNameTemplateLockedChange}
+                        />
                     </RunNamingBlock>
                     <ChannelActionButton
                         disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
@@ -331,5 +350,14 @@ const InsertVariableButton = styled.button`
 
     &.a11y--focused {
         box-shadow: 0 0 0 2px var(--button-bg);
+    }
+`;
+
+const TemplateLockedCheckbox = styled(CheckboxInput)`
+    padding: 6px 0;
+    margin-top: 4px;
+
+    &:hover {
+        background-color: transparent;
     }
 `;

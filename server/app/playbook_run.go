@@ -780,6 +780,9 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if prev.AssigneePropertyFieldID != item.AssigneePropertyFieldID {
 				fields["assignee_property_field_id"] = item.AssigneePropertyFieldID
 			}
+			if prev.AssigneeOnlyComplete != item.AssigneeOnlyComplete {
+				fields["assignee_only_complete"] = item.AssigneeOnlyComplete
+			}
 			if prev.Command != item.Command {
 				fields["command"] = item.Command
 			}
@@ -794,6 +797,9 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			}
 			if !reflect.DeepEqual(prev.TaskActions, item.TaskActions) {
 				fields["task_actions"] = item.TaskActions
+			}
+			if !reflect.DeepEqual(prev.Requirements, item.Requirements) {
+				fields["requirements"] = item.Requirements
 			}
 			if prev.UpdateAt != item.UpdateAt {
 				fields["update_at"] = item.UpdateAt
@@ -1254,6 +1260,12 @@ const (
 	TriggerTypeStatusUpdatePosted = "status_update_posted"
 )
 
+// ModifyCheckedStateOptions holds optional parameters for ModifyCheckedState.
+type ModifyCheckedStateOptions struct {
+	// RequirementValues maps requirement IDs to the values filled in when checking off a task.
+	RequirementValues map[string]string
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -1277,8 +1289,12 @@ type PlaybookRunService interface {
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
 	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
 
-	// OpenAddChecklistItemDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
+	// OpenAddChecklistItemDialog opens an interactive dialog so the user can add a checklist item.
 	OpenAddChecklistItemDialog(triggerID, userID, playbookRunID string, checklist int) error
+
+	// OpenFillRequirementsDialog opens an interactive dialog so the user can fill task requirements
+	// and mark the checklist item complete (used from slash commands).
+	OpenFillRequirementsDialog(triggerID, userID, playbookRunID string, checklist, item int) error
 
 	// AddPostToTimeline adds an event based on a post to a playbook run's timeline.
 	AddPostToTimeline(playbookRun *PlaybookRun, userID string, post *model.Post, summary string) error
@@ -1321,8 +1337,9 @@ type PlaybookRunService interface {
 	ChangeOwner(playbookRunID string, userID string, ownerID string) error
 
 	// ModifyCheckedState modifies the state of the specified checklist item
-	// Idempotent, will not perform any actions if the checklist item is already in the specified state
-	ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber int, itemNumber int) error
+	// Idempotent, will not perform any actions if the checklist item is already in the specified state.
+	// Optional opts may include requirement values to apply when checking off a task.
+	ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber int, itemNumber int, opts ...ModifyCheckedStateOptions) error
 
 	// ToggleCheckedState checks or unchecks the specified checklist item
 	ToggleCheckedState(playbookRunID, userID string, checklistNumber, itemNumber int) error
@@ -1337,6 +1354,9 @@ type PlaybookRunService interface {
 	// SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
 	// property field resolves to on this run.
 	SetPropertyUserAssignee(playbookRunID, userID string, checklistNumber, itemNumber int, propertyFieldID string) error
+
+	// SetAssigneeOnlyComplete sets whether only the assignee may check/uncheck the checklist item.
+	SetAssigneeOnlyComplete(playbookRunID, userID string, checklistNumber, itemNumber int, assigneeOnlyComplete bool) error
 
 	// SetCommandToChecklistItem sets command to checklist item
 	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
@@ -1474,7 +1494,7 @@ type PlaybookRunService interface {
 	RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error
 
 	// AddParticipants adds users to the participants list
-	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool, omitWebsocket bool) error
+	AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool, omitWebsocket bool) ([]string, error)
 
 	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
 	GetPlaybookRunIDsForUser(userID string) ([]string, error)

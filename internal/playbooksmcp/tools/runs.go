@@ -17,6 +17,7 @@ import (
 
 type ListRunsArgs struct {
 	TeamID      string   `json:"team_id,omitempty" jsonschema:"Filter by team ID (26-char Mattermost ID)"`
+	ChannelID   string   `json:"channel_id,omitempty" jsonschema:"Filter by channel ID (26-char Mattermost ID). If the agent is operating within a channel, set this to that channel's ID to see only its runs."`
 	Status      string   `json:"status,omitempty" jsonschema:"Filter by status: InProgress or Finished"`
 	OwnerUserID string   `json:"owner_user_id,omitempty" jsonschema:"Filter by owner user ID. Use 'me' for the current user."`
 	Type        string   `json:"type,omitempty" jsonschema:"Filter by run type: playbook or channelChecklist"`
@@ -125,7 +126,7 @@ type playbookRunDetail struct {
 
 func (p *PlaybooksToolProvider) addMCPHelperRunTools(server *mcphelper.Server) {
 	addMCPHelperTool(server, p.clientFactory, "list_runs",
-		"List playbook runs and channel checklists with optional filters. Returns a paginated list showing ID, name, type, status, owner, and timestamps. Use status='InProgress' to see active runs and type='channelChecklist' to list checklists. Example: {\"status\": \"InProgress\", \"type\": \"channelChecklist\", \"per_page\": 5}",
+		"List playbook runs and channel checklists with optional filters. Returns a paginated list showing ID, name, type, status, owner, and timestamps. Use status='InProgress' to see active runs, type='channelChecklist' to list checklists, and channel_id to restrict to a single channel. Example: {\"status\": \"InProgress\", \"channel_id\": \"abc123...\", \"per_page\": 5}",
 		toolListRuns)
 
 	addMCPHelperTool(server, p.clientFactory, "create_checklist",
@@ -158,6 +159,12 @@ func toolListRuns(ctx context.Context, client APIClient, args ListRunsArgs) (str
 	}
 	if args.TeamID != "" {
 		params.Set("team_id", args.TeamID)
+	}
+	if args.ChannelID != "" {
+		if err := validateID(args.ChannelID, "channel_id"); err != nil {
+			return "", err
+		}
+		params.Set("channel_id", args.ChannelID)
 	}
 	if args.Status != "" {
 		params.Add("statuses", args.Status)
