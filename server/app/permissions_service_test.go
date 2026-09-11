@@ -613,6 +613,9 @@ func (s *stubRunService) GetPlaybookRuns(RequesterInfo, PlaybookRunFilterOptions
 func (s *stubRunService) CreatePlaybookRun(*PlaybookRun, *Playbook, string, bool, string, map[string]json.RawMessage) (*PlaybookRun, error) {
 	panic("stubRunService: CreatePlaybookRun not implemented")
 }
+func (s *stubRunService) PublishRunEventToViewers(string, interface{}, *PlaybookRun, ...string) {
+	panic("stubRunService: PublishRunEventToViewers not implemented")
+}
 func (s *stubRunService) OpenCreatePlaybookRunDialog(string, string, string, string, string, []Playbook) error {
 	panic("stubRunService: OpenCreatePlaybookRunDialog not implemented")
 }
@@ -846,9 +849,13 @@ type stubPlaybookService struct {
 	err         error
 	schemeRoles PlaybookSchemeRoles
 	schemeErr   error
+
+	// getCalls counts Get calls so tests can assert how often the playbook is read.
+	getCalls int
 }
 
 func (s *stubPlaybookService) Get(id string) (Playbook, error) {
+	s.getCalls++
 	return s.playbook, s.err
 }
 
