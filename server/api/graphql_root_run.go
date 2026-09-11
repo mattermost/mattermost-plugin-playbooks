@@ -18,6 +18,21 @@ import (
 type RunRootResolver struct {
 }
 
+// maxRunsPerPage bounds a single run listing, both when a client requests a page
+// size and when it omits pagination entirely. Every run is hydrated with its full
+// checklists, so an unbounded listing can cost far more memory than it appears to.
+const maxRunsPerPage = 1000
+
+// runsPerPage resolves the page size for a run listing. Page sizes at or below
+// zero are left to the store, which reads them as an empty page.
+func runsPerPage(first *int32) int {
+	if first == nil || *first > maxRunsPerPage {
+		return maxRunsPerPage
+	}
+
+	return int(*first)
+}
+
 func (r *RunRootResolver) Run(ctx context.Context, args struct {
 	ID string `url:"id,omitempty"`
 }) (*RunResolver, error) {
@@ -31,8 +46,13 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 		return nil, err
 	}
 
+	if err = c.recordBudget.reserve(1); err != nil {
+		return nil, err
+	}
+
 	run, err := c.playbookRunService.GetPlaybookRun(args.ID)
 	if err != nil {
+		c.recordBudget.release(1)
 		return nil, err
 	}
 
@@ -68,10 +88,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		args.ParticipantOrFollowerID = userID
 	}
 
-	perPage := 10000 // If paging not specified, get "everything"
-	if args.First != nil {
-		perPage = int(*args.First)
-	}
+	perPage := runsPerPage(args.First)
 
 	page := 0
 	if args.After != nil {
@@ -96,10 +113,16 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		OmitEnded:               args.OmitEnded,
 	}
 
-	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
-	if err != nil {
+	if err = c.recordBudget.reserve(perPage); err != nil {
 		return nil, err
 	}
+
+	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
+	if err != nil {
+		c.recordBudget.release(perPage)
+		return nil, err
+	}
+	c.recordBudget.release(perPage - len(runResults.Items))
 
 	return &RunConnectionResolver{results: *runResults, page: page}, nil
 }

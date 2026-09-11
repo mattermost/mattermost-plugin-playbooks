@@ -141,6 +141,7 @@ type GraphQLContext struct {
 	config               config.Service
 	permissions          *app.PermissionsService
 	licenceChecker       app.LicenseChecker
+	recordBudget         *recordBudget
 	favoritesLoader      *dataloader.Loader[favoriteInfo, bool]
 	playbooksLoader      *dataloader.Loader[playbookInfo, *app.Playbook]
 	statusPostsLoader    *dataloader.Loader[string, []app.StatusPost]
@@ -190,6 +191,7 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		playbookStore:        h.playbookStore,
 		runStore:             h.runStore,
 		licenceChecker:       h.licenceChecker,
+		recordBudget:         &recordBudget{limit: maxRecordsPerRequest},
 		favoritesLoader:      favoritesLoader,
 		playbooksLoader:      playbooksLoader,
 		statusPostsLoader:    statusPostsLoader,
