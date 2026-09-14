@@ -39,9 +39,9 @@ const ChecklistItemTitle = (props: TitleProps) => {
         channelNamesMap,
     };
 
-    const computeHeight = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-        e.target.style.height = '5px';
-        e.target.style.height = (e.target.scrollHeight) + 'px';
+    const computeHeight = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        e.currentTarget.style.height = '5px';
+        e.currentTarget.style.height = (e.currentTarget.scrollHeight) + 'px';
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

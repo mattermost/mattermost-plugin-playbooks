@@ -120,7 +120,7 @@ export function useClickOutsideRef(
  * https://overreacted.io/making-setinterval-declarative-with-react-hooks/
  */
 export function useTimeout(callback: () => void, delay: number | null) {
-    const timeoutRef = useRef<number>();
+    const timeoutRef = useRef<number | undefined>(undefined);
     const callbackRef = useRef(callback);
 
     // Remember the latest callback:
@@ -601,7 +601,7 @@ export const useStats = (playbookId: string) => {
  * Hook that returns the previous value of the prop passed as argument
  */
 export const usePrevious = (value: any) => {
-    const ref = useRef();
+    const ref = useRef<typeof value>(undefined);
 
     useEffect(() => {
         ref.current = value;

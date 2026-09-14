@@ -4,7 +4,7 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
 import {IntlProvider} from 'react-intl';
-import {act} from '@testing-library/react-hooks';
+import {act} from '@testing-library/react';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
