@@ -128,9 +128,9 @@ check-style-server: manifest-check apply install-go-tools
 # weird reports at golangci-lint step
 ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
-	$(GO) vet ./...
+	$(GO) vet $$(go list ./... | grep -v /node_modules/)
 	$(GOBIN)/golangci-lint run ./...
-	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 -license.ignore=server/graphql/models.go ./...
+	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 -license.ignore=server/graphql/models.go $$(go list ./... | grep -v /node_modules/)
 endif
 
 ## Runs eslint and golangci-lint
