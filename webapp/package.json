@@ -196,6 +196,9 @@
     "setupFiles": [
       "jest-canvas-mock"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup_react19.js"
+    ],
     "testEnvironmentOptions": {
       "url": "http://localhost:8065"
     }
