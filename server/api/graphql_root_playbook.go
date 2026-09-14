@@ -19,12 +19,6 @@ import (
 type PlaybookRootResolver struct {
 }
 
-// maxPlaybooksPerPage bounds a single playbook listing. The query takes no
-// pagination arguments, so this is the whole listing, and playbooks are hydrated
-// with their full checklists: the previous 10000 record page was larger than a
-// whole request is allowed to hydrate, leaving the request budget unenforceable.
-const maxPlaybooksPerPage = 1000
-
 func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -36,13 +30,8 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 		return nil, err
 	}
 
-	if err = c.recordBudget.reserve(1); err != nil {
-		return nil, err
-	}
-
 	playbook, err := c.playbookService.Get(playbookID)
 	if err != nil {
-		c.recordBudget.release(1)
 		return nil, err
 	}
 
@@ -94,19 +83,13 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 		WithArchived:       args.WithArchived,
 		WithMembershipOnly: isGuest || args.WithMembershipOnly, // Guests can only see playbooks if they are invited to them
 		Page:               0,
-		PerPage:            maxPlaybooksPerPage,
-	}
-
-	if err = c.recordBudget.reserve(maxPlaybooksPerPage); err != nil {
-		return nil, err
+		PerPage:            10000,
 	}
 
 	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
 	if err != nil {
-		c.recordBudget.release(maxPlaybooksPerPage)
 		return nil, err
 	}
-	c.recordBudget.release(maxPlaybooksPerPage - len(playbookResults.Items))
 
 	filteredItems := c.permissions.FilterPlaybooksByViewPermission(userID, playbookResults.Items)
 
