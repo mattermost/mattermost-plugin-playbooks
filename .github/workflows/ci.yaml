@@ -458,7 +458,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       minio:
-        image: minio/minio:RELEASE.2019-10-11T00-38-09Z
+        image: mattermostdevelopment/mirrored-minio:RELEASE.2026-07-17T12-07-51Z
         env:
           MINIO_ACCESS_KEY: minioaccesskey
           MINIO_SECRET_KEY: miniosecretkey
@@ -569,7 +569,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       minio:
-        image: minio/minio:RELEASE.2019-10-11T00-38-09Z
+        image: mattermostdevelopment/mirrored-minio:RELEASE.2026-07-17T12-07-51Z
         env:
           MINIO_ACCESS_KEY: minioaccesskey
           MINIO_SECRET_KEY: miniosecretkey
@@ -676,7 +676,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       minio:
-        image: minio/minio:RELEASE.2019-10-11T00-38-09Z
+        image: mattermostdevelopment/mirrored-minio:RELEASE.2026-07-17T12-07-51Z
         env:
           MINIO_ACCESS_KEY: minioaccesskey
           MINIO_SECRET_KEY: miniosecretkey
