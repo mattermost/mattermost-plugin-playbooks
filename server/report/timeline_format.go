@@ -35,8 +35,8 @@ type FormattedTimelineEvent struct {
 }
 
 // unknownActor is the deny sentinel used when SubjectID / CreatorID cannot
-// be resolved against the resolver table. Matches the markdown_writer and
-// html_writer conventions of failing closed rather than leaking IDs.
+// be resolved against the resolver table. Matches the html_writer
+// convention of failing closed rather than leaking IDs.
 const unknownActorLabel = "Unknown user"
 
 // fallbackHeadline is the generic placeholder when an unknown event type

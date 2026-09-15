@@ -6,17 +6,15 @@
 // writers consume. The package is intentionally pure: it depends on no
 // other plugin package (no server/app, no pluginapi, no net/http).
 //
-// Concrete output formats live in sibling packages:
+// The report output lives in a sibling package:
 //
-//	report/markdown_writer  — canonical Mattermost-flavored markdown
-//	report/html_writer      — self-contained HTML document (input to PDF)
-//	report/renderer/html2pdf — HTML→PDF renderer interface + adapters
+//	report/html_writer — self-contained HTML document (downloaded directly,
+//	                     or browser-printed to PDF by the client)
 //
 // All dynamic input arrives as sanitized DTOs from a caller (server/app's
 // ReportService) that owns permission scoping, batched lookups, and
 // external I/O.
 //
-// Markdown rendering uses yuin/goldmark augmented by a Mattermost-flavored
-// extension at sub-package markdown/mattermost (mentions, channel links,
-// file embeds, shortcode-as-styled-text emoji).
+// html_writer renders Mattermost-flavored markdown bodies to HTML with
+// yuin/goldmark (GFM), scrubbed by bluemonday.
 package report

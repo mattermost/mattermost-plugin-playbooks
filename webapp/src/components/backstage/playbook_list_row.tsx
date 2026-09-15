@@ -40,11 +40,8 @@ import DotMenu, {
     iconSplitStyling,
 } from 'src/components/dot_menu';
 import {
-    PDFExportError,
     createPlaybookRun,
     exportPlaybookHTML,
-    exportPlaybookMarkdown,
-    exportPlaybookPDF,
     playbookExportProps,
     triggerBrowserPrint,
     triggerPDFDownload,
@@ -150,35 +147,18 @@ const PlaybookListRow = (props: Props) => {
     const [showPDFModal, setShowPDFModal] = useState(false);
     const addToast = useToaster().add;
 
-    // Third positional arg (transcriptMode) is accepted but unused — playbook
-    // templates don't have a transcript section.
     const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat = 'pdf') => {
         setShowPDFModal(false);
         try {
-            if (format === 'md') {
-                const result = await exportPlaybookMarkdown(props.playbook.id, sections);
-                triggerPDFDownload(result);
-                return;
-            }
             if (format === 'html') {
                 const result = await exportPlaybookHTML(props.playbook.id, sections, false);
                 triggerPDFDownload(result);
                 return;
             }
 
-            // format === 'pdf'
-            try {
-                const result = await exportPlaybookPDF(props.playbook.id, sections);
-                triggerPDFDownload(result);
-            } catch (err) {
-                // Server-rendered PDF not configured — fall back to browser print of HTML.
-                if (err instanceof PDFExportError && err.status === 501) {
-                    const html = await exportPlaybookHTML(props.playbook.id, sections, true);
-                    triggerBrowserPrint(html.blob);
-                    return;
-                }
-                throw err;
-            }
+            // format === 'pdf' — browser-print the HTML.
+            const html = await exportPlaybookHTML(props.playbook.id, sections, true);
+            triggerBrowserPrint(html.blob);
         } catch (err) {
             const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export.'});
             const requestId = (err as {requestId?: string | null})?.requestId;

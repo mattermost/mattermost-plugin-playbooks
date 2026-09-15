@@ -894,10 +894,12 @@ const parseFilenameFromDisposition = (disposition: string | null, fallback: stri
     return match?.[1] ? decodeURIComponent(match[1]) : fallback;
 };
 
-const fetchPDFExport = async (url: string, fallbackFilename: string): Promise<PDFExportResult> => {
+export type TranscriptMode = 'threaded' | 'chronological';
+
+const fetchExportBlob = async (url: string, fallbackFilename: string, extraHeaders: Record<string, string> = {}): Promise<PDFExportResult> => {
     const options = Client4.getOptions({
         method: 'GET',
-        headers: {Accept: 'application/pdf'},
+        headers: {Accept: 'text/html', ...extraHeaders},
     });
     const resp = await fetch(url, options);
     if (!resp.ok) {
@@ -918,7 +920,9 @@ const fetchPDFExport = async (url: string, fallbackFilename: string): Promise<PD
     };
 };
 
-export async function exportRunReportPDF(runID: string, sections: PDFExportSections, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
+// exportRunReportHTML fetches a run report as HTML. When forPrint is true the
+// caller browser-prints the blob to PDF; otherwise it downloads the HTML.
+export async function exportRunReportHTML(runID: string, sections: PDFExportSections, forPrint = false, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
     const params = new URLSearchParams();
     const list = sectionsToQueryString(sections);
     if (list) {
@@ -928,105 +932,24 @@ export async function exportRunReportPDF(runID: string, sections: PDFExportSecti
         params.set('transcript_mode', transcriptMode);
     }
     const query = params.toString();
-    const url = `${apiUrl}/runs/${runID}/report.pdf${query ? `?${query}` : ''}`;
-    return fetchPDFExport(url, `run_${runID}.pdf`);
+    const url = `${apiUrl}/runs/${runID}/report.html${query ? `?${query}` : ''}`;
+    return fetchExportBlob(url, `run_${runID}.html`, {'X-Playbooks-Export-Intent': forPrint ? 'pdf-fallback' : 'html-direct'});
 }
 
-export async function exportPlaybookPDF(playbookID: string, sections: PDFExportSections): Promise<PDFExportResult> {
+export async function exportPlaybookHTML(playbookID: string, sections: PDFExportSections, forPrint = false): Promise<PDFExportResult> {
     const params = new URLSearchParams();
     const list = sectionsToQueryString(sections);
     if (list) {
         params.set('sections', list);
     }
     const query = params.toString();
-    const url = `${apiUrl}/playbooks/${playbookID}/report.pdf${query ? `?${query}` : ''}`;
-    return fetchPDFExport(url, `playbook_${playbookID}.pdf`);
-}
-
-// buildSectionsQuery returns a URLSearchParams-encoded "sections=..." string (no leading "?").
-const buildSectionsQuery = (sections: PDFExportSections): string => {
-    const list = sectionsToQueryString(sections);
-    if (!list) {
-        return '';
-    }
-    return new URLSearchParams({sections: list}).toString();
-};
-
-// fetchExportBlob fetches any export URL with optional extra headers and returns a PDFExportResult.
-const fetchExportBlob = async (
-    url: string,
-    acceptMime: string,
-    extraHeaders: Record<string, string> = {},
-): Promise<PDFExportResult> => {
-    const options = Client4.getOptions({
-        method: 'GET',
-        headers: {Accept: acceptMime, ...extraHeaders},
-    });
-    const resp = await fetch(url, options);
-    if (!resp.ok) {
-        let message = resp.statusText;
-        try {
-            const body = await resp.json();
-            message = body?.error || message;
-        } catch {
-            // body wasn't JSON; keep statusText
-        }
-        throw new PDFExportError(resp.status, message, resp.headers.get('X-Request-ID'));
-    }
-    const blob = await resp.blob();
-    const ext = url.split('?')[0].split('.').pop() ?? 'bin';
-    const fallback = `export.${ext}`;
-    return {
-        blob,
-        filename: parseFilenameFromDisposition(resp.headers.get('Content-Disposition'), fallback),
-        truncated: resp.headers.get('X-Playbooks-Report-Truncated') === 'true',
-    };
-};
-
-// Fetch a run report in the given format. Returns the response blob and filename.
-export type TranscriptMode = 'threaded' | 'chronological';
-
-const buildExportQuery = (sections: PDFExportSections, transcriptMode?: TranscriptMode): string => {
-    const parts: string[] = [];
-    const sectionsQ = buildSectionsQuery(sections);
-    if (sectionsQ) {
-        parts.push(sectionsQ);
-    }
-    if (transcriptMode && transcriptMode !== 'threaded') {
-        parts.push(`transcript_mode=${encodeURIComponent(transcriptMode)}`);
-    }
-    return parts.join('&');
-};
-
-export async function exportRunReportMarkdown(runID: string, sections: PDFExportSections, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
-    const query = buildExportQuery(sections, transcriptMode);
-    const url = `${apiUrl}/runs/${runID}/report.md${query ? `?${query}` : ''}`;
-    return fetchExportBlob(url, 'text/markdown');
-}
-
-export async function exportRunReportHTML(runID: string, sections: PDFExportSections, forPrint = false, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
-    const query = buildExportQuery(sections, transcriptMode);
-    const intentHeader = forPrint ? 'pdf-fallback' : 'html-direct';
-    const url = `${apiUrl}/runs/${runID}/report.html${query ? `?${query}` : ''}`;
-    return fetchExportBlob(url, 'text/html', {'X-Playbooks-Export-Intent': intentHeader});
-}
-
-export async function exportPlaybookMarkdown(playbookID: string, sections: PDFExportSections): Promise<PDFExportResult> {
-    const query = buildSectionsQuery(sections);
-    const url = `${apiUrl}/playbooks/${playbookID}/report.md${query ? `?${query}` : ''}`;
-    return fetchExportBlob(url, 'text/markdown');
-}
-
-export async function exportPlaybookHTML(playbookID: string, sections: PDFExportSections, forPrint = false): Promise<PDFExportResult> {
-    const query = buildSectionsQuery(sections);
-    const intentHeader = forPrint ? 'pdf-fallback' : 'html-direct';
     const url = `${apiUrl}/playbooks/${playbookID}/report.html${query ? `?${query}` : ''}`;
-    return fetchExportBlob(url, 'text/html', {'X-Playbooks-Export-Intent': intentHeader});
+    return fetchExportBlob(url, `playbook_${playbookID}.html`, {'X-Playbooks-Export-Intent': forPrint ? 'pdf-fallback' : 'html-direct'});
 }
 
-// triggerBrowserPrint opens the HTML blob in a popup and triggers window.print().
-// Uses both the load event and a setTimeout(0) backstop for Safari/Firefox
-// blob-URL timing quirks.
+// triggerBrowserPrint opens the HTML blob in a popup and triggers window.print()
+// so the user can Save as PDF. Uses both the load event and a setTimeout
+// backstop for Safari/Firefox blob-URL timing quirks.
 export function triggerBrowserPrint(blob: Blob): void {
     const url = URL.createObjectURL(blob);
     const popup = window.open(url, '_blank');
@@ -1049,7 +972,7 @@ export function triggerBrowserPrint(blob: Blob): void {
     };
     popup.addEventListener('load', doPrint, {once: true});
 
-    // Backstop: some browsers (Safari, older Firefox) don't fire load on blob URLs
+    // Backstop: some browsers (Safari, older Firefox) don't fire load on blob URLs.
     setTimeout(doPrint, 500);
 }
 

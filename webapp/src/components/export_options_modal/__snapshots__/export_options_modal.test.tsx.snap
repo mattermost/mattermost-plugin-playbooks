@@ -11,15 +11,15 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
       className="FormatSelector-fRuKVN frSyxO"
     >
       <button
-        className="FormatButton-jpoeiq fCAij"
-        data-testid="format-button-md"
+        className="FormatButton-jpoeiq kywyMA"
+        data-testid="format-button-pdf"
         onClick={[Function]}
-        selected={false}
+        selected={true}
       >
         <i
-          className="icon icon-file-text-outline"
+          className="icon icon-file-pdf-outline"
         />
-        Markdown
+        PDF
       </button>
       <button
         className="FormatButton-jpoeiq fCAij"
@@ -32,23 +32,12 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
         />
         HTML
       </button>
-      <button
-        className="FormatButton-jpoeiq kywyMA"
-        data-testid="format-button-pdf"
-        onClick={[Function]}
-        selected={true}
-      >
-        <i
-          className="icon icon-file-pdf-outline"
-        />
-        PDF
-      </button>
     </div>
     <p
       className="FormatHint-lnvEeT kBHaCo"
       data-testid="format-hint"
     >
-      Rendered in your browser — Save as PDF in the print dialog
+      Opens your browser print dialog — choose "Save as PDF".
     </p>
     <p
       className="Description-dTdaMR caPvRr"
@@ -113,15 +102,15 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       className="FormatSelector-fRuKVN frSyxO"
     >
       <button
-        className="FormatButton-jpoeiq fCAij"
-        data-testid="format-button-md"
+        className="FormatButton-jpoeiq kywyMA"
+        data-testid="format-button-pdf"
         onClick={[Function]}
-        selected={false}
+        selected={true}
       >
         <i
-          className="icon icon-file-text-outline"
+          className="icon icon-file-pdf-outline"
         />
-        Markdown
+        PDF
       </button>
       <button
         className="FormatButton-jpoeiq fCAij"
@@ -134,23 +123,12 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
         />
         HTML
       </button>
-      <button
-        className="FormatButton-jpoeiq kywyMA"
-        data-testid="format-button-pdf"
-        onClick={[Function]}
-        selected={true}
-      >
-        <i
-          className="icon icon-file-pdf-outline"
-        />
-        PDF
-      </button>
     </div>
     <p
       className="FormatHint-lnvEeT kBHaCo"
       data-testid="format-hint"
     >
-      Rendered in your browser — Save as PDF in the print dialog
+      Opens your browser print dialog — choose "Save as PDF".
     </p>
     <p
       className="Description-dTdaMR caPvRr"

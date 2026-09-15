@@ -30,12 +30,9 @@ import (
 //     attribute (onerror, onclick, style, etc.) and dangerous URL schemes
 //     on href/src (only http, https, mailto survive on links).
 //
-// Phase C deliberately uses plain goldmark + GFM rather than the
-// Mattermost-flavored extension at server/report/markdown. That extension
-// emits typed Instruction nodes for the PDF renderer (mentions, channel
-// links, emoji) and has no HTML renderer wired in. Standard markdown
-// fidelity is sufficient for v1; MM token-to-HTML rendering ships in a
-// follow-up (see plan §3.6.6 polish item).
+// Standard markdown fidelity is sufficient for v1; Mattermost token-to-HTML
+// rendering (mentions, channel links, emoji) ships in a follow-up (see plan
+// §3.6.6 polish item).
 //
 // rt is accepted for forward-compatibility with that follow-up; it is
 // currently unused.

@@ -50,10 +50,11 @@ import {
     autoUnfollowPlaybook,
     duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchPlaybookFollowers,
-    exportPlaybookPDF,
+    exportPlaybookHTML,
     getSiteUrl,
     playbookExportProps,
     restorePlaybook,
+    triggerBrowserPrint,
     triggerPDFDownload,
 } from 'src/client';
 import ExportOptionsModal, {ExportFormat, SectionFlags} from 'src/components/export_options_modal';
@@ -384,42 +385,18 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEd
 
     const currentUserId = useAppSelector(getCurrentUserId);
 
-    // Third positional arg (transcriptMode) accepted but unused — playbook
-    // templates don't have a transcript section.
     const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat = 'pdf') => {
         setShowPDFModal(false);
         try {
-            const {
-                PDFExportError,
-                exportPlaybookHTML,
-                exportPlaybookMarkdown,
-                triggerBrowserPrint,
-            } = await import('src/client');
-
-            if (format === 'md') {
-                const result = await exportPlaybookMarkdown(playbook.id, sections);
-                triggerPDFDownload(result);
-                return;
-            }
             if (format === 'html') {
                 const result = await exportPlaybookHTML(playbook.id, sections, false);
                 triggerPDFDownload(result);
                 return;
             }
 
-            // format === 'pdf'
-            try {
-                const result = await exportPlaybookPDF(playbook.id, sections);
-                triggerPDFDownload(result);
-            } catch (err) {
-                // Server-rendered PDF not configured — fall back to browser print of HTML.
-                if (err instanceof PDFExportError && err.status === 501) {
-                    const html = await exportPlaybookHTML(playbook.id, sections, true);
-                    triggerBrowserPrint(html.blob);
-                    return;
-                }
-                throw err;
-            }
+            // format === 'pdf' — browser-print the HTML.
+            const html = await exportPlaybookHTML(playbook.id, sections, true);
+            triggerBrowserPrint(html.blob);
         } catch (err) {
             const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export.'});
             const requestId = (err as {requestId?: string | null})?.requestId;
