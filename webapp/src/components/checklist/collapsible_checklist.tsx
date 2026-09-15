@@ -136,7 +136,7 @@ const CollapsibleChecklist = ({
                 checklistIndex={index}
                 checklistTitle={title}
                 onRenameChecklist={() => setIsRenaming(true)}
-                dragHandleProps={draggableProvided?.dragHandleProps}
+                dragHandleProps={draggableProvided?.dragHandleProps ?? undefined}
                 isChecklistSkipped={isChecklistSkipped}
                 onDuplicateChecklist={() => onDuplicateChecklist(index)}
                 onDeleteChecklist={() => onDeleteChecklist(index)}

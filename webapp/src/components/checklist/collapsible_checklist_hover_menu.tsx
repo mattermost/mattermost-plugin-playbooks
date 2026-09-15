@@ -18,7 +18,7 @@ export interface Props {
     onRenameChecklist: () => void;
     onDuplicateChecklist: () => void;
     onDeleteChecklist: () => void;
-    dragHandleProps: DraggableProvidedDragHandleProps | undefined;
+    dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
     isChecklistSkipped: boolean;
     isChannelChecklist?: boolean;
 }
