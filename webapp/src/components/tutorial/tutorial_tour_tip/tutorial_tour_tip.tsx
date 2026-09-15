@@ -78,7 +78,7 @@ const TutorialTourTip = ({
     width = 320,
 }: Props) => {
     const {formatMessage} = useIntl();
-    const triggerRef = useRef(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
     const {
         show,
         tourSteps,
@@ -250,7 +250,7 @@ const TutorialTourTip = ({
                     maxWidth={width}
                     aria={{content: 'labelledby'}}
                     zIndex={9999}
-                    reference={triggerRef}
+                    reference={triggerRef as React.RefObject<Element>}
                     interactive={true}
                     appendTo={rootPortal!}
                     onHide={() => setShow(false)}

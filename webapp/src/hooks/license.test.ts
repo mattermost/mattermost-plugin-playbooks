@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {renderHook} from '@testing-library/react-hooks';
+import {renderHook} from '@testing-library/react';
 
 import * as reduxHooks from 'src/hooks/redux';
 import * as license from 'src/license';

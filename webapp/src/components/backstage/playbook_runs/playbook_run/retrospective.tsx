@@ -43,7 +43,7 @@ const Retrospective = ({
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
-    const childRef = useRef<any>();
+    const childRef = useRef<any>(null);
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
 
     const onMetricsChange = useMemo(

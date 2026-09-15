@@ -7,6 +7,7 @@
   "dependencies": {
     "@apollo/client": "3.7.3",
     "@floating-ui/react": "0.26.28",
+    "@hello-pangea/dnd": "18.0.1",
     "@mattermost/client": "11.8.0",
     "@mattermost/compass-icons": "0.1.32",
     "@mattermost/shared": "11.8.0",
@@ -28,11 +29,10 @@
     "mattermost-redux": "11.8.0",
     "parse-duration": "2.1.4",
     "qs": "6.14.1",
-    "@hello-pangea/dnd": "^16.6.0",
-    "react": "^18.2.0",
+    "react": "19.2.8",
     "react-chartjs-2": "4.3.1",
     "react-custom-scrollbars": "4.2.1",
-    "react-dom": "^18.2.0",
+    "react-dom": "19.2.8",
     "react-infinite-scroll-component": "^6.1.0",
     "react-infinite-scroller": "1.2.6",
     "react-intl": "7.1.11",
@@ -55,24 +55,25 @@
     "@graphql-codegen/client-preset": "1.2.5",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.4",
     "@stylistic/eslint-plugin": "3.1.0",
-    "@testing-library/react-hooks": "8.0.0",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "16.3.0",
     "@types/debounce": "1.2.1",
     "@types/history": "4.7.8",
     "@types/jest": "27.4.0",
     "@types/lodash": "4.14.178",
     "@types/luxon": "3.6.2",
     "@types/qs": "6.9.7",
-    "@types/react": "^18.2.0",
+    "@types/react": "19.2.18",
     "@types/react-custom-scrollbars": "4.0.10",
-    "@types/react-dom": "^18.2.0",
+    "@types/react-dom": "19.2.6",
     "@types/react-infinite-scroller": "1.2.3",
     "@types/react-router-dom": "5.3.3",
     "@types/react-router-hash-link": "2.4.5",
     "@types/react-select": "3.1.2",
-    "@types/react-test-renderer": "18.0.0",
+    "@types/react-test-renderer": "19.1.0",
     "@types/redux-mock-store": "1.5.0",
     "@types/shallow-equals": "1.0.0",
-    "@types/styled-components": "5.1.26",
+    "@types/styled-components": "5.1.36",
     "@typescript-eslint/eslint-plugin": "8.32.0",
     "@typescript-eslint/parser": "8.32.0",
     "@webpack-cli/serve": "1.6.0",
@@ -105,7 +106,7 @@
     "process": "0.11.10",
     "react-bootstrap": "1.6.1",
     "react-refresh": "0.11.0",
-    "react-test-renderer": "18.2.0",
+    "react-test-renderer": "19.2.8",
     "redux-mock-store": "1.5.4",
     "redux-thunk": "3.1.0",
     "sass": "1.46.0",
@@ -124,8 +125,8 @@
       "redux": "$redux"
     },
     "react-custom-scrollbars": {
-      "react": "18.2.0",
-      "react-dom": "18.2.0"
+      "react": "19.2.8",
+      "react-dom": "19.2.8"
     }
   },
   "scripts": {
@@ -190,6 +191,9 @@
     ],
     "setupFiles": [
       "jest-canvas-mock"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup_react19.js"
     ],
     "testEnvironmentOptions": {
       "url": "http://localhost:8065"
