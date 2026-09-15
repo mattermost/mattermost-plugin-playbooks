@@ -3,7 +3,7 @@
 
 import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
-import {DraggableProvided} from 'react-beautiful-dnd';
+import {DraggableProvided} from '@hello-pangea/dnd';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 

@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
+import {DraggableProvidedDragHandleProps} from '@hello-pangea/dnd';
 
 import {clientDuplicateChecklist, clientRestoreChecklist, clientSkipChecklist} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
