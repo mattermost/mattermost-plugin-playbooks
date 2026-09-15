@@ -22,7 +22,7 @@ const Trigger = () => {
 
 describe('ToastProvider', () => {
     it('renders an added toast without using findDOMNode', () => {
-        let tree: renderer.ReactTestRenderer;
+        let tree!: renderer.ReactTestRenderer;
         act(() => {
             tree = renderer.create(
                 <ToastProvider>
@@ -35,6 +35,6 @@ describe('ToastProvider', () => {
             tree.root.findByType('button').props.onClick();
         });
 
-        expect(JSON.stringify(tree!.toJSON())).toContain('Successfully duplicated playbook');
+        expect(JSON.stringify(tree.toJSON())).toContain('Successfully duplicated playbook');
     });
 });
