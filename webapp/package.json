@@ -7,6 +7,7 @@
   "dependencies": {
     "@apollo/client": "3.7.3",
     "@floating-ui/react": "0.26.28",
+    "@hello-pangea/dnd": "18.0.1",
     "@mattermost/client": "11.8.0",
     "@mattermost/compass-icons": "0.1.32",
     "@mattermost/shared": "11.8.0",
@@ -63,7 +64,6 @@
     "@types/luxon": "3.6.2",
     "@types/qs": "6.9.7",
     "@types/react": "19.2.18",
-    "@types/react-beautiful-dnd": "13.1.2",
     "@types/react-custom-scrollbars": "4.0.10",
     "@types/react-dom": "19.2.6",
     "@types/react-infinite-scroller": "1.2.3",
@@ -104,7 +104,6 @@
     "jest-junit": "13.0.0",
     "postcss-styled-syntax": "0.7.1",
     "process": "0.11.10",
-    "react-beautiful-dnd": "13.1.0",
     "react-bootstrap": "1.6.1",
     "react-refresh": "0.11.0",
     "react-test-renderer": "19.2.8",
@@ -124,9 +123,6 @@
   "overrides": {
     "@types/redux-mock-store": {
       "redux": "$redux"
-    },
-    "react-beautiful-dnd": {
-      "react-redux": "$react-redux"
     },
     "react-custom-scrollbars": {
       "react": "19.2.8",
