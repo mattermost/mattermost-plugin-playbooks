@@ -56,6 +56,7 @@ const [windowExternals, sharedCallback] = webAppExternals();
 
 let config = {
     entry: [
+        './src/jsx_runtime_shim.ts',
         './src/index.tsx',
     ],
     resolve: {
