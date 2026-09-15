@@ -239,44 +239,32 @@ const useRunPDFExport = (playbookRunId: string) => {
     const runPDFExport = async (sections: SectionFlags, format: ExportFormat = 'pdf', transcriptMode: TranscriptMode = 'threaded') => {
         try {
             const {
-                PDFExportError,
                 exportRunReportHTML,
-                exportRunReportMarkdown,
-                exportRunReportPDF,
                 triggerBrowserPrint,
                 triggerPDFDownload,
             } = await import('src/client');
 
-            if (format === 'md') {
-                const result = await exportRunReportMarkdown(playbookRunId, sections, transcriptMode);
-                triggerPDFDownload(result);
-                return;
-            }
             if (format === 'html') {
                 const result = await exportRunReportHTML(playbookRunId, sections, false, transcriptMode);
                 triggerPDFDownload(result);
-                return;
-            }
-
-            // format === 'pdf'
-            try {
-                const result = await exportRunReportPDF(playbookRunId, sections, transcriptMode);
-                triggerPDFDownload(result);
                 if (result.truncated) {
                     addToast({
-                        content: formatMessage({defaultMessage: 'PDF generated, but the transcript was truncated due to size limits.'}),
+                        content: formatMessage({defaultMessage: 'HTML generated, but the transcript was truncated due to size limits.'}),
                         toastStyle: ToastStyle.Success,
                     });
                 }
-            } catch (err) {
-                // Server-rendered PDF not configured — fall back to browser print of HTML.
-                if (err instanceof PDFExportError && err.status === 501) {
-                    const html = await exportRunReportHTML(playbookRunId, sections, true, transcriptMode);
-                    triggerBrowserPrint(html.blob);
-                    return;
-                }
-                throw err;
+                return;
             }
+
+            // format === 'pdf' — browser-print the HTML.
+            const html = await exportRunReportHTML(playbookRunId, sections, true, transcriptMode);
+            if (html.truncated) {
+                addToast({
+                    content: formatMessage({defaultMessage: 'The transcript was truncated due to size limits.'}),
+                    toastStyle: ToastStyle.Success,
+                });
+            }
+            triggerBrowserPrint(html.blob);
         } catch (err) {
             const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export.'});
             const requestId = (err as {requestId?: string | null})?.requestId;

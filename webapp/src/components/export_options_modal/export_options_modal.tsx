@@ -9,7 +9,7 @@ import GenericModal from 'src/components/widgets/generic_modal';
 
 export type Surface = 'run' | 'playbook';
 
-export type ExportFormat = 'md' | 'html' | 'pdf';
+export type ExportFormat = 'html' | 'pdf';
 
 export type TranscriptMode = 'threaded' | 'chronological';
 
@@ -32,7 +32,6 @@ export type ExportOptionsModalProps = {
     onConfirm: (sections: SectionFlags, format: ExportFormat, transcriptMode: TranscriptMode) => void;
     onCancel: () => void;
     channelExportAvailable?: boolean;
-    pdfAvailableServerSide?: boolean; // true when PdfRendererBackend is configured
 };
 
 type ToggleRow = {
@@ -61,7 +60,7 @@ export const DEFAULT_SECTIONS = {
     playbook: PLAYBOOK_DEFAULTS,
 };
 
-const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExportAvailable = false, pdfAvailableServerSide = false}: ExportOptionsModalProps) => {
+const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExportAvailable = false}: ExportOptionsModalProps) => {
     const {formatMessage} = useIntl();
     const baseDefaults = surface === 'run' ? RUN_DEFAULTS : PLAYBOOK_DEFAULTS;
     const [sections, setSections] = useState<SectionFlags>({...baseDefaults, ...defaults});
@@ -108,12 +107,12 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
             <Body>
                 <FormatSelector>
                     <FormatButton
-                        data-testid='format-button-md'
-                        selected={format === 'md'}
-                        onClick={() => setFormat('md')}
+                        data-testid='format-button-pdf'
+                        selected={format === 'pdf'}
+                        onClick={() => setFormat('pdf')}
                     >
-                        <i className='icon icon-file-text-outline'/>
-                        <FormattedMessage defaultMessage='Markdown'/>
+                        <i className='icon icon-file-pdf-outline'/>
+                        <FormattedMessage defaultMessage='PDF'/>
                     </FormatButton>
                     <FormatButton
                         data-testid='format-button-html'
@@ -123,23 +122,10 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                         <i className='icon icon-code-tags'/>
                         <FormattedMessage defaultMessage='HTML'/>
                     </FormatButton>
-                    <FormatButton
-                        data-testid='format-button-pdf'
-                        selected={format === 'pdf'}
-                        onClick={() => setFormat('pdf')}
-                    >
-                        <i className='icon icon-file-pdf-outline'/>
-                        <FormattedMessage defaultMessage='PDF'/>
-                    </FormatButton>
                 </FormatSelector>
-                {format === 'pdf' && !pdfAvailableServerSide && (
+                {format === 'pdf' && (
                     <FormatHint data-testid='format-hint'>
-                        <FormattedMessage defaultMessage='Rendered in your browser — Save as PDF in the print dialog'/>
-                    </FormatHint>
-                )}
-                {format === 'pdf' && pdfAvailableServerSide && (
-                    <FormatHint data-testid='format-hint'>
-                        <FormattedMessage defaultMessage='Server-rendered via Gotenberg'/>
+                        <FormattedMessage defaultMessage='Opens your browser print dialog — choose "Save as PDF".'/>
                     </FormatHint>
                 )}
                 <Description>

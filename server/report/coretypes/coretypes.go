@@ -1,10 +1,9 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// Package coretypes carries the small set of DTOs that both server/report
-// and server/report/markdown reference. Hosting them here avoids an import
-// cycle between the renderer (which consumes the markdown extension) and
-// the markdown extension (which consumes the resolver table).
+// Package coretypes carries the small set of DTOs shared across the report
+// packages (server/report and server/report/html_writer). Hosting them in a
+// leaf package keeps the shared vocabulary free of import cycles.
 //
 // server/report re-exports each type via a type alias so existing callers
 // continue to write report.RenderUser, report.ResolverTable, etc.

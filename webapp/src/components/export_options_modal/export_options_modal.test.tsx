@@ -34,19 +34,10 @@ const wrap = (ui: React.ReactNode) => (
 const findCheckboxes = (instance: renderer.ReactTestInstance) =>
     instance.findAllByType('input').filter((n) => n.props.type === 'checkbox');
 
-// Find the rendered <p data-testid="format-hint"> DOM node (not the styled wrapper).
-const findFormatHints = (root: renderer.ReactTestInstance) =>
-    root.findAllByType('p').filter((n) => n.props['data-testid'] === 'format-hint');
-
-// Recursively collect all string children from a test instance tree.
-const collectText = (node: renderer.ReactTestInstance): string =>
-    node.children.map((c) => (typeof c === 'string' ? c : collectText(c as renderer.ReactTestInstance))).join('');
-
 type RenderOverrides = Partial<{
     surface: Surface;
     defaults: SectionFlags;
     channelExportAvailable: boolean;
-    pdfAvailableServerSide: boolean;
 }>;
 
 const render = (overrides: RenderOverrides = {}) => {
@@ -61,7 +52,6 @@ const render = (overrides: RenderOverrides = {}) => {
                 onConfirm={onConfirm}
                 onCancel={onCancel}
                 channelExportAvailable={overrides.channelExportAvailable}
-                pdfAvailableServerSide={overrides.pdfAvailableServerSide}
             />,
         ));
     });
@@ -116,79 +106,46 @@ describe('ExportOptionsModal', () => {
         expect(tree.root.findAllByProps({'data-testid': 'channel-export-hint'})).toHaveLength(0);
     });
 
-    it('defaults to pdf format with pdf button selected', () => {
+    it('defaults to pdf format with the pdf button selected', () => {
         const {tree} = render({surface: 'run'});
         const pdfBtn = tree.root.findByProps({'data-testid': 'format-button-pdf'});
-        const mdBtn = tree.root.findByProps({'data-testid': 'format-button-md'});
         const htmlBtn = tree.root.findByProps({'data-testid': 'format-button-html'});
         expect(pdfBtn.props.selected).toBe(true);
-        expect(mdBtn.props.selected).toBe(false);
         expect(htmlBtn.props.selected).toBe(false);
     });
 
-    it('clicking Markdown sets format to md', () => {
+    it('shows the browser-print hint for pdf and hides it for html', () => {
         const {tree} = render({surface: 'run'});
-        const mdBtn = tree.root.findByProps({'data-testid': 'format-button-md'});
-        const pdfBtn = tree.root.findByProps({'data-testid': 'format-button-pdf'});
+        expect(tree.root.findAllByProps({'data-testid': 'format-hint'}).length).toBeGreaterThan(0);
 
-        expect(mdBtn.props.selected).toBe(false);
+        const htmlBtn = tree.root.findByProps({'data-testid': 'format-button-html'});
         act(() => {
-            mdBtn.props.onClick();
+            htmlBtn.props.onClick();
         });
-        expect(mdBtn.props.selected).toBe(true);
-        expect(pdfBtn.props.selected).toBe(false);
+        expect(tree.root.findAllByProps({'data-testid': 'format-hint'})).toHaveLength(0);
     });
 
-    it('onConfirm receives md format when Markdown is selected', () => {
-        const {tree, onConfirm} = render({surface: 'run'});
+    it('onConfirm receives sections, the pdf format, and transcript mode by default', () => {
+        const {onConfirm} = render({surface: 'run'});
 
-        // Select Markdown
-        const mdBtn = tree.root.findByProps({'data-testid': 'format-button-md'});
-        act(() => {
-            mdBtn.props.onClick();
-        });
-
-        // Trigger confirm via the captured handleConfirm from the modal mock
         act(() => {
             capturedHandleConfirm?.();
         });
 
-        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'md', 'threaded');
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'pdf', 'threaded');
     });
 
-    it('shows browser-print hint when pdfAvailableServerSide is false and format is pdf', () => {
-        const {tree} = render({surface: 'run', pdfAvailableServerSide: false});
-
-        // Default format is 'pdf'
-        const pdfBtn = tree.root.findByProps({'data-testid': 'format-button-pdf'});
-        expect(pdfBtn.props.selected).toBe(true);
-
-        const hints = findFormatHints(tree.root);
-        expect(hints).toHaveLength(1);
-        expect(collectText(hints[0])).toMatch(/Rendered in your browser/);
-    });
-
-    it('shows Gotenberg hint when pdfAvailableServerSide is true and format is pdf', () => {
-        const {tree} = render({surface: 'run', pdfAvailableServerSide: true});
-
-        // Default format is 'pdf'
-        const pdfBtn = tree.root.findByProps({'data-testid': 'format-button-pdf'});
-        expect(pdfBtn.props.selected).toBe(true);
-
-        const hints = findFormatHints(tree.root);
-        expect(hints).toHaveLength(1);
-        expect(collectText(hints[0])).toMatch(/Gotenberg/);
-    });
-
-    it('hides format hint when a non-pdf format is selected', () => {
-        const {tree} = render({surface: 'run', pdfAvailableServerSide: false});
-
-        const mdBtn = tree.root.findByProps({'data-testid': 'format-button-md'});
+    it('onConfirm receives the html format when HTML is selected', () => {
+        const {tree, onConfirm} = render({surface: 'run'});
+        const htmlBtn = tree.root.findByProps({'data-testid': 'format-button-html'});
         act(() => {
-            mdBtn.props.onClick();
+            htmlBtn.props.onClick();
+        });
+        act(() => {
+            capturedHandleConfirm?.();
         });
 
-        expect(findFormatHints(tree.root)).toHaveLength(0);
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'html', 'threaded');
     });
 
     it('matches snapshot for run surface', () => {

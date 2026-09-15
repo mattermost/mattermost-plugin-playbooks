@@ -110,41 +110,14 @@ func TestExport_SafeFilename(t *testing.T) {
 	}
 }
 
-func TestExport_BuildContentDisposition(t *testing.T) {
-	got := buildContentDisposition("Incident_Report")
-	assert.Contains(t, got, `attachment;`)
-	assert.Contains(t, got, `filename="Incident_Report.pdf"`)
-	assert.Contains(t, got, `filename*=UTF-8''Incident_Report.pdf`)
-}
+func TestExport_BuildDispositionFor(t *testing.T) {
+	inline := buildDispositionFor("Incident_Report", "html", false)
+	assert.Contains(t, inline, `inline;`)
+	assert.Contains(t, inline, `filename="Incident_Report.html"`)
+	assert.Contains(t, inline, `filename*=UTF-8''Incident_Report.html`)
 
-func TestExport_CheckAcceptPDF(t *testing.T) {
-	cases := []struct {
-		name, header string
-		wantErr      bool
-	}{
-		{"missing", "", false},
-		{"wildcard", "*/*", false},
-		{"application wildcard", "application/*", false},
-		{"explicit pdf", "application/pdf", false},
-		{"with q value", "application/pdf; q=0.9, */*; q=0.5", false},
-		{"html only", "text/html", true},
-		{"json only", "application/json", true},
-	}
-	h := &ExportHandler{}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			if tc.header != "" {
-				req.Header.Set("Accept", tc.header)
-			}
-			err := h.checkAcceptPDF(req)
-			if tc.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
+	attach := buildDispositionFor("Incident_Report", "html", true)
+	assert.Contains(t, attach, `attachment;`)
 }
 
 func TestExport_CorrelationFromRequest(t *testing.T) {
@@ -161,21 +134,18 @@ func TestExport_CorrelationFromRequest(t *testing.T) {
 }
 
 func TestExport_ExportKey_StableAndDistinct(t *testing.T) {
-	a := exportKey("run", "pdf", "abc", "user1", report.SectionFlags{Cover: true})
-	b := exportKey("run", "pdf", "abc", "user1", report.SectionFlags{Cover: true})
+	a := exportKey("run", "abc", "user1", report.SectionFlags{Cover: true})
+	b := exportKey("run", "abc", "user1", report.SectionFlags{Cover: true})
 	assert.Equal(t, a, b, "same inputs must produce same key")
 
-	c := exportKey("run", "pdf", "abc", "user2", report.SectionFlags{Cover: true})
+	c := exportKey("run", "abc", "user2", report.SectionFlags{Cover: true})
 	assert.NotEqual(t, a, c, "different user must produce different key")
 
-	d := exportKey("run", "pdf", "abc", "user1", report.SectionFlags{Timeline: true})
+	d := exportKey("run", "abc", "user1", report.SectionFlags{Timeline: true})
 	assert.NotEqual(t, a, d, "different sections must produce different key")
 
-	e := exportKey("playbook", "pdf", "abc", "user1", report.SectionFlags{Cover: true})
+	e := exportKey("playbook", "abc", "user1", report.SectionFlags{Cover: true})
 	assert.NotEqual(t, a, e, "different kind must produce different key")
-
-	f := exportKey("run", "html", "abc", "user1", report.SectionFlags{Cover: true})
-	assert.NotEqual(t, a, f, "different format must produce different key")
 }
 
 func TestExport_ReadSessionToken(t *testing.T) {

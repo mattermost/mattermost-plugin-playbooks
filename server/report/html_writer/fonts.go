@@ -4,10 +4,8 @@
 package html_writer //nolint:staticcheck
 
 // systemFontCSS returns CSS @font-face–free font stacks that use OS-installed
-// fonts. No font files are bundled; Gotenberg's Chromium container ships with
-// Liberation / DejaVu / Noto families that cover these stacks. Browser-print
-// fallback path uses whatever the OS provides, which is fine for all modern
-// desktop/mobile OSes.
+// fonts. No font files are bundled; the browser-print path uses whatever the
+// OS provides, which is fine for all modern desktop/mobile OSes.
 func systemFontCSS() string {
 	return `
 :root {

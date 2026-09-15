@@ -199,16 +199,15 @@ type retroCfgData struct {
 	Metrics      []metricData
 }
 
-// redactedUser is the deny sentinel for an unresolvable user — matches the
-// markdown_writer package convention.
+// redactedUser is the deny sentinel for an unresolvable user.
 const redactedUser = "@_redacted_user_"
 
 // RenderRunHTML renders rc to a complete self-contained HTML document.
 //
 // The output embeds a strict Content-Security-Policy that forbids all
 // scripts and disallows network fetches; styles are limited to the
-// document's own <style> tags. The same document is served verbatim from
-// the report.html endpoint and is the input to the Gotenberg PDF adapter.
+// document's own <style> tags. The client downloads the document or
+// browser-prints it to PDF.
 func RenderRunHTML(rc report.RenderContext, opts Options) ([]byte, error) {
 	data := buildRunData(rc, opts)
 
@@ -363,7 +362,7 @@ func buildRunData(rc report.RenderContext, opts Options) runReportData {
 
 // buildThreadedTranscript turns a flat post slice into threadData/replyData
 // shapes for the template. Threading semantics live in report.CollateThreads
-// (single source of truth, shared with markdown_writer): grouping is by
+// (single source of truth): grouping is by
 // RootID; CreateAt is used only for display order; orphans return in a
 // separate slice rendered under their own subsection.
 func buildThreadedTranscript(posts []report.RenderPost, rt report.ResolverTable) ([]threadData, []replyData) {
@@ -599,8 +598,7 @@ func countTasksAcross(cls []report.RenderChecklist) (int, int) {
 }
 
 // resolveUserDisplay returns "@username" if the resolver has one, otherwise
-// the display name, otherwise the redacted sentinel. Matches the
-// markdown_writer convention.
+// the display name, otherwise the redacted sentinel.
 func resolveUserDisplay(rt report.ResolverTable, id string) string {
 	if id == "" {
 		return redactedUser
@@ -729,8 +727,7 @@ func transcriptEmptyMessage(reason string) string {
 	}
 }
 
-// filterSystemPosts drops posts with a non-empty Type (system messages) —
-// mirrors the markdown_writer / PDF transcript behavior.
+// filterSystemPosts drops posts with a non-empty Type (system messages).
 func filterSystemPosts(posts []report.RenderPost) []report.RenderPost {
 	out := make([]report.RenderPost, 0, len(posts))
 	for _, p := range posts {

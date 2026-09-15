@@ -2354,23 +2354,24 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
-  /plugins/playbooks/api/v0/runs/{id}/report.pdf:
+  /plugins/playbooks/api/v0/runs/{id}/report.html:
     get:
-      summary: Export a playbook run as a PDF report
-      operationId: exportPlaybookRunPDFReport
+      summary: Export a playbook run as an HTML report
+      operationId: exportPlaybookRunHTMLReport
       description: |
-        Renders a PDF report for the given playbook run. Sections may be
-        selected via the `sections` query parameter; omit it for the default
-        set (cover, summary, timeline, updates, checklists, retro — but not
-        transcript). The transcript section requires the requester to be a
+        Renders a self-contained HTML report for the given playbook run. The
+        client either downloads the HTML or browser-prints it to PDF. Sections
+        may be selected via the `sections` query parameter; omit it for the
+        default set (cover, summary, timeline, updates, checklists, retro — but
+        not transcript). The transcript section requires the requester to be a
         member of the run's channel.
 
-        Response is always either a complete `application/pdf` payload OR a
-        canonical JSON error — never a partial PDF.
+        Response is always either a complete `text/html` payload OR a canonical
+        JSON error — never a partial document.
 
         When a server-side cap (post count or byte budget) is hit, the
-        response is still 200 with a truncation footer page; the response
-        also carries `X-Playbooks-Report-Truncated: true` and
+        response is still 200 with a truncation footer; the response also
+        carries `X-Playbooks-Report-Truncated: true` and
         `X-Playbooks-Report-Truncated-Reason: posts|bytes`.
       security:
         - BearerAuth: []
@@ -2394,27 +2395,28 @@ paths:
           schema:
             type: string
             example: cover,summary,timeline,updates
+        - name: download
+          in: query
+          required: false
+          description: When `1`, the response is served as an attachment; otherwise inline.
+          schema:
+            type: string
+            example: "1"
         - name: X-CSRF-Token
           in: header
           required: true
           description: Session CSRF token, constant-time compared against the session record.
           schema:
             type: string
-        - name: Accept
-          in: header
-          required: false
-          description: Must permit `application/pdf` (e.g. `*/*`, `application/*`, or `application/pdf`). Returns 406 otherwise.
-          schema:
-            type: string
-            example: application/pdf
       responses:
         200:
-          description: PDF report (atomic; full body buffered before any header is sent).
+          description: HTML report (atomic; full body buffered before any header is sent).
           headers:
             Content-Disposition:
               description: |
-                Always `attachment` with both ASCII (`filename="…"`) and
-                UTF-8 (`filename*=UTF-8''…`) variants per RFC 6266.
+                `inline` by default, or `attachment` when `download=1`, with
+                both ASCII (`filename="…"`) and UTF-8 (`filename*=UTF-8''…`)
+                variants per RFC 6266.
               schema:
                 type: string
             Cache-Control:
@@ -2434,10 +2436,9 @@ paths:
               schema:
                 type: string
           content:
-            application/pdf:
+            text/html:
               schema:
                 type: string
-                format: binary
         400:
           description: Unknown section token in the `sections` query.
           content:
@@ -2453,14 +2454,8 @@ paths:
         404:
           description: |
             Run not found OR not visible to the caller — existence is not
-            disclosed. Also returned when PDF reports are disabled in the
+            disclosed. Also returned when reports are disabled in the
             plugin config.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        406:
-          description: Accept header does not permit `application/pdf`.
           content:
             application/json:
               schema:
@@ -2488,17 +2483,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /plugins/playbooks/api/v0/playbooks/{id}/report.pdf:
+  /plugins/playbooks/api/v0/playbooks/{id}/report.html:
     get:
-      summary: Export a playbook (template) as a PDF report
-      operationId: exportPlaybookPDFReport
+      summary: Export a playbook (template) as an HTML report
+      operationId: exportPlaybookHTMLReport
       description: |
-        Renders a PDF report for the given playbook template. Webhook URLs
-        are redacted (host-masked) unless the requester has playbook-manage
-        permission.
+        Renders a self-contained HTML report for the given playbook template.
+        The client either downloads the HTML or browser-prints it to PDF.
+        Webhook URLs are redacted (host-masked) unless the requester has
+        playbook-manage permission.
 
-        Response is always either a complete `application/pdf` payload OR a
-        canonical JSON error — never a partial PDF.
+        Response is always either a complete `text/html` payload OR a canonical
+        JSON error — never a partial document.
       security:
         - BearerAuth: []
       tags:
@@ -2521,22 +2517,22 @@ paths:
           schema:
             type: string
             example: overview,checklists
+        - name: download
+          in: query
+          required: false
+          description: When `1`, the response is served as an attachment; otherwise inline.
+          schema:
+            type: string
+            example: "1"
         - name: X-CSRF-Token
           in: header
           required: true
           description: Session CSRF token, constant-time compared against the session record.
           schema:
             type: string
-        - name: Accept
-          in: header
-          required: false
-          description: Must permit `application/pdf`. Returns 406 otherwise.
-          schema:
-            type: string
-            example: application/pdf
       responses:
         200:
-          description: PDF report (atomic; full body buffered before any header is sent).
+          description: HTML report (atomic; full body buffered before any header is sent).
           headers:
             Content-Disposition:
               schema:
@@ -2548,22 +2544,15 @@ paths:
               schema:
                 type: string
           content:
-            application/pdf:
+            text/html:
               schema:
                 type: string
-                format: binary
         400:
           $ref: "#/components/responses/400"
         403:
           $ref: "#/components/responses/403"
         404:
           $ref: "#/components/responses/404"
-        406:
-          description: Accept header does not permit `application/pdf`.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
         429:
           description: Concurrent render semaphore saturated.
           headers:

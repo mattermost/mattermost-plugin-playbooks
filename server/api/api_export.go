@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,22 +32,13 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/html_writer"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/markdown_writer"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/renderer/html2pdf"
 )
 
-// Audit event names per format. The v5.4 cutover replaced the single
-// "_pdf" events with three format-specific events.
 const (
-	exportEventRunMD        = "run_exported_md"
 	exportEventRunHTML      = "run_exported_html"
-	exportEventRunPDF       = "run_exported_pdf"
-	exportEventPlaybookMD   = "playbook_exported_md"
 	exportEventPlaybookHTML = "playbook_exported_html"
-	exportEventPlaybookPDF  = "playbook_exported_pdf"
 
-	// exportRequestTimeout is the per-request render budget. v5.4 raised
-	// this from 15s to 30s to accommodate the Gotenberg round-trip.
+	// exportRequestTimeout is the per-request render budget.
 	exportRequestTimeout = 30 * time.Second
 
 	// exportRetryAfterSeconds is sent in the Retry-After header on 429.
@@ -63,7 +53,8 @@ const (
 	filenameMaxLen = 80
 
 	// exportIntentHeader is the optional client-supplied hint recorded in
-	// the audit log on HTML exports ("preview" / "print" / "download").
+	// the audit log ("pdf-fallback" when the client will browser-print the
+	// HTML, "html-direct" when downloading it as HTML).
 	exportIntentHeader = "X-Playbooks-Export-Intent"
 )
 
@@ -78,10 +69,10 @@ type ReportService interface {
 	AssemblePlaybookReportContext(ctx context.Context, playbookID, userID string, sections report.SectionFlags, locale string, hasPlaybookManage bool) (report.PlaybookRenderContext, ResolverStats, error)
 }
 
-// ExportHandler owns the GET .../report.{md,html,pdf} surfaces for both
-// runs and playbooks. Permission gating, CSRF validation, concurrency
-// throttling, filename safety, audit logging, and atomic buffer-then-write
-// all live here.
+// ExportHandler owns the GET .../report.html surface for both runs and
+// playbooks. The HTML is downloaded directly, or browser-printed to PDF by
+// the client. Permission gating, CSRF validation, concurrency throttling,
+// filename safety, audit logging, and atomic buffer-then-write all live here.
 type ExportHandler struct {
 	*ErrorHandler
 	pluginAPI          *pluginapi.Client
@@ -91,19 +82,13 @@ type ExportHandler struct {
 	playbookService    app.PlaybookService
 	reportService      ReportService
 
-	// getRenderer returns the currently-active HTMLPdfRenderer, or nil when
-	// no PDF backend is configured. The plugin stores the renderer in an
-	// atomic.Pointer that is rebuilt on OnConfigurationChange — the closure
-	// reads the latest value on every call.
-	getRenderer func() html2pdf.HTMLPdfRenderer
-
 	// renderSem bounds concurrent renders. Sized lazily on first request
 	// from config.
 	renderSemOnce sync.Once
 	renderSem     chan struct{}
 
 	// sf coalesces identical in-flight renders. Keyed on
-	// (kind|id|userID|format|sectionsHash).
+	// (kind|id|userID|sectionsHash).
 	sf singleflight.Group
 }
 
@@ -127,45 +112,30 @@ func currentExportHandler() *ExportHandler {
 	return registeredExportHandler
 }
 
-// registerRunExportRoute mounts the three per-format run report endpoints
-// on the per-run subrouter when the ExportHandler is available.
+// registerRunExportRoute mounts the run PDF report endpoint on the per-run
+// subrouter when the ExportHandler is available.
 func registerRunExportRoute(runRouter *mux.Router) {
-	register := func(suffix string, fn func(*ExportHandler, *Context, http.ResponseWriter, *http.Request)) {
-		runRouter.HandleFunc(suffix, withContext(func(c *Context, w http.ResponseWriter, r *http.Request) {
-			h := currentExportHandler()
-			if h == nil {
-				HandleErrorWithCode(c.logger, w, http.StatusNotFound, "not found", nil)
-				return
-			}
-			fn(h, c, w, r)
-		})).Methods(http.MethodGet)
-	}
-	register("/report.md", (*ExportHandler).exportRun)
-	register("/report.html", (*ExportHandler).exportRun)
-	register("/report.pdf", (*ExportHandler).exportRun)
+	registerExportRoute(runRouter, "/report.html", (*ExportHandler).exportRun)
 }
 
-// registerPlaybookExportRoute mounts the three per-format playbook report
-// endpoints on the per-playbook subrouter.
+// registerPlaybookExportRoute mounts the playbook HTML report endpoint on the
+// per-playbook subrouter.
 func registerPlaybookExportRoute(pbRouter *mux.Router) {
-	register := func(suffix string, fn func(*ExportHandler, *Context, http.ResponseWriter, *http.Request)) {
-		pbRouter.HandleFunc(suffix, withContext(func(c *Context, w http.ResponseWriter, r *http.Request) {
-			h := currentExportHandler()
-			if h == nil {
-				HandleErrorWithCode(c.logger, w, http.StatusNotFound, "not found", nil)
-				return
-			}
-			fn(h, c, w, r)
-		})).Methods(http.MethodGet)
-	}
-	register("/report.md", (*ExportHandler).exportPlaybook)
-	register("/report.html", (*ExportHandler).exportPlaybook)
-	register("/report.pdf", (*ExportHandler).exportPlaybook)
+	registerExportRoute(pbRouter, "/report.html", (*ExportHandler).exportPlaybook)
 }
 
-// NewExportHandler wires the export handler. The getRenderer closure reads
-// the plugin's atomic.Pointer[html2pdf.HTMLPdfRenderer] so config changes
-// take effect without rebuilding the handler.
+func registerExportRoute(router *mux.Router, suffix string, fn func(*ExportHandler, *Context, http.ResponseWriter, *http.Request)) {
+	router.HandleFunc(suffix, withContext(func(c *Context, w http.ResponseWriter, r *http.Request) {
+		h := currentExportHandler()
+		if h == nil {
+			HandleErrorWithCode(c.logger, w, http.StatusNotFound, "not found", nil)
+			return
+		}
+		fn(h, c, w, r)
+	})).Methods(http.MethodGet)
+}
+
+// NewExportHandler wires the export handler.
 func NewExportHandler(
 	pluginAPI *pluginapi.Client,
 	cfg config.Service,
@@ -173,7 +143,6 @@ func NewExportHandler(
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
 	reportService ReportService,
-	getRenderer func() html2pdf.HTMLPdfRenderer,
 ) *ExportHandler {
 	return &ExportHandler{
 		ErrorHandler:       &ErrorHandler{},
@@ -183,21 +152,19 @@ func NewExportHandler(
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
 		reportService:      reportService,
-		getRenderer:        getRenderer,
 	}
 }
 
-// exportRun is the unified handler for GET /runs/{id}/report.{md,html,pdf}.
+// exportRun is the handler for GET /runs/{id}/report.html.
 func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	runID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-Id")
 	correlationID := correlationFromRequest(r)
-	format := formatFromPath(r.URL.Path)
 	logger := c.logger.
 		WithField("correlation_id", correlationID).
 		WithField("export_kind", "run").
-		WithField("export_format", format)
+		WithField("export_format", "html")
 
 	if !h.reportsEnabled() {
 		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "not found", nil)
@@ -241,7 +208,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 
 	rc, resolverStats, asmErr := h.reportService.AssembleRunReportContext(ctx, run.ID, userID, sections, locale)
 	if asmErr != nil {
-		h.logAndAuditFailure(logger, eventForRun(format), userID, run.ID, correlationID, sections, asmErr)
+		h.logAndAuditFailure(logger, exportEventRunHTML, userID, run.ID, correlationID, sections, asmErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
 		return
 	}
@@ -249,83 +216,31 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 
 	asciiName := safeFilename(rc.Run.Name, "run-"+run.ID)
 
-	switch format {
-	case "md":
-		data := h.renderRunMarkdown(rc, run.ID, userID, sections)
-		h.writeResponse(w, logger, writeArgs{
-			contentType:   "text/markdown; charset=utf-8",
-			data:          data,
-			asciiName:     asciiName,
-			ext:           "md",
-			download:      isDownload(r),
-			correlationID: correlationID,
-			trunc:         rc.TranscriptTruncation,
-		})
-		h.auditSuccess(logger, exportEventRunMD, userID, run.ID, correlationID, sections, resolverStats, rc.TranscriptTruncation, len(data), "")
-
-	case "html":
-		htmlOpts := html_writer.Options{Title: rc.Run.Name, PageSize: "A4"}
-		data, htmlErr := h.renderRunHTML(rc, htmlOpts, run.ID, userID, sections)
-		if htmlErr != nil {
-			h.logAndAuditFailure(logger, exportEventRunHTML, userID, run.ID, correlationID, sections, htmlErr)
-			h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", htmlErr)
-			return
-		}
-		intent := r.Header.Get(exportIntentHeader)
-		if intent == "" {
-			intent = "html-direct"
-		}
-		h.writeHTMLResponse(w, data, asciiName, isDownload(r), correlationID, rc.TranscriptTruncation)
-		h.auditSuccess(logger, exportEventRunHTML, userID, run.ID, correlationID, sections, resolverStats, rc.TranscriptTruncation, len(data), intent)
-
-	case "pdf":
-		renderer := h.activeRenderer()
-		if renderer == nil {
-			h.HandleErrorWithCode(w, logger, http.StatusNotImplemented, "PDF rendering not configured", nil)
-			return
-		}
-		htmlOpts := html_writer.Options{Title: rc.Run.Name, PageSize: "A4"}
-		htmlData, htmlErr := html_writer.RenderRunHTML(rc, htmlOpts)
-		if htmlErr != nil {
-			h.logAndAuditFailure(logger, exportEventRunPDF, userID, run.ID, correlationID, sections, htmlErr)
-			h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", htmlErr)
-			return
-		}
-		cfg := h.config.GetConfiguration()
-		pdfOpts := html2pdf.Options{
-			Title:       rc.Run.Name,
-			Filename:    asciiName + ".pdf",
-			PdfAFlavor:  pdfAFlavor(cfg),
-			EnableLinks: true,
-			PageSize:    "A4",
-		}
-		pdfData, pdfErr := h.renderRunPDF(ctx, renderer, htmlData, pdfOpts, run.ID, userID, sections)
-		if pdfErr != nil {
-			h.logAndAuditFailure(logger, exportEventRunPDF, userID, run.ID, correlationID, sections, pdfErr)
-			w.Header().Set("X-Request-ID", correlationID)
-			h.HandleErrorWithCode(w, logger, http.StatusBadGateway, "PDF renderer failed", pdfErr)
-			return
-		}
-		h.writePDFResponse(w, pdfData, asciiName, correlationID, rc.TranscriptTruncation)
-		h.auditSuccess(logger, exportEventRunPDF, userID, run.ID, correlationID, sections, resolverStats, rc.TranscriptTruncation, len(pdfData), "")
-
-	default:
-		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "unknown format", nil)
+	htmlOpts := html_writer.Options{Title: rc.Run.Name, PageSize: "A4"}
+	data, htmlErr := h.renderRunHTML(rc, htmlOpts, run.ID, userID, sections)
+	if htmlErr != nil {
+		h.logAndAuditFailure(logger, exportEventRunHTML, userID, run.ID, correlationID, sections, htmlErr)
+		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", htmlErr)
+		return
 	}
+	intent := r.Header.Get(exportIntentHeader)
+	if intent == "" {
+		intent = "html-direct"
+	}
+	h.writeHTMLResponse(w, data, asciiName, isDownload(r), correlationID, rc.TranscriptTruncation)
+	h.auditSuccess(logger, exportEventRunHTML, userID, run.ID, correlationID, sections, resolverStats, rc.TranscriptTruncation, len(data), intent)
 }
 
-// exportPlaybook is the unified handler for
-// GET /playbooks/{id}/report.{md,html,pdf}.
+// exportPlaybook is the handler for GET /playbooks/{id}/report.html.
 func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-Id")
 	correlationID := correlationFromRequest(r)
-	format := formatFromPath(r.URL.Path)
 	logger := c.logger.
 		WithField("correlation_id", correlationID).
 		WithField("export_kind", "playbook").
-		WithField("export_format", format)
+		WithField("export_format", "pdf")
 
 	if !h.reportsEnabled() {
 		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "not found", nil)
@@ -366,99 +281,32 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 
 	pc, resolverStats, asmErr := h.reportService.AssemblePlaybookReportContext(ctx, pb.ID, userID, sections, locale, hasPlaybookManage)
 	if asmErr != nil {
-		h.logAndAuditFailure(logger, eventForPlaybook(format), userID, pb.ID, correlationID, sections, asmErr)
+		h.logAndAuditFailure(logger, exportEventPlaybookHTML, userID, pb.ID, correlationID, sections, asmErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
 		return
 	}
 
 	asciiName := safeFilename(pc.Playbook.Title, "playbook-"+pb.ID)
 
-	switch format {
-	case "md":
-		data := h.renderPlaybookMarkdown(pc, pb.ID, userID, sections)
-		h.writeResponse(w, logger, writeArgs{
-			contentType:   "text/markdown; charset=utf-8",
-			data:          data,
-			asciiName:     asciiName,
-			ext:           "md",
-			download:      isDownload(r),
-			correlationID: correlationID,
-		})
-		h.auditSuccess(logger, exportEventPlaybookMD, userID, pb.ID, correlationID, sections, resolverStats, report.Truncation{}, len(data), "")
-
-	case "html":
-		htmlOpts := html_writer.Options{Title: pc.Playbook.Title, PageSize: "A4"}
-		data, htmlErr := h.renderPlaybookHTML(pc, htmlOpts, pb.ID, userID, sections)
-		if htmlErr != nil {
-			h.logAndAuditFailure(logger, exportEventPlaybookHTML, userID, pb.ID, correlationID, sections, htmlErr)
-			h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", htmlErr)
-			return
-		}
-		intent := r.Header.Get(exportIntentHeader)
-		if intent == "" {
-			intent = "html-direct"
-		}
-		h.writeHTMLResponse(w, data, asciiName, isDownload(r), correlationID, report.Truncation{})
-		h.auditSuccess(logger, exportEventPlaybookHTML, userID, pb.ID, correlationID, sections, resolverStats, report.Truncation{}, len(data), intent)
-
-	case "pdf":
-		renderer := h.activeRenderer()
-		if renderer == nil {
-			h.HandleErrorWithCode(w, logger, http.StatusNotImplemented, "PDF rendering not configured", nil)
-			return
-		}
-		htmlOpts := html_writer.Options{Title: pc.Playbook.Title, PageSize: "A4"}
-		htmlData, htmlErr := html_writer.RenderPlaybookHTML(pc, htmlOpts)
-		if htmlErr != nil {
-			h.logAndAuditFailure(logger, exportEventPlaybookPDF, userID, pb.ID, correlationID, sections, htmlErr)
-			h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", htmlErr)
-			return
-		}
-		cfg := h.config.GetConfiguration()
-		pdfOpts := html2pdf.Options{
-			Title:       pc.Playbook.Title,
-			Filename:    asciiName + ".pdf",
-			PdfAFlavor:  pdfAFlavor(cfg),
-			EnableLinks: true,
-			PageSize:    "A4",
-		}
-		pdfData, pdfErr := h.renderPlaybookPDF(ctx, renderer, htmlData, pdfOpts, pb.ID, userID, sections)
-		if pdfErr != nil {
-			h.logAndAuditFailure(logger, exportEventPlaybookPDF, userID, pb.ID, correlationID, sections, pdfErr)
-			w.Header().Set("X-Request-ID", correlationID)
-			h.HandleErrorWithCode(w, logger, http.StatusBadGateway, "PDF renderer failed", pdfErr)
-			return
-		}
-		h.writePDFResponse(w, pdfData, asciiName, correlationID, report.Truncation{})
-		h.auditSuccess(logger, exportEventPlaybookPDF, userID, pb.ID, correlationID, sections, resolverStats, report.Truncation{}, len(pdfData), "")
-
-	default:
-		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "unknown format", nil)
+	htmlOpts := html_writer.Options{Title: pc.Playbook.Title, PageSize: "A4"}
+	data, htmlErr := h.renderPlaybookHTML(pc, htmlOpts, pb.ID, userID, sections)
+	if htmlErr != nil {
+		h.logAndAuditFailure(logger, exportEventPlaybookHTML, userID, pb.ID, correlationID, sections, htmlErr)
+		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", htmlErr)
+		return
 	}
+	intent := r.Header.Get(exportIntentHeader)
+	if intent == "" {
+		intent = "html-direct"
+	}
+	h.writeHTMLResponse(w, data, asciiName, isDownload(r), correlationID, report.Truncation{})
+	h.auditSuccess(logger, exportEventPlaybookHTML, userID, pb.ID, correlationID, sections, resolverStats, report.Truncation{}, len(data), intent)
 }
 
-// ---- single-flight wrappers per (kind, format) ----
-
-func (h *ExportHandler) renderRunMarkdown(rc report.RenderContext, runID, userID string, sections report.SectionFlags) []byte {
-	key := exportKey("run", "md", runID, userID, sections)
-	v, _, _ := h.sf.Do(key, func() (any, error) {
-		return markdown_writer.RenderRunMarkdown(rc), nil
-	})
-	b, _ := v.([]byte)
-	return append([]byte(nil), b...)
-}
-
-func (h *ExportHandler) renderPlaybookMarkdown(pc report.PlaybookRenderContext, playbookID, userID string, sections report.SectionFlags) []byte {
-	key := exportKey("playbook", "md", playbookID, userID, sections)
-	v, _, _ := h.sf.Do(key, func() (any, error) {
-		return markdown_writer.RenderPlaybookMarkdown(pc), nil
-	})
-	b, _ := v.([]byte)
-	return append([]byte(nil), b...)
-}
+// ---- single-flight wrappers per kind ----
 
 func (h *ExportHandler) renderRunHTML(rc report.RenderContext, opts html_writer.Options, runID, userID string, sections report.SectionFlags) ([]byte, error) {
-	key := exportKey("run", "html", runID, userID, sections)
+	key := exportKey("run", runID, userID, sections)
 	v, err, _ := h.sf.Do(key, func() (any, error) {
 		return html_writer.RenderRunHTML(rc, opts)
 	})
@@ -470,7 +318,7 @@ func (h *ExportHandler) renderRunHTML(rc report.RenderContext, opts html_writer.
 }
 
 func (h *ExportHandler) renderPlaybookHTML(pc report.PlaybookRenderContext, opts html_writer.Options, playbookID, userID string, sections report.SectionFlags) ([]byte, error) {
-	key := exportKey("playbook", "html", playbookID, userID, sections)
+	key := exportKey("playbook", playbookID, userID, sections)
 	v, err, _ := h.sf.Do(key, func() (any, error) {
 		return html_writer.RenderPlaybookHTML(pc, opts)
 	})
@@ -481,81 +329,11 @@ func (h *ExportHandler) renderPlaybookHTML(pc report.PlaybookRenderContext, opts
 	return append([]byte(nil), b...), nil
 }
 
-func (h *ExportHandler) renderRunPDF(ctx context.Context, renderer html2pdf.HTMLPdfRenderer, htmlData []byte, opts html2pdf.Options, runID, userID string, sections report.SectionFlags) ([]byte, error) {
-	key := exportKey("run", "pdf", runID, userID, sections)
-	v, err, _ := h.sf.Do(key, func() (any, error) {
-		return renderer.Render(ctx, htmlData, opts)
-	})
-	if err != nil {
-		return nil, err
-	}
-	b, _ := v.([]byte)
-	if b == nil {
-		return nil, errors.New("renderer returned nil pdf")
-	}
-	return append([]byte(nil), b...), nil
-}
-
-func (h *ExportHandler) renderPlaybookPDF(ctx context.Context, renderer html2pdf.HTMLPdfRenderer, htmlData []byte, opts html2pdf.Options, playbookID, userID string, sections report.SectionFlags) ([]byte, error) {
-	key := exportKey("playbook", "pdf", playbookID, userID, sections)
-	v, err, _ := h.sf.Do(key, func() (any, error) {
-		return renderer.Render(ctx, htmlData, opts)
-	})
-	if err != nil {
-		return nil, err
-	}
-	b, _ := v.([]byte)
-	if b == nil {
-		return nil, errors.New("renderer returned nil pdf")
-	}
-	return append([]byte(nil), b...), nil
-}
-
-// activeRenderer reads the current renderer pointer; returns nil when no
-// PDF backend is configured.
-func (h *ExportHandler) activeRenderer() html2pdf.HTMLPdfRenderer {
-	if h.getRenderer == nil {
-		return nil
-	}
-	return h.getRenderer()
-}
-
 // ---- response writers ----
 
-type writeArgs struct {
-	contentType   string
-	data          []byte
-	asciiName     string
-	ext           string // "md" | "html" | "pdf"
-	download      bool
-	correlationID string
-	trunc         report.Truncation
-}
-
-// writeResponse is the unified emitter used for markdown (and as a building
-// block). Headers go out atomically; the buffer is fully built before this
-// is called so a render error never leaks partial bytes.
-func (h *ExportHandler) writeResponse(w http.ResponseWriter, _ logrus.FieldLogger, a writeArgs) {
-	w.Header().Set("Content-Type", a.contentType)
-	w.Header().Set("Content-Length", strconv.Itoa(len(a.data)))
-	w.Header().Set("Content-Disposition", buildDispositionFor(a.asciiName, a.ext, a.download))
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if a.correlationID != "" {
-		w.Header().Set("X-Request-ID", a.correlationID)
-	}
-	if a.trunc.Hit {
-		w.Header().Set("X-Playbooks-Report-Truncated", "true")
-		if a.trunc.Reason != "" {
-			w.Header().Set("X-Playbooks-Report-Truncated-Reason", a.trunc.Reason)
-		}
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(a.data)
-}
-
-// writeHTMLResponse emits the HTML report with the v5.4 hardened header set:
-// strict CSP, nosniff, frame-deny, referrer-policy.
+// writeHTMLResponse emits the HTML report with a hardened header set: strict
+// CSP, nosniff, frame-deny, referrer-policy. The client either downloads it or
+// browser-prints it to PDF.
 func (h *ExportHandler) writeHTMLResponse(w http.ResponseWriter, data []byte, asciiName string, download bool, correlationID string, trunc report.Truncation) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
@@ -578,30 +356,9 @@ func (h *ExportHandler) writeHTMLResponse(w http.ResponseWriter, data []byte, as
 	_, _ = w.Write(data) //nolint:gosec
 }
 
-// writePDFResponse emits a PDF byte slice atomically with the full RFC 6266
-// Content-Disposition.
-func (h *ExportHandler) writePDFResponse(w http.ResponseWriter, data []byte, asciiName, correlationID string, trunc report.Truncation) {
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
-	w.Header().Set("Content-Disposition", buildContentDisposition(asciiName))
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("X-Request-ID", correlationID)
-	if trunc.Hit {
-		w.Header().Set("X-Playbooks-Report-Truncated", "true")
-		if trunc.Reason != "" {
-			w.Header().Set("X-Playbooks-Report-Truncated-Reason", trunc.Reason)
-		}
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data) //nolint:gosec
-}
-
 // ---- gating helpers ----
 
 // reportsEnabled returns true when the plugin config permits exports.
-// EnableReports is the v5.4 master switch; it falls back to EnablePDFReports
-// for one release to keep older operator configs working.
 func (h *ExportHandler) reportsEnabled() bool {
 	if h.config == nil {
 		return true
@@ -610,28 +367,7 @@ func (h *ExportHandler) reportsEnabled() bool {
 	if cfg == nil {
 		return true
 	}
-	if cfg.EnableReports {
-		return true
-	}
 	return cfg.EnablePDFReports
-}
-
-// checkAcceptPDF is retained for backward compatibility with the existing
-// test suite. It is no longer called from the request path in v5.4 — the
-// format is decided by the URL suffix, not the Accept header.
-func (h *ExportHandler) checkAcceptPDF(r *http.Request) error {
-	accept := strings.TrimSpace(r.Header.Get("Accept"))
-	if accept == "" {
-		return nil
-	}
-	for part := range strings.SplitSeq(accept, ",") {
-		mime := strings.TrimSpace(strings.SplitN(part, ";", 2)[0])
-		switch mime {
-		case "*/*", "application/*", "application/pdf":
-			return nil
-		}
-	}
-	return errors.New("Accept header does not include application/pdf")
 }
 
 // verifyCSRF defends a GET-with-side-effects endpoint against cross-origin
@@ -853,63 +589,12 @@ func sectionsToList(s report.SectionFlags) []string {
 	return out
 }
 
-// exportKey is the single-flight coalescing key. It folds the kind, format,
-// id, user, and section-flag JSON into a stable string.
-func exportKey(kind, format, id, userID string, s report.SectionFlags) string {
+// exportKey is the single-flight coalescing key. It folds the kind, id,
+// user, and section-flag JSON into a stable string.
+func exportKey(kind, id, userID string, s report.SectionFlags) string {
 	flags, _ := json.Marshal(s)
 	sum := sha256.Sum256(flags)
-	return strings.Join([]string{kind, format, id, userID, hex.EncodeToString(sum[:])}, "|")
-}
-
-// formatFromPath extracts "md" | "html" | "pdf" from a URL ending in
-// report.<ext>. Unknown suffixes return "".
-func formatFromPath(p string) string {
-	base := path.Base(p)
-	switch base {
-	case "report.md":
-		return "md"
-	case "report.html":
-		return "html"
-	case "report.pdf":
-		return "pdf"
-	}
-	if i := strings.LastIndex(base, "."); i >= 0 {
-		return strings.ToLower(base[i+1:])
-	}
-	return ""
-}
-
-// eventForRun returns the audit event constant for a given format on the run surface.
-func eventForRun(format string) string {
-	switch format {
-	case "md":
-		return exportEventRunMD
-	case "html":
-		return exportEventRunHTML
-	case "pdf":
-		return exportEventRunPDF
-	}
-	return exportEventRunPDF
-}
-
-// eventForPlaybook returns the audit event constant for a given format on
-// the playbook surface.
-func eventForPlaybook(format string) string {
-	switch format {
-	case "md":
-		return exportEventPlaybookMD
-	case "html":
-		return exportEventPlaybookHTML
-	case "pdf":
-		return exportEventPlaybookPDF
-	}
-	return exportEventPlaybookPDF
-}
-
-// isDownload returns true when the client asked for an attachment
-// (?download=1). Defaults to inline display.
-func isDownload(r *http.Request) bool {
-	return r.URL.Query().Get("download") == "1"
+	return strings.Join([]string{kind, id, userID, hex.EncodeToString(sum[:])}, "|")
 }
 
 // parseTranscriptMode normalizes the ?transcript_mode= query param. Unknown
@@ -922,19 +607,6 @@ func parseTranscriptMode(raw string) coretypes.TranscriptMode {
 	default:
 		return coretypes.TranscriptModeThreaded
 	}
-}
-
-// buildDispositionFor returns an RFC 6266 Content-Disposition header for the
-// given extension. disposition is "inline" by default; "attachment" when
-// download is true.
-func buildDispositionFor(asciiName, ext string, download bool) string {
-	disposition := "inline"
-	if download || ext == "pdf" {
-		disposition = "attachment"
-	}
-	encoded := url.PathEscape(asciiName)
-	return fmt.Sprintf(`%s; filename="%s.%s"; filename*=UTF-8''%s.%s`,
-		disposition, asciiName, ext, encoded, ext)
 }
 
 // safeFilename produces an RFC 6266-safe ASCII filename. The input is the
@@ -978,12 +650,23 @@ func collapseUnderscores(s string) string {
 	return b.String()
 }
 
-// buildContentDisposition emits both filename="" and filename*=UTF-8 forms
-// per RFC 6266 for the PDF surface. Retained as the canonical PDF disposition
-// builder used by writePDFResponse and the existing test suite.
-func buildContentDisposition(asciiName string) string {
+// isDownload returns true when the client asked for an attachment
+// (?download=1). Defaults to inline display.
+func isDownload(r *http.Request) bool {
+	return r.URL.Query().Get("download") == "1"
+}
+
+// buildDispositionFor returns an RFC 6266 Content-Disposition header for the
+// given extension. disposition is "inline" by default; "attachment" when
+// download is true.
+func buildDispositionFor(asciiName, ext string, download bool) string {
+	disposition := "inline"
+	if download {
+		disposition = "attachment"
+	}
 	encoded := url.PathEscape(asciiName)
-	return fmt.Sprintf(`attachment; filename="%s.pdf"; filename*=UTF-8''%s.pdf`, asciiName, encoded)
+	return fmt.Sprintf(`%s; filename="%s.%s"; filename*=UTF-8''%s.%s`,
+		disposition, asciiName, ext, encoded, ext)
 }
 
 // correlationFromRequest reuses the request's X-Request-ID when present, or
@@ -995,22 +678,13 @@ func correlationFromRequest(r *http.Request) string {
 	return model.NewId()
 }
 
-// cspHeader is the strict Content-Security-Policy applied to the inline
-// HTML report. It forbids scripts, network fetches, and framing entirely;
-// inline styles are allowed only because the document embeds its own
-// <style> blocks.
+// cspHeader is the strict Content-Security-Policy applied to the inline HTML
+// report. It forbids scripts, network fetches, and framing entirely; inline
+// styles are allowed only because the document embeds its own <style> blocks.
 func cspHeader() string {
 	return "default-src 'none'; script-src 'none'; object-src 'none'; " +
 		"connect-src 'none'; worker-src 'none'; media-src 'none'; " +
 		"style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
 		"font-src 'self' data:; base-uri 'none'; form-action 'none'; " +
 		"frame-ancestors 'none'"
-}
-
-// pdfAFlavor returns the configured PDF/A flavor or the empty string.
-func pdfAFlavor(cfg *config.Configuration) string {
-	if cfg == nil {
-		return ""
-	}
-	return cfg.PdfAFlavor
 }

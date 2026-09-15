@@ -24,8 +24,8 @@ import "sort"
 // missing, instead of the orphan reply being silently promoted to a root.
 //
 // CollateThreads is the canonical model for the Threaded transcript mode
-// (coretypes.TranscriptModeThreaded) and is shared by markdown_writer and
-// html_writer. The Chronological mode bypasses this function and emits
+// (coretypes.TranscriptModeThreaded) and is used by html_writer. The
+// Chronological mode bypasses this function and emits
 // posts in pure CreateAt order with ↳ indicators.
 func CollateThreads(posts []RenderPost) (threads [][]RenderPost, orphans []RenderPost) {
 	rootIdx := make(map[string]int, len(posts)) // root.PostID → index in `threads`
