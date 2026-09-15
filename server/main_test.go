@@ -57,6 +57,11 @@ func TestMain(m *testing.M) {
 		return
 	}
 
+	// Playbooks requires Mattermost 12.0.0 for the host JSX runtime. The
+	// in-process test server still reports 11.9 via server/v8; override so
+	// plugin deploy succeeds until that module is bumped.
+	model.CurrentVersion = "12.0.0"
+
 	serverpathBytes, err := exec.Command("go", "list", "-f", "'{{.Dir}}'", "-m", "github.com/mattermost/mattermost/server/v8").Output()
 	if err != nil {
 		panic(err)

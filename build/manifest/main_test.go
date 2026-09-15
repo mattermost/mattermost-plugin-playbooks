@@ -17,7 +17,7 @@ const validSourceManifest = `{
   "homepage_url": "https://github.com/mattermost/mattermost-plugin-playbooks/",
   "support_url": "https://github.com/mattermost/mattermost-plugin-playbooks/issues",
   "icon_path": "assets/plugin_icon.svg",
-  "min_server_version": "11.9.0"
+  "min_server_version": "12.0.0"
 }`
 
 func TestReadManifestRejectsHardcodedVersion(t *testing.T) {
