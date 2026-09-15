@@ -11,7 +11,7 @@ import React, {
 import {useUpdateEffect} from 'react-use';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
-import {DraggableProvided} from 'react-beautiful-dnd';
+import {DraggableProvided} from '@hello-pangea/dnd';
 import {UserProfile} from '@mattermost/types/users';
 
 import {FloatingPortal} from '@floating-ui/react';
