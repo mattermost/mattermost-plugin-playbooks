@@ -19,7 +19,7 @@ jest.mock('react-intl', () => {
     };
 });
 
-jest.mock('react-beautiful-dnd', () => ({
+jest.mock('@hello-pangea/dnd', () => ({
     DragDropContext: ({children}: any) => children,
     Droppable: ({children}: any) => children({droppableProps: {}, innerRef: jest.fn(), placeholder: null}, {}),
     Draggable: ({children}: any) => children({draggableProps: {style: {}}, dragHandleProps: {}, innerRef: jest.fn()}, {isDragging: false}),
