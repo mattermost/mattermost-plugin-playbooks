@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 
@@ -39,6 +39,42 @@ interface ToastFuncs {
     add: (options: ToastOptions) => number;
     remove: (id: number) => void;
 }
+
+type AnimatedToastProps = {
+    options: ToastOptionsWithID;
+    onRemove: (id: number) => void;
+    onMouseEnterToast: (id: number) => void;
+    onMouseLeaveToast: (id: number) => void;
+} & Omit<React.ComponentProps<typeof CSSTransition>, 'classNames' | 'timeout' | 'nodeRef'>;
+
+const AnimatedToast = ({
+    options,
+    onRemove,
+    onMouseEnterToast,
+    onMouseLeaveToast,
+    ...transitionProps
+}: AnimatedToastProps) => {
+    const nodeRef = useRef<HTMLDivElement>(null);
+    return (
+        <CSSTransition
+            {...transitionProps}
+            nodeRef={nodeRef}
+            classNames='fade'
+            timeout={500}
+        >
+            <Toast
+                ref={nodeRef}
+                {...options}
+                closeCallback={() => {
+                    onRemove(options.id);
+                    options.closeCallback?.();
+                }}
+                onMouseEnter={() => onMouseEnterToast(options.id)}
+                onMouseLeave={() => onMouseLeaveToast(options.id)}
+            />
+        </CSSTransition>
+    );
+};
 
 export const ToastProvider = (props: Props) => {
     const [toasts, setToasts] = useState<ToastOptionsWithID[]>([]);
@@ -104,25 +140,15 @@ export const ToastProvider = (props: Props) => {
             {props.children}
             <TransitionGroup component={ToastContainer}>
                 {
-                    toasts.map((options: ToastOptionsWithID) => {
-                        return (
-                            <CSSTransition
-                                key={options.id}
-                                classNames='fade'
-                                timeout={500}
-                            >
-                                <Toast
-                                    {...options}
-                                    closeCallback={() => {
-                                        remove(options.id);
-                                        options.closeCallback?.();
-                                    }}
-                                    onMouseEnter={() => onToastMouseEnter(options.id)}
-                                    onMouseLeave={() => onToastMouseLeave(options.id)}
-                                />
-                            </CSSTransition>
-                        );
-                    })
+                    toasts.map((options: ToastOptionsWithID) => (
+                        <AnimatedToast
+                            key={options.id}
+                            options={options}
+                            onRemove={remove}
+                            onMouseEnterToast={onToastMouseEnter}
+                            onMouseLeaveToast={onToastMouseLeave}
+                        />
+                    ))
                 }
             </TransitionGroup>
         </Ctx.Provider>
