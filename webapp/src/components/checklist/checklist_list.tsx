@@ -13,7 +13,7 @@ import {
     DropResult,
     Droppable,
     DroppableProvided,
-} from 'react-beautiful-dnd';
+} from '@hello-pangea/dnd';
 
 import classNames from 'classnames';
 
@@ -49,10 +49,6 @@ import {getDistinctAssignees} from 'src/utils';
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 import GenericChecklist, {generateKeys} from './generic_checklist';
 import MultiSelectActionBar from './multi_select_action_bar';
-
-// disable all react-beautiful-dnd development warnings
-// @ts-ignore
-window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 // Helper function to check if a task is adjacent to other tasks in its condition group
 const isTaskAdjacentToConditionGroup = (
