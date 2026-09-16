@@ -1653,7 +1653,11 @@ func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.
 
 	triggerID, err := h.playbookRunService.RunChecklistItemSlashCommand(playbookRunID, userID, checklistNum, itemNum)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		if errors.Is(err, app.ErrNoPermissions) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+		} else {
+			h.HandleError(w, c.logger, err)
+		}
 		return
 	}
 
