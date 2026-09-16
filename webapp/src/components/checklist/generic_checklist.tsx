@@ -5,7 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
-import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
+import {Droppable, DroppableProvided} from '@hello-pangea/dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
@@ -20,10 +20,6 @@ import {PropertyField} from 'src/types/properties';
 import {clientDeleteChecklistItem} from 'src/client';
 
 import ConditionHeader from './condition_header';
-
-// disable all react-beautiful-dnd development warnings
-// @ts-ignore
-window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     id: string

@@ -101,7 +101,7 @@ Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
     cy.findByTestId('playbookID').should('exist').within(() => {
         cy.get('input').click().type(playbookName.toLowerCase(), {force: true});
     });
-    cy.document().its('body').find('#react-select-2-listbox').contains(playbookName).click({force: true});
+    cy.document().its('body').find('[id$=-listbox]').contains(playbookName).click({force: true});
 });
 
 Cypress.Commands.add('createPost', (message) => {
@@ -118,7 +118,7 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (playbookRunName, summary
         cy.findByTestId('playbookID').should('exist').within(() => {
             cy.get('input').click().type(playbookRunName);
         });
-        cy.document().its('body').find('#react-select-2-listbox').contains(playbookRunName).click({force: true});
+        cy.document().its('body').find('[id$=-listbox]').contains(playbookRunName).click({force: true});
 
         // # Type playbook run name
         cy.findByTestId('summaryinput').clear().type(summary, {force: true});
@@ -179,10 +179,8 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
         cy.wait(TIMEOUTS.ONE_HUNDRED_MILLIS);
 
         if (reminderQuery) {
-            cy.get('#reminder_timer_datetime').within(() => {
-                cy.get('#react-select-2-input').focus().realType(reminderQuery).wait(TIMEOUTS.ONE_SEC);
-                cy.get('#react-select-2-input').focus().type('{enter}');
-            });
+            cy.get('#reminder_timer_datetime input').focus().realType(reminderQuery).wait(TIMEOUTS.ONE_SEC);
+            cy.get('#reminder_timer_datetime input').focus().type('{enter}');
         }
 
         // # Submit the dialog.

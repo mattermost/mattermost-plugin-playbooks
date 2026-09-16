@@ -15,7 +15,7 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
+import {DragDropContext, Draggable, Droppable} from '@hello-pangea/dnd';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {
     ChevronDownCircleOutlineIcon,
