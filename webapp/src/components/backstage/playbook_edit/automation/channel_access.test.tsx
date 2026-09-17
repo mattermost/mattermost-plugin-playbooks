@@ -76,12 +76,37 @@ describe('CreateAChannel — run number prefix input', () => {
         expect(prefixInput?.props.value).toBe('INC');
     });
 
-    it('disables the prefix input when channel_mode is link_existing_channel', () => {
+    it('keeps the prefix input enabled when channel_mode is link_existing_channel', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: '',
             channel_name_template_locked: false,
             delete_at: 0,
+            channel_mode: 'link_existing_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [prefixInput] = component.root.findAll(
+            (node) => node.props['data-testid'] === 'channel-access-run-number-prefix',
+        );
+        expect(prefixInput?.props.disabled).toBe(false);
+    });
+
+    it('disables the prefix input when the playbook is archived, regardless of channel_mode', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '',
+            channel_name_template_locked: false,
+            delete_at: 1234,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
             run_number_prefix: '',
@@ -213,12 +238,37 @@ describe('CreateAChannel — lock run name checkbox', () => {
         expect(onChannelNameTemplateLockedChange).toHaveBeenCalledWith(true);
     });
 
-    it('disables the checkbox when channel_mode is link_existing_channel', () => {
+    it('keeps the checkbox enabled when channel_mode is link_existing_channel', () => {
         const playbook = {
             create_public_playbook_run: true,
             channel_name_template: 'Incident {SEQ}',
             channel_name_template_locked: false,
             delete_at: 0,
+            channel_mode: 'link_existing_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const [checkbox] = component.root.findAll(
+            (node) => node.props.testId === checkboxTestId,
+        );
+        expect(checkbox?.props.disabled).toBe(false);
+    });
+
+    it('disables the checkbox when the playbook is archived, regardless of channel_mode', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: 'Incident {SEQ}',
+            channel_name_template_locked: false,
+            delete_at: 1234,
             channel_mode: 'link_existing_channel' as const,
             channel_id: '',
             run_number_prefix: '',
@@ -350,6 +400,60 @@ describe('CreateAChannel — lock run name checkbox', () => {
         );
         expect(checkbox?.props.disabled).toBe(false);
         expect(checkbox?.props.checked).toBe(true);
+    });
+});
+
+describe('CreateAChannel — insert variable button', () => {
+    const insertButtonTestId = 'channel-access-run-name-template-insert-variable';
+
+    it('renders the Insert variable button when channel_mode is link_existing_channel', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '',
+            channel_name_template_locked: false,
+            delete_at: 0,
+            channel_mode: 'link_existing_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const insertButtons = component.root.findAll(
+            (node) => node.props['data-testid'] === insertButtonTestId,
+        );
+        expect(insertButtons.length).toBeGreaterThan(0);
+    });
+
+    it('does not render the Insert variable button when the playbook is archived', () => {
+        const playbook = {
+            create_public_playbook_run: true,
+            channel_name_template: '',
+            channel_name_template_locked: false,
+            delete_at: 1234,
+            channel_mode: 'create_new_channel' as const,
+            channel_id: '',
+            run_number_prefix: '',
+            next_run_number: 1,
+        };
+
+        const component = renderWithIntl(
+            <CreateAChannel
+                playbook={playbook}
+                setPlaybook={jest.fn()}
+            />,
+        );
+
+        const insertButtons = component.root.findAll(
+            (node) => node.props['data-testid'] === insertButtonTestId,
+        );
+        expect(insertButtons.length).toBe(0);
     });
 });
 

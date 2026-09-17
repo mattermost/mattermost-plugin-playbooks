@@ -17,6 +17,7 @@ import {
     SelectorWrapper,
 } from 'src/components/backstage/playbook_edit/automation/styles';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
+import {SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {showPlaybookActionsModal} from 'src/actions';
 import {SecondaryButtonLarger} from 'src/components/backstage/playbook_editor/controls';
 import ChannelSelector from 'src/components/backstage/channel_selector';
@@ -46,7 +47,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
     const teamId = useAppSelector(getCurrentTeamId);
     const disabled = disabledProp || playbook.delete_at !== 0;
     const [insertCounter, setInsertCounter] = useState(0);
-    const templateEnabled = !disabled && playbook.channel_mode === 'create_new_channel';
+    const templateEnabled = !disabled;
     const templateLockedChecked = playbook.channel_name_template_locked ?? false;
 
     const handlePublicChange = (isPublic: boolean) => {
@@ -176,53 +177,6 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                             <BigText>{formatMessage({defaultMessage: 'Private'})}</BigText>
                         </ButtonLabel>
                     </VerticalSplit>
-                    <RunNamingBlock>
-                        <InputLabel htmlFor='channel-access-run-number-prefix'>{formatMessage({defaultMessage: 'Run number prefix'})}</InputLabel>
-                        <BaseInput
-                            id='channel-access-run-number-prefix'
-                            data-testid='channel-access-run-number-prefix'
-                            type='text'
-                            disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
-                            value={playbook.run_number_prefix ?? ''}
-                            onChange={(e) => handleRunNumberPrefixChange(e.target.value)}
-                            placeholder={formatMessage({defaultMessage: 'e.g. INC-'})}
-                        />
-                        <LabelRow>
-                            <InputLabel as='div'>{formatMessage({defaultMessage: 'Run name template'})}</InputLabel>
-                            {templateEnabled && (
-                                <InsertVariableButton
-                                    type='button'
-                                    onClick={() => setInsertCounter((n) => n + 1)}
-                                    aria-label={formatMessage({defaultMessage: 'Insert variable'})}
-                                    title={formatMessage({defaultMessage: 'Insert variable'})}
-                                    data-testid='channel-access-run-name-template-insert-variable'
-                                >
-                                    <CodeBracketsIcon
-                                        size={14}
-                                        aria-hidden={true}
-                                    />
-                                </InsertVariableButton>
-                            )}
-                        </LabelRow>
-                        <TemplateInput
-                            enabled={templateEnabled}
-                            placeholderText={formatMessage({defaultMessage: 'Run name template (optional)'})}
-                            input={playbook.channel_name_template ?? ''}
-                            onChange={handleChannelNameTemplateChange}
-                            fieldNames={fieldNames ?? []}
-                            prefix={playbook.run_number_prefix ?? ''}
-                            maxLength={1024}
-                            testId='channel-access-run-name-template'
-                            openInsertToggle={insertCounter}
-                        />
-                        <TemplateLockedCheckbox
-                            testId='channel-access-run-name-template-locked'
-                            text={formatMessage({defaultMessage: 'Lock run name'})}
-                            checked={templateLockedChecked}
-                            disabled={!templateEnabled}
-                            onChange={handleChannelNameTemplateLockedChange}
-                        />
-                    </RunNamingBlock>
                     <ChannelActionButton
                         disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                         data-testid='playbook-channel-actions-button'
@@ -233,6 +187,73 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                     </ChannelActionButton>
                 </HorizontalSplit>
             </AutomationHeader>
+            <RunNamingSection>
+                <RunNamingSectionTitle id='run-naming-title'>
+                    {formatMessage({defaultMessage: 'Run naming'})}
+                </RunNamingSectionTitle>
+                <RunNamingBlock
+                    role='group'
+                    aria-labelledby='run-naming-title'
+                >
+                    <AutomationHeader id={'run-number-prefix'}>
+                        <AutomationTitle>
+                            <InputLabel htmlFor='channel-access-run-number-prefix'>{formatMessage({defaultMessage: 'Run number prefix'})}</InputLabel>
+                        </AutomationTitle>
+                        <SelectorWrapper>
+                            <PrefixInput
+                                id='channel-access-run-number-prefix'
+                                data-testid='channel-access-run-number-prefix'
+                                type='text'
+                                disabled={disabled}
+                                value={playbook.run_number_prefix ?? ''}
+                                onChange={(e) => handleRunNumberPrefixChange(e.target.value)}
+                                placeholder={formatMessage({defaultMessage: 'e.g. INC-'})}
+                            />
+                        </SelectorWrapper>
+                    </AutomationHeader>
+                    <AutomationHeader id={'run-name-template'}>
+                        <AutomationTitle style={{alignSelf: 'flex-start'}}>
+                            <InputLabel as='div'>{formatMessage({defaultMessage: 'Run name template'})}</InputLabel>
+                        </AutomationTitle>
+                        <TemplateInputWrapper>
+                            {templateEnabled && (
+                                <InsertVariableRow>
+                                    <InsertVariableButton
+                                        type='button'
+                                        onClick={() => setInsertCounter((n) => n + 1)}
+                                        aria-label={formatMessage({defaultMessage: 'Insert variable'})}
+                                        title={formatMessage({defaultMessage: 'Insert variable'})}
+                                        data-testid='channel-access-run-name-template-insert-variable'
+                                    >
+                                        <CodeBracketsIcon
+                                            size={14}
+                                            aria-hidden={true}
+                                        />
+                                    </InsertVariableButton>
+                                </InsertVariableRow>
+                            )}
+                            <TemplateInput
+                                enabled={templateEnabled}
+                                placeholderText={formatMessage({defaultMessage: 'Run name template (optional)'})}
+                                input={playbook.channel_name_template ?? ''}
+                                onChange={handleChannelNameTemplateChange}
+                                fieldNames={fieldNames ?? []}
+                                prefix={playbook.run_number_prefix ?? ''}
+                                maxLength={1024}
+                                testId='channel-access-run-name-template'
+                                openInsertToggle={insertCounter}
+                            />
+                            <TemplateLockedCheckbox
+                                testId='channel-access-run-name-template-locked'
+                                text={formatMessage({defaultMessage: 'Lock run name'})}
+                                checked={templateLockedChecked}
+                                disabled={!templateEnabled}
+                                onChange={handleChannelNameTemplateLockedChange}
+                            />
+                        </TemplateInputWrapper>
+                    </AutomationHeader>
+                </RunNamingBlock>
+            </RunNamingSection>
         </Container>
     );
 };
@@ -308,24 +329,40 @@ export const ChannelModeRadio = styled(RadioInput)`
     }
 `;
 
+const RunNamingSection = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
+
+const RunNamingSectionTitle = styled(SectionTitle)`
+    margin: 0 0 8px;
+`;
+
 const RunNamingBlock = styled.div`
     display: flex;
     flex-direction: column;
+    gap: 16px;
+`;
+
+const PrefixInput = styled(BaseInput)`
+    width: 100%;
+`;
+
+const TemplateInputWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
     gap: 4px;
-    margin-top: 8px;
 `;
 
 const InputLabel = styled.label`
     font-size: 12px;
     font-weight: 600;
     color: rgba(var(--center-channel-color-rgb), 0.72);
-    margin-top: 8px;
 `;
 
-const LabelRow = styled.div`
+const InsertVariableRow = styled.div`
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
 `;
 
 const InsertVariableButton = styled.button`
@@ -354,6 +391,7 @@ const InsertVariableButton = styled.button`
 `;
 
 const TemplateLockedCheckbox = styled(CheckboxInput)`
+    align-self: flex-end;
     padding: 6px 0;
     margin-top: 4px;
 
