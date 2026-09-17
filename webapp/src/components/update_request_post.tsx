@@ -134,6 +134,7 @@ const UpdateRequestPost = (props: Props) => {
         );
     }
 
+    const neverOption: Option = {value: null, label: formatMessage({defaultMessage: 'Never'})};
     const options = [
         makeOption({minutes: 60}),
         makeOption({hours: 24}),
@@ -152,6 +153,10 @@ const UpdateRequestPost = (props: Props) => {
         pushIfNotIn(makeOption({seconds: run.reminderTimerDefaultSeconds}));
     }
     options.sort((a, b) => ms(a.value) - ms(b.value));
+
+    // "Never" snoozes indefinitely (clears the reminder); kept first and out of the
+    // duration sort so its null value (ms 0) does not interleave with real durations.
+    options.unshift(neverOption);
 
     const snoozeFor = (option: Option) => {
         resetReminder(run.id, ms(option.value) / 1000);

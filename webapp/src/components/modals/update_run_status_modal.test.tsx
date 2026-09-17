@@ -1,9 +1,14 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import React from 'react';
+import renderer from 'react-test-renderer';
+import {IntlProvider} from 'react-intl';
+import {Duration} from 'luxon';
+
 import {formatSequentialID} from 'src/utils/template_utils';
 
-import {computeStatusMessagePreview} from './update_run_status_modal';
+import {computeStatusMessagePreview, isNeverOptionSelected, useReminderTimerOption} from './update_run_status_modal';
 
 const SEQ_3 = formatSequentialID('INC', 3);
 
@@ -109,5 +114,103 @@ describe('computeStatusMessagePreview', () => {
     it('token matching is case-insensitive for system tokens', () => {
         expect(computeStatusMessagePreview('By {owner}', makeRun(), userMap)).toBe('By Alice');
         expect(computeStatusMessagePreview('By {Owner}', makeRun(), userMap)).toBe('By Alice');
+    });
+});
+
+describe('isNeverOptionSelected', () => {
+    it('is false when nothing is selected (undefined)', () => {
+        expect(isNeverOptionSelected(undefined)).toBe(false);
+    });
+
+    it('is false when the selection was cleared (null)', () => {
+        expect(isNeverOptionSelected(null)).toBe(false);
+    });
+
+    it('is true when the "Never" option (value null) is selected', () => {
+        expect(isNeverOptionSelected({value: null, label: 'Never'})).toBe(true);
+    });
+
+    it('is false when a real duration option is selected', () => {
+        expect(isNeverOptionSelected({value: Duration.fromObject({days: 1})})).toBe(false);
+    });
+
+    it('is false when the option value is undefined (no value field)', () => {
+        expect(isNeverOptionSelected({value: undefined} as any)).toBe(false);
+    });
+});
+
+describe('useReminderTimerOption preselection', () => {
+    const makeReminderRun = (overrides: Record<string, unknown> = {}): any => ({
+        previousReminder: 0,
+        reminderTimerDefaultSeconds: 0,
+        statusPosts: [],
+        ...overrides,
+    });
+
+    // Renders the hook and reports what it resolved to. `reminder` is the value submitted to the
+    // server; `isNeverSelected` is what keeps validation from rejecting a deliberate "Never".
+    const renderHook = (run: any, disabled?: boolean, preselectedValue?: number) => {
+        let result: any;
+        const Harness = () => {
+            result = useReminderTimerOption(run, disabled, preselectedValue);
+            return null;
+        };
+        renderer.act(() => {
+            renderer.create(
+                <IntlProvider locale='en'>
+                    <Harness/>
+                </IntlProvider>,
+            );
+        });
+        return result;
+    };
+
+    it('preselects Never when the playbook default is 0 and no update was posted', () => {
+        const result = renderHook(makeReminderRun());
+
+        expect(result.isNeverSelected).toBe(true);
+        expect(result.reminder).toBe(0);
+    });
+
+    // Regression: the Never branch used to be gated on !hasActivePost, so every update after the
+    // first opened with nothing selected and a validation error, contradicting MM-46380.
+    it('still preselects Never after an update has been posted', () => {
+        const run = makeReminderRun({
+            statusPosts: [{id: 'post-1', deleteAt: 0}],
+        });
+
+        const result = renderHook(run);
+
+        expect(result.isNeverSelected).toBe(true);
+        expect(result.reminder).toBe(0);
+    });
+
+    // Regression: `if (preselectedValue)` treated the Never value of 0 as "nothing preselected",
+    // so cancelling the finish-run confirmation silently swapped Never for the playbook default.
+    it('honours an explicit preselected value of 0 over the playbook default', () => {
+        const run = makeReminderRun({reminderTimerDefaultSeconds: 24 * 60 * 60});
+
+        const result = renderHook(run, false, 0);
+
+        expect(result.isNeverSelected).toBe(true);
+        expect(result.reminder).toBe(0);
+    });
+
+    it('preselects the playbook default when it is a real duration', () => {
+        const run = makeReminderRun({reminderTimerDefaultSeconds: 24 * 60 * 60});
+
+        const result = renderHook(run);
+
+        expect(result.isNeverSelected).toBe(false);
+        expect(result.reminder).toBeGreaterThan(0);
+    });
+
+    it('honours a non-zero preselected value', () => {
+        const run = makeReminderRun({reminderTimerDefaultSeconds: 0});
+
+        const result = renderHook(run, false, 60 * 60);
+
+        expect(result.isNeverSelected).toBe(false);
+        expect(result.reminder).toBeGreaterThan(0);
     });
 });
