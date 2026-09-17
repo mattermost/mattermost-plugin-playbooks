@@ -360,4 +360,78 @@ describe('api > runs', {testIsolation: true}, () => {
             });
         });
     });
+
+    describe('deactivated user cleanup', () => {
+        let followerUser;
+
+        const getFollowers = (runId) => cy.request({
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            url: `/plugins/playbooks/api/v0/runs/${runId}/followers`,
+            method: 'GET',
+        });
+
+        // The UserHasBeenDeactivated plugin hook runs server-side, so poll until
+        // the follower list reflects the removal instead of asserting immediately.
+        const expectFollowerRemoved = (runId, userId, attempts = 10) => {
+            getFollowers(runId).then((response) => {
+                expect(response.status).to.equal(200);
+                const followers = response.body || [];
+                if (!followers.includes(userId)) {
+                    expect(followers).to.not.include(userId);
+                    return;
+                }
+
+                if (attempts <= 1) {
+                    expect(followers, 'deactivated user should be removed from followers').to.not.include(userId);
+                    return;
+                }
+
+                cy.wait(500);
+                expectFollowerRemoved(runId, userId, attempts - 1);
+            });
+        };
+
+        before(() => {
+            // # Login as admin to create a dedicated follower user
+            cy.apiAdminLogin();
+            cy.apiCreateUser().then(({user: createdUser}) => {
+                followerUser = createdUser;
+                cy.apiAddUserToTeam(testTeam.id, followerUser.id);
+            });
+        });
+
+        it('removes a deactivated user from a run follower list', () => {
+            // # Login as testUser and start a run
+            cy.apiLogin(testUser);
+            cy.apiCreateChannel(testTeam.id, 'deactivation-followers', 'Deactivation Followers').then(({channel}) => {
+                cy.apiRunPlaybook({
+                    ownerUserId: testUser.id,
+                    channelId: channel.id,
+                    playbookId: testPlaybook.id,
+                }, {expectedStatusCode: 201}).then((run) => {
+                    // # Add the follower as a participant so they have run access
+                    cy.apiAddUsersToRun(run.id, [followerUser.id]);
+
+                    // # Follow the run as the follower user
+                    cy.apiLogin(followerUser);
+                    cy.apiFollowPlaybookRun(run.id);
+
+                    // * Confirm the follower is listed before deactivation
+                    cy.apiLogin(testUser);
+                    getFollowers(run.id).then((response) => {
+                        expect(response.status).to.equal(200);
+                        expect(response.body).to.include(followerUser.id);
+                    });
+
+                    // # Deactivate the follower user as admin
+                    cy.apiAdminLogin();
+                    cy.apiDeactivateUser(followerUser.id);
+
+                    // * The deactivated user is removed from the run followers
+                    cy.apiLogin(testUser);
+                    expectFollowerRemoved(run.id, followerUser.id);
+                });
+            });
+        });
+    });
 });
