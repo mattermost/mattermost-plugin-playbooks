@@ -21,7 +21,7 @@
     "incremental": true,
     "tsBuildInfoFile": "./.tsbuildinfo",
     "experimentalDecorators": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "useUnknownInCatchVariables": false
   },

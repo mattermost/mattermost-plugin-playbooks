@@ -179,7 +179,7 @@ const RightHandSidebar = () => {
     const currentTeam = useAppSelector(getCurrentTeam);
     const currentChannelId = useAppSelector(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string | undefined>();
-    const autoSelectCheckedForChannel = useRef<string | undefined>();
+    const autoSelectCheckedForChannel = useRef<string | undefined>(undefined);
     const [autoAddTaskRunId, setAutoAddTaskRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);

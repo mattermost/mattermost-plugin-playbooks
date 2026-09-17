@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {act, renderHook} from '@testing-library/react-hooks';
+import {act, renderHook} from '@testing-library/react';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
