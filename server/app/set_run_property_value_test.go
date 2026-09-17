@@ -97,8 +97,11 @@ func (s *stubLicenseCheckerNoAttributes) ConditionalPlaybooksAllowed() bool { re
 // GetPlaybookRun. All other methods panic so that any unexpected call is
 // immediately visible during testing.
 type stubRunStoreGetOnly struct {
-	run *PlaybookRun
-	err error
+	run                    *PlaybookRun
+	err                    error
+	unfollowAllRunsErr     error
+	unfollowAllRunsUserID  string
+	unfollowAllRunsCallNum int
 }
 
 func (s *stubRunStoreGetOnly) GetPlaybookRun(playbookRunID string) (*PlaybookRun, error) {
@@ -159,8 +162,13 @@ func (s *stubRunStoreGetOnly) GetParticipatingRuns(_ string) ([]RunLink, error) 
 func (s *stubRunStoreGetOnly) GetOverdueUpdateRuns(_ string) ([]RunLink, error) {
 	panic("not implemented")
 }
-func (s *stubRunStoreGetOnly) Follow(_, _ string) error                    { panic("not implemented") }
-func (s *stubRunStoreGetOnly) Unfollow(_, _ string) error                  { panic("not implemented") }
+func (s *stubRunStoreGetOnly) Follow(_, _ string) error   { panic("not implemented") }
+func (s *stubRunStoreGetOnly) Unfollow(_, _ string) error { panic("not implemented") }
+func (s *stubRunStoreGetOnly) UnfollowAllRuns(userID string) error {
+	s.unfollowAllRunsUserID = userID
+	s.unfollowAllRunsCallNum++
+	return s.unfollowAllRunsErr
+}
 func (s *stubRunStoreGetOnly) UnfollowMultiple(_ string, _ []string) error { panic("not implemented") }
 func (s *stubRunStoreGetOnly) FollowBatch(_ string, _ []string) error      { panic("not implemented") }
 func (s *stubRunStoreGetOnly) GetFollowers(_ string) ([]string, error)     { panic("not implemented") }

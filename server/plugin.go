@@ -72,6 +72,10 @@ type StatusRecorder struct {
 	Status int
 }
 
+type runFollowerCleaner interface {
+	UnfollowAllRuns(userID string) error
+}
+
 func (r *StatusRecorder) WriteHeader(status int) {
 	r.Status = status
 	r.ResponseWriter.WriteHeader(status)
@@ -342,6 +346,20 @@ func (p *Plugin) UserHasJoinedChannel(c *plugin.Context, channelMember *model.Ch
 		actorID = actor.Id
 	}
 	p.channelActionService.UserHasJoinedChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+}
+
+func (p *Plugin) UserHasBeenDeactivated(c *plugin.Context, user *model.User) {
+	if err := unfollowAllRunsForDeactivatedUser(p.playbookRunService, user); err != nil {
+		logrus.WithError(err).WithField("user_id", user.Id).Error("failed to remove deactivated user from playbook run followers")
+	}
+}
+
+func unfollowAllRunsForDeactivatedUser(cleaner runFollowerCleaner, user *model.User) error {
+	if user == nil {
+		return nil
+	}
+
+	return cleaner.UnfollowAllRuns(user.Id)
 }
 
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
