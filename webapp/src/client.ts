@@ -833,6 +833,172 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
     return [href, filename];
 };
 
+export type PDFExportSections = {
+    cover?: boolean;
+    executiveSummary?: boolean;
+    timeline?: boolean;
+    statusUpdates?: boolean;
+    checklists?: boolean;
+    retrospective?: boolean;
+    transcript?: boolean;
+    playbookOverview?: boolean;
+    playbookChecklistTemplates?: boolean;
+    playbookSettings?: boolean;
+};
+
+export class PDFExportError extends Error {
+    status: number;
+    requestId: string | null;
+
+    constructor(status: number, message: string, requestId: string | null) {
+        super(message);
+        this.name = 'PDFExportError';
+        this.status = status;
+        this.requestId = requestId;
+    }
+}
+
+export type PDFExportResult = {
+    blob: Blob;
+    filename: string;
+    truncated: boolean;
+};
+
+const SECTION_KEY_TO_PARAM: Record<keyof PDFExportSections, string> = {
+    cover: 'cover',
+    executiveSummary: 'summary',
+    timeline: 'timeline',
+    statusUpdates: 'updates',
+    checklists: 'tasks',
+    retrospective: 'retro',
+    transcript: 'transcript',
+    playbookOverview: 'overview',
+    playbookChecklistTemplates: 'tasks',
+    playbookSettings: 'settings',
+};
+
+const sectionsToQueryString = (sections: PDFExportSections): string => {
+    const keys = Object.keys(sections) as (keyof PDFExportSections)[];
+    return keys
+        .filter((k) => sections[k])
+        .map((k) => SECTION_KEY_TO_PARAM[k])
+        .filter(Boolean)
+        .join(',');
+};
+
+const parseFilenameFromDisposition = (disposition: string | null, fallback: string): string => {
+    if (!disposition) {
+        return fallback;
+    }
+    const match = (/filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/i).exec(disposition);
+    return match?.[1] ? decodeURIComponent(match[1]) : fallback;
+};
+
+export type TranscriptMode = 'threaded' | 'chronological';
+
+const fetchExportBlob = async (url: string, fallbackFilename: string, extraHeaders: Record<string, string> = {}): Promise<PDFExportResult> => {
+    const options = Client4.getOptions({
+        method: 'GET',
+        headers: {Accept: 'text/html', ...extraHeaders},
+    });
+    const resp = await fetch(url, options);
+    if (!resp.ok) {
+        let message = resp.statusText;
+        try {
+            const body = await resp.json();
+            message = body?.error || message;
+        } catch {
+            // body wasn't JSON; keep statusText
+        }
+        throw new PDFExportError(resp.status, message, resp.headers.get('X-Request-ID'));
+    }
+    const blob = await resp.blob();
+    return {
+        blob,
+        filename: parseFilenameFromDisposition(resp.headers.get('Content-Disposition'), fallbackFilename),
+        truncated: resp.headers.get('X-Playbooks-Report-Truncated') === 'true',
+    };
+};
+
+// exportRunReportHTML fetches a run report as HTML. When forPrint is true the
+// caller browser-prints the blob to PDF; otherwise it downloads the HTML.
+export async function exportRunReportHTML(runID: string, sections: PDFExportSections, forPrint = false, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
+    const params = new URLSearchParams();
+    const list = sectionsToQueryString(sections);
+    if (list) {
+        params.set('sections', list);
+    }
+    if (transcriptMode && transcriptMode !== 'threaded') {
+        params.set('transcript_mode', transcriptMode);
+    }
+    const query = params.toString();
+    const url = `${apiUrl}/runs/${runID}/report.html${query ? `?${query}` : ''}`;
+    return fetchExportBlob(url, `run_${runID}.html`, {'X-Playbooks-Export-Intent': forPrint ? 'pdf-fallback' : 'html-direct'});
+}
+
+export async function exportPlaybookHTML(playbookID: string, sections: PDFExportSections, forPrint = false): Promise<PDFExportResult> {
+    const params = new URLSearchParams();
+    const list = sectionsToQueryString(sections);
+    if (list) {
+        params.set('sections', list);
+    }
+    const query = params.toString();
+    const url = `${apiUrl}/playbooks/${playbookID}/report.html${query ? `?${query}` : ''}`;
+    return fetchExportBlob(url, `playbook_${playbookID}.html`, {'X-Playbooks-Export-Intent': forPrint ? 'pdf-fallback' : 'html-direct'});
+}
+
+// triggerBrowserPrint opens the HTML blob in a popup and triggers window.print()
+// so the user can Save as PDF. Uses both the load event and a setTimeout
+// backstop for Safari/Firefox blob-URL timing quirks.
+export function triggerBrowserPrint(blob: Blob): void {
+    const url = URL.createObjectURL(blob);
+    const popup = window.open(url, '_blank');
+    if (!popup) {
+        // Popup was blocked — fall back to navigating the current tab.
+        window.location.href = url;
+        return;
+    }
+    let printed = false;
+    const doPrint = () => {
+        if (printed) {
+            return;
+        }
+        printed = true;
+        popup.focus();
+        popup.print();
+
+        // Revoke the blob URL after a delay to allow the print dialog to open.
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    };
+    popup.addEventListener('load', doPrint, {once: true});
+
+    // Backstop: some browsers (Safari, older Firefox) don't fire load on blob URLs.
+    setTimeout(doPrint, 500);
+}
+
+export async function fetchChannelExportAvailable(): Promise<boolean> {
+    try {
+        const data = await doGet<{available: boolean}>(`${apiUrl}/integrations/channel-export-available`);
+        return Boolean(data?.available);
+    } catch {
+        return false;
+    }
+}
+
+export const triggerPDFDownload = (result: PDFExportResult) => {
+    const url = URL.createObjectURL(result.blob);
+    try {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+};
+
 export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
     const queryParams = qs.stringify({
         time_range: timeRange,
