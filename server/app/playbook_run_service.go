@@ -42,6 +42,14 @@ const (
 	playbookRunUpdatedIncrementalWSEvent = "playbook_run_updated_incremental"
 
 	noAssigneeName = "No Assignee"
+
+	// runAudiencePerPage is the page size used to walk a run channel's members when
+	// resolving websocket recipients.
+	runAudiencePerPage = 200
+
+	// maxRunAudienceMembers caps how many channel members a single run event is resolved
+	// against, bounding the permission checks a run update costs on very large channels.
+	maxRunAudienceMembers = 5000
 )
 
 // Actions recorded in a TaskStateModified timeline event's details.
@@ -159,19 +167,8 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		StatusPostDeletes:    statusPostDeletes,
 	}
 
-	var nonMembers []string
-	if len(additionalUserIDs) > 0 {
-		nonMembers = s.getNonMembersIDs(currentRun.ChannelID, additionalUserIDs)
-	}
-
 	// Send the incremental update
-	s.poster.PublishWebsocketEventToChannelReliable(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
-	if len(nonMembers) > 0 {
-		for _, nonMember := range nonMembers {
-			s.poster.PublishWebsocketEventToUserReliable(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
-		}
-	}
-
+	s.PublishRunEventToViewers(playbookRunUpdatedIncrementalWSEvent, update, currentRun, additionalUserIDs...)
 }
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
@@ -4439,6 +4436,82 @@ func withRunWSOptions(options *RunWSOptions) RunWSOption {
 	}
 }
 
+// PublishRunEventToViewers sends a websocket event carrying run data to the users allowed to
+// view the run, plus any additionalUserIDs that pass the same check. Membership of the run's
+// channel does not by itself grant access to a playbook-based run, so recipients are filtered
+// with the predicate the REST API uses instead of broadcasting to the whole channel. Run
+// payloads can exceed the best-effort UDP size cap, so delivery uses the reliable cluster path.
+func (s *PlaybookRunServiceImpl) PublishRunEventToViewers(event string, payload interface{}, run *PlaybookRun, additionalUserIDs ...string) {
+	var candidateUserIDs []string
+
+	if s.permissions.RunViewIsChannelScoped(run) {
+		// Access to a channel checklist is access to its channel, so broadcasting to the
+		// channel already matches who may view the run.
+		s.poster.PublishWebsocketEventToChannelReliable(event, payload, run.ChannelID)
+		if len(additionalUserIDs) == 0 {
+			return
+		}
+		candidateUserIDs = s.getNonMembersIDs(run.ChannelID, additionalUserIDs)
+	} else {
+		candidateUserIDs = s.getRunAudienceIDs(run, additionalUserIDs)
+	}
+
+	for _, userID := range s.permissions.FilterRunViewers(candidateUserIDs, run) {
+		s.poster.PublishWebsocketEventToUserReliable(event, payload, userID)
+	}
+}
+
+// getRunAudienceIDs lists everyone who could plausibly be interested in an update to the run:
+// the members of its channel, its owner and participants, and additionalUserIDs. The result is
+// deduplicated and still needs to be filtered for view access.
+func (s *PlaybookRunServiceImpl) getRunAudienceIDs(run *PlaybookRun, additionalUserIDs []string) []string {
+	seen := make(map[string]bool)
+	audience := make([]string, 0, len(run.ParticipantIDs)+len(additionalUserIDs))
+
+	add := func(userIDs ...string) {
+		for _, userID := range userIDs {
+			if userID == "" || seen[userID] {
+				continue
+			}
+			seen[userID] = true
+			audience = append(audience, userID)
+		}
+	}
+
+	logger := logrus.WithFields(logrus.Fields{
+		"channel_id":      run.ChannelID,
+		"playbook_run_id": run.ID,
+	})
+
+	for page := 0; len(audience) < maxRunAudienceMembers; page++ {
+		members, err := s.pluginAPI.Channel.ListMembers(run.ChannelID, page, runAudiencePerPage)
+		if err != nil {
+			// The owner and participants added below still get the event, so the run stays
+			// live for the people driving it.
+			logger.WithError(err).Warn("failed to list run channel members while resolving websocket recipients")
+			break
+		}
+
+		if len(members) == 0 {
+			break
+		}
+
+		for _, member := range members {
+			add(member.UserId)
+		}
+	}
+
+	if len(audience) >= maxRunAudienceMembers {
+		logger.WithField("limit", maxRunAudienceMembers).Warn("run channel exceeds the websocket recipient limit; some members will not receive live run updates")
+	}
+
+	add(run.OwnerUserID)
+	add(run.ParticipantIDs...)
+	add(additionalUserIDs...)
+
+	return audience
+}
+
 func (s *PlaybookRunServiceImpl) getNonMembersIDs(channelID string, userIDs []string) []string {
 	members, err := s.pluginAPI.Channel.ListMembersByIDs(channelID, userIDs)
 	if err != nil {
@@ -4482,14 +4555,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 		}
 	}
 
-	s.poster.PublishWebsocketEventToChannelReliable(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
-
-	nonMembers := s.getNonMembersIDs(playbookRun.ChannelID, sendWSOptions.AdditionalUserIDs)
-	if len(nonMembers) > 0 {
-		for _, nonMember := range nonMembers {
-			s.poster.PublishWebsocketEventToUserReliable(playbookRunUpdatedWSEvent, playbookRun, nonMember)
-		}
-	}
+	s.PublishRunEventToViewers(playbookRunUpdatedWSEvent, playbookRun, playbookRun, sendWSOptions.AdditionalUserIDs...)
 }
 
 func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, newRetrospective RetrospectiveUpdate) error {
