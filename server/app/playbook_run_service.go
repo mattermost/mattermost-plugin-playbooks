@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -3980,7 +3981,17 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		message += part3
 	}
 
-	return &model.Post{Message: message}, nil
+	T := i18n.GetUserTranslations(user.Locale)
+	footer := "\n" + T("app.user.digest.message_truncated")
+	capped := capDigestMessage(message, footer, model.PostMessageMaxRunesV2)
+	if capped != message {
+		logrus.WithFields(logrus.Fields{
+			"user_id": userID,
+			"runes":   utf8.RuneCountInString(message),
+		}).Warn("todo digest exceeded max post size; truncating")
+	}
+
+	return &model.Post{Message: capped}, nil
 }
 
 // EphemeralPostTodoDigestToUser
@@ -5404,6 +5415,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	}
 
 	var tasksNoDueDate, tasksDoAfterToday int
+	var displayedTasks, omittedTasks int
 	currentTime := timeutils.GetTimeForMillis(model.GetMillis()).In(timezone)
 	yesterday := currentTime.Add(-24 * time.Hour)
 
@@ -5416,7 +5428,12 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 			if task.ChecklistItem.DueDate == 0 {
 				// add information about tasks without due date only if the full list was requested
 				if !onlyTasksDueUntilToday {
-					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
+					if displayedTasks < digestMaxItems {
+						fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
+						displayedTasks++
+					} else {
+						omittedTasks++
+					}
 				}
 				tasksNoDueDate++
 				continue
@@ -5424,24 +5441,44 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 			dueTime := time.Unix(task.ChecklistItem.DueDate/1000, 0).In(timezone)
 			// due today
 			if timeutils.IsSameDay(dueTime, currentTime) {
-				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today"))
+				if displayedTasks < digestMaxItems {
+					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today"))
+					displayedTasks++
+				} else {
+					omittedTasks++
+				}
 				continue
 			}
 			// due yesterday
 			if timeutils.IsSameDay(dueTime, yesterday) {
-				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday"))
+				if displayedTasks < digestMaxItems {
+					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday"))
+					displayedTasks++
+				} else {
+					omittedTasks++
+				}
 				continue
 			}
 			// due before yesterday
 			if dueTime.Before(currentTime) {
 				days := timeutils.GetDaysDiff(dueTime, currentTime)
-				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days))
+				if displayedTasks < digestMaxItems {
+					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days))
+					displayedTasks++
+				} else {
+					omittedTasks++
+				}
 				continue
 			}
 			// due after today
 			if !onlyTasksDueUntilToday {
 				days := timeutils.GetDaysDiff(currentTime, dueTime)
-				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days))
+				if displayedTasks < digestMaxItems {
+					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days))
+					displayedTasks++
+				} else {
+					omittedTasks++
+				}
 			}
 			tasksDoAfterToday++
 		}
@@ -5469,6 +5506,11 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	msg.WriteString("\n\n")
 	msg.WriteString(runsInfo.String())
 
+	if omittedTasks > 0 {
+		msg.WriteString(T("app.user.digest.more_tasks", omittedTasks))
+		msg.WriteString("\n")
+	}
+
 	// add summary info for tasks without a due date or due date after today
 	if tasksDoAfterToday > 0 && onlyTasksDueUntilToday {
 		msg.WriteString(":information_source: ")
@@ -5492,8 +5534,12 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
-	for _, run := range runs {
+	limit := min(total, digestMaxItems)
+	for _, run := range runs[:limit] {
 		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
+	}
+	if total > digestMaxItems {
+		msg += T("app.user.digest.more_runs", total-digestMaxItems) + "\n"
 	}
 
 	return msg
@@ -5510,8 +5556,12 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 
 	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
-	for _, run := range runs {
+	limit := min(total, digestMaxItems)
+	for _, run := range runs[:limit] {
 		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
+	}
+	if total > digestMaxItems {
+		msg += T("app.user.digest.more_runs", total-digestMaxItems) + "\n"
 	}
 
 	return msg

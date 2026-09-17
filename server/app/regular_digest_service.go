@@ -4,8 +4,35 @@
 package app
 
 import (
+	"strings"
 	"time"
+	"unicode/utf8"
 )
+
+// digestMaxItems is the maximum number of items shown per digest section.
+// When a section exceeds this limit a "…and N more" footer with a link to
+// /playbooks/runs is appended instead of the remaining items.
+// capDigestMessage is a secondary safety net that truncates the combined
+// message if it still exceeds PostMessageMaxRunesV2; in that case the
+// per-section "…and N more" footers may be discarded and replaced by the
+// generic truncation footer.
+const digestMaxItems = 20
+
+// capDigestMessage returns message unchanged when it fits within maxRunes.
+// When message exceeds maxRunes, it is truncated to leave room for footer,
+// snapping back to the last newline so no markdown link is cut mid-syntax,
+// then footer is appended. Precondition: footer must be shorter than maxRunes.
+func capDigestMessage(message, footer string, maxRunes int) string {
+	if utf8.RuneCountInString(message) <= maxRunes {
+		return message
+	}
+	budget := max(0, maxRunes-utf8.RuneCountInString(footer))
+	truncated := truncateRunes(message, budget)
+	if i := strings.LastIndex(truncated, "\n"); i > 0 {
+		truncated = truncated[:i]
+	}
+	return truncated + footer
+}
 
 func ShouldSendWeeklyDigestMessage(userInfo UserInfo, timezone *time.Location, currentTime time.Time) bool {
 	if userInfo.DigestNotificationSettings.DisableWeeklyDigest {
