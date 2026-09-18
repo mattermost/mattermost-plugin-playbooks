@@ -1478,6 +1478,9 @@ type PlaybookRunService interface {
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
 
+	// UnfollowAllRuns removes userID as a follower from all playbook runs.
+	UnfollowAllRuns(userID string) error
+
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
 
@@ -1583,6 +1586,9 @@ type PlaybookRunStore interface {
 
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
+
+	// UnfollowAllRuns removes userID as a follower from all playbook runs.
+	UnfollowAllRuns(userID string) error
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)

@@ -799,6 +799,9 @@ func (s *stubRunService) Follow(string, string) error {
 func (s *stubRunService) Unfollow(string, string) error {
 	panic("stubRunService: Unfollow not implemented")
 }
+func (s *stubRunService) UnfollowAllRuns(string) error {
+	panic("stubRunService: UnfollowAllRuns not implemented")
+}
 func (s *stubRunService) UnfollowMultiple(string, []string) error {
 	panic("stubRunService: UnfollowMultiple not implemented")
 }

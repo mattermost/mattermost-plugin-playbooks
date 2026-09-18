@@ -1157,6 +1157,54 @@ func TestGetFollowersActiveTotal(t *testing.T) {
 	})
 }
 
+func TestUnfollowAllRuns(t *testing.T) {
+	db := setupTestDB(t)
+	runStore := setupPlaybookRunStore(t, db)
+
+	followerID := model.NewId()
+	otherFollowerID := model.NewId()
+	runs := []*app.PlaybookRun{
+		NewBuilder(t).ToPlaybookRun(),
+		NewBuilder(t).ToPlaybookRun(),
+		NewBuilder(t).ToPlaybookRun(),
+	}
+
+	for i, run := range runs {
+		created, err := runStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		runs[i] = created
+	}
+
+	require.NoError(t, runStore.Follow(runs[0].ID, followerID))
+	require.NoError(t, runStore.AddParticipants(runs[0].ID, []string{followerID}))
+	require.NoError(t, runStore.Follow(runs[1].ID, followerID))
+	require.NoError(t, runStore.Follow(runs[1].ID, otherFollowerID))
+	require.NoError(t, runStore.Follow(runs[2].ID, otherFollowerID))
+
+	require.NoError(t, runStore.UnfollowAllRuns(followerID))
+
+	runOneFollowers, err := runStore.GetFollowers(runs[0].ID)
+	require.NoError(t, err)
+	require.NotContains(t, runOneFollowers, followerID)
+
+	sqlStore := runStore.(*playbookRunStore).store
+	var isParticipant bool
+	err = sqlStore.getBuilder(sqlStore.db, &isParticipant, sqlStore.builder.
+		Select("IsParticipant").
+		From("IR_Run_Participants").
+		Where(sq.Eq{"IncidentID": runs[0].ID, "UserID": followerID}))
+	require.NoError(t, err)
+	require.True(t, isParticipant)
+
+	runTwoFollowers, err := runStore.GetFollowers(runs[1].ID)
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{otherFollowerID}, runTwoFollowers)
+
+	runThreeFollowers, err := runStore.GetFollowers(runs[2].ID)
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{otherFollowerID}, runThreeFollowers)
+}
+
 func TestGetParticipantsActiveTotal(t *testing.T) {
 	createRuns := func(
 		store *SQLStore,
