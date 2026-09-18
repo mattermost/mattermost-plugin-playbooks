@@ -4,6 +4,24 @@
     "translation": "Unable to execute command."
   },
   {
+    "id": "app.user.digest.message_truncated",
+    "translation": "Some items were omitted because this digest was too long. Please use `/playbook todo` to see your full list."
+  },
+  {
+    "id": "app.user.digest.more_runs",
+    "translation": {
+      "one": "_…and {{.Count}} more run. [View all runs](/playbooks/runs)_",
+      "other": "_…and {{.Count}} more runs. [View all runs](/playbooks/runs)_"
+    }
+  },
+  {
+    "id": "app.user.digest.more_tasks",
+    "translation": {
+      "one": "_…and {{.Count}} more task. [View all runs](/playbooks/runs)_",
+      "other": "_…and {{.Count}} more tasks. [View all runs](/playbooks/runs)_"
+    }
+  },
+  {
     "id": "app.user.digest.overdue_status_updates.heading",
     "translation": "Overdue Status Updates"
   },
@@ -122,18 +140,6 @@
     "translation": "Add new task"
   },
   {
-    "id": "app.user.run.fill_requirements.intro",
-    "translation": "Fill in the required fields for \"{{.Task}}\" to mark it complete."
-  },
-  {
-    "id": "app.user.run.fill_requirements.submit_label",
-    "translation": "Save and mark complete"
-  },
-  {
-    "id": "app.user.run.fill_requirements.title",
-    "translation": "Complete requirements"
-  },
-  {
     "id": "app.user.run.add_to_timeline.playbook_run",
     "translation": "Playbook Run"
   },
@@ -171,6 +177,18 @@
   {
     "id": "app.user.run.confirm_finish.title",
     "translation": "Confirm finish"
+  },
+  {
+    "id": "app.user.run.fill_requirements.intro",
+    "translation": "Fill in the required fields for \"{{.Task}}\" to mark it complete."
+  },
+  {
+    "id": "app.user.run.fill_requirements.submit_label",
+    "translation": "Save and mark complete"
+  },
+  {
+    "id": "app.user.run.fill_requirements.title",
+    "translation": "Complete requirements"
   },
   {
     "id": "app.user.run.request_join_channel",
