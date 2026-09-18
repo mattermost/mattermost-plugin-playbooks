@@ -137,11 +137,17 @@ func (p *PropertyField) ToMattermostPropertyField() *model.PropertyField {
 	mmpf := p.PropertyField
 
 	mmpf.Attrs = model.StringInterface{
-		PropertyAttrsVisibility:             p.Attrs.Visibility,
-		PropertyAttrsSortOrder:              p.Attrs.SortOrder,
-		model.PropertyFieldAttributeOptions: p.Attrs.Options,
-		PropertyAttrsParentID:               p.Attrs.ParentID,
-		PropertyAttrsValueType:              p.Attrs.ValueType,
+		PropertyAttrsVisibility: p.Attrs.Visibility,
+		PropertyAttrsSortOrder:  p.Attrs.SortOrder,
+		PropertyAttrsParentID:   p.Attrs.ParentID,
+		PropertyAttrsValueType:  p.Attrs.ValueType,
+	}
+	// Only include the options key when there are options to send. A nil or empty
+	// typed slice stored as interface{} is not equal to nil, so inlineOptions() on
+	// the server side would fail the []any type assertion for fields whose type
+	// does not support options (and for which EnsureOptionIDs is a no-op).
+	if len(p.Attrs.Options) > 0 {
+		mmpf.Attrs[model.PropertyFieldAttributeOptions] = p.Attrs.Options
 	}
 	return &mmpf
 }
