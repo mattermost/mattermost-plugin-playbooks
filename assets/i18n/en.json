@@ -5,7 +5,7 @@
   },
   {
     "id": "app.user.digest.message_truncated",
-    "translation": "Some items were omitted because this digest was too long. Please use `/playbook todo` to see your full list."
+    "translation": "Some items were omitted because this message was too long. [View all runs](/playbooks/runs)"
   },
   {
     "id": "app.user.digest.more_runs",
@@ -17,8 +17,8 @@
   {
     "id": "app.user.digest.more_tasks",
     "translation": {
-      "one": "_…and {{.Count}} more task. [View all runs](/playbooks/runs)_",
-      "other": "_…and {{.Count}} more tasks. [View all runs](/playbooks/runs)_"
+      "one": "_…and {{.Count}} more task. Please use `/playbook todo` to see all your tasks._",
+      "other": "_…and {{.Count}} more tasks. Please use `/playbook todo` to see all your tasks._"
     }
   },
   {

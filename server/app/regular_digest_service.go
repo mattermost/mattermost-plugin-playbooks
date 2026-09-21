@@ -9,13 +9,13 @@ import (
 	"unicode/utf8"
 )
 
-// digestMaxItems is the maximum number of items shown per digest section.
-// When a section exceeds this limit a "…and N more" footer with a link to
-// /playbooks/runs is appended instead of the remaining items.
-// capDigestMessage is a secondary safety net that truncates the combined
-// message if it still exceeds PostMessageMaxRunesV2; in that case the
-// per-section "…and N more" footers may be discarded and replaced by the
-// generic truncation footer.
+// digestMaxItems is the maximum number of items shown per digest section for
+// scheduled digests (force=false). When a section exceeds this limit a
+// "…and N more" footer is appended instead of the remaining items.
+// /playbook todo (force=true) passes maxItems=0 (uncapped); capDigestMessage
+// remains the size safety net for both paths.
+// When capDigestMessage truncates, per-section "…and N more" footers may be
+// discarded and replaced by the generic truncation footer linking to /playbooks/runs.
 const digestMaxItems = 20
 
 // capDigestMessage returns message unchanged when it fits within maxRunes.

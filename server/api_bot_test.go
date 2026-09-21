@@ -92,10 +92,11 @@ func TestBotConnect(t *testing.T) {
 	t.Run("no digest due immediately after the first connect", func(t *testing.T) {
 		require.NotNil(t, digestPost, "expected the first subtest to have found a digest post")
 
-		// The first subtest's connect() call already persisted LastDailyTodoDMAt = now,
-		// so calling connect() again moments later deterministically finds both
-		// ShouldSendWeeklyDigestMessage (same ISO week) and ShouldSendDailyDigestMessage
-		// (well under an hour elapsed) false — no need for a second user or settings.
+		// The first subtest's connect() call already persisted LastDailyTodoDMAt = now
+		// after a successful DM, so calling connect() again moments later deterministically
+		// finds both ShouldSendWeeklyDigestMessage (same ISO week) and
+		// ShouldSendDailyDigestMessage (well under an hour elapsed) false — no need for a
+		// second user or settings.
 		resp, err := e.DoPluginAPIRequestWithHeaders(context.Background(), e.ServerClient, http.MethodGet, "/api/v0/bot/connect", "", nil)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)

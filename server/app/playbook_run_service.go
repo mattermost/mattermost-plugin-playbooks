@@ -3958,7 +3958,14 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		return nil, err
 	}
 
-	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale)
+	// Scheduled digests (force=false) cap each section so the DM stays actionable.
+	// /playbook todo (force=true) shows the full list; capDigestMessage is the size safety net.
+	maxItems := 0
+	if !force {
+		maxItems = digestMaxItems
+	}
+
+	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale, maxItems)
 
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
@@ -3967,8 +3974,8 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		}).Warn("failed to get user timezone")
 	}
 
-	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force)
-	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale)
+	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force, maxItems)
+	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale, maxItems)
 
 	var message string
 	if shouldSendFullData || len(digestMessageItems.overdueRuns) > 0 {
@@ -5395,7 +5402,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {
+func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool, maxItems int) string {
 	var msg strings.Builder
 
 	T := i18n.GetUserTranslations(locale)
@@ -5419,6 +5426,15 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	currentTime := timeutils.GetTimeForMillis(model.GetMillis()).In(timezone)
 	yesterday := currentTime.Add(-24 * time.Hour)
 
+	appendTask := func(tasksInfo *strings.Builder, line string) {
+		if maxItems > 0 && displayedTasks >= maxItems {
+			omittedTasks++
+			return
+		}
+		tasksInfo.WriteString(line)
+		displayedTasks++
+	}
+
 	var runsInfo strings.Builder
 	for _, run := range runs {
 		var tasksInfo strings.Builder
@@ -5428,12 +5444,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 			if task.ChecklistItem.DueDate == 0 {
 				// add information about tasks without due date only if the full list was requested
 				if !onlyTasksDueUntilToday {
-					if displayedTasks < digestMaxItems {
-						fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
-						displayedTasks++
-					} else {
-						omittedTasks++
-					}
+					appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title))
 				}
 				tasksNoDueDate++
 				continue
@@ -5441,44 +5452,24 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 			dueTime := time.Unix(task.ChecklistItem.DueDate/1000, 0).In(timezone)
 			// due today
 			if timeutils.IsSameDay(dueTime, currentTime) {
-				if displayedTasks < digestMaxItems {
-					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today"))
-					displayedTasks++
-				} else {
-					omittedTasks++
-				}
+				appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today")))
 				continue
 			}
 			// due yesterday
 			if timeutils.IsSameDay(dueTime, yesterday) {
-				if displayedTasks < digestMaxItems {
-					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday"))
-					displayedTasks++
-				} else {
-					omittedTasks++
-				}
+				appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday")))
 				continue
 			}
 			// due before yesterday
 			if dueTime.Before(currentTime) {
 				days := timeutils.GetDaysDiff(dueTime, currentTime)
-				if displayedTasks < digestMaxItems {
-					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days))
-					displayedTasks++
-				} else {
-					omittedTasks++
-				}
+				appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days)))
 				continue
 			}
 			// due after today
 			if !onlyTasksDueUntilToday {
 				days := timeutils.GetDaysDiff(currentTime, dueTime)
-				if displayedTasks < digestMaxItems {
-					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days))
-					displayedTasks++
-				} else {
-					omittedTasks++
-				}
+				appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days)))
 			}
 			tasksDoAfterToday++
 		}
@@ -5521,7 +5512,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	return msg.String()
 }
 
-func buildRunsInProgressMessage(runs []RunLink, locale string) string {
+func buildRunsInProgressMessage(runs []RunLink, locale string, maxItems int) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
@@ -5534,18 +5525,21 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
-	limit := min(total, digestMaxItems)
+	limit := total
+	if maxItems > 0 {
+		limit = min(total, maxItems)
+	}
 	for _, run := range runs[:limit] {
 		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
 	}
-	if total > digestMaxItems {
-		msg += T("app.user.digest.more_runs", total-digestMaxItems) + "\n"
+	if maxItems > 0 && total > maxItems {
+		msg += T("app.user.digest.more_runs", total-maxItems) + "\n"
 	}
 
 	return msg
 }
 
-func buildRunsOverdueMessage(runs []RunLink, locale string) string {
+func buildRunsOverdueMessage(runs []RunLink, locale string, maxItems int) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 	msg := "\n"
@@ -5556,12 +5550,15 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 
 	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
-	limit := min(total, digestMaxItems)
+	limit := total
+	if maxItems > 0 {
+		limit = min(total, maxItems)
+	}
 	for _, run := range runs[:limit] {
 		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
 	}
-	if total > digestMaxItems {
-		msg += T("app.user.digest.more_runs", total-digestMaxItems) + "\n"
+	if maxItems > 0 && total > maxItems {
+		msg += T("app.user.digest.more_runs", total-maxItems) + "\n"
 	}
 
 	return msg

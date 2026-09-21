@@ -84,7 +84,7 @@ func TestDigestItemCap(t *testing.T) {
 
 	t.Run("buildRunsInProgressMessage caps at digestMaxItems", func(t *testing.T) {
 		runs := makeRunLinks(digestMaxItems + 5)
-		msg := buildRunsInProgressMessage(runs, "en")
+		msg := buildRunsInProgressMessage(runs, "en", digestMaxItems)
 		// In the test environment i18n returns the key; check the key is present.
 		assert.Equal(t, digestMaxItems, strings.Count(msg, "- [Run"))
 		assert.Contains(t, msg, "app.user.digest.more_runs")
@@ -92,14 +92,21 @@ func TestDigestItemCap(t *testing.T) {
 
 	t.Run("buildRunsInProgressMessage under cap shows all", func(t *testing.T) {
 		runs := makeRunLinks(3)
-		msg := buildRunsInProgressMessage(runs, "en")
+		msg := buildRunsInProgressMessage(runs, "en", digestMaxItems)
 		assert.Equal(t, 3, strings.Count(msg, "- [Run"))
+		assert.NotContains(t, msg, "app.user.digest.more_runs")
+	})
+
+	t.Run("buildRunsInProgressMessage maxItems 0 shows all", func(t *testing.T) {
+		runs := makeRunLinks(digestMaxItems + 5)
+		msg := buildRunsInProgressMessage(runs, "en", 0)
+		assert.Equal(t, digestMaxItems+5, strings.Count(msg, "- [Run"))
 		assert.NotContains(t, msg, "app.user.digest.more_runs")
 	})
 
 	t.Run("buildRunsOverdueMessage caps at digestMaxItems", func(t *testing.T) {
 		runs := makeRunLinks(digestMaxItems + 3)
-		msg := buildRunsOverdueMessage(runs, "en")
+		msg := buildRunsOverdueMessage(runs, "en", digestMaxItems)
 		assert.Equal(t, digestMaxItems, strings.Count(msg, "- [Run"))
 		assert.Contains(t, msg, "app.user.digest.more_runs")
 	})
@@ -109,7 +116,7 @@ func TestDigestItemCap(t *testing.T) {
 		// Due date = 0 (no due date) is excluded in onlyTasksDueUntilToday mode.
 		// Use dueDate=1 (effectively epoch, well in the past) so tasks are treated as overdue.
 		runs := makeAssignedRuns(9, 3, 1)
-		msg := buildAssignedTaskMessageSummary(runs, "en", time.UTC, false)
+		msg := buildAssignedTaskMessageSummary(runs, "en", time.UTC, false, digestMaxItems)
 		taskLineCount := strings.Count(msg, "  - [ ]")
 		require.Equal(t, digestMaxItems, taskLineCount, "should display exactly digestMaxItems task lines")
 		assert.Contains(t, msg, "app.user.digest.more_tasks", "should have more_tasks footer when over cap")
@@ -117,9 +124,16 @@ func TestDigestItemCap(t *testing.T) {
 
 	t.Run("buildAssignedTaskMessageSummary under cap shows all tasks", func(t *testing.T) {
 		runs := makeAssignedRuns(3, 2, 1) // 6 tasks total — under cap
-		msg := buildAssignedTaskMessageSummary(runs, "en", time.UTC, false)
+		msg := buildAssignedTaskMessageSummary(runs, "en", time.UTC, false, digestMaxItems)
 		taskLineCount := strings.Count(msg, "  - [ ]")
 		assert.Equal(t, 6, taskLineCount)
+		assert.NotContains(t, msg, "app.user.digest.more_tasks")
+	})
+
+	t.Run("buildAssignedTaskMessageSummary maxItems 0 shows all tasks", func(t *testing.T) {
+		runs := makeAssignedRuns(9, 3, 1) // 27 tasks
+		msg := buildAssignedTaskMessageSummary(runs, "en", time.UTC, false, 0)
+		assert.Equal(t, 27, strings.Count(msg, "  - [ ]"))
 		assert.NotContains(t, msg, "app.user.digest.more_tasks")
 	})
 }
