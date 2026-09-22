@@ -387,13 +387,13 @@ const myPlaybookRunsByTeam = (
                         break;
                     }
                 }
-                if (targetTeamId) {
+                if (targetTeamId !== null) {
                     break;
                 }
             }
         }
 
-        if (!targetTeamId || !targetChannelId) {
+        if (targetTeamId === null || targetChannelId === null) {
             return state;
         }
 
