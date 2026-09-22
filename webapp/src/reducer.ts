@@ -354,7 +354,7 @@ const myPlaybookRunsByTeam = (
         const removedFromChannelAction = action as RemovedFromChannel;
         const channelId = removedFromChannelAction.channelId;
         const teamId = Object.keys(state).find((t) => Boolean(state[t]?.[channelId]));
-        if (!teamId) {
+        if (teamId === undefined) {
             return state;
         }
 
