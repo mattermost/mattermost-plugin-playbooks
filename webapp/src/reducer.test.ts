@@ -232,7 +232,7 @@ describe('websocket event actions', () => {
             // @ts-ignore
             const newState = reducer(state, action);
 
-            expect(newState.myPlaybookRunsByTeam['']!['dm_channel_1'].name).toBe('DM Updated Name');
+            expect(newState.myPlaybookRunsByTeam['']!.dm_channel_1.name).toBe('DM Updated Name');
         });
     });
 });
