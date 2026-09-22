@@ -5271,6 +5271,15 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	return nil
 }
 
+// UnfollowAllRuns removes userID as a follower from all playbook runs.
+func (s *PlaybookRunServiceImpl) UnfollowAllRuns(userID string) error {
+	if err := s.store.UnfollowAllRuns(userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to unfollow all runs", userID)
+	}
+
+	return nil
+}
+
 // GetFollowers returns list of followers for a specific playbook run
 func (s *PlaybookRunServiceImpl) GetFollowers(playbookRunID string) ([]string, error) {
 	var followers []string

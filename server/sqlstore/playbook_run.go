@@ -1379,6 +1379,18 @@ func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
 	return s.updateFollowing(playbookRunID, userID, false)
 }
 
+func (s *playbookRunStore) UnfollowAllRuns(userID string) error {
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Run_Participants").
+		Set("IsFollower", false).
+		Where(sq.Eq{"UserID": userID, "IsFollower": true}))
+	if err != nil {
+		return errors.Wrapf(err, "failed to remove follower '%s' from all runs", userID)
+	}
+
+	return nil
+}
+
 func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Run_Participants").
