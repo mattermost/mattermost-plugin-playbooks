@@ -3958,14 +3958,16 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		return nil, err
 	}
 
-	// Scheduled digests (force=false) cap each section so the DM stays actionable.
-	// /playbook todo (force=true) shows the full list; capDigestMessage is the size safety net.
-	maxItems := 0
+	// Runs are always capped: /playbooks/runs is available as a paginated fallback.
+	// Tasks are only capped for scheduled digests; /playbook todo shows the full list
+	// because there is no equivalent paginated page for tasks yet.
+	runsMaxItems := digestMaxItems
+	tasksMaxItems := 0
 	if !force {
-		maxItems = digestMaxItems
+		tasksMaxItems = digestMaxItems
 	}
 
-	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale, maxItems)
+	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale, runsMaxItems)
 
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
@@ -3974,8 +3976,8 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		}).Warn("failed to get user timezone")
 	}
 
-	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force, maxItems)
-	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale, maxItems)
+	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force, tasksMaxItems)
+	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale, runsMaxItems)
 
 	var message string
 	if shouldSendFullData || len(digestMessageItems.overdueRuns) > 0 {

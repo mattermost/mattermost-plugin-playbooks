@@ -9,11 +9,9 @@ import (
 	"unicode/utf8"
 )
 
-// digestMaxItems is the maximum number of items shown per digest section for
-// scheduled digests (force=false). When a section exceeds this limit a
-// "…and N more" footer is appended instead of the remaining items.
-// /playbook todo (force=true) passes maxItems=0 (uncapped); capDigestMessage
-// remains the size safety net for both paths.
+// digestMaxItems is the maximum number of items shown per runs section in both
+// scheduled digests and /playbook todo. Tasks are also capped for scheduled
+// digests but not for /playbook todo (no paginated task page exists yet).
 // When capDigestMessage truncates, per-section "…and N more" footers may be
 // discarded and replaced by the generic truncation footer linking to /playbooks/runs.
 const digestMaxItems = 20
