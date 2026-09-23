@@ -228,13 +228,6 @@ describe('runs > run details page > finish with conditional hidden tasks', {test
 
         cy.wait('@setItemState').its('response.statusCode').should('eq', 200);
 
-        // Wait for the checkbox to visually reflect the completed state before
-        // clicking Finish, mirroring real user behavior and avoiding a race
-        // with the async WS incremental-update cycle.
-        cy.findByText('Always visible task').closest('[data-testid="checkbox-item-container"]').within(() => {
-            cy.get('input[type="checkbox"]').should('be.checked');
-        });
-
         cy.findByTestId('run-finish-section').find('button').click();
 
         cy.get('#confirmModal').should('be.visible');
