@@ -75,7 +75,7 @@ export const myPlaybookRunsByTeam = (state: GlobalState) => pluginState(state).m
 export const getRun = (playbookRunId: string, teamId?: string, channelId?: string) => {
     return (state: GlobalState) => {
         const runsByTeam = myPlaybookRunsByTeam(state);
-        if (teamId && channelId) {
+        if (teamId !== undefined && channelId) {
             return runsByTeam[teamId]?.[channelId];
         }
         return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === playbookRunId);

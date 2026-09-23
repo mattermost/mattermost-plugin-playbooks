@@ -45,6 +45,7 @@ import {
     fetchPlaybookRuns,
     fetchPlaybookStats,
 } from 'src/client';
+import {playbookRunUpdated} from 'src/actions';
 import {resolve} from 'src/utils';
 
 export type FetchMetadata = {
@@ -310,7 +311,13 @@ export function usePost(postId: string) {
 }
 
 export function useRun(runId: string, teamId?: string, channelId?: string) {
-    return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
+    const dispatch = useAppDispatch();
+    const fetchAndStore = useCallback(async (id: string) => {
+        const run = await fetchPlaybookRun(id);
+        dispatch(playbookRunUpdated(run));
+        return run;
+    }, [dispatch]);
+    return useThing(runId, fetchAndStore, getRun(runId, teamId, channelId));
 }
 
 /**
