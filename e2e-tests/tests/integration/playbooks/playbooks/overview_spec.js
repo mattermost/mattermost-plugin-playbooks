@@ -127,7 +127,9 @@ describe('playbooks > overview', {testIsolation: true}, () => {
 
             // # Open Playbooks
             cy.uiGetProductMenuButton().click({force: true});
-            cy.get('a[href="/playbooks"]').click({force: true});
+            cy.uiGetProductMenu().
+                find('#product-menu-item-playbooks').
+                click({force: true});
 
             // Click through to open the playbook
             cy.findByTestId('playbooksLHSButton').click({force: true});
