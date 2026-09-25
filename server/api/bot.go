@@ -203,15 +203,6 @@ func (h *BotHandler) connect(c *Context, w http.ResponseWriter, r *http.Request)
 
 func (h *BotHandler) createDigestSender(c *Context, w http.ResponseWriter, userID string, userInfo *app.UserInfo) func(DigestSenderParams) {
 	return func(params DigestSenderParams) {
-		now := model.GetMillis()
-		// record that we're sending a DM now (this will prevent us trying over and over on every
-		// response if there's a failure later)
-		userInfo.LastDailyTodoDMAt = now
-		if err := h.userInfoStore.Upsert(*userInfo); err != nil {
-			h.HandleError(w, c.logger, err)
-			return
-		}
-
 		regulartity := "daily"
 		if params.isWeekly {
 			regulartity = "weekly"
@@ -219,6 +210,14 @@ func (h *BotHandler) createDigestSender(c *Context, w http.ResponseWriter, userI
 
 		if err := h.playbookRunService.DMTodoDigestToUser(userID, false, params.isWeekly); err != nil {
 			h.HandleError(w, c.logger, errors.Wrapf(err, "failed to send '%s' DMTodoDigest to userID '%s'", regulartity, userID))
+			return
+		}
+
+		// Only stamp LastDailyTodoDMAt after a successful send so a failed DM is retried
+		// on the next connect (e.g. post-too-long or transient CreatePost errors).
+		userInfo.LastDailyTodoDMAt = model.GetMillis()
+		if err := h.userInfoStore.Upsert(*userInfo); err != nil {
+			h.HandleError(w, c.logger, err)
 			return
 		}
 	}
