@@ -101,6 +101,13 @@ type PlaybookMember struct {
 	SchemeRoles []string `json:"scheme_roles"`
 }
 
+// PlaybookSchemeRoles holds the playbook role names a team's scheme assigns. Teams without a
+// scheme fall back to the built-in PlaybookRoleAdmin/PlaybookRoleMember.
+type PlaybookSchemeRoles struct {
+	AdminRole  string
+	MemberRole string
+}
+
 type PlaybookMetricConfig struct {
 	ID          string   `json:"id" export:"-"`
 	PlaybookID  string   `json:"playbook_id" export:"-"`
@@ -448,6 +455,10 @@ type PlaybookService interface {
 
 	// ReorderPropertyFields reorders property fields for a playbook and bumps the playbook's updated_at
 	ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error)
+
+	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
+	// falling back to the built-in roles when the team has no scheme.
+	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -528,6 +539,10 @@ type PlaybookStore interface {
 
 	// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
 	BumpPlaybookUpdatedAt(playbookID string) error
+
+	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
+	// falling back to the built-in roles when the team has no scheme.
+	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
 }
 
 const (
