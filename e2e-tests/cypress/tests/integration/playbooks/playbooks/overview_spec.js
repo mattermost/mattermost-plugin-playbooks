@@ -126,8 +126,7 @@ describe('playbooks > overview', {testIsolation: true}, () => {
             cy.visit(`${team.name}/channels/town-square`);
 
             // # Open Playbooks
-            cy.get('[aria-label="Product switch menu"]').click({force: true});
-            cy.get('a[href="/playbooks"]').click({force: true});
+            cy.uiOpenProductMenu('Playbooks');
 
             // Click through to open the playbook
             cy.findByTestId('playbooksLHSButton').click({force: true});
