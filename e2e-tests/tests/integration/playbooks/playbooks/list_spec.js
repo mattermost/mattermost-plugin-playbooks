@@ -116,13 +116,17 @@ describe('playbooks > list', {testIsolation: true}, () => {
     });
 
     it('can duplicate playbook with attributes and conditions', () => {
+        // Unique titles avoid Cypress retry leftovers matching "Copy of Copy of ..."
+        const originalTitle = `Playbook with Attributes ${Date.now()}`;
+        const copyTitle = `Copy of ${originalTitle}`;
+        const exactTitle = (title) => new RegExp(`^${Cypress._.escapeRegExp(title)}$`);
         let priorityField;
         let statusField;
 
         // # Create a playbook with attributes and conditions
         cy.apiCreateTestPlaybook({
             teamId: testTeam.id,
-            title: 'Playbook with Attributes',
+            title: originalTitle,
             userId: testUser.id,
         }).then((playbook) => {
             // # Add a text attribute
@@ -195,21 +199,22 @@ describe('playbooks > list', {testIsolation: true}, () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click on the dot menu of the playbook with attributes
-        cy.contains('[data-testid="playbook-item"]', 'Playbook with Attributes').within(() => {
+        cy.contains('[data-testid="playbook-item"]', exactTitle(originalTitle)).within(() => {
             cy.findByTestId('menuButtonActions').click();
         });
 
         // # Click on duplicate
         cy.findByText('Duplicate').click();
 
-        // * Verify that playbook got duplicated (there may be multiple from previous runs)
-        cy.contains('Copy of Playbook with Attributes', {timeout: 10000}).should('be.visible');
+        // * Verify that playbook got duplicated
+        cy.contains('[data-testid="playbook-title"]', exactTitle(copyTitle), {timeout: 10000}).should('be.visible');
 
-        // # Click on the duplicated playbook to open it (use first match if multiple exist)
-        cy.get('[data-testid="playbook-title"]').
-            contains('Copy of Playbook with Attributes').
-            first().
-            click();
+        // # Wait for the success toast so it does not steal focus mid-edit
+        cy.findByText('Successfully duplicated playbook').should('be.visible');
+        cy.findByText('Successfully duplicated playbook').should('not.exist');
+
+        // # Click on the duplicated playbook to open it
+        cy.contains('[data-testid="playbook-title"]', exactTitle(copyTitle)).click();
 
         // # Navigate to attributes section
         cy.findByText('Attributes').click();
@@ -236,14 +241,15 @@ describe('playbooks > list', {testIsolation: true}, () => {
         });
 
         // # Modify the duplicated playbook to test independence
-        // # Rename the first attribute
+        // # Rename the first attribute; assert full value before blur so a mid-type
+        // # focus loss cannot leave a truncated name like "Mod"
         cy.findAllByTestId('property-field-row').eq(0).within(() => {
-            cy.findByLabelText('Attribute name').clear().type('Modified Name');
+            cy.findByLabelText('Attribute name').
+                click().
+                type('{selectAll}Modified Name').
+                should('have.value', 'Modified Name').
+                type('{enter}');
         });
-
-        // # Click outside to save
-        cy.get('body').click(0, 0);
-        cy.wait(500);
 
         // * Verify the change was saved
         verifyAttributeInList(0, 'Modified Name');
@@ -284,12 +290,8 @@ describe('playbooks > list', {testIsolation: true}, () => {
         // # Wait for playbook list to load
         cy.findAllByTestId('playbook-item').should('have.length.at.least', 1);
 
-        // # Open the original playbook (not the "Copy of" version)
-        cy.get('[data-testid="playbook-title"]').
-            filter(':contains("Playbook with Attributes")').
-            not(':contains("Copy of")').
-            first().
-            click();
+        // # Open the original playbook (exact title, not a "Copy of" variant)
+        cy.contains('[data-testid="playbook-title"]', exactTitle(originalTitle)).click();
 
         // # Navigate to attributes section
         cy.findByText('Attributes').click();
