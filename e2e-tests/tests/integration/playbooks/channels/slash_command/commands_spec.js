@@ -93,7 +93,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly('/playbook check 1 1');
 
             // * Verify the task is checked
-            cy.get('[data-rbd-droppable-id="1"]').find('.checkbox').eq(1).should('be.checked');
+            cy.get('[data-rfd-droppable-id="1"]').find('.checkbox').eq(1).should('be.checked');
         });
 
         it('check add', () => {
@@ -101,7 +101,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly('/playbook checkadd 1 new-task');
 
             // * Verify the task was added
-            cy.get('[data-rbd-droppable-id="1"]').contains('new-task');
+            cy.get('[data-rfd-droppable-id="1"]').contains('new-task');
         });
 
         it('check remove', () => {
@@ -109,7 +109,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly('/playbook checkremove 1 1');
 
             // * Verify the task was added
-            cy.get('[data-rbd-droppable-id="1"]').contains('Step 2').should('not.exist');
+            cy.get('[data-rfd-droppable-id="1"]').contains('Step 2').should('not.exist');
         });
 
         it('owner', () => {
@@ -308,7 +308,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             });
 
             // * Verify the task is checked
-            cy.get('[data-rbd-droppable-id="1"]').find('.checkbox').eq(1).should('be.checked');
+            cy.get('[data-rfd-droppable-id="1"]').find('.checkbox').eq(1).should('be.checked');
         });
 
         it('check add', () => {
@@ -351,7 +351,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             });
 
             // * Verify the task was added
-            cy.get('[data-rbd-droppable-id="1"]').contains('new-task');
+            cy.get('[data-rfd-droppable-id="1"]').contains('new-task');
         });
 
         it('check remove', () => {
@@ -394,7 +394,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             });
 
             // * Verify the task was added
-            cy.get('[data-rbd-droppable-id="1"]').contains('Step 2').should('not.exist');
+            cy.get('[data-rfd-droppable-id="1"]').contains('Step 2').should('not.exist');
         });
 
         it('owner', () => {
