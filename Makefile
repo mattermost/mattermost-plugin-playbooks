@@ -296,10 +296,11 @@ detach: setup-attach
 	fi
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
+## -timeout 20m: FIPS CI regularly exceeds the default 10m package timeout.
 .PHONY: test
 test: apply webapp/node_modules install-go-tools
 ifneq ($(HAS_SERVER),)
-	$(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
+	$(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- -timeout 20m ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;

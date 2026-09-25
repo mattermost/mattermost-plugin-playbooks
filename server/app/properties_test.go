@@ -259,55 +259,97 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 }
 
 func TestPropertyField_ToMattermostPropertyField(t *testing.T) {
-	optionID1 := model.NewId()
-	optionID2 := model.NewId()
-	option1 := model.NewPluginPropertyOption(optionID1, "Option 1")
-	option2 := model.NewPluginPropertyOption(optionID2, "Option 2")
-
-	pf := &PropertyField{
-		PropertyField: model.PropertyField{
-			ID:         "field-id",
-			Name:       "Test Field",
-			Type:       model.PropertyFieldTypeSelect,
-			GroupID:    "group-id",
-			TargetType: "playbook",
-			TargetID:   "playbook-id",
-			CreateAt:   1234567890,
-			UpdateAt:   1234567891,
-		},
-		Attrs: Attrs{
-			Visibility: PropertyFieldVisibilityAlways,
-			SortOrder:  5.0,
-			Options:    model.PropertyOptions[*model.PluginPropertyOption]{option1, option2},
-			ParentID:   "parent-id",
-			ValueType:  "url",
-		},
+	baseField := model.PropertyField{
+		ID:         "field-id",
+		Name:       "Test Field",
+		Type:       model.PropertyFieldTypeSelect,
+		GroupID:    "group-id",
+		TargetType: "playbook",
+		TargetID:   "playbook-id",
+		CreateAt:   1234567890,
+		UpdateAt:   1234567891,
 	}
 
-	result := pf.ToMattermostPropertyField()
+	assertCommonAttrs := func(t *testing.T, result *model.PropertyField) {
+		t.Helper()
+		require.Equal(t, "field-id", result.ID)
+		require.Equal(t, "Test Field", result.Name)
+		require.Equal(t, model.PropertyFieldTypeSelect, result.Type)
+		require.Equal(t, "group-id", result.GroupID)
+		require.Equal(t, "playbook", result.TargetType)
+		require.Equal(t, "playbook-id", result.TargetID)
+		require.Equal(t, int64(1234567890), result.CreateAt)
+		require.Equal(t, int64(1234567891), result.UpdateAt)
+		require.Equal(t, PropertyFieldVisibilityAlways, result.Attrs[PropertyAttrsVisibility])
+		require.Equal(t, 5.0, result.Attrs[PropertyAttrsSortOrder])
+		require.Equal(t, "parent-id", result.Attrs[PropertyAttrsParentID])
+		require.Equal(t, "url", result.Attrs[PropertyAttrsValueType])
+	}
 
-	require.Equal(t, "field-id", result.ID)
-	require.Equal(t, "Test Field", result.Name)
-	require.Equal(t, model.PropertyFieldTypeSelect, result.Type)
-	require.Equal(t, "group-id", result.GroupID)
-	require.Equal(t, "playbook", result.TargetType)
-	require.Equal(t, "playbook-id", result.TargetID)
-	require.Equal(t, int64(1234567890), result.CreateAt)
-	require.Equal(t, int64(1234567891), result.UpdateAt)
+	t.Run("omits Options key when Options is nil", func(t *testing.T) {
+		pf := &PropertyField{
+			PropertyField: baseField,
+			Attrs: Attrs{
+				Visibility: PropertyFieldVisibilityAlways,
+				SortOrder:  5.0,
+				Options:    nil,
+				ParentID:   "parent-id",
+				ValueType:  "url",
+			},
+		}
 
-	// Check attrs
-	require.Equal(t, PropertyFieldVisibilityAlways, result.Attrs[PropertyAttrsVisibility])
-	require.Equal(t, 5.0, result.Attrs[PropertyAttrsSortOrder])
-	require.Equal(t, "parent-id", result.Attrs[PropertyAttrsParentID])
-	require.Equal(t, "url", result.Attrs[PropertyAttrsValueType])
+		result := pf.ToMattermostPropertyField()
+		assertCommonAttrs(t, result)
+		_, hasOptions := result.Attrs[model.PropertyFieldAttributeOptions]
+		require.False(t, hasOptions)
+	})
 
-	options, ok := result.Attrs[model.PropertyFieldAttributeOptions].(model.PropertyOptions[*model.PluginPropertyOption])
-	require.True(t, ok)
-	require.Len(t, options, 2)
-	require.Equal(t, optionID1, options[0].GetID())
-	require.Equal(t, "Option 1", options[0].GetName())
-	require.Equal(t, optionID2, options[1].GetID())
-	require.Equal(t, "Option 2", options[1].GetName())
+	t.Run("omits Options key when Options is empty", func(t *testing.T) {
+		pf := &PropertyField{
+			PropertyField: baseField,
+			Attrs: Attrs{
+				Visibility: PropertyFieldVisibilityAlways,
+				SortOrder:  5.0,
+				Options:    model.PropertyOptions[*model.PluginPropertyOption]{},
+				ParentID:   "parent-id",
+				ValueType:  "url",
+			},
+		}
+
+		result := pf.ToMattermostPropertyField()
+		assertCommonAttrs(t, result)
+		_, hasOptions := result.Attrs[model.PropertyFieldAttributeOptions]
+		require.False(t, hasOptions)
+	})
+
+	t.Run("includes Options when non-empty", func(t *testing.T) {
+		optionID1 := model.NewId()
+		optionID2 := model.NewId()
+		option1 := model.NewPluginPropertyOption(optionID1, "Option 1")
+		option2 := model.NewPluginPropertyOption(optionID2, "Option 2")
+
+		pf := &PropertyField{
+			PropertyField: baseField,
+			Attrs: Attrs{
+				Visibility: PropertyFieldVisibilityAlways,
+				SortOrder:  5.0,
+				Options:    model.PropertyOptions[*model.PluginPropertyOption]{option1, option2},
+				ParentID:   "parent-id",
+				ValueType:  "url",
+			},
+		}
+
+		result := pf.ToMattermostPropertyField()
+		assertCommonAttrs(t, result)
+
+		options, ok := result.Attrs[model.PropertyFieldAttributeOptions].(model.PropertyOptions[*model.PluginPropertyOption])
+		require.True(t, ok)
+		require.Len(t, options, 2)
+		require.Equal(t, optionID1, options[0].GetID())
+		require.Equal(t, "Option 1", options[0].GetName())
+		require.Equal(t, optionID2, options[1].GetID())
+		require.Equal(t, "Option 2", options[1].GetName())
+	})
 }
 
 func TestNewPropertyFieldFromMattermostPropertyField(t *testing.T) {
