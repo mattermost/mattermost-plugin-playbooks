@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {renderHook} from '@testing-library/react-hooks';
+import {renderHook, waitFor} from '@testing-library/react';
 import {MockedProvider} from '@apollo/client/testing';
 import {GraphQLError} from 'graphql';
 
@@ -156,7 +156,7 @@ describe('GraphQL Hooks Integration Tests', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybook(mockPlaybookID),
                 {wrapper}
             );
@@ -165,7 +165,9 @@ describe('GraphQL Hooks Integration Tests', () => {
             expect(result.current[1].loading).toBe(true);
             expect(result.current[0]).toBeUndefined();
 
-            await waitForNextUpdate();
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
 
             // After loading completes
             expect(result.current[1].loading).toBe(false);
@@ -199,12 +201,14 @@ describe('GraphQL Hooks Integration Tests', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybook(mockPlaybookID),
                 {wrapper}
             );
 
-            await waitForNextUpdate();
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
 
             expect(result.current[1].loading).toBe(false);
 
@@ -332,12 +336,14 @@ describe('GraphQL Hooks Integration Tests', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybook(mockPlaybookID),
                 {wrapper}
             );
 
-            await waitForNextUpdate();
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
 
             expect(result.current[1].loading).toBe(false);
 
@@ -359,12 +365,14 @@ describe('GraphQL Hooks Integration Tests', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybook(mockPlaybookID),
                 {wrapper}
             );
 
-            await waitForNextUpdate();
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
 
             expect(result.current[1].loading).toBe(false);
             expect(result.current[0]).toBeUndefined();
@@ -392,7 +400,7 @@ describe('GraphQL Hooks Integration Tests', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
                 {wrapper}
             );
@@ -401,7 +409,9 @@ describe('GraphQL Hooks Integration Tests', () => {
             expect(result.current[1].loading).toBe(true);
             expect(result.current[0]).toBeUndefined();
 
-            await waitForNextUpdate();
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
 
             // After loading completes
             expect(result.current[1].loading).toBe(false);
@@ -424,7 +434,7 @@ describe('GraphQL Hooks Integration Tests', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
                 {wrapper}
             );
@@ -432,7 +442,9 @@ describe('GraphQL Hooks Integration Tests', () => {
             // Initially loading
             expect(result.current[1].loading).toBe(true);
 
-            await waitForNextUpdate();
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
 
             // After error occurs
             expect(result.current[1].loading).toBe(false);
@@ -455,7 +467,7 @@ describe('GraphQL Hooks Integration Tests', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
                 {wrapper}
             );
@@ -463,7 +475,9 @@ describe('GraphQL Hooks Integration Tests', () => {
             // Initially loading
             expect(result.current[1].loading).toBe(true);
 
-            await waitForNextUpdate();
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
 
             // After network error occurs
             expect(result.current[1].loading).toBe(false);
@@ -580,12 +594,14 @@ describe('GraphQL Hooks Integration Tests', () => {
 
             const wrapper = createWrapper(mocks);
 
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybook(mockPlaybookID),
                 {wrapper}
             );
 
-            await waitForNextUpdate();
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
 
             expect(result.current[1].loading).toBe(false);
 

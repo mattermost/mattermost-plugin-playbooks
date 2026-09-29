@@ -6,6 +6,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -104,6 +105,688 @@ func TestToolCreatePlaybookFetchesCreatedPlaybookAndReturnsURL(t *testing.T) {
 	if decoded.PlaybookURL != "https://mattermost.example.com/playbooks/playbooks/abcdefghijklmnopqrstuvwxyz" {
 		t.Fatalf("unexpected playbook_url: %s", decoded.PlaybookURL)
 	}
+}
+
+func TestToolCreatePlaybookAttributePostsPropertyField(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		postMapResultSet: true,
+		postMapResult: map[string]any{
+			"id":        "bcdefghijklmnopqrstuvwxyza",
+			"name":      "Severity",
+			"type":      "select",
+			"create_at": float64(123),
+			"attrs": map[string]any{
+				"visibility": "always",
+			},
+		},
+	}
+
+	result, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		Name:       "  Severity  ",
+		Type:       "Select",
+		Attrs: &CreatePlaybookAttributeAttrs{
+			Visibility: "always",
+			SortOrder:  2,
+			Options: []CreatePlaybookAttributeOption{
+				{Name: "  High  ", Color: "red"},
+				{Name: "Low"},
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.postEndpoint)
+
+	body := client.postBody.(map[string]any)
+	assert.Equal(t, "Severity", body["name"])
+	assert.Equal(t, "select", body["type"])
+
+	attrs := body["attrs"].(map[string]any)
+	assert.Equal(t, "always", attrs["visibility"])
+	assert.Equal(t, float64(2), attrs["sort_order"])
+	options := attrs["options"].([]map[string]any)
+	require.Len(t, options, 2)
+	assert.Equal(t, map[string]any{"name": "High", "color": "red"}, options[0])
+	assert.Equal(t, map[string]any{"name": "Low"}, options[1])
+
+	var decoded map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result), &decoded))
+	assert.True(t, strings.HasPrefix(result, "{\n"))
+	assert.Contains(t, result, "\n  ")
+	assert.Equal(t, "bcdefghijklmnopqrstuvwxyza", decoded["id"])
+	assert.Equal(t, "Severity", decoded["name"])
+	assert.Equal(t, "select", decoded["type"])
+	assert.Equal(t, float64(123), decoded["create_at"])
+}
+
+func TestToolCreatePlaybookAttributePostsTextFieldAttrs(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	parentID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{}
+
+	_, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		Name:       "Runbook URL",
+		Type:       "text",
+		Attrs: &CreatePlaybookAttributeAttrs{
+			ParentID:  parentID,
+			ValueType: "url",
+		},
+	})
+	require.NoError(t, err)
+
+	body := client.postBody.(map[string]any)
+	attrs := body["attrs"].(map[string]any)
+	assert.Equal(t, parentID, attrs["parent_id"])
+	assert.Equal(t, "url", attrs["value_type"])
+	assert.NotContains(t, attrs, "options")
+}
+
+func TestToolCreatePlaybookAttributeWrapsPostErrors(t *testing.T) {
+	client := &fakeAPIClient{postErr: errors.New("boom")}
+
+	_, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+		PlaybookID: "abcdefghijklmnopqrstuvwxyz",
+		Name:       "Impact",
+		Type:       "text",
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create playbook attribute")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields", client.postEndpoint)
+}
+
+func TestToolCreatePlaybookAttributeRejectsEmptyOrUnidentifiedResponse(t *testing.T) {
+	tests := []struct {
+		name          string
+		postMapResult map[string]any
+		want          string
+	}{
+		{
+			name: "nil response",
+			want: "response was empty",
+		},
+		{
+			name:          "empty object",
+			postMapResult: map[string]any{},
+			want:          "response was empty",
+		},
+		{
+			name:          "missing id",
+			postMapResult: map[string]any{"name": "Impact", "type": "text"},
+			want:          "response missing id",
+		},
+		{
+			name:          "blank id",
+			postMapResult: map[string]any{"id": "   ", "name": "Impact"},
+			want:          "response missing id",
+		},
+		{
+			name:          "non-string id",
+			postMapResult: map[string]any{"id": float64(1), "name": "Impact"},
+			want:          "response missing id",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{
+				postMapResultSet: true,
+				postMapResult:    tt.postMapResult,
+			}
+
+			_, err := toolCreatePlaybookAttribute(context.Background(), client, CreatePlaybookAttributeArgs{
+				PlaybookID: "abcdefghijklmnopqrstuvwxyz",
+				Name:       "Impact",
+				Type:       "text",
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "failed to create playbook attribute")
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields", client.postEndpoint)
+		})
+	}
+}
+
+func TestToolCreatePlaybookAttributeRejectsInvalidInput(t *testing.T) {
+	tests := []struct {
+		name string
+		args CreatePlaybookAttributeArgs
+		want string
+	}{
+		{
+			name: "invalid playbook id",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "bad", Name: "Severity", Type: "text"},
+			want: "playbook_id must be a valid Mattermost ID",
+		},
+		{
+			name: "blank name",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: " ", Type: "text"},
+			want: "name is required",
+		},
+		{
+			name: "reserved name",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: " seq ", Type: "text"},
+			want: `name "seq" is reserved`,
+		},
+		{
+			name: "unsupported type",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity", Type: "checkbox"},
+			want: "type must be one of",
+		},
+		{
+			name: "select missing options",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity", Type: "select"},
+			want: "attrs.options is required for select attributes",
+		},
+		{
+			name: "multiselect empty options",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Tags", Type: "multiselect", Attrs: &CreatePlaybookAttributeAttrs{}},
+			want: "attrs.options is required for multiselect attributes",
+		},
+		{
+			name: "invalid visibility",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{Visibility: "sometimes"}},
+			want: "attrs.visibility must be one of",
+		},
+		{
+			name: "blank option name",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity", Type: "select", Attrs: &CreatePlaybookAttributeAttrs{Options: []CreatePlaybookAttributeOption{{Name: " "}}}},
+			want: "attrs.options[0].name is required",
+		},
+		{
+			name: "invalid parent id",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Severity detail", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{ParentID: "bad"}},
+			want: "attrs.parent_id must be a valid Mattermost ID",
+		},
+		{
+			name: "invalid value type",
+			args: CreatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", Name: "Link", Type: "text", Attrs: &CreatePlaybookAttributeAttrs{ValueType: "email"}},
+			want: "attrs.value_type must be url when provided",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolCreatePlaybookAttribute(context.Background(), client, tt.args)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Empty(t, client.postEndpoint)
+			assert.Empty(t, client.getEndpoint)
+			assert.Empty(t, client.putEndpoint)
+			assert.Empty(t, client.deleteEndpoint)
+		})
+	}
+}
+
+func TestToolUpdatePlaybookAttributePutsPropertyField(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		putMapResultSet: true,
+		putMapResult: map[string]any{
+			"id":   fieldID,
+			"name": "Priority",
+			"type": "multiselect",
+			"attrs": map[string]any{
+				"visibility": "always",
+			},
+		},
+	}
+
+	result, err := toolUpdatePlaybookAttribute(context.Background(), client, UpdatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		FieldID:    fieldID,
+		Name:       "  Priority  ",
+		Type:       "MultiSelect",
+		Attrs: &UpdatePlaybookAttributeAttrs{
+			Visibility: "always",
+			SortOrder:  3,
+			Options: []UpdatePlaybookAttributeOption{
+				{ID: "opt1234567890abcdefghijklm", Name: "  Blocker  ", Color: "red"},
+				{Name: "Normal"},
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/"+fieldID, client.putEndpoint)
+
+	body := client.putBody.(map[string]any)
+	assert.Equal(t, "Priority", body["name"])
+	assert.Equal(t, "multiselect", body["type"])
+
+	attrs := body["attrs"].(map[string]any)
+	assert.Equal(t, "always", attrs["visibility"])
+	assert.Equal(t, float64(3), attrs["sort_order"])
+	options := attrs["options"].([]map[string]any)
+	require.Len(t, options, 2)
+	assert.Equal(t, map[string]any{"id": "opt1234567890abcdefghijklm", "name": "Blocker", "color": "red"}, options[0])
+	assert.Equal(t, map[string]any{"name": "Normal"}, options[1])
+
+	var decoded map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result), &decoded))
+	assert.True(t, strings.HasPrefix(result, "{\n"))
+	assert.Contains(t, result, "\n  ")
+	assert.Equal(t, fieldID, decoded["id"])
+	assert.Equal(t, "Priority", decoded["name"])
+	assert.Equal(t, "multiselect", decoded["type"])
+}
+
+func TestToolUpdatePlaybookAttributeWrapsPutErrors(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{putErr: errors.New("boom")}
+
+	_, err := toolUpdatePlaybookAttribute(context.Background(), client, UpdatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		FieldID:    fieldID,
+		Name:       "Impact",
+		Type:       "text",
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to update playbook attribute")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/"+fieldID, client.putEndpoint)
+}
+
+func TestToolUpdatePlaybookAttributeRejectsEmptyOrUnidentifiedResponse(t *testing.T) {
+	tests := []struct {
+		name         string
+		putMapResult map[string]any
+		want         string
+	}{
+		{
+			name: "nil response",
+			want: "response was empty",
+		},
+		{
+			name:         "empty object",
+			putMapResult: map[string]any{},
+			want:         "response was empty",
+		},
+		{
+			name:         "missing id",
+			putMapResult: map[string]any{"name": "Impact", "type": "text"},
+			want:         "response missing id",
+		},
+		{
+			name:         "blank id",
+			putMapResult: map[string]any{"id": "   ", "name": "Impact"},
+			want:         "response missing id",
+		},
+		{
+			name:         "non-string id",
+			putMapResult: map[string]any{"id": float64(1), "name": "Impact"},
+			want:         "response missing id",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{
+				putMapResultSet: true,
+				putMapResult:    tt.putMapResult,
+			}
+
+			_, err := toolUpdatePlaybookAttribute(context.Background(), client, UpdatePlaybookAttributeArgs{
+				PlaybookID: "abcdefghijklmnopqrstuvwxyz",
+				FieldID:    "bcdefghijklmnopqrstuvwxyza",
+				Name:       "Impact",
+				Type:       "text",
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "failed to update playbook attribute")
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Equal(t, "playbooks/abcdefghijklmnopqrstuvwxyz/property_fields/bcdefghijklmnopqrstuvwxyza", client.putEndpoint)
+		})
+	}
+}
+
+func TestToolUpdatePlaybookAttributeRejectsInvalidInput(t *testing.T) {
+	tests := []struct {
+		name string
+		args UpdatePlaybookAttributeArgs
+		want string
+	}{
+		{
+			name: "invalid field id",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bad", Name: "Severity", Type: "text"},
+			want: "field_id must be a valid Mattermost ID",
+		},
+		{
+			name: "invalid playbook id",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "bad", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "text"},
+			want: "playbook_id must be a valid Mattermost ID",
+		},
+		{
+			name: "select missing options",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "select"},
+			want: "attrs.options is required for select attributes",
+		},
+		{
+			name: "blank name",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: " ", Type: "text"},
+			want: "name is required",
+		},
+		{
+			name: "reserved name",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: " owner ", Type: "text"},
+			want: `name "owner" is reserved`,
+		},
+		{
+			name: "unsupported type",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "checkbox"},
+			want: "type must be one of",
+		},
+		{
+			name: "invalid visibility",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "text", Attrs: &UpdatePlaybookAttributeAttrs{Visibility: "sometimes"}},
+			want: "attrs.visibility must be one of",
+		},
+		{
+			name: "blank option name",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity", Type: "select", Attrs: &UpdatePlaybookAttributeAttrs{Options: []UpdatePlaybookAttributeOption{{Name: " "}}}},
+			want: "attrs.options[0].name is required",
+		},
+		{
+			name: "invalid parent id",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Severity detail", Type: "text", Attrs: &UpdatePlaybookAttributeAttrs{ParentID: "bad"}},
+			want: "attrs.parent_id must be a valid Mattermost ID",
+		},
+		{
+			name: "invalid value type",
+			args: UpdatePlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", Name: "Link", Type: "text", Attrs: &UpdatePlaybookAttributeAttrs{ValueType: "email"}},
+			want: "attrs.value_type must be url when provided",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolUpdatePlaybookAttribute(context.Background(), client, tt.args)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Empty(t, client.postEndpoint)
+			assert.Empty(t, client.getEndpoint)
+			assert.Empty(t, client.putEndpoint)
+			assert.Empty(t, client.deleteEndpoint)
+		})
+	}
+}
+
+func TestToolReorderPlaybookAttributePostsReorderRequest(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority", "sort_order": float64(0)},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity", "sort_order": float64(1)},
+		},
+		postMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority", "sort_order": float64(0)},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity", "sort_order": float64(1)},
+		},
+	}
+
+	result, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        fieldID,
+		TargetPosition: 0,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/reorder", client.postEndpoint)
+	assert.Equal(t, map[string]any{"field_id": fieldID, "target_position": 0}, client.postBody)
+
+	var decoded []map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result), &decoded))
+	assert.True(t, strings.HasPrefix(result, "[\n"))
+	require.Len(t, decoded, 2)
+	assert.Equal(t, fieldID, decoded[0]["id"])
+	assert.Equal(t, "Priority", decoded[0]["name"])
+}
+
+func TestToolReorderPlaybookAttributeFormatsNilResponseAsEmptyList(t *testing.T) {
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority"},
+		},
+		postMapListResultSet: true,
+	}
+
+	result, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     "abcdefghijklmnopqrstuvwxyz",
+		FieldID:        fieldID,
+		TargetPosition: 0,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "[]", result)
+}
+
+func TestToolReorderPlaybookAttributeWrapsPostErrors(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority"},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity"},
+		},
+		postErr: errors.New("boom"),
+	}
+
+	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        fieldID,
+		TargetPosition: 1,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to reorder playbook attribute")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields/reorder", client.postEndpoint)
+}
+
+func TestToolReorderPlaybookAttributeWrapsListErrors(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{getErr: errors.New("boom")}
+
+	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        fieldID,
+		TargetPosition: 0,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to list playbook attributes")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+	assert.Empty(t, client.postEndpoint)
+}
+
+func TestToolReorderPlaybookAttributeRejectsUnknownFieldID(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Priority"},
+			{"id": "defghijklmnopqrstuvwxyzabc", "name": "Severity"},
+		},
+	}
+
+	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        "bcdefghijklmnopqrstuvwxyza",
+		TargetPosition: 0,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `field_id "bcdefghijklmnopqrstuvwxyza" not found in playbook `+playbookID)
+	assert.Contains(t, err.Error(), "Available attributes:")
+	assert.Contains(t, err.Error(), "[0] Priority (field_id: cdefghijklmnopqrstuvwxyzab)")
+	assert.Contains(t, err.Error(), "[1] Severity (field_id: defghijklmnopqrstuvwxyzabc)")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+	assert.Empty(t, client.postEndpoint)
+}
+
+func TestToolReorderPlaybookAttributeRejectsOutOfRangeTargetPosition(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{"id": fieldID, "name": "Priority"},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Severity"},
+		},
+	}
+
+	_, err := toolReorderPlaybookAttribute(context.Background(), client, ReorderPlaybookAttributeArgs{
+		PlaybookID:     playbookID,
+		FieldID:        fieldID,
+		TargetPosition: 2,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "target_position 2 is out of range for playbook "+playbookID)
+	assert.Contains(t, err.Error(), "Available attributes:")
+	assert.Contains(t, err.Error(), "[0] Priority (field_id: "+fieldID+")")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+	assert.Empty(t, client.postEndpoint)
+}
+
+func TestToolReorderPlaybookAttributeRejectsInvalidInput(t *testing.T) {
+	tests := []struct {
+		name string
+		args ReorderPlaybookAttributeArgs
+		want string
+	}{
+		{
+			name: "invalid playbook id",
+			args: ReorderPlaybookAttributeArgs{PlaybookID: "bad", FieldID: "bcdefghijklmnopqrstuvwxyza"},
+			want: "playbook_id must be a valid Mattermost ID",
+		},
+		{
+			name: "invalid field id",
+			args: ReorderPlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bad"},
+			want: "field_id must be a valid Mattermost ID",
+		},
+		{
+			name: "negative target position",
+			args: ReorderPlaybookAttributeArgs{PlaybookID: "abcdefghijklmnopqrstuvwxyz", FieldID: "bcdefghijklmnopqrstuvwxyza", TargetPosition: -1},
+			want: "target_position must be a non-negative integer",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeAPIClient{}
+			_, err := toolReorderPlaybookAttribute(context.Background(), client, tt.args)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+			assert.Empty(t, client.postEndpoint)
+			assert.Empty(t, client.getEndpoint)
+			assert.Empty(t, client.putEndpoint)
+			assert.Empty(t, client.deleteEndpoint)
+		})
+	}
+}
+
+func TestToolUpdatePlaybookAttributePreservesOptionIDs(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	fieldID := "bcdefghijklmnopqrstuvwxyza"
+	optionID := "opt1234567890abcdefghijklm"
+	client := &fakeAPIClient{
+		putMapResultSet: true,
+		putMapResult:    map[string]any{"id": fieldID, "name": "Severity", "type": "select"},
+	}
+
+	_, err := toolUpdatePlaybookAttribute(context.Background(), client, UpdatePlaybookAttributeArgs{
+		PlaybookID: playbookID,
+		FieldID:    fieldID,
+		Name:       "Severity",
+		Type:       "select",
+		Attrs: &UpdatePlaybookAttributeAttrs{
+			Options: []UpdatePlaybookAttributeOption{
+				{ID: optionID, Name: "High", Color: "red"},
+				{Name: "Low"},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	body := client.putBody.(map[string]any)
+	attrs := body["attrs"].(map[string]any)
+	options := attrs["options"].([]map[string]any)
+	require.Len(t, options, 2)
+	assert.Equal(t, map[string]any{"id": optionID, "name": "High", "color": "red"}, options[0])
+	assert.Equal(t, map[string]any{"name": "Low"}, options[1])
+}
+
+func TestToolListPlaybookAttributesGetsPropertyFields(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{
+		getMapListResultSet: true,
+		getMapListResult: []map[string]any{
+			{
+				"id":   "bcdefghijklmnopqrstuvwxyza",
+				"name": "Severity",
+				"type": "select",
+				"attrs": map[string]any{
+					"options": []any{
+						map[string]any{"id": "opt1234567890abcdefghijklm", "name": "High"},
+					},
+				},
+			},
+			{"id": "cdefghijklmnopqrstuvwxyzab", "name": "Owner", "type": "user"},
+		},
+	}
+
+	result, err := toolListPlaybookAttributes(context.Background(), client, ListPlaybookAttributesArgs{PlaybookID: playbookID})
+	require.NoError(t, err)
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+
+	var decoded []map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result), &decoded))
+	assert.True(t, strings.HasPrefix(result, "[\n"))
+	require.Len(t, decoded, 2)
+	assert.Equal(t, "bcdefghijklmnopqrstuvwxyza", decoded[0]["id"])
+	assert.Equal(t, "Severity", decoded[0]["name"])
+	assert.Equal(t, "cdefghijklmnopqrstuvwxyzab", decoded[1]["id"])
+}
+
+func TestToolListPlaybookAttributesFormatsNilResponseAsEmptyList(t *testing.T) {
+	client := &fakeAPIClient{getMapListResultSet: true}
+
+	result, err := toolListPlaybookAttributes(context.Background(), client, ListPlaybookAttributesArgs{
+		PlaybookID: "abcdefghijklmnopqrstuvwxyz",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "[]", result)
+}
+
+func TestToolListPlaybookAttributesWrapsGetErrors(t *testing.T) {
+	playbookID := "abcdefghijklmnopqrstuvwxyz"
+	client := &fakeAPIClient{getErr: errors.New("boom")}
+
+	_, err := toolListPlaybookAttributes(context.Background(), client, ListPlaybookAttributesArgs{PlaybookID: playbookID})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to list playbook attributes")
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, "playbooks/"+playbookID+"/property_fields", client.getEndpoint)
+}
+
+func TestToolListPlaybookAttributesRejectsInvalidPlaybookID(t *testing.T) {
+	client := &fakeAPIClient{}
+
+	_, err := toolListPlaybookAttributes(context.Background(), client, ListPlaybookAttributesArgs{PlaybookID: "bad"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "playbook_id must be a valid Mattermost ID")
+	assert.Empty(t, client.getEndpoint)
+	assert.Empty(t, client.postEndpoint)
+	assert.Empty(t, client.putEndpoint)
+	assert.Empty(t, client.deleteEndpoint)
 }
 
 func TestToolCreatePlaybookRejectsInvalidInput(t *testing.T) {

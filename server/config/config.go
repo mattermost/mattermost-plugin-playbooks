@@ -46,4 +46,7 @@ type Service interface {
 
 	// IsExperimentalFeaturesEnabled returns true when experimental features are enabled.
 	IsExperimentalFeaturesEnabled() bool
+
+	// IsTaskRequirementsEnabled returns true when the task requirements beta feature is enabled.
+	IsTaskRequirementsEnabled() bool
 }

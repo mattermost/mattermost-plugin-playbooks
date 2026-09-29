@@ -3,7 +3,7 @@
 
 import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
-import {DraggableProvided} from 'react-beautiful-dnd';
+import {DraggableProvided} from '@hello-pangea/dnd';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
@@ -136,7 +136,7 @@ const CollapsibleChecklist = ({
                 checklistIndex={index}
                 checklistTitle={title}
                 onRenameChecklist={() => setIsRenaming(true)}
-                dragHandleProps={draggableProvided?.dragHandleProps}
+                dragHandleProps={draggableProvided?.dragHandleProps ?? undefined}
                 isChecklistSkipped={isChecklistSkipped}
                 onDuplicateChecklist={() => onDuplicateChecklist(index)}
                 onDeleteChecklist={() => onDeleteChecklist(index)}

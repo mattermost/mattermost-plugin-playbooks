@@ -52,8 +52,11 @@ if (targetIsDevServer) {
     plugins.push(new ReactRefreshWebpackPlugin());
 }
 
+const [windowExternals, sharedCallback] = webAppExternals();
+
 let config = {
     entry: [
+        './src/jsx_runtime_shim.ts',
         './src/index.tsx',
     ],
     resolve: {
@@ -113,7 +116,15 @@ let config = {
             },
         ],
     },
-    externals: webAppExternals(),
+    externals: [
+        {
+            ...windowExternals,
+            'react-dom/client': 'ReactDOM',
+            'react/jsx-runtime': 'ReactJSXRuntime',
+            'react/jsx-dev-runtime': 'ReactJSXDevRuntime',
+        },
+        sharedCallback,
+    ],
     output: {
         devtoolNamespace: PLUGIN_ID,
         path: path.join(__dirname, '/dist'),

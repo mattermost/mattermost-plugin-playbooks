@@ -1374,6 +1374,31 @@ func GetTopPlaybooksInsightsListWithPagination(playbooks []*app.PlaybookInsight,
 	return &app.PlaybooksInsightsList{HasNext: hasNext, Items: playbooks}
 }
 
+// GetTeamPlaybookSchemeRoles returns the playbook role names configured by the team's scheme.
+// Mirrors the COALESCE in playbookSelect so a team with no scheme resolves to the built-in roles.
+func (p *playbookStore) GetTeamPlaybookSchemeRoles(teamID string) (app.PlaybookSchemeRoles, error) {
+	if teamID == "" {
+		return app.PlaybookSchemeRoles{}, errors.New("teamID cannot be empty")
+	}
+
+	var roles app.PlaybookSchemeRoles
+	err := p.store.getBuilder(p.store.db, &roles, p.queryBuilder.
+		Select(
+			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') AdminRole",
+			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') MemberRole",
+		).
+		From("Teams t").
+		LeftJoin("Schemes s ON t.SchemeId = s.Id").
+		Where(sq.Eq{"t.Id": teamID}))
+	if errors.Is(err, sql.ErrNoRows) {
+		return app.PlaybookSchemeRoles{}, errors.Wrapf(app.ErrNotFound, "team does not exist for teamID '%s'", teamID)
+	} else if err != nil {
+		return app.PlaybookSchemeRoles{}, errors.Wrapf(err, "failed to get playbook scheme roles for team '%s'", teamID)
+	}
+
+	return roles, nil
+}
+
 // BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
 func (p *playbookStore) BumpPlaybookUpdatedAt(playbookID string) error {
 	if _, err := p.store.execBuilder(p.store.db, sq.

@@ -112,11 +112,19 @@ input ChecklistItemUpdates {
 	assigneeModified: Float!
 	assigneeType: String
 	assigneePropertyFieldID: String
+	assigneeOnlyComplete: Boolean
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
 	taskActions: [TaskActionUpdates!]
 	conditionID: String!
+	requirements: [TaskRequirementUpdates!]
+}
+
+input TaskRequirementUpdates {
+	id: String!
+	label: String!
+	value: String!
 }
 
 input TaskActionUpdates {
@@ -207,6 +215,7 @@ type ChecklistItem {
 	assigneeType: String!
 	assigneePropertyFieldID: String!
 	assigneeModified: Float!
+	assigneeOnlyComplete: Boolean!
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
@@ -214,6 +223,13 @@ type ChecklistItem {
 	conditionID: String!
 	conditionAction: String!
 	conditionReason: String!
+	requirements: [TaskRequirement!]!
+}
+
+type TaskRequirement {
+	id: String!
+	label: String!
+	value: String!
 }
 
 type TaskAction {

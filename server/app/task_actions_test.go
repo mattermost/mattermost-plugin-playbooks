@@ -106,3 +106,22 @@ func TestTaskActionTriggers(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateRequirementsExclusiveOfTaskActions(t *testing.T) {
+	enabledActions := []TaskAction{{
+		Trigger: Trigger{Type: KeywordsByUsersTriggerType, Payload: `{"keywords":["resolved"],"user_ids":[]}`},
+		Actions: []Action{{Type: MarkItemAsDoneActionType, Payload: `{"enabled":true}`}},
+	}}
+	disabledActions := []TaskAction{{
+		Trigger: Trigger{Type: KeywordsByUsersTriggerType, Payload: `{"keywords":["resolved"],"user_ids":[]}`},
+		Actions: []Action{{Type: MarkItemAsDoneActionType, Payload: `{"enabled":false}`}},
+	}}
+	requirements := []TaskRequirement{{ID: "req-1", Label: "Ticket URL"}}
+
+	require.NoError(t, ValidateRequirementsExclusiveOfTaskActions(nil, enabledActions))
+	require.NoError(t, ValidateRequirementsExclusiveOfTaskActions(requirements, nil))
+	require.NoError(t, ValidateRequirementsExclusiveOfTaskActions(requirements, disabledActions))
+	require.Error(t, ValidateRequirementsExclusiveOfTaskActions(requirements, enabledActions))
+	require.True(t, HasEnabledMarkItemAsDoneAction(enabledActions))
+	require.False(t, HasEnabledMarkItemAsDoneAction(disabledActions))
+}

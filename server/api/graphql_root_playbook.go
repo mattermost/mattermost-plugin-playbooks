@@ -19,6 +19,12 @@ import (
 type PlaybookRootResolver struct {
 }
 
+// maxPlaybooksPerPage bounds a single playbook listing. The query takes no
+// pagination arguments, so this is the whole listing, and playbooks are hydrated
+// with their full checklists: the previous 10000 record page was larger than a
+// whole request is allowed to hydrate, leaving the request budget unenforceable.
+const maxPlaybooksPerPage = 1000
+
 func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -30,8 +36,13 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 		return nil, err
 	}
 
+	if err = c.recordBudget.reserve(1); err != nil {
+		return nil, err
+	}
+
 	playbook, err := c.playbookService.Get(playbookID)
 	if err != nil {
+		c.recordBudget.release(1)
 		return nil, err
 	}
 
@@ -83,13 +94,19 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 		WithArchived:       args.WithArchived,
 		WithMembershipOnly: isGuest || args.WithMembershipOnly, // Guests can only see playbooks if they are invited to them
 		Page:               0,
-		PerPage:            10000,
+		PerPage:            maxPlaybooksPerPage,
+	}
+
+	if err = c.recordBudget.reserve(maxPlaybooksPerPage); err != nil {
+		return nil, err
 	}
 
 	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
 	if err != nil {
+		c.recordBudget.release(maxPlaybooksPerPage)
 		return nil, err
 	}
+	c.recordBudget.release(maxPlaybooksPerPage - len(playbookResults.Items))
 
 	filteredItems := c.permissions.FilterPlaybooksByViewPermission(userID, playbookResults.Items)
 
@@ -307,6 +324,12 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		app.CleanUpChecklists(*args.Updates.Checklists)
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
 			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
+		}
+		if err := validateUpdateTaskRequirements(*args.Updates.Checklists); err != nil {
+			return "", errors.Wrapf(err, "failed to validate checklist item requirements for playbook id: '%s'", args.ID)
+		}
+		if err := validateUpdateRequirementsExclusiveOfTaskActions(*args.Updates.Checklists); err != nil {
+			return "", errors.Wrapf(err, "failed to validate checklist item exclusivity for playbook id: '%s'", args.ID)
 		}
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
@@ -552,6 +575,39 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 						}
 					}
 				}
+			}
+		}
+	}
+	return nil
+}
+
+func validateUpdateRequirementsExclusiveOfTaskActions(checklists []UpdateChecklist) error {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			var requirements []app.TaskRequirement
+			if item.Requirements != nil {
+				requirements = *item.Requirements
+			}
+			var taskActions []app.TaskAction
+			if item.TaskActions != nil {
+				taskActions = *item.TaskActions
+			}
+			if err := app.ValidateRequirementsExclusiveOfTaskActions(requirements, taskActions); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateUpdateTaskRequirements(checklists []UpdateChecklist) error {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			if item.Requirements == nil {
+				continue
+			}
+			if err := app.ValidateTaskRequirements(*item.Requirements); err != nil {
+				return err
 			}
 		}
 	}

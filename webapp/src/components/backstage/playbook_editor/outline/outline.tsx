@@ -349,13 +349,11 @@ const SectionsImpl = ({
     'data-testid': dataTestId,
 }: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
-        if (
-            React.isValidElement(node) &&
-            node.props.id &&
-            node.props.title &&
-            node.props.children
-        ) {
-            const {id, title} = node.props;
+        if (!React.isValidElement<SectionItem & {children?: ReactNode}>(node)) {
+            return result;
+        }
+        const {id, title, children: sectionChildren} = node.props;
+        if (id && title && sectionChildren) {
             result.push({id, title});
         }
         return result;

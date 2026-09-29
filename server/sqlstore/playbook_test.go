@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -2610,5 +2611,59 @@ func TestAutoArchiveChannelRoundTrip(t *testing.T) {
 
 		assert.False(t, updated.AutoArchiveChannel)
 		assert.False(t, updated.RetrospectiveEnabled)
+	})
+}
+
+func TestGetTeamPlaybookSchemeRoles(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+	store := setupSQLStore(t, db)
+
+	t.Run("team with no scheme falls back to the built-in playbook roles", func(t *testing.T) {
+		_, err := store.execBuilder(store.db, sq.
+			Insert("Teams").
+			SetMap(map[string]interface{}{
+				"ID": "team_no_scheme",
+			}))
+		require.NoError(t, err)
+
+		roles, err := playbookStore.GetTeamPlaybookSchemeRoles("team_no_scheme")
+		require.NoError(t, err)
+		require.Equal(t, app.PlaybookRoleAdmin, roles.AdminRole)
+		require.Equal(t, app.PlaybookRoleMember, roles.MemberRole)
+	})
+
+	t.Run("team with an override scheme returns the scheme's playbook roles", func(t *testing.T) {
+		_, err := store.execBuilder(store.db, sq.
+			Insert("Schemes").
+			SetMap(map[string]interface{}{
+				"ID":                        "scheme_pb",
+				"DefaultPlaybookAdminRole":  "custom_pb_admin",
+				"DefaultPlaybookMemberRole": "custom_pb_member",
+			}))
+		require.NoError(t, err)
+
+		_, err = store.execBuilder(store.db, sq.
+			Insert("Teams").
+			SetMap(map[string]interface{}{
+				"ID":       "team_with_scheme",
+				"SchemeId": "scheme_pb",
+			}))
+		require.NoError(t, err)
+
+		roles, err := playbookStore.GetTeamPlaybookSchemeRoles("team_with_scheme")
+		require.NoError(t, err)
+		require.Equal(t, "custom_pb_admin", roles.AdminRole)
+		require.Equal(t, "custom_pb_member", roles.MemberRole)
+	})
+
+	t.Run("unknown team is reported as not found", func(t *testing.T) {
+		_, err := playbookStore.GetTeamPlaybookSchemeRoles("team_does_not_exist")
+		require.ErrorIs(t, err, app.ErrNotFound)
+	})
+
+	t.Run("empty teamID is rejected", func(t *testing.T) {
+		_, err := playbookStore.GetTeamPlaybookSchemeRoles("")
+		require.Error(t, err)
 	})
 }

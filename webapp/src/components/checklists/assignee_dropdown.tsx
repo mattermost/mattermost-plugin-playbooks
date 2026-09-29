@@ -4,6 +4,7 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
@@ -16,13 +17,16 @@ import {
 } from 'src/types/playbook';
 
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
+import {AssigneeOnlyCompleteControl} from 'src/components/checklist_item/assignee_only_complete_control';
 
 const ROLE_NONE = 'none';
 
 interface Props {
     checklistItem: ChecklistItem;
     editable: boolean;
+    disabledReason?: string;
     onChanged: (item: ChecklistItem) => void;
+    onAssigneeMenuOpenChange?: (isOpen: boolean) => void;
     participantUserIds: string[];
     runOwnerUserId?: string;
     runCreatorUserId?: string;
@@ -31,7 +35,7 @@ interface Props {
     propertyValues?: PropertyValue[];
 }
 
-const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserIds, runOwnerUserId, runCreatorUserId, mode, propertyFields, propertyValues}: Props) => {
+const AssigneeDropdown = ({checklistItem, editable, disabledReason, onChanged, onAssigneeMenuOpenChange, participantUserIds, runOwnerUserId, runCreatorUserId, mode, propertyFields, propertyValues}: Props) => {
     const {formatMessage} = useIntl();
     const profilesInTeam = useProfilesInTeam();
     const [pendingPropertyUser, setPendingPropertyUser] = useState<boolean>(false);
@@ -55,6 +59,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             assignee_type: value === ROLE_NONE ? '' : value,
             assignee_id: '',
             assignee_property_field_id: '',
+            assignee_only_complete: value === ROLE_NONE ? false : checklistItem.assignee_only_complete,
         });
     }, [checklistItem, onChanged]);
 
@@ -65,6 +70,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             assignee_type: fieldId ? AssigneeTypePropertyUser : '',
             assignee_id: '',
             assignee_property_field_id: fieldId,
+            assignee_only_complete: fieldId ? checklistItem.assignee_only_complete : false,
         });
     }, [checklistItem, onChanged]);
 
@@ -77,6 +83,14 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             assignee_type: '',
             assignee_id: user?.id ?? '',
             assignee_property_field_id: '',
+            assignee_only_complete: user?.id ? checklistItem.assignee_only_complete : false,
+        });
+    }, [checklistItem, onChanged]);
+
+    const handleAssigneeOnlyCompleteChange = useCallback((value: boolean) => {
+        onChanged({
+            ...checklistItem,
+            assignee_only_complete: value,
         });
     }, [checklistItem, onChanged]);
 
@@ -122,14 +136,36 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
         return (
             <Container>
+                {disabledReason && (
+                    <DisabledReasonBanner data-testid='assignee-locked-reason'>
+                        {disabledReason}
+                    </DisabledReasonBanner>
+                )}
                 {resolvedUserId && (
-                    <CompactProfileSelector
-                        selectedUserId={resolvedUserId}
-                        placeholder={formatMessage({defaultMessage: 'Assignee...'})}
-                        enableEdit={false}
-                        getAllUsers={getAllUsersInTeam}
-                        selfIsFirstOption={false}
-                    />
+                    disabledReason ? (
+                        <WithTooltip
+                            id='assignee-locked-editor-tooltip'
+                            title={disabledReason}
+                        >
+                            <span>
+                                <CompactProfileSelector
+                                    selectedUserId={resolvedUserId}
+                                    placeholder={formatMessage({defaultMessage: 'Assignee...'})}
+                                    enableEdit={false}
+                                    getAllUsers={getAllUsersInTeam}
+                                    selfIsFirstOption={false}
+                                />
+                            </span>
+                        </WithTooltip>
+                    ) : (
+                        <CompactProfileSelector
+                            selectedUserId={resolvedUserId}
+                            placeholder={formatMessage({defaultMessage: 'Assignee...'})}
+                            enableEdit={false}
+                            getAllUsers={getAllUsersInTeam}
+                            selfIsFirstOption={false}
+                        />
+                    )
                 )}
                 <RoleBadge data-testid={badgeTestId}>
                     {badgeLabel}
@@ -140,21 +176,57 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
     return (
         <Container>
+            {!editable && disabledReason && (
+                <DisabledReasonBanner data-testid='assignee-locked-reason'>
+                    {disabledReason}
+                </DisabledReasonBanner>
+            )}
             <SectionLabel>{formatMessage({defaultMessage: 'ASSIGN TO A PERSON'})}</SectionLabel>
-            <ProfileSelector
-                testId={'assignee-profile-selector'}
-                selectedUserId={checklistItem.assignee_id}
-                placeholder={formatMessage({defaultMessage: 'Assignee...'})}
-                enableEdit={editable}
-                getAllUsers={getAllUsersInTeam}
-                onSelectedChange={handleUserSelect}
-                selfIsFirstOption={true}
-                userGroups={{
-                    subsetUserIds: participantUserIds,
-                    defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
-                    subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
-                }}
-            />
+            {!editable && disabledReason ? (
+                <WithTooltip
+                    id='assignee-locked-editor-tooltip'
+                    title={disabledReason}
+                >
+                    <span>
+                        <ProfileSelector
+                            testId={'assignee-profile-selector'}
+                            selectedUserId={checklistItem.assignee_id}
+                            placeholder={formatMessage({defaultMessage: 'Assignee...'})}
+                            enableEdit={false}
+                            getAllUsers={getAllUsersInTeam}
+                            onSelectedChange={handleUserSelect}
+                            selfIsFirstOption={true}
+                            userGroups={{
+                                subsetUserIds: participantUserIds,
+                                defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                                subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
+                            }}
+                        />
+                    </span>
+                </WithTooltip>
+            ) : (
+                <ProfileSelector
+                    testId={'assignee-profile-selector'}
+                    selectedUserId={checklistItem.assignee_id}
+                    placeholder={formatMessage({defaultMessage: 'Assignee...'})}
+                    enableEdit={editable}
+                    getAllUsers={getAllUsersInTeam}
+                    onSelectedChange={handleUserSelect}
+                    selfIsFirstOption={true}
+                    userGroups={{
+                        subsetUserIds: participantUserIds,
+                        defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                        subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
+                    }}
+                    customControl={editable ? AssigneeOnlyCompleteControl : undefined}
+                    customControlProps={editable ? {
+                        showAssigneeOnlyComplete: true,
+                        assigneeOnlyComplete: Boolean(checklistItem.assignee_only_complete),
+                        onAssigneeOnlyCompleteChange: handleAssigneeOnlyCompleteChange,
+                    } : undefined}
+                    onOpenChange={onAssigneeMenuOpenChange}
+                />
+            )}
             <Divider/>
             <SectionLabel>{formatMessage({defaultMessage: 'ASSIGN TO A ROLE'})}</SectionLabel>
             <SelectWrapper>
@@ -206,6 +278,16 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     gap: 4px;
+`;
+
+const DisabledReasonBanner = styled.div`
+    margin: 0 8px 4px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 12px;
+    line-height: 16px;
 `;
 
 const SectionLabel = styled.div`

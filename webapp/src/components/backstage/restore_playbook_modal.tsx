@@ -19,7 +19,7 @@ type Props = {id: string; title: string};
 const useConfirmPlaybookRestoreModal = (restorePlaybook: (id: Playbook['id']) => void) : [React.ReactNode, (context: Props, callback?: () => void) => void] => {
     const {formatMessage} = useIntl();
     const [open, setOpen] = useState(false);
-    const cbRef = useRef<() => void>();
+    const cbRef = useRef<(() => void) | undefined>(undefined);
     const [showBanner, setShowBanner] = useState(false);
     const [context, setContext] = useState<Props | null>(null);
     const refreshLHS = useLHSRefresh();

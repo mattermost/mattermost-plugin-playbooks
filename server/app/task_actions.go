@@ -152,3 +152,34 @@ func ValidateAction(a Action) error {
 		return errors.Errorf("Unknown task action type: %s", a.Type)
 	}
 }
+
+// HasEnabledMarkItemAsDoneAction reports whether any mark-as-done task action is enabled.
+func HasEnabledMarkItemAsDoneAction(taskActions []TaskAction) bool {
+	for _, ta := range taskActions {
+		for _, a := range ta.Actions {
+			if a.Type != MarkItemAsDoneActionType {
+				continue
+			}
+			action, err := NewMarkItemAsDoneAction(a)
+			if err != nil {
+				continue
+			}
+			if action.Payload.Enabled {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// ValidateRequirementsExclusiveOfTaskActions ensures task requirements and
+// mark-as-done message triggers are not both configured on the same item.
+func ValidateRequirementsExclusiveOfTaskActions(requirements []TaskRequirement, taskActions []TaskAction) error {
+	if len(requirements) == 0 {
+		return nil
+	}
+	if HasEnabledMarkItemAsDoneAction(taskActions) {
+		return errors.New("task requirements and mark-as-done message triggers are mutually exclusive")
+	}
+	return nil
+}

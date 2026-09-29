@@ -11,7 +11,7 @@ import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 interface CheckBoxButtonProps {
-    onChange: (item: ChecklistItemState) => undefined | Promise<void | {error: ClientError}>;
+    onChange: (item: ChecklistItemState) => undefined | Promise<void | {error?: ClientError; cancelled?: boolean}>;
     item: ChecklistItem;
     readOnly: boolean;//when true, component can receive events, but can't be modified.
     disabled?: boolean;
@@ -41,7 +41,7 @@ export const CheckBoxButton = (props: CheckBoxButtonProps) => {
         const newValue = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
         setIsChecked(!isChecked);
         const res = await props.onChange(newValue);
-        if (res?.error) {
+        if (res?.error || res?.cancelled) {
             setIsChecked(isChecked);
         }
     };

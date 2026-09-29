@@ -57,6 +57,9 @@ export const clientId = (state: GlobalState): string => pluginState(state).clien
 
 export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
 
+export const selectTaskRequirementsEnabled = (state: GlobalState): boolean =>
+    Boolean(globalSettings(state)?.enable_task_requirements);
+
 /**
  * @returns runs indexed by playbookRunId->playbookRun
  */
@@ -75,7 +78,7 @@ export const myPlaybookRunsByTeam = (state: GlobalState) => pluginState(state).m
 export const getRun = (playbookRunId: string, teamId?: string, channelId?: string) => {
     return (state: GlobalState) => {
         const runsByTeam = myPlaybookRunsByTeam(state);
-        if (teamId && channelId) {
+        if (teamId !== undefined && channelId) {
             return runsByTeam[teamId]?.[channelId];
         }
         return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === playbookRunId);

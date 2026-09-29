@@ -37,6 +37,7 @@ func NewSettingsHandler(router *mux.Router, api *pluginapi.Client, configService
 func (h *SettingsHandler) getSettings(w http.ResponseWriter, r *http.Request) {
 	settings := client.GlobalSettings{
 		EnableExperimentalFeatures: h.config.IsExperimentalFeaturesEnabled(),
+		EnableTaskRequirements:     h.config.IsTaskRequirementsEnabled(),
 	}
 
 	ReturnJSON(w, &settings, http.StatusOK)

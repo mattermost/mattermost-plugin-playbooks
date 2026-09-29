@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {renderHook} from '@testing-library/react-hooks';
+import {renderHook} from '@testing-library/react';
 import {getProfilesByIds, getProfilesInTeam} from 'mattermost-redux/actions/users';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';

@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 
 Cypress.Commands.add('uiGetProductMenuButton', () => {
-    return cy.findByRole('button', {name: 'Product switch menu'}).should('be.visible');
+    return cy.findByRole('button', {name: 'Open product menu'}).should('be.visible');
 });
 
 Cypress.Commands.add('uiGetProductMenu', () => {
-    return cy.get('.product-switcher-menu').should('be.visible');
+    return cy.findByRole('menu', {name: 'Product menu'}).should('be.visible');
 });
 
 Cypress.Commands.add('uiOpenProductMenu', (item = '') => {

@@ -217,5 +217,22 @@ describe('websocket event actions', () => {
             // State should remain unchanged
             expect(newState).toEqual(state);
         });
+
+        it('should update DM/GM runs with empty team_id via incremental update', () => {
+            const dmRun = {...testPlaybookRun, team_id: '', channel_id: 'dm_channel_1'};
+            const state = makeStateWithRun(dmRun);
+            const action = websocketPlaybookRunIncrementalUpdateReceived({
+                id: dmRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    name: 'DM Updated Name',
+                },
+            });
+
+            // @ts-ignore
+            const newState = reducer(state, action);
+
+            expect(newState.myPlaybookRunsByTeam['']!.dm_channel_1.name).toBe('DM Updated Name');
+        });
     });
 });

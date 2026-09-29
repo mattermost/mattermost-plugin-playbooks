@@ -127,10 +127,12 @@ func NewPlaybookRunHandler(
 		checklistItem.HandleFunc("/restore", withContext(handler.itemRestore)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/state", withContext(handler.itemSetState)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/assignee_only_complete", withContext(handler.itemSetAssigneeOnlyComplete)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
 		checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
 		checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/fill-requirements-dialog", withContext(handler.fillRequirementsDialog)).Methods(http.MethodPost)
 	}
 
 	registerChecklistItemRoutes(checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter())
@@ -253,7 +255,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
-	h.poster.PublishWebsocketEventToChannel(app.PlaybookRunCreatedWSEvent, map[string]interface{}{"playbook_run": playbookRun}, playbookRun.ChannelID)
+	h.poster.PublishWebsocketEventToChannelReliable(app.PlaybookRunCreatedWSEvent, map[string]interface{}{"playbook_run": playbookRun}, playbookRun.ChannelID)
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
 	ReturnJSON(w, &playbookRun, http.StatusCreated)
@@ -411,7 +413,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	go func() {
 		time.Sleep(1 * time.Second) // arbitrary 1 second magic number
 
-		h.poster.PublishWebsocketEventToChannel(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
+		h.poster.PublishWebsocketEventToChannelReliable(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
 			"client_id":    state.ClientID,
 			"playbook_run": playbookRun,
 			"channel_name": channel.Name,
@@ -1464,7 +1466,8 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		NewState string `json:"new_state"`
+		NewState          string            `json:"new_state"`
+		RequirementValues map[string]string `json:"requirement_values"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
@@ -1476,7 +1479,20 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 		return
 	}
 
-	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
+	var opts []app.ModifyCheckedStateOptions
+	if params.RequirementValues != nil {
+		opts = append(opts, app.ModifyCheckedStateOptions{RequirementValues: params.RequirementValues})
+	}
+
+	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, opts...); err != nil {
+		if errors.Is(err, app.ErrAssigneeOnlyComplete) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee can complete this task", err)
+			return
+		}
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to modify checklist item state", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1536,7 +1552,9 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 			return
 		}
 		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
-			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			} else {
 				h.HandleError(w, c.logger, err)
@@ -1545,7 +1563,9 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 		}
 	case params.AssigneeType != "":
 		if err := h.playbookRunService.SetRoleAssignee(id, userID, params.AssigneeType, checklistNum, itemNum); err != nil {
-			if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else if errors.Is(err, app.ErrMalformedPlaybookRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			} else {
 				h.HandleError(w, c.logger, err)
@@ -1555,9 +1575,52 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	default:
 		// Empty body / empty assignee_id keeps the existing "clear assignee" semantics.
 		if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
-			h.HandleError(w, c.logger, err)
+			if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
 			return
 		}
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) itemSetAssigneeOnlyComplete(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		AssigneeOnlyComplete bool `json:"assignee_only_complete"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetAssigneeOnlyComplete(id, userID, checklistNum, itemNum, params.AssigneeOnlyComplete); err != nil {
+		if errors.Is(err, app.ErrAssigneeOnlyChangeAssignee) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee or run owner can change the assignee of this task", err)
+			return
+		}
+		if errors.Is(err, app.ErrAssigneeRequiredForLock) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assign someone before locking this task", err)
+			return
+		}
+		h.HandleError(w, c.logger, err)
+		return
 	}
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
@@ -1653,7 +1716,11 @@ func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.
 
 	triggerID, err := h.playbookRunService.RunChecklistItemSlashCommand(playbookRunID, userID, checklistNum, itemNum)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		if errors.Is(err, app.ErrNoPermissions) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+		} else {
+			h.HandleError(w, c.logger, err)
+		}
 		return
 	}
 
@@ -1708,6 +1775,10 @@ func (h *PlaybookRunHandler) addChecklist(c *Context, w http.ResponseWriter, r *
 	}
 
 	if err := h.playbookRunService.AddChecklist(id, userID, checklist); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid checklist", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1775,6 +1846,10 @@ func (h *PlaybookRunHandler) addChecklistItem(c *Context, w http.ResponseWriter,
 	}
 
 	if err := h.playbookRunService.AddChecklistItem(id, userID, checklistNum, checklistItem); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid checklist item", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1826,12 +1901,81 @@ func (h *PlaybookRunHandler) addChecklistItemDialog(c *Context, w http.ResponseW
 	}
 
 	if err := h.playbookRunService.AddChecklistItem(playbookRunID, userID, checklistNum, checklistItem); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid checklist item", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 
+}
+
+// fillRequirementsDialog handles interactive dialog submission for filling task requirements
+// from slash commands and marking the checklist item complete.
+func (h *PlaybookRunHandler) fillRequirementsDialog(c *Context, w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+
+	var request *model.SubmitDialogRequest
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil || request == nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
+		return
+	}
+
+	if userID != request.UserId {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+	if !app.IsValidChecklistItemIndex(playbookRun.Checklists, checklistNum, itemNum) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid checklist item indices", nil)
+		return
+	}
+
+	requirementValues := make(map[string]string, len(playbookRun.Checklists[checklistNum].Items[itemNum].Requirements))
+	for _, req := range playbookRun.Checklists[checklistNum].Items[itemNum].Requirements {
+		if raw, ok := request.Submission[req.ID].(string); ok {
+			requirementValues[req.ID] = strings.TrimSpace(raw)
+		}
+	}
+
+	if err := h.playbookRunService.ModifyCheckedState(
+		playbookRunID,
+		userID,
+		app.ChecklistItemStateClosed,
+		checklistNum,
+		itemNum,
+		app.ModifyCheckedStateOptions{RequirementValues: requirementValues},
+	); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to complete task requirements", err)
+			return
+		}
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) itemDelete(c *Context, w http.ResponseWriter, r *http.Request) {
