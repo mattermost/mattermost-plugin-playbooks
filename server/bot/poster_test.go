@@ -190,26 +190,25 @@ func TestPublishWebsocketEventPayloadMarshalled(t *testing.T) {
 func TestBotSkipsEmptyPosts(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		call func(t *testing.T, b *Bot, api *plugintest.API) error
+		call func(t *testing.T, b *Bot, api *plugintest.API) (*model.Post, error)
 	}{
 		{
 			name: "PostMessage empty string",
-			call: func(t *testing.T, b *Bot, api *plugintest.API) error {
-				_, err := b.PostMessage("channel-id", "")
-				return err
+			call: func(t *testing.T, b *Bot, api *plugintest.API) (*model.Post, error) {
+				return b.PostMessage("channel-id", "")
 			},
 		},
 		{
 			name: "DM whitespace only",
-			call: func(t *testing.T, b *Bot, api *plugintest.API) error {
+			call: func(t *testing.T, b *Bot, api *plugintest.API) (*model.Post, error) {
 				api.On("GetDirectChannel", "user-id", "bot-user-id").Return(&model.Channel{Id: "dm-channel-id"}, nil).Once()
-				return b.DM("user-id", &model.Post{Message: " \n\t "})
+				return nil, b.DM("user-id", &model.Post{Message: " \n\t "})
 			},
 		},
 		{
 			name: "custom post action-only attachment",
-			call: func(t *testing.T, b *Bot, api *plugintest.API) error {
-				_, err := b.PostCustomMessageWithAttachments("channel-id", "custom_type", []*model.MessageAttachment{
+			call: func(t *testing.T, b *Bot, api *plugintest.API) (*model.Post, error) {
+				return b.PostCustomMessageWithAttachments("channel-id", "custom_type", []*model.MessageAttachment{
 					{
 						Text: "\n\n---\n\n",
 						Actions: []*model.PostAction{{
@@ -218,14 +217,21 @@ func TestBotSkipsEmptyPosts(t *testing.T) {
 						}},
 					},
 				}, "")
-				return err
+			},
+		},
+		{
+			name: "PostCustomMessageWithAttachmentsf empty format",
+			call: func(t *testing.T, b *Bot, api *plugintest.API) (*model.Post, error) {
+				return b.PostCustomMessageWithAttachmentsf("channel-id", "custom_type", nil, "   ")
 			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			b, api := newPosterForTest(t)
 
-			require.NoError(t, tc.call(t, b, api))
+			post, err := tc.call(t, b, api)
+			require.NoError(t, err)
+			assert.Nil(t, post)
 			api.AssertNotCalled(t, "CreatePost", mock.Anything)
 		})
 	}

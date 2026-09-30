@@ -23,10 +23,7 @@ func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 	}
-	if err := b.createPost("PostMessage", post, nil); err != nil {
-		return nil, err
-	}
-	return post, nil
+	return b.createdPost("PostMessage", post, nil)
 }
 
 // Post posts a custom post. The Message and ChannelId fields should be provided in the specified
@@ -42,7 +39,8 @@ func (b *Bot) Post(post *model.Post) error {
 
 	post.UserId = b.botUserID
 
-	return b.createPost("Post", post, nil)
+	_, err := b.createPost("Post", post, nil)
+	return err
 }
 
 // PostMessageToThread posts a message to a specified thread identified by rootPostID.
@@ -60,7 +58,8 @@ func (b *Bot) PostMessageToThread(rootPostID string, post *model.Post) error {
 	post.UserId = b.botUserID
 	post.RootId = rootID
 
-	return b.createPost("PostMessageToThread", post, nil)
+	_, err := b.createPost("PostMessageToThread", post, nil)
+	return err
 }
 
 // PostMessageWithAttachments posts a formatted message with attachments []*model.MessageAttachment to channelID.
@@ -72,10 +71,7 @@ func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.
 		ChannelId: channelID,
 	}
 	model.ParseMessageAttachment(post, attachments)
-	if err := b.createPost("PostMessageWithAttachments", post, nil); err != nil {
-		return nil, err
-	}
-	return post, nil
+	return b.createdPost("PostMessageWithAttachments", post, nil)
 }
 
 func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string) (*model.Post, error) {
@@ -90,10 +86,7 @@ func (b *Bot) postCustomMessageWithAttachments(channelID, customType string, att
 		Type:      customType,
 	}
 	model.ParseMessageAttachment(post, attachments)
-	if err := b.createPost("PostCustomMessageWithAttachments", post, fields); err != nil {
-		return nil, err
-	}
-	return post, nil
+	return b.createdPost("PostCustomMessageWithAttachments", post, fields)
 }
 
 func (b *Bot) PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error) {
@@ -109,7 +102,8 @@ func (b *Bot) DM(userID string, post *model.Post) error {
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
 
-	return b.createPost("DM", post, logrus.Fields{"recipient_user_id": userID})
+	_, err = b.createPost("DM", post, logrus.Fields{"recipient_user_id": userID})
+	return err
 }
 
 // EphemeralPost sends an ephemeral message to a user
@@ -352,7 +346,18 @@ func (b *Bot) IsFromPoster(post *model.Post) bool {
 	return post.UserId == b.botUserID
 }
 
-func (b *Bot) createPost(caller string, post *model.Post, fields logrus.Fields) error {
+func (b *Bot) createdPost(caller string, post *model.Post, fields logrus.Fields) (*model.Post, error) {
+	created, err := b.createPost(caller, post, fields)
+	if err != nil {
+		return nil, err
+	}
+	if !created {
+		return nil, nil
+	}
+	return post, nil
+}
+
+func (b *Bot) createPost(caller string, post *model.Post, fields logrus.Fields) (bool, error) {
 	if !postHasContent(post) {
 		logFields := logrus.Fields{
 			"caller":     caller,
@@ -363,10 +368,10 @@ func (b *Bot) createPost(caller string, post *model.Post, fields logrus.Fields) 
 			logFields[key] = value
 		}
 		logrus.WithFields(logFields).Warn("skipping empty bot post")
-		return nil
+		return false, nil
 	}
 
-	return b.pluginAPI.Post.CreatePost(post)
+	return true, b.pluginAPI.Post.CreatePost(post)
 }
 
 func postHasContent(post *model.Post) bool {

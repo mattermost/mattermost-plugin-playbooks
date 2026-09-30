@@ -1455,7 +1455,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
 		logger.WithError(err).WithField("channel_id", playbookRunToModify.ChannelID).Error("failed to post the status update to channel")
-	} else {
+	} else if post != nil {
 		postID = post.Id
 	}
 
@@ -1588,7 +1588,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
 		logger.WithError(err).WithField("channel_id", playbookRunToModify.ChannelID).Error("failed to post the status update to channel")
-	} else {
+	} else if post != nil {
 		postID = post.Id
 	}
 
@@ -1714,7 +1714,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
 		logger.WithField("channel_id", playbookRunToRestore.ChannelID).Error("failed to post the status update to channel")
-	} else {
+	} else if post != nil {
 		postID = post.Id
 	}
 
@@ -4839,6 +4839,11 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
+	if post == nil {
+		err := fmt.Errorf("failed to post update request message in channel for run '%s'", playbookRun.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
 
 	// create timeline event
 	event := &TimelineEvent{
@@ -5205,6 +5210,9 @@ func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID,
 	err = s.poster.PostMessageToThread(channelIDsToRootIDs[channelID], post)
 	if err != nil {
 		return errors.Wrapf(err, "failed to PostMessageToThread for channelID '%s'", channelID)
+	}
+	if post.Id == "" {
+		return nil
 	}
 
 	newRootID := post.RootId
