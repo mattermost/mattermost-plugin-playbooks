@@ -6,6 +6,7 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -22,7 +23,7 @@ func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 	}
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+	if err := b.createPost("PostMessage", post, nil); err != nil {
 		return nil, err
 	}
 	return post, nil
@@ -41,7 +42,7 @@ func (b *Bot) Post(post *model.Post) error {
 
 	post.UserId = b.botUserID
 
-	return b.pluginAPI.Post.CreatePost(post)
+	return b.createPost("Post", post, nil)
 }
 
 // PostMessageToThread posts a message to a specified thread identified by rootPostID.
@@ -59,7 +60,7 @@ func (b *Bot) PostMessageToThread(rootPostID string, post *model.Post) error {
 	post.UserId = b.botUserID
 	post.RootId = rootID
 
-	return b.pluginAPI.Post.CreatePost(post)
+	return b.createPost("PostMessageToThread", post, nil)
 }
 
 // PostMessageWithAttachments posts a formatted message with attachments []*model.MessageAttachment to channelID.
@@ -71,13 +72,17 @@ func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.
 		ChannelId: channelID,
 	}
 	model.ParseMessageAttachment(post, attachments)
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+	if err := b.createPost("PostMessageWithAttachments", post, nil); err != nil {
 		return nil, err
 	}
 	return post, nil
 }
 
 func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string) (*model.Post, error) {
+	return b.postCustomMessageWithAttachments(channelID, customType, attachments, message, nil)
+}
+
+func (b *Bot) postCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string, fields logrus.Fields) (*model.Post, error) {
 	post := &model.Post{
 		Message:   message,
 		UserId:    b.botUserID,
@@ -85,7 +90,7 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 		Type:      customType,
 	}
 	model.ParseMessageAttachment(post, attachments)
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+	if err := b.createPost("PostCustomMessageWithAttachments", post, fields); err != nil {
 		return nil, err
 	}
 	return post, nil
@@ -104,7 +109,7 @@ func (b *Bot) DM(userID string, post *model.Post) error {
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
 
-	return b.pluginAPI.Post.CreatePost(post)
+	return b.createPost("DM", post, logrus.Fields{"recipient_user_id": userID})
 }
 
 // EphemeralPost sends an ephemeral message to a user
@@ -276,6 +281,16 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to ask for status updates in playbook runs", author.Username)
 		title = "Try request update with a free trial"
 		text = "Request updates for playbook runs in a single click and get notified directly when an update is posted. Start a free, 30-day trial to try it out.\n" + footer
+	case "start_trial_to_set_checklist_item_due_date":
+		message = fmt.Sprintf("@%s requested access to set due dates on checklist items.", author.Username)
+		title = "Keep checklist work on schedule"
+		text = "Set due dates on checklist items to help your team prioritize work and keep playbook runs on track. Start a free, 30-day trial to try it out.\n" + footer
+	default:
+		logrus.WithFields(logrus.Fields{
+			"message_type":   messageType,
+			"author_user_id": authorUserID,
+		}).Warn("skipping unknown admin notification type")
+		return nil
 	}
 
 	actions := []*model.PostAction{
@@ -321,7 +336,10 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 			}
 
 			//nolint:govet
-			if _, err := b.PostCustomMessageWithAttachments(channel.Id, postType, attachments, message); err != nil {
+			if _, err := b.postCustomMessageWithAttachments(channel.Id, postType, attachments, message, logrus.Fields{
+				"message_type":      messageType,
+				"recipient_user_id": adminID,
+			}); err != nil {
 				logrus.WithError(err).WithField("user_id", adminID).Error("failed to send a DM to user")
 			}
 		}(admin.Id)
@@ -332,6 +350,138 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 
 func (b *Bot) IsFromPoster(post *model.Post) bool {
 	return post.UserId == b.botUserID
+}
+
+func (b *Bot) createPost(caller string, post *model.Post, fields logrus.Fields) error {
+	if !postHasContent(post) {
+		logFields := logrus.Fields{
+			"caller":     caller,
+			"channel_id": post.ChannelId,
+			"post_type":  post.Type,
+		}
+		for key, value := range fields {
+			logFields[key] = value
+		}
+		logrus.WithFields(logFields).Warn("skipping empty bot post")
+		return nil
+	}
+
+	return b.pluginAPI.Post.CreatePost(post)
+}
+
+func postHasContent(post *model.Post) bool {
+	if post == nil {
+		return false
+	}
+	if hasTextContent(post.Message) {
+		return true
+	}
+	if len(post.FileIds) > 0 {
+		return true
+	}
+
+	return propsHaveContent(post.GetProps())
+}
+
+func propsHaveContent(props model.StringInterface) bool {
+	if len(props) == 0 {
+		return false
+	}
+	return attachmentsHaveContent(props[model.PostPropsAttachments])
+}
+
+func attachmentsHaveContent(value interface{}) bool {
+	switch attachments := value.(type) {
+	case []*model.MessageAttachment:
+		for _, attachment := range attachments {
+			if attachmentHasContent(attachment) {
+				return true
+			}
+		}
+	case []model.MessageAttachment:
+		for i := range attachments {
+			if attachmentHasContent(&attachments[i]) {
+				return true
+			}
+		}
+	case []interface{}:
+		for _, attachment := range attachments {
+			if typed, ok := attachment.(*model.MessageAttachment); ok && attachmentHasContent(typed) {
+				return true
+			}
+			if typed, ok := attachment.(model.MessageAttachment); ok && attachmentHasContent(&typed) {
+				return true
+			}
+			if typed, ok := attachment.(map[string]interface{}); ok && attachmentMapHasContent(typed) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func attachmentHasContent(attachment *model.MessageAttachment) bool {
+	if attachment == nil {
+		return false
+	}
+
+	for _, text := range []string{
+		attachment.Fallback,
+		attachment.Pretext,
+		attachment.AuthorName,
+		attachment.Title,
+		attachment.Text,
+		attachment.Footer,
+		attachment.ImageURL,
+		attachment.ThumbURL,
+	} {
+		if hasTextContent(text) {
+			return true
+		}
+	}
+
+	for _, field := range attachment.Fields {
+		if field == nil {
+			continue
+		}
+		if hasTextContent(field.Title) {
+			return true
+		}
+		if value, ok := field.Value.(string); ok && hasTextContent(value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func attachmentMapHasContent(attachment map[string]interface{}) bool {
+	for _, key := range []string{"fallback", "pretext", "author_name", "title", "text", "footer", "image_url", "thumb_url"} {
+		if value, ok := attachment[key].(string); ok && hasTextContent(value) {
+			return true
+		}
+	}
+
+	fields, _ := attachment["fields"].([]interface{})
+	for _, field := range fields {
+		typed, ok := field.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if value, ok := typed["title"].(string); ok && hasTextContent(value) {
+			return true
+		}
+		if value, ok := typed["value"].(string); ok && hasTextContent(value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func hasTextContent(text string) bool {
+	return strings.Trim(strings.TrimSpace(text), "-") != ""
 }
 
 func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
