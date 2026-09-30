@@ -67,7 +67,7 @@ type stubTaskStatePoster struct {
 	channelEvents []string
 }
 
-func (p *stubTaskStatePoster) PublishWebsocketEventToChannel(event string, _ interface{}, _ string) {
+func (p *stubTaskStatePoster) PublishWebsocketEventToChannelReliable(event string, _ interface{}, _ string) {
 	p.channelEvents = append(p.channelEvents, event)
 }
 

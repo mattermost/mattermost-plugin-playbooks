@@ -51,7 +51,7 @@ jest.mock('./empty_state', () => ({
         </>
     ),
 }));
-jest.mock('react-beautiful-dnd', () => ({
+jest.mock('@hello-pangea/dnd', () => ({
     DragDropContext: ({children}: {children: React.ReactNode}) => <>{children}</>,
     Droppable: ({children}: {children: (provided: any) => React.ReactNode}) =>
         <>{children({droppableProps: {}, innerRef: () => null, placeholder: null})}</>,

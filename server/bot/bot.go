@@ -22,7 +22,8 @@ type Poster interface {
 	// Post posts a custom post, which should provide the Message and ChannelId fields
 	Post(post *model.Post) error
 
-	// PostMessage posts a simple message to channelID. Returns the post id if posting was successful.
+	// PostMessage posts a simple message to channelID. Returns the created post, or nil, nil if the
+	// post is skipped because it has no content.
 	PostMessage(channelID, format string, args ...interface{}) (*model.Post, error)
 
 	// PostMessageToThread posts a message to a specified channel and thread identified by rootPostID.
@@ -31,14 +32,17 @@ type Poster interface {
 	// future use (i.e., save that if you want to continue the thread).
 	PostMessageToThread(rootPostID string, post *model.Post) error
 
-	// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
-	// posting was successful. Often used to include post actions.
+	// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the
+	// created post, or nil, nil if the post is skipped because it has no content. Often used to
+	// include post actions.
 	PostMessageWithAttachments(channelID string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error)
 
 	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
+	// Returns the created post, or nil, nil if the post is skipped because it has no content.
 	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string) (*model.Post, error)
 
 	// PostCustomMessageWithAttachmentsf posts a custom message with the specified type using format string. Falling back to attachments for mobile.
+	// Returns the created post, or nil, nil if the post is skipped because it has no content.
 	PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error)
 
 	// DM posts a DM from the plugin bot to the specified user
@@ -56,14 +60,30 @@ type Poster interface {
 	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID.
 	PublishWebsocketEventToTeam(event string, payload interface{}, teamID string)
 
+	// PublishWebsocketEventToTeamReliable sends a websocket event with payload to teamID over
+	// the reliable, TCP-backed cluster channel. Use for essential, low-frequency events.
+	PublishWebsocketEventToTeamReliable(event string, payload interface{}, teamID string)
+
 	// PublishWebsocketEventToChannel sends a websocket event with payload to channelID.
 	PublishWebsocketEventToChannel(event string, payload interface{}, channelID string)
+
+	// PublishWebsocketEventToChannelReliable sends a websocket event with payload to channelID over
+	// the reliable, TCP-backed cluster channel. Use for large or essential events.
+	PublishWebsocketEventToChannelReliable(event string, payload interface{}, channelID string)
 
 	// PublishWebsocketEventToUser sends a websocket event with payload to userID.
 	PublishWebsocketEventToUser(event string, payload interface{}, userID string)
 
+	// PublishWebsocketEventToUserReliable sends a websocket event with payload to userID over the
+	// reliable, TCP-backed cluster channel. Use for large or essential events.
+	PublishWebsocketEventToUserReliable(event string, payload interface{}, userID string)
+
 	// PublishWebsocketEventGlobal sends a websocket event with payload to all connected users.
 	PublishWebsocketEventGlobal(event string, payload interface{})
+
+	// PublishWebsocketEventGlobalReliable sends a websocket event with payload to all connected
+	// users over the reliable, TCP-backed cluster channel. Use for essential, low-frequency events.
+	PublishWebsocketEventGlobalReliable(event string, payload interface{})
 
 	// NotifyAdmins sends a DM with the message to each admins
 	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error

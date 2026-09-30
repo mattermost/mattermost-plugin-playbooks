@@ -780,6 +780,9 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if prev.AssigneePropertyFieldID != item.AssigneePropertyFieldID {
 				fields["assignee_property_field_id"] = item.AssigneePropertyFieldID
 			}
+			if prev.AssigneeOnlyComplete != item.AssigneeOnlyComplete {
+				fields["assignee_only_complete"] = item.AssigneeOnlyComplete
+			}
 			if prev.Command != item.Command {
 				fields["command"] = item.Command
 			}
@@ -1352,6 +1355,9 @@ type PlaybookRunService interface {
 	// property field resolves to on this run.
 	SetPropertyUserAssignee(playbookRunID, userID string, checklistNumber, itemNumber int, propertyFieldID string) error
 
+	// SetAssigneeOnlyComplete sets whether only the assignee may check/uncheck the checklist item.
+	SetAssigneeOnlyComplete(playbookRunID, userID string, checklistNumber, itemNumber int, assigneeOnlyComplete bool) error
+
 	// SetCommandToChecklistItem sets command to checklist item
 	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
 
@@ -1472,6 +1478,9 @@ type PlaybookRunService interface {
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
 
+	// UnfollowAllRuns removes userID as a follower from all playbook runs.
+	UnfollowAllRuns(userID string) error
+
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
 
@@ -1577,6 +1586,9 @@ type PlaybookRunStore interface {
 
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
+
+	// UnfollowAllRuns removes userID as a follower from all playbook runs.
+	UnfollowAllRuns(userID string) error
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)

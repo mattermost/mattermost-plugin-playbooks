@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ReactNode, ReactNodeArray} from 'react';
+import React, {ReactNode} from 'react';
 
 import {Team} from '@mattermost/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
@@ -13,7 +13,7 @@ import {UpdateBody} from 'src/components/rhs/rhs_shared';
 interface Props {
     text: string;
     team: Team;
-    children?: ReactNode | ReactNodeArray;
+    children?: ReactNode;
     className?: string;
 }
 

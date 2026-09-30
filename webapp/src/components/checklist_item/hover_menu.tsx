@@ -45,9 +45,15 @@ export interface Props {
     toggleDescription: () => void;
     assignee_id: string;
     assignee_type?: string;
+    assignee_only_complete?: boolean;
     onAssigneeChange: (user?: UserProfile) => void;
     onExtraOptionSelected?: (value: string) => void;
+    onAssigneeOnlyCompleteChange?: (value: boolean) => void;
+    assigneeEditable?: boolean;
+    assigneeDisabledReason?: string;
     roleOptions?: RoleOption[];
+    runOwnerId?: string;
+    runCreatorId?: string;
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
     onDuplicateChecklistItem?: () => void;
@@ -86,11 +92,16 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}
                     assignee_type={props.assignee_type}
-                    editable={props.isEditing}
+                    assignee_only_complete={props.assignee_only_complete}
+                    editable={props.assigneeEditable ?? true}
+                    disabledReason={props.assigneeDisabledReason}
                     inHoverMenu={true}
                     onSelectedChange={props.onAssigneeChange}
                     onExtraOptionSelected={props.onExtraOptionSelected}
+                    onAssigneeOnlyCompleteChange={props.onAssigneeOnlyCompleteChange}
                     roleOptions={props.roleOptions}
+                    runOwnerUserId={props.runOwnerId}
+                    runCreatorUserId={props.runCreatorId}
                     placement={'bottom-end'}
                     onOpenChange={props.onItemOpenChange}
                     teamId={props.teamId}

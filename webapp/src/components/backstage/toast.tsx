@@ -21,7 +21,7 @@ export interface ToastProps {
     onMouseLeave?: () => void;
 }
 
-export const Toast = (props: ToastProps) => {
+export const Toast = React.forwardRef<HTMLDivElement, ToastProps>((props, ref) => {
     let iconName = props.iconName;
     if (!iconName) {
         switch (props.toastStyle) {
@@ -37,6 +37,7 @@ export const Toast = (props: ToastProps) => {
     }
     return (
         <StyledToast
+            ref={ref}
             toastStyle={props.toastStyle ?? ToastStyle.Success}
             onMouseEnter={props.onMouseEnter}
             onMouseLeave={props.onMouseLeave}
@@ -56,7 +57,8 @@ export const Toast = (props: ToastProps) => {
             />
         </StyledToast >
     );
-};
+});
+Toast.displayName = 'Toast';
 
 const StyledToast = styled.div<{toastStyle: ToastStyle}>`
     display: flex;

@@ -220,6 +220,18 @@ func (mr *MockPosterMockRecorder) PublishWebsocketEventGlobal(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventGlobal", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventGlobal), arg0, arg1)
 }
 
+// PublishWebsocketEventGlobalReliable mocks base method.
+func (m *MockPoster) PublishWebsocketEventGlobalReliable(arg0 string, arg1 interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventGlobalReliable", arg0, arg1)
+}
+
+// PublishWebsocketEventGlobalReliable indicates an expected call of PublishWebsocketEventGlobalReliable.
+func (mr *MockPosterMockRecorder) PublishWebsocketEventGlobalReliable(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventGlobalReliable", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventGlobalReliable), arg0, arg1)
+}
+
 // PublishWebsocketEventToChannel mocks base method.
 func (m *MockPoster) PublishWebsocketEventToChannel(arg0 string, arg1 interface{}, arg2 string) {
 	m.ctrl.T.Helper()
@@ -230,6 +242,18 @@ func (m *MockPoster) PublishWebsocketEventToChannel(arg0 string, arg1 interface{
 func (mr *MockPosterMockRecorder) PublishWebsocketEventToChannel(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToChannel", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToChannel), arg0, arg1, arg2)
+}
+
+// PublishWebsocketEventToChannelReliable mocks base method.
+func (m *MockPoster) PublishWebsocketEventToChannelReliable(arg0 string, arg1 interface{}, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventToChannelReliable", arg0, arg1, arg2)
+}
+
+// PublishWebsocketEventToChannelReliable indicates an expected call of PublishWebsocketEventToChannelReliable.
+func (mr *MockPosterMockRecorder) PublishWebsocketEventToChannelReliable(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToChannelReliable", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToChannelReliable), arg0, arg1, arg2)
 }
 
 // PublishWebsocketEventToTeam mocks base method.
@@ -244,6 +268,18 @@ func (mr *MockPosterMockRecorder) PublishWebsocketEventToTeam(arg0, arg1, arg2 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToTeam", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToTeam), arg0, arg1, arg2)
 }
 
+// PublishWebsocketEventToTeamReliable mocks base method.
+func (m *MockPoster) PublishWebsocketEventToTeamReliable(arg0 string, arg1 interface{}, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventToTeamReliable", arg0, arg1, arg2)
+}
+
+// PublishWebsocketEventToTeamReliable indicates an expected call of PublishWebsocketEventToTeamReliable.
+func (mr *MockPosterMockRecorder) PublishWebsocketEventToTeamReliable(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToTeamReliable", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToTeamReliable), arg0, arg1, arg2)
+}
+
 // PublishWebsocketEventToUser mocks base method.
 func (m *MockPoster) PublishWebsocketEventToUser(arg0 string, arg1 interface{}, arg2 string) {
 	m.ctrl.T.Helper()
@@ -254,6 +290,18 @@ func (m *MockPoster) PublishWebsocketEventToUser(arg0 string, arg1 interface{}, 
 func (mr *MockPosterMockRecorder) PublishWebsocketEventToUser(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToUser", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToUser), arg0, arg1, arg2)
+}
+
+// PublishWebsocketEventToUserReliable mocks base method.
+func (m *MockPoster) PublishWebsocketEventToUserReliable(arg0 string, arg1 interface{}, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventToUserReliable", arg0, arg1, arg2)
+}
+
+// PublishWebsocketEventToUserReliable indicates an expected call of PublishWebsocketEventToUserReliable.
+func (mr *MockPosterMockRecorder) PublishWebsocketEventToUserReliable(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToUserReliable", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToUserReliable), arg0, arg1, arg2)
 }
 
 // SystemEphemeralPost mocks base method.

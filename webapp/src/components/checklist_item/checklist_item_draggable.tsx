@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Draggable, DraggableProvided, DraggableStateSnapshot} from 'react-beautiful-dnd';
+import {Draggable, DraggableProvided, DraggableStateSnapshot} from '@hello-pangea/dnd';
 
 import {setChecklistItemState} from 'src/client';
 import {ChecklistItem, ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';

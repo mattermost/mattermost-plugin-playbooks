@@ -366,6 +366,20 @@ export async function setPropertyUserAssignee(
     });
 }
 
+export async function setAssigneeOnlyComplete(
+    playbookRunId: string,
+    checklistNum: number,
+    itemNum: number,
+    assigneeOnlyComplete: boolean,
+) {
+    const body = JSON.stringify({assignee_only_complete: assigneeOnlyComplete});
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee_only_complete`, body);
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number) {
     const body = JSON.stringify({due_date: date});
     try {

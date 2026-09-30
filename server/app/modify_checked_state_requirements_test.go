@@ -65,7 +65,7 @@ func newModifyCheckedStateHarness(t *testing.T, run *PlaybookRun, taskRequiremen
 
 	ctrl := gomock.NewController(t)
 	poster := mock_bot.NewMockPoster(ctrl)
-	poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	poster.EXPECT().PublishWebsocketEventToChannelReliable(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	svc := &PlaybookRunServiceImpl{
 		store:          store,

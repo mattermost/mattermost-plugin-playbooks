@@ -6,6 +6,7 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -22,10 +23,7 @@ func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 	}
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
-		return nil, err
-	}
-	return post, nil
+	return b.createdPost("PostMessage", post, nil)
 }
 
 // Post posts a custom post. The Message and ChannelId fields should be provided in the specified
@@ -41,7 +39,8 @@ func (b *Bot) Post(post *model.Post) error {
 
 	post.UserId = b.botUserID
 
-	return b.pluginAPI.Post.CreatePost(post)
+	_, err := b.createPost("Post", post, nil)
+	return err
 }
 
 // PostMessageToThread posts a message to a specified thread identified by rootPostID.
@@ -59,7 +58,8 @@ func (b *Bot) PostMessageToThread(rootPostID string, post *model.Post) error {
 	post.UserId = b.botUserID
 	post.RootId = rootID
 
-	return b.pluginAPI.Post.CreatePost(post)
+	_, err := b.createPost("PostMessageToThread", post, nil)
+	return err
 }
 
 // PostMessageWithAttachments posts a formatted message with attachments []*model.MessageAttachment to channelID.
@@ -71,13 +71,14 @@ func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.
 		ChannelId: channelID,
 	}
 	model.ParseMessageAttachment(post, attachments)
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
-		return nil, err
-	}
-	return post, nil
+	return b.createdPost("PostMessageWithAttachments", post, nil)
 }
 
 func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string) (*model.Post, error) {
+	return b.postCustomMessageWithAttachments(channelID, customType, attachments, message, nil)
+}
+
+func (b *Bot) postCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string, fields logrus.Fields) (*model.Post, error) {
 	post := &model.Post{
 		Message:   message,
 		UserId:    b.botUserID,
@@ -85,10 +86,7 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 		Type:      customType,
 	}
 	model.ParseMessageAttachment(post, attachments)
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
-		return nil, err
-	}
-	return post, nil
+	return b.createdPost("PostCustomMessageWithAttachments", post, fields)
 }
 
 func (b *Bot) PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error) {
@@ -104,7 +102,8 @@ func (b *Bot) DM(userID string, post *model.Post) error {
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
 
-	return b.pluginAPI.Post.CreatePost(post)
+	_, err = b.createPost("DM", post, logrus.Fields{"recipient_user_id": userID})
+	return err
 }
 
 // EphemeralPost sends an ephemeral message to a user
@@ -135,34 +134,74 @@ func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, att
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
+// publishWebsocketEvent marshals payload and dispatches the event with the given broadcast scope.
+func (b *Bot) publishWebsocketEvent(event string, payload interface{}, broadcast *model.WebsocketBroadcast) {
+	payloadMap := b.makePayloadMap(payload)
+	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, broadcast)
+}
+
 // PublishWebsocketEventToTeam sends a websocket event with payload to teamID
 func (b *Bot) PublishWebsocketEventToTeam(event string, payload interface{}, teamID string) {
-	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
 		TeamId: teamID,
+	})
+}
+
+// PublishWebsocketEventToTeamReliable sends a websocket event with payload to teamID over the
+// reliable, TCP-backed cluster channel. See PublishWebsocketEventToChannelReliable.
+func (b *Bot) PublishWebsocketEventToTeamReliable(event string, payload interface{}, teamID string) {
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
+		TeamId:              teamID,
+		ReliableClusterSend: true,
 	})
 }
 
 // PublishWebsocketEventToChannel sends a websocket event with payload to channelID
 func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, channelID string) {
-	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
 		ChannelId: channelID,
+	})
+}
+
+// PublishWebsocketEventToChannelReliable sends a websocket event with payload to channelID over the
+// reliable, TCP-backed cluster channel. Use for essential, low-frequency events that must not be
+// dropped or truncated by the best-effort UDP path (which can drop packets and caps the marshalled
+// event at ~49KB). Keep high-frequency events on the best-effort path so they don't saturate the
+// shared reliable channel.
+func (b *Bot) PublishWebsocketEventToChannelReliable(event string, payload interface{}, channelID string) {
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
+		ChannelId:           channelID,
+		ReliableClusterSend: true,
 	})
 }
 
 // PublishWebsocketEventToUser sends a websocket event with payload to userID
 func (b *Bot) PublishWebsocketEventToUser(event string, payload interface{}, userID string) {
-	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
 		UserId: userID,
+	})
+}
+
+// PublishWebsocketEventToUserReliable sends a websocket event with payload to userID over the
+// reliable, TCP-backed cluster channel. See PublishWebsocketEventToChannelReliable.
+func (b *Bot) PublishWebsocketEventToUserReliable(event string, payload interface{}, userID string) {
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
+		UserId:              userID,
+		ReliableClusterSend: true,
 	})
 }
 
 // PublishWebsocketEventGlobal sends a websocket event with payload to all connected users
 func (b *Bot) PublishWebsocketEventGlobal(event string, payload interface{}) {
-	payloadMap := b.makePayloadMap(payload)
-	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{})
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{})
+}
+
+// PublishWebsocketEventGlobalReliable sends a websocket event with payload to all connected users
+// over the reliable, TCP-backed cluster channel. See PublishWebsocketEventToChannelReliable.
+func (b *Bot) PublishWebsocketEventGlobalReliable(event string, payload interface{}) {
+	b.publishWebsocketEvent(event, payload, &model.WebsocketBroadcast{
+		ReliableClusterSend: true,
+	})
 }
 
 func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool) error {
@@ -236,6 +275,16 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to ask for status updates in playbook runs", author.Username)
 		title = "Try request update with a free trial"
 		text = "Request updates for playbook runs in a single click and get notified directly when an update is posted. Start a free, 30-day trial to try it out.\n" + footer
+	case "start_trial_to_set_checklist_item_due_date":
+		message = fmt.Sprintf("@%s requested access to set due dates on checklist items.", author.Username)
+		title = "Keep checklist work on schedule"
+		text = "Set due dates on checklist items to help your team prioritize work and keep playbook runs on track. Start a free, 30-day trial to try it out.\n" + footer
+	default:
+		logrus.WithFields(logrus.Fields{
+			"message_type":   messageType,
+			"author_user_id": authorUserID,
+		}).Warn("skipping unknown admin notification type")
+		return nil
 	}
 
 	actions := []*model.PostAction{
@@ -281,7 +330,10 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 			}
 
 			//nolint:govet
-			if _, err := b.PostCustomMessageWithAttachments(channel.Id, postType, attachments, message); err != nil {
+			if _, err := b.postCustomMessageWithAttachments(channel.Id, postType, attachments, message, logrus.Fields{
+				"message_type":      messageType,
+				"recipient_user_id": adminID,
+			}); err != nil {
 				logrus.WithError(err).WithField("user_id", adminID).Error("failed to send a DM to user")
 			}
 		}(admin.Id)
@@ -292,6 +344,149 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 
 func (b *Bot) IsFromPoster(post *model.Post) bool {
 	return post.UserId == b.botUserID
+}
+
+func (b *Bot) createdPost(caller string, post *model.Post, fields logrus.Fields) (*model.Post, error) {
+	created, err := b.createPost(caller, post, fields)
+	if err != nil {
+		return nil, err
+	}
+	if !created {
+		return nil, nil
+	}
+	return post, nil
+}
+
+func (b *Bot) createPost(caller string, post *model.Post, fields logrus.Fields) (bool, error) {
+	if !postHasContent(post) {
+		logFields := logrus.Fields{
+			"caller":     caller,
+			"channel_id": post.ChannelId,
+			"post_type":  post.Type,
+		}
+		for key, value := range fields {
+			logFields[key] = value
+		}
+		logrus.WithFields(logFields).Warn("skipping empty bot post")
+		return false, nil
+	}
+
+	return true, b.pluginAPI.Post.CreatePost(post)
+}
+
+func postHasContent(post *model.Post) bool {
+	if post == nil {
+		return false
+	}
+	if hasTextContent(post.Message) {
+		return true
+	}
+	if len(post.FileIds) > 0 {
+		return true
+	}
+
+	return propsHaveContent(post.GetProps())
+}
+
+func propsHaveContent(props model.StringInterface) bool {
+	if len(props) == 0 {
+		return false
+	}
+	return attachmentsHaveContent(props[model.PostPropsAttachments])
+}
+
+func attachmentsHaveContent(value interface{}) bool {
+	switch attachments := value.(type) {
+	case []*model.MessageAttachment:
+		for _, attachment := range attachments {
+			if attachmentHasContent(attachment) {
+				return true
+			}
+		}
+	case []model.MessageAttachment:
+		for i := range attachments {
+			if attachmentHasContent(&attachments[i]) {
+				return true
+			}
+		}
+	case []interface{}:
+		for _, attachment := range attachments {
+			if typed, ok := attachment.(*model.MessageAttachment); ok && attachmentHasContent(typed) {
+				return true
+			}
+			if typed, ok := attachment.(model.MessageAttachment); ok && attachmentHasContent(&typed) {
+				return true
+			}
+			if typed, ok := attachment.(map[string]interface{}); ok && attachmentMapHasContent(typed) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func attachmentHasContent(attachment *model.MessageAttachment) bool {
+	if attachment == nil {
+		return false
+	}
+
+	for _, text := range []string{
+		attachment.Fallback,
+		attachment.Pretext,
+		attachment.AuthorName,
+		attachment.Title,
+		attachment.Text,
+		attachment.Footer,
+		attachment.ImageURL,
+		attachment.ThumbURL,
+	} {
+		if hasTextContent(text) {
+			return true
+		}
+	}
+
+	for _, field := range attachment.Fields {
+		if field == nil {
+			continue
+		}
+		if hasTextContent(field.Title) {
+			return true
+		}
+		if value, ok := field.Value.(string); ok && hasTextContent(value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func attachmentMapHasContent(attachment map[string]interface{}) bool {
+	for _, key := range []string{"fallback", "pretext", "author_name", "title", "text", "footer", "image_url", "thumb_url"} {
+		if value, ok := attachment[key].(string); ok && hasTextContent(value) {
+			return true
+		}
+	}
+
+	fields, _ := attachment["fields"].([]interface{})
+	for _, field := range fields {
+		typed, ok := field.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if value, ok := typed["title"].(string); ok && hasTextContent(value) {
+			return true
+		}
+		if value, ok := typed["value"].(string); ok && hasTextContent(value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func hasTextContent(text string) bool {
+	return strings.Trim(strings.TrimSpace(text), "-") != ""
 }
 
 func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {

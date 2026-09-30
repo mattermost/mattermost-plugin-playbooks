@@ -13,7 +13,7 @@ import {
     DropResult,
     Droppable,
     DroppableProvided,
-} from 'react-beautiful-dnd';
+} from '@hello-pangea/dnd';
 
 import classNames from 'classnames';
 
@@ -49,10 +49,6 @@ import {getDistinctAssignees} from 'src/utils';
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 import GenericChecklist, {generateKeys} from './generic_checklist';
 import MultiSelectActionBar from './multi_select_action_bar';
-
-// disable all react-beautiful-dnd development warnings
-// @ts-ignore
-window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 // Helper function to check if a task is adjacent to other tasks in its condition group
 const isTaskAdjacentToConditionGroup = (
@@ -92,6 +88,7 @@ export const mapChecklistItemToInput = (ci: ChecklistItem) => ({
     assigneeID: ci.assignee_id || '',
     assigneeType: ci.assignee_type || '',
     assigneePropertyFieldID: ci.assignee_property_field_id || '',
+    assigneeOnlyComplete: Boolean(ci.assignee_only_complete),
     assigneeModified: ci.assignee_modified || 0,
     command: ci.command,
     commandLastRun: ci.command_last_run,
@@ -180,6 +177,7 @@ const ChecklistList = ({
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
                         assignee_property_field_id: ci.assignee_property_field_id || '',
+                        assignee_only_complete: Boolean(ci.assignee_only_complete),
                         requirements: ci.requirements || [],
                     };
                 }),

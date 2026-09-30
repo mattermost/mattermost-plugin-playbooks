@@ -331,7 +331,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), teamID)
 
 		mockPropertyService.EXPECT().
 			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
@@ -376,7 +376,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), teamID)
 
 		mockPropertyService.EXPECT().
 			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
@@ -401,7 +401,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), teamID)
 
 		mockPropertyService.EXPECT().
 			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
@@ -439,7 +439,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), teamID)
 
 		mockPropertyService.EXPECT().
 			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
@@ -467,7 +467,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), teamID)
 
 		mockPropertyService.EXPECT().
 			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
@@ -606,7 +606,7 @@ func TestPlaybookService_Import(t *testing.T) {
 					"ConditionAction should be cleared before Create")
 				return newPlaybookID, nil
 			})
-		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
+		mockPoster.EXPECT().PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), gomock.Any())
 
 		createdField := &app.PropertyField{
 			PropertyField: model.PropertyField{ID: newFieldID, Name: "Status", Type: model.PropertyFieldTypeSelect},
@@ -717,7 +717,7 @@ func TestPlaybookService_Import(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
 
 		resultID, err := service.Import(app.PlaybookImportData{
 			Playbook:   basePlaybook,
@@ -765,7 +765,7 @@ func TestPlaybookService_Import(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
 
 		mockPropertyService.EXPECT().
 			CreatePropertyField(newPlaybookID, gomock.Any()).
@@ -815,7 +815,7 @@ func TestPlaybookService_Import(t *testing.T) {
 			Return(newPlaybookID, nil)
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), gomock.Any())
 
 		mockPropertyService.EXPECT().
 			CreatePropertyField(newPlaybookID, gomock.Any()).
@@ -881,7 +881,7 @@ func TestPlaybookService_Import(t *testing.T) {
 				require.Empty(t, created.Metrics[0].ID, "import must strip metric IDs so Create only inserts new metrics")
 				return newPlaybookID, nil
 			})
-		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
+		mockPoster.EXPECT().PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
 
 		resultID, err := service.Import(app.PlaybookImportData{Playbook: pb}, userID)
 		require.NoError(t, err)
@@ -945,7 +945,7 @@ func TestPlaybookService_ValidateNewChannelOnlyMode(t *testing.T) {
 			Create(gomock.Any()).
 			Return(newPlaybookID, nil)
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), teamID)
 
 		id, err := service.Create(playbook, userID)
 		require.NoError(t, err)
@@ -1010,7 +1010,7 @@ func TestPlaybookService_ValidateNewChannelOnlyMode(t *testing.T) {
 			Create(gomock.Any()).
 			Return(newPlaybookID, nil)
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeamReliable(gomock.Any(), gomock.Any(), teamID)
 
 		id, err := service.Import(app.PlaybookImportData{Playbook: playbook}, userID)
 		require.NoError(t, err)

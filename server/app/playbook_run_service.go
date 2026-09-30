@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -165,10 +166,10 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	}
 
 	// Send the incremental update
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
+	s.poster.PublishWebsocketEventToChannelReliable(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
 	if len(nonMembers) > 0 {
 		for _, nonMember := range nonMembers {
-			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
+			s.poster.PublishWebsocketEventToUserReliable(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
 		}
 	}
 
@@ -1454,7 +1455,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
 		logger.WithError(err).WithField("channel_id", playbookRunToModify.ChannelID).Error("failed to post the status update to channel")
-	} else {
+	} else if post != nil {
 		postID = post.Id
 	}
 
@@ -1587,7 +1588,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
 		logger.WithError(err).WithField("channel_id", playbookRunToModify.ChannelID).Error("failed to post the status update to channel")
-	} else {
+	} else if post != nil {
 		postID = post.Id
 	}
 
@@ -1713,7 +1714,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
 		logger.WithField("channel_id", playbookRunToRestore.ChannelID).Error("failed to post the status update to channel")
-	} else {
+	} else if post != nil {
 		postID = post.Id
 	}
 
@@ -2425,6 +2426,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return nil
 	}
 
+	if err := checkAssigneeOnlyComplete(itemToCheck, userID); err != nil {
+		return err
+	}
+
 	stateChanged := newState != itemToCheck.State
 	timestamp := model.GetMillis()
 
@@ -2513,6 +2518,94 @@ func (s *PlaybookRunServiceImpl) ToggleCheckedState(playbookRunID, userID string
 	return s.ModifyCheckedState(playbookRunID, userID, newState, checklistNumber, itemNumber)
 }
 
+// checkAssigneeOnlyComplete returns ErrAssigneeOnlyComplete when the item is locked to its
+// assignee and the acting user is not that assignee. Unassigned locked items are not restricted.
+func checkAssigneeOnlyComplete(item ChecklistItem, userID string) error {
+	if !item.AssigneeOnlyComplete || item.AssigneeID == "" || item.AssigneeID == userID {
+		return nil
+	}
+	return ErrAssigneeOnlyComplete
+}
+
+// checkAssigneeOnlyChangeAssignee returns ErrAssigneeOnlyChangeAssignee when the item is locked
+// to an assignee and the acting user is neither that assignee nor the run owner.
+// Locked but unassigned items are not restricted.
+func checkAssigneeOnlyChangeAssignee(item ChecklistItem, userID, ownerUserID string) error {
+	if !item.AssigneeOnlyComplete || item.AssigneeID == "" {
+		return nil
+	}
+	if userID == ownerUserID {
+		return nil
+	}
+	if item.AssigneeID == userID {
+		return nil
+	}
+	return ErrAssigneeOnlyChangeAssignee
+}
+
+func itemHasAssignee(item ChecklistItem) bool {
+	if item.AssigneeID != "" {
+		return true
+	}
+	return item.AssigneeType == AssigneeTypeOwner ||
+		item.AssigneeType == AssigneeTypeCreator ||
+		item.AssigneeType == AssigneeTypePropertyUser
+}
+
+// SetAssigneeOnlyComplete sets whether only the assignee may check/uncheck the checklist item.
+func (s *PlaybookRunServiceImpl) SetAssigneeOnlyComplete(playbookRunID, userID string, checklistNumber, itemNumber int, assigneeOnlyComplete bool) error {
+	auditRec := plugin.MakeAuditRecord("setChecklistItemAssigneeOnlyComplete", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+	model.AddEventParameterToAuditRec(auditRec, "assigneeOnlyComplete", assigneeOnlyComplete)
+
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
+
+	if itemToCheck.AssigneeOnlyComplete == assigneeOnlyComplete {
+		auditRec.Success()
+		return nil
+	}
+
+	if assigneeOnlyComplete && !itemHasAssignee(*itemToCheck) {
+		return ErrAssigneeRequiredForLock
+	}
+
+	// When already locked, only the assignee or run owner may change (including unlock) the lock.
+	if err := checkAssigneeOnlyChangeAssignee(*itemToCheck, userID, playbookRunToModify.OwnerUserID); err != nil {
+		return err
+	}
+
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
+	}
+
+	itemToCheck.AssigneeOnlyComplete = assigneeOnlyComplete
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, 0)
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
+	}
+
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	auditRec.Success()
+	auditRec.AddEventResultState(*playbookRunToModify)
+
+	return nil
+}
+
 // SetAssignee sets the assignee for the specified checklist item
 // Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error {
@@ -2544,9 +2637,13 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	// Only skip the store write if BOTH the assignee AND the type are already correct.
 	// If AssigneeType is still a role-based value ("owner"/"creator"), we MUST fall through
 	// to the store write to persist the clear.
-	if applyAssigneeUpdate(itemToCheck, assigneeID) {
+	if applyAssigneeUpdate(itemToCheck, assigneeID) && (assigneeID != "" || !itemToCheck.AssigneeOnlyComplete) {
 		auditRec.Success()
 		return nil
+	}
+
+	if err := checkAssigneeOnlyChangeAssignee(*itemToCheck, userID, playbookRunToModify.OwnerUserID); err != nil {
+		return err
 	}
 
 	newAssigneeUserAtMention := noAssigneeName
@@ -2570,6 +2667,9 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	}
 
 	itemToCheck.AssigneeID = assigneeID
+	if assigneeID == "" {
+		itemToCheck.AssigneeOnlyComplete = false
+	}
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeModified = timestamp
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)
@@ -2674,11 +2774,19 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 		originalRun = playbookRun.Clone()
 	}
 
-	noChangeNeeded := applyPropertyUserAssigneeUpdate(itemToCheck, runFieldID, resolvedUserID)
+	noChangeNeeded := runFieldID == itemToCheck.AssigneePropertyFieldID &&
+		itemToCheck.AssigneeType == AssigneeTypePropertyUser &&
+		resolvedUserID == itemToCheck.AssigneeID
 	if noChangeNeeded {
 		auditRec.Success()
 		return nil
 	}
+
+	if err := checkAssigneeOnlyChangeAssignee(*itemToCheck, userID, playbookRun.OwnerUserID); err != nil {
+		return err
+	}
+
+	applyPropertyUserAssigneeUpdate(itemToCheck, runFieldID, resolvedUserID)
 
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeModified = timestamp
@@ -2758,6 +2866,10 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 	if itemToCheck.AssigneeType == assigneeType && itemToCheck.AssigneeID == resolvedAssigneeID && itemToCheck.AssigneePropertyFieldID == "" {
 		auditRec.Success()
 		return nil
+	}
+
+	if err := checkAssigneeOnlyChangeAssignee(*itemToCheck, userID, playbookRunToModify.OwnerUserID); err != nil {
+		return err
 	}
 
 	var originalRun *PlaybookRun
@@ -3846,7 +3958,16 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		return nil, err
 	}
 
-	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale)
+	// Runs are always capped: /playbooks/runs is available as a paginated fallback.
+	// Tasks are only capped for scheduled digests; /playbook todo shows the full list
+	// because there is no equivalent paginated page for tasks yet.
+	runsMaxItems := digestMaxItems
+	tasksMaxItems := 0
+	if !force {
+		tasksMaxItems = digestMaxItems
+	}
+
+	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale, runsMaxItems)
 
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
@@ -3855,8 +3976,8 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		}).Warn("failed to get user timezone")
 	}
 
-	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force)
-	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale)
+	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force, tasksMaxItems)
+	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale, runsMaxItems)
 
 	var message string
 	if shouldSendFullData || len(digestMessageItems.overdueRuns) > 0 {
@@ -3869,7 +3990,17 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		message += part3
 	}
 
-	return &model.Post{Message: message}, nil
+	T := i18n.GetUserTranslations(user.Locale)
+	footer := "\n" + T("app.user.digest.message_truncated")
+	capped := capDigestMessage(message, footer, model.PostMessageMaxRunesV2)
+	if capped != message {
+		logrus.WithFields(logrus.Fields{
+			"user_id": userID,
+			"runes":   utf8.RuneCountInString(message),
+		}).Warn("todo digest exceeded max post size; truncating")
+	}
+
+	return &model.Post{Message: capped}, nil
 }
 
 // EphemeralPostTodoDigestToUser
@@ -4371,12 +4502,12 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 		}
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
+	s.poster.PublishWebsocketEventToChannelReliable(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
 
 	nonMembers := s.getNonMembersIDs(playbookRun.ChannelID, sendWSOptions.AdditionalUserIDs)
 	if len(nonMembers) > 0 {
 		for _, nonMember := range nonMembers {
-			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRun, nonMember)
+			s.poster.PublishWebsocketEventToUserReliable(playbookRunUpdatedWSEvent, playbookRun, nonMember)
 		}
 	}
 }
@@ -4705,6 +4836,11 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	post, err := s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data))
 	if err != nil {
 		err := errors.Wrapf(err, "failed to post update request message in channel for run '%s'", playbookRun.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+	if post == nil {
+		err := fmt.Errorf("failed to post update request message in channel for run '%s'", playbookRun.Name)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -5075,6 +5211,9 @@ func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID,
 	if err != nil {
 		return errors.Wrapf(err, "failed to PostMessageToThread for channelID '%s'", channelID)
 	}
+	if post.Id == "" {
+		return nil
+	}
 
 	newRootID := post.RootId
 	if newRootID == "" {
@@ -5156,6 +5295,15 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	// Mark success and add result state for audit
 	auditRec.Success()
 	auditRec.AddEventResultState(*playbookRun)
+
+	return nil
+}
+
+// UnfollowAllRuns removes userID as a follower from all playbook runs.
+func (s *PlaybookRunServiceImpl) UnfollowAllRuns(userID string) error {
+	if err := s.store.UnfollowAllRuns(userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to unfollow all runs", userID)
+	}
 
 	return nil
 }
@@ -5273,7 +5421,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {
+func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool, maxItems int) string {
 	var msg strings.Builder
 
 	T := i18n.GetUserTranslations(locale)
@@ -5293,8 +5441,18 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	}
 
 	var tasksNoDueDate, tasksDoAfterToday int
+	var displayedTasks, omittedTasks int
 	currentTime := timeutils.GetTimeForMillis(model.GetMillis()).In(timezone)
 	yesterday := currentTime.Add(-24 * time.Hour)
+
+	appendTask := func(tasksInfo *strings.Builder, line string) {
+		if maxItems > 0 && displayedTasks >= maxItems {
+			omittedTasks++
+			return
+		}
+		tasksInfo.WriteString(line)
+		displayedTasks++
+	}
 
 	var runsInfo strings.Builder
 	for _, run := range runs {
@@ -5305,7 +5463,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 			if task.ChecklistItem.DueDate == 0 {
 				// add information about tasks without due date only if the full list was requested
 				if !onlyTasksDueUntilToday {
-					fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
+					appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title))
 				}
 				tasksNoDueDate++
 				continue
@@ -5313,24 +5471,24 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 			dueTime := time.Unix(task.ChecklistItem.DueDate/1000, 0).In(timezone)
 			// due today
 			if timeutils.IsSameDay(dueTime, currentTime) {
-				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today"))
+				appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today")))
 				continue
 			}
 			// due yesterday
 			if timeutils.IsSameDay(dueTime, yesterday) {
-				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday"))
+				appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday")))
 				continue
 			}
 			// due before yesterday
 			if dueTime.Before(currentTime) {
 				days := timeutils.GetDaysDiff(dueTime, currentTime)
-				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days))
+				appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days)))
 				continue
 			}
 			// due after today
 			if !onlyTasksDueUntilToday {
 				days := timeutils.GetDaysDiff(currentTime, dueTime)
-				fmt.Fprintf(&tasksInfo, "  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days))
+				appendTask(&tasksInfo, fmt.Sprintf("  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days)))
 			}
 			tasksDoAfterToday++
 		}
@@ -5358,6 +5516,11 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	msg.WriteString("\n\n")
 	msg.WriteString(runsInfo.String())
 
+	if omittedTasks > 0 {
+		msg.WriteString(T("app.user.digest.more_tasks", omittedTasks))
+		msg.WriteString("\n")
+	}
+
 	// add summary info for tasks without a due date or due date after today
 	if tasksDoAfterToday > 0 && onlyTasksDueUntilToday {
 		msg.WriteString(":information_source: ")
@@ -5368,7 +5531,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	return msg.String()
 }
 
-func buildRunsInProgressMessage(runs []RunLink, locale string) string {
+func buildRunsInProgressMessage(runs []RunLink, locale string, maxItems int) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
@@ -5381,14 +5544,21 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
-	for _, run := range runs {
+	limit := total
+	if maxItems > 0 {
+		limit = min(total, maxItems)
+	}
+	for _, run := range runs[:limit] {
 		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
+	}
+	if maxItems > 0 && total > maxItems {
+		msg += T("app.user.digest.more_runs", total-maxItems) + "\n"
 	}
 
 	return msg
 }
 
-func buildRunsOverdueMessage(runs []RunLink, locale string) string {
+func buildRunsOverdueMessage(runs []RunLink, locale string, maxItems int) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 	msg := "\n"
@@ -5399,8 +5569,15 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 
 	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
-	for _, run := range runs {
+	limit := total
+	if maxItems > 0 {
+		limit = min(total, maxItems)
+	}
+	for _, run := range runs[:limit] {
 		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
+	}
+	if maxItems > 0 && total > maxItems {
+		msg += T("app.user.digest.more_runs", total-maxItems) + "\n"
 	}
 
 	return msg

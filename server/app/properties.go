@@ -137,11 +137,13 @@ func (p *PropertyField) ToMattermostPropertyField() *model.PropertyField {
 	mmpf := p.PropertyField
 
 	mmpf.Attrs = model.StringInterface{
-		PropertyAttrsVisibility:             p.Attrs.Visibility,
-		PropertyAttrsSortOrder:              p.Attrs.SortOrder,
-		model.PropertyFieldAttributeOptions: p.Attrs.Options,
-		PropertyAttrsParentID:               p.Attrs.ParentID,
-		PropertyAttrsValueType:              p.Attrs.ValueType,
+		PropertyAttrsVisibility: p.Attrs.Visibility,
+		PropertyAttrsSortOrder:  p.Attrs.SortOrder,
+		PropertyAttrsParentID:   p.Attrs.ParentID,
+		PropertyAttrsValueType:  p.Attrs.ValueType,
+	}
+	if len(p.Attrs.Options) > 0 {
+		mmpf.Attrs[model.PropertyFieldAttributeOptions] = p.Attrs.Options
 	}
 	return &mmpf
 }

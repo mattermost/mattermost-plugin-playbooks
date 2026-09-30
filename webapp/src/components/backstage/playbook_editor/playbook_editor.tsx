@@ -66,7 +66,7 @@ const PlaybookEditor = () => {
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const headingRef = useRef<HTMLDivElement>(null);
-    const headingIntersection = useIntersection(headingRef, {threshold: 1});
+    const headingIntersection = useIntersection(headingRef as React.RefObject<HTMLElement>, {threshold: 1});
     const headingVisible = headingIntersection?.isIntersecting ?? true;
 
     useEffect(() => {

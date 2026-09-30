@@ -50,6 +50,7 @@ import {
     fetchPlaybookRuns,
     fetchPlaybookStats,
 } from 'src/client';
+import {playbookRunUpdated} from 'src/actions';
 import {resolve} from 'src/utils';
 
 export type FetchMetadata = {
@@ -120,7 +121,7 @@ export function useClickOutsideRef(
  * https://overreacted.io/making-setinterval-declarative-with-react-hooks/
  */
 export function useTimeout(callback: () => void, delay: number | null) {
-    const timeoutRef = useRef<number>();
+    const timeoutRef = useRef<number | undefined>(undefined);
     const callbackRef = useRef(callback);
 
     // Remember the latest callback:
@@ -352,7 +353,13 @@ export function usePost(postId: string) {
 }
 
 export function useRun(runId: string, teamId?: string, channelId?: string) {
-    return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
+    const dispatch = useAppDispatch();
+    const fetchAndStore = useCallback(async (id: string) => {
+        const run = await fetchPlaybookRun(id);
+        dispatch(playbookRunUpdated(run));
+        return run;
+    }, [dispatch]);
+    return useThing(runId, fetchAndStore, getRun(runId, teamId, channelId));
 }
 
 /**
@@ -601,7 +608,7 @@ export const useStats = (playbookId: string) => {
  * Hook that returns the previous value of the prop passed as argument
  */
 export const usePrevious = (value: any) => {
-    const ref = useRef();
+    const ref = useRef<typeof value>(undefined);
 
     useEffect(() => {
         ref.current = value;

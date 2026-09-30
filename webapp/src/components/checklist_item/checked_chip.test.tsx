@@ -17,7 +17,7 @@ jest.mock('@mattermost/shared/components/tooltip', () => ({
             {children}
         </div>
     ),
-}), {virtual: true});
+}));
 
 jest.mock('src/components/profile/profile', () => ({
     __esModule: true,
