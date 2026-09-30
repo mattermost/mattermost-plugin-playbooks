@@ -22,7 +22,8 @@ type Poster interface {
 	// Post posts a custom post, which should provide the Message and ChannelId fields
 	Post(post *model.Post) error
 
-	// PostMessage posts a simple message to channelID. Returns the post id if posting was successful.
+	// PostMessage posts a simple message to channelID. Returns the created post, or nil, nil if the
+	// post is skipped because it has no content.
 	PostMessage(channelID, format string, args ...interface{}) (*model.Post, error)
 
 	// PostMessageToThread posts a message to a specified channel and thread identified by rootPostID.
@@ -31,14 +32,17 @@ type Poster interface {
 	// future use (i.e., save that if you want to continue the thread).
 	PostMessageToThread(rootPostID string, post *model.Post) error
 
-	// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
-	// posting was successful. Often used to include post actions.
+	// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the
+	// created post, or nil, nil if the post is skipped because it has no content. Often used to
+	// include post actions.
 	PostMessageWithAttachments(channelID string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error)
 
 	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
+	// Returns the created post, or nil, nil if the post is skipped because it has no content.
 	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.MessageAttachment, message string) (*model.Post, error)
 
 	// PostCustomMessageWithAttachmentsf posts a custom message with the specified type using format string. Falling back to attachments for mobile.
+	// Returns the created post, or nil, nil if the post is skipped because it has no content.
 	PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.MessageAttachment, format string, args ...interface{}) (*model.Post, error)
 
 	// DM posts a DM from the plugin bot to the specified user
