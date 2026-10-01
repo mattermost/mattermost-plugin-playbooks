@@ -27,11 +27,11 @@
       "id": "foundations",
       "name": "Foundations: shared page objects and seeding helpers",
       "doc": "e2e-tests/playwright/docs/tasks/03-foundations.md",
-      "done": false,
-      "coded_at": null,
-      "reviewed_at": null,
-      "review_status": null,
-      "attempts": 0,
+      "done": true,
+      "coded_at": "2026-10-01T22:04:08Z",
+      "reviewed_at": "2026-10-01T22:08:04Z",
+      "review_status": "OK",
+      "attempts": 1,
       "notes": null
     },
     {
