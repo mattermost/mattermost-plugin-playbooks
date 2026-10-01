@@ -1,35 +1,14 @@
-# Task 03: Foundations: shared page objects and seeding helpers
+# Task 33: Backstage runs list
 
-**Task id**: `foundations` · **Kind**: playwright
+**Task id**: `runs-list` · **Kind**: playwright
 
 ## Target
 
-- `tests/pages/run_details_page.ts`
-- `tests/pages/channel_rhs.ts`
-- `tests/pages/run_modal.ts`
-- `tests/pages/status_update_dialog.ts`
-- `tests/helpers/*.ts`
-- `tests/smoke/run_details.spec.ts`
+- `tests/runs/runs_list.spec.ts`
 
 ## What to do
 
-Build the building blocks every later task needs, so later tasks don't each reinvent them.
-
-**Helpers** (`tests/helpers/`, same style as existing: `requestedWith`, `readJsonOrThrow`, typed returns):
-- `run.ts`: make `createRun` **return the run** (id, channel_id, name); add `finishRun`, `restoreRun`, `updateStatus(runId, message, reminderSeconds)`, `addParticipants(runId, userIds)`, `getRun(runId)`.
-- `playbook.ts`: `patchPlaybook(id, partial)` / `updatePlaybook`, `archivePlaybook`, `getPlaybook`; `createPlaybook` options for `members`, `public`, checklists with items.
-- `channel.ts` (new): `createChannel(teamId, {type: 'O'|'P'})`, `createDirectChannel(a, b)`, `createGroupChannel(ids)`, `getChannel`.
-- `config.ts` (new): `patchConfig(partial)` (admin) for feature flags like App Bar / beta features / EnableTesting.
-- `user.ts`/`team.ts`: anything missing to seed a viewer user that is a team member but not a participant.
-
-**Page objects** (`tests/pages/`), a11y-first locators, `expect*` methods:
-- `RunDetailsPage` (`/playbooks/runs/:id`): `goto(teamName, runId)`, header (title, status badge, context menu), sections (summary, status update, checklist, retrospective, finish), right sidebar (Info/Timeline).
-- `ChannelRhs`: `gotoRunChannel(teamName, channelName)`, run title, checklist, run list, menu.
-- `RunModal` (start-run modal): run name, summary, channel-mode radios, channel selector, submit/cancel.
-- `StatusUpdateDialog`: message, reminder, "mark as finished", submit/cancel.
-Only implement what you can exercise in the smoke spec; later tasks extend these classes.
-
-**Smoke spec** `tests/smoke/run_details.spec.ts`: seed playbook + run via API, open the RDP and the run channel RHS, assert the run name is visible on both. This proves the helpers + POs work end-to-end.
+Target ~4 tests. Click run -> RDP; "my runs only" for both users in one test; finished filter; LHS runs sorted by name.
 
 ## Migration hard rules (a violation is an automatic review BLOCKER)
 
@@ -45,9 +24,34 @@ Only implement what you can exercise in the smoke spec; later tasks extend these
 - Don't delete Cypress specs (that's the `retire-cypress` task).
 - **Stuck on a selector?** You may use the agent-browser skill (`agent-browser skills get core`) to explore the running app and read its accessibility tree (roles + accessible names). Turn what you find into role/label locators in a page object. Artifacts go to /tmp only; never change server config through the System Console. It's an exploration aid only; the Playwright tests must pass on their own.
 
+- **Mattermost core UI goes through `MattermostCore`** (`tests/pages/mattermost/`, created by the `mattermost-core-pom` task): channels, posts, ephemeral messages, LHS sidebar, app bar/channel header, core RHS/threads, generic modals, interactive dialogs, System Console. Plugin page objects and specs must not locate core UI themselves. Extend `MattermostCore` if something is missing. The reviewer treats core-UI locators outside `tests/pages/mattermost/` as MAJOR.
+
 ## Definition of done
 
 1. Target spec(s) exist and pass locally: `cd e2e-tests/playwright && npx playwright test <spec> --reporter=list` (server at `MM_SERVICESETTINGS_SITEURL`, default `http://localhost:8065`, plugin deployed with `make deploy` if you added webapp a11y attributes).
 2. Run it a second time to check stability (`--repeat-each=2` is fine).
 3. `e2e-tests/playwright/docs/quality.sh` prints `QUALITY: PASS` (log saved as `docs/tasks/reviews/<task-id>.attempt-<n>.quality.log`). If it redeployed the plugin, re-run step 1 afterwards.
 4. At the top of the spec, a comment lists the Cypress spec(s) it replaces (and which parts).
+
+## Cypress coverage (sources)
+
+Scope column says which part of each source spec belongs to THIS task. The excerpt below is the full inventory of that spec; ignore the parts outside the scope.
+
+| Cypress spec | Scope for this task |
+|---|---|
+| `e2e-tests/cypress/tests/integration/playbooks/runs/list_spec.js` | all tests |
+
+### `runs/list_spec.js`
+
+> Scope: all tests
+
+- **Area**: runs backstage list + LHS run list
+- **Setup**: `apiInitSetup` team/user, second user added to team; public playbook with both as members, `createPublicPlaybookRun: true`; viewport macbook-13.
+- **Tests**:
+  - `has "Runs" and team name in heading` — backstage runs list: after starting a run via API, `#playbookRunList` exists when switching to Runs via `playbookRunsLHSButton`.
+  - `loads playbook run details page when clicking on a playbook run` — backstage runs list → RDP: clicking a run name in the list navigates to RDP, header (`run-header-section` h1) shows run name.
+  - `filters my runs only > for testUser` — backstage runs list: "my-runs-only" filter (`my-runs-only` test id) hides other user's run, keeps own run visible.
+  - `filters my runs only > for testAnotherUser` — backstage runs list: same filter from the other user's perspective, symmetric behavior.
+  - `filters Finished runs correctly > shows finished runs` — backstage runs list: finished run hidden by default; "finished-runs" filter reveals it alongside in-progress runs.
+  - `LHS run list > lhs run list sorted by name` — LHS navigation: 4 runs created concurrently via API appear in LHS sorted/ordered by name (`run-sort-check 0..3`).
+- **Notes**: none significant; uses `Promise.all` with `cy.apiRunPlaybook` for concurrent run creation.

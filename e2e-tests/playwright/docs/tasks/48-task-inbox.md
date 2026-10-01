@@ -1,35 +1,14 @@
-# Task 03: Foundations: shared page objects and seeding helpers
+# Task 48: Task inbox
 
-**Task id**: `foundations` · **Kind**: playwright
+**Task id**: `task-inbox` · **Kind**: playwright
 
 ## Target
 
-- `tests/pages/run_details_page.ts`
-- `tests/pages/channel_rhs.ts`
-- `tests/pages/run_modal.ts`
-- `tests/pages/status_update_dialog.ts`
-- `tests/helpers/*.ts`
-- `tests/smoke/run_details.spec.ts`
+- `tests/navigation/task_inbox.spec.ts`
 
 ## What to do
 
-Build the building blocks every later task needs, so later tasks don't each reinvent them.
-
-**Helpers** (`tests/helpers/`, same style as existing: `requestedWith`, `readJsonOrThrow`, typed returns):
-- `run.ts`: make `createRun` **return the run** (id, channel_id, name); add `finishRun`, `restoreRun`, `updateStatus(runId, message, reminderSeconds)`, `addParticipants(runId, userIds)`, `getRun(runId)`.
-- `playbook.ts`: `patchPlaybook(id, partial)` / `updatePlaybook`, `archivePlaybook`, `getPlaybook`; `createPlaybook` options for `members`, `public`, checklists with items.
-- `channel.ts` (new): `createChannel(teamId, {type: 'O'|'P'})`, `createDirectChannel(a, b)`, `createGroupChannel(ids)`, `getChannel`.
-- `config.ts` (new): `patchConfig(partial)` (admin) for feature flags like App Bar / beta features / EnableTesting.
-- `user.ts`/`team.ts`: anything missing to seed a viewer user that is a team member but not a participant.
-
-**Page objects** (`tests/pages/`), a11y-first locators, `expect*` methods:
-- `RunDetailsPage` (`/playbooks/runs/:id`): `goto(teamName, runId)`, header (title, status badge, context menu), sections (summary, status update, checklist, retrospective, finish), right sidebar (Info/Timeline).
-- `ChannelRhs`: `gotoRunChannel(teamName, channelName)`, run title, checklist, run list, menu.
-- `RunModal` (start-run modal): run name, summary, channel-mode radios, channel selector, submit/cancel.
-- `StatusUpdateDialog`: message, reminder, "mark as finished", submit/cancel.
-Only implement what you can exercise in the smoke spec; later tasks extend these classes.
-
-**Smoke spec** `tests/smoke/run_details.spec.ts`: seed playbook + run via API, open the RDP and the run channel RHS, assert the run name is visible on both. This proves the helpers + POs work end-to-end.
+Target ~3 tests. Header icon toggles panel ("Your tasks", count); filter all-from-owned-runs vs assigned only; checking a task hides it and "show checked" brings it back. Cypress used styled-component class selectors: add accessible names/roles in the webapp component if needed (that's in scope).
 
 ## Migration hard rules (a violation is an automatic review BLOCKER)
 
@@ -45,9 +24,33 @@ Only implement what you can exercise in the smoke spec; later tasks extend these
 - Don't delete Cypress specs (that's the `retire-cypress` task).
 - **Stuck on a selector?** You may use the agent-browser skill (`agent-browser skills get core`) to explore the running app and read its accessibility tree (roles + accessible names). Turn what you find into role/label locators in a page object. Artifacts go to /tmp only; never change server config through the System Console. It's an exploration aid only; the Playwright tests must pass on their own.
 
+- **Mattermost core UI goes through `MattermostCore`** (`tests/pages/mattermost/`, created by the `mattermost-core-pom` task): channels, posts, ephemeral messages, LHS sidebar, app bar/channel header, core RHS/threads, generic modals, interactive dialogs, System Console. Plugin page objects and specs must not locate core UI themselves. Extend `MattermostCore` if something is missing. The reviewer treats core-UI locators outside `tests/pages/mattermost/` as MAJOR.
+
 ## Definition of done
 
 1. Target spec(s) exist and pass locally: `cd e2e-tests/playwright && npx playwright test <spec> --reporter=list` (server at `MM_SERVICESETTINGS_SITEURL`, default `http://localhost:8065`, plugin deployed with `make deploy` if you added webapp a11y attributes).
 2. Run it a second time to check stability (`--repeat-each=2` is fine).
 3. `e2e-tests/playwright/docs/quality.sh` prints `QUALITY: PASS` (log saved as `docs/tasks/reviews/<task-id>.attempt-<n>.quality.log`). If it redeployed the plugin, re-run step 1 afterwards.
 4. At the top of the spec, a comment lists the Cypress spec(s) it replaces (and which parts).
+
+## Cypress coverage (sources)
+
+Scope column says which part of each source spec belongs to THIS task. The excerpt below is the full inventory of that spec; ignore the parts outside the scope.
+
+| Cypress spec | Scope for this task |
+|---|---|
+| `e2e-tests/cypress/tests/integration/playbooks/runs/taskinbox_spec.js` | all tests |
+
+### `runs/taskinbox_spec.js`
+
+> Scope: all tests
+
+- **Area**: Global header > Task Inbox RHS panel (cross-run personal task list)
+- **Setup**: Public playbook with 4 checklist tasks, task 0 assigned to testUser via API; a sysadmin and testViewerUser also created but mostly unused here; macbook-13 viewport. Run owned by testUser.
+- **Tests**:
+  - `icon in global header` — Playbooks product page shows `header-task-inbox-icon` in global header and it's clickable.
+  - `icon toggles taskinbox view` — clicking header icon opens Task Inbox RHS ("Your tasks", "1 assigned") and clicking again closes it.
+  - `show unassigned tasks from runs I own` — by default (showing all tasks from owned runs), Task Inbox shows all 4 tasks regardless of assignment.
+  - `show only assigned tasks` — via Filters, disabling "Show all tasks from runs I own" narrows list to only the 1 task assigned to current user.
+  - `tasks can be checked` — checking a task in Task Inbox removes it from (default) list of 4→3; enabling "Show checked tasks" filter brings it back (shows 4 again).
+- **Notes**: Uses `getStyledComponent` selectors (styled-components class names) rather than testIds for most Task Inbox internals — relies on component naming (`HeaderTitle`, `Body`, `TaskList`, `Container`), which is brittle for refactors.

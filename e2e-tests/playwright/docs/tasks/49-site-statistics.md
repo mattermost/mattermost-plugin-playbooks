@@ -1,35 +1,14 @@
-# Task 03: Foundations: shared page objects and seeding helpers
+# Task 49: Admin console site statistics
 
-**Task id**: `foundations` · **Kind**: playwright
+**Task id**: `site-statistics` · **Kind**: playwright
 
 ## Target
 
-- `tests/pages/run_details_page.ts`
-- `tests/pages/channel_rhs.ts`
-- `tests/pages/run_modal.ts`
-- `tests/pages/status_update_dialog.ts`
-- `tests/helpers/*.ts`
-- `tests/smoke/run_details.spec.ts`
+- `tests/admin/site_statistics.spec.ts`
 
 ## What to do
 
-Build the building blocks every later task needs, so later tasks don't each reinvent them.
-
-**Helpers** (`tests/helpers/`, same style as existing: `requestedWith`, `readJsonOrThrow`, typed returns):
-- `run.ts`: make `createRun` **return the run** (id, channel_id, name); add `finishRun`, `restoreRun`, `updateStatus(runId, message, reminderSeconds)`, `addParticipants(runId, userIds)`, `getRun(runId)`.
-- `playbook.ts`: `patchPlaybook(id, partial)` / `updatePlaybook`, `archivePlaybook`, `getPlaybook`; `createPlaybook` options for `members`, `public`, checklists with items.
-- `channel.ts` (new): `createChannel(teamId, {type: 'O'|'P'})`, `createDirectChannel(a, b)`, `createGroupChannel(ids)`, `getChannel`.
-- `config.ts` (new): `patchConfig(partial)` (admin) for feature flags like App Bar / beta features / EnableTesting.
-- `user.ts`/`team.ts`: anything missing to seed a viewer user that is a team member but not a participant.
-
-**Page objects** (`tests/pages/`), a11y-first locators, `expect*` methods:
-- `RunDetailsPage` (`/playbooks/runs/:id`): `goto(teamName, runId)`, header (title, status badge, context menu), sections (summary, status update, checklist, retrospective, finish), right sidebar (Info/Timeline).
-- `ChannelRhs`: `gotoRunChannel(teamName, channelName)`, run title, checklist, run list, menu.
-- `RunModal` (start-run modal): run name, summary, channel-mode radios, channel selector, submit/cancel.
-- `StatusUpdateDialog`: message, reminder, "mark as finished", submit/cancel.
-Only implement what you can exercise in the smoke spec; later tasks extend these classes.
-
-**Smoke spec** `tests/smoke/run_details.spec.ts`: seed playbook + run via API, open the RDP and the run channel RHS, assert the run name is visible on both. This proves the helpers + POs work end-to-end.
+One test: counters visible, create a playbook and a run as a regular user, reload, both counters +1.
 
 ## Migration hard rules (a violation is an automatic review BLOCKER)
 
@@ -45,9 +24,31 @@ Only implement what you can exercise in the smoke spec; later tasks extend these
 - Don't delete Cypress specs (that's the `retire-cypress` task).
 - **Stuck on a selector?** You may use the agent-browser skill (`agent-browser skills get core`) to explore the running app and read its accessibility tree (roles + accessible names). Turn what you find into role/label locators in a page object. Artifacts go to /tmp only; never change server config through the System Console. It's an exploration aid only; the Playwright tests must pass on their own.
 
+- **Mattermost core UI goes through `MattermostCore`** (`tests/pages/mattermost/`, created by the `mattermost-core-pom` task): channels, posts, ephemeral messages, LHS sidebar, app bar/channel header, core RHS/threads, generic modals, interactive dialogs, System Console. Plugin page objects and specs must not locate core UI themselves. Extend `MattermostCore` if something is missing. The reviewer treats core-UI locators outside `tests/pages/mattermost/` as MAJOR.
+
 ## Definition of done
 
 1. Target spec(s) exist and pass locally: `cd e2e-tests/playwright && npx playwright test <spec> --reporter=list` (server at `MM_SERVICESETTINGS_SITEURL`, default `http://localhost:8065`, plugin deployed with `make deploy` if you added webapp a11y attributes).
 2. Run it a second time to check stability (`--repeat-each=2` is fine).
 3. `e2e-tests/playwright/docs/quality.sh` prints `QUALITY: PASS` (log saved as `docs/tasks/reviews/<task-id>.attempt-<n>.quality.log`). If it redeployed the plugin, re-run step 1 afterwards.
 4. At the top of the spec, a comment lists the Cypress spec(s) it replaces (and which parts).
+
+## Cypress coverage (sources)
+
+Scope column says which part of each source spec belongs to THIS task. The excerpt below is the full inventory of that spec; ignore the parts outside the scope.
+
+| Cypress spec | Scope for this task |
+|---|---|
+| `e2e-tests/cypress/tests/integration/playbooks/adminconsole/analytics_spec.js` | all tests |
+
+### `adminconsole/analytics_spec.js`
+
+> Scope: all tests
+
+- **Area**: admin console > site statistics (playbooks/runs counters)
+- **Setup**: creates a custom sysadmin user + regular user/team, a playbook; tests login as sysadmin to view admin console.
+- **Tests**:
+  - `admin console > site statistics > playbooks and runs counters are visible` — visiting admin console System Statistics page shows `playbooks.playbook_count` and `playbooks.playbook_run_count` test elements.
+  - `admin console > site statistics > playbook counter increases after creating a playbook` — creating a playbook as non-admin user then reloading admin console stats page shows playbook counter incremented by 1.
+  - `admin console > site statistics > run counter increases after creating a run` — running a playbook (via API) as non-admin user then reloading admin console stats page shows run counter incremented by 1.
+- **Notes**: all tests are effectively API-setup + admin console UI assertion; no RHS/editor UI covered here.

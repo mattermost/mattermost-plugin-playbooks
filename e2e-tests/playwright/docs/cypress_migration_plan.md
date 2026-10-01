@@ -249,6 +249,7 @@ spec stays until a human schedules the Go work.
 Start with what unblocks the most page objects, then the highest-value flows.
 
 1. **Foundations**: page objects for RDP (`RunDetailsPage`), channel RHS (`ChannelRhs`), start-run modal (`RunModal`), status update dialog. Add helpers (Playwright only, no Go/webapp changes): `createRun` returning the run, `updateStatus`, `finishRun`, `setConfig`/feature flag, `createChannel`, `createDM/GM`, `addParticipant`, `patchPlaybook`.
+1b. **`MattermostCore` page object** (`tests/pages/mattermost/`), right after `start_run_modal`. Everything Mattermost renders (channels, posts, ephemeral messages, sidebar, app bar, core RHS/threads, modals, interactive dialogs, System Console) gets its own layer. Existing plugin page objects are refactored onto it, and later tasks must use it.
 2. `start_run_modal`, `start_run_entry_points`, `run_start_actions`, `finish_restore`, `checklist`: core run lifecycle.
 3. `rdp_header`, `rdp_viewer`, `participants`, `rdp_sidebar`, `status_updates`, `status_update_dialog`.
 4. Editor: `editor_run_settings`, `editor_status_updates`, `editor_checklists`, `editor_access`, `attributes`, `conditions`.

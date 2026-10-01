@@ -26,6 +26,9 @@ These apply to every task. The reviewer treats any violation as a BLOCKER.
 | `e2e-tests/playwright/docs/tasks/reviews/<id>.attempt-<n>.md` | Review report written by the review agent for each attempt. |
 | `e2e-tests/playwright/docs/tasks/reviews/<id>.attempt-<n>.quality.log` | Output of `quality.sh` saved by the coder for each attempt (plus the `Pre-existing failures` / `Product bugs found` sections). |
 | `e2e-tests/playwright/docs/quality.sh` | Runs the CI quality gates that match the current change, and enforces hard rules 1–2. Exit 0 / `QUALITY: PASS` = green. |
+| `e2e-tests/playwright/docs/prompts/coder-attempt-1.md` | Exact prompt template for a coder's first attempt. Single source of truth; substitute `<ID>`/`<DOC>`/`<N>`. |
+| `e2e-tests/playwright/docs/prompts/coder-attempt-n.md` | Exact prompt template for a coder's attempt N > 1 (fixing a NOK review). Substitute `<ID>`/`<N>`/`<N-1>`. |
+| `e2e-tests/playwright/docs/prompts/review.md` | Exact prompt template for the review agent. Substitute `<ID>`/`<DOC>`/`<N>`. |
 | `e2e-tests/playwright/docs/cypress_migration_plan.md` | Consolidation principles P1–P7 and the overall layout. |
 | `e2e-tests/playwright/docs/cypress_inventory.md` | Full per-test inventory of the Cypress suite. |
 | `e2e-tests/playwright/AGENTS.md` | Playwright conventions. Both agents must follow it. |
@@ -131,33 +134,12 @@ Start the attempt, then prompt the coder:
 N=$(e2e-tests/playwright/docs/todo.sh start-attempt "$ID")
 ```
 
-**Attempt 1 prompt:**
+**Attempt 1 prompt:** use `e2e-tests/playwright/docs/prompts/coder-attempt-1.md` verbatim,
+substituting `<ID>`, `<DOC>`, `<N>` with the real values. Don't paraphrase it; copy it exactly so every task gets
+the same instructions.
 
-```
-You are the CODING agent for migration task `<ID>`.
-1. Read, in this order: AGENTS.md, e2e-tests/playwright/AGENTS.md, e2e-tests/playwright/docs/cypress_migration_plan.md (section 1), and your task doc <DOC>.
-2. Implement the task exactly as the doc describes. Read the original Cypress specs listed in the doc when you need details beyond the inventory excerpt.
-3. Respect the migration hard rules in your task doc: no Go file changes at all; webapp changes are limited to a11y attributes; product bugs become test.fixme, not product fixes.
-4. Meet the doc's "Definition of done": the spec passes locally twice. Then run the quality gates:
-   e2e-tests/playwright/docs/quality.sh 2>&1 | tee e2e-tests/playwright/docs/tasks/reviews/<ID>.attempt-<N>.quality.log
-   Fix EVERY issue it reports and re-run until it prints QUALITY: PASS. Don't suppress checks. If it redeployed the plugin, re-run your spec afterwards.
-5. Do NOT commit, and do NOT edit docs/todo.json by hand.
-6. Only when the spec passes AND quality.sh prints QUALITY: PASS, run: e2e-tests/playwright/docs/todo.sh coded <ID>
-   Then reply with exactly: CODED <ID>
-If you truly cannot complete it (e.g. a product bug blocks it), don't run `coded`. Reply: BLOCKED <ID> <one-line reason>, and put details in e2e-tests/playwright/docs/tasks/reviews/<ID>.coder-blocked.md.
-```
-
-**Attempt N > 1 prompt:**
-
-```
-Review attempt <N-1> of task `<ID>` is NOK. Read e2e-tests/playwright/docs/tasks/reviews/<ID>.attempt-<N-1>.md.
-Fix every finding marked BLOCKER or MAJOR. Fix MINOR findings when they're cheap.
-If you disagree with a finding, don't ignore it: add a "## Coder response" section to that review file explaining why.
-Re-run the full Definition of done from the task doc, including
-`e2e-tests/playwright/docs/quality.sh 2>&1 | tee e2e-tests/playwright/docs/tasks/reviews/<ID>.attempt-<N>.quality.log`, until it prints QUALITY: PASS.
-The hard rules still apply: no Go changes, webapp changes limited to a11y attributes. Then run: e2e-tests/playwright/docs/todo.sh coded <ID>
-and reply with exactly: CODED <ID>
-```
+**Attempt N > 1 prompt:** use `e2e-tests/playwright/docs/prompts/coder-attempt-n.md` verbatim,
+substituting `<ID>`, `<N>`, `<N-1>`.
 
 Send the prompt and wait. Coding can take a long time, so use a generous timeout and re-wait if needed:
 
@@ -187,33 +169,9 @@ herdr agent start reviewer --kind pi --pane "$REVIEWER_PANE" --timeout 60000
 mkdir -p e2e-tests/playwright/docs/tasks/reviews
 ```
 
-**Review prompt:**
-
-```
-You are the REVIEW agent for migration task `<ID>`, attempt <N>. Do NOT modify any code or tests. You may only write your review file.
-1. Read: AGENTS.md, e2e-tests/playwright/AGENTS.md, e2e-tests/playwright/docs/cypress_migration_plan.md (section 1), and the task doc <DOC>.
-2. Inspect the work: `e2e-tests/playwright/docs/quality.sh --list` lists every changed file (anywhere in the repo). Read `git diff HEAD` for tracked files and read each untracked file in that list. This is everything done for this task (all earlier tasks are committed). Any file outside `e2e-tests/` and `webapp/` is a BLOCKER (the `allowed-paths` gate also fails on it).
-3. Verify all of the following:
-   a. Coverage: every behavior in the doc's "Cypress coverage" (within each source's Scope) is asserted somewhere, unless the doc moves it elsewhere. List anything missing.
-   b. Consolidation: duplicates were merged and tables were used as the doc asks. It's not a copy-paste of the Cypress specs.
-   c. e2e-tests/playwright/AGENTS.md rules: POM is mandatory. ESLint already rejects `getBy*`, `locator`, and `waitForTimeout` calls in spec files. The local plugin `eslint-rules/` (`playbooks-e2e/*` rules) rejects these in spec files: locator builders, locator refinements (`.filter({...})`/`.first()`/`.nth()`/`.and()`/`.or()`), legacy `page.click('#sel')`-style APIs, destructured or aliased builders, fixed waits, and unconditional skips. Still check for workarounds that dodge the rules, which are BLOCKERs: any eslint-disable, raw DOM queries via `page.evaluate`, locators built in helpers instead of page objects, or changes to `eslint.config.mjs`/`eslint-rules/` that weaken the rules. Check a11y-first locators, helpers for seeding, @objective + tag + #/* comments, collision-free names, and no fixed waits (`waitForTimeout`).
-   d. Definition of done: run the spec yourself twice (`npx playwright test <spec> --reporter=list`). Re-run `e2e-tests/playwright/docs/quality.sh` yourself; don't trust the coder's log. Any failure is a BLOCKER, unless it is listed under `## Pre-existing failures` in the coder's quality log (`<ID>.attempt-<N>.quality.log`) with convincing proof that it also fails on a clean HEAD. Any suppressed check (new eslint-disable, nolint, skipped test, loosened config) is a BLOCKER.
-   e. Migration hard rules: ANY Go file change is a BLOCKER. Read the full webapp diff (`git diff -- webapp`). Every hunk must be only an a11y attribute (aria-label/-labelledby/-describedby, role, alt, htmlFor/id) or the i18n string an aria-label needs. Anything else is a BLOCKER: logic, styling, markup restructuring, data-testid, new files, or a product bug fix. A product bug must appear as `test.fixme` with a reason, not as a product fix.
-4. Write e2e-tests/playwright/docs/tasks/reviews/<ID>.attempt-<N>.md:
-   - The first line is exactly `VERDICT: OK` or `VERDICT: NOK`.
-   - Then a findings list. Each finding has: severity (BLOCKER | MAJOR | MINOR), file:line, the problem, and the expected fix.
-   - Verdict is NOK if there is at least one BLOCKER or MAJOR finding. MINOR findings alone are still OK.
-   - Include the exact test commands you ran and their results.
-5. Run: e2e-tests/playwright/docs/todo.sh reviewed <ID> OK   (or NOK)
-6. Reply with exactly: REVIEW <OK|NOK> e2e-tests/playwright/docs/tasks/reviews/<ID>.attempt-<N>.md
-```
-
-For the `go-coverage-gaps` task (report only), replace 3a–3d: check that every
-listed Cypress test has a row and that each COVERED claim points to a real Go
-test that asserts the same thing. Spot-check at least 5. Every PARTIAL/GAP must be
-either assigned to a Playwright task or listed as a follow-up. No code changed
-at all. For `retire-cypress`, check that only fully covered specs were deleted
-(cross-check against `todo.json` and the go-coverage-gaps follow-ups).
+**Review prompt:** use `e2e-tests/playwright/docs/prompts/review.md` verbatim, substituting
+`<ID>`, `<DOC>`, `<N>`. That file also has the `go-coverage-gaps`/`retire-cypress` overrides for
+step 3a-3d. Copy it exactly; don't paraphrase.
 
 Wait the same way as for the coder:
 
