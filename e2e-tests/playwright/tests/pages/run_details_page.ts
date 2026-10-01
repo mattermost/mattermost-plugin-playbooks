@@ -26,6 +26,10 @@ export class RunDetailsPage {
     readonly sidebar: Locator;
     readonly sidebarTitle: Locator;
 
+    // The channel-name link in the run detail sidebar (data-testid='runinfo-channel-link').
+    // Clicking it navigates to the channel linked to this run.
+    readonly channelLink: Locator;
+
     constructor(page: Page) {
         this.page = page;
 
@@ -45,6 +49,8 @@ export class RunDetailsPage {
 
         this.sidebar = page.getByRole('complementary');
         this.sidebarTitle = this.sidebar.getByTestId('rhs-title');
+
+        this.channelLink = page.getByTestId('runinfo-channel-link');
     }
 
     async goto(teamName: string, runId: string) {
@@ -78,5 +84,10 @@ export class RunDetailsPage {
 
     async expectSidebarTitle(title: string) {
         await expect(this.sidebarTitle).toContainText(title);
+    }
+
+    // Clicks the channel link and navigates to the linked channel.
+    async clickChannelLink() {
+        await this.channelLink.click();
     }
 }

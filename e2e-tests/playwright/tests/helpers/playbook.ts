@@ -23,6 +23,18 @@ export interface Playbook {
     checklists: Checklist[];
     members: PlaybookMember[];
     delete_at: number;
+    channel_mode?: string;
+    channel_id?: string;
+    channel_name_template?: string;
+    channel_name_template_locked?: boolean;
+    run_summary_template?: string;
+    run_summary_template_enabled?: boolean;
+    new_channel_only?: boolean;
+    default_owner_enabled?: boolean;
+    default_owner_id?: string;
+    create_public_playbook_run?: boolean;
+    next_run_number?: number;
+    run_number_prefix?: string;
 }
 
 export interface CreatePlaybookOptions {
@@ -85,6 +97,11 @@ interface PatchPlaybookOptions {
     run_number_prefix?: string;
     channel_name_template?: string;
     channel_name_template_locked?: boolean;
+    new_channel_only?: boolean;
+    channel_mode?: string;
+    channel_id?: string;
+    run_summary_template?: string;
+    run_summary_template_enabled?: boolean;
 }
 
 // Partial update (PATCH): only supports the fields the server's patch endpoint
@@ -98,6 +115,34 @@ export async function patchPlaybook(page: Page, playbookId: string, partial: Pat
 
     if (!response.ok()) {
         throw new Error(`Unable to patch playbook ${playbookId}: ${response.status()} ${await response.text()}`);
+    }
+}
+
+export interface PropertyFieldInput {
+    name: string;
+    type: string;
+    attrs?: Record<string, unknown>;
+}
+
+// Adds a property field to a playbook via GraphQL (the REST API does not expose this yet).
+export async function addPlaybookPropertyField(page: Page, playbookId: string, field: PropertyFieldInput): Promise<void> {
+    const response = await page.request.post('/plugins/playbooks/api/v0/query', {
+        ...requestedWith,
+        data: {
+            query: `mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+                addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+            }`,
+            variables: {playbookID: playbookId, propertyField: field},
+        },
+    });
+
+    if (!response.ok()) {
+        throw new Error(`Unable to add property field to playbook ${playbookId}: ${response.status()} ${await response.text()}`);
+    }
+
+    const body = await response.json() as {errors?: Array<{message: string}>};
+    if (body.errors?.length) {
+        throw new Error(`addPlaybookPropertyField failed: ${JSON.stringify(body.errors)}`);
     }
 }
 

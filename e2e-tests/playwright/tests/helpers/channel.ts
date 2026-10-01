@@ -56,3 +56,12 @@ export async function getChannel(page: Page, channelId: string): Promise<Channel
     const response = await page.request.get(`/api/v4/channels/${channelId}`, requestedWith);
     return readJsonOrThrow<Channel>(response, `Unable to fetch channel ${channelId}`);
 }
+
+// Searches for channels in a team matching `term` (display name or name prefix).
+export async function searchChannels(page: Page, teamId: string, term: string): Promise<Channel[]> {
+    const response = await page.request.post(`/api/v4/teams/${teamId}/channels/search`, {
+        ...requestedWith,
+        data: {term},
+    });
+    return readJsonOrThrow<Channel[]>(response, `Unable to search channels in team ${teamId} for term "${term}"`);
+}

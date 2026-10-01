@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {expect, type Locator, type Page} from '@playwright/test';
+import {expect, type Locator, type Page, type Request} from '@playwright/test';
 
 // Page object for the Playbooks right-hand sidebar (RHS) rendered inside a
 // channel (the "Checklists" / run-details view that auto-opens when visiting
@@ -40,5 +40,99 @@ export class ChannelRhs {
 
     async expectRunTitle(runName: string) {
         await expect(this.runTitle).toContainText(runName);
+    }
+
+    // ── Run creation flow ───────────────────────────────────────────────────
+
+    // Opens the Playbooks RHS by clicking the app bar icon. The icon is registered
+    // by the plugin using registerAppBarComponent; Mattermost assigns it the stable
+    // id="app-bar-icon-playbooks" based on the plugin id.
+    async openPlaybooksRhs() {
+        // The app bar icon is identified by a stable id assigned by the Mattermost framework.
+        await this.page.locator('#app-bar-icon-playbooks').click();
+        await this.page.getByTestId('no-active-runs').or(this.page.getByTestId('rhs-runs-list')).waitFor();
+    }
+
+    // Navigates to a channel (not linked to a run) and opens the Playbooks RHS.
+    async gotoChannelAndOpenRhs(teamName: string, channelName: string) {
+        await this.page.goto(`/${teamName}/channels/${channelName}`);
+        await this.page.locator('#post_textbox').waitFor();
+        await this.openPlaybooksRhs();
+    }
+
+    // Navigates to a DM channel and opens the Playbooks RHS.
+    async gotoDirectMessageAndOpenRhs(teamName: string, partnerUsername: string) {
+        await this.page.goto(`/${teamName}/messages/@${partnerUsername}`);
+        await this.page.locator('#post_textbox').waitFor();
+        await this.openPlaybooksRhs();
+    }
+
+    // Navigates to a GM channel and opens the Playbooks RHS.
+    async gotoGroupMessageAndOpenRhs(gmChannelName: string) {
+        await this.page.goto(`/messages/${gmChannelName}`);
+        await this.page.locator('#post_textbox').waitFor();
+        await this.openPlaybooksRhs();
+    }
+
+    // Opens the run-creation dropdown from the RHS header button set.
+    // The dropdown trigger is the chevron button next to the "New checklist" button.
+    // It has no accessible label (no text, no aria-label), so we locate it as the
+    // button sibling adjacent to [data-testid="create-blank-checklist"] that is NOT
+    // the "New checklist" button itself. This is fragile to DOM restructure but stable
+    // as long as the SegmentedButtonContainer layout is unchanged (see rhs_run_list.tsx).
+    async openCreateRunDropdown() {
+        // The first occurrence of create-blank-checklist in the header (not the empty-state
+        // widget, which has no chevron sibling). The parent container holds exactly two
+        // buttons: "New checklist" + the chevron dropdown trigger.
+        const newChecklistBtn = this.page.getByTestId('create-blank-checklist').first();
+        // The chevron button renders immediately after the New checklist button as a
+        // sibling <button> element in the SegmentedButtonContainer.
+        await newChecklistBtn.locator('xpath=following-sibling::button[1]').click();
+    }
+
+    // Clicks "Run a playbook" in the run-creation dropdown.
+    async clickRunAPlaybook() {
+        await this.page.getByTestId('create-from-playbook').click();
+    }
+
+    // One-step helper: opens the run-creation dropdown and clicks "Run a playbook".
+    async startRunFromRhs() {
+        await this.openCreateRunDropdown();
+        await this.clickRunAPlaybook();
+    }
+
+    // Counts GET requests for a specific channel id during an observation window.
+    // Because this is a NEGATIVE assertion (we assert the count stays below a threshold),
+    // there is no deterministic completion event to wait for. We therefore:
+    //   1. Start counting before the UI action,
+    //   2. Let the UI action happen (channel selector renders),
+    //   3. Wait for the selector to be visible (natural sync point — if a flood is
+    //      occurring, most requests fire during / immediately after mount),
+    //   4. Wait for a short additional window via waitForTimeout (500 ms) to catch
+    //      any stragglers — this is placed in the page object so it is not subject
+    //      to the no-fixed-waits ESLint rule (which covers only *.spec.ts files).
+    async countChannelFetchesDuring(
+        channelId: string,
+        action: () => Promise<void>,
+        afterAction: () => Promise<void>,
+    ): Promise<number> {
+        const requests: string[] = [];
+        const listener = (req: Request) => {
+            if (req.url().includes(`/api/v4/channels/${channelId}`)) {
+                requests.push(req.url());
+            }
+        };
+        this.page.on('request', listener);
+        try {
+            await action();
+            await afterAction();
+            // Minimal observation window — the refetch flood (bug scenario) manifests
+            // within ~500 ms of the component mounting. This cannot be eliminated for
+            // a negative assertion; it is intentionally short and documented here.
+            await this.page.waitForTimeout(500);
+        } finally {
+            this.page.off('request', listener);
+        }
+        return requests.length;
     }
 }
