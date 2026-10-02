@@ -71,11 +71,11 @@
       "id": "run-start-actions",
       "name": "Run start side effects of playbook actions (invite, default owner, broadcast, webhook)",
       "doc": "e2e-tests/playwright/docs/tasks/07-run-start-actions.md",
-      "done": false,
-      "coded_at": null,
-      "reviewed_at": null,
-      "review_status": null,
-      "attempts": 0,
+      "done": true,
+      "coded_at": "2026-10-02T03:52:24Z",
+      "reviewed_at": "2026-10-02T03:59:36Z",
+      "review_status": "OK",
+      "attempts": 1,
       "notes": null
     },
     {

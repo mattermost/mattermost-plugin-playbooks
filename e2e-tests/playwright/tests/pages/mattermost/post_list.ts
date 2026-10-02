@@ -66,6 +66,27 @@ export class MattermostPostList {
         await this.page.getByRole('menuitem', {name: /run playbook/i}).click();
     }
 
+    // The first (oldest) post body in the channel.
+    firstPostMessage(): Locator {
+        return this.allPostMessages().first();
+    }
+
+    // Asserts that the first (oldest) post in the channel contains the given text.
+    async expectFirstPostContains(text: string): Promise<void> {
+        await expect(this.firstPostMessage()).toContainText(text);
+    }
+
+    // Asserts that at least one post in the channel contains the given text.
+    // Uses toContainText on the first matching post via filter.
+    async expectAnyPostContains(text: string): Promise<void> {
+        await expect(this.allPostMessages().filter({hasText: text}).first()).toBeVisible();
+    }
+
+    // Asserts that NO post in the channel contains the given text.
+    async expectNoPostContains(text: string): Promise<void> {
+        await expect(this.allPostMessages().filter({hasText: text})).toHaveCount(0);
+    }
+
     // Asserts that an ephemeral ("only visible to you") post containing `text`
     // is visible. In Mattermost, ephemeral posts show the indicator text
     // "Only visible to you" alongside the message body. The `postContent`

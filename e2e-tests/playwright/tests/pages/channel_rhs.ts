@@ -23,6 +23,10 @@ export class ChannelRhs {
     readonly runTitle: Locator;
     readonly contextMenu: Locator;
     readonly checklist: Locator;
+    // The Owner profile selector in the RHS About section (rhs_about.tsx).
+    // Rendered as a div with data-testid="owner-profile-selector" containing
+    // a button with text "@username ▾".
+    readonly ownerSelector: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -34,6 +38,7 @@ export class ChannelRhs {
         this.runTitle = page.getByTestId('rendered-run-name').getByTestId('menuButton');
         this.contextMenu = page.getByTestId('dropdownmenu');
         this.checklist = page.getByTestId('pb-checklists-inner-container');
+        this.ownerSelector = page.getByTestId('owner-profile-selector');
     }
 
     // Navigates to the given channel; the Playbooks RHS auto-opens when the
@@ -49,6 +54,13 @@ export class ChannelRhs {
 
     async expectRunTitle(runName: string) {
         await expect(this.runTitle).toContainText(runName);
+    }
+
+    // Asserts that the Owner section in the RHS About panel shows the given
+    // username. The owner-profile-selector div contains a button with the
+    // username prefixed by "@" (e.g. "@alice ").
+    async expectOwner(username: string) {
+        await expect(this.ownerSelector).toContainText(`@${username}`);
     }
 
     // ── Run creation flow ───────────────────────────────────────────────────

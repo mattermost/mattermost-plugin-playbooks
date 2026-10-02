@@ -52,6 +52,14 @@ export async function createGroupChannel(page: Page, userIds: string[]): Promise
     return readJsonOrThrow<Channel>(response, 'Unable to create group channel');
 }
 
+export async function deleteChannel(page: Page, channelId: string): Promise<void> {
+    const response = await page.request.delete(`/api/v4/channels/${channelId}`, requestedWith);
+
+    if (!response.ok()) {
+        throw new Error(`Unable to delete channel ${channelId}: ${response.status()} ${await response.text()}`);
+    }
+}
+
 export async function getChannel(page: Page, channelId: string): Promise<Channel> {
     const response = await page.request.get(`/api/v4/channels/${channelId}`, requestedWith);
     return readJsonOrThrow<Channel>(response, `Unable to fetch channel ${channelId}`);

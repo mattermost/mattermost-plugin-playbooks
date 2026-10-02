@@ -35,6 +35,15 @@ export interface Playbook {
     create_public_playbook_run?: boolean;
     next_run_number?: number;
     run_number_prefix?: string;
+    // Run-start action fields
+    invited_user_ids?: string[];
+    invite_users_enabled?: boolean;
+    broadcast_channel_ids?: string[];
+    broadcast_enabled?: boolean;
+    webhook_on_creation_urls?: string[];
+    webhook_on_creation_enabled?: boolean;
+    retrospective_enabled?: boolean;
+    create_channel_member_on_new_participant?: boolean;
 }
 
 export interface CreatePlaybookOptions {
@@ -42,6 +51,17 @@ export interface CreatePlaybookOptions {
     description?: string;
     public?: boolean;
     members?: PlaybookMember[];
+    // Run-start action settings
+    invitedUserIds?: string[];
+    inviteUsersEnabled?: boolean;
+    defaultOwnerId?: string;
+    defaultOwnerEnabled?: boolean;
+    broadcastChannelIds?: string[];
+    broadcastEnabled?: boolean;
+    webhookOnCreationUrls?: string[];
+    webhookOnCreationEnabled?: boolean;
+    retrospectiveEnabled?: boolean;
+    createPublicPlaybookRun?: boolean;
 }
 
 // Creates a playbook as whoever the page is currently logged in as. The creator
@@ -59,6 +79,17 @@ export async function createPlaybook(page: Page, teamId: string, title: string, 
             members: options.members,
             reminder_timer_default_seconds: 86400,
             create_channel_member_on_new_participant: true,
+            // Run-start action settings (only sent when explicitly provided)
+            ...(options.invitedUserIds !== undefined && {invited_user_ids: options.invitedUserIds}),
+            ...(options.inviteUsersEnabled !== undefined && {invite_users_enabled: options.inviteUsersEnabled}),
+            ...(options.defaultOwnerId !== undefined && {default_owner_id: options.defaultOwnerId}),
+            ...(options.defaultOwnerEnabled !== undefined && {default_owner_enabled: options.defaultOwnerEnabled}),
+            ...(options.broadcastChannelIds !== undefined && {broadcast_channel_ids: options.broadcastChannelIds}),
+            ...(options.broadcastEnabled !== undefined && {broadcast_enabled: options.broadcastEnabled}),
+            ...(options.webhookOnCreationUrls !== undefined && {webhook_on_creation_urls: options.webhookOnCreationUrls}),
+            ...(options.webhookOnCreationEnabled !== undefined && {webhook_on_creation_enabled: options.webhookOnCreationEnabled}),
+            ...(options.retrospectiveEnabled !== undefined && {retrospective_enabled: options.retrospectiveEnabled}),
+            ...(options.createPublicPlaybookRun !== undefined && {create_public_playbook_run: options.createPublicPlaybookRun}),
         },
     });
     if (createResponse.status() !== 201) {
