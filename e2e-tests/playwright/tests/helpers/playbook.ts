@@ -62,6 +62,12 @@ export interface CreatePlaybookOptions {
     webhookOnCreationEnabled?: boolean;
     retrospectiveEnabled?: boolean;
     createPublicPlaybookRun?: boolean;
+    // Auto-archive: when true, the run channel is archived when the run is finished.
+    autoArchiveChannel?: boolean;
+    // Channel mode for the playbook: 'create_new_channel' (default) or 'link_existing_channel'.
+    channelMode?: 'create_new_channel' | 'link_existing_channel';
+    // When channelMode is 'link_existing_channel', the id of the channel to link.
+    channelId?: string;
 }
 
 // Creates a playbook as whoever the page is currently logged in as. The creator
@@ -90,6 +96,9 @@ export async function createPlaybook(page: Page, teamId: string, title: string, 
             ...(options.webhookOnCreationEnabled !== undefined && {webhook_on_creation_enabled: options.webhookOnCreationEnabled}),
             ...(options.retrospectiveEnabled !== undefined && {retrospective_enabled: options.retrospectiveEnabled}),
             ...(options.createPublicPlaybookRun !== undefined && {create_public_playbook_run: options.createPublicPlaybookRun}),
+            ...(options.autoArchiveChannel !== undefined && {auto_archive_channel: options.autoArchiveChannel}),
+            ...(options.channelMode !== undefined && {channel_mode: options.channelMode}),
+            ...(options.channelId !== undefined && {channel_id: options.channelId}),
         },
     });
     if (createResponse.status() !== 201) {

@@ -20,6 +20,7 @@ import {type Page} from '@playwright/test';
 
 import {MattermostAppBar} from './app_bar';
 import {MattermostChannels} from './channels';
+import {MattermostConfirmModal} from './confirm_modal';
 import {InteractiveRunDialog} from './interactive_run_dialog';
 import {MattermostPostList} from './post_list';
 import {MattermostCoreRhs} from './rhs';
@@ -28,6 +29,7 @@ import {MattermostSystemConsole} from './system_console';
 
 export {MattermostAppBar} from './app_bar';
 export {MattermostChannels} from './channels';
+export {MattermostConfirmModal} from './confirm_modal';
 export {InteractiveRunDialog} from './interactive_run_dialog';
 export {MattermostPostList} from './post_list';
 export {MattermostCoreRhs} from './rhs';
@@ -59,6 +61,10 @@ export class MattermostCore {
     // System Console navigation (admin-only routes).
     readonly systemConsole: MattermostSystemConsole;
 
+    // The generic Mattermost ConfirmModal (id="confirmModal") used by both core
+    // and plugin code for binary confirm/cancel prompts (finish run, restart run, etc.).
+    readonly confirmModal: MattermostConfirmModal;
+
     constructor(page: Page) {
         this.channels = new MattermostChannels(page);
         this.sidebar = new MattermostSidebar(page);
@@ -67,5 +73,6 @@ export class MattermostCore {
         this.rhs = new MattermostCoreRhs(page);
         this.systemConsole = new MattermostSystemConsole(page);
         this.interactiveRunDialog = new InteractiveRunDialog(page);
+        this.confirmModal = new MattermostConfirmModal(page);
     }
 }

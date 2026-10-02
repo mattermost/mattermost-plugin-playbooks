@@ -26,6 +26,14 @@ export class RunDetailsPage {
     readonly retrospectiveSection: Locator;
     readonly finishSection: Locator;
 
+    // The finish button inside the finish section.
+    // The RDP finish section contains a single button that triggers the finish-run flow.
+    readonly finishButton: Locator;
+
+    // Playbooks LHS navigation panel (data-testid='lhs-navigation').
+    // Used to verify a run appears/disappears from the left-hand sidebar list.
+    readonly lhsNavigation: Locator;
+
     // Right sidebar (Info/Timeline)
     readonly sidebar: Locator;
     readonly sidebarTitle: Locator;
@@ -51,6 +59,11 @@ export class RunDetailsPage {
         this.checklistSection = page.getByTestId('run-checklist-section');
         this.retrospectiveSection = page.getByTestId('run-retrospective-section');
         this.finishSection = page.getByTestId('run-finish-section');
+        // The finish section contains a single call-to-action button.
+        // Using getByRole scoped to the section avoids matching other buttons on the page.
+        this.finishButton = this.finishSection.getByRole('button');
+
+        this.lhsNavigation = page.getByTestId('lhs-navigation');
 
         this.sidebar = page.getByRole('complementary');
         this.sidebarTitle = this.sidebar.getByTestId('rhs-title');
@@ -93,5 +106,77 @@ export class RunDetailsPage {
     // Clicks the channel link and navigates to the linked channel.
     async clickChannelLink() {
         await this.channelLink.click();
+    }
+
+    // ── Finish / restore actions ─────────────────────────────────────────────
+
+    // Clicks the finish button in the RDP finish section.
+    async clickFinishButton(): Promise<void> {
+        await this.finishButton.click();
+    }
+
+    // Returns the locator for a named item in the open context dropdown menu.
+    contextMenuItem(text: string): Locator {
+        return this.contextMenu.getByText(text, {exact: true});
+    }
+
+    // Opens the context menu and clicks the item with the given text.
+    async openContextMenuAndClickItem(itemText: string): Promise<void> {
+        await this.openContextMenu();
+        await this.contextMenuItem(itemText).click();
+    }
+
+    // ── Finish-section assertions ────────────────────────────────────────────
+
+    // Asserts the RDP finish section is visible.
+    async expectFinishSectionVisible(): Promise<void> {
+        await expect(this.finishSection).toBeVisible();
+    }
+
+    // Asserts the RDP finish section has been removed from the DOM.
+    async expectFinishSectionHidden(): Promise<void> {
+        await expect(this.finishSection).toHaveCount(0);
+    }
+
+    // Asserts the finish section contains the expected placeholder text.
+    async expectFinishSectionPlaceholder(text: string): Promise<void> {
+        await expect(this.finishSection).toContainText(text);
+    }
+
+    // ── Context-menu item assertions ─────────────────────────────────────────
+
+    // Asserts a named item is visible in the currently open context menu.
+    async expectContextMenuItemVisible(text: string): Promise<void> {
+        await expect(this.contextMenuItem(text)).toBeVisible();
+    }
+
+    // Asserts a named item does not exist in the context menu (or menu is closed).
+    async expectContextMenuItemHidden(text: string): Promise<void> {
+        await expect(this.contextMenuItem(text)).toHaveCount(0);
+    }
+
+    // ── LHS run-list assertions ──────────────────────────────────────────────
+
+    // Asserts the run appears by name in the Playbooks LHS navigation list.
+    async expectRunInLhs(runName: string): Promise<void> {
+        await expect(this.lhsNavigation.getByText(runName)).toBeVisible();
+    }
+
+    // Asserts the run does NOT appear in the Playbooks LHS navigation list.
+    async expectRunNotInLhs(runName: string): Promise<void> {
+        await expect(this.lhsNavigation.getByText(runName)).toHaveCount(0);
+    }
+
+    // ── Timeline assertions ──────────────────────────────────────────────────
+
+    // Returns the locator for all timeline items of a given event type.
+    // The RDP timeline renders each event with data-testid="timeline-item <eventType>".
+    timelineItem(eventType: string): Locator {
+        return this.page.getByTestId(`timeline-item ${eventType}`);
+    }
+
+    // Asserts that at least one timeline item of the given event type is visible.
+    async expectTimelineEvent(eventType: string): Promise<void> {
+        await expect(this.timelineItem(eventType).first()).toBeVisible();
     }
 }

@@ -28,6 +28,13 @@ export class ChannelRhs {
     // a button with text "@username ▾".
     readonly ownerSelector: Locator;
 
+    // The finish section shown in the RHS (data-testid="rhs-finish-section").
+    // Only visible for run participants. Contains a button to trigger the finish flow.
+    readonly rhsFinishSection: Locator;
+
+    // The "Finish run" button inside the RHS finish section.
+    readonly rhsFinishButton: Locator;
+
     constructor(page: Page) {
         this.page = page;
         this.mm = new MattermostCore(page);
@@ -39,6 +46,9 @@ export class ChannelRhs {
         this.contextMenu = page.getByTestId('dropdownmenu');
         this.checklist = page.getByTestId('pb-checklists-inner-container');
         this.ownerSelector = page.getByTestId('owner-profile-selector');
+        this.rhsFinishSection = page.getByTestId('rhs-finish-section');
+        // The RHS finish button is a role="button" element inside the finish section.
+        this.rhsFinishButton = this.rhsFinishSection.getByRole('button', {name: /finish/i});
     }
 
     // Navigates to the given channel; the Playbooks RHS auto-opens when the
@@ -86,6 +96,11 @@ export class ChannelRhs {
     async gotoGroupMessageAndOpenRhs(gmChannelName: string) {
         await this.mm.channels.gotoGroupMessage(gmChannelName);
         await this.openPlaybooksRhs();
+    }
+
+    // Clicks the finish button in the RHS finish section.
+    async clickFinishButton(): Promise<void> {
+        await this.rhsFinishButton.click();
     }
 
     // Opens the run-creation dropdown from the RHS header button set.

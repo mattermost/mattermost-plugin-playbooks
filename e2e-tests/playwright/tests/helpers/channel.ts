@@ -11,6 +11,8 @@ export interface Channel {
     display_name: string;
     team_id: string;
     type: string;
+    // Unix timestamp (ms). Non-zero when the channel has been archived/deleted.
+    delete_at: number;
 }
 
 export interface CreateChannelOptions {
@@ -63,6 +65,22 @@ export async function deleteChannel(page: Page, channelId: string): Promise<void
 export async function getChannel(page: Page, channelId: string): Promise<Channel> {
     const response = await page.request.get(`/api/v4/channels/${channelId}`, requestedWith);
     return readJsonOrThrow<Channel>(response, `Unable to fetch channel ${channelId}`);
+}
+
+// Fetches a channel by team name and channel name (URL slug).
+export async function getChannelByName(page: Page, teamName: string, channelName: string): Promise<Channel> {
+    const response = await page.request.get(`/api/v4/teams/name/${teamName}/channels/name/${channelName}`, requestedWith);
+    return readJsonOrThrow<Channel>(response, `Unable to fetch channel ${channelName} in team ${teamName}`);
+}
+
+// Restores (unarchives) a channel using the core Mattermost API. Requires admin
+// privileges on the page's browser context.
+export async function restoreChannel(page: Page, channelId: string): Promise<void> {
+    const response = await page.request.post(`/api/v4/channels/${channelId}/restore`, requestedWith);
+
+    if (!response.ok()) {
+        throw new Error(`Unable to restore channel ${channelId}: ${response.status()} ${await response.text()}`);
+    }
 }
 
 // Creates a keyword-triggered "Prompt to run a playbook" channel action via the Playbooks REST

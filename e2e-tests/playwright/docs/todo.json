@@ -82,11 +82,11 @@
       "id": "finish-restore",
       "name": "Finish / restore runs and auto-archive behavior",
       "doc": "e2e-tests/playwright/docs/tasks/08-finish-restore.md",
-      "done": false,
-      "coded_at": null,
-      "reviewed_at": null,
-      "review_status": null,
-      "attempts": 0,
+      "done": true,
+      "coded_at": "2026-10-02T04:15:02Z",
+      "reviewed_at": "2026-10-02T04:23:03Z",
+      "review_status": "OK",
+      "attempts": 1,
       "notes": null
     },
     {
