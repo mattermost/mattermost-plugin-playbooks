@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {type Locator, type Page} from '@playwright/test';
+import {expect, type Locator, type Page} from '@playwright/test';
 
 // Wraps Mattermost core channel-level UI: navigating to channels, DMs and GMs;
 // the post composition textbox; sending messages and slash commands.
@@ -65,5 +65,33 @@ export class MattermostChannels {
         await this.postTextbox.click();
         await this.page.keyboard.type(cmd);
         await this.page.getByTestId('SendMessageButton').click();
+    }
+
+    // Opens the channel header dropdown menu (the button at the top of the channel
+    // that shows the channel name and expands a menu with channel management options).
+    // Mattermost renders this as a button with accessible name "<channelName> channel menu".
+    async openChannelMenu(): Promise<void> {
+        // The button name ends with " channel menu" — use a substring match so
+        // the helper works for any channel without needing to pass the name.
+        await this.page.getByRole('button', {name: /channel menu$/i}).click();
+    }
+
+    // Opens the Channel Settings modal from the channel header dropdown menu.
+    // Waits for the dialog to be visible before returning.
+    async openChannelSettings(): Promise<void> {
+        await this.openChannelMenu();
+        await this.page.getByRole('menuitem', {name: 'Channel Settings'}).click();
+        // Wait for the modal to open
+        await this.page.getByRole('dialog', {name: 'Channel Settings'}).waitFor();
+    }
+
+    // Asserts that the "Channel Header" textbox inside the currently-open Channel
+    // Settings dialog is visible and not disabled. This confirms the current user
+    // has channel-admin rights on the channel (only channel admins can edit the header).
+    async expectChannelHeaderEditable(): Promise<void> {
+        const dialog = this.page.getByRole('dialog', {name: 'Channel Settings'});
+        const headerTextbox = dialog.getByRole('textbox', {name: /header/i});
+        await expect(headerTextbox).toBeVisible();
+        await expect(headerTextbox).not.toBeDisabled();
     }
 }

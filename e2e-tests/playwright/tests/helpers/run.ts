@@ -82,6 +82,22 @@ export async function updateStatus(page: Page, runId: string, message: string, r
 // Adds participants to a run. There is no REST endpoint for this yet, only the
 // (deprecated but functional) GraphQL mutation `addRunParticipants` — see
 // server/api/schema.graphqls.
+// Searches for runs in a team by name. Returns the first run matching the given name,
+// or undefined if none found. Use for post-UI-action API verification.
+export async function getRunByName(page: Page, teamId: string, runName: string): Promise<Run | undefined> {
+    const response = await page.request.get('/plugins/playbooks/api/v0/runs', {
+        ...requestedWith,
+        params: {team_id: teamId, search_term: runName, per_page: 100},
+    });
+
+    if (!response.ok()) {
+        throw new Error(`Unable to search runs by name: ${response.status()} ${await response.text()}`);
+    }
+
+    const body = await response.json() as {items: Run[]};
+    return body.items.find((r) => r.name === runName);
+}
+
 export async function addParticipants(page: Page, runId: string, userIds: string[]) {
     const response = await page.request.post('/plugins/playbooks/api/v0/query', {
         ...requestedWith,

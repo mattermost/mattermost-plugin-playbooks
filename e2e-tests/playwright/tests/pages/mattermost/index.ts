@@ -20,6 +20,7 @@ import {type Page} from '@playwright/test';
 
 import {MattermostAppBar} from './app_bar';
 import {MattermostChannels} from './channels';
+import {InteractiveRunDialog} from './interactive_run_dialog';
 import {MattermostPostList} from './post_list';
 import {MattermostCoreRhs} from './rhs';
 import {MattermostSidebar} from './sidebar';
@@ -27,6 +28,7 @@ import {MattermostSystemConsole} from './system_console';
 
 export {MattermostAppBar} from './app_bar';
 export {MattermostChannels} from './channels';
+export {InteractiveRunDialog} from './interactive_run_dialog';
 export {MattermostPostList} from './post_list';
 export {MattermostCoreRhs} from './rhs';
 export {MattermostSidebar} from './sidebar';
@@ -49,6 +51,11 @@ export class MattermostCore {
     // The Playbooks RHS content is in ChannelRhs (plugin page object).
     readonly rhs: MattermostCoreRhs;
 
+    // The Mattermost interactive dialog opened by the `/playbook run` slash command
+    // and the post-actions menu "Run playbook" item. This is distinct from the plugin's
+    // custom RunModal (used by the playbook editor and backstage list).
+    readonly interactiveRunDialog: InteractiveRunDialog;
+
     // System Console navigation (admin-only routes).
     readonly systemConsole: MattermostSystemConsole;
 
@@ -59,5 +66,6 @@ export class MattermostCore {
         this.postList = new MattermostPostList(page);
         this.rhs = new MattermostCoreRhs(page);
         this.systemConsole = new MattermostSystemConsole(page);
+        this.interactiveRunDialog = new InteractiveRunDialog(page);
     }
 }

@@ -60,11 +60,11 @@
       "id": "start-run-entry-points",
       "name": "Run creation entry points (list, editor, cross-team, RHS, slash command, post menu, keyword prompt)",
       "doc": "e2e-tests/playwright/docs/tasks/06-start-run-entry-points.md",
-      "done": false,
-      "coded_at": null,
-      "reviewed_at": null,
-      "review_status": null,
-      "attempts": 0,
+      "done": true,
+      "coded_at": "2026-10-02T03:18:11Z",
+      "reviewed_at": "2026-10-02T03:23:28Z",
+      "review_status": "OK",
+      "attempts": 3,
       "notes": null
     },
     {

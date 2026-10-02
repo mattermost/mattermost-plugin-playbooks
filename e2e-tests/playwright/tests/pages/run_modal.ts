@@ -70,6 +70,26 @@ export class RunModal {
         await this.runNameInput.waitFor({state: 'attached'});
     }
 
+    // Returns true when the modal is showing the playbook-picker step.
+    // The picker step is active when the run-name input has NOT yet rendered —
+    // that input only appears in the run-details step (after a playbook is selected).
+    // When only one playbook is available it is auto-selected and the modal jumps
+    // directly to the run-details step, bypassing the picker entirely.
+    async isPlaybookPickerShowing(): Promise<boolean> {
+        // runNameInput is only rendered in the run-details step; its absence means the
+        // picker (or a loading state) is still active.
+        return await this.runNameInput.count() === 0;
+    }
+
+    // Selects the given playbook in the picker step only if the picker is currently visible.
+    // A no-op when the modal has already skipped the picker (e.g. single playbook or
+    // playbook pre-selected from an editor/list context).
+    async selectPlaybookIfNeeded(playbookTitle: string): Promise<void> {
+        if (await this.isPlaybookPickerShowing()) {
+            await this.selectPlaybook(playbookTitle);
+        }
+    }
+
     async setRunName(name: string) {
         await this.runNameInput.fill(name);
     }

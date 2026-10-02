@@ -1,0 +1,234 @@
+Changed files:
+  e2e-tests/playwright/docs/tasks/reviews/start-run-entry-points.attempt-1.md
+  e2e-tests/playwright/docs/tasks/reviews/start-run-entry-points.attempt-1.quality.log
+  e2e-tests/playwright/docs/tasks/reviews/start-run-entry-points.attempt-2.md
+  e2e-tests/playwright/docs/tasks/reviews/start-run-entry-points.attempt-2.quality.log
+  e2e-tests/playwright/docs/tasks/reviews/start-run-entry-points.attempt-3.quality.log
+  e2e-tests/playwright/docs/todo.json
+  e2e-tests/playwright/tests/helpers/channel.ts
+  e2e-tests/playwright/tests/helpers/run.ts
+  e2e-tests/playwright/tests/pages/channel_rhs.ts
+  e2e-tests/playwright/tests/pages/mattermost/channels.ts
+  e2e-tests/playwright/tests/pages/mattermost/index.ts
+  e2e-tests/playwright/tests/pages/mattermost/interactive_run_dialog.ts
+  e2e-tests/playwright/tests/pages/mattermost/post_list.ts
+  e2e-tests/playwright/tests/pages/playbooks_page.ts
+  e2e-tests/playwright/tests/pages/run_modal.ts
+  e2e-tests/playwright/tests/runs/start_run_entry_points.spec.ts
+
+=== GATE allowed-paths
+=== PASS allowed-paths
+
+=== GATE no-go-changes
+=== PASS no-go-changes
+
+=== GATE lint-web: rm -f webapp/.eslintcache webapp/.stylelintcache e2e-tests/.eslintcache e2e-tests/cypress/.eslintcache e2e-tests/playwright/.eslintcache && make check-style-web
+./build/bin/manifest check
+./build/bin/manifest apply
+Checking webapp style
+cd webapp && npm run lint
+
+> lint
+> npm run lint:eslint && npm run lint:stylelint
+
+
+> lint:eslint
+> eslint --ext .js,.jsx,.tsx,.ts . --quiet --cache
+
+
+> lint:stylelint
+> stylelint './src/**/*.{ts,tsx,css,scss}' --cache --quiet
+
+cd webapp && npm run check-types
+
+> check-types
+> tsc
+
+cd e2e-tests/cypress && npm run check
+
+> check
+> eslint --ext .js,.ts . --quiet --cache
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+cd e2e-tests/cypress && npm run check-types
+
+> check-types
+> tsc -b
+
+cd e2e-tests/playwright && npm run check
+
+> check
+> eslint . --quiet --cache && npm run test:eslint-rules
+
+
+> test:eslint-rules
+> node --test 'eslint-rules/tests/*.test.mjs'
+
+▶ no-locators-in-specs
+  ▶ valid
+    ✔ test('t', async ({page}) => {
+const po = new PlaybooksPage(page); await po.openRunsList(); await po.expectRunVisible("x");
+}); (21.368417ms)
+    ✔ test('t', async ({page}) => {
+await editor.title.click(); await expect(editor.title).toBeVisible();
+}); (2.264666ms)
+    ✔ test('t', async ({page}) => {
+await page.goto("/x"); await page.reload(); await expect(page).toHaveURL(/x/);
+}); (1.919167ms)
+    ✔ test('t', async ({page}) => {
+await page.keyboard.press("Enter"); await page.mouse.click(1, 2);
+}); (1.8635ms)
+    ✔ test('t', async ({page}) => {
+await editor.titleInput.fill("new name"); await editor.titleInput.press("Enter");
+}); (1.477541ms)
+    ✔ test('t', async ({page}) => {
+const ids = runs.filter((r) => r.active).map((r) => r.id); const x = list.find((y) => y);
+}); (2.096042ms)
+    ✔ test('t', async ({page}) => {
+const perms = role.permissions.filter((p) => !(/x/).test(p));
+}); (1.713708ms)
+    ✔ test('t', async ({page}) => {
+await playbooksPage.goto(team.name);
+}); (1.200417ms)
+  ✔ valid (34.4235ms)
+  ▶ invalid
+    ✔ test('t', async ({page}) => {
+await page.getByRole("button", {name: "x"}).click();
+}); (2.725709ms)
+    ✔ test('t', async ({page}) => {
+await page.getByTestId("x").click();
+}); (1.391958ms)
+    ✔ test('t', async ({page}) => {
+await page.locator("#x").click();
+}); (0.951209ms)
+    ✔ test('t', async ({page}) => {
+await otherPage.getByText("x").click();
+}); (0.97175ms)
+    ✔ test('t', async ({page}) => {
+await po.container.locator("a").click();
+}); (0.947917ms)
+    ✔ test('t', async ({page}) => {
+await page.frameLocator("iframe").getByRole("button").click();
+}); (1.051417ms)
+    ✔ test('t', async ({page}) => {
+await page.$("#x"); await page.$$(".y");
+}); (1.062ms)
+    ✔ test('t', async ({page}) => {
+await page.waitForSelector("#x");
+}); (0.952791ms)
+    ✔ test('t', async ({page}) => {
+await page["locator"]("#x").click();
+}); (1.342ms)
+    ✔ test('t', async ({page}) => {
+const find = page.getByRole.bind(page); await find("button").click();
+}); (1.269292ms)
+    ✔ test('t', async ({page}) => {
+const {getByRole} = page; await getByRole("button").click();
+}); (1.032458ms)
+    ✔ test('t', async ({page}) => {
+await po.items.filter({hasText: "Foo"}).click();
+}); (0.985ms)
+    ✔ test('t', async ({page}) => {
+await po.items.first().click();
+}); (0.892042ms)
+    ✔ test('t', async ({page}) => {
+await po.items.last().click();
+}); (0.75825ms)
+    ✔ test('t', async ({page}) => {
+await po.items.nth(2).click();
+}); (0.813667ms)
+    ✔ test('t', async ({page}) => {
+await po.a.and(po.b).click(); await po.a.or(po.b).click();
+}); (0.99925ms)
+    ✔ test('t', async ({page}) => {
+await page.click("#save");
+}); (0.708209ms)
+    ✔ test('t', async ({page}) => {
+await page.fill("#name", "x");
+}); (6.284666ms)
+    ✔ test('t', async ({page}) => {
+await page.check(`#${id}`);
+}); (1.658416ms)
+    ✔ test('t', async ({page}) => {
+await viewerPage.hover("#x");
+}); (0.9075ms)
+    ✔ test('t', async ({page}) => {
+await this.page.selectOption("select", "a");
+}); (0.861833ms)
+  ✔ invalid (28.952916ms)
+✔ no-locators-in-specs (63.634875ms)
+▶ no-fixed-waits
+  ▶ valid
+    ✔ test('t', async ({page}) => {
+await expect(po.title).toBeVisible(); await expect.poll(() => getRun(id)).toBe(1);
+}); (1.08275ms)
+    ✔ test('t', async ({page}) => {
+await page.waitForResponse((r) => r.url().includes("/runs"));
+}); (0.791958ms)
+  ✔ valid (1.922917ms)
+  ▶ invalid
+    ✔ test('t', async ({page}) => {
+await page.waitForTimeout(500);
+}); (0.729ms)
+    ✔ test('t', async ({page}) => {
+await new Promise((r) => setTimeout(r, 1000));
+}); (0.763042ms)
+  ✔ invalid (1.5445ms)
+✔ no-fixed-waits (3.571375ms)
+▶ no-unconditional-skip
+  ▶ valid
+    ✔ test.beforeEach(() => { test.skip(Boolean(skipReason), skipReason); }); (0.743625ms)
+    ✔ test('t', async ({page}) => {
+test.skip(!process.env.MM_LICENSE, "needs a license");
+}); (0.6555ms)
+    ✔ test.fixme("finish button does not update (MM-123)", async ({page}) => {}); (0.554792ms)
+    ✔ test('t', async ({page}) => {
+test.fixme(true, "participate button stale after leave, see Cypress rdp_main_header");
+}); (0.603541ms)
+    ✔ test("a", async () => {}); test.describe("d", () => {}); (0.583625ms)
+  ✔ valid (3.217625ms)
+  ▶ invalid
+    ✔ test.skip("disabled test", async ({page}) => {}); (0.634917ms)
+    ✔ test.describe.skip("d", () => {}); (0.816625ms)
+    ✔ test.describe.fixme("d", () => {}); (0.867375ms)
+    ✔ test('t', async ({page}) => {
+test.skip();
+}); (0.718125ms)
+    ✔ test('t', async ({page}) => {
+test.fixme();
+}); (0.612834ms)
+    ✔ test('t', async ({page}) => {
+test.skip(true);
+}); (0.5865ms)
+    ✔ test.only("x", async () => {}); (0.484375ms)
+    ✔ test.describe.only("x", () => {}); (0.493125ms)
+  ✔ invalid (5.340542ms)
+✔ no-unconditional-skip (8.616666ms)
+ℹ tests 46
+ℹ suites 9
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 819.317834
+cd e2e-tests/playwright && npm run check-types
+
+> check-types
+> tsc --noEmit
+
+=== PASS lint-web
+
+QUALITY: PASS
+
+## Product bugs found
+
+- `interactive run dialog: validation and metadata > whitespace-only run name is rejected`:
+  The legacy Cypress spec `run_dialog_spec.js > rejects invalid channel names` expected
+  the interactive dialog to reject whitespace-only run names with an "unable to create
+  playbook run" error in `div.error-text`. The server now trims whitespace to "" and falls
+  back to "Untitled" without returning an error. No client-side guard exists either (the
+  submit button remains enabled for whitespace-only input since `runName !== ''` is true).
+  Marked test.fixme in the spec.
+  See: e2e-tests/cypress/tests/integration/playbooks/channels/run_dialog_spec.js
+       "rejects invalid channel names"

@@ -108,4 +108,11 @@ export class PlaybooksPage {
             this.page.getByText("There are no playbooks to view. You don't have permission to create playbooks in this workspace."),
         ).toBeVisible();
     }
+
+    // Clicks the "Run" button on the first playbook row in the backstage playbook list.
+    // Each row has data-testid="playbook-item"; the Run button inside has role="button"
+    // with accessible name "Run".
+    async clickRunForFirstPlaybook(): Promise<void> {
+        await this.page.getByTestId('playbook-item').first().getByRole('button', {name: 'Run'}).click();
+    }
 }

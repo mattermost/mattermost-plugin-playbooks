@@ -28,7 +28,10 @@ export class ChannelRhs {
         this.page = page;
         this.mm = new MattermostCore(page);
         this.title = page.getByTestId('rhs-title');
-        this.runTitle = page.getByTestId('menuButton');
+        // The run title button is the `menuButton` inside the `rendered-run-name` container.
+        // Scoping to `rendered-run-name` avoids ambiguity with the checklist's dot-menu button
+        // which also carries `data-testid="menuButton"` when both are rendered simultaneously.
+        this.runTitle = page.getByTestId('rendered-run-name').getByTestId('menuButton');
         this.contextMenu = page.getByTestId('dropdownmenu');
         this.checklist = page.getByTestId('pb-checklists-inner-container');
     }

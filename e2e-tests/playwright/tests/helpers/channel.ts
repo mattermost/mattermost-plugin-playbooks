@@ -57,6 +57,31 @@ export async function getChannel(page: Page, channelId: string): Promise<Channel
     return readJsonOrThrow<Channel>(response, `Unable to fetch channel ${channelId}`);
 }
 
+// Creates a keyword-triggered "Prompt to run a playbook" channel action via the Playbooks REST
+// API. When any of `keywords` is posted in `channelId`, a bot prompt will appear asking users to
+// run the specified playbook.
+export async function createKeywordRunPlaybookAction(
+    page: Page,
+    channelId: string,
+    keywords: string[],
+    playbookId: string,
+): Promise<{id: string}> {
+    const response = await page.request.post(
+        `/plugins/playbooks/api/v0/actions/channels/${channelId}`,
+        {
+            ...requestedWith,
+            data: {
+                channel_id: channelId,
+                enabled: true,
+                action_type: 'prompt_run_playbook',
+                trigger_type: 'keywords',
+                payload: {keywords, playbook_id: playbookId},
+            },
+        },
+    );
+    return readJsonOrThrow<{id: string}>(response, `Unable to create channel action for channel ${channelId}`);
+}
+
 // Searches for channels in a team matching `term` (display name or name prefix).
 export async function searchChannels(page: Page, teamId: string, term: string): Promise<Channel[]> {
     const response = await page.request.post(`/api/v4/teams/${teamId}/channels/search`, {
