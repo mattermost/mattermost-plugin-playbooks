@@ -6,14 +6,15 @@
     "npm": ">=10.1.0"
   },
   "scripts": {
-    "check": "eslint . --quiet --cache",
+    "check": "eslint . --quiet --cache && npm run test:eslint-rules",
     "check-types": "tsc --noEmit",
     "fix": "eslint . --quiet --fix --cache",
     "playwright:install": "playwright install --with-deps chromium",
     "playwright:test": "cross-env TZ=Etc/UTC playwright test",
     "playwright:test:headed": "cross-env TZ=Etc/UTC playwright test --headed",
     "playwright:ui": "cross-env TZ=Etc/UTC playwright test --ui",
-    "test": "cross-env TZ=Etc/UTC playwright test"
+    "test": "cross-env TZ=Etc/UTC playwright test",
+    "test:eslint-rules": "node --test 'eslint-rules/tests/*.test.mjs'"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

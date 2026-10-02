@@ -1,0 +1,6 @@
+# The per-attempt review findings (*.md) and raw quality.sh logs (*.quality.log)
+# are working artifacts of the migration orchestration, not permanent history:
+# they're regenerated per attempt and only useful while a task is in flight.
+# Keep them on disk locally; don't commit them.
+*
+!.gitignore

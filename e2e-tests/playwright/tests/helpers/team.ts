@@ -93,6 +93,14 @@ export async function getTeamMemberRole(page: Page, scheme: Scheme): Promise<Rol
     return roles[0];
 }
 
+export async function removeUserFromTeam(page: Page, teamId: string, userId: string) {
+    const response = await page.request.delete(`/api/v4/teams/${teamId}/members/${userId}`, requestedWith);
+
+    if (!response.ok()) {
+        throw new Error(`Unable to remove user ${userId} from team ${teamId}: ${response.status()} ${await response.text()}`);
+    }
+}
+
 export async function setRolePermissions(page: Page, roleId: string, permissions: string[]) {
     const response = await page.request.put(`/api/v4/roles/${roleId}/patch`, {
         ...requestedWith,

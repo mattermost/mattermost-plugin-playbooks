@@ -16,7 +16,8 @@ interface CurrentUser {
     username: string;
 }
 
-const seededUserPassword = 'Passwd123!';
+// Long enough for strict password policies (some local servers require 14+ characters).
+const seededUserPassword = 'Passwd123!-playwright';
 
 export async function getCurrentUser(page: Page): Promise<CurrentUser> {
     const response = await page.request.get('/api/v4/users/me', requestedWith);
