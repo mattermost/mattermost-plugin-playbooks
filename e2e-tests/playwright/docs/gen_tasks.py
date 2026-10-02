@@ -97,7 +97,7 @@ task('mattermost-core-pom', 'MattermostCore page object: everything that belongs
 **Rules**
 - a11y-first locators. Core Mattermost markup isn't ours: hard rule 2 (webapp a11y attributes only) applies to *this* repo's webapp only. If core UI has no accessible name, use the most stable core hook available (ids/testids Mattermost itself uses, such as `#post_textbox` or `postMessageText_<id>`), wrapped and documented inside the core page object, never in plugin page objects or specs.
 - Document the layering in `e2e-tests/playwright/AGENTS.md` (new short section "Mattermost core vs plugin page objects"): core UI only through `tests/pages/mattermost/`; plugin page objects must not locate core UI.
-- Use the agent-browser skill if needed to read the real core accessibility tree.
+- Use the agent-browser skill if needed to read the real core accessibility tree (DOM inspection only, no screenshots).
 
 **Smoke spec** `tests/smoke/mattermost_core.spec.ts` (~3 tests) exercising each public method once: navigate to a channel and a DM, post a message and assert it's the last post, run a slash command that produces an ephemeral post (e.g. `/playbook info` outside a run channel), open a thread reply in the RHS, open the app bar Playbooks icon, open System Console > Site Statistics.""")
 
@@ -581,7 +581,7 @@ COMMON_PW = """## Migration hard rules (a violation is an automatic review BLOCK
 - Apply the consolidation principles P1-P7 from `docs/cypress_migration_plan.md`: modernize, don't copy-paste. Every behavior listed under "Cypress coverage" must be covered by some assertion, unless this doc says it moves elsewhere.
 - Reuse and extend existing page objects/helpers before creating new ones. If a webapp component lacks an accessible name needed for a role locator, adding an a11y attribute in `webapp/` is allowed (hard rule 2, nothing else).
 - Don't delete Cypress specs (that's the `retire-cypress` task).
-- **Stuck on a selector?** You may use the agent-browser skill (`agent-browser skills get core`) to explore the running app and read its accessibility tree (roles + accessible names). Turn what you find into role/label locators in a page object. Artifacts go to /tmp only; never change server config through the System Console. It's an exploration aid only; the Playwright tests must pass on their own.
+- **Stuck on a selector?** You may use the agent-browser skill (`agent-browser skills get core`) to explore the running app and read its accessibility tree (roles + accessible names). Inspect the DOM only and **do not take screenshots**. Turn what you find into role/label locators in a page object. Any artifacts go to /tmp only; never change server config through the System Console. It's an exploration aid only; the Playwright tests must pass on their own.
 
 ## Definition of done
 

@@ -319,7 +319,7 @@ Rules:
 - **Finding the right locator**: the Playwright UI mode / codegen
   (`npm run playwright:ui`, `npx playwright codegen <url>`) and the
   `agent-browser` skill (`agent-browser skills get core`, accessibility-tree
-  snapshots) both show the roles and accessible names the app really renders.
+  snapshots; inspect the DOM, don't take screenshots) both show the roles and accessible names the app really renders.
   Use them to discover the locator, then write it as a role/label locator in a
   page object. Never paste generated CSS selectors.
 - **Composite/filtered locators belong in a small documented method**, not a
