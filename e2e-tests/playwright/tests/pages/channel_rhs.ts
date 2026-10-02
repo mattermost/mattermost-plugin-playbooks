@@ -3,11 +3,16 @@
 
 import {expect, type Locator, type Page, type Request} from '@playwright/test';
 
+import {MattermostCore} from './mattermost';
+
 // Page object for the Playbooks right-hand sidebar (RHS) rendered inside a
 // channel (the "Checklists" / run-details view that auto-opens when visiting
 // a channel linked to a run).
 export class ChannelRhs {
     readonly page: Page;
+    // MattermostCore facade — all core Mattermost UI interactions (post
+    // textbox, app bar, channel navigation) go through here.
+    readonly mm: MattermostCore;
     // The RHS header title ("Checklist") rendered by the core webapp's RHS
     // chrome. There is no single container both the title and body share an
     // accessible role/testid for (the core RHS panel itself exposes neither),
@@ -21,6 +26,7 @@ export class ChannelRhs {
 
     constructor(page: Page) {
         this.page = page;
+        this.mm = new MattermostCore(page);
         this.title = page.getByTestId('rhs-title');
         this.runTitle = page.getByTestId('menuButton');
         this.contextMenu = page.getByTestId('dropdownmenu');
@@ -30,7 +36,7 @@ export class ChannelRhs {
     // Navigates to the given channel; the Playbooks RHS auto-opens when the
     // channel is linked to a run.
     async gotoRunChannel(teamName: string, channelName: string) {
-        await this.page.goto(`/${teamName}/channels/${channelName}`);
+        await this.mm.channels.goto(teamName, channelName);
         await this.title.waitFor();
     }
 
@@ -44,33 +50,26 @@ export class ChannelRhs {
 
     // ── Run creation flow ───────────────────────────────────────────────────
 
-    // Opens the Playbooks RHS by clicking the app bar icon. The icon is registered
-    // by the plugin using registerAppBarComponent; Mattermost assigns it the stable
-    // id="app-bar-icon-playbooks" based on the plugin id.
+    // Opens the Playbooks RHS by clicking the app bar icon via MattermostCore.
     async openPlaybooksRhs() {
-        // The app bar icon is identified by a stable id assigned by the Mattermost framework.
-        await this.page.locator('#app-bar-icon-playbooks').click();
-        await this.page.getByTestId('no-active-runs').or(this.page.getByTestId('rhs-runs-list')).waitFor();
+        await this.mm.appBar.openPlaybooks();
     }
 
     // Navigates to a channel (not linked to a run) and opens the Playbooks RHS.
     async gotoChannelAndOpenRhs(teamName: string, channelName: string) {
-        await this.page.goto(`/${teamName}/channels/${channelName}`);
-        await this.page.locator('#post_textbox').waitFor();
+        await this.mm.channels.goto(teamName, channelName);
         await this.openPlaybooksRhs();
     }
 
     // Navigates to a DM channel and opens the Playbooks RHS.
     async gotoDirectMessageAndOpenRhs(teamName: string, partnerUsername: string) {
-        await this.page.goto(`/${teamName}/messages/@${partnerUsername}`);
-        await this.page.locator('#post_textbox').waitFor();
+        await this.mm.channels.gotoDirectMessage(teamName, partnerUsername);
         await this.openPlaybooksRhs();
     }
 
     // Navigates to a GM channel and opens the Playbooks RHS.
     async gotoGroupMessageAndOpenRhs(gmChannelName: string) {
-        await this.page.goto(`/messages/${gmChannelName}`);
-        await this.page.locator('#post_textbox').waitFor();
+        await this.mm.channels.gotoGroupMessage(gmChannelName);
         await this.openPlaybooksRhs();
     }
 

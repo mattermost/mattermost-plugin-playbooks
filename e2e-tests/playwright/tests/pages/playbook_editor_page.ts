@@ -3,8 +3,12 @@
 
 import {expect, type Locator, type Page} from '@playwright/test';
 
+import {MattermostCore} from './mattermost';
+
 export class PlaybookEditorPage {
     readonly page: Page;
+    // MattermostCore facade 
+    readonly mm: MattermostCore;
     readonly title: Locator;
     readonly header: Locator;
     readonly description: Locator;
@@ -12,26 +16,21 @@ export class PlaybookEditorPage {
     readonly descriptionEditInput: Locator;
     readonly saveButton: Locator;
 
-    // Stable anchor for the Town Square page: the sidebar link for town-square.
-    // Used to confirm the team/channel context is set before doing client-side navigation.
-    private readonly townSquareSidebarLink: Locator;
-
     constructor(page: Page) {
         this.page = page;
+        this.mm = new MattermostCore(page);
         this.title = page.getByTestId('playbook-editor-title');
         this.header = page.getByTestId('playbook-editor-header');
         this.description = page.getByTestId('playbook-editor-description');
         this.titleEditInput = page.getByTestId('rendered-editable-text');
         this.descriptionEditInput = page.getByRole('textbox', {name: /Add a description/});
         this.saveButton = page.getByRole('button', {name: 'Save'});
-        this.townSquareSidebarLink = page.getByRole('link', {name: 'town square public channel'});
     }
 
     async goto(teamName: string, playbookId: string) {
-        // Visit the team first so the current team (and its LHS) is set before
+        // Visit town-square first so the Redux team context is set before
         // entering the (team-agnostic) editor URL.
-        await this.page.goto(`/${teamName}/channels/town-square`);
-        await this.townSquareSidebarLink.waitFor();
+        await this.mm.channels.goto(teamName, 'town-square');
         await this.page.goto(`/playbooks/playbooks/${playbookId}/outline`);
         await this.title.waitFor();
     }
@@ -51,8 +50,7 @@ export class PlaybookEditorPage {
     // to "Link to existing channel" mode.
     async gotoViaClientSideNav(teamName: string, playbookId: string) {
         // First fully navigate to town-square to set the Redux current channel
-        await this.page.goto(`/${teamName}/channels/town-square`);
-        await this.townSquareSidebarLink.waitFor();
+        await this.mm.channels.goto(teamName, 'town-square');
         // Push the editor URL into the history without a full page reload
         await this.page.evaluate((url) => {
             (window as {WebappUtils?: {browserHistory?: {push: (u: string) => void}}}).WebappUtils?.browserHistory?.push(url);

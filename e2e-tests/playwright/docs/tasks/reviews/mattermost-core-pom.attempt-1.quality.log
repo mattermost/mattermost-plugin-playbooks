@@ -1,0 +1,221 @@
+Changed files:
+  e2e-tests/playwright/AGENTS.md
+  e2e-tests/playwright/docs/tasks/reviews/mattermost-core-pom.attempt-1.quality.log
+  e2e-tests/playwright/docs/todo.json
+  e2e-tests/playwright/tests/pages/channel_rhs.ts
+  e2e-tests/playwright/tests/pages/mattermost/app_bar.ts
+  e2e-tests/playwright/tests/pages/mattermost/channels.ts
+  e2e-tests/playwright/tests/pages/mattermost/index.ts
+  e2e-tests/playwright/tests/pages/mattermost/post_list.ts
+  e2e-tests/playwright/tests/pages/mattermost/rhs.ts
+  e2e-tests/playwright/tests/pages/mattermost/sidebar.ts
+  e2e-tests/playwright/tests/pages/mattermost/system_console.ts
+  e2e-tests/playwright/tests/pages/playbook_editor_page.ts
+  e2e-tests/playwright/tests/pages/playbooks_page.ts
+  e2e-tests/playwright/tests/pages/run_details_page.ts
+  e2e-tests/playwright/tests/smoke/mattermost_core.spec.ts
+
+=== GATE allowed-paths
+=== PASS allowed-paths
+
+=== GATE no-go-changes
+=== PASS no-go-changes
+
+=== GATE lint-web: rm -f webapp/.eslintcache webapp/.stylelintcache e2e-tests/.eslintcache e2e-tests/cypress/.eslintcache e2e-tests/playwright/.eslintcache && make check-style-web
+./build/bin/manifest check
+./build/bin/manifest apply
+Checking webapp style
+cd webapp && npm run lint
+
+> lint
+> npm run lint:eslint && npm run lint:stylelint
+
+
+> lint:eslint
+> eslint --ext .js,.jsx,.tsx,.ts . --quiet --cache
+
+
+> lint:stylelint
+> stylelint './src/**/*.{ts,tsx,css,scss}' --cache --quiet
+
+cd webapp && npm run check-types
+
+> check-types
+> tsc
+
+cd e2e-tests/cypress && npm run check
+
+> check
+> eslint --ext .js,.ts . --quiet --cache
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+cd e2e-tests/cypress && npm run check-types
+
+> check-types
+> tsc -b
+
+cd e2e-tests/playwright && npm run check
+
+> check
+> eslint . --quiet --cache && npm run test:eslint-rules
+
+
+> test:eslint-rules
+> node --test 'eslint-rules/tests/*.test.mjs'
+
+▶ no-locators-in-specs
+  ▶ valid
+    ✔ test('t', async ({page}) => {
+const po = new PlaybooksPage(page); await po.openRunsList(); await po.expectRunVisible("x");
+}); (22.638042ms)
+    ✔ test('t', async ({page}) => {
+await editor.title.click(); await expect(editor.title).toBeVisible();
+}); (2.639833ms)
+    ✔ test('t', async ({page}) => {
+await page.goto("/x"); await page.reload(); await expect(page).toHaveURL(/x/);
+}); (1.999542ms)
+    ✔ test('t', async ({page}) => {
+await page.keyboard.press("Enter"); await page.mouse.click(1, 2);
+}); (1.69375ms)
+    ✔ test('t', async ({page}) => {
+await editor.titleInput.fill("new name"); await editor.titleInput.press("Enter");
+}); (1.7505ms)
+    ✔ test('t', async ({page}) => {
+const ids = runs.filter((r) => r.active).map((r) => r.id); const x = list.find((y) => y);
+}); (2.209ms)
+    ✔ test('t', async ({page}) => {
+const perms = role.permissions.filter((p) => !(/x/).test(p));
+}); (1.854458ms)
+    ✔ test('t', async ({page}) => {
+await playbooksPage.goto(team.name);
+}); (1.146334ms)
+  ✔ valid (36.484833ms)
+  ▶ invalid
+    ✔ test('t', async ({page}) => {
+await page.getByRole("button", {name: "x"}).click();
+}); (2.351167ms)
+    ✔ test('t', async ({page}) => {
+await page.getByTestId("x").click();
+}); (1.446375ms)
+    ✔ test('t', async ({page}) => {
+await page.locator("#x").click();
+}); (1.213958ms)
+    ✔ test('t', async ({page}) => {
+await otherPage.getByText("x").click();
+}); (1.154167ms)
+    ✔ test('t', async ({page}) => {
+await po.container.locator("a").click();
+}); (1.094083ms)
+    ✔ test('t', async ({page}) => {
+await page.frameLocator("iframe").getByRole("button").click();
+}); (1.122542ms)
+    ✔ test('t', async ({page}) => {
+await page.$("#x"); await page.$$(".y");
+}); (1.155333ms)
+    ✔ test('t', async ({page}) => {
+await page.waitForSelector("#x");
+}); (1.078ms)
+    ✔ test('t', async ({page}) => {
+await page["locator"]("#x").click();
+}); (1.252958ms)
+    ✔ test('t', async ({page}) => {
+const find = page.getByRole.bind(page); await find("button").click();
+}); (1.148042ms)
+    ✔ test('t', async ({page}) => {
+const {getByRole} = page; await getByRole("button").click();
+}); (1.102542ms)
+    ✔ test('t', async ({page}) => {
+await po.items.filter({hasText: "Foo"}).click();
+}); (1.136542ms)
+    ✔ test('t', async ({page}) => {
+await po.items.first().click();
+}); (0.9825ms)
+    ✔ test('t', async ({page}) => {
+await po.items.last().click();
+}); (0.852584ms)
+    ✔ test('t', async ({page}) => {
+await po.items.nth(2).click();
+}); (0.7935ms)
+    ✔ test('t', async ({page}) => {
+await po.a.and(po.b).click(); await po.a.or(po.b).click();
+}); (0.979042ms)
+    ✔ test('t', async ({page}) => {
+await page.click("#save");
+}); (5.81875ms)
+    ✔ test('t', async ({page}) => {
+await page.fill("#name", "x");
+}); (1.119208ms)
+    ✔ test('t', async ({page}) => {
+await page.check(`#${id}`);
+}); (1.399375ms)
+    ✔ test('t', async ({page}) => {
+await viewerPage.hover("#x");
+}); (1.087583ms)
+    ✔ test('t', async ({page}) => {
+await this.page.selectOption("select", "a");
+}); (0.814708ms)
+  ✔ invalid (29.51025ms)
+✔ no-locators-in-specs (66.253583ms)
+▶ no-fixed-waits
+  ▶ valid
+    ✔ test('t', async ({page}) => {
+await expect(po.title).toBeVisible(); await expect.poll(() => getRun(id)).toBe(1);
+}); (1.071916ms)
+    ✔ test('t', async ({page}) => {
+await page.waitForResponse((r) => r.url().includes("/runs"));
+}); (0.742875ms)
+  ✔ valid (1.860792ms)
+  ▶ invalid
+    ✔ test('t', async ({page}) => {
+await page.waitForTimeout(500);
+}); (0.676292ms)
+    ✔ test('t', async ({page}) => {
+await new Promise((r) => setTimeout(r, 1000));
+}); (1.049208ms)
+  ✔ invalid (1.789292ms)
+✔ no-fixed-waits (3.718625ms)
+▶ no-unconditional-skip
+  ▶ valid
+    ✔ test.beforeEach(() => { test.skip(Boolean(skipReason), skipReason); }); (0.951083ms)
+    ✔ test('t', async ({page}) => {
+test.skip(!process.env.MM_LICENSE, "needs a license");
+}); (0.751459ms)
+    ✔ test.fixme("finish button does not update (MM-123)", async ({page}) => {}); (0.657542ms)
+    ✔ test('t', async ({page}) => {
+test.fixme(true, "participate button stale after leave, see Cypress rdp_main_header");
+}); (0.772875ms)
+    ✔ test("a", async () => {}); test.describe("d", () => {}); (0.749417ms)
+  ✔ valid (3.989584ms)
+  ▶ invalid
+    ✔ test.skip("disabled test", async ({page}) => {}); (0.803459ms)
+    ✔ test.describe.skip("d", () => {}); (0.764167ms)
+    ✔ test.describe.fixme("d", () => {}); (0.793625ms)
+    ✔ test('t', async ({page}) => {
+test.skip();
+}); (0.770084ms)
+    ✔ test('t', async ({page}) => {
+test.fixme();
+}); (0.621875ms)
+    ✔ test('t', async ({page}) => {
+test.skip(true);
+}); (0.613958ms)
+    ✔ test.only("x", async () => {}); (0.499792ms)
+    ✔ test.describe.only("x", () => {}); (0.974625ms)
+  ✔ invalid (5.98325ms)
+✔ no-unconditional-skip (10.047708ms)
+ℹ tests 46
+ℹ suites 9
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 901.342791
+cd e2e-tests/playwright && npm run check-types
+
+> check-types
+> tsc --noEmit
+
+=== PASS lint-web
+
+QUALITY: PASS

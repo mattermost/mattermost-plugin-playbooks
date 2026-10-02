@@ -49,11 +49,11 @@
       "id": "mattermost-core-pom",
       "name": "MattermostCore page object: everything that belongs to Mattermost, not the plugin",
       "doc": "e2e-tests/playwright/docs/tasks/05-mattermost-core-pom.md",
-      "done": false,
-      "coded_at": null,
-      "reviewed_at": null,
-      "review_status": null,
-      "attempts": 0,
+      "done": true,
+      "coded_at": "2026-10-02T00:00:53Z",
+      "reviewed_at": "2026-10-02T00:14:49Z",
+      "review_status": "OK",
+      "attempts": 1,
       "notes": null
     },
     {

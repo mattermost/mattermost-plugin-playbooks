@@ -3,8 +3,12 @@
 
 import {expect, type Locator, type Page} from '@playwright/test';
 
+import {MattermostCore} from './mattermost';
+
 export class PlaybooksPage {
     readonly page: Page;
+    // MattermostCore facade 
+    readonly mm: MattermostCore;
     readonly playbooksLHSButton: Locator;
     readonly playbookRunsLHSButton: Locator;
     readonly titlePlaybook: Locator;
@@ -18,6 +22,7 @@ export class PlaybooksPage {
 
     constructor(page: Page) {
         this.page = page;
+        this.mm = new MattermostCore(page);
         this.playbooksLHSButton = page.getByTestId('playbooksLHSButton');
         this.playbookRunsLHSButton = page.getByTestId('playbookRunsLHSButton');
         this.titlePlaybook = page.getByTestId('titlePlaybook');
@@ -31,11 +36,10 @@ export class PlaybooksPage {
     }
 
     async goto(teamName: string) {
-        await this.page.goto(`/${teamName}/channels/town-square`);
-
-        // Wait for the team's sidebar to render (sets the current team) before
-        // leaving for the product.
-        await this.page.getByRole('link', {name: 'town square public channel'}).waitFor();
+        // Navigate to town-square first to set the Redux team context, then go
+        // to the Playbooks product. MattermostCore.channels.goto() waits for
+        // the post textbox, which confirms the LHS/team context is ready.
+        await this.mm.channels.goto(teamName, 'town-square');
         await this.page.goto('/playbooks');
         await this.playbooksLHSButton.waitFor();
     }

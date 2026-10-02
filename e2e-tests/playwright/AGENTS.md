@@ -407,6 +407,62 @@ Rules:
 - Follow existing import grouping: `@playwright/test` types first, then
   relative imports from `../helpers/*` and `../pages/*`.
 
+## Mattermost core vs plugin page objects
+
+The Playbooks plugin renders UI *inside* the Mattermost webapp. Two separate
+layers of page objects reflect that boundary:
+
+| Layer | Location | Covers |
+|---|---|---|
+| **Mattermost core** | `tests/pages/mattermost/` | Channel sidebar, post textbox, post list, app bar icons, core RHS (thread view), System Console |
+| **Plugin** | `tests/pages/*.ts` | Playbooks product: playbook editor, run details page, channel RHS panel, run modal, status update dialog |
+
+**Rule: plugin page objects must not locate core Mattermost UI directly.**
+All core-UI interactions (navigating to channels, posting messages, opening
+app bar icons, checking ephemeral replies, etc.) go through the `MattermostCore`
+facade (`tests/pages/mattermost/index.ts`). Plugin page objects compose it
+in their constructor:
+
+```ts
+import {MattermostCore} from './mattermost';
+
+export class ChannelRhs {
+    readonly mm: MattermostCore;
+    constructor(page: Page) {
+        this.mm = new MattermostCore(page);
+        // ...
+    }
+    async gotoChannelAndOpenRhs(teamName: string, channelName: string) {
+        await this.mm.channels.goto(teamName, channelName); // ← core
+        await this.openPlaybooksRhs();                      // ← plugin
+    }
+}
+```
+
+Specs may also instantiate `MattermostCore` directly when they need core UI
+outside a plugin page object:
+
+```ts
+const mm = new MattermostCore(page);
+await mm.channels.goto(teamName, 'town-square');
+await mm.postList.expectLastPostContains('hello');
+await mm.appBar.openPlaybooks();
+await mm.systemConsole.gotoSiteStatistics();
+```
+
+**Stable Mattermost hooks used in the core layer** (documented here, not in
+plugin page objects or specs):
+- `#post_textbox` — the post composition textbox id (Mattermost assigns this
+  directly, no accessible name is exposed).
+- `#app-bar-icon-<pluginId>` — app bar icon id assigned by the Mattermost
+  framework when a plugin registers via `registerAppBarComponent`.
+- `data-testid="reply-icon"` — the Reply button in the post action toolbar.
+- `data-testid="postMessageText_<id>"` — each post's message body.
+- `.post.post--ephemeral` — CSS class Mattermost adds to ephemeral posts.
+
+These hooks live **only** inside `tests/pages/mattermost/`; they are wrapped
+and documented there so the rest of the suite never depends on them directly.
+
 ## Checklist for a new spec
 
 - [ ] Copyright header, and a "ported from Cypress spec X" comment if

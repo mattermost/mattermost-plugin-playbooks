@@ -3,9 +3,13 @@
 
 import {expect, type Locator, type Page} from '@playwright/test';
 
+import {MattermostCore} from './mattermost';
+
 // Page object for the Run Details Page (RDP), `/playbooks/runs/:runId`.
 export class RunDetailsPage {
     readonly page: Page;
+    // MattermostCore facade 
+    readonly mm: MattermostCore;
 
     // Header
     readonly header: Locator;
@@ -32,6 +36,7 @@ export class RunDetailsPage {
 
     constructor(page: Page) {
         this.page = page;
+        this.mm = new MattermostCore(page);
 
         this.header = page.getByTestId('run-header-section');
         this.statusBadge = this.header.getByText(/^(In Progress|Finished|Archived)$/);
@@ -54,10 +59,9 @@ export class RunDetailsPage {
     }
 
     async goto(teamName: string, runId: string) {
-        // Visit the team first so the current team (and its LHS) is set before
+        // Visit town-square first so the Redux team context is set before
         // entering the (team-agnostic) run details URL.
-        await this.page.goto(`/${teamName}/channels/town-square`);
-        await this.page.getByRole('link', {name: 'town square public channel'}).waitFor();
+        await this.mm.channels.goto(teamName, 'town-square');
         await this.page.goto(`/playbooks/runs/${runId}`);
         await this.header.waitFor();
     }
