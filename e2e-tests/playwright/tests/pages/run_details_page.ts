@@ -179,4 +179,43 @@ export class RunDetailsPage {
     async expectTimelineEvent(eventType: string): Promise<void> {
         await expect(this.timelineItem(eventType).first()).toBeVisible();
     }
+
+    // ── Checklist interactions (RDP) ─────────────────────────────────────────────
+
+    // Returns all task (checkbox-item-container) rows in the RDP checklist section.
+    rdpChecklistItems(): Locator {
+        return this.checklistSection.getByTestId('checkbox-item-container');
+    }
+
+    // Checks the task checkbox at the given index in the RDP checklist section.
+    async checkTaskAtIndex(index: number): Promise<void> {
+        await this.rdpChecklistItems().nth(index).getByRole('checkbox').click();
+    }
+
+    // Asserts the task at the given index is checked.
+    async expectTaskChecked(index: number): Promise<void> {
+        await expect(this.rdpChecklistItems().nth(index).getByRole('checkbox')).toBeChecked();
+    }
+
+    // Asserts the total number of visible task rows in the RDP checklist section.
+    async expectTaskCount(count: number): Promise<void> {
+        await expect(this.rdpChecklistItems()).toHaveCount(count);
+    }
+
+    // Hovers over the task at the given index to reveal its hover menu.
+    async hoverTaskAtIndex(index: number): Promise<void> {
+        await this.rdpChecklistItems().nth(index).hover();
+    }
+
+    // Opens the dot-menu ('More') for the task at the given index on the RDP.
+    // The DotMenu button renders with data-testid='menuButtonMore' (see dot_menu.tsx).
+    async openTaskDotMenuAtIndex(index: number): Promise<void> {
+        await this.hoverTaskAtIndex(index);
+        await this.rdpChecklistItems().nth(index).getByTestId('menuButtonMore').click({force: true});
+    }
+
+    // Asserts that a given item is visible in the currently open task dot-menu.
+    async expectTaskMenuItemVisible(text: string): Promise<void> {
+        await expect(this.page.getByRole('button', {name: text})).toBeVisible();
+    }
 }

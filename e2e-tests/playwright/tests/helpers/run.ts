@@ -98,6 +98,37 @@ export async function getRunByName(page: Page, teamId: string, runName: string):
     return body.items.find((r) => r.name === runName);
 }
 
+// Sets the due date of a checklist item via the Playbooks REST API.
+// `dueDateMillis` is a Unix timestamp in milliseconds; pass a past timestamp to make the item overdue.
+export async function setChecklistItemDueDate(page: Page, runId: string, checklistIndex: number, itemIndex: number, dueDateMillis: number): Promise<void> {
+    const response = await page.request.put(
+        `/plugins/playbooks/api/v0/runs/${runId}/checklists/${checklistIndex}/item/${itemIndex}/duedate`,
+        {
+            ...requestedWith,
+            data: {due_date: dueDateMillis},
+        },
+    );
+
+    if (!response.ok()) {
+        throw new Error(`Unable to set due date: ${response.status()} ${await response.text()}`);
+    }
+}
+
+// Sets the state of a checklist item via the Playbooks REST API.  Used in tests that need to skip or close a task without driving the UI (e.g. when there is no UI skip flow).  `state` must be one of '', 'closed', or 'skipped'.
+export async function setChecklistItemState(page: Page, runId: string, checklistIndex: number, itemIndex: number, state: '' | 'closed' | 'skipped'): Promise<void> {
+    const response = await page.request.put(
+        `/plugins/playbooks/api/v0/runs/${runId}/checklists/${checklistIndex}/item/${itemIndex}/state`,
+        {
+            ...requestedWith,
+            data: {new_state: state},
+        },
+    );
+
+    if (!response.ok()) {
+        throw new Error(`Unable to set checklist item state: ${response.status()} ${await response.text()}`);
+    }
+}
+
 export async function addParticipants(page: Page, runId: string, userIds: string[]) {
     const response = await page.request.post('/plugins/playbooks/api/v0/query', {
         ...requestedWith,

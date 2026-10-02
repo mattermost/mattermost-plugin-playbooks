@@ -7,7 +7,7 @@ import {readJsonOrThrow, requestedWith} from './client';
 
 interface Checklist {
     title: string;
-    items: Array<{title: string}>;
+    items: Array<{title: string; command?: string}>;
 }
 
 export interface PlaybookMember {

@@ -93,11 +93,11 @@
       "id": "checklist",
       "name": "Run checklist (RHS full matrix + RDP smoke, chips, progress)",
       "doc": "e2e-tests/playwright/docs/tasks/09-checklist.md",
-      "done": false,
-      "coded_at": null,
-      "reviewed_at": null,
-      "review_status": null,
-      "attempts": 0,
+      "done": true,
+      "coded_at": "2026-10-02T05:37:40Z",
+      "reviewed_at": "2026-10-02T05:51:40Z",
+      "review_status": "OK",
+      "attempts": 1,
       "notes": null
     },
     {

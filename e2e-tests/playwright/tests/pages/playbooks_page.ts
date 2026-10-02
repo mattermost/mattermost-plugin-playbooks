@@ -115,4 +115,27 @@ export class PlaybooksPage {
     async clickRunForFirstPlaybook(): Promise<void> {
         await this.page.getByTestId('playbook-item').first().getByRole('button', {name: 'Run'}).click();
     }
+
+    // Navigates to the backstage runs list for a team.
+    async gotoRunsList(teamName: string): Promise<void> {
+        // Set team context first, then navigate to the runs list.
+        await this.mm.channels.goto(teamName, 'town-square');
+        await this.page.goto('/playbooks/runs');
+        await this.playbookRunList.waitFor();
+    }
+
+    // Returns the run list row that contains the given run name.
+    // The runs list renders each row as data-testid='run-list-item'; we pick the one
+    // that contains the run name text.
+    runListRow(runName: string): Locator {
+        return this.playbookRunList.getByTestId('run-list-item').filter({hasText: runName});
+    }
+
+    // Asserts the task progress indicator for the named run shows the expected text
+    // (e.g. '0/4', '2/4', '4/4').
+    async expectTaskProgress(runName: string, progress: string): Promise<void> {
+        await expect(
+            this.runListRow(runName).getByTestId('task-progress-indicator'),
+        ).toContainText(progress);
+    }
 }
