@@ -129,10 +129,13 @@ export async function setChecklistItemState(page: Page, runId: string, checklist
     }
 }
 
+// operationName is required by the server outside developer/testing mode: without it, the
+// GraphQL handler returns an empty 200 body ('Invalid blank operation name').
 export async function addParticipants(page: Page, runId: string, userIds: string[]) {
     const response = await page.request.post('/plugins/playbooks/api/v0/query', {
         ...requestedWith,
         data: {
+            operationName: 'AddRunParticipants',
             query: `mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
                 addRunParticipants(runID: $runID, userIDs: $userIDs)
             }`,
@@ -144,7 +147,12 @@ export async function addParticipants(page: Page, runId: string, userIds: string
         throw new Error(`Unable to add participants to run ${runId}: ${response.status()} ${await response.text()}`);
     }
 
-    const body = await response.json() as {errors?: Array<{message: string}>};
+    const text = await response.text();
+    if (!text) {
+        throw new Error(`addParticipants: server returned empty response body — operationName may be missing or server is not in developer mode`);
+    }
+
+    const body = JSON.parse(text) as {errors?: Array<{message: string}>};
     if (body.errors && body.errors.length > 0) {
         throw new Error(`Unable to add participants to run ${runId}: ${body.errors.map((e) => e.message).join(', ')}`);
     }

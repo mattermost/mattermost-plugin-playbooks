@@ -91,6 +91,39 @@ async function addUserToTeam(apiContext: APIRequestContext, teamId: string, user
     throw new Error(`Unable to add user ${userId} to team ${teamId}: ${response.status()} ${body}`);
 }
 
+// Normalises the server config to the values Cypress enforces in
+// e2e-tests/cypress/tests/support/api/on_prem_default_config.json via
+// sysadminSetup() in index.js. CI starts the server with EnableOpenServer=false
+// (default when MM_TEAMSETTINGS_ENABLEOPENSERVER is not set) and may have
+// CollapsedThreads in a non-disabled state when an enterprise license is
+// present. Playwright's globalSetup sets both to the same values Cypress uses
+// so the suite sees a predictable server regardless of CI defaults.
+//
+// Only the settings that materially affect the Playwright suite are patched;
+// the rest of the config is left untouched (read-modify-write via GET + PUT).
+async function ensureServerConfig(apiContext: APIRequestContext): Promise<void> {
+    const getResp = await apiContext.get('/api/v4/config', requestedWith);
+    if (!getResp.ok()) {
+        throw new Error(`ensureServerConfig: unable to GET /api/v4/config: ${getResp.status()} ${await getResp.text()}`);
+    }
+    const config = await getResp.json() as Record<string, Record<string, unknown>>;
+
+    // Patch only the settings we care about; leave everything else intact.
+    config.ServiceSettings = {...config.ServiceSettings, CollapsedThreads: 'disabled'};
+    config.TeamSettings = {...config.TeamSettings, EnableOpenServer: true};
+
+    const putResp = await apiContext.put('/api/v4/config', {
+        ...requestedWith,
+        data: config,
+    });
+    if (!putResp.ok()) {
+        throw new Error(
+            `ensureServerConfig: unable to PUT /api/v4/config ` +
+            `(server may have ReadOnlyConfig=true): ${putResp.status()} ${await putResp.text()}`,
+        );
+    }
+}
+
 export async function ensureAdminHasTeam(apiContext: APIRequestContext): Promise<Team> {
     await loginAsAdmin(apiContext);
 
@@ -119,6 +152,7 @@ export default async function globalSetup(config: FullConfig) {
 
     try {
         await ensureAdminHasTeam(apiContext);
+        await ensureServerConfig(apiContext);
     } finally {
         await apiContext.dispose();
     }

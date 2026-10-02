@@ -165,10 +165,13 @@ export interface PropertyFieldInput {
 }
 
 // Adds a property field to a playbook via GraphQL (the REST API does not expose this yet).
+// operationName is required by the server outside developer/testing mode: without it, the
+// GraphQL handler returns an empty 200 body ('Invalid blank operation name').
 export async function addPlaybookPropertyField(page: Page, playbookId: string, field: PropertyFieldInput): Promise<void> {
     const response = await page.request.post('/plugins/playbooks/api/v0/query', {
         ...requestedWith,
         data: {
+            operationName: 'AddPlaybookPropertyField',
             query: `mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
                 addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
             }`,
@@ -180,7 +183,12 @@ export async function addPlaybookPropertyField(page: Page, playbookId: string, f
         throw new Error(`Unable to add property field to playbook ${playbookId}: ${response.status()} ${await response.text()}`);
     }
 
-    const body = await response.json() as {errors?: Array<{message: string}>};
+    const text = await response.text();
+    if (!text) {
+        throw new Error(`addPlaybookPropertyField: server returned empty response body — operationName may be missing or server is not in developer mode`);
+    }
+
+    const body = JSON.parse(text) as {errors?: Array<{message: string}>};
     if (body.errors?.length) {
         throw new Error(`addPlaybookPropertyField failed: ${JSON.stringify(body.errors)}`);
     }
