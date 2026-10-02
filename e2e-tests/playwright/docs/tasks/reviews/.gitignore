@@ -1,4 +1,6 @@
-# Raw quality.sh output is reproducible by re-running the gate and is only
-# useful while a task is in flight (the reviewer reads it live during review).
-# Keep the human-written review findings (*.md), drop the verbose raw log.
-*.quality.log
+# The per-attempt review findings (*.md) and raw quality.sh logs (*.quality.log)
+# are working artifacts of the migration orchestration, not permanent history:
+# they're regenerated per attempt and only useful while a task is in flight.
+# Keep them on disk locally; don't commit them.
+*
+!.gitignore
