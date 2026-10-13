@@ -65,6 +65,7 @@ const WelcomeWarn = styled(WelcomeDesc)`
 const Header = styled.div`
     display: grid;
     min-height: 13rem;
+    flex-shrink: 0;
     margin-bottom: 4rem;
 `;
 
@@ -85,6 +86,7 @@ const ListHeading = styled.h4`
 const ListSection = styled.div`
     position: relative;
     display: grid;
+    flex-shrink: 0;
     margin-top: 1rem;
     margin-bottom: 5rem;
     box-shadow: 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.08);
