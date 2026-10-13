@@ -24,6 +24,7 @@ const pgUniqueViolation = "23505"
 type sqlPlaybook struct {
 	app.Playbook
 	ChecklistsJSON                        json.RawMessage
+	StatusSchemeJSON                      json.RawMessage
 	ConcatenatedInvitedUserIDs            string
 	ConcatenatedInvitedGroupIDs           string
 	ConcatenatedSignalAnyKeywords         string
@@ -172,6 +173,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.OwnerGroupOnlyActions",
 			"p.NewChannelOnly",
 			"p.AutoArchiveChannel",
+			"COALESCE(p.StatusSchemeJSON, 'null'::json) StatusSchemeJSON",
 			"p.ChecklistsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
 			"p.RunSummaryTemplateEnabled",
@@ -289,6 +291,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"OwnerGroupOnlyActions": rawPlaybook.OwnerGroupOnlyActions,
 			"NewChannelOnly":        rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":    rawPlaybook.AutoArchiveChannel,
+			"StatusSchemeJSON":      rawPlaybook.StatusSchemeJSON,
 		}))
 	if err != nil {
 		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
@@ -743,6 +746,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"OwnerGroupOnlyActions":                   rawPlaybook.OwnerGroupOnlyActions,
 			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
+			"StatusSchemeJSON":                        rawPlaybook.StatusSchemeJSON,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -1229,9 +1233,18 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 		return nil, errors.Errorf("checklist json for playbook id '%s' is too long (max %d)", playbook.ID, maxJSONLength)
 	}
 
+	var statusSchemeJSON json.RawMessage
+	if len(playbook.StatusScheme) > 0 {
+		statusSchemeJSON, err = json.Marshal(playbook.StatusScheme)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to marshal status scheme json for playbook id: '%s'", playbook.ID)
+		}
+	}
+
 	return &sqlPlaybook{
 		Playbook:                              playbook,
 		ChecklistsJSON:                        checklistsJSON,
+		StatusSchemeJSON:                      statusSchemeJSON,
 		ConcatenatedInvitedUserIDs:            strings.Join(playbook.InvitedUserIDs, ","),
 		ConcatenatedInvitedGroupIDs:           strings.Join(playbook.InvitedGroupIDs, ","),
 		ConcatenatedSignalAnyKeywords:         strings.Join(playbook.SignalAnyKeywords, ","),
@@ -1278,6 +1291,13 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	if rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs != "" {
 		p.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs, ",")
 	}
+
+	if len(rawPlaybook.StatusSchemeJSON) > 0 && string(rawPlaybook.StatusSchemeJSON) != "null" {
+		if err := json.Unmarshal(rawPlaybook.StatusSchemeJSON, &p.StatusScheme); err != nil {
+			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal status scheme json for playbook id: '%s'", p.ID)
+		}
+	}
+
 	return p, nil
 }
 

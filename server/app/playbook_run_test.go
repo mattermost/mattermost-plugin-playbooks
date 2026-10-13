@@ -156,6 +156,23 @@ func TestDetectChangedFields(t *testing.T) {
 		require.Empty(t, changes)
 	})
 
+	t.Run("status slug change", func(t *testing.T) {
+		prev := &PlaybookRun{
+			ID:            "run1",
+			CurrentStatus: StatusInProgress,
+			StatusSlug:    StatusSlugInProgress,
+		}
+		curr := &PlaybookRun{
+			ID:            "run1",
+			CurrentStatus: StatusFinished,
+			StatusSlug:    StatusSlugClosed,
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Equal(t, StatusFinished, changes["current_status"])
+		require.Equal(t, StatusSlugClosed, changes["status_slug"])
+	})
+
 	t.Run("scalar field changes", func(t *testing.T) {
 		prev := &PlaybookRun{
 			ID:          "run1",

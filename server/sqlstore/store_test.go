@@ -647,6 +647,83 @@ func TestMigrations(t *testing.T) {
 	})
 }
 
+func TestStatusSlugBackfill(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	db := setupTestDB(t)
+	sqlStore := &SQLStore{
+		db,
+		builder,
+		scheduler,
+	}
+
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+	setupKVStoreTable(t, db)
+	setupTeamMembersTable(t, db)
+	setupChannelMembersTable(t, db)
+	setupBotsTable(t, db)
+
+	migrateUpTo(t, sqlStore, semver.MustParse("0.69.0"))
+
+	openID := model.NewId()
+	closedID := model.NewId()
+	_, err := sqlStore.execBuilder(sqlStore.db, sq.
+		Insert("IR_Incident").
+		SetMap(map[string]interface{}{
+			"ID":              openID,
+			"Name":            "open-run",
+			"Description":     "test",
+			"IsActive":        true,
+			"CommanderUserID": "commander",
+			"TeamID":          "testTeam",
+			"ChannelID":       model.NewId(),
+			"CreateAt":        model.GetMillis(),
+			"ActiveStage":     0,
+			"ChecklistsJSON":  "{}",
+			"CurrentStatus":   app.StatusInProgress,
+		}))
+	require.NoError(t, err)
+
+	_, err = sqlStore.execBuilder(sqlStore.db, sq.
+		Insert("IR_Incident").
+		SetMap(map[string]interface{}{
+			"ID":              closedID,
+			"Name":            "closed-run",
+			"Description":     "test",
+			"IsActive":        false,
+			"CommanderUserID": "commander",
+			"TeamID":          "testTeam",
+			"ChannelID":       model.NewId(),
+			"CreateAt":        model.GetMillis(),
+			"ActiveStage":     0,
+			"ChecklistsJSON":  "{}",
+			"CurrentStatus":   app.StatusFinished,
+		}))
+	require.NoError(t, err)
+
+	migrateFrom(t, sqlStore, semver.MustParse("0.69.0"))
+
+	type row struct {
+		ID         string
+		StatusSlug string
+	}
+	var rows []row
+	err = sqlStore.selectBuilder(sqlStore.db, &rows, sqlStore.builder.
+		Select("ID", "StatusSlug").
+		From("IR_Incident").
+		Where(sq.Eq{"ID": []string{openID, closedID}}).
+		OrderBy("Name ASC"))
+	require.NoError(t, err)
+	require.Len(t, rows, 2)
+	require.Equal(t, closedID, rows[0].ID)
+	require.Equal(t, app.StatusSlugClosed, rows[0].StatusSlug)
+	require.Equal(t, openID, rows[1].ID)
+	require.Equal(t, app.StatusSlugInProgress, rows[1].StatusSlug)
+}
+
 func insertRunWithExpiredReminder(sqlStore *SQLStore, reminderExpiredAgo time.Duration) (string, error) {
 	id := model.NewId()
 	_, err := sqlStore.execBuilder(sqlStore.db, sq.

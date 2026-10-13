@@ -282,6 +282,7 @@ const PlaybookEditor = () => {
                     <PlaybookUsage
                         playbookID={playbook.id}
                         stats={stats}
+                        statusScheme={restPlaybook?.status_scheme}
                     />
                 </Route>
                 {allowPlaybookAttributes && (

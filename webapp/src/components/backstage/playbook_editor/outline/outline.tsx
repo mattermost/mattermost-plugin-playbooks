@@ -25,6 +25,7 @@ import {PlaybookWithChecklist} from 'src/types/playbook';
 import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
 
 import StatusUpdates from './section_status_updates';
+import SectionStatusScheme from './section_status_scheme';
 import SectionAdminSettings from './section_admin_settings';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
@@ -241,6 +242,18 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                     canEdit={canEdit}
                 />
             </Section>
+            {restPlaybook && (
+                <Section
+                    id={'status-scheme'}
+                    title={formatMessage({defaultMessage: 'Run status'})}
+                >
+                    <SectionStatusScheme
+                        playbook={restPlaybook}
+                        canEdit={!archived && canEdit}
+                        onSaved={refetch}
+                    />
+                </Section>
+            )}
             <Section
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Tasks'})}

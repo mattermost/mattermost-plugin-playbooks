@@ -22,20 +22,23 @@ import {StarButton} from 'src/components/backstage/playbook_editor/playbook_edit
 import HeaderButton from 'src/components/backstage/playbook_runs/playbook_run//header_button';
 import {ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
 import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rhs';
-import {Badge, ExpandRight, Role} from 'src/components/backstage/playbook_runs/shared';
+import {ExpandRight, Role} from 'src/components/backstage/playbook_runs/shared';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import {BadgeType} from 'src/components/backstage/status_badge';
 import CopyLink from 'src/components/widgets/copy_link';
 import {useFavoriteRun, useParticipateInRun} from 'src/hooks';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import {useUpdateRun} from 'src/graphql/hooks';
 import TextEdit from 'src/components/text_edit';
 import {SemiBoldHeading} from 'src/styles/headings';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, PlaybookRunStatus} from 'src/types/playbook_run';
+
+import StatusSchemeSelect from './status_scheme_select';
 
 interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
     playbookRun: PlaybookRun;
+    playbook?: PlaybookWithChecklist;
     role: Role;
     hasPermanentViewerAccess: boolean;
     onInfoClick: () => void;
@@ -45,7 +48,7 @@ interface Props {
     ownerGroupOnlyActions?: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection, ownerGroupOnlyActions}: Props) => {
+export const RunHeader = ({playbookRun, playbook, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection, ownerGroupOnlyActions}: Props) => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const updateRun = useUpdateRun(playbookRun.id);
@@ -99,7 +102,11 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                             hasPermanentViewerAccess={hasPermanentViewerAccess}
                             ownerGroupOnlyActions={ownerGroupOnlyActions}
                         />
-                        <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                        <StatusSchemeSelect
+                            playbookRun={playbookRun}
+                            scheme={playbook?.status_scheme}
+                            disabled={role !== Role.Participant}
+                        />
                         <HeaderButton
                             tooltipId={'run-actions-button-tooltip'}
                             tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
@@ -169,15 +176,6 @@ const StyledCopyLink = styled(CopyLink)`
     margin-left: 4px;
     font-size: 18px;
     place-items: center;
-`;
-
-const StyledBadge = styled(Badge)`
-    padding: 2px 6px;
-    margin-right: 6px;
-    margin-left: 8px;
-    font-size: 10px;
-    line-height: 16px;
-    text-transform: uppercase;
 `;
 
 const GetInvolved = styled(PrimaryButton)`

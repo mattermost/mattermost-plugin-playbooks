@@ -63,6 +63,11 @@ jest.mock('./section_status_updates', () => ({
     },
 }));
 
+jest.mock('./section_status_scheme', () => ({
+    __esModule: true,
+    default: () => null,
+}));
+
 jest.mock('./section_retrospective', () => ({
     __esModule: true,
     default: (props: SectionRetrospectiveProps) => {

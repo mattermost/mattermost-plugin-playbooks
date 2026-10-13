@@ -13,6 +13,7 @@ import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import Profiles from 'src/components/assets/icons/profiles';
 import ClipboardsCheckmark from 'src/components/assets/icons/clipboards_checkmark';
 import {PlaybookStats} from 'src/types/stats';
+import {type StatusSchemeOption} from 'src/types/playbook';
 import {useAllowPlaybookStatsView} from 'src/hooks';
 
 import Pill from 'src/components/widgets/pill';
@@ -24,12 +25,14 @@ import UpgradePlaybookPlaceholder from './upgrade_playbook_placeholder';
 import BarGraph from './bar_graph';
 
 import LineGraph from './line_graph';
+import StatusBreakdown from './status_breakdown';
 
 interface Props {
     stats: PlaybookStats
     fetchParams: FetchPlaybookRunsParams
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
     setFilterPill: (pill: ReactNode) => void
+    statusScheme?: StatusSchemeOption[] | null
 }
 
 const StatsView = (props: Props) => {
@@ -114,6 +117,12 @@ const StatsView = (props: Props) => {
         });
     };
 
+    const filterStatus = (slug?: string) => {
+        props.setFetchParams((oldParams) => {
+            return {...oldParams, status_slugs: slug ? [slug] : undefined, page: 0};
+        });
+    };
+
     const pill = (text: ReactNode) => (
         <PillRow>
             <Pill
@@ -176,6 +185,14 @@ const StatsView = (props: Props) => {
                         tooltipLabelCallback={(numParticipants) => formatMessage({defaultMessage: '{numParticipants, plural, =0 {no active participants} =1 {# active participant} other {# active participants}}'}, {numParticipants})}
                     />
                 </GraphBox>
+            </BottomRow>
+            <BottomRow>
+                <StatusBreakdown
+                    counts={props.stats.runs_by_status || []}
+                    scheme={props.statusScheme}
+                    selectedSlug={props.fetchParams.status_slugs?.[0]}
+                    onSelect={filterStatus}
+                />
             </BottomRow>
         </>
     );

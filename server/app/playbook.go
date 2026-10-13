@@ -91,6 +91,9 @@ type Playbook struct {
 
 	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
 
+	// StatusScheme is nil/empty for the implicit default (In progress + Closed).
+	StatusScheme []StatusSchemeOption `json:"status_scheme,omitempty" export:"status_scheme"`
+
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
@@ -172,6 +175,9 @@ func (p Playbook) Clone() Playbook {
 	}
 	if len(p.WebhookOnStatusUpdateURLs) != 0 {
 		newPlaybook.WebhookOnStatusUpdateURLs = append([]string(nil), p.WebhookOnStatusUpdateURLs...)
+	}
+	if len(p.StatusScheme) != 0 {
+		newPlaybook.StatusScheme = append([]StatusSchemeOption(nil), p.StatusScheme...)
 	}
 	return newPlaybook
 }

@@ -22,6 +22,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/ops"
 )
 
 // PlaybookHandler is the API handler.
@@ -33,6 +34,7 @@ type PlaybookHandler struct {
 	config          config.Service
 	permissions     *app.PermissionsService
 	licenseChecker  app.LicenseChecker
+	PlaybookOps     *ops.Playbooks
 }
 
 const SettingsKey = "global_settings"
@@ -68,6 +70,10 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 		config:          configService,
 		permissions:     permissions,
 		licenseChecker:  licenseChecker,
+		PlaybookOps: &ops.Playbooks{
+			Service:     playbookService,
+			Permissions: permissions,
+		},
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
@@ -163,6 +169,12 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return false
 	}
+
+	if err := app.ValidateStatusScheme(playbook.StatusScheme); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return false
+	}
+	playbook.StatusScheme = app.NormalizeStatusScheme(playbook.StatusScheme)
 
 	for listIndex := range playbook.Checklists {
 		for itemIndex := range playbook.Checklists[listIndex].Items {
@@ -263,21 +275,16 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 }
 
 func (h *PlaybookHandler) getPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playbookID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
-		return
-	}
-
-	playbook, err := h.playbookService.Get(playbookID)
+	playbook, err := h.PlaybookOps.Read(callerFromRequest(r), mux.Vars(r)["id"])
 	if err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
-
-	ReturnJSON(w, &playbook, http.StatusOK)
+	ReturnJSON(w, playbook, http.StatusOK)
 }
 
 func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -314,6 +321,9 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 	if _, ok := rawFields["channel_name_template_locked"]; !ok {
 		playbook.ChannelNameTemplateLocked = oldPlaybook.ChannelNameTemplateLocked
+	}
+	if _, ok := rawFields["status_scheme"]; !ok {
+		playbook.StatusScheme = oldPlaybook.StatusScheme
 	}
 
 	if err = h.validateMetrics(playbook); err != nil {

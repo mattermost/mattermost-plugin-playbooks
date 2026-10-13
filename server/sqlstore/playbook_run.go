@@ -223,7 +223,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 	// When adding a PlaybookRun column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
 		Select("i.ID", "i.Name AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.UpdateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
+			"i.CreateAt", "i.UpdateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.StatusSlug", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
@@ -311,6 +311,11 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	if len(options.Statuses) != 0 {
 		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
+	}
+
+	if len(options.StatusSlugs) != 0 {
+		queryForResults = queryForResults.Where(sq.Eq{"i.StatusSlug": options.StatusSlugs})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.StatusSlug": options.StatusSlugs})
 	}
 
 	if len(options.Types) != 0 {
@@ -482,6 +487,9 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 
 	playbookRun = playbookRun.Clone()
+	if playbookRun.StatusSlug == "" {
+		playbookRun.StatusSlug = app.StatusSlugFromCurrentStatus(playbookRun.CurrentStatus)
+	}
 
 	if playbookRun.ID == "" {
 		playbookRun.ID = model.NewId()
@@ -522,6 +530,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
 			"ReminderTimerDefaultSeconds":             rawPlaybookRun.ReminderTimerDefaultSeconds,
 			"CurrentStatus":                           rawPlaybookRun.CurrentStatus,
+			"StatusSlug":                              rawPlaybookRun.StatusSlug,
 			"LastStatusUpdateAt":                      rawPlaybookRun.LastStatusUpdateAt,
 			"ConcatenatedInvitedUserIDs":              rawPlaybookRun.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":             rawPlaybookRun.ConcatenatedInvitedGroupIDs,
@@ -594,6 +603,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"SummaryModifiedAt":                       rawPlaybookRun.SummaryModifiedAt,
 			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
 			"LastStatusUpdateAt":                      rawPlaybookRun.LastStatusUpdateAt,
+			"StatusSlug":                              rawPlaybookRun.StatusSlug,
 			"ChecklistsJSON":                          rawPlaybookRun.ChecklistsJSON,
 			"ReminderPostID":                          rawPlaybookRun.ReminderPostID,
 			"PreviousReminder":                        rawPlaybookRun.PreviousReminder,
@@ -614,8 +624,8 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
-			"RunType":             rawPlaybookRun.Type,
-			"AutoArchivedChannel": rawPlaybookRun.AutoArchivedChannel,
+			"RunType":                                 rawPlaybookRun.Type,
+			"AutoArchivedChannel":                     rawPlaybookRun.AutoArchivedChannel,
 			// ChannelCreatedByRun and AutoArchiveChannel are intentionally omitted — set once at creation and immutable.
 			"UpdateAt": rawPlaybookRun.UpdateAt,
 		}).
@@ -664,6 +674,7 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"CurrentStatus": app.StatusFinished,
+			"StatusSlug":    app.StatusSlugClosed,
 			"EndAt":         endAt,
 			"UpdateAt":      endAt,
 		}).
@@ -680,6 +691,7 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"CurrentStatus":      app.StatusInProgress,
+			"StatusSlug":         app.StatusSlugInProgress,
 			"EndAt":              0,
 			"LastStatusUpdateAt": restoredAt,
 			"UpdateAt":           restoredAt,
@@ -689,6 +701,103 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 	}
 
 	return nil
+}
+
+func (s *playbookRunStore) ApplyLifecycleTransition(transition app.LifecycleTransition) (app.LifecycleTransitionResult, error) {
+	if transition.RunID == "" {
+		return app.LifecycleTransitionResult{}, errors.New("needs playbook run ID")
+	}
+	if transition.ExpectedStatus == "" || transition.NewStatus == "" || transition.NewSlug == "" {
+		return app.LifecycleTransitionResult{}, errors.New("needs expected status, new status, and new slug")
+	}
+
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return app.LifecycleTransitionResult{}, errors.Wrap(err, "could not begin transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	setMap := map[string]interface{}{
+		"CurrentStatus": transition.NewStatus,
+		"StatusSlug":    transition.NewSlug,
+		"UpdateAt":      transition.At,
+	}
+	if transition.EndAt != nil {
+		setMap["EndAt"] = *transition.EndAt
+	}
+	if transition.LastStatusUpdateAt != nil {
+		setMap["LastStatusUpdateAt"] = *transition.LastStatusUpdateAt
+	}
+
+	where := sq.Eq{
+		"ID":            transition.RunID,
+		"CurrentStatus": transition.ExpectedStatus,
+	}
+	if transition.ExpectedSlug != "" {
+		where["StatusSlug"] = transition.ExpectedSlug
+	}
+
+	sqlResult, err := s.store.execBuilder(tx, sq.Update("IR_Incident").SetMap(setMap).Where(where))
+	if err != nil {
+		return app.LifecycleTransitionResult{}, errors.Wrapf(err, "failed to apply lifecycle transition for id '%s'", transition.RunID)
+	}
+	rows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return app.LifecycleTransitionResult{}, errors.Wrap(err, "failed to check lifecycle transition rows affected")
+	}
+	if rows == 0 {
+		return app.LifecycleTransitionResult{Applied: false}, nil
+	}
+
+	timelineEventID := ""
+	if transition.Timeline != nil {
+		event := *transition.Timeline
+		if event.PlaybookRunID == "" {
+			event.PlaybookRunID = transition.RunID
+		}
+		if event.CreateAt == 0 {
+			event.CreateAt = transition.At
+		}
+		if event.EventAt == 0 {
+			event.EventAt = transition.At
+		}
+		if event.ID == "" {
+			event.ID = model.NewId()
+		}
+		if event.EventType == "" {
+			return app.LifecycleTransitionResult{}, errors.New("needs event type")
+		}
+
+		eventType := string(event.EventType)
+		if event.EventType == app.OwnerChanged {
+			eventType = legacyEventTypeCommanderChanged
+		}
+
+		if _, err = s.store.execBuilder(tx, sq.
+			Insert("IR_TimelineEvent").
+			SetMap(map[string]interface{}{
+				"ID":            event.ID,
+				"IncidentID":    event.PlaybookRunID,
+				"CreateAt":      event.CreateAt,
+				"DeleteAt":      event.DeleteAt,
+				"EventAt":       event.EventAt,
+				"EventType":     eventType,
+				"Summary":       event.Summary,
+				"Details":       event.Details,
+				"PostID":        event.PostID,
+				"SubjectUserID": event.SubjectUserID,
+				"CreatorUserID": event.CreatorUserID,
+			})); err != nil {
+			return app.LifecycleTransitionResult{}, errors.Wrap(err, "failed to insert timeline event")
+		}
+		timelineEventID = event.ID
+	}
+
+	if err = tx.Commit(); err != nil {
+		return app.LifecycleTransitionResult{}, errors.Wrap(err, "could not commit transaction")
+	}
+
+	return app.LifecycleTransitionResult{Applied: true, TimelineEventID: timelineEventID}, nil
 }
 
 // BumpRunUpdatedAt updates the UpdateAt timestamp for a playbook run

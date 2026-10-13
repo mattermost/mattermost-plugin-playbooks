@@ -16,6 +16,7 @@ import {PlaybookStats} from 'src/types/stats';
 import {useRunsList} from 'src/hooks';
 
 import {PlaybookRunStatus} from 'src/types/playbook_run';
+import {type StatusSchemeOption, resolveStatusScheme} from 'src/types/playbook';
 
 import RunList from './runs_list/runs_list';
 
@@ -30,6 +31,7 @@ const defaultPlaybookFetchParams = {
 interface Props {
     playbookID: string;
     stats: PlaybookStats;
+    statusScheme?: StatusSchemeOption[] | null;
 }
 
 type Attrs = HTMLAttributes<HTMLElement>;
@@ -37,10 +39,12 @@ type Attrs = HTMLAttributes<HTMLElement>;
 const PlaybookUsage = ({
     playbookID,
     stats,
+    statusScheme,
     ...attrs
 }: Props & Attrs) => {
     const [filterPill, setFilterPill] = useState<ReactNode>(null);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
+    const scheme = resolveStatusScheme(statusScheme);
 
     useEffect(() => {
         setFetchParams((oldParams) => {
@@ -56,6 +60,7 @@ const PlaybookUsage = ({
                     fetchParams={fetchParams}
                     setFetchParams={setFetchParams}
                     setFilterPill={setFilterPill}
+                    statusScheme={scheme}
                 />
                 <RunListContainer>
                     <RunList
@@ -66,6 +71,7 @@ const PlaybookUsage = ({
                         filterPill={filterPill}
                         fixedTeam={true}
                         fixedPlaybook={true}
+                        statusScheme={scheme}
                     />
                 </RunListContainer>
             </InnerContainer>

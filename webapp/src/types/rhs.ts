@@ -17,6 +17,7 @@ export enum TimelineEventType {
     CanceledRetrospective = 'canceled_retrospective',
     RunFinished = 'run_finished',
     RunRestored = 'run_restored',
+    RunStatusChanged = 'run_status_changed',
     StatusUpdatesEnabled = 'status_updates_enabled',
     StatusUpdatesDisabled = 'status_updates_disabled',
     RetrospectiveEnabled = 'retrospective_enabled',

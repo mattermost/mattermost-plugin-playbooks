@@ -1809,4 +1809,29 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.69.0"),
+		toVersion:   semver.MustParse("0.70.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Incident", "StatusSlug", "TEXT NOT NULL DEFAULT 'in_progress'"); err != nil {
+				return errors.Wrapf(err, "failed adding column StatusSlug to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "StatusSchemeJSON", "JSON"); err != nil {
+				return errors.Wrapf(err, "failed adding column StatusSchemeJSON to IR_Playbook")
+			}
+
+			if _, err := e.Exec(`UPDATE IR_Incident SET StatusSlug = 'closed' WHERE CurrentStatus = 'Finished'`); err != nil {
+				return errors.Wrap(err, "failed backfilling StatusSlug for finished runs")
+			}
+			if _, err := e.Exec(`UPDATE IR_Incident SET StatusSlug = 'in_progress' WHERE CurrentStatus <> 'Finished'`); err != nil {
+				return errors.Wrap(err, "failed backfilling StatusSlug for open runs")
+			}
+
+			if _, err := e.Exec(createPGIndex("IR_Incident_StatusSlug", "IR_Incident", "StatusSlug")); err != nil {
+				return errors.Wrap(err, "failed creating index IR_Incident_StatusSlug")
+			}
+
+			return nil
+		},
+	},
 }

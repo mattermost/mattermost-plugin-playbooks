@@ -19,15 +19,24 @@ import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/p
 import PlaybookSelector, {Option as PlaybookOption} from 'src/components/backstage/runs_list/playbook_selector';
 import {Option as TeamOption} from 'src/components/team/team_selector';
 import {clientFetchPlaybooks, fetchOwnersInTeam} from 'src/client';
-import {Playbook} from 'src/types/playbook';
+import {
+    Playbook,
+    type StatusSchemeOption,
+    resolveStatusScheme,
+    splitStatusScheme,
+} from 'src/types/playbook';
 import SearchInput from 'src/components/backstage/search_input';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
+import {DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
+import Dropdown from 'src/components/dropdown';
+import {FilterButton} from 'src/components/backstage/styles';
 
 interface Props {
     fetchParams: FetchPlaybookRunsParams;
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>;
     fixedPlaybook?: boolean;
     fixedFinished?: boolean;
+    statusScheme?: StatusSchemeOption[] | null;
 }
 
 const searchDebounceDelayMilliseconds = 300;
@@ -71,7 +80,7 @@ const PlaybookControlComponent = (ownProps: ControlProps<PlaybookOption, boolean
     return controlComponent(ownProps, 'playbooks');
 };
 
-const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Props) => {
+const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished, statusScheme}: Props) => {
     const {formatMessage} = useIntl();
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const [playbookSelectorToggle, setPlaybookSelectorToggle] = useState(false);
@@ -107,6 +116,16 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
         const types = checked ? [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist] : [PlaybookRunType.Playbook];
         setFetchParams((oldParams) => {
             return {...oldParams, types, page: 0};
+        });
+    };
+
+    const setStatusSlug = (slug?: string) => {
+        setFetchParams((oldParams) => {
+            return {
+                ...oldParams,
+                status_slugs: slug ? [slug] : undefined,
+                page: 0,
+            };
         });
     };
 
@@ -158,12 +177,19 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                 checked={myRunsOnly}
                 onChange={setMyRunsOnly}
             />
-            {!fixedFinished &&
+            {!fixedFinished && !statusScheme &&
                 <CheckboxInput
                     testId={'finished-runs'}
                     text={formatMessage({defaultMessage: 'Include finished'})}
                     checked={(fetchParams.statuses?.length ?? 0) > 1}
                     onChange={setFinishedRuns}
+                />
+            }
+            {statusScheme &&
+                <StatusFilter
+                    scheme={statusScheme}
+                    selectedSlug={fetchParams.status_slugs?.[0]}
+                    onSelect={setStatusSlug}
                 />
             }
             {!fixedPlaybook &&
@@ -209,5 +235,85 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
         </PlaybookRunListFilters>
     );
 };
+
+interface StatusFilterProps {
+    scheme: StatusSchemeOption[];
+    selectedSlug?: string;
+    onSelect: (slug?: string) => void;
+}
+
+const StatusFilter = ({scheme, selectedSlug, onSelect}: StatusFilterProps) => {
+    const {formatMessage} = useIntl();
+    const [isOpen, setOpen] = useState(false);
+    const options = resolveStatusScheme(scheme);
+    const {open, closed} = splitStatusScheme(options);
+    const selected = options.find((opt) => opt.slug === selectedSlug);
+    const label = selected?.name ?? formatMessage({defaultMessage: 'Status'});
+
+    const choose = (slug?: string) => {
+        setOpen(false);
+        onSelect(slug);
+    };
+
+    const trigger = (
+        <FilterButton
+            data-testid='status-filter'
+            $active={isOpen || Boolean(selectedSlug)}
+            onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setOpen((openState) => !openState);
+            }}
+        >
+            {label}
+            <i className='icon-chevron-down icon--small'/>
+        </FilterButton>
+    );
+
+    return (
+        <Dropdown
+            isOpen={isOpen}
+            onOpenChange={setOpen}
+            placement='bottom-start'
+            target={trigger}
+        >
+            <DropdownMenu
+                data-testid='status-filter-menu'
+                role='listbox'
+                aria-label={formatMessage({defaultMessage: 'Filter by status'})}
+            >
+                <DropdownMenuItem onClick={() => choose()}>
+                    {formatMessage({defaultMessage: 'All statuses'})}
+                </DropdownMenuItem>
+                <FilterGroupLabel>{formatMessage({defaultMessage: 'Open'})}</FilterGroupLabel>
+                {open.map((opt) => (
+                    <DropdownMenuItem
+                        key={opt.slug}
+                        onClick={() => choose(opt.slug)}
+                    >
+                        {opt.name}
+                    </DropdownMenuItem>
+                ))}
+                <FilterGroupLabel>{formatMessage({defaultMessage: 'Closed'})}</FilterGroupLabel>
+                {closed.map((opt) => (
+                    <DropdownMenuItem
+                        key={opt.slug}
+                        onClick={() => choose(opt.slug)}
+                    >
+                        {opt.name}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenu>
+        </Dropdown>
+    );
+};
+
+const FilterGroupLabel = styled.div`
+    padding: 6px 20px 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+`;
 
 export default Filters;

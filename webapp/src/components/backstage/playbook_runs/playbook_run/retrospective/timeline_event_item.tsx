@@ -211,6 +211,8 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: 'Run finished by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.RunRestored:
             return formatMessage({defaultMessage: 'Run restored by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.RunStatusChanged:
+            return formatMessage({defaultMessage: '{name} changed status to {summary}'}, {name: event.subject_display_name, summary: event.summary});
         case TimelineEventType.StatusUpdated:
             if (event.summary === '') {
                 return formatMessage({defaultMessage: '{name} posted a status update'}, {name: event.subject_display_name});
@@ -317,6 +319,7 @@ const TimelineEventItem = (props: Props) => {
         case TimelineEventType.RunCreated:
         case TimelineEventType.RunFinished:
         case TimelineEventType.RunRestored:
+        case TimelineEventType.RunStatusChanged:
             return 'icon-shield-alert-outline';
         case TimelineEventType.StatusUpdated:
         case TimelineEventType.StatusUpdateSnoozed:

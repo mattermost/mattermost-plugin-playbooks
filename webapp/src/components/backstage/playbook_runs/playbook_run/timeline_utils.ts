@@ -80,6 +80,7 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
         TimelineEventType.RunCreated,
         TimelineEventType.RunFinished,
         TimelineEventType.RunRestored,
+        TimelineEventType.RunStatusChanged,
     ];
     return filterRecord[eventType] || (filterRecord[TimelineEventType.StatusUpdated] && statusUpdateTypes.includes(eventType as TimelineEventType));
 };

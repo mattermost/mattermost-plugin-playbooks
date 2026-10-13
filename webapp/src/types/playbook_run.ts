@@ -27,6 +27,7 @@ export interface PlaybookRun {
     checklists: Checklist[];
     status_posts: StatusPost[];
     current_status: RunStatus;
+    status_slug?: string;
     last_status_update_at: number;
     reminder_post_id: string;
     reminder_message_template: string;
@@ -127,6 +128,7 @@ export interface FetchPlaybookRunsParams {
     sort?: string;
     direction?: string;
     statuses?: string[];
+    status_slugs?: string[];
     types?: string[];
     owner_user_id?: string;
     participant_id?: string;

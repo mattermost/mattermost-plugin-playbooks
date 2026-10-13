@@ -208,6 +208,25 @@ func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) e
 	return nil
 }
 
+func (s *PlaybookRunService) SetStatus(ctx context.Context, playbookRunID, slug string) (*PlaybookRun, error) {
+	statusURL := fmt.Sprintf("runs/%s/status-slug", playbookRunID)
+	req, err := s.client.newAPIRequest(http.MethodPut, statusURL, struct {
+		Slug string `json:"slug"`
+	}{Slug: slug})
+	if err != nil {
+		return nil, err
+	}
+
+	playbookRun := new(PlaybookRun)
+	resp, err := s.client.do(ctx, req, playbookRun)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return playbookRun, nil
+}
+
 func (s *PlaybookRunService) Restore(ctx context.Context, playbookRunID string) error {
 	restoreURL := fmt.Sprintf("runs/%s/restore", playbookRunID)
 	req, err := s.client.newAPIRequest(http.MethodPut, restoreURL, nil)

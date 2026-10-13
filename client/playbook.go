@@ -44,12 +44,21 @@ type Playbook struct {
 	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
 	NewChannelOnly                          bool                   `json:"new_channel_only"`
 	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
+	StatusScheme                            []StatusSchemeOption   `json:"status_scheme,omitempty"`
 }
 
 type PlaybookMember struct {
 	UserID      string   `json:"user_id"`
 	Roles       []string `json:"roles"`
 	SchemeRoles []string `json:"scheme_roles"`
+}
+
+// StatusSchemeOption is one entry in a playbook status scheme.
+type StatusSchemeOption struct {
+	Slug     string `json:"slug"`
+	Name     string `json:"name"`
+	Category string `json:"category"`
+	Order    int    `json:"order"`
 }
 
 const (
@@ -68,26 +77,26 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	ID                      string       `json:"id"`
-	Title                   string       `json:"title"`
-	State                   string       `json:"state"`
-	StateModified           int64        `json:"state_modified"`
-	AssigneeID              string       `json:"assignee_id"`
-	AssigneeModified        int64        `json:"assignee_modified"`
-	AssigneeType            string       `json:"assignee_type"`
-	AssigneePropertyFieldID string       `json:"assignee_property_field_id"`
-	AssigneeOnlyComplete    bool         `json:"assignee_only_complete"`
-	Command                 string       `json:"command"`
-	CommandLastRun          int64        `json:"command_last_run"`
-	Description             string       `json:"description"`
-	LastSkipped             int64        `json:"delete_at"`
-	DueDate                 int64        `json:"due_date"`
-	TaskActions             []TaskAction `json:"task_actions"`
+	ID                      string            `json:"id"`
+	Title                   string            `json:"title"`
+	State                   string            `json:"state"`
+	StateModified           int64             `json:"state_modified"`
+	AssigneeID              string            `json:"assignee_id"`
+	AssigneeModified        int64             `json:"assignee_modified"`
+	AssigneeType            string            `json:"assignee_type"`
+	AssigneePropertyFieldID string            `json:"assignee_property_field_id"`
+	AssigneeOnlyComplete    bool              `json:"assignee_only_complete"`
+	Command                 string            `json:"command"`
+	CommandLastRun          int64             `json:"command_last_run"`
+	Description             string            `json:"description"`
+	LastSkipped             int64             `json:"delete_at"`
+	DueDate                 int64             `json:"due_date"`
+	TaskActions             []TaskAction      `json:"task_actions"`
 	Requirements            []TaskRequirement `json:"requirements"`
-	ConditionID             string       `json:"condition_id"`
-	ConditionAction         string       `json:"condition_action"`
-	ConditionReason         string       `json:"condition_reason"`
-	UpdateAt                int64        `json:"update_at"`
+	ConditionID             string            `json:"condition_id"`
+	ConditionAction         string            `json:"condition_action"`
+	ConditionReason         string            `json:"condition_reason"`
+	UpdateAt                int64             `json:"update_at"`
 }
 
 // TaskRequirement is a labeled field that must be completed when checking off a task.
@@ -138,6 +147,7 @@ type PlaybookCreateOptions struct {
 	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
 	NewChannelOnly                          bool                   `json:"new_channel_only"`
 	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
+	StatusScheme                            []StatusSchemeOption   `json:"status_scheme,omitempty"`
 }
 
 type PlaybookMetricConfig struct {
@@ -166,22 +176,28 @@ type GetPlaybooksResults struct {
 }
 
 type PlaybookStats struct {
-	RunsInProgress                int        `json:"runs_in_progress"`
-	ParticipantsActive            int        `json:"participants_active"`
-	RunsFinishedPrev30Days        int        `json:"runs_finished_prev_30_days"`
-	RunsFinishedPercentageChange  int        `json:"runs_finished_percentage_change"`
-	RunsStartedPerWeek            []int      `json:"runs_started_per_week"`
-	RunsStartedPerWeekTimes       [][]int64  `json:"runs_started_per_week_times"`
-	ActiveRunsPerDay              []int      `json:"active_runs_per_day"`
-	ActiveRunsPerDayTimes         [][]int64  `json:"active_runs_per_day_times"`
-	ActiveParticipantsPerDay      []int      `json:"active_participants_per_day"`
-	ActiveParticipantsPerDayTimes [][]int64  `json:"active_participants_per_day_times"`
-	MetricOverallAverage          []null.Int `json:"metric_overall_average"`
-	MetricRollingAverage          []null.Int `json:"metric_rolling_average"`
-	MetricRollingAverageChange    []null.Int `json:"metric_rolling_average_change"`
-	MetricValueRange              [][]int64  `json:"metric_value_range"`
-	MetricRollingValues           [][]int64  `json:"metric_rolling_values"`
-	LastXRunNames                 []string   `json:"last_x_run_names"`
+	RunsInProgress                int           `json:"runs_in_progress"`
+	ParticipantsActive            int           `json:"participants_active"`
+	RunsFinishedPrev30Days        int           `json:"runs_finished_prev_30_days"`
+	RunsFinishedPercentageChange  int           `json:"runs_finished_percentage_change"`
+	RunsStartedPerWeek            []int         `json:"runs_started_per_week"`
+	RunsStartedPerWeekTimes       [][]int64     `json:"runs_started_per_week_times"`
+	ActiveRunsPerDay              []int         `json:"active_runs_per_day"`
+	ActiveRunsPerDayTimes         [][]int64     `json:"active_runs_per_day_times"`
+	ActiveParticipantsPerDay      []int         `json:"active_participants_per_day"`
+	ActiveParticipantsPerDayTimes [][]int64     `json:"active_participants_per_day_times"`
+	MetricOverallAverage          []null.Int    `json:"metric_overall_average"`
+	MetricRollingAverage          []null.Int    `json:"metric_rolling_average"`
+	MetricRollingAverageChange    []null.Int    `json:"metric_rolling_average_change"`
+	MetricValueRange              [][]int64     `json:"metric_value_range"`
+	MetricRollingValues           [][]int64     `json:"metric_rolling_values"`
+	LastXRunNames                 []string      `json:"last_x_run_names"`
+	RunsByStatus                  []StatusCount `json:"runs_by_status"`
+}
+
+type StatusCount struct {
+	Slug  string `json:"slug"`
+	Count int    `json:"count"`
 }
 
 type ChannelPlaybookMode int

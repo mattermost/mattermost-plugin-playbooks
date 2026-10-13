@@ -36,6 +36,7 @@ type PlaybookRun struct {
 	Checklists                              []Checklist     `json:"checklists"`
 	StatusPosts                             []StatusPost    `json:"status_posts"`
 	CurrentStatus                           string          `json:"current_status"`
+	StatusSlug                              string          `json:"status_slug"`
 	LastStatusUpdateAt                      int64           `json:"last_status_update_at"`
 	ReminderPostID                          string          `json:"reminder_post_id"`
 	PreviousReminder                        time.Duration   `json:"previous_reminder"`
@@ -223,6 +224,9 @@ type PlaybookRunListOptions struct {
 
 	// Statuses filters by InProgress or Ended; defaults to All when no status specified.
 	Statuses []Status `url:"statuses,omitempty"`
+
+	// StatusSlugs filters by playbook scheme slugs.
+	StatusSlugs []string `url:"status_slugs,omitempty"`
 
 	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter). Specify "me" for current user.
 	OwnerID string `url:"owner_user_id,omitempty"`

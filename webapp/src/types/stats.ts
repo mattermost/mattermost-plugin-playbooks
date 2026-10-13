@@ -25,6 +25,7 @@ export interface PlaybookStats {
     metric_value_range: NullNumber[][]; // indexed by metric, each array is a tuple: min max
     metric_rolling_values: NullNumber[][]; // indexed by metric, each array is that metric's last x runs values (reverse order: 0: most recent, 1: second most recent, etc.)
     last_x_run_names: string[];
+    runs_by_status: Array<{slug: string; count: number}>;
 }
 
 export const EmptyPlaybookStats = {
@@ -44,4 +45,5 @@ export const EmptyPlaybookStats = {
     metric_value_range: [[0, 0], [0, 0], [0, 0], [0, 0]],
     metric_rolling_values: [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
     last_x_run_names: ['', '', '', '', '', '', '', '', '', ''],
+    runs_by_status: [],
 } as PlaybookStats;

@@ -242,6 +242,7 @@ const PlaybookRunDetails = () => {
                     <RunHeader
                         playbookRunMetadata={metadata ?? null}
                         playbookRun={playbookRun}
+                        playbook={playbook ?? undefined}
                         onInfoClick={onInfoClick}
                         onTimelineClick={onTimelineClick}
                         role={role}

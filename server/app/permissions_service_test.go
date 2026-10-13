@@ -643,6 +643,9 @@ func (s *stubRunService) OpenFinishPlaybookRunDialog(string, string, string) err
 func (s *stubRunService) FinishPlaybookRun(string, string) error {
 	panic("stubRunService: FinishPlaybookRun not implemented")
 }
+func (s *stubRunService) SetRunStatus(string, string, string) error {
+	panic("stubRunService: SetRunStatus not implemented")
+}
 func (s *stubRunService) ToggleStatusUpdates(string, string, bool) error {
 	panic("stubRunService: ToggleStatusUpdates not implemented")
 }

@@ -10,6 +10,7 @@ import {FormattedMessage} from 'react-intl';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
+import {type StatusSchemeOption} from 'src/types/playbook';
 
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 
@@ -25,6 +26,7 @@ interface Props {
     filterPill: React.ReactNode | null
     fixedTeam?: boolean
     fixedPlaybook?: boolean
+    statusScheme?: StatusSchemeOption[] | null
 }
 
 const PlaybookRunList = styled.div`
@@ -65,10 +67,12 @@ const RunList = ({
     filterPill,
     fixedTeam,
     fixedPlaybook,
+    statusScheme,
 }: Props) => {
     const isFiltering = (
         (fetchParams?.search_term?.length ?? 0) > 0 ||
         (fetchParams?.statuses?.length ?? 0) > 1 ||
+        (fetchParams?.status_slugs?.length ?? 0) > 0 ||
         (fetchParams?.owner_user_id?.length ?? 0) > 0 ||
         (fetchParams?.participant_id?.length ?? 0) > 0 ||
         (fetchParams?.participant_or_follower_id?.length ?? 0) > 0
@@ -88,6 +92,7 @@ const RunList = ({
                 fetchParams={fetchParams}
                 setFetchParams={setFetchParams}
                 fixedPlaybook={fixedPlaybook}
+                statusScheme={statusScheme}
             />
             {filterPill}
             <RunListHeader
@@ -116,6 +121,7 @@ const RunList = ({
                         key={playbookRun.id}
                         playbookRun={playbookRun}
                         fixedTeam={fixedTeam}
+                        statusScheme={statusScheme}
                     />
                 ))}
             </InfiniteScroll>

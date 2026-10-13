@@ -378,6 +378,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 
 	finalPlaybookRun := *returned
 	finalPlaybookRun.CurrentStatus = app.StatusInProgress
+	finalPlaybookRun.StatusSlug = app.StatusSlugInProgress
 	finalPlaybookRun.EndAt = 0
 	finalPlaybookRun.LastStatusUpdateAt = now
 
@@ -2135,6 +2136,121 @@ func TestRunChannelFieldsRoundTrip(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, updated.AutoArchivedChannel)
 	})
+}
+
+func TestStatusSlugRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupSQLStore(t, db)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	t.Run("StatusSlug defaults from CurrentStatus on Create", func(t *testing.T) {
+		openRun := NewBuilder(t).ToPlaybookRun()
+		created, err := playbookRunStore.CreatePlaybookRun(openRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		got, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusSlugInProgress, got.StatusSlug)
+
+		closedRun := NewBuilder(t).WithCurrentStatus(app.StatusFinished).ToPlaybookRun()
+		createdClosed, err := playbookRunStore.CreatePlaybookRun(closedRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, createdClosed)
+
+		gotClosed, err := playbookRunStore.GetPlaybookRun(createdClosed.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusSlugClosed, gotClosed.StatusSlug)
+	})
+
+	t.Run("StatusSlug persists through Update", func(t *testing.T) {
+		run := NewBuilder(t).ToPlaybookRun()
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		got, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		got.StatusSlug = "investigating"
+		_, err = playbookRunStore.UpdatePlaybookRun(got)
+		require.NoError(t, err)
+
+		updated, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "investigating", updated.StatusSlug)
+	})
+
+	t.Run("FinishPlaybookRun sets StatusSlug closed", func(t *testing.T) {
+		run := NewBuilder(t).ToPlaybookRun()
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		err = playbookRunStore.FinishPlaybookRun(created.ID, model.GetMillis())
+		require.NoError(t, err)
+
+		got, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusFinished, got.CurrentStatus)
+		assert.Equal(t, app.StatusSlugClosed, got.StatusSlug)
+	})
+}
+
+func TestApplyLifecycleTransition(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupSQLStore(t, db)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	run := NewBuilder(t).ToPlaybookRun()
+	created, err := playbookRunStore.CreatePlaybookRun(run)
+	require.NoError(t, err)
+	createPlaybookRunChannel(t, store, created)
+
+	at := model.GetMillis()
+	endAt := at
+	result, err := playbookRunStore.ApplyLifecycleTransition(app.LifecycleTransition{
+		RunID:          created.ID,
+		ExpectedStatus: app.StatusInProgress,
+		ExpectedSlug:   app.StatusSlugInProgress,
+		NewStatus:      app.StatusFinished,
+		NewSlug:        app.StatusSlugClosed,
+		At:             at,
+		EndAt:          &endAt,
+		Timeline: &app.TimelineEvent{
+			PlaybookRunID: created.ID,
+			CreateAt:      at,
+			EventAt:       at,
+			EventType:     app.RunFinished,
+			SubjectUserID: "user1",
+			Summary:       app.StatusSlugClosed,
+		},
+	})
+	require.NoError(t, err)
+	require.True(t, result.Applied)
+	require.NotEmpty(t, result.TimelineEventID)
+
+	got, err := playbookRunStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, app.StatusFinished, got.CurrentStatus)
+	assert.Equal(t, app.StatusSlugClosed, got.StatusSlug)
+	assert.Equal(t, at, got.EndAt)
+	require.NotEmpty(t, got.TimelineEvents)
+	assert.Equal(t, app.RunFinished, got.TimelineEvents[len(got.TimelineEvents)-1].EventType)
+
+	stale, err := playbookRunStore.ApplyLifecycleTransition(app.LifecycleTransition{
+		RunID:          created.ID,
+		ExpectedStatus: app.StatusInProgress,
+		ExpectedSlug:   app.StatusSlugInProgress,
+		NewStatus:      app.StatusFinished,
+		NewSlug:        app.StatusSlugClosed,
+		At:             at + 1,
+	})
+	require.NoError(t, err)
+	require.False(t, stale.Applied)
 }
 
 func TestGetOrderByClause(t *testing.T) {

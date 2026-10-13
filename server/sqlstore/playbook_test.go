@@ -2614,6 +2614,57 @@ func TestAutoArchiveChannelRoundTrip(t *testing.T) {
 	})
 }
 
+func TestStatusSchemeRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+	scheme := []app.StatusSchemeOption{
+		{Slug: "investigating", Name: "Investigating", Category: app.LifecycleOpen, Order: 0},
+		{Slug: "closed", Name: "Closed", Category: app.LifecycleClosed, Order: 1},
+	}
+
+	t.Run("empty scheme stays empty through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("status-scheme-empty").
+			WithTeamID(teamID).
+			ToPlaybook()
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		assert.Empty(t, got.StatusScheme)
+	})
+
+	t.Run("custom scheme persists through Create and Update", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("status-scheme-custom").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.StatusScheme = scheme
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Equal(t, scheme, got.StatusScheme)
+
+		got.StatusScheme = append(got.StatusScheme, app.StatusSchemeOption{
+			Slug: "resolved", Name: "Resolved", Category: app.LifecycleClosed, Order: 2,
+		})
+		err = playbookStore.Update(got)
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Len(t, updated.StatusScheme, 3)
+		assert.Equal(t, "resolved", updated.StatusScheme[2].Slug)
+	})
+}
+
 func TestGetTeamPlaybookSchemeRoles(t *testing.T) {
 	db := setupTestDB(t)
 	playbookStore := setupPlaybookStore(t, db)

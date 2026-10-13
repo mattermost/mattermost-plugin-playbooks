@@ -77,6 +77,8 @@ export interface PlaybookWithChecklist extends Playbook {
     next_run_number: number;
     owner_group_only_actions: boolean;
 
+    status_scheme?: StatusSchemeOption[];
+
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
     webhook_on_creation_enabled: boolean;
@@ -357,4 +359,64 @@ This section lists the action items to turn learnings into changes that help the
 
 ### Timeline highlights
 This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`;
+
+export interface StatusSchemeOption {
+    slug: string;
+    name: string;
+    category: 'open' | 'closed';
+    order: number;
+}
+
+export const DefaultStatusScheme: StatusSchemeOption[] = [
+    {slug: 'in_progress', name: 'In progress', category: 'open', order: 0},
+    {slug: 'closed', name: 'Closed', category: 'closed', order: 1},
+];
+
+export function resolveStatusScheme(scheme?: StatusSchemeOption[] | null): StatusSchemeOption[] {
+    return scheme && scheme.length > 0 ? scheme : DefaultStatusScheme;
+}
+
+export function statusSlugLabel(slug?: string, scheme?: StatusSchemeOption[] | null): string {
+    const options = resolveStatusScheme(scheme);
+    if (!slug) {
+        return options[0].name;
+    }
+    const found = options.find((opt) => opt.slug === slug);
+    return found?.name ?? slug;
+}
+
+export function statusSlugCategory(
+    slug?: string,
+    scheme?: StatusSchemeOption[] | null,
+    fallbackStatus?: string,
+): StatusSchemeOption['category'] {
+    const options = resolveStatusScheme(scheme);
+    const found = options.find((opt) => opt.slug === slug);
+    if (found) {
+        return found.category;
+    }
+    return fallbackStatus === 'Finished' ? 'closed' : 'open';
+}
+
+export const statusSlugPattern = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
+
+export function isValidStatusSlug(slug: string): boolean {
+    return statusSlugPattern.test(slug);
+}
+
+export function slugFromName(name: string): string {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
+
+export function splitStatusScheme(scheme: StatusSchemeOption[]) {
+    const byOrder = [...scheme].sort((a, b) => a.order - b.order);
+    return {
+        open: byOrder.filter((opt) => opt.category === 'open'),
+        closed: byOrder.filter((opt) => opt.category === 'closed'),
+    };
+}
+
+export function joinStatusScheme(open: StatusSchemeOption[], closed: StatusSchemeOption[]): StatusSchemeOption[] {
+    return [...open, ...closed].map((opt, order) => ({...opt, order}));
+}
 

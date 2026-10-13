@@ -20,6 +20,7 @@ import {
     ArrowForwardIosIcon,
     BookOutlineIcon,
     BullhornOutlineIcon,
+    FlagOutlineIcon,
     LockOutlineIcon,
     OpenInNewIcon,
     ProductChannelsIcon,
@@ -51,6 +52,7 @@ import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {useEnsureProfiles, useTextOverflow} from 'src/hooks';
 
 import {FollowState} from './rhs_info';
+import StatusSchemeSelect from './status_scheme_select';
 
 const useRequestJoinChannel = (playbookRunId: string) => {
     const {formatMessage} = useIntl();
@@ -178,6 +180,18 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
                     placement={'bottom-end'}
                     teamId={run.team_id}
                     channelId={run.channel_id}
+                />
+            </Item>
+            <Item
+                id='runinfo-status'
+                icon={FlagOutlineIcon}
+                name={formatMessage({defaultMessage: 'Status'})}
+            >
+                <StatusSchemeSelect
+                    playbookRun={run}
+                    scheme={playbook?.status_scheme}
+                    disabled={role !== Role.Participant}
+                    flush={true}
                 />
             </Item>
             <Item

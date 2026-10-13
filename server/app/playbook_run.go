@@ -122,9 +122,13 @@ type PlaybookRun struct {
 	// StatusPosts is an array of all the status updates posted in the run.
 	StatusPosts []StatusPost `json:"status_posts"`
 
-	// CurrentStatus is the current status of the playbook run.
-	// It can be StatusInProgress ("InProgress") or StatusFinished ("Finished")
+	// CurrentStatus is the stored lifecycle of the playbook run.
+	// It can be StatusInProgress ("InProgress") or StatusFinished ("Finished").
+	// Custom scheme slugs are stored on StatusSlug, not here.
 	CurrentStatus string `json:"current_status"`
+
+	// StatusSlug is the playbook scheme option currently on the run.
+	StatusSlug string `json:"status_slug"`
 
 	// LastStatusUpdateAt is the timestamp, in milliseconds since epoch, of the time the last
 	// status update was posted.
@@ -297,6 +301,7 @@ func (r PlaybookRun) Auditable() map[string]any {
 		"channel_id":     r.ChannelID,
 		"playbook_id":    r.PlaybookID,
 		"current_status": r.CurrentStatus,
+		"status_slug":    r.StatusSlug,
 		"create_at":      r.CreateAt,
 		"update_at":      r.UpdateAt,
 		"end_at":         r.EndAt,
@@ -433,6 +438,9 @@ func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string
 	}
 	if previous.CurrentStatus != current.CurrentStatus {
 		changes["current_status"] = current.CurrentStatus
+	}
+	if previous.StatusSlug != current.StatusSlug {
+		changes["status_slug"] = current.StatusSlug
 	}
 	if previous.LastStatusUpdateAt != current.LastStatusUpdateAt {
 		changes["last_status_update_at"] = current.LastStatusUpdateAt
@@ -1096,6 +1104,7 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	RunStatusChanged       timelineEventType = "run_status_changed"
 	ChannelArchived        timelineEventType = "channel_archived"
 	ChannelUnarchived      timelineEventType = "channel_unarchived"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
@@ -1310,6 +1319,9 @@ type PlaybookRunService interface {
 
 	// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 	FinishPlaybookRun(playbookRunID, userID string) error
+
+	// SetRunStatus is the single write path for a scheme slug change, including open-to-open.
+	SetRunStatus(playbookRunID, userID, slug string) error
 
 	// ToggleStatusUpdates  enables or disables status update for the run
 	ToggleStatusUpdates(playbookRunID, userID string, enable bool) error
@@ -1532,6 +1544,9 @@ type PlaybookRunStore interface {
 	// RestorePlaybookRun restores a run at restoreAt (in millis)
 	RestorePlaybookRun(playbookRunID string, restoreAt int64) error
 
+	// ApplyLifecycleTransition CAS-updates CurrentStatus and StatusSlug, optionally writing a timeline event.
+	ApplyLifecycleTransition(transition LifecycleTransition) (LifecycleTransitionResult, error)
+
 	// GetTimelineEvent returns the timeline event for playbookRunID by the timeline event ID.
 	GetTimelineEvent(playbookRunID, eventID string) (*TimelineEvent, error)
 
@@ -1662,6 +1677,9 @@ type PlaybookRunFilterOptions struct {
 	// Statuses filters by all statuses in the list (inclusive)
 	Statuses []string
 
+	// StatusSlugs filters by playbook scheme slugs (inclusive).
+	StatusSlugs []string
+
 	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
 	OwnerID string `url:"owner_user_id,omitempty"`
 
@@ -1729,6 +1747,9 @@ func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	newPlaybookRunFilterOptions := *o
 	if len(o.Statuses) > 0 {
 		newPlaybookRunFilterOptions.Statuses = append([]string{}, o.Statuses...)
+	}
+	if len(o.StatusSlugs) > 0 {
+		newPlaybookRunFilterOptions.StatusSlugs = append([]string{}, o.StatusSlugs...)
 	}
 	if len(o.Types) > 0 {
 		newPlaybookRunFilterOptions.Types = append([]string{}, o.Types...)
@@ -1816,6 +1837,15 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	for _, s := range options.Statuses {
 		if !validStatus(s) {
 			return PlaybookRunFilterOptions{}, errors.New("bad parameter in 'statuses': must be InProgress or Finished")
+		}
+	}
+
+	if len(options.StatusSlugs) > 32 {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter in 'status_slugs': too many values")
+	}
+	for _, slug := range options.StatusSlugs {
+		if !statusSlugPattern.MatchString(slug) {
+			return PlaybookRunFilterOptions{}, errors.New("bad parameter in 'status_slugs': invalid slug")
 		}
 	}
 

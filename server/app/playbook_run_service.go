@@ -190,6 +190,9 @@ type PlaybookRunServiceImpl struct {
 	metricsService   *metrics.Metrics
 	propertyService  PropertyService
 	conditionService ConditionService
+	transition       *TransitionService
+	// signalAPI emits automation signals. Nil in unit tests.
+	signalAPI plugin.API
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -259,6 +262,7 @@ func NewPlaybookRunService(
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
+	service.transition = NewTransitionService(service)
 
 	return service
 }
@@ -561,6 +565,14 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.CreateAt = now
 	playbookRun.LastStatusUpdateAt = now
 	playbookRun.CurrentStatus = StatusInProgress
+	if playbookRun.StatusSlug == "" {
+		if pb != nil {
+			playbookRun.StatusSlug = FirstSlugInCategory(pb.StatusScheme, LifecycleOpen)
+		}
+		if playbookRun.StatusSlug == "" {
+			playbookRun.StatusSlug = StatusSlugInProgress
+		}
+	}
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if playbookRun.PlaybookID == "" {
@@ -783,6 +795,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	if playbookRun.PostID == "" {
 		auditRec.Success()
+		s.emitRunSignal("run_created", playbookRun.ID, map[string]string{"user_id": userID})
 		return playbookRun, nil
 	}
 
@@ -805,6 +818,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	auditRec.Success()
+	s.emitRunSignal("run_created", playbookRun.ID, map[string]string{"user_id": userID})
 	return playbookRun, nil
 }
 
@@ -1341,6 +1355,10 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	model.AddEventParameterToAuditRec(auditRec, "postID", channelPost.Id)
 	model.AddEventParameterToAuditRec(auditRec, "statusUpdateAt", channelPost.CreateAt)
 	auditRec.AddEventResultState(*playbookRunToModify)
+	s.emitRunSignal("status_updated", playbookRunID, map[string]string{
+		"post_id": channelPost.Id,
+		"user_id": userID,
+	})
 
 	return nil
 }
@@ -1405,127 +1423,6 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookR
 	)
 
 	return announcementMsg
-}
-
-// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
-func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
-	auditRec := plugin.MakeAuditRecord("finishPlaybookRun", model.AuditStatusFail)
-	defer s.api.LogAuditRec(auditRec)
-
-	// Add parameters and context
-	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-
-	logger := logrus.WithField("playbook_run_id", playbookRunID)
-
-	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
-	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToModify.CurrentStatus)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "ownerUserID", playbookRunToModify.OwnerUserID)
-
-	if playbookRunToModify.CurrentStatus == StatusFinished {
-		auditRec.Success()
-		auditRec.AddEventResultState(*playbookRunToModify)
-		return nil
-	}
-
-	var originalRun *PlaybookRun
-	if s.configService.IsIncrementalUpdatesEnabled() {
-		originalRun = playbookRunToModify.Clone()
-	}
-
-	endAt := model.GetMillis()
-	if err = s.store.FinishPlaybookRun(playbookRunID, endAt); err != nil {
-		return err
-	}
-
-	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", userID)
-	}
-
-	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
-	postID := ""
-	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
-	if err != nil {
-		logger.WithError(err).WithField("channel_id", playbookRunToModify.ChannelID).Error("failed to post the status update to channel")
-	} else {
-		postID = post.Id
-	}
-
-	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
-		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify, logger)
-	}
-
-	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
-	err = s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
-	if err != nil {
-		logger.WithError(err).Error("failed to dm post to run followers")
-	}
-
-	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
-	s.RemoveReminder(playbookRunID)
-
-	// We are resolving the playbook run. Send the reminder to fill out the retrospective
-	// Also start the recurring reminder if enabled.
-	if s.licenseChecker.RetrospectiveAllowed() {
-		if playbookRunToModify.RetrospectiveEnabled && playbookRunToModify.RetrospectivePublishedAt == 0 {
-			if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
-				return errors.Wrap(err, "couldn't post retrospective reminder")
-			}
-			s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
-			if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
-				if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
-					return errors.Wrap(err, "failed to set the retrospective reminder for playbook run")
-				}
-			}
-		}
-	}
-
-	event := &TimelineEvent{
-		PlaybookRunID: playbookRunID,
-		CreateAt:      endAt,
-		EventAt:       endAt,
-		EventType:     RunFinished,
-		PostID:        postID,
-		SubjectUserID: userID,
-	}
-
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
-	}
-
-	s.metricsService.IncrementRunsFinishedCount(1)
-
-	if s.shouldAutoArchiveChannel(playbookRunToModify) {
-		playbookRunToModify = s.autoArchiveChannelOnFinish(playbookRunToModify, playbookRunID, userID, endAt, logger)
-	}
-
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
-
-	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
-
-		webhookEvent := PlaybookRunWebhookEvent{
-			Type:   RunFinished,
-			At:     endAt,
-			UserID: userID,
-		}
-
-		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
-	}
-
-	// Mark success and add result state for audit
-	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "endAt", endAt)
-	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusFinished)
-	auditRec.AddEventResultState(*playbookRunToModify)
-
-	return nil
 }
 
 func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID string, enable bool) error {
@@ -1636,122 +1533,6 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	model.AddEventParameterToAuditRec(auditRec, "updateAt", updateAt)
 	model.AddEventParameterToAuditRec(auditRec, "finalState", enable)
 	auditRec.AddEventResultState(*playbookRunToModify)
-
-	return nil
-}
-
-// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
-func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string) error {
-	auditRec := plugin.MakeAuditRecord("restorePlaybookRun", model.AuditStatusFail)
-	defer s.api.LogAuditRec(auditRec)
-
-	// Add parameters and context
-	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-
-	logger := logrus.WithField("playbook_run_id", playbookRunID)
-
-	playbookRunToRestore, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
-	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToRestore.CurrentStatus)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToRestore.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "ownerUserID", playbookRunToRestore.OwnerUserID)
-
-	if playbookRunToRestore.CurrentStatus != StatusFinished {
-		auditRec.Success()
-		auditRec.AddEventResultState(*playbookRunToRestore)
-		return nil
-	}
-
-	var originalRun *PlaybookRun
-	if s.configService.IsIncrementalUpdatesEnabled() {
-		originalRun = playbookRunToRestore.Clone()
-	}
-
-	restoreAt := model.GetMillis()
-	if err = s.store.RestorePlaybookRun(playbookRunID, restoreAt); err != nil {
-		return err
-	}
-
-	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", userID)
-	}
-
-	// Un-archive the channel before posting so the message lands in an active channel.
-	// Always clear AutoArchivedChannel when set — even if the channel was manually unarchived
-	// before the restore, the marker must be cleared so future finishes start fresh.
-	if playbookRunToRestore.AutoArchivedChannel && playbookRunToRestore.ChannelID != "" {
-		unarchived := s.restoreChannelByID(playbookRunToRestore.ChannelID, logger)
-		candidate := *playbookRunToRestore
-		candidate.AutoArchivedChannel = false
-		if updatedRun, err := s.store.UpdatePlaybookRun(&candidate); err != nil {
-			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
-		} else {
-			playbookRunToRestore = updatedRun
-		}
-		if unarchived {
-			unarchiveEvent := &TimelineEvent{
-				PlaybookRunID: playbookRunID,
-				CreateAt:      restoreAt + 1,
-				EventAt:       restoreAt + 1,
-				EventType:     ChannelUnarchived,
-				SubjectUserID: userID,
-			}
-			if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
-				logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
-			}
-		}
-	}
-
-	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
-	postID := ""
-	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
-	if err != nil {
-		logger.WithField("channel_id", playbookRunToRestore.ChannelID).Error("failed to post the status update to channel")
-	} else {
-		postID = post.Id
-	}
-
-	if playbookRunToRestore.StatusUpdateBroadcastChannelsEnabled {
-		s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore, logger)
-	}
-
-	event := &TimelineEvent{
-		PlaybookRunID: playbookRunID,
-		CreateAt:      restoreAt,
-		EventAt:       restoreAt,
-		EventType:     RunRestored,
-		PostID:        postID,
-		SubjectUserID: userID,
-	}
-
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
-	}
-
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
-
-	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
-
-		webhookEvent := PlaybookRunWebhookEvent{
-			Type:   RunRestored,
-			At:     restoreAt,
-			UserID: userID,
-		}
-
-		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
-	}
-
-	// Mark success and add result state for audit
-	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "restoreAt", restoreAt)
-	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusInProgress)
-	auditRec.AddEventResultState(*playbookRunToRestore)
 
 	return nil
 }
@@ -2348,6 +2129,10 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	model.AddEventParameterToAuditRec(auditRec, "newOwnerId", newOwner.Id)
 	model.AddEventParameterToAuditRec(auditRec, "changeTimestamp", eventTime)
 	auditRec.AddEventResultState(*updatedRun)
+	s.emitRunSignal("owner_changed", playbookRunID, map[string]string{
+		"owner_user_id": ownerID,
+		"user_id":       userID,
+	})
 
 	return nil
 }
@@ -3620,6 +3405,11 @@ func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, use
 	if _, err := s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
+	s.emitRunSignal("task_state_modified", playbookRunID, map[string]string{
+		"item_id": item.ID,
+		"action":  action,
+		"user_id": userID,
+	})
 
 	return nil
 }
@@ -4631,6 +4421,15 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	model.AddEventParameterToAuditRec(auditRec, "publisherId", publisherID)
 	model.AddEventParameterToAuditRec(auditRec, "retrospectiveURL", retrospectiveURL)
 	auditRec.AddEventResultState(*playbookRunToPublish)
+
+	postID := ""
+	if post != nil {
+		postID = post.Id
+	}
+	s.emitRunSignal("retrospective_published", playbookRunID, map[string]string{
+		"user_id": publisherID,
+		"post_id": postID,
+	})
 
 	return nil
 }

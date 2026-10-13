@@ -124,6 +124,9 @@ func (s *stubRunStoreGetOnly) FinishPlaybookRun(_ string, _ int64) error {
 func (s *stubRunStoreGetOnly) RestorePlaybookRun(_ string, _ int64) error {
 	panic("not implemented")
 }
+func (s *stubRunStoreGetOnly) ApplyLifecycleTransition(_ LifecycleTransition) (LifecycleTransitionResult, error) {
+	panic("not implemented")
+}
 func (s *stubRunStoreGetOnly) GetTimelineEvent(_, _ string) (*TimelineEvent, error) {
 	panic("not implemented")
 }

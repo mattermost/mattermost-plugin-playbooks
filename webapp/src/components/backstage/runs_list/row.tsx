@@ -18,7 +18,8 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
-import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
+import {NamedStatusBadge} from 'src/components/backstage/status_badge';
+import {type StatusSchemeOption, statusSlugCategory, statusSlugLabel} from 'src/types/playbook';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {findLastUpdatedWithDefault} from 'src/utils';
 import {usePlaybookName, useRunMetadata} from 'src/hooks';
@@ -54,7 +55,7 @@ const SmallProfile = styled(Profile)`
     }
 `;
 
-const SmallStatusBadge = styled(StatusBadge)`
+const SmallStatusBadge = styled(NamedStatusBadge)`
     height: 16px;
     padding: 0 4px;
     margin: 0;
@@ -98,6 +99,7 @@ const PlaybookRunItem = styled.div`
 interface Props {
     playbookRun: PlaybookRun
     fixedTeam?: boolean
+    statusScheme?: StatusSchemeOption[] | null
 }
 
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId)?.display_name ?? '';
@@ -141,7 +143,9 @@ const Row = (props: Props) => {
             </div>
             <div className='col-sm-2'>
                 <SmallStatusBadge
-                    status={BadgeType[props.playbookRun.current_status]}
+                    label={statusSlugLabel(props.playbookRun.status_slug, props.statusScheme)}
+                    category={statusSlugCategory(props.playbookRun.status_slug, props.statusScheme, props.playbookRun.current_status)}
+                    compact={true}
                 />
                 <SmallText>
                     {DateTime.fromMillis(findLastUpdatedWithDefault(props.playbookRun)).toRelative()}

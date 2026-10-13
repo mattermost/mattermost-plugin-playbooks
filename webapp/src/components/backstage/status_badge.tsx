@@ -88,4 +88,24 @@ const StatusBadge = (props: StatusBadgeProps) => {
     );
 };
 
+interface NamedStatusBadgeProps {
+    label: React.ReactNode;
+    category: 'open' | 'closed';
+    compact?: boolean;
+    className?: string;
+}
+
+export const NamedStatusBadge = ({label, category, compact, className}: NamedStatusBadgeProps) => {
+    return (
+        <Badge
+            data-testid={'badge'}
+            className={className}
+            $status={category === 'open' ? BadgeType.InProgress : BadgeType.Finished}
+            $compact={compact}
+        >
+            {label}
+        </Badge>
+    );
+};
+
 export default StatusBadge;

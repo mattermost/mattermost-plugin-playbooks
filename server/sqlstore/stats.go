@@ -48,6 +48,30 @@ func applyFilters(query sq.SelectBuilder, filters *StatsFilters) sq.SelectBuilde
 	return ret
 }
 
+type StatusCount struct {
+	Slug  string `json:"slug" db:"status_slug"`
+	Count int    `json:"count" db:"run_count"`
+}
+
+func (s *StatsStore) RunsByStatusSlug(filters *StatsFilters) []StatusCount {
+	query := applyFilters(s.store.builder.
+		Select("i.StatusSlug AS status_slug", "COUNT(i.ID) AS run_count").
+		From("IR_Incident as i").
+		Where(sq.Eq{"i.DeleteAt": 0}).
+		GroupBy("i.StatusSlug").
+		OrderBy("run_count DESC"), filters)
+
+	var counts []StatusCount
+	if err := s.store.selectBuilder(s.store.db, &counts, query); err != nil {
+		logrus.WithError(err).Error("failed to query runs by status slug")
+		return nil
+	}
+	if counts == nil {
+		return []StatusCount{}
+	}
+	return counts
+}
+
 func (s *StatsStore) TotalInProgressPlaybookRuns(filters *StatsFilters) int {
 	query := s.store.builder.
 		Select("COUNT(i.ID)").
