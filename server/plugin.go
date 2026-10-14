@@ -79,14 +79,6 @@ func (r *StatusRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
-// OnAutomationAction runs a registered Playbooks action for Weave.
-func (p *Plugin) OnAutomationAction(_ *plugin.Context, req *model.AutomationActionRequest) (*model.AutomationActionResponse, string) {
-	if p.runHandler == nil || p.playbookHandler == nil {
-		return nil, "playbooks is not ready"
-	}
-	return api.ExecuteAutomation(p.runHandler.RunOps, p.playbookHandler.PlaybookOps, req)
-}
-
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	if p.serveMCPIfMatch(w, r) {
