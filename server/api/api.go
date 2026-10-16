@@ -120,7 +120,12 @@ const (
 	pluginIDHeader = "Mattermost-Plugin-ID"
 	// actingUserIDHeader is set by the calling plugin to name the user it is acting on behalf of.
 	// It is only honored when the request is a trusted inter-plugin call from an allowed caller.
-	actingUserIDHeader = "Mattermost-Plugin-Acting-User-Id"
+	actingUserIDHeader    = "Mattermost-Plugin-Acting-User-Id"
+	weaveCallerPluginID   = "com.mattermost.weave"
+	weaveActingUserHeader = "Mattermost-Weave-Acting-User-Id"
+	weaveRunAsHeader      = "Mattermost-Weave-Run-As"
+	weaveOwnerScopeHeader = "Mattermost-Weave-Owner-Scope"
+	weaveInvokerHeader    = "Mattermost-Weave-Invoker-User-Id"
 )
 
 // MattermostAuthorizationRequired checks if a request is authorized.
@@ -132,6 +137,11 @@ const (
 // asserted user unchanged.
 func (h *Handler) MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get(pluginIDHeader) == weaveCallerPluginID && r.Header.Get(weaveRunAsHeader) == "bot" {
+			http.Error(w, "bot run-as is not available for this action", http.StatusForbidden)
+			return
+		}
+
 		// Normal authenticated user request -- unchanged behavior.
 		if r.Header.Get(userIDHeader) != "" {
 			next.ServeHTTP(w, r)
@@ -171,10 +181,15 @@ func (h *Handler) MattermostAuthorizationRequired(next http.Handler) http.Handle
 // it acts for; the asserted user's own permissions are still fully enforced downstream.
 func resolveInterPluginUser(r *http.Request) string {
 	callerPluginID := r.Header.Get(pluginIDHeader)
-	actingUserID := r.Header.Get(actingUserIDHeader)
-	if callerPluginID == "" || actingUserID == "" {
+	if callerPluginID == "" {
 		return ""
 	}
-
+	if callerPluginID == weaveCallerPluginID {
+		return r.Header.Get(weaveActingUserHeader)
+	}
+	actingUserID := r.Header.Get(actingUserIDHeader)
+	if actingUserID == "" {
+		return ""
+	}
 	return actingUserID
 }

@@ -190,6 +190,8 @@ type PlaybookRunServiceImpl struct {
 	metricsService   *metrics.Metrics
 	propertyService  PropertyService
 	conditionService ConditionService
+	// signalAPI emits automation signals. Nil in unit tests.
+	signalAPI plugin.API
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -783,6 +785,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	if playbookRun.PostID == "" {
 		auditRec.Success()
+		s.emitRunSignal("run_created", playbookRun.ID, map[string]string{"user_id": userID})
 		return playbookRun, nil
 	}
 
@@ -805,6 +808,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	auditRec.Success()
+	s.emitRunSignal("run_created", playbookRun.ID, map[string]string{"user_id": userID})
 	return playbookRun, nil
 }
 
@@ -1341,6 +1345,10 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	model.AddEventParameterToAuditRec(auditRec, "postID", channelPost.Id)
 	model.AddEventParameterToAuditRec(auditRec, "statusUpdateAt", channelPost.CreateAt)
 	auditRec.AddEventResultState(*playbookRunToModify)
+	s.emitRunSignal("status_updated", playbookRunID, map[string]string{
+		"post_id": channelPost.Id,
+		"user_id": userID,
+	})
 
 	return nil
 }
@@ -1524,6 +1532,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	model.AddEventParameterToAuditRec(auditRec, "endAt", endAt)
 	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusFinished)
 	auditRec.AddEventResultState(*playbookRunToModify)
+	s.emitRunSignal("run_finished", playbookRunID, map[string]string{"user_id": userID})
 
 	return nil
 }
@@ -1752,6 +1761,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	model.AddEventParameterToAuditRec(auditRec, "restoreAt", restoreAt)
 	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusInProgress)
 	auditRec.AddEventResultState(*playbookRunToRestore)
+	s.emitRunSignal("run_restored", playbookRunID, map[string]string{"user_id": userID})
 
 	return nil
 }
@@ -2348,6 +2358,10 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	model.AddEventParameterToAuditRec(auditRec, "newOwnerId", newOwner.Id)
 	model.AddEventParameterToAuditRec(auditRec, "changeTimestamp", eventTime)
 	auditRec.AddEventResultState(*updatedRun)
+	s.emitRunSignal("owner_changed", playbookRunID, map[string]string{
+		"owner_user_id": ownerID,
+		"user_id":       userID,
+	})
 
 	return nil
 }
@@ -3620,6 +3634,11 @@ func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, use
 	if _, err := s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
+	s.emitRunSignal("task_state_modified", playbookRunID, map[string]string{
+		"item_id": item.ID,
+		"action":  action,
+		"user_id": userID,
+	})
 
 	return nil
 }
@@ -4631,6 +4650,15 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	model.AddEventParameterToAuditRec(auditRec, "publisherId", publisherID)
 	model.AddEventParameterToAuditRec(auditRec, "retrospectiveURL", retrospectiveURL)
 	auditRec.AddEventResultState(*playbookRunToPublish)
+
+	postID := ""
+	if post != nil {
+		postID = post.Id
+	}
+	s.emitRunSignal("retrospective_published", playbookRunID, map[string]string{
+		"user_id": publisherID,
+		"post_id": postID,
+	})
 
 	return nil
 }

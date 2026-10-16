@@ -22,6 +22,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/ops"
 )
 
 // PlaybookHandler is the API handler.
@@ -33,6 +34,7 @@ type PlaybookHandler struct {
 	config          config.Service
 	permissions     *app.PermissionsService
 	licenseChecker  app.LicenseChecker
+	PlaybookOps     *ops.Playbooks
 }
 
 const SettingsKey = "global_settings"
@@ -68,6 +70,10 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 		config:          configService,
 		permissions:     permissions,
 		licenseChecker:  licenseChecker,
+		PlaybookOps: &ops.Playbooks{
+			Service:     playbookService,
+			Permissions: permissions,
+		},
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
@@ -263,21 +269,16 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 }
 
 func (h *PlaybookHandler) getPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playbookID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
-		return
-	}
-
-	playbook, err := h.playbookService.Get(playbookID)
+	playbook, err := h.PlaybookOps.Read(callerFromRequest(r), mux.Vars(r)["id"])
 	if err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
-
-	ReturnJSON(w, &playbook, http.StatusOK)
+	ReturnJSON(w, playbook, http.StatusOK)
 }
 
 func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {

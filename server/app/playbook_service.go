@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -31,6 +32,7 @@ type playbookService struct {
 	metricsService   *metrics.Metrics
 	propertyService  PropertyService
 	conditionService ConditionService
+	signalAPI        plugin.API
 }
 
 type InsightsOpts struct {
@@ -91,6 +93,7 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	auditRec.Success()
 	auditRec.AddEventResultState(playbook)
 
+	s.emitPlaybookSignal("playbook_created", playbook, userID)
 	return newID, nil
 }
 
@@ -344,6 +347,7 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 	auditRec.Success()
 	auditRec.AddEventResultState(playbook)
 
+	s.emitPlaybookSignal("playbook_updated", playbook, userID)
 	return nil
 }
 
@@ -378,6 +382,7 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 	auditRec.Success()
 	auditRec.AddEventResultState(playbook)
 
+	s.emitPlaybookSignal("playbook_archived", playbook, userID)
 	return nil
 }
 

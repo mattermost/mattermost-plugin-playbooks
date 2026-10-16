@@ -45,6 +45,8 @@ type Plugin struct {
 	plugin.MattermostPlugin
 
 	handler              *api.Handler
+	playbookHandler      *api.PlaybookHandler
+	runHandler           *api.PlaybookRunHandler
 	config               *config.ServiceImpl
 	playbookRunService   app.PlaybookRunService
 	playbookService      app.PlaybookService
@@ -200,6 +202,15 @@ func (p *Plugin) OnActivate() error {
 		p.propertyService,
 		p.conditionService,
 	)
+	if user, ok := p.playbookService.(app.AutomationAPIUser); ok {
+		user.UseAutomationAPI(p.API)
+	}
+	if user, ok := p.playbookRunService.(app.AutomationAPIUser); ok {
+		user.UseAutomationAPI(p.API)
+	}
+	if err := p.registerAutomation(); err != nil {
+		return errors.Wrap(err, "failed to register automation contributions")
+	}
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
 		logrus.WithError(err).Error("JobOnceScheduler could not add the playbookRunService's HandleReminder")
@@ -235,7 +246,7 @@ func (p *Plugin) OnActivate() error {
 		playbookRunStore,
 		p.licenseChecker,
 	)
-	api.NewPlaybookHandler(
+	p.playbookHandler = api.NewPlaybookHandler(
 		p.handler.APIRouter,
 		p.playbookService,
 		p.propertyService,
@@ -244,7 +255,7 @@ func (p *Plugin) OnActivate() error {
 		p.permissions,
 		p.licenseChecker,
 	)
-	api.NewPlaybookRunHandler(
+	p.runHandler = api.NewPlaybookRunHandler(
 		p.handler.APIRouter,
 		p.playbookRunService,
 		p.playbookService,
