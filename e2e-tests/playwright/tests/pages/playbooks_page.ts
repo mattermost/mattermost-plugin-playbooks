@@ -3,8 +3,12 @@
 
 import {expect, type Locator, type Page} from '@playwright/test';
 
+import {MattermostCore} from './mattermost';
+
 export class PlaybooksPage {
     readonly page: Page;
+    // MattermostCore facade 
+    readonly mm: MattermostCore;
     readonly playbooksLHSButton: Locator;
     readonly playbookRunsLHSButton: Locator;
     readonly titlePlaybook: Locator;
@@ -18,6 +22,7 @@ export class PlaybooksPage {
 
     constructor(page: Page) {
         this.page = page;
+        this.mm = new MattermostCore(page);
         this.playbooksLHSButton = page.getByTestId('playbooksLHSButton');
         this.playbookRunsLHSButton = page.getByTestId('playbookRunsLHSButton');
         this.titlePlaybook = page.getByTestId('titlePlaybook');
@@ -31,11 +36,10 @@ export class PlaybooksPage {
     }
 
     async goto(teamName: string) {
-        await this.page.goto(`/${teamName}/channels/town-square`);
-
-        // Wait for the team's sidebar to render (sets the current team) before
-        // leaving for the product.
-        await this.page.getByRole('link', {name: 'town square public channel'}).waitFor();
+        // Navigate to town-square first to set the Redux team context, then go
+        // to the Playbooks product. MattermostCore.channels.goto() waits for
+        // the post textbox, which confirms the LHS/team context is ready.
+        await this.mm.channels.goto(teamName, 'town-square');
         await this.page.goto('/playbooks');
         await this.playbooksLHSButton.waitFor();
     }
@@ -103,5 +107,35 @@ export class PlaybooksPage {
         await expect(
             this.page.getByText("There are no playbooks to view. You don't have permission to create playbooks in this workspace."),
         ).toBeVisible();
+    }
+
+    // Clicks the "Run" button on the first playbook row in the backstage playbook list.
+    // Each row has data-testid="playbook-item"; the Run button inside has role="button"
+    // with accessible name "Run".
+    async clickRunForFirstPlaybook(): Promise<void> {
+        await this.page.getByTestId('playbook-item').first().getByRole('button', {name: 'Run'}).click();
+    }
+
+    // Navigates to the backstage runs list for a team.
+    async gotoRunsList(teamName: string): Promise<void> {
+        // Set team context first, then navigate to the runs list.
+        await this.mm.channels.goto(teamName, 'town-square');
+        await this.page.goto('/playbooks/runs');
+        await this.playbookRunList.waitFor();
+    }
+
+    // Returns the run list row that contains the given run name.
+    // The runs list renders each row as data-testid='run-list-item'; we pick the one
+    // that contains the run name text.
+    runListRow(runName: string): Locator {
+        return this.playbookRunList.getByTestId('run-list-item').filter({hasText: runName});
+    }
+
+    // Asserts the task progress indicator for the named run shows the expected text
+    // (e.g. '0/4', '2/4', '4/4').
+    async expectTaskProgress(runName: string, progress: string): Promise<void> {
+        await expect(
+            this.runListRow(runName).getByTestId('task-progress-indicator'),
+        ).toContainText(progress);
     }
 }

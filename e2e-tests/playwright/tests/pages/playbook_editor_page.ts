@@ -3,8 +3,12 @@
 
 import {expect, type Locator, type Page} from '@playwright/test';
 
+import {MattermostCore} from './mattermost';
+
 export class PlaybookEditorPage {
     readonly page: Page;
+    // MattermostCore facade 
+    readonly mm: MattermostCore;
     readonly title: Locator;
     readonly header: Locator;
     readonly description: Locator;
@@ -14,6 +18,7 @@ export class PlaybookEditorPage {
 
     constructor(page: Page) {
         this.page = page;
+        this.mm = new MattermostCore(page);
         this.title = page.getByTestId('playbook-editor-title');
         this.header = page.getByTestId('playbook-editor-header');
         this.description = page.getByTestId('playbook-editor-description');
@@ -23,11 +28,33 @@ export class PlaybookEditorPage {
     }
 
     async goto(teamName: string, playbookId: string) {
-        // Visit the team first so the current team (and its LHS) is set before
+        // Visit town-square first so the Redux team context is set before
         // entering the (team-agnostic) editor URL.
-        await this.page.goto(`/${teamName}/channels/town-square`);
-        await this.page.getByRole('link', {name: 'town square public channel'}).waitFor();
+        await this.mm.channels.goto(teamName, 'town-square');
         await this.page.goto(`/playbooks/playbooks/${playbookId}/outline`);
+        await this.title.waitFor();
+    }
+
+    // Navigates directly to the playbook editor outline URL without visiting a channel first.
+    // This leaves Redux's currentChannelId unset/empty, which means the run modal will
+    // NOT auto-fill any channel when the user switches to "Link to existing channel".
+    // Use this when the test specifically needs no channel context.
+    async gotoDirectly(playbookId: string) {
+        await this.page.goto(`/playbooks/playbooks/${playbookId}/outline`);
+        await this.title.waitFor();
+    }
+
+    // Navigates to the editor via client-side routing from Town Square, preserving the
+    // Redux currentChannelId set by the town-square visit. This is the workaround used
+    // by tests that need the run modal to default to the current channel when switching
+    // to "Link to existing channel" mode.
+    async gotoViaClientSideNav(teamName: string, playbookId: string) {
+        // First fully navigate to town-square to set the Redux current channel
+        await this.mm.channels.goto(teamName, 'town-square');
+        // Push the editor URL into the history without a full page reload
+        await this.page.evaluate((url) => {
+            (window as {WebappUtils?: {browserHistory?: {push: (u: string) => void}}}).WebappUtils?.browserHistory?.push(url);
+        }, `/playbooks/playbooks/${playbookId}/outline`);
         await this.title.waitFor();
     }
 
@@ -65,5 +92,16 @@ export class PlaybookEditorPage {
 
     async expectDescription(description: string) {
         await expect(this.description.getByText(description)).toBeVisible();
+    }
+
+    // Opens the "Run" start-run modal from the playbook editor toolbar and waits
+    // for the run-details step to be fully loaded (playbook data fetched via API).
+    // Uses data-testid as a last resort: another button with aria-label "Runs and
+    // Checklists" would match getByRole({name:'Run'}) as a substring.
+    async openRunModal() {
+        await this.page.getByTestId('run-playbook').click();
+        // Wait for the run-name input to appear, which signals the run-details step
+        // is rendered and the playbook data has been loaded (no more loading spinner).
+        await this.page.getByTestId('run-name-input').waitFor({state: 'attached'});
     }
 }
