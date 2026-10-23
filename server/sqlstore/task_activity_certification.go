@@ -13,9 +13,9 @@ import (
 )
 
 type TaskActivityCertification struct {
-	Epoch      string `db:"epoch"`
-	Enabled    bool   `db:"enabled"`
-	Generation int64  `db:"generation"`
+	Epoch      string `db:"epoch" json:"epoch"`
+	Enabled    bool   `db:"enabled" json:"enabled"`
+	Generation int64  `db:"generation" json:"generation"`
 }
 
 func (s *SQLStore) GetTaskActivityCertification(ctx context.Context) (TaskActivityCertification, error) {

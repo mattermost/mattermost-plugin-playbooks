@@ -222,6 +222,12 @@ func (p *Plugin) OnActivate() error {
 		mutex.Unlock()
 		return errors.Wrapf(err, "failed to run migrations")
 	}
+	// Every process activation revokes certification. Re-activation after a restart requires
+	// a fresh epoch, including when an older plugin wrote while this version was absent.
+	if _, err = sqlStore.DisableTaskActivityCertification(context.Background()); err != nil {
+		mutex.Unlock()
+		return errors.Wrap(err, "failed to revoke task activity certification on activation")
+	}
 	mutex.Unlock()
 
 	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
@@ -259,6 +265,9 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.config,
 	)
+	api.NewTaskActivityCertificationHandler(p.handler.APIRouter, func(userID string) bool {
+		return app.IsSystemAdmin(userID, pluginAPIClient)
+	}, sqlStore)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, statsStore, p.playbookService, p.permissions, p.licenseChecker)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config, p.playbookRunService, p.userInfoStore)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.playbookRunService, p.playbookService, keywordsThreadIgnorer, p.bot)
