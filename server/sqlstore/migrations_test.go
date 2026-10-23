@@ -727,6 +727,67 @@ func TestMigration_000070(t *testing.T) {
 	require.Equal(t, "com.mattermost.plugin-incident-management", res[3].PluginID)
 }
 
+func TestMigrationTaskActivityCertification(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupTables(t, db)
+
+	for i := 0; i < len(migrations)-1; i++ {
+		runLegacyMigration(t, store, i)
+	}
+
+	require.NoError(t, InsertRun(store, NewRunMapBuilder().WithName("existing").ToRunAsMap()))
+	runLegacyMigration(t, store, len(migrations)-1)
+
+	var revision int64
+	require.NoError(t, db.Get(&revision, "SELECT TaskActivityRevision FROM IR_Incident WHERE Name = $1", "existing"))
+	require.Zero(t, revision)
+
+	var certification struct {
+		ID         int16  `db:"id"`
+		Epoch      string `db:"epoch"`
+		Enabled    bool   `db:"enabled"`
+		Generation int64  `db:"generation"`
+	}
+	require.NoError(t, db.Get(&certification, "SELECT ID, Epoch, Enabled, Generation FROM IR_TaskActivityCertification"))
+	require.Equal(t, int16(1), certification.ID)
+	require.Empty(t, certification.Epoch)
+	require.False(t, certification.Enabled)
+	require.Zero(t, certification.Generation)
+
+	require.NoError(t, InsertRun(store, NewRunMapBuilder().WithName("created-after-migration").ToRunAsMap()))
+	require.NoError(t, db.Get(&revision, "SELECT TaskActivityRevision FROM IR_Incident WHERE Name = $1", "created-after-migration"))
+	require.Zero(t, revision)
+}
+
+func TestMigration_000084(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupTables(t, db)
+	for i := 0; i < len(migrations)-1; i++ {
+		runLegacyMigration(t, store, i)
+	}
+	require.NoError(t, InsertRun(store, NewRunMapBuilder().WithName("existing").ToRunAsMap()))
+	up, err := assets.ReadFile("migrations/postgres/000084_add_task_activity_certification.up.sql")
+	require.NoError(t, err)
+	_, err = db.Exec(string(up))
+	require.NoError(t, err)
+
+	var revision int64
+	require.NoError(t, db.Get(&revision, "SELECT TaskActivityRevision FROM IR_Incident WHERE Name = $1", "existing"))
+	require.Zero(t, revision)
+
+	var enabled bool
+	require.NoError(t, db.Get(&enabled, "SELECT Enabled FROM IR_TaskActivityCertification WHERE ID = 1"))
+	require.False(t, enabled)
+
+	down, err := assets.ReadFile("migrations/postgres/000084_add_task_activity_certification.down.sql")
+	require.NoError(t, err)
+	_, err = db.Exec(string(down))
+	require.NoError(t, err)
+	exists, err := columnExists(store, "IR_Incident", "TaskActivityRevision")
+	require.NoError(t, err)
+	require.False(t, exists)
+}
+
 func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
 	applied, err := engine.Apply(limit)
 	require.NoError(t, err)

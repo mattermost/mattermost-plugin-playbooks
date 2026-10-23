@@ -1809,4 +1809,26 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.69.0"),
+		toVersion:   semver.MustParse("0.70.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Incident", "TaskActivityRevision", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+				return errors.Wrap(err, "failed adding TaskActivityRevision to IR_Incident")
+			}
+			if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_TaskActivityCertification (
+					ID SMALLINT PRIMARY KEY CHECK (ID = 1),
+					Epoch TEXT NOT NULL DEFAULT '',
+					Enabled BOOLEAN NOT NULL DEFAULT FALSE,
+					Generation BIGINT NOT NULL DEFAULT 0
+				)`); err != nil {
+				return errors.Wrap(err, "failed creating IR_TaskActivityCertification")
+			}
+			if _, err := e.Exec(`INSERT INTO IR_TaskActivityCertification (ID) VALUES (1) ON CONFLICT (ID) DO NOTHING`); err != nil {
+				return errors.Wrap(err, "failed initializing IR_TaskActivityCertification")
+			}
+			return nil
+		},
+	},
 }
