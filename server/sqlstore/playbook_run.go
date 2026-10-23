@@ -4,6 +4,7 @@
 package sqlstore
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"math"
@@ -410,13 +411,19 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		return nil, errors.Wrap(err, "failed to apply sort options")
 	}
 
+	tx, err := s.store.db.BeginTxx(context.Background(), &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return nil, errors.Wrap(err, "could not begin playbook runs read transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
 	var rawPlaybookRuns []sqlPlaybookRun
-	if err := s.store.selectBuilder(s.store.db, &rawPlaybookRuns, queryForResults); err != nil {
+	if err := s.store.selectBuilder(tx, &rawPlaybookRuns, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for playbook runs")
 	}
 
 	var total int
-	if err := s.store.getBuilder(s.store.db, &total, queryForTotal); err != nil {
+	if err := s.store.getBuilder(tx, &total, queryForTotal); err != nil {
 		return nil, errors.Wrap(err, "failed to get total count")
 	}
 	pageCount := 0
@@ -442,17 +449,17 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	var metricsData []sqlRunMetricData
 
 	if !options.SkipExtras {
-		statusPosts, err = s.getStatusPostsForPlaybookRun(s.store.db, playbookRunIDs)
+		statusPosts, err = s.getStatusPostsForPlaybookRun(tx, playbookRunIDs)
 		if err != nil {
 			return nil, err
 		}
 
-		timelineEvents, err = s.getTimelineEventsForPlaybookRun(s.store.db, playbookRunIDs)
+		timelineEvents, err = s.getTimelineEventsForPlaybookRun(tx, playbookRunIDs)
 		if err != nil {
 			return nil, err
 		}
 
-		metricsData, err = s.getMetricsForPlaybookRun(s.store.db, playbookRunIDs)
+		metricsData, err = s.getMetricsForPlaybookRun(tx, playbookRunIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -470,6 +477,10 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		PerPage:    options.PerPage,
 		HasMore:    hasMore,
 		Items:      playbookRuns,
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "could not commit playbook runs read transaction")
 	}
 
 	return result, nil
@@ -790,8 +801,14 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 		return nil, errors.New("ID cannot be empty")
 	}
 
+	tx, err := s.store.db.BeginTxx(context.Background(), &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return nil, errors.Wrap(err, "could not begin playbook run read transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
 	var rawPlaybookRun sqlPlaybookRun
-	err := s.store.getBuilder(s.store.db, &rawPlaybookRun, s.playbookRunSelect.Where(sq.Eq{"i.ID": playbookRunID}))
+	err = s.store.getBuilder(tx, &rawPlaybookRun, s.playbookRunSelect.Where(sq.Eq{"i.ID": playbookRunID}))
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(app.ErrNotFound, "playbook run with id '%s' does not exist", playbookRunID)
 	} else if err != nil {
@@ -809,19 +826,19 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 		Where(sq.Eq{"sp.IncidentID": playbookRunID}).
 		OrderBy("p.CreateAt")
 
-	err = s.store.selectBuilder(s.store.db, &statusPosts, postInfoSelect)
+	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, errors.Wrapf(err, "failed to get playbook run status posts for playbook run with id '%s'", playbookRunID)
 	}
 
-	timelineEvents, err := s.getTimelineEventsForPlaybookRun(s.store.db, []string{playbookRunID})
+	timelineEvents, err := s.getTimelineEventsForPlaybookRun(tx, []string{playbookRunID})
 	if err != nil {
 		return nil, err
 	}
 
 	var metricsData []app.RunMetricData
 
-	err = s.store.selectBuilder(s.store.db, &metricsData, s.metricsDataSelectSingleRun.
+	err = s.store.selectBuilder(tx, &metricsData, s.metricsDataSelectSingleRun.
 		Where(sq.Eq{"IncidentID": playbookRunID}).
 		OrderBy("MetricConfigID")) // Entirely for consistency for the tests)
 
@@ -835,6 +852,10 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, timelineEvents...)
 	playbookRun.MetricsData = metricsData
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "could not commit playbook run read transaction")
+	}
 
 	return playbookRun, nil
 }
