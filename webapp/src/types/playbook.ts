@@ -138,6 +138,7 @@ export interface ChecklistItem {
     description: string;
     state: ChecklistItemState | string;
     state_modified: number;
+    state_event_id?: string | null;
     assignee_id: string;
     assignee_type: string;
     assignee_modified: number;

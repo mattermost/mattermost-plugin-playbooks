@@ -2380,9 +2380,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentState", itemToCheck.State)
 
+	previousRun := playbookRunToModify.Clone()
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
-		originalRun = playbookRunToModify.Clone()
+		originalRun = previousRun
 	}
 
 	var requirementValues map[string]string
@@ -2457,13 +2458,13 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
-	_, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	event, err := s.buildTaskStateModifiedEvent(playbookRunID, userID, action, itemToCheck, timestamp)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run, is now in inconsistent state")
-	}
-
-	if err := s.createTaskStateModifiedEvent(playbookRunID, userID, action, itemToCheck, timestamp); err != nil {
 		return err
+	}
+	playbookRunToModify, _, err = s.store.UpdatePlaybookRunWithTimelineEvent(previousRun, playbookRunToModify, event, checklistNumber, itemNumber)
+	if err != nil {
+		return errors.Wrap(err, "failed to commit task state and timeline event")
 	}
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
@@ -3556,9 +3557,10 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 		return nil
 	}
 
+	previousRun := playbookRunToModify.Clone()
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
-		originalRun = playbookRunToModify.Clone()
+		originalRun = previousRun
 	}
 
 	timestamp := model.GetMillis()
@@ -3568,13 +3570,13 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToSkip, timestamp)
 
 	skippedItem := *itemToSkip
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	event, err := s.buildTaskStateModifiedEvent(playbookRunID, userID, taskStateActionSkip, skippedItem, timestamp)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
-	}
-
-	if err := s.createTaskStateModifiedEvent(playbookRunID, userID, taskStateActionSkip, skippedItem, timestamp); err != nil {
 		return err
+	}
+	playbookRunToModify, _, err = s.store.UpdatePlaybookRunWithTimelineEvent(previousRun, playbookRunToModify, event, checklistNumber, itemNumber)
+	if err != nil {
+		return errors.Wrap(err, "failed to commit task state and timeline event")
 	}
 
 	// Pass a nil current run so the run is refetched and the WS payload carries the timeline event
@@ -3590,10 +3592,10 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	return nil
 }
 
-// createTaskStateModifiedEvent records a task_state_modified timeline event for a checklist item
+// buildTaskStateModifiedEvent prepares a task_state_modified timeline event for a checklist item
 // state change, so clients can attribute the change to a user and a time. action must be one of the
 // taskStateAction constants.
-func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, userID, action string, item ChecklistItem, timestamp int64) error {
+func (s *PlaybookRunServiceImpl) buildTaskStateModifiedEvent(playbookRunID, userID, action string, item ChecklistItem, timestamp int64) (*TimelineEvent, error) {
 	title := stripmd.Strip(item.Title)
 
 	detailsJSON, err := json.Marshal(TaskStateModifiedDetails{
@@ -3602,7 +3604,7 @@ func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, use
 		ItemID: item.ID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to encode timeline event details")
+		return nil, errors.Wrap(err, "failed to encode timeline event details")
 	}
 
 	event := &TimelineEvent{
@@ -3615,11 +3617,7 @@ func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, use
 		Details:       string(detailsJSON),
 	}
 
-	if _, err := s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
-	}
-
-	return nil
+	return event, nil
 }
 
 // RestoreChecklistItem restores the item at the given index from the given checklist
@@ -3649,9 +3647,10 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 		return nil
 	}
 
+	previousRun := playbookRunToModify.Clone()
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
-		originalRun = playbookRunToModify.Clone()
+		originalRun = previousRun
 	}
 
 	timestamp := model.GetMillis()
@@ -3660,13 +3659,13 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToRestore, timestamp)
 
 	restoredItem := *itemToRestore
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	event, err := s.buildTaskStateModifiedEvent(playbookRunID, userID, taskStateActionRestore, restoredItem, timestamp)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
-	}
-
-	if err := s.createTaskStateModifiedEvent(playbookRunID, userID, taskStateActionRestore, restoredItem, timestamp); err != nil {
 		return err
+	}
+	playbookRunToModify, _, err = s.store.UpdatePlaybookRunWithTimelineEvent(previousRun, playbookRunToModify, event, checklistNumber, itemNumber)
+	if err != nil {
+		return errors.Wrap(err, "failed to commit task state and timeline event")
 	}
 
 	// A nil current run forces a refetch so the new timeline event ships with the WS payload.

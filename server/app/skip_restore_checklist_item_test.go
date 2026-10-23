@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -20,9 +21,10 @@ import (
 // which is intentional — these tests must not reach them.
 type stubTaskStateStore struct {
 	PlaybookRunStore
-	run     *PlaybookRun
-	events  []*TimelineEvent
-	updates int
+	run      *PlaybookRun
+	events   []*TimelineEvent
+	updates  int
+	eventErr error
 }
 
 func (s *stubTaskStateStore) GetPlaybookRun(_ string) (*PlaybookRun, error) {
@@ -36,8 +38,24 @@ func (s *stubTaskStateStore) UpdatePlaybookRun(run *PlaybookRun) (*PlaybookRun, 
 }
 
 func (s *stubTaskStateStore) CreateTimelineEvent(event *TimelineEvent) (*TimelineEvent, error) {
+	if s.eventErr != nil {
+		return nil, s.eventErr
+	}
 	s.events = append(s.events, event)
 	return event, nil
+}
+
+func (s *stubTaskStateStore) UpdatePlaybookRunWithTimelineEvent(_ *PlaybookRun, updated *PlaybookRun, event *TimelineEvent, checklistNumber, itemNumber int) (*PlaybookRun, *TimelineEvent, error) {
+	if s.eventErr != nil {
+		return nil, nil, s.eventErr
+	}
+	event.ID = model.NewId()
+	updated = updated.Clone()
+	updated.Checklists[checklistNumber].Items[itemNumber].StateEventID = &event.ID
+	s.updates++
+	s.run = updated.Clone()
+	s.events = append(s.events, event)
+	return s.run.Clone(), event, nil
 }
 
 func (s *stubTaskStateStore) item() ChecklistItem {
@@ -303,4 +321,14 @@ func TestModifyCheckedStateSkip(t *testing.T) {
 		assert.Equal(t, ChecklistItemStateClosed, h.store.item().State)
 		assert.Zero(t, h.store.item().LastSkipped)
 	})
+}
+
+func TestSkipChecklistItemRollsBackWhenEventInsertionFails(t *testing.T) {
+	h := newTaskStateService(t, openItem())
+	h.store.eventErr = errors.New("event insertion failed")
+
+	require.Error(t, h.svc.SkipChecklistItem("run1", "user1", 0, 0))
+	assert.Equal(t, ChecklistItemStateOpen, h.store.item().State)
+	assert.Equal(t, int64(1000), h.store.item().StateModified)
+	assert.Empty(t, h.poster.channelEvents)
 }

@@ -68,26 +68,27 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	ID                      string       `json:"id"`
-	Title                   string       `json:"title"`
-	State                   string       `json:"state"`
-	StateModified           int64        `json:"state_modified"`
-	AssigneeID              string       `json:"assignee_id"`
-	AssigneeModified        int64        `json:"assignee_modified"`
-	AssigneeType            string       `json:"assignee_type"`
-	AssigneePropertyFieldID string       `json:"assignee_property_field_id"`
-	AssigneeOnlyComplete    bool         `json:"assignee_only_complete"`
-	Command                 string       `json:"command"`
-	CommandLastRun          int64        `json:"command_last_run"`
-	Description             string       `json:"description"`
-	LastSkipped             int64        `json:"delete_at"`
-	DueDate                 int64        `json:"due_date"`
-	TaskActions             []TaskAction `json:"task_actions"`
+	ID                      string            `json:"id"`
+	Title                   string            `json:"title"`
+	State                   string            `json:"state"`
+	StateModified           int64             `json:"state_modified"`
+	StateEventID            *string           `json:"state_event_id"`
+	AssigneeID              string            `json:"assignee_id"`
+	AssigneeModified        int64             `json:"assignee_modified"`
+	AssigneeType            string            `json:"assignee_type"`
+	AssigneePropertyFieldID string            `json:"assignee_property_field_id"`
+	AssigneeOnlyComplete    bool              `json:"assignee_only_complete"`
+	Command                 string            `json:"command"`
+	CommandLastRun          int64             `json:"command_last_run"`
+	Description             string            `json:"description"`
+	LastSkipped             int64             `json:"delete_at"`
+	DueDate                 int64             `json:"due_date"`
+	TaskActions             []TaskAction      `json:"task_actions"`
 	Requirements            []TaskRequirement `json:"requirements"`
-	ConditionID             string       `json:"condition_id"`
-	ConditionAction         string       `json:"condition_action"`
-	ConditionReason         string       `json:"condition_reason"`
-	UpdateAt                int64        `json:"update_at"`
+	ConditionID             string            `json:"condition_id"`
+	ConditionAction         string            `json:"condition_action"`
+	ConditionReason         string            `json:"condition_reason"`
+	UpdateAt                int64             `json:"update_at"`
 }
 
 // TaskRequirement is a labeled field that must be completed when checking off a task.

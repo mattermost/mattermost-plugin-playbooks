@@ -52,6 +52,16 @@ func (s *stubRunStoreForCheckedState) CreateTimelineEvent(event *TimelineEvent) 
 	return event, nil
 }
 
+func (s *stubRunStoreForCheckedState) UpdatePlaybookRunWithTimelineEvent(_ *PlaybookRun, updated *PlaybookRun, event *TimelineEvent, checklistNumber, itemNumber int) (*PlaybookRun, *TimelineEvent, error) {
+	event.ID = model.NewId()
+	updated = updated.Clone()
+	updated.Checklists[checklistNumber].Items[itemNumber].StateEventID = &event.ID
+	s.updateCalls++
+	s.updatedRun = updated.Clone()
+	s.timelineEvents = append(s.timelineEvents, event)
+	return updated, event, nil
+}
+
 func newModifyCheckedStateHarness(t *testing.T, run *PlaybookRun, taskRequirementsEnabled bool) (*PlaybookRunServiceImpl, *stubRunStoreForCheckedState) {
 	t.Helper()
 

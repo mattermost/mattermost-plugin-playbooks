@@ -1527,6 +1527,8 @@ type PlaybookRunStore interface {
 	// UpdatePlaybookRun updates a playbook run.
 	UpdatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
 
+	UpdatePlaybookRunWithTimelineEvent(previous, updated *PlaybookRun, event *TimelineEvent, checklistNumber, itemNumber int) (*PlaybookRun, *TimelineEvent, error)
+
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
 

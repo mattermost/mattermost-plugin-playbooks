@@ -573,6 +573,23 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 
 // UpdatePlaybookRun updates a playbook run.
 func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not begin transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	updated, err := s.updatePlaybookRunInTx(tx, playbookRun)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "could not commit transaction")
+	}
+	return updated, nil
+}
+
+func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
 	}
@@ -590,12 +607,6 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	if err != nil {
 		return nil, err
 	}
-	tx, err := s.store.db.Beginx()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not begin transaction")
-	}
-	defer s.store.finalizeTransaction(tx)
-
 	// When adding a PlaybookRun column #3: add to this SetMap (if it is a column that can be updated)
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
@@ -640,11 +651,70 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "could not commit transaction")
+	return playbookRun, nil
+}
+
+func (s *playbookRunStore) UpdatePlaybookRunWithTimelineEvent(previous, updated *app.PlaybookRun, event *app.TimelineEvent, checklistNumber, itemNumber int) (*app.PlaybookRun, *app.TimelineEvent, error) {
+	if previous == nil || updated == nil || event == nil {
+		return nil, nil, errors.New("task state mutation requires previous run, updated run, and event")
+	}
+	if previous.ID == "" || previous.ID != updated.ID || event.PlaybookRunID != updated.ID || event.EventType != app.TaskStateModified {
+		return nil, nil, errors.New("invalid task state mutation")
+	}
+	if !app.IsValidChecklistItemIndex(updated.Checklists, checklistNumber, itemNumber) {
+		return nil, nil, errors.New("invalid checklist item index")
 	}
 
-	return playbookRun, nil
+	expectedChecklists, err := json.Marshal(previous.Checklists)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "could not encode previous checklists")
+	}
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "could not begin task state transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	var unchanged bool
+	if err := tx.Get(&unchanged, `SELECT ChecklistsJSON::jsonb = $2::jsonb FROM IR_Incident WHERE ID = $1 FOR UPDATE`, updated.ID, string(expectedChecklists)); err != nil {
+		return nil, nil, errors.Wrap(err, "could not lock playbook run for task state mutation")
+	}
+	if !unchanged {
+		return nil, nil, errors.New("playbook run checklists changed during task state mutation")
+	}
+
+	eventCopy := *event
+	event = &eventCopy
+	event.ID = model.NewId()
+	updated = updated.Clone()
+	updated.Checklists[checklistNumber].Items[itemNumber].StateEventID = &event.ID
+	updated, err = s.updatePlaybookRunInTx(tx, updated)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	_, err = s.store.execBuilder(tx, sq.
+		Insert("IR_TimelineEvent").
+		SetMap(map[string]interface{}{
+			"ID":            event.ID,
+			"IncidentID":    event.PlaybookRunID,
+			"CreateAt":      event.CreateAt,
+			"DeleteAt":      event.DeleteAt,
+			"EventAt":       event.EventAt,
+			"EventType":     string(event.EventType),
+			"Summary":       event.Summary,
+			"Details":       event.Details,
+			"PostID":        event.PostID,
+			"SubjectUserID": event.SubjectUserID,
+			"CreatorUserID": event.CreatorUserID,
+		}))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to insert task state timeline event")
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, nil, errors.Wrap(err, "could not commit task state transaction")
+	}
+	return updated, event, nil
 }
 
 func (s *playbookRunStore) UpdateStatus(statusPost *app.SQLStatusPost) error {
@@ -767,6 +837,10 @@ func (s *playbookRunStore) UpdateTimelineEvent(event *app.TimelineEvent) error {
 		return errors.New("needs event type")
 	}
 
+	if event.EventType == app.TaskStateModified && event.DeleteAt != 0 {
+		return s.removeTaskStateTimelineEvent(event)
+	}
+
 	eventType := string(event.EventType)
 	if event.EventType == app.OwnerChanged {
 		eventType = legacyEventTypeCommanderChanged
@@ -792,6 +866,52 @@ func (s *playbookRunStore) UpdateTimelineEvent(event *app.TimelineEvent) error {
 		return errors.Wrap(err, "failed to update timeline event")
 	}
 
+	return nil
+}
+func (s *playbookRunStore) removeTaskStateTimelineEvent(event *app.TimelineEvent) error {
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "could not begin task event removal transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	var checklistsJSON []byte
+	if err := tx.Get(&checklistsJSON, `SELECT ChecklistsJSON FROM IR_Incident WHERE ID = $1 FOR UPDATE`, event.PlaybookRunID); err != nil {
+		return errors.Wrap(err, "could not lock run for task event removal")
+	}
+	var storedDeleteAt int64
+	if err := tx.Get(&storedDeleteAt, `SELECT DeleteAt FROM IR_TimelineEvent WHERE ID = $1 AND IncidentID = $2 AND EventType = $3 FOR UPDATE`, event.ID, event.PlaybookRunID, string(app.TaskStateModified)); err != nil {
+		return errors.Wrap(err, "could not lock task event for removal")
+	}
+	if storedDeleteAt != 0 {
+		return nil
+	}
+
+	var checklists []app.Checklist
+	if err := json.Unmarshal(checklistsJSON, &checklists); err != nil {
+		return errors.Wrap(err, "could not decode checklists for task event removal")
+	}
+	for ci := range checklists {
+		for ii := range checklists[ci].Items {
+			item := &checklists[ci].Items[ii]
+			if item.StateEventID != nil && *item.StateEventID == event.ID {
+				item.StateEventID = nil
+			}
+		}
+	}
+	encodedChecklists, err := json.Marshal(checklists)
+	if err != nil {
+		return errors.Wrap(err, "could not encode checklists for task event removal")
+	}
+	if _, err := tx.Exec(`UPDATE IR_TimelineEvent SET DeleteAt = $1 WHERE ID = $2 AND IncidentID = $3`, event.DeleteAt, event.ID, event.PlaybookRunID); err != nil {
+		return errors.Wrap(err, "could not remove task event")
+	}
+	if _, err := tx.Exec(`UPDATE IR_Incident SET ChecklistsJSON = $1, UpdateAt = GREATEST(UpdateAt + 1, $2) WHERE ID = $3`, string(encodedChecklists), event.DeleteAt, event.PlaybookRunID); err != nil {
+		return errors.Wrap(err, "could not update run after task event removal")
+	}
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "could not commit task event removal")
+	}
 	return nil
 }
 

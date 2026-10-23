@@ -317,6 +317,8 @@ type ChecklistItem struct {
 	// state was modified. 0 if it was never modified.
 	StateModified int64 `json:"state_modified" export:"-"`
 
+	StateEventID *string `json:"state_event_id" export:"-"`
+
 	// AssigneeID is the identifier of the user to whom this item is assigned.
 	AssigneeID string `json:"assignee_id" export:"-"`
 
