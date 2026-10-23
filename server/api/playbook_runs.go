@@ -1508,7 +1508,7 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 		h.HandleError(w, c.logger, err)
 		return
 	}
-	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, c, id, update) {
+	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, id, update) {
 		return
 	}
 
@@ -1519,15 +1519,14 @@ func wantsTaskActivitySync(r *http.Request) bool {
 	return r.URL.Query().Get("task_activity_sync") == "1"
 }
 
-func (h *PlaybookRunHandler) returnTaskActivityMutation(w http.ResponseWriter, c *Context, id string, update *app.PlaybookRunUpdate) bool {
+func (h *PlaybookRunHandler) returnTaskActivityMutation(w http.ResponseWriter, id string, update *app.PlaybookRunUpdate) bool {
 	if update != nil && update.TaskActivitySync != nil {
 		ReturnJSON(w, update, http.StatusOK)
 		return true
 	}
 	run, err := h.playbookRunService.GetPlaybookRun(id)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return true
+		return false
 	}
 	if run.TaskActivitySync == nil {
 		return false
@@ -2104,7 +2103,7 @@ func (h *PlaybookRunHandler) itemSkip(c *Context, w http.ResponseWriter, r *http
 		h.HandleError(w, c.logger, err)
 		return
 	}
-	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, c, id, update) {
+	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, id, update) {
 		return
 	}
 
@@ -2142,7 +2141,7 @@ func (h *PlaybookRunHandler) itemRestore(c *Context, w http.ResponseWriter, r *h
 		h.HandleError(w, c.logger, err)
 		return
 	}
-	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, c, id, update) {
+	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, id, update) {
 		return
 	}
 
