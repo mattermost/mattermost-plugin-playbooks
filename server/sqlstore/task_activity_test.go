@@ -70,7 +70,7 @@ func TestTaskStateAndEventCommitTogether(t *testing.T) {
 	require.Equal(t, committedEvent.ID, afterCommit.TimelineEvents[0].ID)
 
 	_, _, err = runStore.UpdatePlaybookRunWithTimelineEvent(previous, updated, event, 0, 0)
-	require.ErrorContains(t, err, "checklists changed")
+	require.ErrorContains(t, err, "task changed")
 	afterConflict, err := runStore.GetPlaybookRun(created.ID)
 	require.NoError(t, err)
 	require.Equal(t, afterCommit.Checklists, afterConflict.Checklists)
@@ -131,4 +131,42 @@ func TestTaskStateLinkDistinguishesSameMillisecondTransitions(t *testing.T) {
 	require.Equal(t, app.ChecklistItemStateClosed, finalRun.Checklists[0].Items[0].State)
 	require.Equal(t, &ids[2], finalRun.Checklists[0].Items[0].StateEventID)
 	require.Len(t, finalRun.TimelineEvents, 3)
+}
+
+func TestConcurrentTaskStateMutationsPreserveDifferentItems(t *testing.T) {
+	db := setupTestDB(t)
+	runStore := setupPlaybookRunStore(t, db)
+	sqlStore := setupSQLStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	created, err := runStore.CreatePlaybookRun(NewBuilder(t).WithChecklists([]int{2}).ToPlaybookRun())
+	require.NoError(t, err)
+	createPlaybookRunChannel(t, sqlStore, created)
+	baseline, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+
+	first := baseline.Clone()
+	first.Checklists[0].Items[0].State = app.ChecklistItemStateClosed
+	first.Checklists[0].Items[0].StateModified = 12345
+	firstEvent := &app.TimelineEvent{PlaybookRunID: created.ID, EventType: app.TaskStateModified, EventAt: 12345, CreateAt: 12345, SubjectUserID: model.NewId()}
+	_, _, err = runStore.UpdatePlaybookRunWithTimelineEvent(baseline, first, firstEvent, 0, 0)
+	require.NoError(t, err)
+
+	second := baseline.Clone()
+	second.Checklists[0].Items[1].State = app.ChecklistItemStateSkipped
+	second.Checklists[0].Items[1].StateModified = 12345
+	secondEvent := &app.TimelineEvent{PlaybookRunID: created.ID, EventType: app.TaskStateModified, EventAt: 12345, CreateAt: 12345, SubjectUserID: model.NewId()}
+	_, _, err = runStore.UpdatePlaybookRunWithTimelineEvent(baseline, second, secondEvent, 0, 1)
+	require.NoError(t, err)
+
+	current, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	require.Equal(t, int64(2), current.TaskActivityRevision)
+	require.Equal(t, app.ChecklistItemStateClosed, current.Checklists[0].Items[0].State)
+	require.Equal(t, app.ChecklistItemStateSkipped, current.Checklists[0].Items[1].State)
+	require.NotNil(t, current.Checklists[0].Items[0].StateEventID)
+	require.NotNil(t, current.Checklists[0].Items[1].StateEventID)
+	require.NotEqual(t, *current.Checklists[0].Items[0].StateEventID, *current.Checklists[0].Items[1].StateEventID)
+	require.Len(t, current.TimelineEvents, 2)
 }

@@ -96,6 +96,8 @@ type PlaybookRun struct {
 	// UpdateAt is the timestamp, in milliseconds since epoch, of when the playbook run was last modified.
 	UpdateAt int64 `json:"update_at"`
 
+	TaskActivityRevision int64 `json:"-"`
+
 	// EndAt is the timestamp, in milliseconds since epoch, of when the playbook run was ended.
 	// If 0, the run is still ongoing.
 	EndAt int64 `json:"end_at"`

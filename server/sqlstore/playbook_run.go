@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"math"
+	"reflect"
 	"strings"
 	"time"
 
@@ -224,7 +225,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 	// When adding a PlaybookRun column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
 		Select("i.ID", "i.Name AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.UpdateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
+			"i.CreateAt", "i.UpdateAt", "i.TaskActivityRevision", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
@@ -603,9 +604,32 @@ func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.P
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
+	var current struct {
+		ChecklistsJSON       []byte
+		TaskActivityRevision int64
+	}
+	if err := tx.Get(&current, `SELECT ChecklistsJSON, TaskActivityRevision FROM IR_Incident WHERE ID = $1 FOR UPDATE`, playbookRun.ID); err != nil {
+		return nil, errors.Wrap(err, "could not lock playbook run for update")
+	}
+	if current.TaskActivityRevision != playbookRun.TaskActivityRevision {
+		return nil, errors.New("playbook run task activity revision changed during update")
+	}
+	var previousChecklists []app.Checklist
+	if err := json.Unmarshal(current.ChecklistsJSON, &previousChecklists); err != nil {
+		return nil, errors.Wrap(err, "could not decode current run checklists")
+	}
+	clearUnattributedStateEventLinks(previousChecklists, playbookRun.Checklists)
+
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
 		return nil, err
+	}
+	var checklistChanged bool
+	if err := tx.Get(&checklistChanged, `SELECT ChecklistsJSON::jsonb IS DISTINCT FROM $2::jsonb FROM IR_Incident WHERE ID = $1`, playbookRun.ID, string(rawPlaybookRun.ChecklistsJSON)); err != nil {
+		return nil, errors.Wrap(err, "could not compare run checklists")
+	}
+	if checklistChanged {
+		playbookRun.TaskActivityRevision++
 	}
 	// When adding a PlaybookRun column #3: add to this SetMap (if it is a column that can be updated)
 	_, err = s.store.execBuilder(tx, sq.
@@ -617,6 +641,7 @@ func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.P
 			"CommanderUserID":                         rawPlaybookRun.OwnerUserID,
 			"LastStatusUpdateAt":                      rawPlaybookRun.LastStatusUpdateAt,
 			"ChecklistsJSON":                          rawPlaybookRun.ChecklistsJSON,
+			"TaskActivityRevision":                    playbookRun.TaskActivityRevision,
 			"ReminderPostID":                          rawPlaybookRun.ReminderPostID,
 			"PreviousReminder":                        rawPlaybookRun.PreviousReminder,
 			"ConcatenatedInvitedUserIDs":              rawPlaybookRun.ConcatenatedInvitedUserIDs,
@@ -654,6 +679,58 @@ func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.P
 	return playbookRun, nil
 }
 
+func clearUnattributedStateEventLinks(previous, updated []app.Checklist) {
+	itemsByID := make(map[string]app.ChecklistItem)
+	for _, checklist := range previous {
+		for _, item := range checklist.Items {
+			itemsByID[item.ID] = item
+		}
+	}
+	for ci := range updated {
+		for ii := range updated[ci].Items {
+			item := &updated[ci].Items[ii]
+			old, found := itemsByID[item.ID]
+			if found && old.StateEventID != nil && item.StateEventID != nil && *old.StateEventID == *item.StateEventID &&
+				(old.State != item.State || old.StateModified != item.StateModified) {
+				item.StateEventID = nil
+			}
+		}
+	}
+}
+
+func mergeTaskStateMutation(previous, updated, current *app.PlaybookRun, checklistNumber, itemNumber int) (*app.PlaybookRun, error) {
+	if !app.IsValidChecklistItemIndex(previous.Checklists, checklistNumber, itemNumber) {
+		return nil, errors.New("invalid previous checklist item index")
+	}
+	previousItem := previous.Checklists[checklistNumber].Items[itemNumber]
+	updatedItem := updated.Checklists[checklistNumber].Items[itemNumber]
+	if previousItem.ID != updatedItem.ID {
+		return nil, errors.New("task identity changed during mutation")
+	}
+	if reflect.DeepEqual(previous.Checklists, current.Checklists) {
+		updated.TaskActivityRevision = current.TaskActivityRevision
+		return updated, nil
+	}
+
+	for ci := range current.Checklists {
+		for ii := range current.Checklists[ci].Items {
+			if current.Checklists[ci].Items[ii].ID != previousItem.ID {
+				continue
+			}
+			if !reflect.DeepEqual(current.Checklists[ci].Items[ii], previousItem) {
+				return nil, errors.New("task changed during state mutation")
+			}
+			merged := current.Clone()
+			merged.Checklists[ci].Items[ii] = updatedItem
+			if updated.Checklists[checklistNumber].UpdateAt > merged.Checklists[ci].UpdateAt {
+				merged.Checklists[ci].UpdateAt = updated.Checklists[checklistNumber].UpdateAt
+			}
+			return merged, nil
+		}
+	}
+	return nil, errors.New("task removed during state mutation")
+}
+
 func (s *playbookRunStore) UpdatePlaybookRunWithTimelineEvent(previous, updated *app.PlaybookRun, event *app.TimelineEvent, checklistNumber, itemNumber int) (*app.PlaybookRun, *app.TimelineEvent, error) {
 	if previous == nil || updated == nil || event == nil {
 		return nil, nil, errors.New("task state mutation requires previous run, updated run, and event")
@@ -665,29 +742,36 @@ func (s *playbookRunStore) UpdatePlaybookRunWithTimelineEvent(previous, updated 
 		return nil, nil, errors.New("invalid checklist item index")
 	}
 
-	expectedChecklists, err := json.Marshal(previous.Checklists)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not encode previous checklists")
-	}
 	tx, err := s.store.db.Beginx()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not begin task state transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	var unchanged bool
-	if err := tx.Get(&unchanged, `SELECT ChecklistsJSON::jsonb = $2::jsonb FROM IR_Incident WHERE ID = $1 FOR UPDATE`, updated.ID, string(expectedChecklists)); err != nil {
+	var rawCurrent sqlPlaybookRun
+	if err := s.store.getBuilder(tx, &rawCurrent, s.playbookRunSelect.Where(sq.Eq{"i.ID": updated.ID}).Suffix("FOR UPDATE")); err != nil {
 		return nil, nil, errors.Wrap(err, "could not lock playbook run for task state mutation")
 	}
-	if !unchanged {
-		return nil, nil, errors.New("playbook run checklists changed during task state mutation")
+	current, err := s.toPlaybookRun(rawCurrent)
+	if err != nil {
+		return nil, nil, err
+	}
+	updated, err = mergeTaskStateMutation(previous, updated, current, checklistNumber, itemNumber)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	eventCopy := *event
 	event = &eventCopy
 	event.ID = model.NewId()
 	updated = updated.Clone()
-	updated.Checklists[checklistNumber].Items[itemNumber].StateEventID = &event.ID
+	for ci := range updated.Checklists {
+		for ii := range updated.Checklists[ci].Items {
+			if updated.Checklists[ci].Items[ii].ID == previous.Checklists[checklistNumber].Items[itemNumber].ID {
+				updated.Checklists[ci].Items[ii].StateEventID = &event.ID
+			}
+		}
+	}
 	updated, err = s.updatePlaybookRunInTx(tx, updated)
 	if err != nil {
 		return nil, nil, err
@@ -906,7 +990,7 @@ func (s *playbookRunStore) removeTaskStateTimelineEvent(event *app.TimelineEvent
 	if _, err := tx.Exec(`UPDATE IR_TimelineEvent SET DeleteAt = $1 WHERE ID = $2 AND IncidentID = $3`, event.DeleteAt, event.ID, event.PlaybookRunID); err != nil {
 		return errors.Wrap(err, "could not remove task event")
 	}
-	if _, err := tx.Exec(`UPDATE IR_Incident SET ChecklistsJSON = $1, UpdateAt = GREATEST(UpdateAt + 1, $2) WHERE ID = $3`, string(encodedChecklists), event.DeleteAt, event.PlaybookRunID); err != nil {
+	if _, err := tx.Exec(`UPDATE IR_Incident SET ChecklistsJSON = $1, UpdateAt = GREATEST(UpdateAt + 1, $2), TaskActivityRevision = TaskActivityRevision + 1 WHERE ID = $3`, string(encodedChecklists), event.DeleteAt, event.PlaybookRunID); err != nil {
 		return errors.Wrap(err, "could not update run after task event removal")
 	}
 	if err := tx.Commit(); err != nil {
@@ -1803,6 +1887,9 @@ func (s *playbookRunStore) GetPlaybookRunIDsForUser(userID string) ([]string, er
 func (s *playbookRunStore) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if id == "" {
 		return errors.New("id should not be empty")
+	}
+	if _, ok := setmap["ChecklistsJSON"]; ok {
+		return errors.New("checklist changes require a task activity revision")
 	}
 
 	_, err := s.store.execBuilder(s.store.db, sq.

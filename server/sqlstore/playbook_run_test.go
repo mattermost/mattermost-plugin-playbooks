@@ -195,10 +195,11 @@ func TestUpdatePlaybookRun(t *testing.T) {
 	require.NoError(t, err)
 
 	validPlaybookRuns := []struct {
-		Name        string
-		PlaybookRun *app.PlaybookRun
-		Update      func(app.PlaybookRun) *app.PlaybookRun
-		ExpectedErr error
+		Name                 string
+		PlaybookRun          *app.PlaybookRun
+		Update               func(app.PlaybookRun) *app.PlaybookRun
+		ExpectedErr          error
+		ExpectedTaskRevision int64
 	}{
 		{
 			Name:        "nil playbook run",
@@ -225,7 +226,8 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				old.Checklists[0].ItemsOrder = []string{}
 				return &old
 			},
-			ExpectedErr: nil,
+			ExpectedErr:          nil,
+			ExpectedTaskRevision: 1,
 		},
 		{
 			Name:        "new description",
@@ -244,7 +246,8 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				old.Checklists[1].Items[0].Title = "new title"
 				return &old
 			},
-			ExpectedErr: nil,
+			ExpectedErr:          nil,
+			ExpectedTaskRevision: 1,
 		},
 		{
 			Name:        "PlaybookRun with metrics, update retrospective text and metrics data",
@@ -311,6 +314,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 			for i := range expected.Checklists {
 				expected.Checklists[i].ItemsOrder = expected.Checklists[i].GetItemsOrder()
 			}
+			expected.TaskActivityRevision = testCase.ExpectedTaskRevision
 			require.Equal(t, expected, actual)
 		})
 	}
