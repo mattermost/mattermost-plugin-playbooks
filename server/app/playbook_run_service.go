@@ -99,7 +99,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 	// Determine if incremental updates are enabled
 	if !s.configService.IsIncrementalUpdatesEnabled() {
-		if currentRun != nil && currentRun.CommittedTaskActivityUpdate != nil {
+		if currentRun != nil && (currentRun.CommittedTaskActivityUpdate != nil || currentRun.TaskActivitySync != nil) {
 			currentRun = nil
 		}
 		if currentRun != nil {
