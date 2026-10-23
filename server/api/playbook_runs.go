@@ -1484,7 +1484,19 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 		opts = append(opts, app.ModifyCheckedStateOptions{RequirementValues: params.RequirementValues})
 	}
 
-	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, opts...); err != nil {
+	var update *app.PlaybookRunUpdate
+	if wantsTaskActivitySync(r) {
+		if service, ok := h.playbookRunService.(interface {
+			ModifyCheckedStateWithTaskActivitySync(string, string, string, int, int, ...app.ModifyCheckedStateOptions) (*app.PlaybookRunUpdate, error)
+		}); ok {
+			update, err = service.ModifyCheckedStateWithTaskActivitySync(id, userID, params.NewState, checklistNum, itemNum, opts...)
+		} else {
+			err = h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, opts...)
+		}
+	} else {
+		err = h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, opts...)
+	}
+	if err != nil {
 		if errors.Is(err, app.ErrAssigneeOnlyComplete) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the assignee can complete this task", err)
 			return
@@ -1496,8 +1508,32 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 		h.HandleError(w, c.logger, err)
 		return
 	}
+	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, c, id, update) {
+		return
+	}
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+func wantsTaskActivitySync(r *http.Request) bool {
+	return r.URL.Query().Get("task_activity_sync") == "1"
+}
+
+func (h *PlaybookRunHandler) returnTaskActivityMutation(w http.ResponseWriter, c *Context, id string, update *app.PlaybookRunUpdate) bool {
+	if update != nil && update.TaskActivitySync != nil {
+		ReturnJSON(w, update, http.StatusOK)
+		return true
+	}
+	run, err := h.playbookRunService.GetPlaybookRun(id)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return true
+	}
+	if run.TaskActivitySync == nil {
+		return false
+	}
+	ReturnJSON(w, run, http.StatusOK)
+	return true
 }
 
 func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -2052,8 +2088,23 @@ func (h *PlaybookRunHandler) itemSkip(c *Context, w http.ResponseWriter, r *http
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.playbookRunService.SkipChecklistItem(id, userID, checklistNum, itemNum); err != nil {
+	var update *app.PlaybookRunUpdate
+	if wantsTaskActivitySync(r) {
+		if service, ok := h.playbookRunService.(interface {
+			SkipChecklistItemWithTaskActivitySync(string, string, int, int) (*app.PlaybookRunUpdate, error)
+		}); ok {
+			update, err = service.SkipChecklistItemWithTaskActivitySync(id, userID, checklistNum, itemNum)
+		} else {
+			err = h.playbookRunService.SkipChecklistItem(id, userID, checklistNum, itemNum)
+		}
+	} else {
+		err = h.playbookRunService.SkipChecklistItem(id, userID, checklistNum, itemNum)
+	}
+	if err != nil {
 		h.HandleError(w, c.logger, err)
+		return
+	}
+	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, c, id, update) {
 		return
 	}
 
@@ -2075,8 +2126,23 @@ func (h *PlaybookRunHandler) itemRestore(c *Context, w http.ResponseWriter, r *h
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.playbookRunService.RestoreChecklistItem(id, userID, checklistNum, itemNum); err != nil {
+	var update *app.PlaybookRunUpdate
+	if wantsTaskActivitySync(r) {
+		if service, ok := h.playbookRunService.(interface {
+			RestoreChecklistItemWithTaskActivitySync(string, string, int, int) (*app.PlaybookRunUpdate, error)
+		}); ok {
+			update, err = service.RestoreChecklistItemWithTaskActivitySync(id, userID, checklistNum, itemNum)
+		} else {
+			err = h.playbookRunService.RestoreChecklistItem(id, userID, checklistNum, itemNum)
+		}
+	} else {
+		err = h.playbookRunService.RestoreChecklistItem(id, userID, checklistNum, itemNum)
+	}
+	if err != nil {
 		h.HandleError(w, c.logger, err)
+		return
+	}
+	if wantsTaskActivitySync(r) && h.returnTaskActivityMutation(w, c, id, update) {
 		return
 	}
 
