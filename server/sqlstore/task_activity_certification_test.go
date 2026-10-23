@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 func TestTaskActivityCertificationEpochLifecycle(t *testing.T) {
@@ -76,4 +78,54 @@ func TestTaskActivityCertificationActivationWaitsForCoveredWriter(t *testing.T) 
 	activated, err := store.ActivateTaskActivityCertification(context.Background(), locked.Generation)
 	require.NoError(t, err)
 	require.True(t, activated.Enabled)
+}
+
+func TestTaskActivityCertificationOnlyMarksCompleteRunReads(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupSQLStore(t, db)
+	runStore := setupPlaybookRunStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	created, err := runStore.CreatePlaybookRun(NewBuilder(t).WithChecklists([]int{1}).ToPlaybookRun())
+	require.NoError(t, err)
+	createPlaybookRunChannel(t, store, created)
+	filter := app.PlaybookRunFilterOptions{ChannelID: created.ChannelID, PerPage: 10}
+	requester := app.RequesterInfo{UserID: "testID", IsAdmin: true}
+
+	single, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	require.Nil(t, single.TaskActivitySync)
+	listed, err := runStore.GetPlaybookRuns(requester, filter)
+	require.NoError(t, err)
+	require.Len(t, listed.Items, 1)
+	require.Nil(t, listed.Items[0].TaskActivitySync)
+
+	certification, err := store.ActivateTaskActivityCertification(context.Background(), 0)
+	require.NoError(t, err)
+	single, err = runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	require.Equal(t, &app.TaskActivitySync{
+		Version:  1,
+		Epoch:    certification.Epoch,
+		Revision: "0",
+		Complete: true,
+	}, single.TaskActivitySync)
+
+	listed, err = runStore.GetPlaybookRuns(requester, filter)
+	require.NoError(t, err)
+	require.Len(t, listed.Items, 1)
+	require.Equal(t, single.TaskActivitySync, listed.Items[0].TaskActivitySync)
+
+	filter.SkipExtras = true
+	partial, err := runStore.GetPlaybookRuns(requester, filter)
+	require.NoError(t, err)
+	require.Len(t, partial.Items, 1)
+	require.Nil(t, partial.Items[0].TaskActivitySync)
+
+	_, err = store.DisableTaskActivityCertification(context.Background())
+	require.NoError(t, err)
+	single, err = runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	require.Nil(t, single.TaskActivitySync)
 }
