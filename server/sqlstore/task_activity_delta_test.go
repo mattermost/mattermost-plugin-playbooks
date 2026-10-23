@@ -51,3 +51,39 @@ func TestTaskStateMutationCapturesCommittedDeltaAfterConcurrentDisjointChange(t 
 	require.Equal(t, staleSecond.Checklists[0].Items[1].ID, updates[0].ItemUpdates[0].ID)
 	require.Equal(t, &secondEvent.ID, updates[0].ItemUpdates[0].Fields["state_event_id"])
 }
+
+func TestChecklistWriterCapturesDeltaAndClearsStaleSnapshotMetadata(t *testing.T) {
+	db := setupTestDB(t)
+	runStore := setupPlaybookRunStore(t, db)
+	sqlStore := setupSQLStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	created, err := runStore.CreatePlaybookRun(NewBuilder(t).WithChecklists([]int{1}).ToPlaybookRun())
+	require.NoError(t, err)
+	createPlaybookRunChannel(t, sqlStore, created)
+	certification, err := sqlStore.ActivateTaskActivityCertification(context.Background(), 0)
+	require.NoError(t, err)
+	previous, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	require.True(t, previous.TaskActivitySync.Complete)
+
+	renamed := previous.Clone()
+	renamed.Checklists[0].Title = "renamed"
+	committed, err := runStore.UpdatePlaybookRun(renamed)
+	require.NoError(t, err)
+	require.Nil(t, committed.TaskActivitySync)
+	require.NotNil(t, committed.CommittedTaskActivityUpdate)
+	require.Equal(t, certification.Epoch, committed.CommittedTaskActivityUpdate.TaskActivitySync.Epoch)
+	require.Equal(t, "0", committed.CommittedTaskActivityUpdate.TaskActivitySync.BaseRevision)
+	require.Equal(t, "1", committed.CommittedTaskActivityUpdate.TaskActivitySync.Revision)
+	require.Len(t, committed.CommittedTaskActivityUpdate.ChangedFields["checklists"].([]app.ChecklistUpdate), 1)
+
+	noOp := committed.Clone()
+	noOp.Summary = "run-only change"
+	committed, err = runStore.UpdatePlaybookRun(noOp)
+	require.NoError(t, err)
+	require.Nil(t, committed.TaskActivitySync)
+	require.Nil(t, committed.CommittedTaskActivityUpdate)
+	require.Equal(t, int64(1), committed.TaskActivityRevision)
+}

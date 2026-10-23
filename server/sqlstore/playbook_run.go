@@ -607,11 +607,12 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := s.store.lockTaskActivityCertificationForWrite(tx); err != nil {
+	certification, err := s.store.lockTaskActivityCertificationForWrite(tx)
+	if err != nil {
 		return nil, err
 	}
 
-	updated, err := s.updatePlaybookRunInTx(tx, playbookRun)
+	updated, err := s.updatePlaybookRunInTx(tx, playbookRun, certification)
 	if err != nil {
 		return nil, err
 	}
@@ -621,7 +622,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	return updated, nil
 }
 
-func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
+func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.PlaybookRun, certification TaskActivityCertification) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
 	}
@@ -633,6 +634,8 @@ func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.P
 	playbookRun.UpdateAt = model.GetMillis()
 
 	playbookRun = playbookRun.Clone()
+	playbookRun.TaskActivitySync = nil
+	playbookRun.CommittedTaskActivityUpdate = nil
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
 	var current struct {
@@ -661,6 +664,31 @@ func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.P
 	}
 	if checklistChanged {
 		playbookRun.TaskActivityRevision++
+		if certification.Enabled && certification.Epoch != "" {
+			before := playbookRun.Clone()
+			before.Checklists = previousChecklists
+			changes := app.DetectChangedFields(before, playbookRun)
+			coveredChanges := make(map[string]interface{})
+			for _, field := range []string{"checklists", "items_order"} {
+				if change, ok := changes[field]; ok {
+					coveredChanges[field] = change
+				}
+			}
+			deletes, _ := changes["_checklist_deletes"].([]string)
+			playbookRun.CommittedTaskActivityUpdate = &app.PlaybookRunUpdate{
+				ID:                   playbookRun.ID,
+				PlaybookRunUpdatedAt: playbookRun.UpdateAt,
+				ChangedFields:        coveredChanges,
+				ChecklistDeletes:     deletes,
+				TaskActivitySync: &app.TaskActivitySync{
+					Version:      1,
+					Epoch:        certification.Epoch,
+					BaseRevision: strconv.FormatInt(current.TaskActivityRevision, 10),
+					Revision:     strconv.FormatInt(playbookRun.TaskActivityRevision, 10),
+					Complete:     false,
+				},
+			}
+		}
 	}
 	// When adding a PlaybookRun column #3: add to this SetMap (if it is a column that can be updated)
 	_, err = s.store.execBuilder(tx, sq.
@@ -808,7 +836,7 @@ func (s *playbookRunStore) UpdatePlaybookRunWithTimelineEvent(previous, updated 
 			}
 		}
 	}
-	updated, err = s.updatePlaybookRunInTx(tx, updated)
+	updated, err = s.updatePlaybookRunInTx(tx, updated, certification)
 	if err != nil {
 		return nil, nil, err
 	}
