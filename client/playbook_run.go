@@ -66,6 +66,26 @@ type PlaybookRun struct {
 	SequentialID                            string          `json:"sequential_id"`
 	TaskTotal                               int             `json:"task_total"`
 	TaskCompleted                           int             `json:"task_completed"`
+
+	TaskActivitySync *TaskActivitySync `json:"task_activity_sync,omitempty"`
+}
+
+type TaskActivitySync struct {
+	Version      int    `json:"version"`
+	Epoch        string `json:"epoch"`
+	BaseRevision string `json:"base_revision,omitempty"`
+	Revision     string `json:"revision"`
+	Complete     bool   `json:"complete"`
+}
+
+type PlaybookRunUpdate struct {
+	ID                   string                     `json:"id"`
+	PlaybookRunUpdatedAt int64                      `json:"playbook_run_updated_at"`
+	ChangedFields        map[string]json.RawMessage `json:"changed_fields"`
+	TaskActivitySync     *TaskActivitySync          `json:"task_activity_sync,omitempty"`
+	ChecklistDeletes     []string                   `json:"checklist_deletes,omitempty"`
+	TimelineEventDeletes []string                   `json:"timeline_event_deletes,omitempty"`
+	StatusPostDeletes    []string                   `json:"status_post_deletes,omitempty"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the

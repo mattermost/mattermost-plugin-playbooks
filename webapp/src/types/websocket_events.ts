@@ -3,7 +3,7 @@
 
 import manifest from 'src/manifest';
 
-import {PlaybookRun} from './playbook_run';
+import {PlaybookRun, TaskActivitySync} from './playbook_run';
 import {Checklist, ChecklistItem} from './playbook';
 
 export const WEBSOCKET_PLAYBOOK_RUN_UPDATED = `custom_${manifest.id}_playbook_run_updated`;
@@ -25,6 +25,7 @@ export const WEBSOCKET_CONDITION_DELETED = `custom_${manifest.id}_condition_dele
 export interface PlaybookRunUpdate {
     id: string;
     playbook_run_updated_at: number;
+    task_activity_sync?: TaskActivitySync;
     changed_fields: Omit<Partial<PlaybookRun>, 'checklists'> & {
         checklists?: ChecklistUpdate[];
     };

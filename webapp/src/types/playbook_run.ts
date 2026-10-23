@@ -74,6 +74,16 @@ export interface PlaybookRun {
 
     /** Computed server-side; closed or skipped counts as completed. */
     task_completed?: number;
+
+    task_activity_sync?: TaskActivitySync;
+}
+
+export interface TaskActivitySync {
+    version: number;
+    epoch: string;
+    base_revision?: string;
+    revision: string;
+    complete: boolean;
 }
 
 export interface PlaybookRunConnection extends Partial<PlaybookRun> {
