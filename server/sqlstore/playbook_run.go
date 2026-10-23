@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"math"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -418,6 +419,11 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	}
 	defer s.store.finalizeTransaction(tx)
 
+	certification, err := s.store.readTaskActivityCertification(tx)
+	if err != nil {
+		return nil, err
+	}
+
 	var rawPlaybookRuns []sqlPlaybookRun
 	if err := s.store.selectBuilder(tx, &rawPlaybookRuns, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for playbook runs")
@@ -440,6 +446,14 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		playbookRun, err := s.toPlaybookRun(rawPlaybookRun)
 		if err != nil {
 			return nil, err
+		}
+		if !options.SkipExtras && certification.Enabled && certification.Epoch != "" {
+			playbookRun.TaskActivitySync = &app.TaskActivitySync{
+				Version:  1,
+				Epoch:    certification.Epoch,
+				Revision: strconv.FormatInt(playbookRun.TaskActivityRevision, 10),
+				Complete: true,
+			}
 		}
 		playbookRuns = append(playbookRuns, *playbookRun)
 		playbookRunIDs = append(playbookRunIDs, playbookRun.ID)
@@ -510,8 +524,17 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		rawPlaybookRun.Type = app.RunTypePlaybook
 	}
 
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not begin playbook run creation")
+	}
+	defer s.store.finalizeTransaction(tx)
+	if _, err := s.store.lockTaskActivityCertificationForWrite(tx); err != nil {
+		return nil, err
+	}
+
 	// When adding a PlaybookRun column #2: add to the SetMap
-	_, err = s.store.execBuilder(s.store.db, sq.
+	_, err = s.store.execBuilder(tx, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
 			"ID":                                      rawPlaybookRun.ID,
@@ -569,6 +592,10 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, errors.Wrapf(err, "failed to store new playbook run")
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "could not commit playbook run creation")
+	}
+
 	return playbookRun, nil
 }
 
@@ -579,6 +606,10 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
+
+	if _, err := s.store.lockTaskActivityCertificationForWrite(tx); err != nil {
+		return nil, err
+	}
 
 	updated, err := s.updatePlaybookRunInTx(tx, playbookRun)
 	if err != nil {
@@ -748,6 +779,10 @@ func (s *playbookRunStore) UpdatePlaybookRunWithTimelineEvent(previous, updated 
 	}
 	defer s.store.finalizeTransaction(tx)
 
+	if _, err := s.store.lockTaskActivityCertificationForWrite(tx); err != nil {
+		return nil, nil, err
+	}
+
 	var rawCurrent sqlPlaybookRun
 	if err := s.store.getBuilder(tx, &rawCurrent, s.playbookRunSelect.Where(sq.Eq{"i.ID": updated.ID}).Suffix("FOR UPDATE")); err != nil {
 		return nil, nil, errors.Wrap(err, "could not lock playbook run for task state mutation")
@@ -876,6 +911,9 @@ func (s *playbookRunStore) CreateTimelineEvent(event *app.TimelineEvent) (*app.T
 	if event.EventType == "" {
 		return nil, errors.New("needs event type")
 	}
+	if event.EventType == app.TaskStateModified {
+		return nil, errors.New("task state events require an atomic run mutation")
+	}
 	if event.CreateAt == 0 {
 		event.CreateAt = model.GetMillis()
 	}
@@ -921,7 +959,10 @@ func (s *playbookRunStore) UpdateTimelineEvent(event *app.TimelineEvent) error {
 		return errors.New("needs event type")
 	}
 
-	if event.EventType == app.TaskStateModified && event.DeleteAt != 0 {
+	if event.EventType == app.TaskStateModified {
+		if event.DeleteAt == 0 {
+			return errors.New("task state event updates require an atomic run mutation")
+		}
 		return s.removeTaskStateTimelineEvent(event)
 	}
 
@@ -958,6 +999,10 @@ func (s *playbookRunStore) removeTaskStateTimelineEvent(event *app.TimelineEvent
 		return errors.Wrap(err, "could not begin task event removal transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
+
+	if _, err := s.store.lockTaskActivityCertificationForWrite(tx); err != nil {
+		return err
+	}
 
 	var checklistsJSON []byte
 	if err := tx.Get(&checklistsJSON, `SELECT ChecklistsJSON FROM IR_Incident WHERE ID = $1 FOR UPDATE`, event.PlaybookRunID); err != nil {
@@ -1011,6 +1056,11 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 	}
 	defer s.store.finalizeTransaction(tx)
 
+	certification, err := s.store.readTaskActivityCertification(tx)
+	if err != nil {
+		return nil, err
+	}
+
 	var rawPlaybookRun sqlPlaybookRun
 	err = s.store.getBuilder(tx, &rawPlaybookRun, s.playbookRunSelect.Where(sq.Eq{"i.ID": playbookRunID}))
 	if err == sql.ErrNoRows {
@@ -1056,6 +1106,14 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, timelineEvents...)
 	playbookRun.MetricsData = metricsData
+	if certification.Enabled && certification.Epoch != "" {
+		playbookRun.TaskActivitySync = &app.TaskActivitySync{
+			Version:  1,
+			Epoch:    certification.Epoch,
+			Revision: strconv.FormatInt(playbookRun.TaskActivityRevision, 10),
+			Complete: true,
+		}
+	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "could not commit playbook run read transaction")
@@ -1223,7 +1281,7 @@ func (s *playbookRunStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_Condition, IR_Metric, IR_MetricConfig, IR_PlaybookMember, IR_Run_Participants, IR_PlaybookAutoFollow, IR_StatusPosts, IR_TimelineEvent, IR_Incident, IR_Playbook, IR_System"); err != nil {
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_Condition, IR_Metric, IR_MetricConfig, IR_PlaybookMember, IR_Run_Participants, IR_PlaybookAutoFollow, IR_StatusPosts, IR_TimelineEvent, IR_TaskActivityCertification, IR_Incident, IR_Playbook, IR_System"); err != nil {
 		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
@@ -1890,6 +1948,9 @@ func (s *playbookRunStore) GraphqlUpdate(id string, setmap map[string]interface{
 	}
 	if _, ok := setmap["ChecklistsJSON"]; ok {
 		return errors.New("checklist changes require a task activity revision")
+	}
+	if _, ok := setmap["TaskActivityRevision"]; ok {
+		return errors.New("task activity revision cannot be updated directly")
 	}
 
 	_, err := s.store.execBuilder(s.store.db, sq.

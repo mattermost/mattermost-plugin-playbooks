@@ -96,7 +96,8 @@ type PlaybookRun struct {
 	// UpdateAt is the timestamp, in milliseconds since epoch, of when the playbook run was last modified.
 	UpdateAt int64 `json:"update_at"`
 
-	TaskActivityRevision int64 `json:"-"`
+	TaskActivityRevision int64             `json:"-"`
+	TaskActivitySync     *TaskActivitySync `json:"task_activity_sync,omitempty"`
 
 	// EndAt is the timestamp, in milliseconds since epoch, of when the playbook run was ended.
 	// If 0, the run is still ongoing.
@@ -307,6 +308,14 @@ func (r PlaybookRun) Auditable() map[string]any {
 	}
 }
 
+type TaskActivitySync struct {
+	Version      int    `json:"version"`
+	Epoch        string `json:"epoch"`
+	BaseRevision string `json:"base_revision,omitempty"`
+	Revision     string `json:"revision"`
+	Complete     bool   `json:"complete"`
+}
+
 // PlaybookRunUpdate represents an incremental update to a playbook run
 type PlaybookRunUpdate struct {
 	// ID is the unique identifier of the playbook run.
@@ -316,7 +325,8 @@ type PlaybookRunUpdate struct {
 	PlaybookRunUpdatedAt int64 `json:"playbook_run_updated_at"`
 
 	// ChangedFields contains only the fields that have changed in the playbook run
-	ChangedFields map[string]interface{} `json:"changed_fields"`
+	ChangedFields    map[string]interface{} `json:"changed_fields"`
+	TaskActivitySync *TaskActivitySync      `json:"task_activity_sync,omitempty"`
 
 	// ChecklistDeletes contains IDs of deleted checklists
 	ChecklistDeletes []string `json:"checklist_deletes,omitempty"`
