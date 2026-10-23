@@ -1144,7 +1144,19 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	model.AddEventParameterToAuditRec(auditRec, "eventCreateAt", event.CreateAt)
 
 	event.DeleteAt = model.GetMillis()
-	if err = s.store.UpdateTimelineEvent(event); err != nil {
+	var committedUpdate *PlaybookRunUpdate
+	if event.EventType == TaskStateModified {
+		if resultStore, ok := s.store.(interface {
+			RemoveTaskStateTimelineEventWithUpdate(*TimelineEvent) (*PlaybookRunUpdate, error)
+		}); ok {
+			committedUpdate, err = resultStore.RemoveTaskStateTimelineEventWithUpdate(event)
+		} else {
+			err = s.store.UpdateTimelineEvent(event)
+		}
+	} else {
+		err = s.store.UpdateTimelineEvent(event)
+	}
+	if err != nil {
 		err := errors.Wrapf(err, "failed to update timeline event (eventID: %s) to mark as deleted in run (runID: %s)", eventID, playbookRunID)
 		auditRec.AddErrorDesc(err.Error())
 		return err
@@ -1157,6 +1169,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 		return err
 	}
 
+	playbookRunModified.CommittedTaskActivityUpdate = committedUpdate
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunModified)
 
 	// Mark success and add result state for audit

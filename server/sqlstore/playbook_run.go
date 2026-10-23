@@ -1048,31 +1048,45 @@ func (s *playbookRunStore) UpdateTimelineEvent(event *app.TimelineEvent) error {
 	return nil
 }
 func (s *playbookRunStore) removeTaskStateTimelineEvent(event *app.TimelineEvent) error {
+	_, err := s.RemoveTaskStateTimelineEventWithUpdate(event)
+	return err
+}
+
+func (s *playbookRunStore) RemoveTaskStateTimelineEventWithUpdate(event *app.TimelineEvent) (*app.PlaybookRunUpdate, error) {
 	tx, err := s.store.db.Beginx()
 	if err != nil {
-		return errors.Wrap(err, "could not begin task event removal transaction")
+		return nil, errors.Wrap(err, "could not begin task event removal transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := s.store.lockTaskActivityCertificationForWrite(tx); err != nil {
-		return err
+	certification, err := s.store.lockTaskActivityCertificationForWrite(tx)
+	if err != nil {
+		return nil, err
 	}
 
-	var checklistsJSON []byte
-	if err := tx.Get(&checklistsJSON, `SELECT ChecklistsJSON FROM IR_Incident WHERE ID = $1 FOR UPDATE`, event.PlaybookRunID); err != nil {
-		return errors.Wrap(err, "could not lock run for task event removal")
+	var locked struct {
+		ChecklistsJSON       []byte
+		TaskActivityRevision int64
+		UpdateAt             int64
+	}
+	if err := tx.Get(&locked, `SELECT ChecklistsJSON, TaskActivityRevision, UpdateAt FROM IR_Incident WHERE ID = $1 FOR UPDATE`, event.PlaybookRunID); err != nil {
+		return nil, errors.Wrap(err, "could not lock run for task event removal")
 	}
 	var storedDeleteAt int64
 	if err := tx.Get(&storedDeleteAt, `SELECT DeleteAt FROM IR_TimelineEvent WHERE ID = $1 AND IncidentID = $2 AND EventType = $3 FOR UPDATE`, event.ID, event.PlaybookRunID, string(app.TaskStateModified)); err != nil {
-		return errors.Wrap(err, "could not lock task event for removal")
+		return nil, errors.Wrap(err, "could not lock task event for removal")
 	}
 	if storedDeleteAt != 0 {
-		return nil
+		return nil, nil
 	}
 
 	var checklists []app.Checklist
-	if err := json.Unmarshal(checklistsJSON, &checklists); err != nil {
-		return errors.Wrap(err, "could not decode checklists for task event removal")
+	if err := json.Unmarshal(locked.ChecklistsJSON, &checklists); err != nil {
+		return nil, errors.Wrap(err, "could not decode checklists for task event removal")
+	}
+	before := make([]app.Checklist, len(checklists))
+	for ci := range checklists {
+		before[ci] = checklists[ci].Clone()
 	}
 	for ci := range checklists {
 		for ii := range checklists[ci].Items {
@@ -1084,18 +1098,39 @@ func (s *playbookRunStore) removeTaskStateTimelineEvent(event *app.TimelineEvent
 	}
 	encodedChecklists, err := json.Marshal(checklists)
 	if err != nil {
-		return errors.Wrap(err, "could not encode checklists for task event removal")
+		return nil, errors.Wrap(err, "could not encode checklists for task event removal")
 	}
 	if _, err := tx.Exec(`UPDATE IR_TimelineEvent SET DeleteAt = $1 WHERE ID = $2 AND IncidentID = $3`, event.DeleteAt, event.ID, event.PlaybookRunID); err != nil {
-		return errors.Wrap(err, "could not remove task event")
+		return nil, errors.Wrap(err, "could not remove task event")
 	}
 	if _, err := tx.Exec(`UPDATE IR_Incident SET ChecklistsJSON = $1, UpdateAt = GREATEST(UpdateAt + 1, $2), TaskActivityRevision = TaskActivityRevision + 1 WHERE ID = $3`, string(encodedChecklists), event.DeleteAt, event.PlaybookRunID); err != nil {
-		return errors.Wrap(err, "could not update run after task event removal")
+		return nil, errors.Wrap(err, "could not update run after task event removal")
+	}
+	var update *app.PlaybookRunUpdate
+	if certification.Enabled && certification.Epoch != "" {
+		checklistUpdates, _ := app.GetChecklistUpdates(before, checklists)
+		changedFields := make(map[string]interface{})
+		if len(checklistUpdates) > 0 {
+			changedFields["checklists"] = checklistUpdates
+		}
+		update = &app.PlaybookRunUpdate{
+			ID:                   event.PlaybookRunID,
+			PlaybookRunUpdatedAt: max(locked.UpdateAt+1, event.DeleteAt),
+			ChangedFields:        changedFields,
+			TimelineEventDeletes: []string{event.ID},
+			TaskActivitySync: &app.TaskActivitySync{
+				Version:      1,
+				Epoch:        certification.Epoch,
+				BaseRevision: strconv.FormatInt(locked.TaskActivityRevision, 10),
+				Revision:     strconv.FormatInt(locked.TaskActivityRevision+1, 10),
+				Complete:     false,
+			},
+		}
 	}
 	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit task event removal")
+		return nil, errors.Wrap(err, "could not commit task event removal")
 	}
-	return nil
+	return update, nil
 }
 
 // GetPlaybookRun gets a playbook run by ID.

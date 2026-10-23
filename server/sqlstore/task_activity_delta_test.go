@@ -87,3 +87,45 @@ func TestChecklistWriterCapturesDeltaAndClearsStaleSnapshotMetadata(t *testing.T
 	require.Nil(t, committed.CommittedTaskActivityUpdate)
 	require.Equal(t, int64(1), committed.TaskActivityRevision)
 }
+
+func TestTaskEventRemovalCapturesDeletionAndLinkClear(t *testing.T) {
+	db := setupTestDB(t)
+	runStore := setupPlaybookRunStore(t, db)
+	sqlStore := setupSQLStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	created, err := runStore.CreatePlaybookRun(NewBuilder(t).WithChecklists([]int{1}).ToPlaybookRun())
+	require.NoError(t, err)
+	createPlaybookRunChannel(t, sqlStore, created)
+	cert, err := sqlStore.ActivateTaskActivityCertification(context.Background(), 0)
+	require.NoError(t, err)
+	previous, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	checked := previous.Clone()
+	checked.Checklists[0].Items[0].State = app.ChecklistItemStateClosed
+	checked.Checklists[0].Items[0].StateModified = 12345
+	_, event, err := runStore.UpdatePlaybookRunWithTimelineEvent(previous, checked, taskStateRevisionEvent(created.ID, checked.Checklists[0].Items[0].ID, 12345, "check"), 0, 0)
+	require.NoError(t, err)
+	event.DeleteAt = 12346
+	update, err := runStore.(interface {
+		RemoveTaskStateTimelineEventWithUpdate(*app.TimelineEvent) (*app.PlaybookRunUpdate, error)
+	}).RemoveTaskStateTimelineEventWithUpdate(event)
+	require.NoError(t, err)
+	require.Equal(t, cert.Epoch, update.TaskActivitySync.Epoch)
+	require.Equal(t, "1", update.TaskActivitySync.BaseRevision)
+	require.Equal(t, "2", update.TaskActivitySync.Revision)
+	require.Equal(t, []string{event.ID}, update.TimelineEventDeletes)
+	checklistUpdates := update.ChangedFields["checklists"].([]app.ChecklistUpdate)
+	require.Len(t, checklistUpdates, 1)
+	require.Len(t, checklistUpdates[0].ItemUpdates, 1)
+	link, present := checklistUpdates[0].ItemUpdates[0].Fields["state_event_id"]
+	require.True(t, present)
+	require.Nil(t, link)
+
+	duplicate, err := runStore.(interface {
+		RemoveTaskStateTimelineEventWithUpdate(*app.TimelineEvent) (*app.PlaybookRunUpdate, error)
+	}).RemoveTaskStateTimelineEventWithUpdate(event)
+	require.NoError(t, err)
+	require.Nil(t, duplicate)
+}
