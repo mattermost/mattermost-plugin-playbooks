@@ -2511,6 +2511,23 @@ func (s *PlaybookRunServiceImpl) modifyCheckedStateWithTaskActivitySync(playbook
 	return playbookRunToModify.CommittedTaskActivityUpdate, nil
 }
 
+func committedChecklistRunForWS(run *PlaybookRun, event *TimelineEvent) *PlaybookRun {
+	if run.CommittedTaskActivityUpdate == nil {
+		return nil
+	}
+	if event != nil {
+		update := *run.CommittedTaskActivityUpdate
+		changedFields := make(map[string]interface{}, len(update.ChangedFields)+1)
+		for key, value := range update.ChangedFields {
+			changedFields[key] = value
+		}
+		changedFields["timeline_events"] = []TimelineEvent{*event}
+		update.ChangedFields = changedFields
+		run.CommittedTaskActivityUpdate = &update
+	}
+	return run
+}
+
 func committedTaskStateRunForWS(run *PlaybookRun) *PlaybookRun {
 	if run.CommittedTaskActivityUpdate != nil {
 		return run
@@ -2637,7 +2654,7 @@ func (s *PlaybookRunServiceImpl) SetAssigneeOnlyComplete(playbookRunID, userID s
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, committedChecklistRunForWS(playbookRunToModify, nil))
 
 	auditRec.Success()
 	auditRec.AddEventResultState(*playbookRunToModify)
@@ -2745,7 +2762,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, committedChecklistRunForWS(playbookRunToModify, event))
 
 	// Mark success and add result state for audit
 	auditRec.Success()
@@ -2859,7 +2876,7 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, committedChecklistRunForWS(playbookRun, event))
 
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
@@ -2953,7 +2970,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, committedChecklistRunForWS(playbookRunToModify, event))
 
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
