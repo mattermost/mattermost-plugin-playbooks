@@ -779,7 +779,8 @@ func (s *playbookRunStore) UpdatePlaybookRunWithTimelineEvent(previous, updated 
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := s.store.lockTaskActivityCertificationForWrite(tx); err != nil {
+	certification, err := s.store.lockTaskActivityCertificationForWrite(tx)
+	if err != nil {
 		return nil, nil, err
 	}
 
@@ -829,6 +830,31 @@ func (s *playbookRunStore) UpdatePlaybookRunWithTimelineEvent(previous, updated 
 		}))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to insert task state timeline event")
+	}
+	if certification.Enabled && certification.Epoch != "" {
+		before := current.Clone()
+		after := current.Clone()
+		after.Checklists = updated.Checklists
+		after.TimelineEvents = []app.TimelineEvent{*event}
+		changes := app.DetectChangedFields(before, after)
+		coveredChanges := make(map[string]interface{})
+		for _, field := range []string{"checklists", "timeline_events", "items_order"} {
+			if change, ok := changes[field]; ok {
+				coveredChanges[field] = change
+			}
+		}
+		updated.CommittedTaskActivityUpdate = &app.PlaybookRunUpdate{
+			ID:                   updated.ID,
+			PlaybookRunUpdatedAt: updated.UpdateAt,
+			ChangedFields:        coveredChanges,
+			TaskActivitySync: &app.TaskActivitySync{
+				Version:      1,
+				Epoch:        certification.Epoch,
+				BaseRevision: strconv.FormatInt(current.TaskActivityRevision, 10),
+				Revision:     strconv.FormatInt(updated.TaskActivityRevision, 10),
+				Complete:     false,
+			},
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, nil, errors.Wrap(err, "could not commit task state transaction")

@@ -99,6 +99,9 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 	// Determine if incremental updates are enabled
 	if !s.configService.IsIncrementalUpdatesEnabled() {
+		if currentRun != nil && currentRun.CommittedTaskActivityUpdate != nil {
+			currentRun = nil
+		}
 		if currentRun != nil {
 			currentRun.ComputeTaskProgress()
 		}
@@ -108,6 +111,15 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 			PlaybookRun:       currentRun,
 		}
 		s.sendPlaybookRunUpdatedWS(playbookRunID, withRunWSOptions(&sendWSOptions))
+		return
+	}
+
+	if currentRun != nil && currentRun.CommittedTaskActivityUpdate != nil {
+		update := *currentRun.CommittedTaskActivityUpdate
+		s.poster.PublishWebsocketEventToChannelReliable(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
+		for _, nonMember := range s.getNonMembersIDs(currentRun.ChannelID, additionalUserIDs) {
+			s.poster.PublishWebsocketEventToUserReliable(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
+		}
 		return
 	}
 
@@ -2355,6 +2367,15 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 // When checking off a task that has requirements, opts may supply RequirementValues; all
 // requirements must have non-empty values or the call fails.
 func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int, opts ...ModifyCheckedStateOptions) error {
+	_, err := s.modifyCheckedStateWithTaskActivitySync(playbookRunID, userID, newState, checklistNumber, itemNumber, opts...)
+	return err
+}
+
+func (s *PlaybookRunServiceImpl) ModifyCheckedStateWithTaskActivitySync(playbookRunID, userID, newState string, checklistNumber, itemNumber int, opts ...ModifyCheckedStateOptions) (*PlaybookRunUpdate, error) {
+	return s.modifyCheckedStateWithTaskActivitySync(playbookRunID, userID, newState, checklistNumber, itemNumber, opts...)
+}
+
+func (s *PlaybookRunServiceImpl) modifyCheckedStateWithTaskActivitySync(playbookRunID, userID, newState string, checklistNumber, itemNumber int, opts ...ModifyCheckedStateOptions) (*PlaybookRunUpdate, error) {
 	auditRec := plugin.MakeAuditRecord("modifyChecklistItemState", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -2367,11 +2388,11 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indicies")
+		return nil, errors.New("invalid checklist item indicies")
 	}
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -2405,7 +2426,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 			}
 		}
 		if err := ValidateTaskRequirements(itemToCheck.Requirements); err != nil {
-			return errors.Wrap(ErrMalformedPlaybookRun, err.Error())
+			return nil, errors.Wrap(ErrMalformedPlaybookRun, err.Error())
 		}
 	}
 
@@ -2414,18 +2435,18 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	if newState == ChecklistItemStateClosed && len(itemToCheck.Requirements) > 0 && s.configService.IsTaskRequirementsEnabled() {
 		for _, req := range itemToCheck.Requirements {
 			if strings.TrimSpace(req.Value) == "" {
-				return errors.Wrap(ErrMalformedPlaybookRun, "all task requirements must be filled before checking off")
+				return nil, errors.Wrap(ErrMalformedPlaybookRun, "all task requirements must be filled before checking off")
 			}
 		}
 	}
 
 	if newState == itemToCheck.State && !requirementsChanged {
 		auditRec.Success()
-		return nil
+		return nil, nil
 	}
 
 	if err := checkAssigneeOnlyComplete(itemToCheck, userID); err != nil {
-		return err
+		return nil, err
 	}
 
 	stateChanged := newState != itemToCheck.State
@@ -2460,13 +2481,13 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 
 	event, err := s.buildTaskStateModifiedEvent(playbookRunID, userID, action, itemToCheck, timestamp)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	playbookRunToModify, _, err = s.store.UpdatePlaybookRunWithTimelineEvent(previousRun, playbookRunToModify, event, checklistNumber, itemNumber)
 	if err != nil {
-		return errors.Wrap(err, "failed to commit task state and timeline event")
+		return nil, errors.Wrap(err, "failed to commit task state and timeline event")
 	}
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, committedTaskStateRunForWS(playbookRunToModify))
 
 	// Mark success and add result state for audit
 	auditRec.Success()
@@ -2474,6 +2495,13 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	model.AddEventParameterToAuditRec(auditRec, "finalState", newState)
 	auditRec.AddEventResultState(*playbookRunToModify)
 
+	return playbookRunToModify.CommittedTaskActivityUpdate, nil
+}
+
+func committedTaskStateRunForWS(run *PlaybookRun) *PlaybookRun {
+	if run.CommittedTaskActivityUpdate != nil {
+		return run
+	}
 	return nil
 }
 
@@ -3532,6 +3560,15 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 
 // SkipChecklistItem skips the item at the given index from the given checklist
 func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	_, err := s.skipChecklistItemWithTaskActivitySync(playbookRunID, userID, checklistNumber, itemNumber)
+	return err
+}
+
+func (s *PlaybookRunServiceImpl) SkipChecklistItemWithTaskActivitySync(playbookRunID, userID string, checklistNumber, itemNumber int) (*PlaybookRunUpdate, error) {
+	return s.skipChecklistItemWithTaskActivitySync(playbookRunID, userID, checklistNumber, itemNumber)
+}
+
+func (s *PlaybookRunServiceImpl) skipChecklistItemWithTaskActivitySync(playbookRunID, userID string, checklistNumber, itemNumber int) (*PlaybookRunUpdate, error) {
 	auditRec := plugin.MakeAuditRecord("skipChecklistItem", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -3543,7 +3580,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	itemToSkip := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -3554,7 +3591,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 
 	if itemToSkip.State == ChecklistItemStateSkipped {
 		auditRec.Success()
-		return nil
+		return nil, nil
 	}
 
 	previousRun := playbookRunToModify.Clone()
@@ -3572,16 +3609,14 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	skippedItem := *itemToSkip
 	event, err := s.buildTaskStateModifiedEvent(playbookRunID, userID, taskStateActionSkip, skippedItem, timestamp)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	playbookRunToModify, _, err = s.store.UpdatePlaybookRunWithTimelineEvent(previousRun, playbookRunToModify, event, checklistNumber, itemNumber)
 	if err != nil {
-		return errors.Wrap(err, "failed to commit task state and timeline event")
+		return nil, errors.Wrap(err, "failed to commit task state and timeline event")
 	}
 
-	// Pass a nil current run so the run is refetched and the WS payload carries the timeline event
-	// created just above; passing the in-memory run would broadcast a stale event list.
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, committedTaskStateRunForWS(playbookRunToModify))
 
 	// Mark success and add result state for audit
 	auditRec.Success()
@@ -3589,7 +3624,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	model.AddEventParameterToAuditRec(auditRec, "finalState", ChecklistItemStateSkipped)
 	auditRec.AddEventResultState(*playbookRunToModify)
 
-	return nil
+	return playbookRunToModify.CommittedTaskActivityUpdate, nil
 }
 
 // buildTaskStateModifiedEvent prepares a task_state_modified timeline event for a checklist item
@@ -3622,6 +3657,15 @@ func (s *PlaybookRunServiceImpl) buildTaskStateModifiedEvent(playbookRunID, user
 
 // RestoreChecklistItem restores the item at the given index from the given checklist
 func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	_, err := s.restoreChecklistItemWithTaskActivitySync(playbookRunID, userID, checklistNumber, itemNumber)
+	return err
+}
+
+func (s *PlaybookRunServiceImpl) RestoreChecklistItemWithTaskActivitySync(playbookRunID, userID string, checklistNumber, itemNumber int) (*PlaybookRunUpdate, error) {
+	return s.restoreChecklistItemWithTaskActivitySync(playbookRunID, userID, checklistNumber, itemNumber)
+}
+
+func (s *PlaybookRunServiceImpl) restoreChecklistItemWithTaskActivitySync(playbookRunID, userID string, checklistNumber, itemNumber int) (*PlaybookRunUpdate, error) {
 	auditRec := plugin.MakeAuditRecord("restoreChecklistItem", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -3633,7 +3677,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	itemToRestore := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -3644,7 +3688,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 
 	if itemToRestore.State != ChecklistItemStateSkipped {
 		auditRec.Success()
-		return nil
+		return nil, nil
 	}
 
 	previousRun := playbookRunToModify.Clone()
@@ -3661,15 +3705,14 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 	restoredItem := *itemToRestore
 	event, err := s.buildTaskStateModifiedEvent(playbookRunID, userID, taskStateActionRestore, restoredItem, timestamp)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	playbookRunToModify, _, err = s.store.UpdatePlaybookRunWithTimelineEvent(previousRun, playbookRunToModify, event, checklistNumber, itemNumber)
 	if err != nil {
-		return errors.Wrap(err, "failed to commit task state and timeline event")
+		return nil, errors.Wrap(err, "failed to commit task state and timeline event")
 	}
 
-	// A nil current run forces a refetch so the new timeline event ships with the WS payload.
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, committedTaskStateRunForWS(playbookRunToModify))
 
 	// Mark success and add result state for audit
 	auditRec.Success()
@@ -3677,7 +3720,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 	model.AddEventParameterToAuditRec(auditRec, "finalState", ChecklistItemStateOpen)
 	auditRec.AddEventResultState(*playbookRunToModify)
 
-	return nil
+	return playbookRunToModify.CommittedTaskActivityUpdate, nil
 }
 
 // EditChecklistItem changes the title of a specified checklist item

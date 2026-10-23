@@ -96,8 +96,9 @@ type PlaybookRun struct {
 	// UpdateAt is the timestamp, in milliseconds since epoch, of when the playbook run was last modified.
 	UpdateAt int64 `json:"update_at"`
 
-	TaskActivityRevision int64             `json:"-"`
-	TaskActivitySync     *TaskActivitySync `json:"task_activity_sync,omitempty"`
+	TaskActivityRevision        int64              `json:"-"`
+	TaskActivitySync            *TaskActivitySync  `json:"task_activity_sync,omitempty"`
+	CommittedTaskActivityUpdate *PlaybookRunUpdate `json:"-"`
 
 	// EndAt is the timestamp, in milliseconds since epoch, of when the playbook run was ended.
 	// If 0, the run is still ongoing.
@@ -779,6 +780,9 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			}
 			if prev.StateModified != item.StateModified {
 				fields["state_modified"] = item.StateModified
+			}
+			if !reflect.DeepEqual(prev.StateEventID, item.StateEventID) {
+				fields["state_event_id"] = item.StateEventID
 			}
 			if prev.AssigneeID != item.AssigneeID {
 				fields["assignee_id"] = item.AssigneeID
