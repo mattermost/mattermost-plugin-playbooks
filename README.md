@@ -11,10 +11,10 @@ Mattermost Playbooks allows your team to create and run playbooks from within Ma
 | Mattermost version | Playbooks version | Supported Until |
 |---|---|---|
 | master | v2.12.1 | always |
-| v12.0 | v2.12.1 | TBD |
+| v12.1 | v2.12.1 | TBD |
+| v12.0 | v2.12.1 | 2027-01-15 |
 | v11.11 | v2.11.4 | 2026-12-15 |
 | v11.10 | v2.11.4 | 2026-11-15 |
-| v11.9 | v2.10.4 | 2026-10-15 |
 | v11.7 ESR | v2.9.6 | 2027-05-15 |
 
 ## Development Builds
