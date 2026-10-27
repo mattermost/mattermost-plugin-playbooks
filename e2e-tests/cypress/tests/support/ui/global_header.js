@@ -1,12 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// Matches both the accessible product menu (mattermost/mattermost#38561) and the
+// legacy one, so tests keep working against servers built before that change.
 Cypress.Commands.add('uiGetProductMenuButton', () => {
-    return cy.findByRole('button', {name: 'Product switch menu'}).should('be.visible');
+    return cy.findByRole('button', {name: /^(Open product menu|Product switch menu)$/}).should('be.visible');
 });
 
 Cypress.Commands.add('uiGetProductMenu', () => {
-    return cy.get('.product-switcher-menu').should('be.visible');
+    return cy.get('[role="menu"][aria-label="Product menu"], .product-switcher-menu').should('be.visible');
 });
 
 Cypress.Commands.add('uiOpenProductMenu', (item = '') => {
