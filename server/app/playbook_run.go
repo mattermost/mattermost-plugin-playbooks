@@ -1268,6 +1268,10 @@ type PlaybookRunService interface {
 	// Call before CreatePlaybookRun to surface template errors before a run number is consumed.
 	ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) error
 
+	// PublishRunEventToViewers sends a websocket event carrying run data only to the users
+	// allowed to view the run, plus any additionalUserIDs that pass the same check.
+	PublishRunEventToViewers(event string, payload interface{}, run *PlaybookRun, additionalUserIDs ...string)
+
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook) error
 
