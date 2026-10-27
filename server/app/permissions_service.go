@@ -82,10 +82,6 @@ func (p *PermissionsService) hasPermissionToTeam(cache teamPermCache, userID, te
 	return allowed
 }
 
-func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) []string {
-	return p.getPlaybookRoleCached(nil, userID, playbook)
-}
-
 func (p *PermissionsService) getPlaybookRoleCached(cache teamPermCache, userID string, playbook Playbook) []string {
 	if !p.canViewTeamCached(cache, userID, playbook.TeamID) {
 		return []string{}
