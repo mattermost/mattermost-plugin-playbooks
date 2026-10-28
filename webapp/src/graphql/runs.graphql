@@ -6,8 +6,8 @@ mutation UpdateRun($id: String!, $updates: RunUpdates!) {
   updateRun(id: $id, updates: $updates)
 }
 
-mutation AddRunParticipants($runID: String!, $userIDs: [String!]!, $forceAddToChannel: Boolean = false) {
-	addRunParticipants(runID: $runID, userIDs: $userIDs, forceAddToChannel: $forceAddToChannel)
+mutation AddRunParticipants($runID: String!, $userIDs: [String!]!, $groupIDs: [String!]! = [], $forceAddToChannel: Boolean = false) {
+	addRunParticipants(runID: $runID, userIDs: $userIDs, groupIDs: $groupIDs, forceAddToChannel: $forceAddToChannel)
 }
 
 mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
