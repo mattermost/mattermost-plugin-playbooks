@@ -4,6 +4,7 @@
 package sqlstore
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -514,11 +515,13 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
+	retainCommittedStateEventLinks(nil, playbookRun.Checklists, nil)
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
 		return nil, err
 	}
+	playbookRun.ChecklistsJSONAsRead = rawPlaybookRun.ChecklistsJSON
 
 	if rawPlaybookRun.Type != app.RunTypeChannelChecklist && rawPlaybookRun.Type != app.RunTypePlaybook {
 		rawPlaybookRun.Type = app.RunTypePlaybook
@@ -612,7 +615,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, err
 	}
 
-	updated, err := s.updatePlaybookRunInTx(tx, playbookRun, certification)
+	updated, err := s.updatePlaybookRunInTx(tx, playbookRun, certification, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -622,7 +625,14 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	return updated, nil
 }
 
-func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.PlaybookRun, certification TaskActivityCertification) (*app.PlaybookRun, error) {
+// committedStateEventLink is the one task-to-event link a write may set: the task state change
+// whose event commits in the same transaction.
+type committedStateEventLink struct {
+	itemID  string
+	eventID string
+}
+
+func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.PlaybookRun, certification TaskActivityCertification, newLink *committedStateEventLink) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
 	}
@@ -645,22 +655,33 @@ func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.P
 	if err := tx.Get(&current, `SELECT ChecklistsJSON, TaskActivityRevision FROM IR_Incident WHERE ID = $1 FOR UPDATE`, playbookRun.ID); err != nil {
 		return nil, errors.Wrap(err, "could not lock playbook run for update")
 	}
-	if current.TaskActivityRevision != playbookRun.TaskActivityRevision {
-		return nil, errors.New("playbook run task activity revision changed during update")
-	}
 	var previousChecklists []app.Checklist
 	if err := json.Unmarshal(current.ChecklistsJSON, &previousChecklists); err != nil {
 		return nil, errors.Wrap(err, "could not decode current run checklists")
 	}
-	clearUnattributedStateEventLinks(previousChecklists, playbookRun.Checklists)
+	if current.TaskActivityRevision != playbookRun.TaskActivityRevision {
+		unchanged, err := checklistsUnchangedSinceRead(playbookRun)
+		if err != nil {
+			return nil, err
+		}
+		if !unchanged {
+			return nil, errors.New("playbook run task activity revision changed during update")
+		}
+		// The writer read the run before a concurrent checklist change and left the checklists
+		// alone, so it carries a stale copy. Keep the committed checklists instead of reverting them.
+		playbookRun.Checklists = previousChecklists
+		playbookRun.TaskActivityRevision = current.TaskActivityRevision
+	}
+	retainCommittedStateEventLinks(previousChecklists, playbookRun.Checklists, newLink)
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
 		return nil, err
 	}
-	var checklistChanged bool
-	if err := tx.Get(&checklistChanged, `SELECT ChecklistsJSON::jsonb IS DISTINCT FROM $2::jsonb FROM IR_Incident WHERE ID = $1`, playbookRun.ID, string(rawPlaybookRun.ChecklistsJSON)); err != nil {
-		return nil, errors.Wrap(err, "could not compare run checklists")
+	playbookRun.ChecklistsJSONAsRead = rawPlaybookRun.ChecklistsJSON
+	checklistChanged, err := checklistsDiffer(previousChecklists, playbookRun.Checklists)
+	if err != nil {
+		return nil, err
 	}
 	if checklistChanged {
 		playbookRun.TaskActivityRevision++
@@ -738,23 +759,75 @@ func (s *playbookRunStore) updatePlaybookRunInTx(tx *sqlx.Tx, playbookRun *app.P
 	return playbookRun, nil
 }
 
-func clearUnattributedStateEventLinks(previous, updated []app.Checklist) {
+// retainCommittedStateEventLinks drops every task-to-event link the store did not commit. A task
+// keeps its link only while its state is still the one that event recorded, or when newLink sets
+// it in this write. Links supplied by clients, copied by task duplication or carried over from a
+// playbook are never trusted: a certified read hands them to mobile, which rejects the run.
+func retainCommittedStateEventLinks(previous, updated []app.Checklist, newLink *committedStateEventLink) {
 	itemsByID := make(map[string]app.ChecklistItem)
 	for _, checklist := range previous {
 		for _, item := range checklist.Items {
 			itemsByID[item.ID] = item
 		}
 	}
+	seen := make(map[string]bool)
 	for ci := range updated {
 		for ii := range updated[ci].Items {
 			item := &updated[ci].Items[ii]
-			old, found := itemsByID[item.ID]
-			if found && old.StateEventID != nil && item.StateEventID != nil && *old.StateEventID == *item.StateEventID &&
-				(old.State != item.State || old.StateModified != item.StateModified) {
-				item.StateEventID = nil
+			firstWithID := !seen[item.ID]
+			seen[item.ID] = true
+			if item.StateEventID == nil {
+				continue
 			}
+			if firstWithID && newLink != nil && item.ID == newLink.itemID && *item.StateEventID == newLink.eventID {
+				continue
+			}
+			old, found := itemsByID[item.ID]
+			if firstWithID && found && old.StateEventID != nil && *old.StateEventID == *item.StateEventID &&
+				old.State == item.State && old.StateModified == item.StateModified {
+				continue
+			}
+			item.StateEventID = nil
 		}
 	}
+}
+
+// checklistsUnchangedSinceRead reports whether the run's checklists still match what the store
+// returned when the run was read. A run the store did not return is assumed changed.
+func checklistsUnchangedSinceRead(playbookRun *app.PlaybookRun) (bool, error) {
+	if playbookRun.ChecklistsJSONAsRead == nil {
+		return false, nil
+	}
+	var asRead []app.Checklist
+	if err := json.Unmarshal(playbookRun.ChecklistsJSONAsRead, &asRead); err != nil {
+		return false, errors.Wrap(err, "could not decode run checklists as read")
+	}
+	differ, err := checklistsDiffer(asRead, playbookRun.Checklists)
+	return !differ, err
+}
+
+// checklistsDiffer compares checklists by content rather than by stored encoding. Older plugin
+// versions stored items_order and omitted state_event_id, so equal checklists can be encoded
+// differently.
+func checklistsDiffer(a, b []app.Checklist) (bool, error) {
+	canonicalA, err := canonicalChecklistsJSON(a)
+	if err != nil {
+		return false, err
+	}
+	canonicalB, err := canonicalChecklistsJSON(b)
+	if err != nil {
+		return false, err
+	}
+	return !bytes.Equal(canonicalA, canonicalB), nil
+}
+
+func canonicalChecklistsJSON(checklists []app.Checklist) ([]byte, error) {
+	canonical := make([]app.Checklist, len(checklists))
+	for i, checklist := range checklists {
+		// Clone drops ItemsOrder, which is derived from the order of Items.
+		canonical[i] = checklist.Clone()
+	}
+	return checklistsToJSON(canonical)
 }
 
 func mergeTaskStateMutation(previous, updated, current *app.PlaybookRun, checklistNumber, itemNumber int) (*app.PlaybookRun, error) {
@@ -829,14 +902,15 @@ func (s *playbookRunStore) UpdatePlaybookRunWithTimelineEvent(previous, updated 
 	event = &eventCopy
 	event.ID = model.NewId()
 	updated = updated.Clone()
+	itemID := previous.Checklists[checklistNumber].Items[itemNumber].ID
 	for ci := range updated.Checklists {
 		for ii := range updated.Checklists[ci].Items {
-			if updated.Checklists[ci].Items[ii].ID == previous.Checklists[checklistNumber].Items[itemNumber].ID {
+			if updated.Checklists[ci].Items[ii].ID == itemID {
 				updated.Checklists[ci].Items[ii].StateEventID = &event.ID
 			}
 		}
 	}
-	updated, err = s.updatePlaybookRunInTx(tx, updated, certification)
+	updated, err = s.updatePlaybookRunInTx(tx, updated, certification, &committedStateEventLink{itemID: itemID, eventID: event.ID})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1584,6 +1658,7 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 	if err := json.Unmarshal(rawPlaybookRun.ChecklistsJSON, &playbookRun.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for playbook run id: %s", rawPlaybookRun.ID)
 	}
+	playbookRun.ChecklistsJSONAsRead = rawPlaybookRun.ChecklistsJSON
 
 	playbookRun.InvitedUserIDs = []string(nil)
 	if rawPlaybookRun.ConcatenatedInvitedUserIDs != "" {

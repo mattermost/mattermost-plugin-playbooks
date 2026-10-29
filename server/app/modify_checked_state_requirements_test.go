@@ -198,6 +198,15 @@ func TestCleanUpChecklists_ClearsRequirementValues(t *testing.T) {
 	assert.Equal(t, "", checklists[0].Items[0].Requirements[0].Value)
 }
 
+func TestCleanUpChecklists_ClearsStateEventID(t *testing.T) {
+	eventID := "event-from-another-run"
+	checklists := []Checklist{{Items: []ChecklistItem{{Title: "Task", StateEventID: &eventID}}}}
+
+	CleanUpChecklists(checklists)
+
+	assert.Nil(t, checklists[0].Items[0].StateEventID, "a playbook task has no state of its own, so it cannot link to a state event")
+}
+
 func TestAddChecklist_RequirementsValidation(t *testing.T) {
 	t.Run("rejects adding checklist item with requirements and enabled task actions", func(t *testing.T) {
 		run := baseRunWithRequirement("")

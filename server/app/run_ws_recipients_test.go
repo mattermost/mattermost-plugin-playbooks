@@ -357,6 +357,64 @@ func TestSendPlaybookRunObjectUpdatedWS_CertifiedDeltaReachesOnlyRunViewers(t *t
 	}
 }
 
+// TestSendPlaybookRunObjectUpdatedWS_CertifiedDeltaIsFollowedByUncoveredChanges covers the
+// fields a certified delta does not carry. They must still reach viewers, but in a separate
+// uncertified update: a client drops a certified delta for a revision it already applied from
+// the mutation response, so anything added to the delta would be lost along with it.
+func TestSendPlaybookRunObjectUpdatedWS_CertifiedDeltaIsFollowedByUncoveredChanges(t *testing.T) {
+	f := newRunWSFixture(t, privatePlaybook(), nil)
+	f.svc.configService = &stubConfigService{incrementalUpdates: true}
+	f.svc.licenseChecker = &stubLicenseCheckerNoAttributes{}
+	f.setChannelMembers(wsOwnerID, wsParticipantID, wsPBMemberID)
+	f.allowTeamView(wsOwnerID, wsParticipantID, wsPBMemberID)
+	f.grantPlaybookMemberView()
+
+	previous := privatePlaybookRun()
+	previous.Checklists = []Checklist{{ID: "checklist", Items: []ChecklistItem{{ID: "item", State: ChecklistItemStateOpen}}}}
+
+	committed := previous.Clone()
+	committed.Checklists[0].Items[0].State = ChecklistItemStateClosed
+	certified := PlaybookRunUpdate{
+		ID:               wsRunID,
+		ChangedFields:    map[string]interface{}{"checklists": []Checklist{}},
+		TaskActivitySync: &TaskActivitySync{Version: 1, Epoch: "epoch-ws", BaseRevision: "4", Revision: "5"},
+	}
+	committed.CommittedTaskActivityUpdate = &certified
+
+	// The assignee was added as a participant after the store committed the task change.
+	afterSideEffects := committed.Clone()
+	afterSideEffects.CommittedTaskActivityUpdate = nil
+	afterSideEffects.ParticipantIDs = append(afterSideEffects.ParticipantIDs, wsPBMemberID)
+	f.svc.store = &stubRunStoreGetOnly{run: afterSideEffects}
+
+	f.svc.sendPlaybookRunObjectUpdatedWS(wsRunID, previous, committed)
+
+	var ownerPayloads []interface{}
+	for i, userID := range f.usersNotified {
+		if userID == wsOwnerID {
+			ownerPayloads = append(ownerPayloads, f.userPayloads[i])
+		}
+	}
+	assert.Empty(t, f.channelBroadcast)
+	if !assert.Len(t, ownerPayloads, 2, "the certified delta and the uncovered changes go out as two updates") {
+		return
+	}
+	assert.Equal(t, certified, ownerPayloads[0], "the certified delta must match the mutation response for the same revision")
+
+	uncovered, ok := ownerPayloads[1].(PlaybookRunUpdate)
+	if !assert.True(t, ok) {
+		return
+	}
+	assert.Nil(t, uncovered.TaskActivitySync, "fields outside the certified delta are not revision-governed")
+	assert.Contains(t, uncovered.ChangedFields, "participant_ids", "a participant added after the store write must still be published")
+	assert.Contains(t, uncovered.ChangedFields, "task_completed")
+	for _, covered := range []string{"checklists", "items_order", "timeline_events"} {
+		assert.NotContains(t, uncovered.ChangedFields, covered, "only the certified delta may carry %s", covered)
+	}
+	assert.Empty(t, uncovered.ChecklistDeletes)
+	assert.Empty(t, uncovered.TimelineEventDeletes)
+}
+
 // TestGetRunAudienceIDs_DeduplicatesAndIncludesParticipants documents that a user appearing as
 // a channel member, a participant, and an additional recipient is only notified once.
 func TestGetRunAudienceIDs_DeduplicatesAndIncludesParticipants(t *testing.T) {

@@ -274,3 +274,6 @@ func (ci *UpdateChecklistItem) ClearRequirementValues() {
 		(*ci.Requirements)[i].Value = ""
 	}
 }
+
+// ClearStateEventID is a no-op: GraphQL playbook updates cannot carry a state event link.
+func (ci *UpdateChecklistItem) ClearStateEventID() {}

@@ -18,20 +18,20 @@ type TaskActivityCertification struct {
 	Generation int64  `db:"generation" json:"generation"`
 }
 
-func (s *SQLStore) GetTaskActivityCertification(ctx context.Context) (TaskActivityCertification, error) {
+func (sqlStore *SQLStore) GetTaskActivityCertification(ctx context.Context) (TaskActivityCertification, error) {
 	var certification TaskActivityCertification
-	err := s.db.GetContext(ctx, &certification, `SELECT Epoch, Enabled, Generation FROM IR_TaskActivityCertification WHERE ID = 1`)
+	err := sqlStore.db.GetContext(ctx, &certification, `SELECT Epoch, Enabled, Generation FROM IR_TaskActivityCertification WHERE ID = 1`)
 	return certification, errors.Wrap(err, "could not read task activity certification")
 }
 
-func (s *SQLStore) readTaskActivityCertification(tx *sqlx.Tx) (TaskActivityCertification, error) {
+func (sqlStore *SQLStore) readTaskActivityCertification(tx *sqlx.Tx) (TaskActivityCertification, error) {
 	var certification TaskActivityCertification
 	err := tx.Get(&certification, `SELECT Epoch, Enabled, Generation FROM IR_TaskActivityCertification WHERE ID = 1`)
 	return certification, errors.Wrap(err, "could not read task activity certification in transaction")
 }
 
 // Covered writers lock this row before the run row so activation can fence them across plugin nodes.
-func (s *SQLStore) lockTaskActivityCertificationForWrite(tx *sqlx.Tx) (TaskActivityCertification, error) {
+func (sqlStore *SQLStore) lockTaskActivityCertificationForWrite(tx *sqlx.Tx) (TaskActivityCertification, error) {
 	var certification TaskActivityCertification
 	err := tx.Get(&certification, `SELECT Epoch, Enabled, Generation FROM IR_TaskActivityCertification WHERE ID = 1 FOR SHARE`)
 	return certification, errors.Wrap(err, "could not lock task activity certification for write")
@@ -39,12 +39,12 @@ func (s *SQLStore) lockTaskActivityCertificationForWrite(tx *sqlx.Tx) (TaskActiv
 
 // ActivateTaskActivityCertification requires an external cluster-wide writer fence and a completed
 // audit of every covered writer. A new epoch is mandatory after any interval of uncertified writes.
-func (s *SQLStore) ActivateTaskActivityCertification(ctx context.Context, expectedGeneration int64) (TaskActivityCertification, error) {
-	tx, err := s.db.BeginTxx(ctx, nil)
+func (sqlStore *SQLStore) ActivateTaskActivityCertification(ctx context.Context, expectedGeneration int64) (TaskActivityCertification, error) {
+	tx, err := sqlStore.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return TaskActivityCertification{}, errors.Wrap(err, "could not begin task activity activation")
 	}
-	defer s.finalizeTransaction(tx)
+	defer sqlStore.finalizeTransaction(tx)
 
 	var certification TaskActivityCertification
 	if err := tx.GetContext(ctx, &certification, `SELECT Epoch, Enabled, Generation FROM IR_TaskActivityCertification WHERE ID = 1 FOR UPDATE`); err != nil {
@@ -70,12 +70,12 @@ func (s *SQLStore) ActivateTaskActivityCertification(ctx context.Context, expect
 	return certification, nil
 }
 
-func (s *SQLStore) DisableTaskActivityCertification(ctx context.Context) (TaskActivityCertification, error) {
-	tx, err := s.db.BeginTxx(ctx, nil)
+func (sqlStore *SQLStore) DisableTaskActivityCertification(ctx context.Context) (TaskActivityCertification, error) {
+	tx, err := sqlStore.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return TaskActivityCertification{}, errors.Wrap(err, "could not begin task activity disable")
 	}
-	defer s.finalizeTransaction(tx)
+	defer sqlStore.finalizeTransaction(tx)
 
 	var certification TaskActivityCertification
 	if err := tx.GetContext(ctx, &certification, `SELECT Epoch, Enabled, Generation FROM IR_TaskActivityCertification WHERE ID = 1 FOR UPDATE`); err != nil {

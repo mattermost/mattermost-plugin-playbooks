@@ -100,6 +100,12 @@ type PlaybookRun struct {
 	TaskActivitySync            *TaskActivitySync  `json:"task_activity_sync,omitempty"`
 	CommittedTaskActivityUpdate *PlaybookRunUpdate `json:"-"`
 
+	// ChecklistsJSONAsRead is the stored encoding of Checklists when the store returned this
+	// run. Only the store sets it: when a write carries a stale TaskActivityRevision, the store
+	// compares against it to tell a write that left the checklists alone, which is safe to
+	// apply, from one that would overwrite a concurrent checklist change.
+	ChecklistsJSONAsRead []byte `json:"-"`
+
 	// EndAt is the timestamp, in milliseconds since epoch, of when the playbook run was ended.
 	// If 0, the run is still ongoing.
 	EndAt int64 `json:"end_at"`

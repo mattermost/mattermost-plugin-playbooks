@@ -116,6 +116,9 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 	if currentRun != nil && currentRun.CommittedTaskActivityUpdate != nil {
 		s.PublishRunEventToViewers(playbookRunUpdatedIncrementalWSEvent, *currentRun.CommittedTaskActivityUpdate, currentRun, additionalUserIDs...)
+		// Sent separately rather than merged into the certified delta: a client that already
+		// applied this revision from the mutation response drops the delta, and anything in it.
+		s.sendUncertifiedRunChangesWS(playbookRunID, previousRun, additionalUserIDs)
 		return
 	}
 
@@ -131,6 +134,52 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		currentRun.ComputeTaskProgress()
 	}
 
+	update, changed := diffRunUpdate(previousRun, currentRun)
+	if !changed {
+		return
+	}
+
+	// Send the incremental update
+	s.PublishRunEventToViewers(playbookRunUpdatedIncrementalWSEvent, update, currentRun, additionalUserIDs...)
+}
+
+// certifiedTaskActivityFields are the changed fields a certified task activity delta carries.
+var certifiedTaskActivityFields = []string{"checklists", "items_order", "timeline_events"}
+
+// sendUncertifiedRunChangesWS publishes the part of a change that a certified task activity
+// delta leaves out, such as task progress and participants. It reads the run fresh because some
+// callers change it after the store commits the delta: SetAssignee adds the assignee as a
+// participant. These fields are not revision-governed, so the update carries no sync block.
+func (s *PlaybookRunServiceImpl) sendUncertifiedRunChangesWS(playbookRunID string, previousRun *PlaybookRun, additionalUserIDs []string) {
+	if previousRun == nil {
+		return
+	}
+
+	currentRun, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Error("failed to get current state of playbook run")
+		return
+	}
+
+	update, changed := diffRunUpdate(previousRun, currentRun)
+	if !changed {
+		return
+	}
+	for _, field := range certifiedTaskActivityFields {
+		delete(update.ChangedFields, field)
+	}
+	update.ChecklistDeletes = nil
+	update.TimelineEventDeletes = nil
+	if len(update.ChangedFields) == 0 && len(update.StatusPostDeletes) == 0 {
+		return
+	}
+
+	s.PublishRunEventToViewers(playbookRunUpdatedIncrementalWSEvent, update, currentRun, additionalUserIDs...)
+}
+
+// diffRunUpdate builds the incremental update from previousRun to currentRun. It reports false
+// when nothing changed.
+func diffRunUpdate(previousRun, currentRun *PlaybookRun) (PlaybookRunUpdate, bool) {
 	if previousRun != nil {
 		previousRun.ComputeTaskProgress()
 	}
@@ -139,7 +188,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	changedFields := DetectChangedFields(previousRun, currentRun)
 	if len(changedFields) == 0 {
 		// No changes detected, nothing to send
-		return
+		return PlaybookRunUpdate{}, false
 	}
 
 	// Extract checklist deletes from changed fields
@@ -166,18 +215,14 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		delete(changedFields, "_status_post_deletes")
 	}
 
-	// Prepare the update data
-	update := PlaybookRunUpdate{
+	return PlaybookRunUpdate{
 		ID:                   currentRun.ID,
 		PlaybookRunUpdatedAt: currentRun.UpdateAt,
 		ChangedFields:        changedFields,
 		ChecklistDeletes:     checklistDeletes,
 		TimelineEventDeletes: timelineEventDeletes,
 		StatusPostDeletes:    statusPostDeletes,
-	}
-
-	// Send the incremental update
-	s.PublishRunEventToViewers(playbookRunUpdatedIncrementalWSEvent, update, currentRun, additionalUserIDs...)
+	}, true
 }
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.

@@ -299,6 +299,7 @@ type ChecklistItemCommon interface {
 	SetStateModified(modified int64)
 	SetCommandLastRun(lastRun int64)
 	ClearRequirementValues()
+	ClearStateEventID()
 }
 
 // ChecklistItem represents an item in a checklist.
@@ -432,6 +433,10 @@ func (ci *ChecklistItem) ClearRequirementValues() {
 	for i := range ci.Requirements {
 		ci.Requirements[i].Value = ""
 	}
+}
+
+func (ci *ChecklistItem) ClearStateEventID() {
+	ci.StateEventID = nil
 }
 
 type GetPlaybooksResults struct {
@@ -825,6 +830,7 @@ func CleanUpChecklists[T ChecklistCommon](checklists []T) {
 			items[itemIndex].SetStateModified(0)
 			items[itemIndex].SetCommandLastRun(0)
 			items[itemIndex].ClearRequirementValues()
+			items[itemIndex].ClearStateEventID()
 		}
 	}
 }

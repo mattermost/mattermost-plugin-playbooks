@@ -4,6 +4,8 @@
 package sqlstore
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -112,5 +114,132 @@ func taskStateRevisionEvent(runID, itemID string, eventAt int64, action string) 
 		CreateAt:      eventAt,
 		SubjectUserID: model.NewId(),
 		Details:       fmt.Sprintf(`{"action":%q,"item_id":%q}`, action, itemID),
+	}
+}
+
+func TestStaleRunOnlyWriteKeepsConcurrentChecklistChange(t *testing.T) {
+	db := setupTestDB(t)
+	runStore := setupPlaybookRunStore(t, db)
+	sqlStore := setupSQLStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	created, err := runStore.CreatePlaybookRun(NewBuilder(t).WithChecklists([]int{2}).ToPlaybookRun())
+	require.NoError(t, err)
+	createPlaybookRunChannel(t, sqlStore, created)
+
+	staleRead, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+
+	checked := staleRead.Clone()
+	checked.Checklists[0].Items[0].State = app.ChecklistItemStateClosed
+	checked.Checklists[0].Items[0].StateModified = 5
+	_, checkEvent, err := runStore.UpdatePlaybookRunWithTimelineEvent(staleRead.Clone(), checked, taskStateRevisionEvent(created.ID, checked.Checklists[0].Items[0].ID, 5, "check"), 0, 0)
+	require.NoError(t, err)
+
+	reminder := staleRead.Clone()
+	reminder.ReminderPostID = "post-id"
+	updated, err := runStore.UpdatePlaybookRun(reminder)
+	require.NoError(t, err, "a write that leaves the checklists as it read them must not conflict with a concurrent checklist change")
+	require.Equal(t, int64(1), updated.TaskActivityRevision, "a run-only write must not bump the revision")
+	require.Nil(t, updated.CommittedTaskActivityUpdate)
+
+	persisted, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	require.Equal(t, "post-id", persisted.ReminderPostID)
+	require.Equal(t, app.ChecklistItemStateClosed, persisted.Checklists[0].Items[0].State, "the stale write must not revert the concurrent task check")
+	require.Equal(t, &checkEvent.ID, persisted.Checklists[0].Items[0].StateEventID)
+	require.Equal(t, int64(1), persisted.TaskActivityRevision)
+}
+
+func TestRunOnlyWriteToLegacyChecklistJSONKeepsRevision(t *testing.T) {
+	db := setupTestDB(t)
+	runStore := setupPlaybookRunStore(t, db)
+	sqlStore := setupSQLStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	created, err := runStore.CreatePlaybookRun(NewBuilder(t).WithChecklists([]int{2}).ToPlaybookRun())
+	require.NoError(t, err)
+	createPlaybookRunChannel(t, sqlStore, created)
+	rewriteAsLegacyChecklistsJSON(t, sqlStore, created.ID)
+	_, err = sqlStore.ActivateTaskActivityCertification(context.Background(), 0)
+	require.NoError(t, err)
+
+	run, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	retrospective := run.Clone()
+	retrospective.Retrospective = "retrospective text"
+	updated, err := runStore.UpdatePlaybookRun(retrospective)
+	require.NoError(t, err)
+	require.Zero(t, updated.TaskActivityRevision, "checklists encoded by an older plugin must not read as a checklist change")
+	require.Nil(t, updated.CommittedTaskActivityUpdate, "a run-only write must not produce a certified delta")
+}
+
+// rewriteAsLegacyChecklistsJSON encodes the run's checklists as plugin versions before task
+// activity sync wrote them: no state_event_id key, and items_order stored with each checklist.
+func rewriteAsLegacyChecklistsJSON(t *testing.T, sqlStore *SQLStore, runID string) {
+	t.Helper()
+
+	var raw []byte
+	require.NoError(t, sqlStore.db.Get(&raw, `SELECT ChecklistsJSON FROM IR_Incident WHERE ID = $1`, runID))
+	var checklists []map[string]any
+	require.NoError(t, json.Unmarshal(raw, &checklists))
+	for _, checklist := range checklists {
+		var itemsOrder []string
+		for _, item := range checklist["items"].([]any) {
+			delete(item.(map[string]any), "state_event_id")
+			itemsOrder = append(itemsOrder, item.(map[string]any)["id"].(string))
+		}
+		checklist["items_order"] = itemsOrder
+	}
+	legacy, err := json.Marshal(checklists)
+	require.NoError(t, err)
+	_, err = sqlStore.db.Exec(`UPDATE IR_Incident SET ChecklistsJSON = $1 WHERE ID = $2`, string(legacy), runID)
+	require.NoError(t, err)
+}
+
+func TestStateEventLinksAreServerOwned(t *testing.T) {
+	db := setupTestDB(t)
+	runStore := setupPlaybookRunStore(t, db)
+	sqlStore := setupSQLStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	forged := model.NewId()
+	toCreate := NewBuilder(t).WithChecklists([]int{2}).ToPlaybookRun()
+	toCreate.Checklists[0].Items[1].StateEventID = &forged
+	created, err := runStore.CreatePlaybookRun(toCreate)
+	require.NoError(t, err)
+	createPlaybookRunChannel(t, sqlStore, created)
+
+	run, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	require.Nil(t, run.Checklists[0].Items[1].StateEventID, "a new run must not keep links copied from its source")
+
+	checked := run.Clone()
+	checked.Checklists[0].Items[0].State = app.ChecklistItemStateClosed
+	checked.Checklists[0].Items[0].StateModified = 5
+	run, checkEvent, err := runStore.UpdatePlaybookRunWithTimelineEvent(run.Clone(), checked, taskStateRevisionEvent(created.ID, checked.Checklists[0].Items[0].ID, 5, "check"), 0, 0)
+	require.NoError(t, err)
+
+	edited := run.Clone()
+	edited.Checklists[0].Items[1].StateEventID = &checkEvent.ID
+	duplicate := edited.Checklists[0].Items[0]
+	duplicate.ID = model.NewId()
+	added := app.ChecklistItem{ID: model.NewId(), Title: "added", StateEventID: &forged}
+	edited.Checklists[0].Items = append(edited.Checklists[0].Items, duplicate, added)
+	edited.Checklists[0].Title = "edited"
+	updated, err := runStore.UpdatePlaybookRun(edited)
+	require.NoError(t, err)
+
+	persisted, err := runStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+	for _, run := range []*app.PlaybookRun{updated, persisted} {
+		items := run.Checklists[0].Items
+		require.Equal(t, &checkEvent.ID, items[0].StateEventID, "an unchanged task keeps the link its state mutation set")
+		require.Nil(t, items[1].StateEventID, "a client cannot link an existing task to another task's event")
+		require.Nil(t, items[2].StateEventID, "a duplicated task must not inherit the original's link")
+		require.Nil(t, items[3].StateEventID, "a client cannot set the link on a task it adds")
 	}
 }

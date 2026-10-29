@@ -315,6 +315,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				expected.Checklists[i].ItemsOrder = expected.Checklists[i].GetItemsOrder()
 			}
 			expected.TaskActivityRevision = testCase.ExpectedTaskRevision
+			expected.ChecklistsJSONAsRead = actual.ChecklistsJSONAsRead
 			require.Equal(t, expected, actual)
 		})
 	}
