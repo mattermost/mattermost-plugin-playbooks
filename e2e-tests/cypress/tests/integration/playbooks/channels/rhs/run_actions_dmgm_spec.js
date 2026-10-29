@@ -108,6 +108,13 @@ describe('channels > rhs > DM/GM run actions', {testIsolation: true}, () => {
 
     it('broadcast action is enabled in DM and the setting persists after save', () => {
         setupFreshDMRunActions(({run}) => {
+            // # Give the run a broadcast destination; the server reports the flag as off without one
+            cy.apiGetChannelByName(testTeam.name, 'town-square').then(({channel}) => {
+                cy.apiUpdateRun(run.id, {broadcastChannelIDs: [channel.id]});
+            });
+            cy.reload();
+            cy.findByTestId('run-header-section').should('be.visible');
+
             openRunActionsModal();
 
             // # Toggle broadcast on by clicking the action row's title — the
