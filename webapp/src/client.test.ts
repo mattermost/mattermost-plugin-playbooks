@@ -22,9 +22,9 @@ describe('REST fetch options (MM-69322)', () => {
 
     const contentTypeValues = () => {
         const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
-        return Object.entries(headers).
-            filter(([name]) => name.toLowerCase() === 'content-type').
-            map(([, value]) => value);
+        return Object.entries(headers)
+            .filter(([name]) => name.toLowerCase() === 'content-type')
+            .map(([, value]) => value);
     };
 
     it('sends a single Content-Type header on POST', async () => {
