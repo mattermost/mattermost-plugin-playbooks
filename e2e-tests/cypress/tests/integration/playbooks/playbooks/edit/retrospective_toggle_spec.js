@@ -104,22 +104,18 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             cy.get('[id="retrospective"]').scrollIntoView().should('be.visible');
             cy.get('[data-testid="retrospective-toggle"]').find('input').should('be.checked');
 
-            // # Intercept the GraphQL mutation so we can wait for the debounced save
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
-
             // # Click the toggle to disable retrospective
             cy.get('[data-testid="retrospective-toggle"]').find('label').click();
 
             // * Assert toggle is now unchecked
             cy.get('[data-testid="retrospective-toggle"]').find('input').should('not.be.checked');
 
-            // # Wait for the save to reach the server
-            cy.wait('@UpdatePlaybook');
-
             // * Verify via API that retrospective_enabled was persisted as false
-            cy.apiGetPlaybook(playbook.id).then((pb) => {
-                expect(pb.retrospective_enabled, 'retrospective_enabled should be false after clicking toggle').to.equal(false);
-            });
+            cy.apiWaitForPlaybook(
+                playbook.id,
+                (pb) => pb.retrospective_enabled === false,
+                'retrospective_enabled should be false after clicking toggle',
+            );
 
             // # Reload to confirm persistence
             cy.reload();

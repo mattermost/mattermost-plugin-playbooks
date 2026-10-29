@@ -107,17 +107,7 @@ describe('channels > rhs > DM/GM run actions', {testIsolation: true}, () => {
     });
 
     it('broadcast action is enabled in DM and the setting persists after save', () => {
-        setupFreshDMRunActions(() => {
-            // # Intercept the GraphQL UpdateRun mutation so we can wait for it
-            //   to complete and inspect the request body — the REST flag may
-            //   be coerced server-side, so we assert on what the modal actually
-            //   sent rather than what we get back.
-            cy.intercept('POST', '**/plugins/playbooks/api/v0/query', (req) => {
-                if (typeof req.body === 'object' && req.body?.operationName === 'UpdateRun') {
-                    req.alias = 'updateRun';
-                }
-            });
-
+        setupFreshDMRunActions(({run}) => {
             openRunActionsModal();
 
             // # Toggle broadcast on by clicking the action row's title — the
@@ -133,22 +123,23 @@ describe('channels > rhs > DM/GM run actions', {testIsolation: true}, () => {
             cy.get('#run-actions-modal').findByRole('button', {name: /save/i}).click();
             cy.get('#run-actions-modal').should('not.exist');
 
-            // * Verify the GraphQL mutation sent the broadcast-enabled flag
-            cy.wait('@updateRun').then((interception) => {
-                expect(interception.response?.statusCode).to.equal(200);
-                expect(interception.request.body.variables.updates.statusUpdateBroadcastChannelsEnabled).to.equal(true);
-            });
+            // * Verify the broadcast-enabled flag is stored on the run
+            cy.apiWaitForPlaybookRun(
+                run.id,
+                (r) => r.status_update_broadcast_channels_enabled === true,
+                'Broadcast setting was not saved',
+            );
+
+            // * Verify the toggle is still on after a reload
+            cy.reload();
+            cy.findByTestId('run-header-section').should('be.visible');
+            openRunActionsModal();
+            cy.findByTestId('action-broadcast-channels').find('input[type="checkbox"]').should('be.checked');
         });
     });
 
     it('outgoing webhook action is enabled in DM and the setting persists after save', () => {
         setupFreshDMRunActions(({run}) => {
-            cy.intercept('POST', '**/plugins/playbooks/api/v0/query', (req) => {
-                if (typeof req.body === 'object' && req.body?.operationName === 'UpdateRun') {
-                    req.alias = 'updateRun';
-                }
-            });
-
             openRunActionsModal();
 
             // # Toggle webhook on
@@ -159,15 +150,26 @@ describe('channels > rhs > DM/GM run actions', {testIsolation: true}, () => {
                 cy.get('textarea').clear().type('https://example.com/webhook');
             });
 
-            // # Save the modal and wait for the GraphQL mutation to flush
+            // # Save the modal
             cy.get('#run-actions-modal').findByRole('button', {name: /save/i}).click();
             cy.get('#run-actions-modal').should('not.exist');
-            cy.wait('@updateRun').its('response.statusCode').should('eq', 200);
 
-            // * Verify the run's webhook-enabled flag is set via API
-            cy.apiGetPlaybookRun(run.id).then((response) => {
-                expect(response.body.status_update_broadcast_webhooks_enabled).to.equal(true);
-                expect(response.body.webhook_on_status_update_urls).to.deep.equal(['https://example.com/webhook']);
+            // * Verify the run's webhook-enabled flag and URL are stored
+            cy.apiWaitForPlaybookRun(
+                run.id,
+                (r) => r.status_update_broadcast_webhooks_enabled === true,
+                'Webhook setting was not saved',
+            ).then((savedRun) => {
+                expect(savedRun.webhook_on_status_update_urls).to.deep.equal(['https://example.com/webhook']);
+            });
+
+            // * Verify the toggle and URL are still set after a reload
+            cy.reload();
+            cy.findByTestId('run-header-section').should('be.visible');
+            openRunActionsModal();
+            cy.findByTestId('action-outgoing-webhook').within(() => {
+                cy.get('input[type="checkbox"]').should('be.checked');
+                cy.get('textarea').should('have.value', 'https://example.com/webhook');
             });
         });
     });

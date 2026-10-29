@@ -41,9 +41,5 @@ declare namespace Cypress {
             method?: string;
             urlPattern?: string | RegExp;
         }) => Chainable<void>;
-        waitForGraphQLQueries: (options?: {
-            idleTime?: number;
-            timeout?: number;
-        }) => Chainable<void>;
     }
 }

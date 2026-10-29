@@ -422,6 +422,27 @@ Cypress.Commands.add('apiGetPlaybook', (playbookId) => {
     });
 });
 
+/**
+ * Wait until the stored playbook satisfies a condition, e.g. after a debounced save from the editor.
+ * @param {String} playbookId - The playbook ID
+ * @param {Function} predicate - Receives the playbook and returns true once it's in the expected state
+ * @param {String} errorMsg - Shown if the condition never holds
+ */
+Cypress.Commands.add('apiWaitForPlaybook', (playbookId, predicate, errorMsg = 'Playbook did not reach the expected state') => {
+    return cy.waitUntil(
+        () => cy.apiGetPlaybook(playbookId).then((playbook) => Boolean(predicate(playbook))),
+        {timeout: 10000, interval: 500, errorMsg},
+    ).then(() => cy.apiGetPlaybook(playbookId));
+});
+
+// Poll a run until predicate(run) is true, then yield the run
+Cypress.Commands.add('apiWaitForPlaybookRun', (runId, predicate, errorMsg = 'Run did not reach the expected state') => {
+    return cy.waitUntil(
+        () => cy.apiGetPlaybookRun(runId).then(({body}) => Boolean(predicate(body))),
+        {timeout: 10000, interval: 500, errorMsg},
+    ).then(() => cy.apiGetPlaybookRun(runId)).then(({body}) => body);
+});
+
 // Update a playbook
 Cypress.Commands.add('apiUpdatePlaybook', (playbook, expectedHttpCode = StatusOK) => {
     return cy.request({
@@ -471,53 +492,55 @@ Cypress.Commands.add('apiUnfollowPlaybookRun', (playbookRunId) => {
     });
 });
 
-// Uses GraphQL because there is no REST endpoint for adding run participants.
-// The GraphQL mutation is marked deprecated but remains the only server-side path.
 Cypress.Commands.add('apiAddUsersToRun', (playbookRunId, usersIds) => {
-    const query = `
-        mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
-            addRunParticipants(runID: $runID, userIDs: $userIDs)
-        }
-    `;
-    const vars = {
-        runID: playbookRunId,
-        userIDs: usersIds,
-    };
-    return doGraphqlQuery(query, 'AddRunParticipants', vars).then((response) => {
-        expect(response.status).to.equal(StatusOK);
-        cy.wrap(response.body);
-    });
-});
-
-// Uses GraphQL because there is no REST endpoint for generic run updates.
-Cypress.Commands.add('apiUpdateRun', (playbookRunId, updates) => {
-    const query = `
-        mutation UpdateRun($id: String!, $updates: RunUpdates!) {
-            updateRun(id: $id, updates: $updates)
-        }
-    `;
-    const vars = {
-        id: playbookRunId,
-        updates,
-    };
-    return doGraphqlQuery(query, 'UpdateRun', vars).then((response) => {
-        expect(response.status).to.equal(StatusOK);
-        cy.wrap(response.body);
-    });
-});
-
-const doGraphqlQuery = (query, operationName, variables) => {
-    const payload = {query, operationName, variables};
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/playbooks/api/v0/query',
-        body: JSON.stringify(payload),
+        url: `/plugins/playbooks/api/v0/runs/${playbookRunId}/participants`,
         method: 'POST',
+        body: {user_ids: usersIds},
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
     });
+});
+
+const runUpdateKeys = {
+    name: 'name',
+    summary: 'summary',
+    channelID: 'channel_id',
+    createChannelMemberOnNewParticipant: 'create_channel_member_on_new_participant',
+    removeChannelMemberOnRemovedParticipant: 'remove_channel_member_on_removed_participant',
+    statusUpdateBroadcastChannelsEnabled: 'status_update_broadcast_channels_enabled',
+    statusUpdateBroadcastWebhooksEnabled: 'status_update_broadcast_webhooks_enabled',
+    broadcastChannelIDs: 'broadcast_channel_ids',
+    webhookOnStatusUpdateURLs: 'webhook_on_status_update_urls',
 };
 
 /**
- * Add a property field to a playbook via GraphQL API
+ * Update a playbook run's settings via REST API
+ * @param {String} playbookRunId - The run ID
+ * @param {Object} updates - Fields to change, keyed in camelCase (e.g. {channelID, createChannelMemberOnNewParticipant})
+ */
+Cypress.Commands.add('apiUpdateRun', (playbookRunId, updates) => {
+    const body = {};
+    Object.entries(updates).forEach(([key, value]) => {
+        expect(runUpdateKeys, `unsupported run update "${key}"`).to.have.property(key);
+        body[runUpdateKeys[key]] = value;
+    });
+
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${playbookRunId}`,
+        method: 'PATCH',
+        body,
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Add a property field to a playbook via REST API
  * @param {String} playbookId - The playbook ID
  * @param {Object} propertyField - The property field to add
  * @param {String} propertyField.name - Name of the property field (e.g., "Priority")
@@ -526,22 +549,31 @@ const doGraphqlQuery = (query, operationName, variables) => {
  * @param {String} propertyField.attrs.visibility - Visibility setting (default: "public")
  * @param {Number} propertyField.attrs.sortOrder - Sort order (default: 0)
  * @param {Array} propertyField.attrs.options - Array of options for select/multiselect types
+ * @param {String} propertyField.attrs.parentID - Optional parent field ID
+ * @param {String} propertyField.attrs.valueType - Optional value type
+ * @returns {String} The new property field's ID
  */
 Cypress.Commands.add('apiAddPropertyField', (playbookId, propertyField) => {
-    const query = `
-        mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
-            addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
-        }
-    `;
-    const vars = {
-        playbookID: playbookId,
-        propertyField,
-    };
-    return doGraphqlQuery(query, 'AddPlaybookPropertyField', vars).then((response) => {
-        expect(response.status).to.equal(StatusOK);
-        const body = typeof response.body === 'string' ? JSON.parse(response.body) : response.body;
-        expect(body.errors, `addPlaybookPropertyField failed: ${JSON.stringify(body.errors)}`).to.be.undefined;
-        return cy.wrap(body.data.addPlaybookPropertyField);
+    const {attrs} = propertyField;
+    const body = {name: propertyField.name, type: propertyField.type};
+    if (attrs) {
+        body.attrs = {
+            visibility: attrs.visibility,
+            sort_order: attrs.sortOrder,
+            options: attrs.options,
+            parent_id: attrs.parentID,
+            value_type: attrs.valueType,
+        };
+    }
+
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}/property_fields`,
+        method: 'POST',
+        body,
+    }).then((response) => {
+        expect(response.status).to.equal(StatusCreated);
+        return cy.wrap(response.body.id);
     });
 });
 
@@ -720,6 +752,31 @@ Cypress.Commands.add('assertRunPropertyValueStored', (playbookRunId, fieldName, 
         if (expectedValue !== null) {
             expect(pv.value, `property value for "${fieldName}" should equal expected`).to.equal(expectedValue);
         }
+    });
+});
+
+/**
+ * Poll until a run property value is stored. Select/multiselect values are matched by option name.
+ */
+Cypress.Commands.add('apiWaitForRunPropertyValue', (playbookRunId, fieldName, expectedValue) => {
+    return cy.apiGetRunPropertyFields(playbookRunId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `run-level field "${fieldName}" should exist`).to.exist;
+        const option = (field.attrs?.options || []).find((o) => o.name === expectedValue);
+        const storedMatches = (value) => {
+            if (option) {
+                return value === option.id || (Array.isArray(value) && value.includes(option.id));
+            }
+            return value === expectedValue;
+        };
+
+        return cy.waitUntil(
+            () => cy.apiGetPlaybookRun(playbookRunId).then(({body: run}) => {
+                const pv = (run.property_values || []).find((v) => v.field_id === field.id);
+                return Boolean(pv && storedMatches(pv.value));
+            }),
+            {timeout: 10000, interval: 500, errorMsg: `Property "${fieldName}" was not stored as "${expectedValue}"`},
+        );
     });
 });
 

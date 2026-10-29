@@ -492,8 +492,12 @@ describe('playbooks > overview', {testIsolation: true}, () => {
                 cy.findByText('Select a channel').click().type('Town{enter}');
             });
 
-            // # Wait for the playbook save to complete (debounced GraphQL mutation)
-            cy.waitForGraphQLQueries();
+            // # Wait for the debounced playbook save to be stored
+            cy.apiWaitForPlaybook(
+                testPlaybook.id,
+                (playbook) => playbook.channel_mode === 'link_existing_channel' && playbook.channel_id !== '',
+                'Playbook did not save the linked channel',
+            );
 
             // # Click Run Playbook
             cy.findByTestId('run-playbook').click({force: true});

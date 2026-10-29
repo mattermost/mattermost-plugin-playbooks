@@ -184,9 +184,6 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             // # Select new type
             cy.findByText(/^select$/i).click();
 
-            // # Wait for GraphQL mutation
-            cy.wait(500);
-
             // * Verify type changed (should now have property values input)
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
                 cy.findByTestId('property-values-input').should('exist');
@@ -226,7 +223,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                 });
             });
 
-            cy.waitForGraphQLQueries();
+            cy.findAllByTestId('property-field-row').eq(0).findByText('Medium').should('exist');
 
             // # Click outside to save
             cy.get('body').click(0, 0);
@@ -252,7 +249,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                 });
             });
 
-            cy.waitForGraphQLQueries();
+            cy.findAllByTestId('property-field-row').eq(0).findByText('In Progress').should('not.exist');
 
             // # Click outside to save
             cy.get('body').click(0, 0);
@@ -529,7 +526,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
     function addNewOption(optionText, isFirstOption = false) {
         if (!isFirstOption) {
             cy.findByRole('button', {name: 'Add value'}).click();
-            cy.waitForGraphQLQueries();
+            cy.findAllByText(/^Option \d+$/).should('exist');
         }
 
         cy.findAllByText(/^Option \d+$/).last().parent().as('optionElement');
@@ -549,7 +546,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                 cy.findByPlaceholderText('Enter value name').clear().type(`${optionText}{enter}`);
             });
         });
-        cy.waitForGraphQLQueries();
+        cy.findByText(optionText).should('exist');
     }
 
     /**
@@ -562,7 +559,6 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         // # Click add attribute button
         cy.findByRole('button', {name: /add.*attribute/i}).click();
 
-        // # Wait for GraphQL mutation
         cy.wait(500);
 
         // # Fill in the name only if provided
@@ -571,9 +567,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                 cy.findByLabelText('Attribute name').clear().type(name);
             });
             cy.get('body').click(0, 0);
-
-            // # Wait for GraphQL mutation
-            cy.wait(500);
+            cy.findAllByTestId('property-field-row').last().findByLabelText('Attribute name').should('have.value', name);
         }
 
         // # Change type if not text
