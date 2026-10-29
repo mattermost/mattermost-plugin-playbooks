@@ -787,7 +787,10 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if prev.StateModified != item.StateModified {
 				fields["state_modified"] = item.StateModified
 			}
-			if !reflect.DeepEqual(prev.StateEventID, item.StateEventID) {
+			// Sent with any state change, even when unchanged: mobile refetches the run when an
+			// update changes state without saying which event, if any, set it.
+			if prev.State != item.State || prev.StateModified != item.StateModified ||
+				!reflect.DeepEqual(prev.StateEventID, item.StateEventID) {
 				fields["state_event_id"] = item.StateEventID
 			}
 			if prev.AssigneeID != item.AssigneeID {

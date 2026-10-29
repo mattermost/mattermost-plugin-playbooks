@@ -686,6 +686,18 @@ func TestDetectChangedFields(t *testing.T) {
 	})
 }
 
+func TestGetChecklistItemUpdates_StateCarriesStateEventID(t *testing.T) {
+	previous := []ChecklistItem{{ID: "item-1", State: ChecklistItemStateOpen}}
+	current := []ChecklistItem{{ID: "item-1", State: ChecklistItemStateClosed, StateModified: 5}}
+
+	updates := GetChecklistItemUpdates(previous, current)
+	require.Len(t, updates.Updates, 1)
+
+	link, ok := updates.Updates[0].Fields["state_event_id"]
+	require.True(t, ok, "a state change must say which event, if any, set the new state, or a client must refetch to find out")
+	assert.Nil(t, link)
+}
+
 func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 	t.Run("non-positive PerPage", func(t *testing.T) {
 		options := PlaybookRunFilterOptions{
