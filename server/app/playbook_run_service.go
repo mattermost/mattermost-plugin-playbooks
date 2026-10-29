@@ -115,11 +115,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	}
 
 	if currentRun != nil && currentRun.CommittedTaskActivityUpdate != nil {
-		update := *currentRun.CommittedTaskActivityUpdate
-		s.poster.PublishWebsocketEventToChannelReliable(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
-		for _, nonMember := range s.getNonMembersIDs(currentRun.ChannelID, additionalUserIDs) {
-			s.poster.PublishWebsocketEventToUserReliable(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
-		}
+		s.PublishRunEventToViewers(playbookRunUpdatedIncrementalWSEvent, *currentRun.CommittedTaskActivityUpdate, currentRun, additionalUserIDs...)
 		return
 	}
 

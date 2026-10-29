@@ -36,6 +36,7 @@ type runWSFixture struct {
 	playbooks        *stubPlaybookService
 	svc              *PlaybookRunServiceImpl
 	usersNotified    []string
+	userPayloads     []interface{}
 	channelBroadcast []string
 }
 
@@ -51,8 +52,9 @@ func newRunWSFixture(t *testing.T, playbook Playbook, playbookErr error) *runWSF
 
 	poster.EXPECT().
 		PublishWebsocketEventToUserReliable(gomock.Any(), gomock.Any(), gomock.Any()).
-		Do(func(_ string, _ interface{}, userID string) {
+		Do(func(_ string, payload interface{}, userID string) {
 			f.usersNotified = append(f.usersNotified, userID)
+			f.userPayloads = append(f.userPayloads, payload)
 		}).
 		AnyTimes()
 	poster.EXPECT().
@@ -315,6 +317,44 @@ func TestPublishRunEventToViewers_ChannelListingFailureKeepsParticipants(t *test
 
 	assert.Empty(t, f.channelBroadcast)
 	assert.ElementsMatch(t, []string{wsOwnerID, wsParticipantID}, f.usersNotified)
+}
+
+// TestSendPlaybookRunObjectUpdatedWS_CertifiedDeltaReachesOnlyRunViewers covers the certified
+// task activity delta, which is published as-is instead of being diffed from the run, and so
+// takes a separate path to the websocket from every other run update.
+func TestSendPlaybookRunObjectUpdatedWS_CertifiedDeltaReachesOnlyRunViewers(t *testing.T) {
+	f := newRunWSFixture(t, privatePlaybook(), nil)
+	f.svc.configService = &stubConfigService{incrementalUpdates: true}
+	f.setChannelMembers(wsOwnerID, wsPBMemberID, wsGuestID, wsStrangerID)
+	f.allowTeamView(wsOwnerID, wsParticipantID, wsPBMemberID, wsGuestID, wsStrangerID)
+	f.grantPlaybookMemberView()
+	// Stubbed so that a channel-scoped publish fails this test's assertions instead of
+	// panicking on an unmocked call.
+	f.api.On("GetChannelMembersByIds", wsChannelID, mock.Anything).Return(model.ChannelMembers{}, nil).Maybe()
+
+	update := PlaybookRunUpdate{
+		ID:            wsRunID,
+		ChangedFields: map[string]interface{}{"checklists": []Checklist{}},
+		TaskActivitySync: &TaskActivitySync{
+			Version:      1,
+			Epoch:        "epoch-ws",
+			BaseRevision: "4",
+			Revision:     "5",
+		},
+	}
+	run := privatePlaybookRun()
+	run.CommittedTaskActivityUpdate = &update
+
+	f.svc.sendPlaybookRunObjectUpdatedWS(wsRunID, nil, run)
+
+	assert.Empty(t, f.channelBroadcast, "a certified delta from a private run must never be broadcast channel-wide")
+	assert.NotContains(t, f.usersNotified, wsGuestID, "a guest in the linked channel is not authorized to view the run")
+	assert.NotContains(t, f.usersNotified, wsStrangerID, "a channel member outside the playbook is not authorized to view the run")
+	assert.ElementsMatch(t, []string{wsOwnerID, wsParticipantID, wsPBMemberID}, f.usersNotified,
+		"wsParticipantID is not in the channel, so only the viewer fan-out can reach them")
+	for _, payload := range f.userPayloads {
+		assert.Equal(t, update, payload, "every viewer must get the committed delta unchanged so their revision sequence has no gaps")
+	}
 }
 
 // TestGetRunAudienceIDs_DeduplicatesAndIncludesParticipants documents that a user appearing as
