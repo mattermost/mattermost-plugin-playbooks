@@ -343,4 +343,12 @@ func TestRunParticipantsREST(t *testing.T) {
 		_, err = e.PlaybooksClient.PlaybookRuns.RemoveParticipants(context.Background(), run.ID, nil)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
+
+	t.Run("removing the owner is rejected", func(t *testing.T) {
+		run := createRun(t, publicRunWithChannelActions, e.RegularUser.Id)
+
+		_, err := e.PlaybooksClient.PlaybookRuns.RemoveParticipants(context.Background(), run.ID, []string{e.RegularUser.Id})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Contains(t, err.Error(), "owner user can't leave the run")
+	})
 }
