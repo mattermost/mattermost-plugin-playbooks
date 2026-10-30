@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useCallback} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 import {
     QueryResult,
@@ -12,15 +12,9 @@ import {
 
 import {
     PlaybookDocument,
-    PlaybookPropertyDocument,
-    PlaybookPropertyQuery,
-    PlaybookPropertyQueryVariables,
     PlaybookQuery,
     PlaybookUpdates,
     RhsRunsDocument,
-    SetRunPropertyValueDocument,
-    SetRunPropertyValueMutation,
-    SetRunPropertyValueMutationVariables,
     UpdatePlaybookDocument,
 } from 'src/graphql/generated/graphql';
 
@@ -31,20 +25,23 @@ import {
     addPlaybookMember,
     addRunParticipants,
     autoFollowPlaybook,
+    fetchPlaybookPropertyField,
     removePlaybookMember,
     removeRunParticipants,
     setChecklistItemTaskActions,
     setOwner,
     setPlaybookFavorite,
     setRunFavorite,
+    setRunPropertyValue as setRunPropertyValueRequest,
     updatePlaybookRun,
 } from 'src/client';
 import {useAppDispatch} from 'src/hooks/redux';
 import {TaskAction} from 'src/types/playbook';
+import {PropertyField} from 'src/types/properties';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
-export type PlaybookPropertyField = PlaybookPropertyQuery['playbookProperty']
+export type PlaybookPropertyField = PropertyField | undefined
 
 export type Loaded<T> = Exclude<T, undefined | null>
 
@@ -194,47 +191,76 @@ export const useUpdateRunItemTaskActions = (runID?: string) => {
 };
 
 /**
- * Hook to fetch a single property field for a playbook
- * @param playbookID - The ID of the playbook
- * @param propertyID - The ID of the property field
- * @returns Tuple of [data, queryResult] where data is the property field or undefined
+ * Hook to fetch a single property field for a playbook via REST.
+ * @returns Tuple of [data, status] where data is the property field or undefined
  */
 export const usePlaybookProperty = (
     playbookID: string,
     propertyID: string
-): [PlaybookPropertyField, QueryResult<PlaybookPropertyQuery, PlaybookPropertyQueryVariables>] => {
-    const result = useQuery(PlaybookPropertyDocument, {
-        variables: {
-            playbookID,
-            propertyID,
-        },
-        fetchPolicy: 'cache-first',
-        errorPolicy: 'all', // Allow partial data and errors to be returned
-    });
+): [PlaybookPropertyField, {loading: boolean; error?: Error}] => {
+    const [field, setField] = useState<PropertyField | undefined>();
+    const [loading, setLoading] = useState(Boolean(playbookID && propertyID));
+    const [error, setError] = useState<Error | undefined>();
 
-    return [result.data?.playbookProperty ?? undefined, result] as const;
+    useEffect(() => {
+        let cancelled = false;
+        if (!playbookID || !propertyID) {
+            setField(undefined);
+            setLoading(false);
+            setError(undefined);
+            return undefined;
+        }
+
+        setLoading(true);
+        setError(undefined);
+        fetchPlaybookPropertyField(playbookID, propertyID)
+            .then((result) => {
+                if (cancelled) {
+                    return;
+                }
+                if (result) {
+                    setField(result);
+                } else {
+                    setField(undefined);
+                    setError(new Error('Property field not found'));
+                }
+                setLoading(false);
+            })
+            .catch((err) => {
+                if (cancelled) {
+                    return;
+                }
+                setField(undefined);
+                setError(err instanceof Error ? err : new Error(String(err)));
+                setLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [playbookID, propertyID]);
+
+    return [field, {loading, error}];
 };
 
 export const useSetRunPropertyValue = () => {
-    const [innerSetRunPropertyValue, result] = useMutation<
-        SetRunPropertyValueMutation,
-        SetRunPropertyValueMutationVariables
-    >(SetRunPropertyValueDocument, {
-        errorPolicy: 'all',
-    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<Error | undefined>();
 
-    const setRunPropertyValue = useCallback(
-        (runID: string, propertyFieldID: string, value: any) => {
-            return innerSetRunPropertyValue({
-                variables: {
-                    runID,
-                    propertyFieldID,
-                    value,
-                },
-            });
-        },
-        [innerSetRunPropertyValue]
-    );
+    const setRunPropertyValue = useCallback(async (runID: string, propertyFieldID: string, value: unknown) => {
+        setLoading(true);
+        setError(undefined);
+        try {
+            const data = await setRunPropertyValueRequest(runID, propertyFieldID, value);
+            setLoading(false);
+            return {data, errors: undefined as undefined};
+        } catch (err) {
+            const nextError = err instanceof Error ? err : new Error(String(err));
+            setError(nextError);
+            setLoading(false);
+            return {data: undefined, errors: [nextError]};
+        }
+    }, []);
 
-    return [setRunPropertyValue, result] as const;
+    return [setRunPropertyValue, {loading, error}] as const;
 };

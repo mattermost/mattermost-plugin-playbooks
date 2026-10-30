@@ -6,9 +6,15 @@ import {renderHook, waitFor} from '@testing-library/react';
 import {MockedProvider} from '@apollo/client/testing';
 import {GraphQLError} from 'graphql';
 
-import {PlaybookDocument, PlaybookPropertyDocument, PropertyFieldType} from 'src/graphql/generated/graphql';
+import {PlaybookDocument, PropertyFieldType} from 'src/graphql/generated/graphql';
 
 import {usePlaybook, usePlaybookProperty} from './hooks';
+
+const mockFetchPlaybookPropertyField = jest.fn();
+jest.mock('src/client', () => ({
+    ...jest.requireActual('src/client'),
+    fetchPlaybookPropertyField: (...args: unknown[]) => mockFetchPlaybookPropertyField(...args),
+}));
 
 describe('GraphQL Hooks Integration Tests', () => {
     const mockPlaybookID = 'playbook-123';
@@ -380,32 +386,18 @@ describe('GraphQL Hooks Integration Tests', () => {
         });
     });
 
-    describe('PlaybookProperty Query', () => {
-        it('should handle successful query', async () => {
-            const mocks = [
-                {
-                    request: {
-                        query: PlaybookPropertyDocument,
-                        variables: {
-                            playbookID: mockPlaybookID,
-                            propertyID: mockPropertyID,
-                        },
-                    },
-                    result: {
-                        data: {
-                            playbookProperty: mockPropertyField,
-                        },
-                    },
-                },
-            ];
+    describe('usePlaybookProperty REST', () => {
+        beforeEach(() => {
+            mockFetchPlaybookPropertyField.mockReset();
+        });
 
-            const wrapper = createWrapper(mocks);
+        it('should handle successful fetch', async () => {
+            mockFetchPlaybookPropertyField.mockResolvedValue(mockPropertyField as any);
+
             const {result} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
-                {wrapper}
             );
 
-            // Initially loading
             expect(result.current[1].loading).toBe(true);
             expect(result.current[0]).toBeUndefined();
 
@@ -413,130 +405,38 @@ describe('GraphQL Hooks Integration Tests', () => {
                 expect(result.current[1].loading).toBe(false);
             });
 
-            // After loading completes
-            expect(result.current[1].loading).toBe(false);
             expect(result.current[0]).toEqual(mockPropertyField);
             expect(result.current[1].error).toBeUndefined();
         });
 
-        it('should handle query errors', async () => {
-            const mocks = [
-                {
-                    request: {
-                        query: PlaybookPropertyDocument,
-                        variables: {
-                            playbookID: mockPlaybookID,
-                            propertyID: mockPropertyID,
-                        },
-                    },
-                    error: new GraphQLError('Property field not found'),
-                },
-            ];
+        it('should handle missing property', async () => {
+            mockFetchPlaybookPropertyField.mockResolvedValue(undefined);
 
-            const wrapper = createWrapper(mocks);
             const {result} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
-                {wrapper}
             );
-
-            // Initially loading
-            expect(result.current[1].loading).toBe(true);
 
             await waitFor(() => {
                 expect(result.current[1].loading).toBe(false);
             });
 
-            // After error occurs
-            expect(result.current[1].loading).toBe(false);
             expect(result.current[0]).toBeUndefined();
             expect(result.current[1].error).toBeDefined();
         });
 
         it('should handle network errors', async () => {
-            const mocks = [
-                {
-                    request: {
-                        query: PlaybookPropertyDocument,
-                        variables: {
-                            playbookID: mockPlaybookID,
-                            propertyID: mockPropertyID,
-                        },
-                    },
-                    error: new Error('Network error'),
-                },
-            ];
+            mockFetchPlaybookPropertyField.mockRejectedValue(new Error('Network error'));
 
-            const wrapper = createWrapper(mocks);
             const {result} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
-                {wrapper}
             );
-
-            // Initially loading
-            expect(result.current[1].loading).toBe(true);
 
             await waitFor(() => {
                 expect(result.current[1].loading).toBe(false);
             });
 
-            // After network error occurs
-            expect(result.current[1].loading).toBe(false);
             expect(result.current[0]).toBeUndefined();
             expect(result.current[1].error).toBeDefined();
-        });
-    });
-
-    describe('Variable Validation', () => {
-        it('should validate required variables for PlaybookProperty query', () => {
-            const requiredVariables = ['playbookID', 'propertyID'];
-
-            const mockRequest = {
-                query: PlaybookPropertyDocument,
-                variables: {
-                    playbookID: mockPlaybookID,
-                    propertyID: mockPropertyID,
-                },
-            };
-
-            expect(mockRequest.variables).toHaveProperty('playbookID');
-            expect(mockRequest.variables).toHaveProperty('propertyID');
-            expect(Object.keys(mockRequest.variables)).toEqual(requiredVariables);
-        });
-
-        it('should validate required variables for mutations', () => {
-            const addVariables = {
-                playbookID: mockPlaybookID,
-                propertyField: {
-                    name: 'Test Field',
-                    type: PropertyFieldType.Text,
-                },
-            };
-
-            const updateVariables = {
-                playbookID: mockPlaybookID,
-                propertyFieldID: mockPropertyID,
-                propertyField: {
-                    name: 'Updated Field',
-                    type: PropertyFieldType.Text,
-                },
-            };
-
-            const deleteVariables = {
-                playbookID: mockPlaybookID,
-                propertyFieldID: mockPropertyID,
-            };
-
-            expect(addVariables).toHaveProperty('playbookID');
-            expect(addVariables).toHaveProperty('propertyField');
-            expect(addVariables.propertyField).toHaveProperty('name');
-            expect(addVariables.propertyField).toHaveProperty('type');
-
-            expect(updateVariables).toHaveProperty('playbookID');
-            expect(updateVariables).toHaveProperty('propertyFieldID');
-            expect(updateVariables).toHaveProperty('propertyField');
-
-            expect(deleteVariables).toHaveProperty('playbookID');
-            expect(deleteVariables).toHaveProperty('propertyFieldID');
         });
     });
 
