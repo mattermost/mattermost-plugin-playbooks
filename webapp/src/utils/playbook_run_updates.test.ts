@@ -1,8 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRun, PlaybookRunStatus, PlaybookRunType} from 'src/types/playbook_run';
 import {TimelineEventType} from 'src/types/rhs';
 
 import {applyIncrementalUpdate} from './playbook_run_updates';

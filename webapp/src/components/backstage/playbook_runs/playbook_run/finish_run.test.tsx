@@ -6,7 +6,7 @@
 import React from 'react';
 import renderer, {act} from 'react-test-renderer';
 
-import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
+import {PlaybookRunType, RunStatus} from 'src/types/playbook_run';
 
 import FinishRun, {useFinishRunConfirmationMessage, useOnFinishRun} from './finish_run';
 

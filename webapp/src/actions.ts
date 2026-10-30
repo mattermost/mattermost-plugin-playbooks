@@ -8,10 +8,11 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
+import {PlaybookRun, PlaybookRunConnection, PlaybookRunType} from 'src/types/playbook_run';
+
 import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/components/modals/run_update_name';
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
-import {PlaybookRun, PlaybookRunConnection} from 'src/types/playbook_run';
 import {
     clientExecuteCommand,
     createPlaybookPropertyField,
@@ -113,7 +114,6 @@ import {PlaybookCreateModalProps, makePlaybookCreateModal} from 'src/components/
 import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
 import {PresetTemplate} from 'src/components/templates/template_data';
 import {makeTaskActionsModalDefinition} from 'src/components/checklist_item/task_actions_modal';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -473,15 +473,13 @@ export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
     }
 
     // Create optimistic update from input, filtering out options without IDs
-    const optimisticOptions = propertyField.attrs?.options ?
-        propertyField.attrs.options
-            .filter((opt) => opt.id !== undefined)
-            .map((opt) => ({
-                id: opt.id!,
-                name: opt.name,
-                color: opt.color,
-            })) :
-        originalField.attrs.options;
+    const optimisticOptions = propertyField.attrs?.options ? propertyField.attrs.options
+        .filter((opt) => opt.id !== undefined)
+        .map((opt) => ({
+            id: opt.id!,
+            name: opt.name,
+            color: opt.color,
+        })) : originalField.attrs.options;
 
     const optimistic: PropertyField = {
         ...originalField,
