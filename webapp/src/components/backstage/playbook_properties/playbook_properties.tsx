@@ -81,6 +81,9 @@ const PlaybookProperties = ({playbookID, canEdit = true}: Props) => {
         }
     }, [pendingAutoFocusName, properties]);
 
+    // Clear once applied so a later Rename on the same field re-triggers focus
+    const clearAutoFocus = useCallback(() => setAutoFocusPropertyId(null), []);
+
     const updateProperty = useCallback(async (updatedProperty: PropertyField) => {
         if (!canEdit) {
             return;
@@ -255,6 +258,7 @@ const PlaybookProperties = ({playbookID, canEdit = true}: Props) => {
                                 updateField={updateProperty}
                                 existingNames={properties.map((p) => p.name)}
                                 autoFocus={info.row.original.id === autoFocusPropertyId}
+                                onAutoFocused={clearAutoFocus}
                                 disabled={!canEdit}
                             />
                         </PropertyCellContent>
@@ -325,7 +329,7 @@ const PlaybookProperties = ({playbookID, canEdit = true}: Props) => {
                 ),
             })] : []),
         ],
-        [columnHelper, formatMessage, updateProperty, properties, editingTypeId, dispatch, playbookID, addToast, autoFocusPropertyId, canEdit]
+        [columnHelper, formatMessage, updateProperty, properties, editingTypeId, dispatch, playbookID, addToast, autoFocusPropertyId, clearAutoFocus, canEdit]
     );
 
     const table = useReactTable({

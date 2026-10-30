@@ -153,6 +153,23 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
     });
 
     describe('update attribute', () => {
+        it('focuses the name input when choosing Rename from the menu', () => {
+            // # Navigate and create an attribute
+            navigateToAttributes();
+            addAttribute('Menu Rename', 'text');
+
+            // # Choose Rename from the attribute's dot menu
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByTestId('menuButton').click();
+            });
+            cy.findByText(/^rename$/i).click();
+
+            // * Verify the name input keeps focus after the menu closes
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByLabelText('Attribute name').should('have.focus');
+            });
+        });
+
         it('can rename an attribute', () => {
             // # Navigate and create an attribute
             navigateToAttributes();
@@ -476,6 +493,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findAllByTestId('property-field-row').should('have.length', 2);
             cy.findAllByTestId('property-field-row').eq(1).within(() => {
                 cy.findByLabelText('Attribute name').should('have.value', 'Original Copy');
+
+                // * Duplicate auto-focuses (and selects) its name input; wait so typing doesn't race it
+                cy.findByLabelText('Attribute name').should('have.focus');
             });
 
             // # Edit the duplicate's name

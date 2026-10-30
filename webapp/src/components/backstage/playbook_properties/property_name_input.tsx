@@ -19,6 +19,7 @@ interface Props {
     updateField: (field: PropertyField) => void;
     existingNames: string[];
     autoFocus?: boolean;
+    onAutoFocused?: () => void;
     disabled?: boolean;
 }
 
@@ -27,7 +28,7 @@ export interface PropertyNameInputRef {
     select: () => void;
 }
 
-const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updateField, existingNames, autoFocus, disabled}, ref) => {
+const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updateField, existingNames, autoFocus, onAutoFocused, disabled}, ref) => {
     const {formatMessage} = useIntl();
 
     const [localValue, setLocalValue] = useState<string | null>(null);
@@ -35,13 +36,19 @@ const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updat
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Auto-focus and select on mount if requested
+    // Auto-focus and select when requested. Deferred so it runs after a closing
+    // menu's FloatingFocusManager returns focus to its trigger (queued as a microtask).
     useEffect(() => {
-        if (autoFocus && inputRef.current) {
-            inputRef.current.focus();
-            inputRef.current.select();
+        if (!autoFocus) {
+            return undefined;
         }
-    }, [autoFocus]);
+        const timeout = setTimeout(() => {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+            onAutoFocused?.();
+        });
+        return () => clearTimeout(timeout);
+    }, [autoFocus, onAutoFocused]);
 
     useImperativeHandle(ref, () => ({
         focus: () => inputRef.current?.focus(),

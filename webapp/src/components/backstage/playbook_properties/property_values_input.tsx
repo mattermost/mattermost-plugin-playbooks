@@ -167,8 +167,7 @@ const ClickableMultiValue = (props: {
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         e.stopPropagation();
         if (e.key === 'Enter') {
-            handleRename();
-            setIsOpen(false);
+            onDropdownChange(false);
         } else if (e.key === 'Escape') {
             setEditValue(props.data.label);
             setIsOpen(false);
