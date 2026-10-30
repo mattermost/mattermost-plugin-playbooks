@@ -83,6 +83,22 @@ export async function fetchPlaybookRun(id: string) {
     return data as PlaybookRun;
 }
 
+export async function addRunParticipants(runId: string, userIds: string[], forceAddToChannel = false): Promise<PlaybookRun> {
+    const data = await doPost(`${apiUrl}/runs/${runId}/participants`, JSON.stringify({
+        user_ids: userIds,
+        force_add_to_channel: forceAddToChannel,
+    }));
+    return data as PlaybookRun;
+}
+
+export async function removeRunParticipants(runId: string, userIds: string[]): Promise<PlaybookRun> {
+    const {data} = await doFetchWithResponse<PlaybookRun>(`${apiUrl}/runs/${runId}/participants`, {
+        method: 'DELETE',
+        body: JSON.stringify({user_ids: userIds}),
+    });
+    return data as PlaybookRun;
+}
+
 export async function fetchPlaybookRunStatusUpdates(id: string) {
     return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
