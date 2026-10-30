@@ -113,6 +113,10 @@ const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updat
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Enter during IME composition confirms a candidate, not the edit
+        if (e.nativeEvent.isComposing) {
+            return;
+        }
         if (e.key === 'Enter') {
             e.currentTarget.blur();
         } else if (e.key === 'Escape') {

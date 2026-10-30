@@ -166,6 +166,11 @@ const ClickableMultiValue = (props: {
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         e.stopPropagation();
+
+        // Enter during IME composition confirms a candidate, not the edit
+        if (e.nativeEvent.isComposing) {
+            return;
+        }
         if (e.key === 'Enter') {
             onDropdownChange(false);
         } else if (e.key === 'Escape') {
