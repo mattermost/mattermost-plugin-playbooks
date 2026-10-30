@@ -91,6 +91,12 @@ func (s *allocPlaybookServiceStub) UpdateChannelNameTemplateLocked(string, bool,
 func (s *allocPlaybookServiceStub) UpdateRunNumberPrefix(string, string, string) error {
 	panic("not called")
 }
+func (s *allocPlaybookServiceStub) AddPlaybookMember(string, string) error {
+	panic("not called")
+}
+func (s *allocPlaybookServiceStub) RemovePlaybookMember(string, string) error {
+	panic("not called")
+}
 
 // allocPropertyServiceStub is a minimal PropertyService stub: returns fixed fields and
 // passes through SanitizePropertyValue unchanged. Methods resolveAndAllocate never calls panic.
