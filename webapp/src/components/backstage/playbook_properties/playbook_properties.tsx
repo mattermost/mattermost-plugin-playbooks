@@ -10,6 +10,7 @@ import React, {
 
 import styled from 'styled-components';
 import {
+    Cell,
     createColumnHelper,
     flexRender,
     getCoreRowModel,
@@ -425,10 +426,7 @@ const PlaybookProperties = ({playbookID, canEdit = true}: Props) => {
                                                                 style={{width: cell.column.getSize()}}
                                                                 {...(cell.column.id === 'drag' ? dragProvided.dragHandleProps : {})}
                                                             >
-                                                                {flexRender(
-                                                                    cell.column.columnDef.cell,
-                                                                    cell.getContext()
-                                                                )}
+                                                                {renderCell(cell)}
                                                             </TableCell>
                                                         ))}
                                                     </TableRow>
@@ -490,6 +488,13 @@ const PlaybookProperties = ({playbookID, canEdit = true}: Props) => {
             </InnerContainer>
         </OuterContainer>
     );
+};
+
+// flexRender would mount inline cell functions as components; since `columns` is
+// rebuilt on many state changes, that remounts every cell and drops in-progress edits.
+const renderCell = (cell: Cell<PropertyField, unknown>) => {
+    const render = cell.column.columnDef.cell;
+    return typeof render === 'function' ? render(cell.getContext()) : render;
 };
 
 const OuterContainer = styled.div`
