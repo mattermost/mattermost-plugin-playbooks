@@ -354,6 +354,7 @@ export type PlaybookUpdateFields = {
     removeChannelMemberOnRemovedParticipant?: boolean | null;
     channelId?: string | null;
     channelMode?: string | null;
+
     /** GraphQL PlaybookUpdates checklist shape (camelCase item fields). Converted to snake_case for REST. */
     checklists?: PlaybookChecklistUpdateFields[] | null;
 };
