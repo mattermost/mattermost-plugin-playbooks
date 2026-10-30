@@ -141,6 +141,11 @@ const myPlaybookRuns = (
     case PLAYBOOK_RUN_UPDATED: {
         const playbookRunUpdated = action as PlaybookRunUpdated;
         const playbookRun = playbookRunUpdated.playbookRun;
+        const current = state[playbookRun.id];
+        // Ignore a stale HTTP snapshot that lost a race with a newer websocket update.
+        if (current && current.update_at > playbookRun.update_at) {
+            return state;
+        }
         return {
             ...state,
             [playbookRun.id]: playbookRun,
@@ -316,10 +321,43 @@ const myPlaybookRunsByTeam = (
         const playbookRunUpdated = action as PlaybookRunUpdated;
         const playbookRun = playbookRunUpdated.playbookRun;
         const teamId = playbookRun.team_id;
+
+        // Drop any previous team/channel slot for this run (channel moves, DM/GM
+        // with empty team_id) before inserting the updated entry.
+        let nextState: TStateMyPlaybookRunsByTeam = state;
+        let changed = false;
+        for (const existingTeamId of Object.keys(state)) {
+            const teamData = state[existingTeamId];
+            if (!teamData) {
+                continue;
+            }
+            for (const channelId of Object.keys(teamData)) {
+                if (teamData[channelId]?.id !== playbookRun.id) {
+                    continue;
+                }
+                if (existingTeamId === teamId && channelId === playbookRun.channel_id) {
+                    continue;
+                }
+                if (!changed) {
+                    nextState = {...state};
+                    changed = true;
+                }
+                if (nextState[existingTeamId] === state[existingTeamId]) {
+                    nextState[existingTeamId] = {...teamData};
+                }
+                delete nextState[existingTeamId]![channelId];
+            }
+        }
+
+        const existingAtDest = nextState[teamId]?.[playbookRun.channel_id];
+        if (isRun(existingAtDest) && existingAtDest.update_at > playbookRun.update_at) {
+            return nextState;
+        }
+
         return {
-            ...state,
+            ...nextState,
             [teamId]: {
-                ...state[teamId],
+                ...nextState[teamId],
                 [playbookRun.channel_id]: playbookRun,
             },
         };
