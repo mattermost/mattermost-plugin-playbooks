@@ -3,13 +3,9 @@
 
 import {useCallback, useEffect, useState} from 'react';
 
-import {
-    useApolloClient,
-} from '@apollo/client';
+import {useApolloClient} from '@apollo/client';
 
-import {
-    RhsRunsDocument,
-} from 'src/graphql/generated/graphql';
+import {RhsRunsDocument} from 'src/graphql/generated/graphql';
 
 import {playbookRunUpdated} from 'src/actions';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
@@ -141,9 +137,8 @@ export const useUpdatePlaybook = (id?: string) => {
         if (!id) {
             return;
         }
-        const updated = await updatePlaybookRequest(id, updates);
+        await updatePlaybookRequest(id, updates);
         notifyPlaybookRefresh(id);
-        return updated;
     }, [id]);
 };
 
@@ -200,6 +195,7 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
             return;
         }
         await addPlaybookMember(playbookID, userID);
+
         // Refresh LHS as soon as membership succeeds so a failed auto-follow
         // cannot leave the joined playbook missing from the sidebar.
         refreshLHS();
