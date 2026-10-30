@@ -178,6 +178,33 @@ func (s *PlaybookRunService) Update(ctx context.Context, playbookRunID string, u
 	return playbookRun, nil
 }
 
+// AddParticipants adds users as participants of a playbook run.
+func (s *PlaybookRunService) AddParticipants(ctx context.Context, playbookRunID string, opts PlaybookRunParticipantsOptions) (*PlaybookRun, error) {
+	return s.changeParticipants(ctx, http.MethodPost, playbookRunID, opts)
+}
+
+// RemoveParticipants removes users from the participants of a playbook run.
+func (s *PlaybookRunService) RemoveParticipants(ctx context.Context, playbookRunID string, userIDs []string) (*PlaybookRun, error) {
+	return s.changeParticipants(ctx, http.MethodDelete, playbookRunID, PlaybookRunParticipantsOptions{UserIDs: userIDs})
+}
+
+func (s *PlaybookRunService) changeParticipants(ctx context.Context, method, playbookRunID string, opts PlaybookRunParticipantsOptions) (*PlaybookRun, error) {
+	participantsURL := fmt.Sprintf("runs/%s/participants", playbookRunID)
+	req, err := s.client.newAPIRequest(method, participantsURL, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	playbookRun := new(PlaybookRun)
+	resp, err := s.client.do(ctx, req, playbookRun)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return playbookRun, nil
+}
+
 func (s *PlaybookRunService) RequestUpdate(ctx context.Context, playbookRunID, userID string) error {
 	requestURL := fmt.Sprintf("runs/%s/request-update", playbookRunID)
 	req, err := s.client.newAPIRequest(http.MethodPost, requestURL, nil)

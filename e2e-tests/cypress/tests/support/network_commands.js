@@ -48,16 +48,3 @@ Cypress.Commands.add('waitForNetworkIdle', (options = {}) => {
         },
     );
 });
-
-Cypress.Commands.add('waitForGraphQLQueries', (options = {}) => {
-    const {
-        idleTime = 500,
-        timeout = 2000,
-    } = options;
-
-    cy.waitForNetworkIdle({
-        idleTime,
-        timeout,
-        urlPattern: /\/plugins\/playbooks\/api\/v0\/query/,
-    });
-});

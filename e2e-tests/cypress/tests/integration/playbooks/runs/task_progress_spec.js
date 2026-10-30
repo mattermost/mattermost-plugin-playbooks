@@ -79,9 +79,8 @@ describe('runs > task progress', {testIsolation: true}, () => {
     it('shows 0/4 progress in runs list when no tasks completed', () => {
         cy.then(() => {
             // # Visit the runs list
-            cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('runsList');
             cy.visit('/playbooks/runs');
-            cy.wait('@runsList');
+            cy.findByTestId('playbookRunList').should('be.visible');
 
             // # Find the run in the list and assert task progress
             cy.playbooksGetRunListRow(testRun.name).within(() => {
@@ -108,9 +107,8 @@ describe('runs > task progress', {testIsolation: true}, () => {
             cy.playbooksCompleteTaskAtIndex(1);
 
             // # Visit the runs list
-            cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('runsList');
             cy.visit('/playbooks/runs');
-            cy.wait('@runsList');
+            cy.findByTestId('playbookRunList').should('be.visible');
 
             // # Find the run in the list and assert task progress
             cy.playbooksGetRunListRow(testRun.name).within(() => {
@@ -140,9 +138,8 @@ describe('runs > task progress', {testIsolation: true}, () => {
             cy.apiSetChecklistItemState(testRun.id, 0, 2, 'skipped');
 
             // # Visit the runs list
-            cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('runsList');
             cy.visit('/playbooks/runs');
-            cy.wait('@runsList');
+            cy.findByTestId('playbookRunList').should('be.visible');
 
             // # Find the run in the list and assert task progress
             cy.playbooksGetRunListRow(testRun.name).within(() => {
@@ -171,9 +168,8 @@ describe('runs > task progress', {testIsolation: true}, () => {
             cy.apiSetChecklistItemState(testRun.id, 0, 3, 'skipped');
 
             // # Visit the runs list
-            cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('runsList');
             cy.visit('/playbooks/runs');
-            cy.wait('@runsList');
+            cy.findByTestId('playbookRunList').should('be.visible');
 
             // # Find the run in the list and assert task progress
             cy.playbooksGetRunListRow(testRun.name).within(() => {
@@ -202,9 +198,8 @@ describe('runs > task progress', {testIsolation: true}, () => {
             cy.playbooksCompleteTaskAtIndex(3);
 
             // # Visit the runs list
-            cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('runsList');
             cy.visit('/playbooks/runs');
-            cy.wait('@runsList');
+            cy.findByTestId('playbookRunList').should('be.visible');
 
             // # Find the run in the list and assert task progress
             cy.playbooksGetRunListRow(testRun.name).within(() => {

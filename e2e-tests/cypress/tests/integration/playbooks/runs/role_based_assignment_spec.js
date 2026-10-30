@@ -368,9 +368,6 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
             cy.visit('/playbooks/playbooks/' + playbook.id + '/outline');
             cy.get('#checklists').should('be.visible');
 
-            // # Register intercept before typing so it is guaranteed to capture the save mutation.
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
-
             cy.get('#checklists').within(() => {
                 cy.contains('[data-testid="checkbox-item-container"]', 'Unassigned Task').within(($item) => {
                     cy.wrap($item).trigger('mouseover');
@@ -384,11 +381,13 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 cy.findByTestId('checklist-item-save-button').click();
             });
 
-            // # Wait for the UpdatePlaybook mutation triggered by the save button click
-            cy.wait('@UpdatePlaybook');
-
-            // * Owner Task must still carry assignee_type=owner after the sibling edit
-            cy.apiGetPlaybook(playbook.id).then((resp) => {
+            // # Wait for the renamed task to be stored
+            cy.apiWaitForPlaybook(
+                playbook.id,
+                (pb) => pb.checklists[0].items.some((i) => i.title === 'Renamed Task'),
+                'Renamed task was not saved',
+            ).then((resp) => {
+                // * Owner Task must still carry assignee_type=owner after the sibling edit
                 const items = resp.checklists[0].items;
                 const ownerTask = items.find((i) => i.title === 'Owner Task');
                 expect(ownerTask).to.exist;
@@ -493,8 +492,6 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 // # Open the task editor in the playbook outline
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Switchable Task');
 
-                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
-
                 cy.get('#checklists').within(() => {
                     // # Select "None" from the role dropdown to clear the role
                     cy.findByTestId('role-options').select('none');
@@ -506,12 +503,13 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 // # Pick the user from the profile selector dropdown (rendered as @username)
                 cy.contains('.playbook-react-select__option', '@' + testOwner.username).click();
 
-                // # Wait for the save to complete
-                cy.wait('@UpdatePlaybook');
-
                 // * Server must have assignee_type cleared and assignee_id set;
                 //   assignee_property_field_id must also be cleared
-                cy.apiGetPlaybook(playbook.id).then((resp) => {
+                cy.apiWaitForPlaybook(
+                    playbook.id,
+                    (pb) => pb.checklists[0].items[0].assignee_id === testOwner.id,
+                    'Task assignee was not saved',
+                ).then((resp) => {
                     const item = resp.checklists[0].items[0];
                     expect(item.assignee_type).to.equal('');
                     expect(item.assignee_id).to.equal(testOwner.id);

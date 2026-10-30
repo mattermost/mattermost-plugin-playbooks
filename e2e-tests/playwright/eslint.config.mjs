@@ -15,6 +15,17 @@ export default tseslint.config(
             globals: globals.node,
         },
         rules: {
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'Literal[value=/api.v0.query/], TemplateElement[value.raw=/api.v0.query/]',
+                    message: 'e2e tests must not call or intercept the GraphQL endpoint; use REST helpers and assert on UI or server state.',
+                },
+                {
+                    selector: "Property[key.name='operationName']",
+                    message: 'e2e tests must not depend on GraphQL operations; assert on UI or server state instead.',
+                },
+            ],
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 {
