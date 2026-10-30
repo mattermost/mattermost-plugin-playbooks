@@ -107,6 +107,12 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	autoFollowRouter.HandleFunc("", withContext(handler.autoFollow)).Methods(http.MethodPut)
 	autoFollowRouter.HandleFunc("", withContext(handler.autoUnfollow)).Methods(http.MethodDelete)
 
+	// Membership mirrors GraphQL addPlaybookMember / removePlaybookMember.
+	membersRouter := playbookRouter.PathPrefix("/members").Subrouter()
+	memberRouter := membersRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
+	memberRouter.HandleFunc("", withContext(handler.addPlaybookMember)).Methods(http.MethodPut)
+	memberRouter.HandleFunc("", withContext(handler.removePlaybookMember)).Methods(http.MethodDelete)
+
 	insightsRouter := playbooksRouter.PathPrefix("/insights").Subrouter()
 	insightsRouter.HandleFunc("/user/me", withContext(handler.getTopPlaybooksForUser)).Methods(http.MethodGet)
 	insightsRouter.HandleFunc("/teams/{teamID}", withContext(handler.getTopPlaybooksForTeam)).Methods(http.MethodGet)
@@ -718,6 +724,67 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		SearchTerm:   searchTerm,
 		WithArchived: withArchived,
 	}, nil
+}
+
+// addPlaybookMember handles PUT /playbooks/{id}/members/{userID}.
+func (h *PlaybookHandler) addPlaybookMember(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	memberUserID := mux.Vars(r)["userID"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageMembers(userID, currentPlaybook)) {
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return
+	}
+
+	if err := h.playbookService.AddPlaybookMember(playbookID, memberUserID); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// removePlaybookMember handles DELETE /playbooks/{id}/members/{userID}.
+func (h *PlaybookHandler) removePlaybookMember(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	memberUserID := mux.Vars(r)["userID"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return
+	}
+
+	// Leaving yourself does not require manage-members (same as GraphQL).
+	if userID != memberUserID {
+		if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageMembers(userID, currentPlaybook)) {
+			return
+		}
+	}
+
+	if err := h.playbookService.RemovePlaybookMember(playbookID, memberUserID); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *PlaybookHandler) autoFollow(c *Context, w http.ResponseWriter, r *http.Request) {

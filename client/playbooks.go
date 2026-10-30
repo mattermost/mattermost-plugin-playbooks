@@ -223,6 +223,27 @@ func (s *PlaybooksService) Stats(ctx context.Context, playbookID string) (*Playb
 	return stats, nil
 }
 
+// AddMember adds a user as a member of the playbook.
+func (s *PlaybooksService) AddMember(ctx context.Context, playbookID, userID string) error {
+	return s.setMember(ctx, http.MethodPut, playbookID, userID)
+}
+
+// RemoveMember removes a user from the playbook.
+func (s *PlaybooksService) RemoveMember(ctx context.Context, playbookID, userID string) error {
+	return s.setMember(ctx, http.MethodDelete, playbookID, userID)
+}
+
+func (s *PlaybooksService) setMember(ctx context.Context, method, playbookID, userID string) error {
+	memberURL := fmt.Sprintf("playbooks/%s/members/%s", playbookID, userID)
+	req, err := s.client.newAPIRequest(method, memberURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
 // AddFavorite marks the playbook as a favorite for the current user.
 func (s *PlaybooksService) AddFavorite(ctx context.Context, playbookID string) error {
 	return s.setFavorite(ctx, http.MethodPut, playbookID)
