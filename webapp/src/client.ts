@@ -30,6 +30,8 @@ import {
     FetchPlaybooksReturn,
     Playbook,
     PlaybookWithChecklist,
+    TaskAction,
+    TaskRequirement,
 } from 'src/types/playbook';
 import {AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
@@ -313,6 +315,151 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
         method: 'DELETE',
     });
     return data;
+}
+
+/** Partial playbook update using GraphQL PlaybookUpdates field names; maps to PATCH /playbooks/{id}. */
+export type PlaybookUpdateFields = {
+    title?: string | null;
+    description?: string | null;
+    public?: boolean | null;
+    createPublicPlaybookRun?: boolean | null;
+    reminderMessageTemplate?: string | null;
+    reminderTimerDefaultSeconds?: number | null;
+    statusUpdateEnabled?: boolean | null;
+    invitedUserIDs?: string[] | null;
+    invitedGroupIDs?: string[] | null;
+    inviteUsersEnabled?: boolean | null;
+    defaultOwnerID?: string | null;
+    defaultOwnerEnabled?: boolean | null;
+    broadcastChannelIDs?: string[] | null;
+    broadcastEnabled?: boolean | null;
+    webhookOnCreationURLs?: string[] | null;
+    webhookOnCreationEnabled?: boolean | null;
+    messageOnJoin?: string | null;
+    messageOnJoinEnabled?: boolean | null;
+    retrospectiveReminderIntervalSeconds?: number | null;
+    retrospectiveTemplate?: string | null;
+    retrospectiveEnabled?: boolean | null;
+    webhookOnStatusUpdateURLs?: string[] | null;
+    webhookOnStatusUpdateEnabled?: boolean | null;
+    signalAnyKeywords?: string[] | null;
+    signalAnyKeywordsEnabled?: boolean | null;
+    categorizeChannelEnabled?: boolean | null;
+    categoryName?: string | null;
+    runSummaryTemplateEnabled?: boolean | null;
+    runSummaryTemplate?: string | null;
+    channelNameTemplate?: string | null;
+    channelNameTemplateLocked?: boolean | null;
+    createChannelMemberOnNewParticipant?: boolean | null;
+    removeChannelMemberOnRemovedParticipant?: boolean | null;
+    channelId?: string | null;
+    channelMode?: string | null;
+    /** GraphQL PlaybookUpdates checklist shape (camelCase item fields). Converted to snake_case for REST. */
+    checklists?: PlaybookChecklistUpdateFields[] | null;
+};
+
+/** Checklist update using GraphQL ChecklistUpdates field names. */
+export type PlaybookChecklistUpdateFields = {
+    title: string;
+    items: PlaybookChecklistItemUpdateFields[];
+};
+
+/** Checklist item update using GraphQL ChecklistItemUpdates field names. */
+export type PlaybookChecklistItemUpdateFields = {
+    title: string;
+    description?: string;
+    state?: string;
+    stateModified?: number;
+    assigneeID?: string;
+    assigneeModified?: number;
+    assigneeType?: string | null;
+    assigneePropertyFieldID?: string | null;
+    assigneeOnlyComplete?: boolean | null;
+    command?: string;
+    commandLastRun?: number;
+    dueDate?: number;
+    taskActions?: TaskAction[] | null;
+    conditionID?: string;
+    requirements?: TaskRequirement[] | null;
+};
+
+const playbookUpdateFieldMap: Record<Exclude<keyof PlaybookUpdateFields, 'checklists'>, string> = {
+    title: 'title',
+    description: 'description',
+    public: 'public',
+    createPublicPlaybookRun: 'create_public_playbook_run',
+    reminderMessageTemplate: 'reminder_message_template',
+    reminderTimerDefaultSeconds: 'reminder_timer_default_seconds',
+    statusUpdateEnabled: 'status_update_enabled',
+    invitedUserIDs: 'invited_user_ids',
+    invitedGroupIDs: 'invited_group_ids',
+    inviteUsersEnabled: 'invite_users_enabled',
+    defaultOwnerID: 'default_owner_id',
+    defaultOwnerEnabled: 'default_owner_enabled',
+    broadcastChannelIDs: 'broadcast_channel_ids',
+    broadcastEnabled: 'broadcast_enabled',
+    webhookOnCreationURLs: 'webhook_on_creation_urls',
+    webhookOnCreationEnabled: 'webhook_on_creation_enabled',
+    messageOnJoin: 'message_on_join',
+    messageOnJoinEnabled: 'message_on_join_enabled',
+    retrospectiveReminderIntervalSeconds: 'retrospective_reminder_interval_seconds',
+    retrospectiveTemplate: 'retrospective_template',
+    retrospectiveEnabled: 'retrospective_enabled',
+    webhookOnStatusUpdateURLs: 'webhook_on_status_update_urls',
+    webhookOnStatusUpdateEnabled: 'webhook_on_status_update_enabled',
+    signalAnyKeywords: 'signal_any_keywords',
+    signalAnyKeywordsEnabled: 'signal_any_keywords_enabled',
+    categorizeChannelEnabled: 'categorize_channel_enabled',
+    categoryName: 'category_name',
+    runSummaryTemplateEnabled: 'run_summary_template_enabled',
+    runSummaryTemplate: 'run_summary_template',
+    channelNameTemplate: 'channel_name_template',
+    channelNameTemplateLocked: 'channel_name_template_locked',
+    createChannelMemberOnNewParticipant: 'create_channel_member_on_new_participant',
+    removeChannelMemberOnRemovedParticipant: 'remove_channel_member_on_removed_participant',
+    channelId: 'channel_id',
+    channelMode: 'channel_mode',
+};
+
+function toRestPlaybookChecklists(checklists: PlaybookChecklistUpdateFields[]) {
+    return checklists.map((checklist) => ({
+        title: checklist.title,
+        items: (checklist.items || []).map((item) => ({
+            title: item.title,
+            description: item.description ?? '',
+            state: item.state ?? '',
+            state_modified: item.stateModified ?? 0,
+            assignee_id: item.assigneeID ?? '',
+            assignee_modified: item.assigneeModified ?? 0,
+            assignee_type: item.assigneeType ?? '',
+            assignee_property_field_id: item.assigneePropertyFieldID ?? '',
+            assignee_only_complete: Boolean(item.assigneeOnlyComplete),
+            command: item.command ?? '',
+            command_last_run: item.commandLastRun ?? 0,
+            due_date: item.dueDate ?? 0,
+            task_actions: item.taskActions ?? [],
+            condition_id: item.conditionID ?? '',
+            requirements: item.requirements ?? [],
+        })),
+    }));
+}
+
+export async function updatePlaybook(playbookId: string, updates: PlaybookUpdateFields): Promise<PlaybookWithChecklist> {
+    const body: Record<string, unknown> = {};
+    (Object.keys(playbookUpdateFieldMap) as Array<keyof typeof playbookUpdateFieldMap>).forEach((key) => {
+        if (updates[key] !== undefined) {
+            body[playbookUpdateFieldMap[key]] = updates[key];
+        }
+    });
+    if (updates.checklists !== undefined) {
+        body.checklists = updates.checklists === null ? null : toRestPlaybookChecklists(updates.checklists);
+    }
+
+    const {data} = await doFetchWithResponse<PlaybookWithChecklist>(`${apiUrl}/playbooks/${playbookId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+    });
+    return data as PlaybookWithChecklist;
 }
 
 export async function updatePlaybookRunNumberPrefix(playbookId: Playbook['id'], runNumberPrefix: string) {
