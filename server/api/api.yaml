@@ -1898,6 +1898,87 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /plugins/playbooks/api/v0/playbooks/{id}/members/{userID}:
+    put:
+      summary: Add a member to a playbook
+      description: |
+        Adds the given user as a playbook member. Requires permission to manage playbook members
+        (same as the GraphQL `addPlaybookMember` mutation). Archived playbooks cannot be modified.
+      operationId: addPlaybookMember
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+        - name: userID
+          in: path
+          required: true
+          description: ID of the user to add as a member.
+          schema:
+            type: string
+            example: hx7fqtqxp7nn8129t7e505ls6s
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/members/hx7fqtqxp7nn8129t7e505ls6s' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Member successfully added.
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      summary: Remove a member from a playbook
+      description: |
+        Removes the given user from the playbook. Removing yourself does not require manage-members
+        permission; removing anyone else does (same as the GraphQL `removePlaybookMember` mutation).
+        Archived playbooks cannot be modified.
+      operationId: removePlaybookMember
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+        - name: userID
+          in: path
+          required: true
+          description: ID of the user to remove.
+          schema:
+            type: string
+            example: hx7fqtqxp7nn8129t7e505ls6s
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/members/hx7fqtqxp7nn8129t7e505ls6s' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Member successfully removed.
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
   /plugins/playbooks/api/v0/playbooks/{id}/favorite:
     put:
       summary: Favorite a playbook
