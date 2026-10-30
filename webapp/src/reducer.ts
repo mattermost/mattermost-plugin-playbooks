@@ -142,6 +142,7 @@ const myPlaybookRuns = (
         const playbookRunUpdated = action as PlaybookRunUpdated;
         const playbookRun = playbookRunUpdated.playbookRun;
         const current = state[playbookRun.id];
+
         // Ignore a stale HTTP snapshot that lost a race with a newer websocket update.
         if (current && current.update_at > playbookRun.update_at) {
             return state;
