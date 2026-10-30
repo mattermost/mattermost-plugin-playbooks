@@ -439,6 +439,22 @@ func (s *playbookService) AutoFollow(playbookID, userID string) error {
 	return nil
 }
 
+// AddPlaybookMember adds a user as a member to a playbook.
+func (s *playbookService) AddPlaybookMember(playbookID, memberID string) error {
+	if err := s.store.AddPlaybookMember(playbookID, memberID); err != nil {
+		return errors.Wrap(err, "unable to add playbook member")
+	}
+	return nil
+}
+
+// RemovePlaybookMember removes a user from a playbook.
+func (s *playbookService) RemovePlaybookMember(playbookID, memberID string) error {
+	if err := s.store.RemovePlaybookMember(playbookID, memberID); err != nil {
+		return errors.Wrap(err, "unable to remove playbook member")
+	}
+	return nil
+}
+
 // AutoUnfollow method lets user to not auto-follow the newly created playbook runs
 func (s *playbookService) AutoUnfollow(playbookID, userID string) error {
 	if err := s.store.AutoUnfollow(playbookID, userID); err != nil {
