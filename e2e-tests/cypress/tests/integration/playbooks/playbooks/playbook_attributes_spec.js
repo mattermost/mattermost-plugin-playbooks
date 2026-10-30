@@ -476,6 +476,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findAllByTestId('property-field-row').should('have.length', 2);
             cy.findAllByTestId('property-field-row').eq(1).within(() => {
                 cy.findByLabelText('Attribute name').should('have.value', 'Original Copy');
+
+                // # Wait for the post-duplicate auto-focus/select to land before typing
+                cy.findByLabelText('Attribute name').should('have.focus');
             });
 
             // # Edit the duplicate's name
