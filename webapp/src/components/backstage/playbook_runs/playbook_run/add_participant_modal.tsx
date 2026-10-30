@@ -162,9 +162,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 showDefaultOptions={isDMGM}
                 customSelectStyles={selectStyles}
                 setValues={setProfiles}
-                placeholder={isDMGM ?
-                    formatMessage({defaultMessage: 'Select channel members'}) :
-                    formatMessage({defaultMessage: 'Search for people'})
+                placeholder={isDMGM ? formatMessage({defaultMessage: 'Select channel members'}) : formatMessage({defaultMessage: 'Search for people'})
                 }
             />
         </GenericModal>

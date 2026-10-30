@@ -15,9 +15,10 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {throttle} from 'lodash';
 
+import {PlaybookRunStatus, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {PlaybookRole} from 'src/types/permissions';
 import {useParticipateInRun, usePlaybook} from 'src/hooks';
 
@@ -30,7 +31,6 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious, useRun} from 'src/hooks/general';
-import {PlaybookRunStatus} from 'src/types/playbook_run';
 import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {

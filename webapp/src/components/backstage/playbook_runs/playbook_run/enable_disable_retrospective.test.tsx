@@ -3,8 +3,7 @@
 
 import {act, renderHook} from '@testing-library/react';
 
-import {PlaybookRun} from 'src/types/playbook_run';
-import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
+import {PlaybookRun, PlaybookRunType, RunStatus} from 'src/types/playbook_run';
 
 import {useToggleRunRetrospective} from './enable_disable_retrospective';
 

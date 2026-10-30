@@ -15,8 +15,8 @@ import {
     FlagOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
-import {PlaybookRun} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRun, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useOnFinishRun} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';

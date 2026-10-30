@@ -10,6 +10,8 @@ import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {BookOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {PlaybookRun, PlaybookRunStatus, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useAppSelector} from 'src/hooks/redux';
 
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -19,8 +21,6 @@ import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import TextEdit from 'src/components/text_edit';
 import {SemiBoldHeading} from 'src/styles/headings';
 import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {usePlaybookName} from 'src/hooks';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 

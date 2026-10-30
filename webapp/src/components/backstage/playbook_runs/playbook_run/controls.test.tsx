@@ -7,8 +7,7 @@ import React from 'react';
 import renderer, {ReactTestRendererJSON} from 'react-test-renderer';
 import {IntlProvider} from 'react-intl';
 
-import {PlaybookRun} from 'src/types/playbook_run';
-import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
+import {PlaybookRun, PlaybookRunType, RunStatus} from 'src/types/playbook_run';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
@@ -45,6 +44,7 @@ jest.mock('src/hooks', () => ({
 }));
 
 jest.mock('src/types/playbook_run', () => ({
+    ...jest.requireActual('src/types/playbook_run'),
     playbookRunIsActive: (run: any) => run.current_status === 'InProgress',
 }));
 

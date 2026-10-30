@@ -19,7 +19,7 @@ import {useRunsList} from 'src/hooks';
 
 import {pluginUrl} from 'src/browser_routing';
 
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRunType} from 'src/types/playbook_run';
 
 import {Mark, Measure, measureAndReport} from 'src/performance_telemetry';
 
