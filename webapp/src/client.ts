@@ -446,6 +446,18 @@ export async function setAssigneeOnlyComplete(
     }
 }
 
+export async function setChecklistItemTaskActions(
+    playbookRunId: string,
+    checklistNum: number,
+    itemNum: number,
+    taskActions: Array<{trigger: {type: string; payload: string}; actions: Array<{type: string; payload: string}>}>,
+) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/task_actions`, {
+        method: 'PUT',
+        body: JSON.stringify({task_actions: taskActions}),
+    });
+}
+
 export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number) {
     const body = JSON.stringify({due_date: date});
     try {
