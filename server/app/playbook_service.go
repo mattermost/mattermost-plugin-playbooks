@@ -699,6 +699,11 @@ func (s *playbookService) checkRunNumberPrefixUnique(teamID, prefix, excludeID s
 	return nil
 }
 
+// ValidateRunNumberPrefixUnique exposes checkRunNumberPrefixUnique for REST PATCH.
+func (s *playbookService) ValidateRunNumberPrefixUnique(teamID, prefix, excludeID string) error {
+	return s.checkRunNumberPrefixUnique(teamID, prefix, excludeID)
+}
+
 // maxImportPrefixSuffixAttempts caps the "-N" suffixes tried below.
 const maxImportPrefixSuffixAttempts = 50
 
@@ -825,6 +830,33 @@ func (s *playbookService) UpdateRunNumberPrefix(playbookID, prefix, userID strin
 	}
 
 	if err := s.store.UpdateRunNumberPrefix(playbookID, prefix); err != nil {
+		return err
+	}
+
+	auditRec.Success()
+	return nil
+}
+
+// GraphqlUpdate applies a partial field update using a setmap.
+func (s *playbookService) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+	if len(setmap) == 0 {
+		return nil
+	}
+
+	auditRec := s.auditor.MakeAuditRecord("graphqlUpdatePlaybook", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+	model.AddEventParameterToAuditRec(auditRec, "playbookID", id)
+
+	fieldNames := make([]string, 0, len(setmap))
+	for fieldName := range setmap {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	model.AddEventParameterToAuditRec(auditRec, "fieldsUpdated", strings.Join(fieldNames, ","))
+
+	setmap["UpdateAt"] = model.GetMillis()
+
+	if err := s.store.GraphqlUpdate(id, setmap); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 

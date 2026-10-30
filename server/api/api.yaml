@@ -1955,6 +1955,54 @@ paths:
           $ref: "#/components/responses/403"
         500:
           $ref: "#/components/responses/500"
+    patch:
+      summary: Partially update a playbook
+      description: |
+        Applies a partial update to a playbook. Only fields present in the request body are changed.
+        Requires permission to edit the playbook (same as the GraphQL `updatePlaybook` mutation),
+        including PlaybookMakePublic/PlaybookMakePrivate when visibility changes. Unknown fields
+        are rejected. All applied fields are written in a single store update.
+      operationId: patchPlaybook
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to update.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      requestBody:
+        description: Partial playbook update. Omit fields that should not change.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaybookUpdateOptions"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PATCH 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{"title": "Renamed playbook", "channel_name_template": "Incident {SEQ}"}'
+      responses:
+        200:
+          description: Updated playbook.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Playbook"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        409:
+          $ref: "#/components/responses/409"
+        500:
+          $ref: "#/components/responses/500"
     delete:
       summary: Delete a playbook
       operationId: deletePlaybook
@@ -2808,6 +2856,12 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
       description: Resource requested not found.
+    409:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: The request conflicts with the current state of the resource.
     500:
       content:
         application/json:
@@ -2965,6 +3019,102 @@ components:
           type: string
           description: The trigger_id returned by the slash command.
           example: ceenjwsg6tgdzjpofxqemy1aio
+    PlaybookUpdateOptions:
+      type: object
+      description: |
+        Partial playbook update for PATCH /playbooks/{id}. All properties are optional;
+        only fields present in the request are changed. Unknown fields are rejected.
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        public:
+          type: boolean
+        create_public_playbook_run:
+          type: boolean
+        reminder_message_template:
+          type: string
+        reminder_timer_default_seconds:
+          type: integer
+          format: int64
+        status_update_enabled:
+          type: boolean
+        invited_user_ids:
+          type: array
+          items:
+            type: string
+        invited_group_ids:
+          type: array
+          items:
+            type: string
+        invite_users_enabled:
+          type: boolean
+        default_owner_id:
+          type: string
+        default_owner_enabled:
+          type: boolean
+        broadcast_channel_ids:
+          type: array
+          items:
+            type: string
+        broadcast_enabled:
+          type: boolean
+        webhook_on_creation_urls:
+          type: array
+          items:
+            type: string
+        webhook_on_creation_enabled:
+          type: boolean
+        message_on_join:
+          type: string
+        message_on_join_enabled:
+          type: boolean
+        retrospective_reminder_interval_seconds:
+          type: integer
+          format: int64
+        retrospective_template:
+          type: string
+        retrospective_enabled:
+          type: boolean
+        webhook_on_status_update_urls:
+          type: array
+          items:
+            type: string
+        webhook_on_status_update_enabled:
+          type: boolean
+        signal_any_keywords:
+          type: array
+          items:
+            type: string
+        signal_any_keywords_enabled:
+          type: boolean
+        categorize_channel_enabled:
+          type: boolean
+        category_name:
+          type: string
+        run_summary_template_enabled:
+          type: boolean
+        run_summary_template:
+          type: string
+        channel_name_template:
+          type: string
+        channel_name_template_locked:
+          type: boolean
+        create_channel_member_on_new_participant:
+          type: boolean
+        remove_channel_member_on_removed_participant:
+          type: boolean
+        channel_id:
+          type: string
+        channel_mode:
+          type: string
+        run_number_prefix:
+          type: string
+        checklists:
+          type: array
+          items:
+            $ref: "#/components/schemas/Checklist"
     Playbook:
       type: object
       properties:

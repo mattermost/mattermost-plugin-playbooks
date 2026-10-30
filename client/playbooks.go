@@ -114,6 +114,25 @@ func (s *PlaybooksService) Update(ctx context.Context, playbook Playbook) error 
 	return nil
 }
 
+// UpdatePartial applies a partial update via PATCH /playbooks/{id}.
+// Only non-nil fields in opts are changed. Returns the updated playbook.
+func (s *PlaybooksService) UpdatePartial(ctx context.Context, playbookID string, opts PlaybookUpdateOptions) (*Playbook, error) {
+	updateURL := fmt.Sprintf("playbooks/%s", playbookID)
+	req, err := s.client.newAPIRequest(http.MethodPatch, updateURL, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	playbook := new(Playbook)
+	resp, err := s.client.do(ctx, req, playbook)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return playbook, nil
+}
+
 func (s *PlaybooksService) Archive(ctx context.Context, playbookID string) error {
 	updateURL := fmt.Sprintf("playbooks/%s", playbookID)
 	req, err := s.client.newAPIRequest(http.MethodDelete, updateURL, nil)

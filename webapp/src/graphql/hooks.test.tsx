@@ -1,19 +1,20 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
 import {renderHook, waitFor} from '@testing-library/react';
-import {MockedProvider} from '@apollo/client/testing';
-import {GraphQLError} from 'graphql';
 
-import {PlaybookDocument, PropertyFieldType} from 'src/graphql/generated/graphql';
+import {PropertyFieldType} from 'src/graphql/generated/graphql';
 
 import {usePlaybook, usePlaybookProperty} from './hooks';
 
 const mockFetchPlaybookPropertyField = jest.fn();
+const mockClientFetchPlaybook = jest.fn();
+const mockIsFavoriteItem = jest.fn();
 jest.mock('src/client', () => ({
     ...jest.requireActual('src/client'),
     fetchPlaybookPropertyField: (...args: unknown[]) => mockFetchPlaybookPropertyField(...args),
+    clientFetchPlaybook: (...args: unknown[]) => mockClientFetchPlaybook(...args),
+    isFavoriteItem: (...args: unknown[]) => mockIsFavoriteItem(...args),
 }));
 
 describe('GraphQL Hooks Integration Tests', () => {
@@ -132,40 +133,17 @@ describe('GraphQL Hooks Integration Tests', () => {
         ],
     };
 
-    const createWrapper = (mocks: any[] = []) => {
-        return ({children}: {children: React.ReactNode}) => (
-            <MockedProvider
-                mocks={mocks}
-                addTypename={false}
-            >
-                {children}
-            </MockedProvider>
-        );
-    };
-
     describe('Playbook Query with PropertyFields', () => {
-        it('should fetch playbook with property fields successfully', async () => {
-            const mocks = [
-                {
-                    request: {
-                        query: PlaybookDocument,
-                        variables: {
-                            id: mockPlaybookID,
-                        },
-                    },
-                    result: {
-                        data: {
-                            playbook: mockPlaybookWithPropertyFields,
-                        },
-                    },
-                },
-            ];
+        beforeEach(() => {
+            mockClientFetchPlaybook.mockReset();
+            mockIsFavoriteItem.mockReset();
+        });
 
-            const wrapper = createWrapper(mocks);
-            const {result} = renderHook(
-                () => usePlaybook(mockPlaybookID),
-                {wrapper}
-            );
+        it('should fetch playbook with property fields successfully', async () => {
+            mockClientFetchPlaybook.mockResolvedValue(mockPlaybookWithPropertyFields);
+            mockIsFavoriteItem.mockResolvedValue(false);
+
+            const {result} = renderHook(() => usePlaybook(mockPlaybookID));
 
             // Initially loading
             expect(result.current[1].loading).toBe(true);
@@ -175,13 +153,11 @@ describe('GraphQL Hooks Integration Tests', () => {
                 expect(result.current[1].loading).toBe(false);
             });
 
-            // After loading completes
             expect(result.current[1].loading).toBe(false);
             expect(result.current[0]).toEqual(mockPlaybookWithPropertyFields);
             expect(result.current[1].error).toBeUndefined();
-
-            // Property fields are now fetched via REST API, not GraphQL
-            // This test will eventually be removed when we deprecate GraphQL usage in the webapp
+            expect(mockClientFetchPlaybook).toHaveBeenCalledWith(mockPlaybookID);
+            expect(mockIsFavoriteItem).toHaveBeenCalledWith('team-123', mockPlaybookID, 'p');
         });
 
         it('should handle playbook with empty property fields', async () => {
@@ -189,37 +165,17 @@ describe('GraphQL Hooks Integration Tests', () => {
                 ...mockPlaybookWithPropertyFields,
                 propertyFields: [],
             };
+            mockClientFetchPlaybook.mockResolvedValue(playbookWithoutFields);
+            mockIsFavoriteItem.mockResolvedValue(false);
 
-            const mocks = [
-                {
-                    request: {
-                        query: PlaybookDocument,
-                        variables: {
-                            id: mockPlaybookID,
-                        },
-                    },
-                    result: {
-                        data: {
-                            playbook: playbookWithoutFields,
-                        },
-                    },
-                },
-            ];
-
-            const wrapper = createWrapper(mocks);
-            const {result} = renderHook(
-                () => usePlaybook(mockPlaybookID),
-                {wrapper}
-            );
+            const {result} = renderHook(() => usePlaybook(mockPlaybookID));
 
             await waitFor(() => {
                 expect(result.current[1].loading).toBe(false);
             });
 
             expect(result.current[1].loading).toBe(false);
-
-            // Property fields are now fetched via REST API, not GraphQL
-            // This test will eventually be removed when we deprecate GraphQL usage in the webapp
+            expect(result.current[0]).toEqual(playbookWithoutFields);
             expect(result.current[1].error).toBeUndefined();
         });
 
@@ -325,56 +281,24 @@ describe('GraphQL Hooks Integration Tests', () => {
                 ],
             };
 
-            const mocks = [
-                {
-                    request: {
-                        query: PlaybookDocument,
-                        variables: {
-                            id: mockPlaybookID,
-                        },
-                    },
-                    result: {
-                        data: {
-                            playbook: playbookWithDifferentTypes,
-                        },
-                    },
-                },
-            ];
+            mockClientFetchPlaybook.mockResolvedValue(playbookWithDifferentTypes);
+            mockIsFavoriteItem.mockResolvedValue(false);
 
-            const wrapper = createWrapper(mocks);
-            const {result} = renderHook(
-                () => usePlaybook(mockPlaybookID),
-                {wrapper}
-            );
+            const {result} = renderHook(() => usePlaybook(mockPlaybookID));
 
             await waitFor(() => {
                 expect(result.current[1].loading).toBe(false);
             });
 
             expect(result.current[1].loading).toBe(false);
-
-            // Property fields are now fetched via REST API, not GraphQL
-            // This test will eventually be removed when we deprecate GraphQL usage in the webapp
+            expect(result.current[0]?.propertyFields).toHaveLength(6);
+            expect(result.current[1].error).toBeUndefined();
         });
 
         it('should handle playbook query errors', async () => {
-            const mocks = [
-                {
-                    request: {
-                        query: PlaybookDocument,
-                        variables: {
-                            id: mockPlaybookID,
-                        },
-                    },
-                    error: new GraphQLError('Playbook not found'),
-                },
-            ];
+            mockClientFetchPlaybook.mockRejectedValue(new Error('Playbook not found'));
 
-            const wrapper = createWrapper(mocks);
-            const {result} = renderHook(
-                () => usePlaybook(mockPlaybookID),
-                {wrapper}
-            );
+            const {result} = renderHook(() => usePlaybook(mockPlaybookID));
 
             await waitFor(() => {
                 expect(result.current[1].loading).toBe(false);
@@ -476,37 +400,17 @@ describe('GraphQL Hooks Integration Tests', () => {
 
     describe('PropertyFields Data Consistency', () => {
         it('should verify property field structure from usePlaybook query', async () => {
-            const mocks = [
-                {
-                    request: {
-                        query: PlaybookDocument,
-                        variables: {
-                            id: mockPlaybookID,
-                        },
-                    },
-                    result: {
-                        data: {
-                            playbook: mockPlaybookWithPropertyFields,
-                        },
-                    },
-                },
-            ];
+            mockClientFetchPlaybook.mockResolvedValue(mockPlaybookWithPropertyFields);
+            mockIsFavoriteItem.mockResolvedValue(false);
 
-            const wrapper = createWrapper(mocks);
-
-            const {result} = renderHook(
-                () => usePlaybook(mockPlaybookID),
-                {wrapper}
-            );
+            const {result} = renderHook(() => usePlaybook(mockPlaybookID));
 
             await waitFor(() => {
                 expect(result.current[1].loading).toBe(false);
             });
 
             expect(result.current[1].loading).toBe(false);
-
-            // Property fields are now fetched via REST API, not GraphQL
-            // This test will eventually be removed when we deprecate GraphQL usage in the webapp
+            expect(result.current[0]?.propertyFields?.[0]?.name).toBe('Priority');
         });
 
         it('should verify property field matches expected schema', () => {
