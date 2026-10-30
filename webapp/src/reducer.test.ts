@@ -4,7 +4,7 @@
 import {PlaybookRun, PlaybookRunType} from 'src/types/playbook_run';
 import {REMOVED_FROM_CHANNEL} from 'src/types/actions';
 import reducer from 'src/reducer';
-import {websocketPlaybookRunIncrementalUpdateReceived} from 'src/actions';
+import {playbookRunUpdated, websocketPlaybookRunIncrementalUpdateReceived} from 'src/actions';
 
 describe('myPlaybookRunsByTeam', () => {
     // @ts-ignore
@@ -232,6 +232,52 @@ describe('websocket event actions', () => {
             const newState = reducer(state, action);
 
             expect(newState.myPlaybookRunsByTeam['']!.dm_channel_1.name).toBe('DM Updated Name');
+        });
+    });
+
+    describe('PLAYBOOK_RUN_UPDATED', () => {
+        it('removes the old channel entry when a run moves channels', () => {
+            const state = makeStateWithRun(testPlaybookRun);
+            const moved = {
+                ...testPlaybookRun,
+                channel_id: 'channel_new',
+                update_at: testPlaybookRun.update_at + 1,
+            };
+
+            // @ts-ignore
+            const newState = reducer(state, playbookRunUpdated(moved));
+
+            expect(newState.myPlaybookRunsByTeam[testPlaybookRun.team_id]![testPlaybookRun.channel_id]).toBeUndefined();
+            expect(newState.myPlaybookRunsByTeam[testPlaybookRun.team_id]!.channel_new).toEqual(moved);
+            expect(newState.myPlaybookRuns[moved.id]).toEqual(moved);
+        });
+
+        it('ignores a stale snapshot that lost a race with a newer update', () => {
+            const newer = {...testPlaybookRun, name: 'Newer', update_at: 3000};
+            const state = makeStateWithRun(newer);
+            const stale = {...testPlaybookRun, name: 'Stale', update_at: 2000};
+
+            // @ts-ignore
+            const newState = reducer(state, playbookRunUpdated(stale));
+
+            expect(newState.myPlaybookRuns[newer.id].name).toBe('Newer');
+            expect(newState.myPlaybookRunsByTeam[newer.team_id]![newer.channel_id].name).toBe('Newer');
+        });
+
+        it('moves a run into an empty team_id slot for DM/GM channels', () => {
+            const state = makeStateWithRun(testPlaybookRun);
+            const movedToDM = {
+                ...testPlaybookRun,
+                team_id: '',
+                channel_id: 'dm_channel_1',
+                update_at: testPlaybookRun.update_at + 1,
+            };
+
+            // @ts-ignore
+            const newState = reducer(state, playbookRunUpdated(movedToDM));
+
+            expect(newState.myPlaybookRunsByTeam[testPlaybookRun.team_id]?.[testPlaybookRun.channel_id]).toBeUndefined();
+            expect(newState.myPlaybookRunsByTeam['']!.dm_channel_1).toEqual(movedToDM);
         });
     });
 });

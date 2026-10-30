@@ -1857,19 +1857,23 @@ func (h *PlaybookRunHandler) itemSetTaskActions(c *Context, w http.ResponseWrite
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		TaskActions []app.TaskAction `json:"task_actions"`
+		TaskActions *[]app.TaskAction `json:"task_actions"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
 		return
 	}
+	if params.TaskActions == nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "missing task_actions", nil)
+		return
+	}
 
-	if err := validateTaskActions(params.TaskActions); err != nil {
+	if err := validateTaskActions(*params.TaskActions); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid task actions", err)
 		return
 	}
 
-	if err := h.playbookRunService.SetTaskActionsToChecklistItem(id, userID, checklistNum, itemNum, params.TaskActions); err != nil {
+	if err := h.playbookRunService.SetTaskActionsToChecklistItem(id, userID, checklistNum, itemNum, *params.TaskActions); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

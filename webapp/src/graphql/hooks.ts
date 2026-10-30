@@ -200,8 +200,10 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
             return;
         }
         await addPlaybookMember(playbookID, userID);
-        await autoFollowPlaybook(playbookID, userID);
+        // Refresh LHS as soon as membership succeeds so a failed auto-follow
+        // cannot leave the joined playbook missing from the sidebar.
         refreshLHS();
+        await autoFollowPlaybook(playbookID, userID);
     }, [playbookID, refreshLHS, userID]);
 
     const leave = useCallback(async () => {
