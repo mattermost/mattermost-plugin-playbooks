@@ -3,7 +3,12 @@
 
 import {useCallback} from 'react';
 
-import {QueryResult, useMutation, useQuery} from '@apollo/client';
+import {
+    QueryResult,
+    useApolloClient,
+    useMutation,
+    useQuery,
+} from '@apollo/client';
 
 import {
     AddPlaybookMemberDocument,
@@ -19,18 +24,22 @@ import {
     RemoveRunParticipantsDocument,
     RhsRunsDocument,
     RunUpdates,
-    SetRunFavoriteDocument,
     SetRunPropertyValueDocument,
     SetRunPropertyValueMutation,
     SetRunPropertyValueMutationVariables,
     TaskActionUpdates,
     UpdatePlaybookDocument,
-    UpdatePlaybookFavoriteDocument,
     UpdateRunDocument,
     UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';
 
-import {autoFollowPlaybook, setOwner} from 'src/client';
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+import {
+    autoFollowPlaybook,
+    setOwner,
+    setPlaybookFavorite,
+    setRunFavorite,
+} from 'src/client';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
@@ -65,19 +74,21 @@ export const useUpdatePlaybook = (id?: string) => {
 };
 
 export const useUpdatePlaybookFavorite = (id: string|undefined) => {
-    const [innerUpdatePlaybook] = useMutation(UpdatePlaybookFavoriteDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-            PlaybookDocument,
-        ],
-    });
+    const refreshLHS = useLHSRefresh();
+    const apolloClient = useApolloClient();
 
-    return useCallback((favorite: boolean) => {
+    return useCallback(async (favorite: boolean) => {
         if (id === undefined) {
             return;
         }
-        innerUpdatePlaybook({variables: {id, favorite}});
-    }, [id, innerUpdatePlaybook]);
+        await setPlaybookFavorite(id, favorite);
+        refreshLHS();
+
+        // Keep Apollo playbook query in sync until usePlaybook moves to REST.
+        await apolloClient.refetchQueries({
+            include: [PlaybookDocument],
+        });
+    }, [apolloClient, id, refreshLHS]);
 };
 
 export const useUpdateRun = (id?: string) => {
@@ -94,18 +105,15 @@ export const useUpdateRun = (id?: string) => {
 };
 
 export const useSetRunFavorite = (id: string|undefined) => {
-    const [innerUpdateRun] = useMutation(SetRunFavoriteDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-    });
+    const refreshLHS = useLHSRefresh();
 
-    return useCallback((fav: boolean) => {
+    return useCallback(async (fav: boolean) => {
         if (id === undefined) {
             return;
         }
-        innerUpdateRun({variables: {id, fav}});
-    }, [id, innerUpdateRun]);
+        await setRunFavorite(id, fav);
+        refreshLHS();
+    }, [id, refreshLHS]);
 };
 
 export const usePlaybookMembership = (playbookID?: string, userID?: string) => {

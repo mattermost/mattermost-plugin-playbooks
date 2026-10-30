@@ -29,6 +29,7 @@ type PlaybookHandler struct {
 	*ErrorHandler
 	playbookService app.PlaybookService
 	propertyService app.PropertyServiceReader
+	categoryService app.CategoryService
 	pluginAPI       *pluginapi.Client
 	config          config.Service
 	permissions     *app.PermissionsService
@@ -59,11 +60,12 @@ type PropertyFieldRequest struct {
 }
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, propertyService app.PropertyServiceReader, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, propertyService app.PropertyServiceReader, categoryService app.CategoryService, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		ErrorHandler:    &ErrorHandler{},
 		playbookService: playbookService,
 		propertyService: propertyService,
+		categoryService: categoryService,
 		pluginAPI:       api,
 		config:          configService,
 		permissions:     permissions,
@@ -86,6 +88,10 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("/duplicate", withContext(handler.duplicatePlaybook)).Methods(http.MethodPost)
+
+	// Favoriting only requires PlaybookView (same as GraphQL updatePlaybookFavorite).
+	playbookRouter.HandleFunc("/favorite", withContext(handler.addPlaybookFavorite)).Methods(http.MethodPut)
+	playbookRouter.HandleFunc("/favorite", withContext(handler.removePlaybookFavorite)).Methods(http.MethodDelete)
 
 	propertyFieldsRouter := playbookRouter.PathPrefix("/property_fields").Subrouter()
 	propertyFieldsRouter.HandleFunc("", withContext(handler.getPlaybookPropertyFields)).Methods(http.MethodGet)
@@ -278,6 +284,49 @@ func (h *PlaybookHandler) getPlaybook(c *Context, w http.ResponseWriter, r *http
 	}
 
 	ReturnJSON(w, &playbook, http.StatusOK)
+}
+
+// addPlaybookFavorite handles PUT /playbooks/{id}/favorite (mirrors GraphQL updatePlaybookFavorite with favorite=true).
+func (h *PlaybookHandler) addPlaybookFavorite(c *Context, w http.ResponseWriter, r *http.Request) {
+	h.setPlaybookFavorite(c, w, r, true)
+}
+
+// removePlaybookFavorite handles DELETE /playbooks/{id}/favorite (mirrors GraphQL updatePlaybookFavorite with favorite=false).
+func (h *PlaybookHandler) removePlaybookFavorite(c *Context, w http.ResponseWriter, r *http.Request) {
+	h.setPlaybookFavorite(c, w, r, false)
+}
+
+func (h *PlaybookHandler) setPlaybookFavorite(c *Context, w http.ResponseWriter, r *http.Request, favorite bool) {
+	playbookID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
+		return
+	}
+
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return
+	}
+
+	item := app.CategoryItem{ItemID: currentPlaybook.ID, Type: app.PlaybookItemType}
+	if favorite {
+		err = h.categoryService.AddFavorite(item, currentPlaybook.TeamID, userID)
+	} else {
+		err = h.categoryService.DeleteFavorite(item, currentPlaybook.TeamID, userID)
+	}
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {

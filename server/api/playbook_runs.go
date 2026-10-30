@@ -33,6 +33,7 @@ type PlaybookRunHandler struct {
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
 	propertyService    app.PropertyServiceReader
+	categoryService    app.CategoryService
 	permissions        *app.PermissionsService
 	licenseChecker     app.LicenseChecker
 	pluginAPI          *pluginapi.Client
@@ -45,6 +46,7 @@ func NewPlaybookRunHandler(
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
 	propertyService app.PropertyServiceReader,
+	categoryService app.CategoryService,
 	permissions *app.PermissionsService,
 	licenseChecker app.LicenseChecker,
 	api *pluginapi.Client,
@@ -56,6 +58,7 @@ func NewPlaybookRunHandler(
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
 		propertyService:    propertyService,
+		categoryService:    categoryService,
 		pluginAPI:          api,
 		poster:             poster,
 		config:             configService,
@@ -89,6 +92,10 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 
 	playbookRunRouter.HandleFunc("/finish-dialog", withContext(handler.finishDialog)).Methods(http.MethodPost)
+
+	// Favoriting only requires RunView (same as GraphQL setRunFavorite).
+	playbookRunRouter.HandleFunc("/favorite", withContext(handler.addRunFavorite)).Methods(http.MethodPut)
+	playbookRunRouter.HandleFunc("/favorite", withContext(handler.removeRunFavorite)).Methods(http.MethodDelete)
 
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
@@ -1170,6 +1177,44 @@ func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWrite
 		h.HandleError(w, c.logger, err)
 		return
 	}
+}
+
+// addRunFavorite handles PUT /runs/{id}/favorite (mirrors GraphQL setRunFavorite with fav=true).
+func (h *PlaybookRunHandler) addRunFavorite(c *Context, w http.ResponseWriter, r *http.Request) {
+	h.setRunFavorite(c, w, r, true)
+}
+
+// removeRunFavorite handles DELETE /runs/{id}/favorite (mirrors GraphQL setRunFavorite with fav=false).
+func (h *PlaybookRunHandler) removeRunFavorite(c *Context, w http.ResponseWriter, r *http.Request) {
+	h.setRunFavorite(c, w, r, false)
+}
+
+func (h *PlaybookRunHandler) setRunFavorite(c *Context, w http.ResponseWriter, r *http.Request, favorite bool) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	item := app.CategoryItem{ItemID: playbookRun.ID, Type: app.RunItemType}
+	if favorite {
+		err = h.categoryService.AddFavorite(item, playbookRun.TeamID, userID)
+	} else {
+		err = h.categoryService.DeleteFavorite(item, playbookRun.TeamID, userID)
+	}
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // finishDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a

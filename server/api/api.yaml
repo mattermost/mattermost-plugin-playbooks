@@ -959,6 +959,70 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /plugins/playbooks/api/v0/runs/{id}/favorite:
+    put:
+      summary: Favorite a playbook run
+      description: |
+        Marks the run as a favorite for the current user. Requires permission to view the run
+        (same as the GraphQL `setRunFavorite` mutation). Returns an error if the run is already a favorite.
+      operationId: addPlaybookRunFavorite
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the playbook run.
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/favorite' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Run successfully favorited.
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      summary: Unfavorite a playbook run
+      description: |
+        Removes the run from the current user's favorites. Requires permission to view the run
+        (same as the GraphQL `setRunFavorite` mutation). Returns an error if the run is not a favorite.
+      operationId: removePlaybookRunFavorite
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the playbook run.
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/favorite' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Run successfully unfavorited.
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
   /plugins/playbooks/api/v0/runs/{id}/next-stage-dialog:
     post:
       summary: Go to next stage from dialog
@@ -1829,6 +1893,74 @@ paths:
       responses:
         204:
           description: Playbook successfully deleted.
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/playbooks/{id}/favorite:
+    put:
+      summary: Favorite a playbook
+      description: |
+        Marks the playbook as a favorite for the current user. Requires permission to view the playbook
+        (same as the GraphQL `updatePlaybookFavorite` mutation). Archived playbooks cannot be favorited.
+        Returns an error if the playbook is already a favorite.
+      operationId: addPlaybookFavorite
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to favorite.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/favorite' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Playbook successfully favorited.
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      summary: Unfavorite a playbook
+      description: |
+        Removes the playbook from the current user's favorites. Requires permission to view the playbook
+        (same as the GraphQL `updatePlaybookFavorite` mutation). Archived playbooks cannot be modified.
+        Returns an error if the playbook is not a favorite.
+      operationId: removePlaybookFavorite
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to unfavorite.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/favorite' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Playbook successfully unfavorited.
+        400:
+          $ref: "#/components/responses/400"
         403:
           $ref: "#/components/responses/403"
         500:
