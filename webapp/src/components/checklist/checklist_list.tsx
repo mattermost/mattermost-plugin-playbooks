@@ -31,12 +31,12 @@ import {
 } from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {
+    PlaybookUpdateFields,
     clientAddChecklist,
     clientDeleteChecklist,
     clientMoveChecklist,
     clientMoveChecklistItem,
     deletePlaybookCondition,
-    PlaybookUpdateFields,
     updatePlaybookCondition,
 } from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
