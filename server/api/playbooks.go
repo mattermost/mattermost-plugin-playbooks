@@ -552,7 +552,56 @@ func (h *PlaybookHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *htt
 		playbookResults.HasMore = false
 	}
 
+	if r.URL.Query().Get("include_favorite") == "true" {
+		if err := h.enrichPlaybookFavorites(playbookResults.Items, teamID, userID); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+	}
+
 	ReturnJSON(w, playbookResults, http.StatusOK)
+}
+
+func (h *PlaybookHandler) enrichPlaybookFavorites(playbooks []app.Playbook, teamID, userID string) error {
+	if len(playbooks) == 0 {
+		return nil
+	}
+
+	items := make([]app.CategoryItem, len(playbooks))
+	for i, pb := range playbooks {
+		items[i] = app.CategoryItem{ItemID: pb.ID, Type: app.PlaybookItemType}
+	}
+
+	// Favorites are scoped to a team. When team_id is omitted, group by each playbook's team.
+	if teamID != "" {
+		favorites, err := h.categoryService.AreItemsFavorites(items, teamID, userID)
+		if err != nil {
+			return errors.Wrap(err, "failed to load playbook favorites")
+		}
+		for i := range playbooks {
+			playbooks[i].IsFavorite = favorites[i]
+		}
+		return nil
+	}
+
+	byTeam := map[string][]int{}
+	for i, pb := range playbooks {
+		byTeam[pb.TeamID] = append(byTeam[pb.TeamID], i)
+	}
+	for tid, indexes := range byTeam {
+		teamItems := make([]app.CategoryItem, len(indexes))
+		for j, idx := range indexes {
+			teamItems[j] = items[idx]
+		}
+		favorites, err := h.categoryService.AreItemsFavorites(teamItems, tid, userID)
+		if err != nil {
+			return errors.Wrap(err, "failed to load playbook favorites")
+		}
+		for j, idx := range indexes {
+			playbooks[idx].IsFavorite = favorites[j]
+		}
+	}
+	return nil
 }
 
 func (h *PlaybookHandler) getPlaybooksAutoComplete(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -654,14 +703,16 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 	searchTerm := u.Query().Get("search_term")
 
 	withArchived, _ := strconv.ParseBool(u.Query().Get("with_archived"))
+	withMembershipOnly, _ := strconv.ParseBool(u.Query().Get("with_membership_only"))
 
 	return app.PlaybookFilterOptions{
-		Sort:         sortField,
-		Direction:    sortDirection,
-		Page:         page,
-		PerPage:      perPage,
-		SearchTerm:   searchTerm,
-		WithArchived: withArchived,
+		Sort:               sortField,
+		Direction:          sortDirection,
+		Page:               page,
+		PerPage:            perPage,
+		SearchTerm:         searchTerm,
+		WithArchived:       withArchived,
+		WithMembershipOnly: withMembershipOnly,
 	}, nil
 }
 

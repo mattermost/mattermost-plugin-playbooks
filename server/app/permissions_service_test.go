@@ -811,6 +811,9 @@ func (s *stubRunService) UnfollowMultiple(string, []string) error {
 func (s *stubRunService) GetFollowers(string) ([]string, error) {
 	panic("stubRunService: GetFollowers not implemented")
 }
+func (s *stubRunService) GetFollowersForRuns([]string) (map[string][]string, error) {
+	panic("stubRunService: GetFollowersForRuns not implemented")
+}
 func (s *stubRunService) RestorePlaybookRun(string, string) error {
 	panic("stubRunService: RestorePlaybookRun not implemented")
 }

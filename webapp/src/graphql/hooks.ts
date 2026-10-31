@@ -8,12 +8,9 @@ import {
     useState,
 } from 'react';
 
-import {useApolloClient} from '@apollo/client';
-
-import {RhsRunsDocument} from 'src/graphql/generated/graphql';
-
 import {playbookRunUpdated} from 'src/actions';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+import {notifyRHSRefresh} from 'src/rhs_refresh';
 import {
     PlaybookUpdateFields,
     RunUpdateFields,
@@ -192,7 +189,6 @@ export const useUpdatePlaybookFavorite = (id: string|undefined) => {
 export const useUpdateRun = (id?: string) => {
     const dispatch = useAppDispatch();
     const refreshLHS = useLHSRefresh();
-    const apolloClient = useApolloClient();
 
     return useCallback(async (updates: RunUpdateFields) => {
         if (!id) {
@@ -201,12 +197,8 @@ export const useUpdateRun = (id?: string) => {
         const updated = await updatePlaybookRun(id, updates);
         dispatch(playbookRunUpdated(updated));
         refreshLHS();
-
-        // Keep Apollo RHS runs list in sync until that query moves to REST.
-        await apolloClient.refetchQueries({
-            include: [RhsRunsDocument],
-        });
-    }, [apolloClient, dispatch, id, refreshLHS]);
+        notifyRHSRefresh();
+    }, [dispatch, id, refreshLHS]);
 };
 
 export const useSetRunFavorite = (id: string|undefined) => {

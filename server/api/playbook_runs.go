@@ -801,7 +801,100 @@ func (h *PlaybookRunHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, 
 		return
 	}
 
+	if err := h.enrichPlaybookRunList(results, userID, r.URL.Query()); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
 	ReturnJSON(w, results, http.StatusOK)
+}
+
+// enrichPlaybookRunList optionally attaches favorite, follower, and playbook-title
+// fields used by LHS/RHS clients that previously relied on GraphQL loaders.
+func (h *PlaybookRunHandler) enrichPlaybookRunList(results *app.GetPlaybookRunsResults, userID string, query url.Values) error {
+	if results == nil || len(results.Items) == 0 {
+		return nil
+	}
+
+	includeFavorite := query.Get("include_favorite") == "true"
+	includeFollowers := query.Get("include_followers") == "true"
+	includePlaybookTitle := query.Get("include_playbook_title") == "true"
+	if !includeFavorite && !includeFollowers && !includePlaybookTitle {
+		return nil
+	}
+
+	runIDs := make([]string, len(results.Items))
+	for i := range results.Items {
+		runIDs[i] = results.Items[i].ID
+	}
+
+	if includeFavorite {
+		items := make([]app.CategoryItem, len(results.Items))
+		for i, run := range results.Items {
+			items[i] = app.CategoryItem{ItemID: run.ID, Type: app.RunItemType}
+		}
+		// Favorites are per-team; group by team to avoid cross-team category misses.
+		byTeam := map[string][]int{}
+		for i, run := range results.Items {
+			byTeam[run.TeamID] = append(byTeam[run.TeamID], i)
+		}
+		for teamID, indexes := range byTeam {
+			teamItems := make([]app.CategoryItem, len(indexes))
+			for j, idx := range indexes {
+				teamItems[j] = items[idx]
+			}
+			favorites, err := h.categoryService.AreItemsFavorites(teamItems, teamID, userID)
+			if err != nil {
+				return errors.Wrap(err, "failed to load run favorites")
+			}
+			for j, idx := range indexes {
+				results.Items[idx].IsFavorite = favorites[j]
+			}
+		}
+	}
+
+	if includeFollowers {
+		followersByRun, err := h.playbookRunService.GetFollowersForRuns(runIDs)
+		if err != nil {
+			return err
+		}
+		for i := range results.Items {
+			if followers, ok := followersByRun[results.Items[i].ID]; ok {
+				results.Items[i].Followers = followers
+			} else {
+				results.Items[i].Followers = []string{}
+			}
+		}
+	}
+
+	if includePlaybookTitle {
+		// Mirror GraphQL's playbooksLoader: only expose titles the requester may view.
+		titles := map[string]string{}
+		for i := range results.Items {
+			playbookID := results.Items[i].PlaybookID
+			if playbookID == "" {
+				continue
+			}
+			title, ok := titles[playbookID]
+			if !ok {
+				pb, err := h.playbookService.Get(playbookID)
+				if err != nil {
+					// Missing playbook should not fail the whole list.
+					titles[playbookID] = ""
+					continue
+				}
+				if err := h.permissions.PlaybookViewWithPlaybook(userID, pb); err != nil {
+					titles[playbookID] = ""
+					continue
+				}
+				title = pb.Title
+				titles[playbookID] = title
+			}
+			results.Items[i].PlaybookTitle = title
+		}
+	}
+
+	return nil
 }
 
 // getPlaybookRun handles the /runs/{id} endpoint.
@@ -2581,6 +2674,10 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	omitEndedParam := u.Query().Get("omit_ended")
 	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
 
+	includeFavorites := u.Query().Get("include_favorites") == "true"
+	skipExtras := u.Query().Get("skip_extras") == "true"
+	skipChecklists := u.Query().Get("skip_checklists") == "true"
+
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
 		Page:                    page,
@@ -2592,6 +2689,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		SearchTerm:              searchTerm,
 		ParticipantID:           participantID,
 		ParticipantOrFollowerID: participantOrFollowerID,
+		IncludeFavorites:        includeFavorites,
 		PlaybookID:              playbookID,
 		ChannelID:               channelID,
 		ActiveGTE:               activeGTE,
@@ -2600,6 +2698,8 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		StartedLT:               startedLT,
 		Types:                   types,
 		ActivitySince:           activitySince,
+		SkipExtras:              skipExtras,
+		SkipChecklists:          skipChecklists,
 		OmitEnded:               omitEnded,
 	}
 
