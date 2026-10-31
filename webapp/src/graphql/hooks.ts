@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useCallback, useEffect, useState} from 'react';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 
 import {useApolloClient} from '@apollo/client';
 
@@ -84,6 +89,11 @@ export const usePlaybook = (id: string): [FullPlaybook, PlaybookFetchResult] => 
     const [error, setError] = useState<Error | null | undefined>();
     const [refreshKey, setRefreshKey] = useState(0);
 
+    // Tracks which playbook id is currently shown so refreshes keep prior data
+    // mounted (Apollo useQuery parity). Flipping loading on every refresh was
+    // unmounting the editor and wiping optimistic toggle state.
+    const loadedIdRef = useRef<string | undefined>(undefined);
+
     useEffect(() => {
         if (!id) {
             return undefined;
@@ -101,23 +111,32 @@ export const usePlaybook = (id: string): [FullPlaybook, PlaybookFetchResult] => 
     useEffect(() => {
         let cancelled = false;
         if (!id) {
+            loadedIdRef.current = undefined;
             setPlaybook(undefined);
             setLoading(false);
             setError(undefined);
             return undefined;
         }
 
-        setLoading(true);
+        const isInitialLoad = loadedIdRef.current !== id;
+        if (isInitialLoad) {
+            if (loadedIdRef.current !== undefined) {
+                setPlaybook(undefined);
+            }
+            setLoading(true);
+        }
         setError(undefined);
         fetchFullPlaybook(id)
             .then((result) => {
                 if (!cancelled) {
+                    loadedIdRef.current = id;
                     setPlaybook(result);
                     setLoading(false);
                 }
             })
             .catch((err: Error) => {
                 if (!cancelled) {
+                    loadedIdRef.current = undefined;
                     setPlaybook(undefined);
                     setError(err);
                     setLoading(false);
