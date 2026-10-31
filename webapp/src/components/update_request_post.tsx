@@ -10,15 +10,13 @@ import {ContainerProps, components} from 'react-select';
 import {Post} from '@mattermost/types/posts';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {ApolloProvider, useQuery} from '@apollo/client';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import PostText from 'src/components/post_text';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
-import {resetReminder} from 'src/client';
+import {fetchPlaybookRun, fetchPlaybookRuns, resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
 import {
     Mode,
@@ -29,42 +27,13 @@ import {
 import {nearest} from 'src/utils';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
-import {graphql} from 'src/graphql/generated';
-import {PlaybookRunReminderQuery} from 'src/graphql/generated/graphql';
+import {PlaybookRun, RunStatus} from 'src/types/playbook_run';
 
 interface Props {
     post: Post;
 }
 
-const playbookRunReminderQuery = graphql(/* GraphQL */`
-    query PlaybookRunReminder($runID: String!) {
-        run (id: $runID){
-            id
-            name
-            previousReminder
-            reminderTimerDefaultSeconds
-        }
-    }
-`);
-
-const firstActiveRunInChannelQuery = graphql(/* GraphQL */`
-    query FirstActiveRunInChannel($channelID: String!) {
-        runs(
-            channelID: $channelID,
-            statuses: ["InProgress"],
-            first: 1,
-        ) {
-            edges {
-                node {
-                    id
-                    name
-                    previousReminder
-                    reminderTimerDefaultSeconds
-                }
-            }
-        }
-    }
-`);
+type ReminderRun = Pick<PlaybookRun, 'id' | 'name' | 'previous_reminder' | 'reminder_timer_default_seconds'>;
 
 const UpdateRequestPost = (props: Props) => {
     const dispatch = useAppDispatch();
@@ -74,39 +43,53 @@ const UpdateRequestPost = (props: Props) => {
     const targetUsername = typeof props.post.props.targetUsername === 'string' ? props.post.props.targetUsername : '';
     const playbookRunId = typeof props.post.props.playbookRunId === 'string' ? props.post.props.playbookRunId : '';
 
-    const [run, setRun] = useState<PlaybookRunReminderQuery['run']>(null);
-    const {data, loading} = useQuery(playbookRunReminderQuery, {
-        variables: {
-            runID: playbookRunId,
-        },
-        fetchPolicy: 'network-only',
-        skip: playbookRunId === undefined,
-    });
-
-    const {data: firstRunInChannelData} = useQuery(firstActiveRunInChannelQuery, {
-        variables: {
-            channelID: props.post.channel_id,
-        },
-        fetchPolicy: 'network-only',
-        skip: playbookRunId !== undefined,
-    });
+    const [run, setRun] = useState<ReminderRun | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (data && !loading) {
-            setRun(data?.run);
-        }
+        let cancelled = false;
+        setLoading(true);
 
-        // If playbookRunId is undefined (could be in old existent reminders), we need this fallback
-        // to get all runs for the channel and take the first one (will be enough for
-        // old one-run-per-channel cases but without post props)
-        //
-        // Since posts are removed after post-update or snooze, this fallback will be unused with the
-        // pass of time. However, the only way the to check that the fallback is not needed is executing
-        // an SQL query.
-        if (!data && !loading && firstRunInChannelData && firstRunInChannelData.runs.edges.length > 0) {
-            setRun(firstRunInChannelData.runs.edges[0]?.node);
-        }
-    }, [data, loading, firstRunInChannelData, props.post.channel_id]);
+        const load = async () => {
+            try {
+                if (playbookRunId) {
+                    const fetched = await fetchPlaybookRun(playbookRunId);
+                    if (!cancelled) {
+                        setRun(fetched);
+                    }
+                    return;
+                }
+
+                // If playbookRunId is missing (could be in old existent reminders), fall back
+                // to the first in-progress run for the channel (enough for old
+                // one-run-per-channel cases without post props).
+                const result = await fetchPlaybookRuns({
+                    page: 0,
+                    per_page: 1,
+                    channel_id: props.post.channel_id,
+                    statuses: [RunStatus.InProgress],
+                    skip_extras: true,
+                    skip_checklists: true,
+                });
+                if (!cancelled) {
+                    setRun(result.items?.[0] ?? null);
+                }
+            } catch {
+                if (!cancelled) {
+                    setRun(null);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        load();
+        return () => {
+            cancelled = true;
+        };
+    }, [playbookRunId, props.post.channel_id]);
 
     // Decide whether to open the snooze menu above or below
     const [snoozeMenuPos, setSnoozeMenuPos] = useState('top');
@@ -125,7 +108,7 @@ const UpdateRequestPost = (props: Props) => {
         return null;
     }
 
-    if (!run) {
+    if (loading || !run) {
         return (
             <StyledPostText
                 text={props.post.message}
@@ -145,11 +128,11 @@ const UpdateRequestPost = (props: Props) => {
             options.push(option);
         }
     };
-    if (run.previousReminder) {
-        pushIfNotIn(makeOption({seconds: nearest(run.previousReminder * 1e-9, 1)}));
+    if (run.previous_reminder) {
+        pushIfNotIn(makeOption({seconds: nearest(run.previous_reminder * 1e-9, 1)}));
     }
-    if (run.reminderTimerDefaultSeconds) {
-        pushIfNotIn(makeOption({seconds: run.reminderTimerDefaultSeconds}));
+    if (run.reminder_timer_default_seconds) {
+        pushIfNotIn(makeOption({seconds: run.reminder_timer_default_seconds}));
     }
     options.sort((a, b) => ms(a.value) - ms(b.value));
 
@@ -240,9 +223,4 @@ const StyledPostText = styled(PostText)`
     margin-bottom: 8px;
 `;
 
-const ApolloWrappedPost = (props: Props) => {
-    const client = getPlaybooksGraphQLClient();
-    return <ApolloProvider client={client}><UpdateRequestPost {...props}/></ApolloProvider>;
-};
-
-export default ApolloWrappedPost;
+export default UpdateRequestPost;
