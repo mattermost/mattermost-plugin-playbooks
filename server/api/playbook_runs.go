@@ -868,6 +868,7 @@ func (h *PlaybookRunHandler) enrichPlaybookRunList(results *app.GetPlaybookRunsR
 	}
 
 	if includePlaybookTitle {
+		// Mirror GraphQL's playbooksLoader: only expose titles the requester may view.
 		titles := map[string]string{}
 		for i := range results.Items {
 			playbookID := results.Items[i].PlaybookID
@@ -879,6 +880,10 @@ func (h *PlaybookRunHandler) enrichPlaybookRunList(results *app.GetPlaybookRunsR
 				pb, err := h.playbookService.Get(playbookID)
 				if err != nil {
 					// Missing playbook should not fail the whole list.
+					titles[playbookID] = ""
+					continue
+				}
+				if err := h.permissions.PlaybookViewWithPlaybook(userID, pb); err != nil {
 					titles[playbookID] = ""
 					continue
 				}

@@ -10,7 +10,7 @@ import {
 
 import {playbookRunUpdated} from 'src/actions';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
-import {notifyRHSRefresh} from 'src/components/rhs/rhs_main';
+import {notifyRHSRefresh} from 'src/rhs_refresh';
 import {
     PlaybookUpdateFields,
     RunUpdateFields,

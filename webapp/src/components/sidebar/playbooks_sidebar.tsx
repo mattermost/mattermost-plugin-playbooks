@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import styled from 'styled-components';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -41,11 +46,13 @@ const useLHSData = (teamID: string) => {
     const [data, setData] = useState<LHSData | undefined>();
     const [error, setError] = useState<Error | undefined>();
     const [refreshKey, setRefreshKey] = useState(0);
+    const latestRequest = useRef(0);
 
     const load = useCallback(async () => {
         if (!teamID) {
             return;
         }
+        const requestID = ++latestRequest.current;
         try {
             const [runsResult, playbooksResult] = await Promise.all([
                 fetchPlaybookRuns({
@@ -70,12 +77,18 @@ const useLHSData = (teamID: string) => {
                     include_favorite: true,
                 }),
             ]);
+            if (requestID !== latestRequest.current) {
+                return;
+            }
             setData({
                 runs: runsResult.items ?? [],
                 playbooks: playbooksResult?.items ?? [],
             });
             setError(undefined);
         } catch (err) {
+            if (requestID !== latestRequest.current) {
+                return;
+            }
             setError(err instanceof Error ? err : new Error(String(err)));
         }
     }, [teamID]);
