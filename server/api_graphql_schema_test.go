@@ -53,13 +53,10 @@ func TestGraphQLPropertyFieldSchema(t *testing.T) {
 			}
 		`, nil)
 
-		var result struct {
-			Type *json.RawMessage `json:"__type"`
-		}
-		if len(response.Data) > 0 && string(response.Data) != "null" {
-			require.NoError(t, json.Unmarshal(response.Data, &result))
-		}
-		require.Nil(t, result.Type)
+		// graphql-go with introspection disabled returns data: {} and no errors.
+		// Assert both so an unrelated GraphQL failure (which can omit data) cannot pass.
+		require.Empty(t, response.Errors)
+		require.JSONEq(t, `{}`, string(response.Data))
 	})
 
 	t.Run("every PropertyFieldType value is accepted", func(t *testing.T) {
