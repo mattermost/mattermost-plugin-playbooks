@@ -11,7 +11,6 @@ import {
 } from '@apollo/client';
 
 import {
-    AddPlaybookMemberDocument,
     PlaybookDocument,
     PlaybookLhsDocument,
     PlaybookPropertyDocument,
@@ -19,7 +18,6 @@ import {
     PlaybookPropertyQueryVariables,
     PlaybookQuery,
     PlaybookUpdates,
-    RemovePlaybookMemberDocument,
     RhsRunsDocument,
     RunUpdates,
     SetRunPropertyValueDocument,
@@ -34,8 +32,10 @@ import {
 import {playbookRunUpdated} from 'src/actions';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {
+    addPlaybookMember,
     addRunParticipants,
     autoFollowPlaybook,
+    removePlaybookMember,
     removeRunParticipants,
     setOwner,
     setPlaybookFavorite,
@@ -119,40 +119,24 @@ export const useSetRunFavorite = (id: string|undefined) => {
 };
 
 export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
-    const [joinPlaybook] = useMutation(AddPlaybookMemberDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-        variables: {
-            playbookID: playbookID || '',
-            userID: userID || '',
-        },
-    });
-
-    const [leavePlaybook] = useMutation(RemovePlaybookMemberDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-        variables: {
-            playbookID: playbookID || '',
-            userID: userID || '',
-        },
-    });
+    const refreshLHS = useLHSRefresh();
 
     const join = useCallback(async () => {
         if (!playbookID || !userID) {
             return;
         }
-        await joinPlaybook();
+        await addPlaybookMember(playbookID, userID);
         await autoFollowPlaybook(playbookID, userID);
-    }, [playbookID, userID, joinPlaybook]);
+        refreshLHS();
+    }, [playbookID, refreshLHS, userID]);
 
     const leave = useCallback(async () => {
         if (!playbookID || !userID) {
             return;
         }
-        await leavePlaybook();
-    }, [playbookID, userID, leavePlaybook]);
+        await removePlaybookMember(playbookID, userID);
+        refreshLHS();
+    }, [playbookID, refreshLHS, userID]);
 
     return {join, leave};
 };
