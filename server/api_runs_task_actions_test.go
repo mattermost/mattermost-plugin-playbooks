@@ -66,6 +66,9 @@ func TestRunTaskActionsREST(t *testing.T) {
 		require.Len(t, edited.Checklists[0].Items[0].TaskActions, 1)
 		require.Equal(t, string(app.KeywordsByUsersTriggerType), edited.Checklists[0].Items[0].TaskActions[0].Trigger.Type)
 		require.Equal(t, triggerPayload, edited.Checklists[0].Items[0].TaskActions[0].Trigger.Payload)
+		require.Len(t, edited.Checklists[0].Items[0].TaskActions[0].Actions, 1)
+		require.Equal(t, string(app.MarkItemAsDoneActionType), edited.Checklists[0].Items[0].TaskActions[0].Actions[0].Type)
+		require.Equal(t, actionPayload, edited.Checklists[0].Items[0].TaskActions[0].Actions[0].Payload)
 
 		newTriggerPayload := `{"keywords":["one", "two", "edited"], "user_ids":["abc"]}`
 		err = e.PlaybooksClient.PlaybookRuns.SetTaskActions(context.Background(), run.ID, 0, 0, []client.TaskAction{
@@ -76,6 +79,9 @@ func TestRunTaskActionsREST(t *testing.T) {
 		edited, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.Equal(t, newTriggerPayload, edited.Checklists[0].Items[0].TaskActions[0].Trigger.Payload)
+		require.Len(t, edited.Checklists[0].Items[0].TaskActions[0].Actions, 1)
+		require.Equal(t, string(app.MarkItemAsDoneActionType), edited.Checklists[0].Items[0].TaskActions[0].Actions[0].Type)
+		require.Equal(t, actionPayload, edited.Checklists[0].Items[0].TaskActions[0].Actions[0].Payload)
 	})
 
 	t.Run("guest cannot set task actions", func(t *testing.T) {
