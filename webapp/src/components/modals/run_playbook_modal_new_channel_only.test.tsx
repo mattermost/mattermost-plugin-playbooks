@@ -171,14 +171,6 @@ jest.mock('src/components/backstage/styles', () => ({
     ),
 }));
 
-jest.mock('@apollo/client', () => ({
-    ApolloProvider: ({children}: {children: React.ReactNode}) => <>{children}</>,
-}));
-
-jest.mock('src/graphql_client', () => ({
-    getPlaybooksGraphQLClient: () => ({}),
-}));
-
 const makePlaybookWithNewChannelOnly = (newChannelOnly: boolean) => ({
     id: 'playbook-1',
     title: 'Test Playbook',
