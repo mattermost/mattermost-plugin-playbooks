@@ -136,6 +136,7 @@ func NewPlaybookRunHandler(
 		checklistItem.HandleFunc("/assignee", withContext(handler.itemSetAssignee)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/assignee_only_complete", withContext(handler.itemSetAssigneeOnlyComplete)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/command", withContext(handler.itemSetCommand)).Methods(http.MethodPut)
+		checklistItem.HandleFunc("/task_actions", withContext(handler.itemSetTaskActions)).Methods(http.MethodPut)
 		checklistItem.HandleFunc("/run", withContext(handler.itemRun)).Methods(http.MethodPost)
 		checklistItem.HandleFunc("/duplicate", withContext(handler.itemDuplicate)).Methods(http.MethodPost)
 		checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
@@ -1836,6 +1837,44 @@ func (h *PlaybookRunHandler) itemSetCommand(c *Context, w http.ResponseWriter, r
 	}
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+// itemSetTaskActions handles PUT /runs/{id}/checklists/{checklist}/item/{item}/task_actions
+// (mirrors GraphQL updateRunTaskActions). RunManageProperties + active-run checks come from middleware.
+func (h *PlaybookRunHandler) itemSetTaskActions(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		TaskActions []app.TaskAction `json:"task_actions"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
+		return
+	}
+
+	if err := validateTaskActions(params.TaskActions); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid task actions", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetTaskActionsToChecklistItem(id, userID, checklistNum, itemNum, params.TaskActions); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.Request) {
