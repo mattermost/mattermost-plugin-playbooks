@@ -42,7 +42,7 @@ const convertToPlaybookWithChecklist = (playbook: FullPlaybook, propertyFields: 
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
-    refetch: () => void;
+    refetch: () => void | Promise<void>;
     canEdit?: boolean;
 }
 
@@ -59,8 +59,13 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
     // savePlaybook calls do not race and overwrite each other with stale metrics.
     const playbookRef = useRef(playbook);
     const saveChainRef = useRef(Promise.resolve());
+    const pendingSavesRef = useRef(0);
     useEffect(() => {
-        playbookRef.current = playbook;
+        // Skip prop sync while saves (and their awaited refetches) are in flight so
+        // an older in-flight response cannot clobber newer optimistic metrics.
+        if (pendingSavesRef.current === 0) {
+            playbookRef.current = playbook;
+        }
     }, [playbook]);
 
     if (!retrospectiveAccess) {
@@ -110,8 +115,15 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
                         const snapshot = {...playbookRef.current};
 
                         const run = async () => {
-                            await savePlaybook(snapshot); // TODO replace with graphql / useUpdatePlaybook
-                            refetch();
+                            pendingSavesRef.current += 1;
+                            try {
+                                await savePlaybook(snapshot); // TODO replace with graphql / useUpdatePlaybook
+                                // Only refetch after a successful PUT, and await it so the
+                                // next queued save sees server-assigned metric IDs.
+                                await refetch();
+                            } finally {
+                                pendingSavesRef.current -= 1;
+                            }
                         };
                         const chained = saveChainRef.current.then(run, run);
                         saveChainRef.current = chained.then(() => undefined, () => undefined);

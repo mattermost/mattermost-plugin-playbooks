@@ -333,10 +333,16 @@ const myPlaybookRunsByTeam = (
                 continue;
             }
             for (const channelId of Object.keys(teamData)) {
-                if (teamData[channelId]?.id !== playbookRun.id) {
+                const existing = teamData[channelId];
+                if (existing?.id !== playbookRun.id) {
                     continue;
                 }
                 if (existingTeamId === teamId && channelId === playbookRun.channel_id) {
+                    continue;
+                }
+
+                // Ignore stale snapshots so they cannot remove a newer channel location.
+                if (isRun(existing) && existing.update_at > playbookRun.update_at) {
                     continue;
                 }
                 if (!changed) {
@@ -353,6 +359,21 @@ const myPlaybookRunsByTeam = (
         const existingAtDest = nextState[teamId]?.[playbookRun.channel_id];
         if (isRun(existingAtDest) && existingAtDest.update_at > playbookRun.update_at) {
             return nextState;
+        }
+
+        // A newer snapshot of this run may still live in another channel/team slot
+        // (deletion above skipped it). Do not re-insert the stale location.
+        for (const existingTeamId of Object.keys(nextState)) {
+            const teamData = nextState[existingTeamId];
+            if (!teamData) {
+                continue;
+            }
+            for (const channelId of Object.keys(teamData)) {
+                const existing = teamData[channelId];
+                if (isRun(existing) && existing.id === playbookRun.id && existing.update_at > playbookRun.update_at) {
+                    return nextState;
+                }
+            }
         }
 
         return {
