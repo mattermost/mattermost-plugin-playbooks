@@ -101,19 +101,21 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
                 </BackstageSubheader>
                 <Metrics
                     playbook={convertToPlaybookWithChecklist(playbook, propertyFields || [])} // TODO reduce prop scope to min-essentials
-                    setPlaybook={async (update) => {
-                        // Serialize metric saves: save-then-delete (and similar) must apply
-                        // against the previous optimistic result, not a stale render closure.
+                    setPlaybook={(update) => {
+                        // Apply the update to the optimistic ref synchronously so a follow-up
+                        // delete/add sees the new metrics list, then serialize the PUTs.
+                        const current = convertToPlaybookWithChecklist(playbookRef.current, propertyFields || []);
+                        const next = typeof update === 'function' ? update(current) : {...current, ...update};
+                        playbookRef.current = {...playbookRef.current, ...next};
+                        const snapshot = {...playbookRef.current};
+
                         const run = async () => {
-                            const current = convertToPlaybookWithChecklist(playbookRef.current, propertyFields || []);
-                            const next = typeof update === 'function' ? update(current) : {...current, ...update};
-                            playbookRef.current = {...playbookRef.current, ...next};
-                            await savePlaybook({...playbookRef.current}); // TODO replace with graphql / useUpdatePlaybook
+                            await savePlaybook(snapshot); // TODO replace with graphql / useUpdatePlaybook
                             refetch();
                         };
                         const chained = saveChainRef.current.then(run, run);
                         saveChainRef.current = chained.then(() => undefined, () => undefined);
-                        await chained;
+                        return chained;
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
