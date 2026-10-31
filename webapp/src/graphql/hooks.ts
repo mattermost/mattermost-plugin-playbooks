@@ -1,31 +1,28 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useCallback, useEffect, useState} from 'react';
-
 import {
-    QueryResult,
-    useApolloClient,
-    useMutation,
-    useQuery,
-} from '@apollo/client';
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 
-import {
-    PlaybookDocument,
-    PlaybookQuery,
-    PlaybookUpdates,
-    RhsRunsDocument,
-    UpdatePlaybookDocument,
-} from 'src/graphql/generated/graphql';
+import {useApolloClient} from '@apollo/client';
+
+import {RhsRunsDocument} from 'src/graphql/generated/graphql';
 
 import {playbookRunUpdated} from 'src/actions';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {
+    PlaybookUpdateFields,
     RunUpdateFields,
     addPlaybookMember,
     addRunParticipants,
     autoFollowPlaybook,
+    clientFetchPlaybook,
     fetchPlaybookPropertyField,
+    isFavoriteItem,
     removePlaybookMember,
     removeRunParticipants,
     setChecklistItemTaskActions,
@@ -33,47 +30,154 @@ import {
     setPlaybookFavorite,
     setRunFavorite,
     setRunPropertyValue as setRunPropertyValueRequest,
+    updatePlaybook as updatePlaybookRequest,
     updatePlaybookRun,
 } from 'src/client';
 import {useAppDispatch} from 'src/hooks/redux';
-import {TaskAction} from 'src/types/playbook';
+import {PlaybookWithChecklist, TaskAction} from 'src/types/playbook';
 import {PropertyField} from 'src/types/properties';
 
-export type FullPlaybook = PlaybookQuery['playbook']
+export type FullPlaybook = PlaybookWithChecklist | undefined
 
 export type PlaybookPropertyField = PropertyField | undefined
 
 export type Loaded<T> = Exclude<T, undefined | null>
 
-export const usePlaybook = (id: string): [FullPlaybook, QueryResult<PlaybookQuery, {id: string}>] => {
-    const result = useQuery(PlaybookDocument, {
-        variables: {
-            id,
-        },
-        fetchPolicy: 'network-only',
-        nextFetchPolicy: 'cache-first',
-    });
+type PlaybookFetchResult = {
+    loading: boolean;
+    error?: Error | null;
+    refetch: () => Promise<void>;
+}
 
-    let playbook : FullPlaybook = result.data?.playbook;
-    playbook = playbook === null ? undefined : playbook;
+const playbookRefreshListeners = new Map<string, Set<() => void>>();
 
-    return [playbook, result];
+function subscribePlaybookRefresh(id: string, listener: () => void): () => void {
+    let listeners = playbookRefreshListeners.get(id);
+    if (!listeners) {
+        listeners = new Set();
+        playbookRefreshListeners.set(id, listeners);
+    }
+    listeners.add(listener);
+    return () => {
+        listeners?.delete(listener);
+        if (listeners && listeners.size === 0) {
+            playbookRefreshListeners.delete(id);
+        }
+    };
+}
+
+function notifyPlaybookRefresh(id: string) {
+    playbookRefreshListeners.get(id)?.forEach((listener) => listener());
+}
+
+async function fetchFullPlaybook(id: string): Promise<PlaybookWithChecklist> {
+    const playbook = await clientFetchPlaybook(id);
+    if (!playbook) {
+        throw new Error(`playbook ${id} not found`);
+    }
+    try {
+        const isFavorite = await isFavoriteItem(playbook.team_id, id, 'p');
+        return {...playbook, is_favorite: Boolean(isFavorite)};
+    } catch {
+        return {...playbook, is_favorite: Boolean(playbook.is_favorite)};
+    }
+}
+
+export const usePlaybook = (id: string): [FullPlaybook, PlaybookFetchResult] => {
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined>();
+    const [loading, setLoading] = useState(Boolean(id));
+    const [error, setError] = useState<Error | null | undefined>();
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    // Tracks which playbook id is currently shown so refreshes keep prior data
+    // mounted (Apollo useQuery parity). Flipping loading on every refresh was
+    // unmounting the editor and wiping optimistic toggle state.
+    const loadedIdRef = useRef<string | undefined>(undefined);
+
+    useEffect(() => {
+        if (!id) {
+            return undefined;
+        }
+        return subscribePlaybookRefresh(id, () => setRefreshKey((key) => key + 1));
+    }, [id]);
+
+    const refetch = useCallback(async () => {
+        if (!id) {
+            return;
+        }
+
+        // Await the fetch itself so callers (e.g. serialized metric saves) can
+        // chain on completion rather than racing a fire-and-forget refreshKey bump.
+        try {
+            const result = await fetchFullPlaybook(id);
+            loadedIdRef.current = id;
+            setPlaybook(result);
+            setLoading(false);
+            setError(undefined);
+        } catch (err) {
+            loadedIdRef.current = undefined;
+            setPlaybook(undefined);
+            setError(err instanceof Error ? err : new Error(String(err)));
+            setLoading(false);
+            throw err;
+        }
+    }, [id]);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!id) {
+            loadedIdRef.current = undefined;
+            setPlaybook(undefined);
+            setLoading(false);
+            setError(undefined);
+            return undefined;
+        }
+
+        const isInitialLoad = loadedIdRef.current !== id;
+        if (isInitialLoad) {
+            if (loadedIdRef.current !== undefined) {
+                setPlaybook(undefined);
+            }
+            setLoading(true);
+        }
+        setError(undefined);
+        fetchFullPlaybook(id)
+            .then((result) => {
+                if (!cancelled) {
+                    loadedIdRef.current = id;
+                    setPlaybook(result);
+                    setLoading(false);
+                }
+            })
+            .catch((err: Error) => {
+                if (!cancelled) {
+                    loadedIdRef.current = undefined;
+                    setPlaybook(undefined);
+                    setError(err);
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [id, refreshKey]);
+
+    return [playbook, {loading, error, refetch}];
 };
 
 export const useUpdatePlaybook = (id?: string) => {
-    const [innerUpdatePlaybook] = useMutation(UpdatePlaybookDocument, {
-        refetchQueries: [
-            PlaybookDocument,
-        ],
-    });
-    return useCallback((updates: PlaybookUpdates) => {
-        return innerUpdatePlaybook({variables: {id: id || '', updates}});
-    }, [id, innerUpdatePlaybook]);
+    return useCallback(async (updates: PlaybookUpdateFields) => {
+        if (!id) {
+            return;
+        }
+        await updatePlaybookRequest(id, updates);
+        notifyPlaybookRefresh(id);
+    }, [id]);
 };
 
 export const useUpdatePlaybookFavorite = (id: string|undefined) => {
     const refreshLHS = useLHSRefresh();
-    const apolloClient = useApolloClient();
 
     return useCallback(async (favorite: boolean) => {
         if (id === undefined) {
@@ -81,12 +185,8 @@ export const useUpdatePlaybookFavorite = (id: string|undefined) => {
         }
         await setPlaybookFavorite(id, favorite);
         refreshLHS();
-
-        // Keep Apollo playbook query in sync until usePlaybook moves to REST.
-        await apolloClient.refetchQueries({
-            include: [PlaybookDocument],
-        });
-    }, [apolloClient, id, refreshLHS]);
+        notifyPlaybookRefresh(id);
+    }, [id, refreshLHS]);
 };
 
 export const useUpdateRun = (id?: string) => {
@@ -129,8 +229,11 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
             return;
         }
         await addPlaybookMember(playbookID, userID);
-        await autoFollowPlaybook(playbookID, userID);
+
+        // Refresh LHS as soon as membership succeeds so a failed auto-follow
+        // cannot leave the joined playbook missing from the sidebar.
         refreshLHS();
+        await autoFollowPlaybook(playbookID, userID);
     }, [playbookID, refreshLHS, userID]);
 
     const leave = useCallback(async () => {

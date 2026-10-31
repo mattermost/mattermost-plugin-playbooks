@@ -428,67 +428,6 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playbookID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	playbook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageProperties(userID, playbook)) {
-		return
-	}
-
-	if playbook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Playbook cannot be modified", fmt.Errorf("playbook with id '%s' is archived", playbookID))
-		return
-	}
-
-	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
-
-	var body struct {
-		RunNumberPrefix           *string `json:"run_number_prefix"`
-		ChannelNameTemplate       *string `json:"channel_name_template"`
-		ChannelNameTemplateLocked *bool   `json:"channel_name_template_locked"`
-	}
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&body); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
-		return
-	}
-
-	// These three updates are not atomic: if an earlier field succeeds but a later one fails,
-	// the earlier change is persisted. Clients that need consistency should send them
-	// in separate requests.
-	if body.RunNumberPrefix != nil {
-		if err = h.playbookService.UpdateRunNumberPrefix(playbookID, *body.RunNumberPrefix, userID); err != nil {
-			h.handlePlaybookWriteError(w, c.logger, err)
-			return
-		}
-	}
-
-	if body.ChannelNameTemplate != nil {
-		if err = h.playbookService.UpdateChannelNameTemplate(playbookID, *body.ChannelNameTemplate, userID); err != nil {
-			h.handlePlaybookWriteError(w, c.logger, err)
-			return
-		}
-	}
-
-	if body.ChannelNameTemplateLocked != nil {
-		if err = h.playbookService.UpdateChannelNameTemplateLocked(playbookID, *body.ChannelNameTemplateLocked, userID); err != nil {
-			h.handlePlaybookWriteError(w, c.logger, err)
-			return
-		}
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func validatePreAssignment(pb app.Playbook) error {
 	assignees := app.GetDistinctAssignees(pb.Checklists)
 	return app.ValidatePreAssignment(assignees, pb.InvitedUserIDs, pb.InviteUsersEnabled)

@@ -934,6 +934,9 @@ func (s *stubPlaybookService) IncrementRunNumber(string) (int64, error) {
 func (s *stubPlaybookService) GraphqlUpdate(string, map[string]interface{}) error {
 	panic("stubPlaybookService: GraphqlUpdate not implemented")
 }
+func (s *stubPlaybookService) ValidateRunNumberPrefixUnique(string, string, string) error {
+	panic("stubPlaybookService: ValidateRunNumberPrefixUnique not implemented")
+}
 func (s *stubPlaybookService) AddPlaybookMember(string, string) error {
 	panic("stubPlaybookService: AddPlaybookMember not implemented")
 }

@@ -141,6 +141,12 @@ const myPlaybookRuns = (
     case PLAYBOOK_RUN_UPDATED: {
         const playbookRunUpdated = action as PlaybookRunUpdated;
         const playbookRun = playbookRunUpdated.playbookRun;
+        const current = state[playbookRun.id];
+
+        // Ignore a stale HTTP snapshot that lost a race with a newer websocket update.
+        if (current && current.update_at > playbookRun.update_at) {
+            return state;
+        }
         return {
             ...state,
             [playbookRun.id]: playbookRun,
@@ -316,10 +322,64 @@ const myPlaybookRunsByTeam = (
         const playbookRunUpdated = action as PlaybookRunUpdated;
         const playbookRun = playbookRunUpdated.playbookRun;
         const teamId = playbookRun.team_id;
+
+        // Drop any previous team/channel slot for this run (channel moves, DM/GM
+        // with empty team_id) before inserting the updated entry.
+        let nextState: TStateMyPlaybookRunsByTeam = state;
+        let changed = false;
+        for (const existingTeamId of Object.keys(state)) {
+            const teamData = state[existingTeamId];
+            if (!teamData) {
+                continue;
+            }
+            for (const channelId of Object.keys(teamData)) {
+                const existing = teamData[channelId];
+                if (existing?.id !== playbookRun.id) {
+                    continue;
+                }
+                if (existingTeamId === teamId && channelId === playbookRun.channel_id) {
+                    continue;
+                }
+
+                // Ignore stale snapshots so they cannot remove a newer channel location.
+                if (isRun(existing) && existing.update_at > playbookRun.update_at) {
+                    continue;
+                }
+                if (!changed) {
+                    nextState = {...state};
+                    changed = true;
+                }
+                if (nextState[existingTeamId] === state[existingTeamId]) {
+                    nextState[existingTeamId] = {...teamData};
+                }
+                delete nextState[existingTeamId]![channelId];
+            }
+        }
+
+        const existingAtDest = nextState[teamId]?.[playbookRun.channel_id];
+        if (isRun(existingAtDest) && existingAtDest.update_at > playbookRun.update_at) {
+            return nextState;
+        }
+
+        // A newer snapshot of this run may still live in another channel/team slot
+        // (deletion above skipped it). Do not re-insert the stale location.
+        for (const existingTeamId of Object.keys(nextState)) {
+            const teamData = nextState[existingTeamId];
+            if (!teamData) {
+                continue;
+            }
+            for (const channelId of Object.keys(teamData)) {
+                const existing = teamData[channelId];
+                if (isRun(existing) && existing.id === playbookRun.id && existing.update_at > playbookRun.update_at) {
+                    return nextState;
+                }
+            }
+        }
+
         return {
-            ...state,
+            ...nextState,
             [teamId]: {
-                ...state[teamId],
+                ...nextState[teamId],
                 [playbookRun.channel_id]: playbookRun,
             },
         };
