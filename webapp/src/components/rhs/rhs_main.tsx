@@ -221,25 +221,35 @@ const RightHandSidebar = () => {
     const {isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
 
     useEffect(() => {
-        // reset filter state
+        // reset filter state and selection when leaving a channel so we never
+        // auto-select against the previous channel's still-mounted run list.
         setListOptions(defaultListOptions);
+        setCurrentRunId(undefined);
+        autoSelectCheckedForChannel.current = undefined;
     }, [currentChannelId]);
 
     // auto-select single in-progress run in channel if applicable
     useEffect(() => {
         if (currentChannelId && currentChannelId !== autoSelectCheckedForChannel.current) {
             setCurrentRunId(() => {
-                if (fetchedRuns.runsInProgress) {
-                    autoSelectCheckedForChannel.current = currentChannelId; // mark that we've checked this channel
-
-                    if (fetchedRuns.runsInProgress.length === 1) {
-                        return fetchedRuns.runsInProgress[0].id; // auto-select the single in-progress run
-                    }
-
-                    return undefined; // no auto-select
+                if (!fetchedRuns.runsInProgress) {
+                    return undefined; // clear immediately - wait until runsInProgress is loaded
                 }
 
-                return undefined; // clear immediately - wait until runsInProgress is loaded
+                // Ignore stale lists from the previous channel that can still be
+                // visible for one render before the channel-change reset commits.
+                const runsForChannel = fetchedRuns.runsInProgress.filter((run) => run.channelID === currentChannelId);
+                if (runsForChannel.length !== fetchedRuns.runsInProgress.length) {
+                    return undefined;
+                }
+
+                autoSelectCheckedForChannel.current = currentChannelId; // mark that we've checked this channel
+
+                if (runsForChannel.length === 1) {
+                    return runsForChannel[0].id; // auto-select the single in-progress run
+                }
+
+                return undefined; // no auto-select
             });
         }
     }, [currentChannelId, fetchedRuns.runsInProgress]);
