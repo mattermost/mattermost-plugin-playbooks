@@ -264,6 +264,27 @@ describe('websocket event actions', () => {
             expect(newState.myPlaybookRunsByTeam[newer.team_id]![newer.channel_id].name).toBe('Newer');
         });
 
+        it('ignores a stale snapshot that would restore an older channel after a move', () => {
+            const moved = {
+                ...testPlaybookRun,
+                channel_id: 'channel_new',
+                update_at: 3000,
+            };
+            const state = makeStateWithRun(moved);
+            const staleAtOldChannel = {
+                ...testPlaybookRun,
+                channel_id: testPlaybookRun.channel_id,
+                update_at: 2000,
+            };
+
+            // @ts-ignore
+            const newState = reducer(state, playbookRunUpdated(staleAtOldChannel));
+
+            expect(newState.myPlaybookRunsByTeam[moved.team_id]!.channel_new).toEqual(moved);
+            expect(newState.myPlaybookRunsByTeam[moved.team_id]![testPlaybookRun.channel_id]).toBeUndefined();
+            expect(newState.myPlaybookRuns[moved.id]).toEqual(moved);
+        });
+
         it('moves a run into an empty team_id slot for DM/GM channels', () => {
             const state = makeStateWithRun(testPlaybookRun);
             const movedToDM = {

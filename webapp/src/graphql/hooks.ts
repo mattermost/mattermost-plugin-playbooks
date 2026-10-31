@@ -105,7 +105,22 @@ export const usePlaybook = (id: string): [FullPlaybook, PlaybookFetchResult] => 
         if (!id) {
             return;
         }
-        setRefreshKey((key) => key + 1);
+
+        // Await the fetch itself so callers (e.g. serialized metric saves) can
+        // chain on completion rather than racing a fire-and-forget refreshKey bump.
+        try {
+            const result = await fetchFullPlaybook(id);
+            loadedIdRef.current = id;
+            setPlaybook(result);
+            setLoading(false);
+            setError(undefined);
+        } catch (err) {
+            loadedIdRef.current = undefined;
+            setPlaybook(undefined);
+            setError(err instanceof Error ? err : new Error(String(err)));
+            setLoading(false);
+            throw err;
+        }
     }, [id]);
 
     useEffect(() => {

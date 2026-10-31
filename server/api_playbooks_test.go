@@ -3000,6 +3000,28 @@ func TestPatchPlaybook(t *testing.T) {
 		// Title length is enforced by the DB column (VARCHAR 1024), same as create.
 		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
+
+	t.Run("rejects link_existing_channel mode when new_channel_only is true", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "New Channel Only Patch Guard",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		pb.NewChannelOnly = true
+		pb.ChannelMode = client.PlaybookRunCreateNewChannel
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{
+			"channel_mode": client.PlaybookRunLinkExistingChannel.String(),
+		})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
 }
 
 // TestSequentialIDFrozenAtCreation pins the contract that SequentialID is frozen at
