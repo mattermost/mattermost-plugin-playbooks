@@ -12,7 +12,6 @@ import {
 
 import {
     AddPlaybookMemberDocument,
-    AddRunParticipantsDocument,
     PlaybookDocument,
     PlaybookLhsDocument,
     PlaybookPropertyDocument,
@@ -21,7 +20,6 @@ import {
     PlaybookQuery,
     PlaybookUpdates,
     RemovePlaybookMemberDocument,
-    RemoveRunParticipantsDocument,
     RhsRunsDocument,
     RunUpdates,
     SetRunPropertyValueDocument,
@@ -33,13 +31,17 @@ import {
     UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';
 
+import {playbookRunUpdated} from 'src/actions';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {
+    addRunParticipants,
     autoFollowPlaybook,
+    removeRunParticipants,
     setOwner,
     setPlaybookFavorite,
     setRunFavorite,
 } from 'src/client';
+import {useAppDispatch} from 'src/hooks/redux';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
@@ -156,31 +158,26 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
 };
 
 export const useManageRunMembership = (runID?: string) => {
-    const [add] = useMutation(AddRunParticipantsDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-    });
-
-    const [remove] = useMutation(RemoveRunParticipantsDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-    });
+    const dispatch = useAppDispatch();
+    const refreshLHS = useLHSRefresh();
 
     const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
-        await add({variables: {runID: runID || '', userIDs: userIDs || [], forceAddToChannel: forceAddToChannel || false}});
-    }, [runID, add]);
+        const updated = await addRunParticipants(runID, userIDs, forceAddToChannel || false);
+        dispatch(playbookRunUpdated(updated));
+        refreshLHS();
+    }, [dispatch, refreshLHS, runID]);
 
     const removeFromRun = useCallback(async (userIDs?: string[]) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
-        await remove({variables: {runID: runID || '', userIDs: userIDs || []}});
-    }, [runID, remove]);
+        const updated = await removeRunParticipants(runID, userIDs);
+        dispatch(playbookRunUpdated(updated));
+        refreshLHS();
+    }, [dispatch, refreshLHS, runID]);
 
     const changeRunOwner = useCallback(async (ownerID?: string) => {
         if (!runID || !ownerID) {
@@ -189,7 +186,8 @@ export const useManageRunMembership = (runID?: string) => {
 
         // Errors from setOwner propagate as a rejected Promise; callers must handle them.
         await setOwner(runID, ownerID);
-    }, [runID]);
+        refreshLHS();
+    }, [refreshLHS, runID]);
 
     return {addToRun, removeFromRun, changeRunOwner};
 };
