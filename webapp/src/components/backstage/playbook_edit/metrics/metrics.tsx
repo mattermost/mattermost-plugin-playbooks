@@ -45,7 +45,7 @@ interface Task {
 
 interface Props {
     playbook: PlaybookWithChecklist | DraftPlaybookWithChecklist;
-    setPlaybook: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | DraftPlaybookWithChecklist>>;
+    setPlaybook: (update: React.SetStateAction<PlaybookWithChecklist | DraftPlaybookWithChecklist>) => void | Promise<void>;
     setChangesMade?: (b: boolean) => void;
     curEditingMetric: EditingMetric | null;
     setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;
@@ -119,12 +119,15 @@ const Metrics = ({
         setChangesMade?.(true);
     };
 
-    const saveMetric = (target: number | null) => {
+    const saveMetric = async (target: number | null) => {
         let length = playbook.metrics.length;
+        const pendingTask = nextTask;
 
         if (curEditingMetric) {
             const metric = {...curEditingMetric.metric, target};
-            setPlaybook((pb) => {
+
+            // Await so a follow-up delete/add/edit sees the saved metrics, not a stale playbook.
+            await Promise.resolve(setPlaybook((pb) => {
                 const metrics = [...pb.metrics];
                 metrics.splice(curEditingMetric.index, 1, metric);
                 length = metrics.length;
@@ -133,23 +136,23 @@ const Metrics = ({
                     ...pb,
                     metrics,
                 };
-            });
+            }));
             setChangesMade?.(true);
         }
 
         // Do we have a requested task ready to do next?
-        if (nextTask?.type === TaskType.add) {
+        if (pendingTask?.type === TaskType.add) {
             // Typescript needs defaults (even though they will be present)
-            addMetric(nextTask?.addType || MetricType.MetricDuration, length);
-        } else if (nextTask?.type === TaskType.edit) {
+            addMetric(pendingTask?.addType || MetricType.MetricDuration, length);
+        } else if (pendingTask?.type === TaskType.edit) {
             // The following is because if editIndex === 0, 0 is falsey
             // eslint-disable-next-line no-undefined
-            const index = nextTask.index === undefined ? -1 : nextTask.index;
+            const index = pendingTask.index === undefined ? -1 : pendingTask.index;
             setCurEditingMetric({index, metric: playbook.metrics[index]});
-        } else if (nextTask?.type === TaskType.delete) {
+        } else if (pendingTask?.type === TaskType.delete) {
             // The following is because if editIndex === 0, 0 is falsey
             // eslint-disable-next-line no-undefined
-            const index = nextTask.index === undefined ? -1 : nextTask.index;
+            const index = pendingTask.index === undefined ? -1 : pendingTask.index;
             setDeletingIdx(index);
         } else {
             setCurEditingMetric(null);
@@ -158,19 +161,20 @@ const Metrics = ({
         setNextTask(null);
     };
 
-    const confirmedDelete = () => {
-        setPlaybook((pb) => {
+    const confirmedDelete = async () => {
+        const indexToDelete = deletingIdx;
+        setDeletingIdx(-1);
+        setCurEditingMetric(null);
+        await Promise.resolve(setPlaybook((pb) => {
             const metrics = [...pb.metrics];
-            metrics.splice(deletingIdx, 1);
+            metrics.splice(indexToDelete, 1);
 
             return {
                 ...pb,
                 metrics,
             };
-        });
+        }));
         setChangesMade?.(true);
-        setDeletingIdx(-1);
-        setCurEditingMetric(null);
     };
 
     // If we're editing a metric, we need to add (or replace) the curEditing metric into the metrics array
