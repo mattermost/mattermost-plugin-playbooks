@@ -99,6 +99,56 @@ export async function removeRunParticipants(runId: string, userIds: string[]): P
     return data as PlaybookRun;
 }
 
+/** Partial run update using the GraphQL RunUpdates field names; maps to PATCH /runs/{id}. */
+export type RunUpdateFields = {
+    name?: string | null;
+    summary?: string | null;
+    channelID?: string | null;
+    createChannelMemberOnNewParticipant?: boolean | null;
+    removeChannelMemberOnRemovedParticipant?: boolean | null;
+    statusUpdateBroadcastChannelsEnabled?: boolean | null;
+    statusUpdateBroadcastWebhooksEnabled?: boolean | null;
+    broadcastChannelIDs?: string[] | null;
+    webhookOnStatusUpdateURLs?: string[] | null;
+};
+
+export async function updatePlaybookRun(runId: string, updates: RunUpdateFields): Promise<PlaybookRun> {
+    const body: Record<string, unknown> = {};
+    if (updates.name !== undefined) {
+        body.name = updates.name;
+    }
+    if (updates.summary !== undefined) {
+        body.summary = updates.summary;
+    }
+    if (updates.channelID !== undefined) {
+        body.channel_id = updates.channelID;
+    }
+    if (updates.createChannelMemberOnNewParticipant !== undefined) {
+        body.create_channel_member_on_new_participant = updates.createChannelMemberOnNewParticipant;
+    }
+    if (updates.removeChannelMemberOnRemovedParticipant !== undefined) {
+        body.remove_channel_member_on_removed_participant = updates.removeChannelMemberOnRemovedParticipant;
+    }
+    if (updates.statusUpdateBroadcastChannelsEnabled !== undefined) {
+        body.status_update_broadcast_channels_enabled = updates.statusUpdateBroadcastChannelsEnabled;
+    }
+    if (updates.statusUpdateBroadcastWebhooksEnabled !== undefined) {
+        body.status_update_broadcast_webhooks_enabled = updates.statusUpdateBroadcastWebhooksEnabled;
+    }
+    if (updates.broadcastChannelIDs !== undefined) {
+        body.broadcast_channel_ids = updates.broadcastChannelIDs;
+    }
+    if (updates.webhookOnStatusUpdateURLs !== undefined) {
+        body.webhook_on_status_update_urls = updates.webhookOnStatusUpdateURLs;
+    }
+
+    const {data} = await doFetchWithResponse<PlaybookRun>(`${apiUrl}/runs/${runId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+    });
+    return data as PlaybookRun;
+}
+
 export async function fetchPlaybookRunStatusUpdates(id: string) {
     return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }

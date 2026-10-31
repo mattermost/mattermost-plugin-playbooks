@@ -12,26 +12,24 @@ import {
 
 import {
     PlaybookDocument,
-    PlaybookLhsDocument,
     PlaybookPropertyDocument,
     PlaybookPropertyQuery,
     PlaybookPropertyQueryVariables,
     PlaybookQuery,
     PlaybookUpdates,
     RhsRunsDocument,
-    RunUpdates,
     SetRunPropertyValueDocument,
     SetRunPropertyValueMutation,
     SetRunPropertyValueMutationVariables,
     TaskActionUpdates,
     UpdatePlaybookDocument,
-    UpdateRunDocument,
     UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';
 
 import {playbookRunUpdated} from 'src/actions';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {
+    RunUpdateFields,
     addPlaybookMember,
     addRunParticipants,
     autoFollowPlaybook,
@@ -40,6 +38,7 @@ import {
     setOwner,
     setPlaybookFavorite,
     setRunFavorite,
+    updatePlaybookRun,
 } from 'src/client';
 import {useAppDispatch} from 'src/hooks/redux';
 
@@ -94,16 +93,23 @@ export const useUpdatePlaybookFavorite = (id: string|undefined) => {
 };
 
 export const useUpdateRun = (id?: string) => {
-    const [innerUpdateRun] = useMutation(UpdateRunDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-            RhsRunsDocument,
-        ],
-    });
+    const dispatch = useAppDispatch();
+    const refreshLHS = useLHSRefresh();
+    const apolloClient = useApolloClient();
 
-    return useCallback((updates: RunUpdates) => {
-        return innerUpdateRun({variables: {id: id || '', updates}});
-    }, [id, innerUpdateRun]);
+    return useCallback(async (updates: RunUpdateFields) => {
+        if (!id) {
+            return;
+        }
+        const updated = await updatePlaybookRun(id, updates);
+        dispatch(playbookRunUpdated(updated));
+        refreshLHS();
+
+        // Keep Apollo RHS runs list in sync until that query moves to REST.
+        await apolloClient.refetchQueries({
+            include: [RhsRunsDocument],
+        });
+    }, [apolloClient, dispatch, id, refreshLHS]);
 };
 
 export const useSetRunFavorite = (id: string|undefined) => {
