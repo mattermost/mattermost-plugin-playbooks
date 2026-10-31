@@ -172,7 +172,10 @@ func (s *stubRunStoreGetOnly) UnfollowAllRuns(userID string) error {
 func (s *stubRunStoreGetOnly) UnfollowMultiple(_ string, _ []string) error { panic("not implemented") }
 func (s *stubRunStoreGetOnly) FollowBatch(_ string, _ []string) error      { panic("not implemented") }
 func (s *stubRunStoreGetOnly) GetFollowers(_ string) ([]string, error)     { panic("not implemented") }
-func (s *stubRunStoreGetOnly) GetRunsActiveTotal() (int64, error)          { panic("not implemented") }
+func (s *stubRunStoreGetOnly) GetFollowersForRuns(_ []string) (map[string][]string, error) {
+	panic("not implemented")
+}
+func (s *stubRunStoreGetOnly) GetRunsActiveTotal() (int64, error) { panic("not implemented") }
 func (s *stubRunStoreGetOnly) GetOverdueUpdateRunsTotal() (int64, error) {
 	panic("not implemented")
 }
