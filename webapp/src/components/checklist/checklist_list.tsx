@@ -19,10 +19,11 @@ import classNames from 'classnames';
 
 import {FloatingPortal} from '@floating-ui/react';
 
+import {PlaybookRun, PlaybookRunStatus, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useAppDispatch} from 'src/hooks/redux';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {PlaybookRunType, PlaybookUpdates} from 'src/graphql/generated/graphql';
+import {PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {
     conditionCreated,
     conditionDeleted,

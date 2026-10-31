@@ -11,6 +11,8 @@ import {CheckAllIcon, PlayOutlineIcon} from '@mattermost/compass-icons/component
 
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
+import {PlaybookRun, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useTextOverflow} from 'src/hooks';
@@ -20,7 +22,6 @@ import {DropdownMenu, TitleButton} from 'src/components/dot_menu';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {useManageRunMembership} from 'src/graphql/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -29,7 +30,6 @@ import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible} from 'src/selectors';

@@ -1,10 +1,15 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {MetricType} from 'src/graphql/generated/graphql';
 import {PropertyField} from 'src/types/properties';
 
-export {MetricType};
+/** Matches the server MetricConfig type strings and the former GraphQL MetricType enum. */
+export const MetricType = {
+    MetricCurrency: 'metric_currency',
+    MetricDuration: 'metric_duration',
+    MetricInteger: 'metric_integer',
+} as const;
+export type MetricType = (typeof MetricType)[keyof typeof MetricType];
 
 export interface Playbook {
     id: string;

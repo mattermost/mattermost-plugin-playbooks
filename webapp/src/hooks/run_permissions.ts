@@ -5,10 +5,9 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {isSystemAdmin} from 'mattermost-redux/utils/user_utils';
 
-import {useAppSelector} from 'src/hooks/redux';
+import {PlaybookRun, PlaybookRunType, RunStatus} from 'src/types/playbook_run';
 
-import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {useAppSelector} from 'src/hooks/redux';
 
 import {useHasChannelPermission} from './permissions';
 
@@ -16,7 +15,7 @@ type RunPermissionsScope = Pick<PlaybookRun, 'type' | 'team_id' | 'channel_id' |
 
 /**
  * Minimal run fields needed for permission checks
- * Accepts both PlaybookRunStatus and RunStatus (GraphQL enum) for current_status
+ * Uses RunStatus (also exported as PlaybookRunStatus) for current_status
  */
 export type RunPermissionFields = RunPermissionsScope & Partial<PlaybookRun>;
 

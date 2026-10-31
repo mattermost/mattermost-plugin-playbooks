@@ -7,7 +7,7 @@ import {useIntl} from 'react-intl';
 
 import GenericModal, {Description, InlineLabel} from 'src/components/widgets/generic_modal';
 import {useRun} from 'src/hooks';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRunType} from 'src/types/playbook_run';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';

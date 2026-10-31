@@ -11,10 +11,10 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {UserProfile} from '@mattermost/types/users';
 
+import {FetchPlaybookRunsParams, PlaybookRunStatus, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useAppSelector} from 'src/hooks/redux';
 
-import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import PlaybookSelector, {Option as PlaybookOption} from 'src/components/backstage/runs_list/playbook_selector';
 import {Option as TeamOption} from 'src/components/team/team_selector';

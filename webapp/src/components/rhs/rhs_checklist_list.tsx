@@ -12,10 +12,10 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
 import {GlobalState} from '@mattermost/types/store';
 
+import {PlaybookRun, PlaybookRunStatus, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
