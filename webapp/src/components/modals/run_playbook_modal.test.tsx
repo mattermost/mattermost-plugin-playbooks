@@ -39,7 +39,7 @@ jest.mock('react-redux', () => {
     return {useDispatch: mockDispatch, useSelector: mockSelector, useStore: mockStore};
 });
 
-jest.mock('src/graphql/hooks', () => ({}));
+jest.mock('src/hooks/playbooks', () => ({}));
 
 jest.mock('src/client', () => ({
     createPlaybookRun: jest.fn(),

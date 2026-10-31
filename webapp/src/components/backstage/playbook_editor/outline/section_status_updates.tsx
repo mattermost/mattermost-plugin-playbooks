@@ -8,7 +8,7 @@ import styled from 'styled-components';
 
 import {Duration} from 'luxon';
 
-import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/hooks/playbooks';
 import MarkdownEdit from 'src/components/markdown_edit';
 
 import {formatDuration} from 'src/components/formatted_duration';
