@@ -22,24 +22,14 @@ import {usePlaybooksCrud} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {PlaybookRun, RunStatus} from 'src/types/playbook_run';
 import {fetchPlaybookRuns} from 'src/client';
+import {subscribeRHSRefresh} from 'src/rhs_refresh';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
 import RHSHome from './rhs_home';
 
+export {notifyRHSRefresh, subscribeRHSRefresh} from 'src/rhs_refresh';
+
 const pageSize = 8;
-
-const rhsRefreshListeners = new Set<() => void>();
-
-export function subscribeRHSRefresh(listener: () => void): () => void {
-    rhsRefreshListeners.add(listener);
-    return () => {
-        rhsRefreshListeners.delete(listener);
-    };
-}
-
-export function notifyRHSRefresh() {
-    rhsRefreshListeners.forEach((listener) => listener());
-}
 
 type RunListItem = {
     id: string
@@ -96,11 +86,14 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     const [finished, setFinished] = useState<StatusState>(emptyStatusState);
     const [error, setError] = useState<Error | undefined>();
     const [refreshKey, setRefreshKey] = useState(0);
+    const latestRequest = useRef(0);
+    const inFlightMore = useRef({inProgress: false, finished: false});
 
     const fetchStatus = useCallback(async (status: RunStatus, page: number, append: boolean) => {
         if (!channelID) {
             return;
         }
+        const requestID = latestRequest.current;
         const result = await fetchPlaybookRuns({
             page,
             per_page: pageSize,
@@ -111,6 +104,9 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
             skip_extras: true,
             include_playbook_title: true,
         });
+        if (requestID !== latestRequest.current) {
+            return;
+        }
         const mapped = (result.items ?? []).map(mapRun);
         const apply = (prev: StatusState): StatusState => ({
             runs: append ? [...prev.runs, ...mapped] : mapped,
@@ -127,9 +123,15 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
         }
     }, [channelID, listOptions.direction, listOptions.sort]);
 
+    // Reset lists only when the channel changes so a refresh does not unmount
+    // RHSRunDetails (Apollo refetch kept existing data visible).
     useEffect(() => {
         setInProgress(emptyStatusState());
         setFinished(emptyStatusState());
+    }, [channelID]);
+
+    useEffect(() => {
+        latestRequest.current += 1;
         setError(undefined);
 
         (async () => {
@@ -147,17 +149,23 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     useEffect(() => subscribeRHSRefresh(() => setRefreshKey((key) => key + 1)), []);
 
     const getMoreInProgress = () => {
-        if (!inProgress.hasMore) {
+        if (!inProgress.hasMore || inFlightMore.current.inProgress) {
             return Promise.resolve();
         }
-        return fetchStatus(RunStatus.InProgress, inProgress.page + 1, true);
+        inFlightMore.current.inProgress = true;
+        return fetchStatus(RunStatus.InProgress, inProgress.page + 1, true).finally(() => {
+            inFlightMore.current.inProgress = false;
+        });
     };
 
     const getMoreFinished = () => {
-        if (!finished.hasMore) {
+        if (!finished.hasMore || inFlightMore.current.finished) {
             return Promise.resolve();
         }
-        return fetchStatus(RunStatus.Finished, finished.page + 1, true);
+        inFlightMore.current.finished = true;
+        return fetchStatus(RunStatus.Finished, finished.page + 1, true).finally(() => {
+            inFlightMore.current.finished = false;
+        });
     };
 
     const refetch = () => setRefreshKey((key) => key + 1);

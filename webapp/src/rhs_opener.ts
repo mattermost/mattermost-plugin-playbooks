@@ -48,6 +48,10 @@ export function makeRHSOpener(store: Store): () => Promise<void> {
                 team_id: currentTeam.id,
                 statuses: [PlaybookRunStatus.InProgress],
                 participant_or_follower_id: currentUserId,
+
+                // Match the old GraphQL connections query: favourited runs that the
+                // user neither participates in nor follows must still map channels.
+                include_favorites: true,
                 skip_extras: true,
                 skip_checklists: true,
             });
