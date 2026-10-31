@@ -9,10 +9,10 @@ import {UpdateRunStatusModal} from './update_run_status_modal';
 // ---------------------------------------------------------------------------
 // Module mocks
 //
-// The modal pulls in Apollo, the datetime input, Redux and a number of
-// presentational widgets. We only care about whether the "Also mark the run as
-// finished" checkbox is rendered, so everything else is stubbed out and the
-// footer (which holds the checkbox) is rendered verbatim by a GenericModal mock.
+// The modal pulls in the datetime input, Redux and a number of presentational
+// widgets. We only care about whether the "Also mark the run as finished"
+// checkbox is rendered, so everything else is stubbed out and the footer
+// (which holds the checkbox) is rendered verbatim by a GenericModal mock.
 // ---------------------------------------------------------------------------
 
 jest.mock('react-router-dom', () => ({
@@ -29,32 +29,6 @@ jest.mock('react-intl', () => {
     };
 });
 
-jest.mock('@apollo/client', () => ({
-    ApolloProvider: ({children}: {children: React.ReactNode}) => children,
-    useQuery: () => ({
-        data: {
-            run: {
-                id: 'run-1',
-                name: 'Test Run',
-                teamID: 'team-1',
-                broadcastChannelIDs: [],
-                statusUpdateBroadcastChannelsEnabled: false,
-                checklists: [],
-                followers: [],
-                reminderMessageTemplate: '',
-                statusPosts: [],
-                previousReminder: 0,
-                reminderTimerDefaultSeconds: 0,
-            },
-        },
-    }),
-}));
-
-jest.mock('src/graphql/generated', () => ({
-    graphql: (s: string) => s,
-    getFragmentData: (_fragment: unknown, data: unknown) => data,
-}));
-
 jest.mock('src/hooks/redux', () => ({
     useAppDispatch: () => jest.fn(),
     useAppSelector: (selector: (state: unknown) => unknown) => selector({}),
@@ -70,10 +44,27 @@ jest.mock('mattermost-redux/selectors/entities/channels', () => ({
     getChannel: () => undefined,
 }));
 
+const restRunStub = {
+    id: 'run-1',
+    name: 'Test Run',
+    team_id: 'team-1',
+    owner_user_id: 'owner-1',
+    playbook_id: 'playbook-1',
+    broadcast_channel_ids: [],
+    status_update_broadcast_channels_enabled: false,
+    checklists: [],
+    reminder_message_template: '',
+    status_posts: [],
+    previous_reminder: 0,
+    reminder_timer_default_seconds: 0,
+};
+
 const mockUseRun = jest.fn();
+const mockUseRunMetadata = jest.fn();
 const mockUsePlaybook = jest.fn();
 jest.mock('src/hooks/general', () => ({
     useRun: (...args: unknown[]) => mockUseRun(...args),
+    useRunMetadata: (...args: unknown[]) => mockUseRunMetadata(...args),
     useUserDisplayNameMap: () => ({}),
 }));
 jest.mock('src/hooks/crud', () => ({
@@ -141,7 +132,8 @@ const renderModal = () => renderer.create(<UpdateRunStatusModal {...baseProps}/>
 describe('UpdateRunStatusModal — finish checkbox gating', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        mockUseRun.mockReturnValue([{owner_user_id: 'owner-1', playbook_id: 'playbook-1'}]);
+        mockUseRun.mockReturnValue([{...restRunStub}]);
+        mockUseRunMetadata.mockReturnValue([{followers: []}]);
         mockUsePlaybook.mockReturnValue([{owner_group_only_actions: true}]);
     });
 
@@ -162,7 +154,7 @@ describe('UpdateRunStatusModal — finish checkbox gating', () => {
     });
 
     it('derives ownerGroupOnlyActions and isOwner from the run and playbook for the restriction check', () => {
-        mockUseRun.mockReturnValue([{owner_user_id: 'current-user', playbook_id: 'playbook-1'}]);
+        mockUseRun.mockReturnValue([{...restRunStub, owner_user_id: 'current-user'}]);
         mockUsePlaybook.mockReturnValue([{owner_group_only_actions: true}]);
         mockIsBlockedByOwnerOnly.mockReturnValue(false);
 

@@ -16,8 +16,6 @@ import {DateTime, Duration} from 'luxon';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {ApolloProvider, useQuery} from '@apollo/client';
-
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
@@ -34,7 +32,7 @@ import {
 } from 'src/components/datetime_input';
 
 import {useFormattedUsernames, usePost} from 'src/hooks';
-import {useRun, useUserDisplayNameMap} from 'src/hooks/general';
+import {useRun, useRunMetadata, useUserDisplayNameMap} from 'src/hooks/general';
 import {usePlaybook} from 'src/hooks/crud';
 import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
 
@@ -53,12 +51,9 @@ import {openUpdateRunStatusModal, showRunActionsModal} from 'src/actions';
 import {VerticalSpacer} from 'src/components/backstage/styles';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
-import {getPlaybooksGraphQLClient} from 'src/graphql_client';
-import {getFragmentData, graphql} from 'src/graphql/generated';
-import {DefaultMessageFragment, ReminderTimerFragment} from 'src/graphql/generated/graphql';
 import {resolveTemplatePreview} from 'src/utils/template_utils';
 import {PropertyField} from 'src/types/properties';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -74,29 +69,9 @@ type Props = {
 
 export const makeModalDefinition = (props: Props) => ({
     modalId: ID,
-    dialogType: ApolloWrappedModal,
+    dialogType: UpdateRunStatusModal,
     dialogProps: props,
 });
-
-const runStatusModalQueryDocument = graphql(/* GraphQL */`
-    query RunStatusModal($runID: String!) {
-        run(id: $runID) {
-            id
-            name
-            teamID
-            ...DefaultMessage
-            ...ReminderTimer
-            broadcastChannelIDs
-            statusUpdateBroadcastChannelsEnabled
-            checklists {
-                items {
-                    state
-                }
-            }
-            followers
-        }
-    }
-`);
 
 function buildRunTemplateContext(run: PlaybookRun, userMap: Record<string, string>) {
     const fields = (run.property_fields ?? []) as PropertyField[];
@@ -176,25 +151,20 @@ export const UpdateRunStatusModal = ({
     // the run, mirroring the gating used by the standalone Finish controls. When blocked we hide
     // the "Also mark the run as finished" checkbox so the user cannot trigger a finish that the
     // server would reject.
-    const [restRun] = useRun(playbookRunId);
-    const [playbook] = usePlaybook(restRun?.playbook_id);
+    const [run] = useRun(playbookRunId);
+    const [metadata] = useRunMetadata(playbookRunId);
+    const [playbook] = usePlaybook(run?.playbook_id);
+    const followers = metadata?.followers ?? [];
 
     // `usePlaybook(undefined)` resolves to null while the run is still loading, so treat both
     // null and undefined as "not yet known" — passing undefined keeps the checkbox hidden during
     // load (the hook blocks on undefined) and prevents a flash of the checkbox for a blocked user.
     const ownerGroupOnlyActions = playbook == null ? undefined : (playbook.owner_group_only_actions ?? false);
-    const isOwner = restRun?.owner_user_id === currentUserId;
+    const isOwner = run?.owner_user_id === currentUserId;
     const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
-    const {data} = useQuery(runStatusModalQueryDocument, {
-        variables: {
-            runID: playbookRunId,
-        },
-        fetchPolicy: 'network-only',
-    });
-    const run = data?.run;
 
     const [message, setMessage] = useState(providedMessage);
-    const defaultMessage = useDefaultMessage(getFragmentData(DefaultMessage, run));
+    const defaultMessage = useDefaultMessage(run);
     if (message == null && defaultMessage) {
         setMessage(defaultMessage);
     }
@@ -211,7 +181,7 @@ export const UpdateRunStatusModal = ({
     // cancel-reopen round trip.
     const effectiveFinishRun = !blockedByOwnerOnly && finishRun;
 
-    const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), effectiveFinishRun, providedReminder);
+    const {input: reminderInput, reminder} = useReminderTimerOption(run, effectiveFinishRun, providedReminder);
     const isReminderValid = effectiveFinishRun || (reminder && reminder > 0);
     let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
     if (!reminder || reminder === 0) {
@@ -222,7 +192,7 @@ export const UpdateRunStatusModal = ({
     // The limit applied must be done at the end to consider the chance
     // that the names are hidden to us (channels we haven't joined or are private)
     const broadcastChannelNames = useAppSelector((state) => {
-        return run?.broadcastChannelIDs.reduce<string[]>((result, id) => {
+        return run?.broadcast_channel_ids.reduce<string[]>((result, id) => {
             const displayName = getChannel(state, id)?.display_name;
             if (displayName) {
                 result.push(displayName);
@@ -230,7 +200,7 @@ export const UpdateRunStatusModal = ({
             return result;
         }, []);
     })?.slice(0, NAMES_ON_TOOLTIP) || [];
-    const followerNames = useFormattedUsernames(run?.followers)?.slice(0, NAMES_ON_TOOLTIP);
+    const followerNames = useFormattedUsernames(followers)?.slice(0, NAMES_ON_TOOLTIP);
 
     const generateTooltipText = (names: string[], total: number) => {
         // other should be added when:
@@ -267,7 +237,7 @@ export const UpdateRunStatusModal = ({
             postStatusUpdate(
                 playbookRunId,
                 {message, reminder, finishRun: effectiveFinishRun},
-                {user_id: currentUserId, channel_id: channelId, team_id: run?.teamID ?? ''}
+                {user_id: currentUserId, channel_id: channelId, team_id: run?.team_id ?? ''}
             );
             onActualHide();
         }
@@ -295,10 +265,10 @@ export const UpdateRunStatusModal = ({
 
     const description = () => {
         let broadcastChannelCount = 0;
-        if (run?.statusUpdateBroadcastChannelsEnabled) {
-            broadcastChannelCount = run?.broadcastChannelIDs.length ?? 0;
+        if (run?.status_update_broadcast_channels_enabled) {
+            broadcastChannelCount = run?.broadcast_channel_ids.length ?? 0;
         }
-        const followersChannelCount = run?.followers?.length ?? 0;
+        const followersChannelCount = followers.length;
 
         const OverviewLink = (chunks: React.ReactNode): ReactNode => (
             <Link
@@ -394,7 +364,7 @@ export const UpdateRunStatusModal = ({
 
     const preopenRunActionsModal = () => {
         // Open modal only if there are already broadcast channels
-        if (run?.broadcastChannelIDs.length) {
+        if (run?.broadcast_channel_ids.length) {
             dispatch(showRunActionsModal());
         }
     };
@@ -455,18 +425,13 @@ export const UpdateRunStatusModal = ({
     );
 };
 
-const DefaultMessage = graphql(/* GraphQL */`
-    fragment DefaultMessage on Run {
-        reminderMessageTemplate
-        statusPosts {
-            id
-            deleteAt
-        }
-    }
-`);
+type DefaultMessageFields = Maybe<{
+    reminder_message_template: string;
+    status_posts: StatusPost[];
+}>;
 
-const useDefaultMessage = (run: Maybe<DefaultMessageFragment>) => {
-    const lastStatusPostMeta = run?.statusPosts.slice().reverse().find(({deleteAt}) => !deleteAt);
+const useDefaultMessage = (run: DefaultMessageFields) => {
+    const lastStatusPostMeta = run?.status_posts.slice().reverse().find(({delete_at}) => !delete_at);
     const [lastStatusPost] = usePost(lastStatusPostMeta?.id ?? '');
 
     if (!run) {
@@ -479,21 +444,17 @@ const useDefaultMessage = (run: Maybe<DefaultMessageFragment>) => {
     }
 
     // run loaded and was no last status post, but there might be a message template
-    return run?.reminderMessageTemplate;
+    return run?.reminder_message_template;
 };
 
-const ReminderTimer = graphql(/* GraphQL */`
-    fragment ReminderTimer on Run {
-        previousReminder
-        reminderTimerDefaultSeconds
-        statusPosts {
-            deleteAt
-        }
-    }
-`);
+type ReminderTimerFields = Maybe<{
+    previous_reminder: number;
+    reminder_timer_default_seconds: number;
+    status_posts: StatusPost[];
+}>;
 
 const useReminderTimerOption = (
-    run: Maybe<ReminderTimerFragment>,
+    run: ReminderTimerFields,
     disabled?: boolean,
     preselectedValue?: number,
 ) => {
@@ -512,18 +473,18 @@ const useReminderTimerOption = (
             value = makeOption({seconds: preselectedValue});
         }
         if (run) {
-            if (!value && run.previousReminder) {
-                value = makeOption({seconds: nearest(run.previousReminder * 1e-9, 60)});
+            if (!value && run.previous_reminder) {
+                value = makeOption({seconds: nearest(run.previous_reminder * 1e-9, 60)});
             }
 
-            if (run.reminderTimerDefaultSeconds) {
-                const defaultReminderOption = makeOption({seconds: run.reminderTimerDefaultSeconds});
+            if (run.reminder_timer_default_seconds) {
+                const defaultReminderOption = makeOption({seconds: run.reminder_timer_default_seconds});
                 if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
                     // don't duplicate an option that exists already
                     options.push(defaultReminderOption);
                 }
 
-                if (!value && !run?.statusPosts.some(({deleteAt}) => !deleteAt)) {
+                if (!value && !run?.status_posts.some(({delete_at}) => !delete_at)) {
                     // set preselected-default if it was not set previously
                     // and there are no previous status posts (excluding deleted)
                     // (the previous reminder timer specified take precedence)
@@ -543,7 +504,6 @@ const useReminderTimerOption = (
 
         return {options, value};
     }, [run, preselectedValue, locale]);
-
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,
         parsingOptions: {forwardDate: true, defaultUnit: 'minutes'},
@@ -619,7 +579,3 @@ const StyledCheckboxInput = styled(CheckboxInput)`
     }
 `;
 
-const ApolloWrappedModal = (props: Props) => {
-    const client = getPlaybooksGraphQLClient();
-    return <ApolloProvider client={client}><UpdateRunStatusModal {...props}/></ApolloProvider>;
-};

@@ -7,14 +7,6 @@ import React, {act} from 'react';
 import renderer from 'react-test-renderer';
 
 // Mock heavy external dependencies
-jest.mock('src/graphql_client', () => ({
-    getPlaybooksGraphQLClient: jest.fn(() => ({})),
-}));
-
-jest.mock('@apollo/client', () => ({
-    ApolloProvider: ({children}: {children: React.ReactNode}) => <>{children}</>,
-}));
-
 jest.mock('react-intl', () => {
     const reactIntl = jest.requireActual('react-intl');
     const intl = reactIntl.createIntl({locale: 'en', defaultLocale: 'en'});
