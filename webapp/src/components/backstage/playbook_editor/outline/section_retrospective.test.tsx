@@ -18,7 +18,7 @@ jest.mock('src/hooks', () => ({
     usePlaybookAttributes: () => [],
 }));
 
-jest.mock('src/graphql/hooks', () => ({
+jest.mock('src/hooks/playbooks', () => ({
     useUpdatePlaybook: () => jest.fn(),
 }));
 

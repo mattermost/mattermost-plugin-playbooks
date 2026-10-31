@@ -14,7 +14,7 @@ import DotMenu from 'src/components/dot_menu';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
-import {useSetRunFavorite} from 'src/graphql/hooks';
+import {useSetRunFavorite} from 'src/hooks/playbooks';
 import {useRunFollowers} from 'src/hooks';
 
 import {useLeaveRun} from './playbook_runs/playbook_run/context_menu';

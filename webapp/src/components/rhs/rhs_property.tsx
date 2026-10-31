@@ -7,7 +7,7 @@ import {useIntl} from 'react-intl';
 
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
 
-import {useSetRunPropertyValue} from 'src/graphql/hooks';
+import {useSetRunPropertyValue} from 'src/hooks/playbooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 

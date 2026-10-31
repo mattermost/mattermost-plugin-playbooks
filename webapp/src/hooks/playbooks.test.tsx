@@ -3,9 +3,9 @@
 
 import {act, renderHook, waitFor} from '@testing-library/react';
 
-import {PropertyFieldType} from 'src/graphql/generated/graphql';
+import {PropertyFieldType} from 'src/types/properties';
 
-import {usePlaybook, usePlaybookProperty} from './hooks';
+import {usePlaybook, usePlaybookProperty} from './playbooks';
 
 const mockFetchPlaybookPropertyField = jest.fn();
 const mockClientFetchPlaybook = jest.fn();
@@ -17,7 +17,7 @@ jest.mock('src/client', () => ({
     isFavoriteItem: (...args: unknown[]) => mockIsFavoriteItem(...args),
 }));
 
-describe('GraphQL Hooks Integration Tests', () => {
+describe('Playbook hooks', () => {
     const mockPlaybookID = 'playbook-123';
     const mockPropertyID = 'property-456';
 

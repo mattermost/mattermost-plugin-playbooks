@@ -9,7 +9,7 @@ import {useUpdateEffect} from 'react-use';
 import {useAppSelector} from 'src/hooks/redux';
 
 import {isFavoriteItem} from 'src/client';
-import {useSetRunFavorite} from 'src/graphql/hooks';
+import {useSetRunFavorite} from 'src/hooks/playbooks';
 import {CategoryItemType} from 'src/types/category';
 import BecomeParticipantsModal from 'src/components/backstage/playbook_runs/playbook_run/become_participant_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
