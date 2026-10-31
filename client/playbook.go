@@ -113,6 +113,7 @@ type Playbook struct {
 	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
 	NewChannelOnly                          bool                   `json:"new_channel_only"`
 	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
+	IsFavorite                              bool                   `json:"is_favorite"`
 }
 
 type PlaybookMember struct {
@@ -221,10 +222,12 @@ type PlaybookMetricConfig struct {
 // PlaybookListOptions specifies the optional parameters to the
 // PlaybooksService.List method.
 type PlaybookListOptions struct {
-	Sort         Sort          `url:"sort,omitempty"`
-	Direction    SortDirection `url:"direction,omitempty"`
-	SearchTeam   string        `url:"search_term,omitempty"`
-	WithArchived bool          `url:"with_archived,omitempty"`
+	Sort               Sort          `url:"sort,omitempty"`
+	Direction          SortDirection `url:"direction,omitempty"`
+	SearchTeam         string        `url:"search_term,omitempty"`
+	WithArchived       bool          `url:"with_archived,omitempty"`
+	WithMembershipOnly bool          `url:"with_membership_only,omitempty"`
+	IncludeFavorite    bool          `url:"include_favorite,omitempty"`
 }
 
 type GetPlaybooksResults struct {

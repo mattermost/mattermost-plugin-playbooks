@@ -124,6 +124,48 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: include_favorites
+          in: query
+          description: When listing with participant_or_follower_id, also include runs the user has favorited.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: skip_extras
+          in: query
+          description: Omit timeline events, status posts, and metrics from each run in the response.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: skip_checklists
+          in: query
+          description: Omit checklist payloads after computing task_total and task_completed.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: include_favorite
+          in: query
+          description: Attach is_favorite for the current user on each returned run.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: include_followers
+          in: query
+          description: Attach followers on each returned run.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: include_playbook_title
+          in: query
+          description: Attach playbook_title on each returned run.
+          required: false
+          schema:
+            type: boolean
+            default: false
         - name: since
           in: query
           description: Return only PlaybookRuns created/modified since the given timestamp (in milliseconds).
@@ -1677,6 +1719,20 @@ paths:
           description: Includes archived playbooks in the result.
           required: false
           example: true
+          schema:
+            type: boolean
+            default: false
+        - name: with_membership_only
+          in: query
+          description: When true, return only playbooks the current user is a member of.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: include_favorite
+          in: query
+          description: Attach is_favorite for the current user on each returned playbook.
+          required: false
           schema:
             type: boolean
             default: false
