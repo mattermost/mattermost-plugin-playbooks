@@ -186,6 +186,15 @@ func (h *PlaybookHandler) buildPlaybookPatchSetmap(userID string, current app.Pl
 	}
 	addToSetmap(setmap, "ChannelNameTemplateLocked", updates.ChannelNameTemplateLocked)
 	addToSetmap(setmap, "ChannelID", updates.ChannelID)
+	if updates.ChannelMode != nil {
+		var mode app.ChannelPlaybookMode
+		if err := mode.UnmarshalText([]byte(*updates.ChannelMode)); err != nil {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, err.Error())
+		}
+		if err := app.ValidateNewChannelOnlyMode(current.NewChannelOnly, mode); err != nil {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, err.Error())
+		}
+	}
 	addToSetmap(setmap, "ChannelMode", updates.ChannelMode)
 
 	if updates.RunNumberPrefix != nil {
@@ -208,13 +217,13 @@ func (h *PlaybookHandler) buildPlaybookPatchSetmap(userID string, current app.Pl
 		converted := toUpdateChecklists(*updates.Checklists)
 		app.CleanUpChecklists(converted)
 		if err := validateUpdateTaskActions(converted); err != nil {
-			return nil, errors.Wrapf(err, "failed to validate task actions for playbook id: '%s'", current.ID)
+			return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "failed to validate task actions for playbook id: '%s': %s", current.ID, err.Error())
 		}
 		if err := validateUpdateTaskRequirements(converted); err != nil {
-			return nil, errors.Wrapf(err, "failed to validate checklist item requirements for playbook id: '%s'", current.ID)
+			return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "failed to validate checklist item requirements for playbook id: '%s': %s", current.ID, err.Error())
 		}
 		if err := validateUpdateRequirementsExclusiveOfTaskActions(converted); err != nil {
-			return nil, errors.Wrapf(err, "failed to validate checklist item exclusivity for playbook id: '%s'", current.ID)
+			return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "failed to validate checklist item exclusivity for playbook id: '%s': %s", current.ID, err.Error())
 		}
 		checklistsJSON, err := json.Marshal(converted)
 		if err != nil {
@@ -226,7 +235,7 @@ func (h *PlaybookHandler) buildPlaybookPatchSetmap(userID string, current app.Pl
 
 	if updates.Checklists != nil || updates.InvitedUserIDs != nil || updates.InviteUsersEnabled != nil {
 		if err := validatePreAssignmentUpdate(current, updateChecklists, updates.InvitedUserIDs, updates.InviteUsersEnabled); err != nil {
-			return nil, errors.Wrapf(err, "invalid user pre-assignment for playbook id: '%s'", current.ID)
+			return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "invalid user pre-assignment for playbook id: '%s': %s", current.ID, err.Error())
 		}
 	}
 
@@ -310,7 +319,6 @@ func (h *PlaybookHandler) handlePlaybookPatchError(w http.ResponseWriter, logger
 	case errors.Is(err, app.ErrMalformedPlaybookRun):
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 	default:
-		// Validation failures from checklist/pre-assignment often aren't typed.
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		h.HandleError(w, logger, err)
 	}
 }
