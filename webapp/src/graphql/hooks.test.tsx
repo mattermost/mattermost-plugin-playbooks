@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {renderHook, waitFor} from '@testing-library/react';
+import {act, renderHook, waitFor} from '@testing-library/react';
 
 import {PropertyFieldType} from 'src/graphql/generated/graphql';
 
@@ -307,6 +307,50 @@ describe('GraphQL Hooks Integration Tests', () => {
             expect(result.current[1].loading).toBe(false);
             expect(result.current[0]).toBeUndefined();
             expect(result.current[1].error).toBeDefined();
+        });
+
+        it('keeps previous playbook mounted while refetching', async () => {
+            mockClientFetchPlaybook.mockResolvedValue(mockPlaybookWithPropertyFields);
+            mockIsFavoriteItem.mockResolvedValue(false);
+
+            const {result} = renderHook(() => usePlaybook(mockPlaybookID));
+
+            await waitFor(() => {
+                expect(result.current[1].loading).toBe(false);
+            });
+
+            const updatedPlaybook = {
+                ...mockPlaybookWithPropertyFields,
+                title: 'Updated Title',
+                invited_user_ids: ['user-2'],
+            };
+
+            let resolveFetch: (value: typeof updatedPlaybook) => void = () => undefined;
+            mockClientFetchPlaybook.mockImplementation(() => new Promise((resolve) => {
+                resolveFetch = resolve;
+            }));
+
+            act(() => {
+                result.current[1].refetch();
+            });
+
+            await waitFor(() => {
+                expect(mockClientFetchPlaybook).toHaveBeenCalledTimes(2);
+            });
+
+            // Prior data stays visible; loading must not flip true (editor stays mounted).
+            expect(result.current[1].loading).toBe(false);
+            expect(result.current[0]).toEqual(mockPlaybookWithPropertyFields);
+
+            await act(async () => {
+                resolveFetch(updatedPlaybook);
+            });
+
+            await waitFor(() => {
+                expect(result.current[0]?.title).toBe('Updated Title');
+            });
+            expect(result.current[1].loading).toBe(false);
+            expect(result.current[0]?.invited_user_ids).toEqual(['user-2']);
         });
     });
 
