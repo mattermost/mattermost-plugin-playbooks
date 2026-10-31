@@ -24,7 +24,8 @@ import {Category} from 'src/types/category';
 
 import {useThing} from './general';
 
-type ParamsState = Required<Omit<FetchPlaybooksParams, 'team_id'>>;
+type ParamsState = Required<Omit<FetchPlaybooksParams, 'team_id' | 'with_membership_only' | 'include_favorite'>> &
+Pick<FetchPlaybooksParams, 'with_membership_only' | 'include_favorite'>;
 
 const searchDebounceDelayMilliseconds = 300;
 
