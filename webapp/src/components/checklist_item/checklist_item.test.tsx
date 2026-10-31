@@ -28,7 +28,7 @@ jest.mock('react-use', () => ({
     useUpdateEffect: jest.fn(),
 }));
 
-jest.mock('src/graphql/hooks', () => ({
+jest.mock('src/hooks/playbooks', () => ({
     useUpdateRunItemTaskActions: jest.fn(() => ({updateRunTaskActions: jest.fn()})),
 }));
 

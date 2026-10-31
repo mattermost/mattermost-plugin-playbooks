@@ -28,7 +28,7 @@ import {BadgeType} from 'src/components/backstage/status_badge';
 import CopyLink from 'src/components/widgets/copy_link';
 import {useFavoriteRun, useParticipateInRun} from 'src/hooks';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
-import {useUpdateRun} from 'src/graphql/hooks';
+import {useUpdateRun} from 'src/hooks/playbooks';
 import TextEdit from 'src/components/text_edit';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, PlaybookRunStatus} from 'src/types/playbook_run';
