@@ -3,7 +3,19 @@
 
 import {act, renderHook, waitFor} from '@testing-library/react';
 
-import {usePlaybook, useSetRunFavorite, useUpdatePlaybookFavorite} from './hooks';
+import {usePlaybook, useSetRunFavorite, useUpdatePlaybookFavorite} from './playbooks';
+
+jest.mock('src/actions', () => ({
+    playbookRunUpdated: jest.fn(),
+}));
+
+jest.mock('src/rhs_refresh', () => ({
+    notifyRHSRefresh: jest.fn(),
+}));
+
+jest.mock('src/hooks/redux', () => ({
+    useAppDispatch: () => jest.fn(),
+}));
 
 const mockSetPlaybookFavorite = jest.fn();
 const mockSetRunFavorite = jest.fn();

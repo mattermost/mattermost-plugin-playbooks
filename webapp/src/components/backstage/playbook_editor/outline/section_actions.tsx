@@ -24,7 +24,7 @@ import {
 
 import {useAppDispatch} from 'src/hooks/redux';
 
-import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/hooks/playbooks';
 import {
     fetchPlaybookPropertyFields,
     updatePlaybookChannelNameTemplate,

@@ -11,13 +11,11 @@ import {GlobalState} from '@mattermost/types/store';
 import {Client4} from 'mattermost-redux/client';
 import {General} from 'mattermost-redux/constants';
 import {FormattedMessage} from 'react-intl';
-import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {Store} from 'src/types/store';
 
 import appIcon from 'src/components/assets/app-bar-icon.png';
-import {isConfiguredForDevelopment} from 'src/license';
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
 import LoginHook from 'src/components/login_hook';
@@ -83,9 +81,7 @@ import UpdateRequestPost from 'src/components/update_request_post';
 
 import {RetrospectivePost} from './components/retrospective_post';
 
-import {setPlaybooksGraphQLClient} from './graphql_client';
 import {RHSTitlePlaceholder} from './rhs_title_remote_render';
-import {ApolloWrapper, makeGraphqlClient} from './graphql/apollo';
 import PresetTemplates from './components/templates/template_data';
 
 const GlobalHeaderCenter = () => {
@@ -151,7 +147,7 @@ export default class Plugin {
     stylesContainer?: Element;
     stylesRoot?: Root;
 
-    doRegistrations(registry: any, store: Store, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
+    doRegistrations(registry: any, store: Store): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -163,28 +159,9 @@ export default class Plugin {
             }
         });
 
-        // eslint-disable-next-line react/require-optimization
-        const BackstageWrapped = () => (
-            <ApolloWrapper
-                component={<Backstage/>}
-                client={graphqlClient}
-            />
-        );
-
-        // eslint-disable-next-line react/require-optimization
-        const RHSWrapped = () => (
-            <ApolloWrapper
-                component={<RightHandSidebar/>}
-                client={graphqlClient}
-            />
-        );
-        // eslint-disable-next-line react/require-optimization
-        const RHSTitlePlaceholderWrapped = () => (
-            <ApolloWrapper
-                component={<RHSTitlePlaceholder/>}
-                client={graphqlClient}
-            />
-        );
+        const BackstageWrapped = () => <Backstage/>;
+        const RHSWrapped = () => <RightHandSidebar/>;
+        const RHSTitlePlaceholderWrapped = () => <RHSTitlePlaceholder/>;
 
         const enableTeamSidebar = true;
 
@@ -327,14 +304,7 @@ export default class Plugin {
         setSiteUrl(siteUrl);
         Client4.setUrl(siteUrl);
 
-        // Setup our graphql client
-        const isDev = isConfiguredForDevelopment(store.getState());
-        const graphqlClient = makeGraphqlClient(isDev);
-
-        // Store graphql client for bad modals.
-        setPlaybooksGraphQLClient(graphqlClient);
-
-        this.doRegistrations(registry, store, graphqlClient);
+        this.doRegistrations(registry, store);
 
         // https://mattermost.atlassian.net/browse/MM-48872
         // This is handled by LoginHook, but it doesn't seem compatible with e2e tests.
