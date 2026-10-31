@@ -56,7 +56,7 @@ import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyle
 import useConfirmPlaybookArchiveModal from 'src/components/backstage/archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import useConfirmPlaybookRestoreModal from 'src/components/backstage/restore_playbook_modal';
-import {usePlaybookMembership, useUpdatePlaybookFavorite} from 'src/graphql/hooks';
+import {usePlaybookMembership, useUpdatePlaybookFavorite} from 'src/hooks/playbooks';
 import {StyledDropdownMenuItem} from 'src/components/backstage/shared';
 import {copyToClipboard} from 'src/utils';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';

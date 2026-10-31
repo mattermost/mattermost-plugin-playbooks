@@ -33,7 +33,7 @@ jest.mock('src/hooks/redux', () => ({
     useAppDispatch: jest.fn(() => jest.fn()),
 }));
 
-jest.mock('src/graphql/hooks', () => ({
+jest.mock('src/hooks/playbooks', () => ({
     useUpdatePlaybook: jest.fn(() => jest.fn()),
 }));
 
@@ -92,11 +92,6 @@ jest.mock('./multi_select_action_bar', () => ({__esModule: true, default: () => 
 
 jest.mock('src/components/checklist_item/checklist_item', () => ({
     ButtonsFormat: {Compact: 'compact'},
-}));
-
-jest.mock('src/graphql/generated/graphql', () => ({
-    PlaybookRunType: {ChannelChecklist: 'channel_checklist'},
-    RunStatus: {Finished: 'Finished', InProgress: 'InProgress'},
 }));
 
 let capturedProps: any = null;

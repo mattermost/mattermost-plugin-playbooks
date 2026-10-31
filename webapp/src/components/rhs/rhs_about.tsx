@@ -33,7 +33,7 @@ import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import PropertiesList from 'src/components/rhs/properties_list';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
 import {playbookRunUpdated, setRHSAboutCollapsedState} from 'src/actions';
-import {useUpdateRun} from 'src/graphql/hooks';
+import {useUpdateRun} from 'src/hooks/playbooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 

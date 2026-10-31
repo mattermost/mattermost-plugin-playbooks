@@ -17,7 +17,7 @@ import {clientDeleteChecklistItem, setDueDate as clientSetDueDate, setAssignee} 
 import {playbookRunUpdated} from 'src/actions';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useToaster} from 'src/components/backstage/toast_banner';
-import {FullPlaybook, Loaded} from 'src/graphql/hooks';
+import {FullPlaybook, Loaded} from 'src/hooks/playbooks';
 
 type SelectedItem = {checklistIndex: number; itemIndex: number; item: ChecklistItem};
 

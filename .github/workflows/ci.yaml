@@ -122,8 +122,8 @@ jobs:
       - name: ci/run-make-graphql
         run: make graphql
 
-      - name: ci/check-diff-on-webapp-graphql-generated-files
-        run: git --no-pager diff --exit-code webapp/src/graphql/generated/ || (echo "Please run \"make graphql\" and commit the changes." && exit 1)
+      - name: ci/check-diff-on-server-graphql-generated-files
+        run: git --no-pager diff --exit-code server/graphql/models.go || (echo "Please run \"make graphql\" and commit the changes in server/graphql/models.go." && exit 1)
 
   lint-go:
     runs-on: ubuntu-22.04

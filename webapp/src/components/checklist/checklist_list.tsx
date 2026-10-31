@@ -40,7 +40,7 @@ import {
     updatePlaybookCondition,
 } from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
-import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/hooks/playbooks';
 import {usePlaybookAttributes, useProxyState} from 'src/hooks';
 import {useBulkActions} from 'src/hooks/bulk_actions';
 import {usePlaybookConditions} from 'src/hooks/conditions';

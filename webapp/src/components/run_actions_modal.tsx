@@ -8,7 +8,7 @@ import styled from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {useIsDMGM} from 'src/hooks';
-import {useUpdateRun} from 'src/graphql/hooks';
+import {useUpdateRun} from 'src/hooks/playbooks';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
 import ActionsModal, {ActionsContainer, TriggersContainer} from 'src/components/actions_modal';

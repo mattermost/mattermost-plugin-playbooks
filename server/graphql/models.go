@@ -3,15 +3,74 @@
 
 package graphql
 
+type Action struct {
+	Type    string `json:"type"`
+	Payload string `json:"payload"`
+}
+
+type ActionUpdates struct {
+	Type    string `json:"type"`
+	Payload string `json:"payload"`
+}
+
+type Checklist struct {
+	Title string          `json:"title"`
+	Items []ChecklistItem `json:"items"`
+}
+
+type ChecklistItem struct {
+	Title                   string            `json:"title"`
+	Description             string            `json:"description"`
+	State                   string            `json:"state"`
+	StateModified           float64           `json:"stateModified"`
+	AssigneeID              string            `json:"assigneeID"`
+	AssigneeType            string            `json:"assigneeType"`
+	AssigneePropertyFieldID string            `json:"assigneePropertyFieldID"`
+	AssigneeModified        float64           `json:"assigneeModified"`
+	AssigneeOnlyComplete    bool              `json:"assigneeOnlyComplete"`
+	Command                 string            `json:"command"`
+	CommandLastRun          float64           `json:"commandLastRun"`
+	DueDate                 float64           `json:"dueDate"`
+	TaskActions             []TaskAction      `json:"taskActions"`
+	ConditionID             string            `json:"conditionID"`
+	ConditionAction         string            `json:"conditionAction"`
+	ConditionReason         string            `json:"conditionReason"`
+	Requirements            []TaskRequirement `json:"requirements"`
+}
+
+type ChecklistItemUpdates struct {
+	Title                   string                   `json:"title"`
+	Description             string                   `json:"description"`
+	State                   string                   `json:"state"`
+	StateModified           float64                  `json:"stateModified"`
+	AssigneeID              string                   `json:"assigneeID"`
+	AssigneeModified        float64                  `json:"assigneeModified"`
+	AssigneeType            *string                  `json:"assigneeType"`
+	AssigneePropertyFieldID *string                  `json:"assigneePropertyFieldID"`
+	AssigneeOnlyComplete    *bool                    `json:"assigneeOnlyComplete"`
+	Command                 string                   `json:"command"`
+	CommandLastRun          float64                  `json:"commandLastRun"`
+	DueDate                 float64                  `json:"dueDate"`
+	TaskActions             []TaskActionUpdates      `json:"taskActions"`
+	ConditionID             string                   `json:"conditionID"`
+	Requirements            []TaskRequirementUpdates `json:"requirements"`
+}
+
+type ChecklistUpdates struct {
+	Title string                 `json:"title"`
+	Items []ChecklistItemUpdates `json:"items"`
+}
+
+type EnumMetricType string
+
+const EnumMetricTypemetric_duration EnumMetricType = "metric_duration"
+const EnumMetricTypemetric_currency EnumMetricType = "metric_currency"
+const EnumMetricTypemetric_integer EnumMetricType = "metric_integer"
+
 type EnumPlaybookRunType string
 
 const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
 const EnumPlaybookRunTypechannelChecklist EnumPlaybookRunType = "channelChecklist"
-
-type EnumRunStatus string
-
-const EnumRunStatusInProgress EnumRunStatus = "InProgress"
-const EnumRunStatusFinished EnumRunStatus = "Finished"
 
 type EnumPropertyFieldType string
 
@@ -22,16 +81,10 @@ const EnumPropertyFieldTypedate EnumPropertyFieldType = "date"
 const EnumPropertyFieldTypeuser EnumPropertyFieldType = "user"
 const EnumPropertyFieldTypemultiuser EnumPropertyFieldType = "multiuser"
 
-type Enum__TypeKind string
+type EnumRunStatus string
 
-const Enum__TypeKindSCALAR Enum__TypeKind = "SCALAR"
-const Enum__TypeKindOBJECT Enum__TypeKind = "OBJECT"
-const Enum__TypeKindINTERFACE Enum__TypeKind = "INTERFACE"
-const Enum__TypeKindUNION Enum__TypeKind = "UNION"
-const Enum__TypeKindENUM Enum__TypeKind = "ENUM"
-const Enum__TypeKindINPUT_OBJECT Enum__TypeKind = "INPUT_OBJECT"
-const Enum__TypeKindLIST Enum__TypeKind = "LIST"
-const Enum__TypeKindNON_NULL Enum__TypeKind = "NON_NULL"
+const EnumRunStatusInProgress EnumRunStatus = "InProgress"
+const EnumRunStatusFinished EnumRunStatus = "Finished"
 
 type Enum__DirectiveLocation string
 
@@ -54,149 +107,27 @@ const Enum__DirectiveLocationENUM_VALUE Enum__DirectiveLocation = "ENUM_VALUE"
 const Enum__DirectiveLocationINPUT_OBJECT Enum__DirectiveLocation = "INPUT_OBJECT"
 const Enum__DirectiveLocationINPUT_FIELD_DEFINITION Enum__DirectiveLocation = "INPUT_FIELD_DEFINITION"
 
-type EnumMetricType string
+type Enum__TypeKind string
 
-const EnumMetricTypemetric_duration EnumMetricType = "metric_duration"
-const EnumMetricTypemetric_currency EnumMetricType = "metric_currency"
-const EnumMetricTypemetric_integer EnumMetricType = "metric_integer"
+const Enum__TypeKindSCALAR Enum__TypeKind = "SCALAR"
+const Enum__TypeKindOBJECT Enum__TypeKind = "OBJECT"
+const Enum__TypeKindINTERFACE Enum__TypeKind = "INTERFACE"
+const Enum__TypeKindUNION Enum__TypeKind = "UNION"
+const Enum__TypeKindENUM Enum__TypeKind = "ENUM"
+const Enum__TypeKindINPUT_OBJECT Enum__TypeKind = "INPUT_OBJECT"
+const Enum__TypeKindLIST Enum__TypeKind = "LIST"
+const Enum__TypeKindNON_NULL Enum__TypeKind = "NON_NULL"
 
-type __Schema struct {
-	Types            []__Type      `json:"types"`
-	QueryType        __Type        `json:"queryType"`
-	MutationType     *__Type       `json:"mutationType"`
-	SubscriptionType *__Type       `json:"subscriptionType"`
-	Directives       []__Directive `json:"directives"`
-}
-
-type __Type struct {
-	Kind          Enum__TypeKind `json:"kind"`
-	Name          *string        `json:"name"`
-	Description   *string        `json:"description"`
-	Fields        []__Field      `json:"fields"`
-	Interfaces    []__Type       `json:"interfaces"`
-	PossibleTypes []__Type       `json:"possibleTypes"`
-	EnumValues    []__EnumValue  `json:"enumValues"`
-	InputFields   []__InputValue `json:"inputFields"`
-	OfType        *__Type        `json:"ofType"`
-}
-
-type __Field struct {
-	Name              string         `json:"name"`
-	Description       *string        `json:"description"`
-	Args              []__InputValue `json:"args"`
-	Type              __Type         `json:"type"`
-	IsDeprecated      bool           `json:"isDeprecated"`
-	DeprecationReason *string        `json:"deprecationReason"`
-}
-
-type __InputValue struct {
-	Name         string  `json:"name"`
-	Description  *string `json:"description"`
-	Type         __Type  `json:"type"`
-	DefaultValue *string `json:"defaultValue"`
-}
-
-type __EnumValue struct {
-	Name              string  `json:"name"`
-	Description       *string `json:"description"`
-	IsDeprecated      bool    `json:"isDeprecated"`
-	DeprecationReason *string `json:"deprecationReason"`
-}
-
-type __Directive struct {
-	Name        string                    `json:"name"`
-	Description *string                   `json:"description"`
-	Locations   []Enum__DirectiveLocation `json:"locations"`
-	Args        []__InputValue            `json:"args"`
+type Member struct {
+	UserID      string   `json:"userID"`
+	Roles       []string `json:"roles"`
+	SchemeRoles []string `json:"schemeRoles"`
 }
 
 type PageInfo struct {
 	HasNextPage bool   `json:"hasNextPage"`
 	StartCursor string `json:"startCursor"`
 	EndCursor   string `json:"endCursor"`
-}
-
-type PlaybookUpdates struct {
-	Title                                   *string            `json:"title"`
-	Description                             *string            `json:"description"`
-	Public                                  *bool              `json:"public"`
-	CreatePublicPlaybookRun                 *bool              `json:"createPublicPlaybookRun"`
-	ReminderMessageTemplate                 *string            `json:"reminderMessageTemplate"`
-	ReminderTimerDefaultSeconds             *float64           `json:"reminderTimerDefaultSeconds"`
-	StatusUpdateEnabled                     *bool              `json:"statusUpdateEnabled"`
-	InvitedUserIDs                          []string           `json:"invitedUserIDs"`
-	InvitedGroupIDs                         []string           `json:"invitedGroupIDs"`
-	InviteUsersEnabled                      *bool              `json:"inviteUsersEnabled"`
-	DefaultOwnerID                          *string            `json:"defaultOwnerID"`
-	DefaultOwnerEnabled                     *bool              `json:"defaultOwnerEnabled"`
-	BroadcastChannelIDs                     []string           `json:"broadcastChannelIDs"`
-	BroadcastEnabled                        *bool              `json:"broadcastEnabled"`
-	WebhookOnCreationURLs                   []string           `json:"webhookOnCreationURLs"`
-	WebhookOnCreationEnabled                *bool              `json:"webhookOnCreationEnabled"`
-	MessageOnJoin                           *string            `json:"messageOnJoin"`
-	MessageOnJoinEnabled                    *bool              `json:"messageOnJoinEnabled"`
-	RetrospectiveReminderIntervalSeconds    *float64           `json:"retrospectiveReminderIntervalSeconds"`
-	RetrospectiveTemplate                   *string            `json:"retrospectiveTemplate"`
-	RetrospectiveEnabled                    *bool              `json:"retrospectiveEnabled"`
-	WebhookOnStatusUpdateURLs               []string           `json:"webhookOnStatusUpdateURLs"`
-	WebhookOnStatusUpdateEnabled            *bool              `json:"webhookOnStatusUpdateEnabled"`
-	SignalAnyKeywords                       []string           `json:"signalAnyKeywords"`
-	SignalAnyKeywordsEnabled                *bool              `json:"signalAnyKeywordsEnabled"`
-	CategorizeChannelEnabled                *bool              `json:"categorizeChannelEnabled"`
-	CategoryName                            *string            `json:"categoryName"`
-	RunSummaryTemplateEnabled               *bool              `json:"runSummaryTemplateEnabled"`
-	RunSummaryTemplate                      *string            `json:"runSummaryTemplate"`
-	ChannelNameTemplate                     *string            `json:"channelNameTemplate"`
-	ChannelNameTemplateLocked               *bool              `json:"channelNameTemplateLocked"`
-	Checklists                              []ChecklistUpdates `json:"checklists"`
-	CreateChannelMemberOnNewParticipant     *bool              `json:"createChannelMemberOnNewParticipant"`
-	RemoveChannelMemberOnRemovedParticipant *bool              `json:"removeChannelMemberOnRemovedParticipant"`
-	ChannelId                               *string            `json:"channelId"`
-	ChannelMode                             *string            `json:"channelMode"`
-}
-
-type ChecklistUpdates struct {
-	Title string                 `json:"title"`
-	Items []ChecklistItemUpdates `json:"items"`
-}
-
-type ChecklistItemUpdates struct {
-	Title                   string                   `json:"title"`
-	Description             string                   `json:"description"`
-	State                   string                   `json:"state"`
-	StateModified           float64                  `json:"stateModified"`
-	AssigneeID              string                   `json:"assigneeID"`
-	AssigneeModified        float64                  `json:"assigneeModified"`
-	AssigneeType            *string                  `json:"assigneeType"`
-	AssigneePropertyFieldID *string                  `json:"assigneePropertyFieldID"`
-	AssigneeOnlyComplete    *bool                    `json:"assigneeOnlyComplete"`
-	Command                 string                   `json:"command"`
-	CommandLastRun          float64                  `json:"commandLastRun"`
-	DueDate                 float64                  `json:"dueDate"`
-	TaskActions             []TaskActionUpdates      `json:"taskActions"`
-	ConditionID             string                   `json:"conditionID"`
-	Requirements            []TaskRequirementUpdates `json:"requirements"`
-}
-
-type TaskRequirementUpdates struct {
-	Id    string `json:"id"`
-	Label string `json:"label"`
-	Value string `json:"value"`
-}
-
-type TaskActionUpdates struct {
-	Trigger TriggerUpdates  `json:"trigger"`
-	Actions []ActionUpdates `json:"actions"`
-}
-
-type TriggerUpdates struct {
-	Type    string `json:"type"`
-	Payload string `json:"payload"`
-}
-
-type ActionUpdates struct {
-	Type    string `json:"type"`
-	Payload string `json:"payload"`
 }
 
 type Playbook struct {
@@ -252,58 +183,6 @@ type Playbook struct {
 	ChannelMode                             string                 `json:"channelMode"`
 }
 
-type Checklist struct {
-	Title string          `json:"title"`
-	Items []ChecklistItem `json:"items"`
-}
-
-type Member struct {
-	UserID      string   `json:"userID"`
-	Roles       []string `json:"roles"`
-	SchemeRoles []string `json:"schemeRoles"`
-}
-
-type ChecklistItem struct {
-	Title                   string            `json:"title"`
-	Description             string            `json:"description"`
-	State                   string            `json:"state"`
-	StateModified           float64           `json:"stateModified"`
-	AssigneeID              string            `json:"assigneeID"`
-	AssigneeType            string            `json:"assigneeType"`
-	AssigneePropertyFieldID string            `json:"assigneePropertyFieldID"`
-	AssigneeModified        float64           `json:"assigneeModified"`
-	AssigneeOnlyComplete    bool              `json:"assigneeOnlyComplete"`
-	Command                 string            `json:"command"`
-	CommandLastRun          float64           `json:"commandLastRun"`
-	DueDate                 float64           `json:"dueDate"`
-	TaskActions             []TaskAction      `json:"taskActions"`
-	ConditionID             string            `json:"conditionID"`
-	ConditionAction         string            `json:"conditionAction"`
-	ConditionReason         string            `json:"conditionReason"`
-	Requirements            []TaskRequirement `json:"requirements"`
-}
-
-type TaskRequirement struct {
-	Id    string `json:"id"`
-	Label string `json:"label"`
-	Value string `json:"value"`
-}
-
-type TaskAction struct {
-	Trigger Trigger  `json:"trigger"`
-	Actions []Action `json:"actions"`
-}
-
-type Trigger struct {
-	Type    string `json:"type"`
-	Payload string `json:"payload"`
-}
-
-type Action struct {
-	Type    string `json:"type"`
-	Payload string `json:"payload"`
-}
-
 type PlaybookMetricConfig struct {
 	Id          string         `json:"id"`
 	Title       string         `json:"title"`
@@ -312,6 +191,98 @@ type PlaybookMetricConfig struct {
 	Target      *int64         `json:"target"`
 }
 
+type PlaybookUpdates struct {
+	Title                                   *string            `json:"title"`
+	Description                             *string            `json:"description"`
+	Public                                  *bool              `json:"public"`
+	CreatePublicPlaybookRun                 *bool              `json:"createPublicPlaybookRun"`
+	ReminderMessageTemplate                 *string            `json:"reminderMessageTemplate"`
+	ReminderTimerDefaultSeconds             *float64           `json:"reminderTimerDefaultSeconds"`
+	StatusUpdateEnabled                     *bool              `json:"statusUpdateEnabled"`
+	InvitedUserIDs                          []string           `json:"invitedUserIDs"`
+	InvitedGroupIDs                         []string           `json:"invitedGroupIDs"`
+	InviteUsersEnabled                      *bool              `json:"inviteUsersEnabled"`
+	DefaultOwnerID                          *string            `json:"defaultOwnerID"`
+	DefaultOwnerEnabled                     *bool              `json:"defaultOwnerEnabled"`
+	BroadcastChannelIDs                     []string           `json:"broadcastChannelIDs"`
+	BroadcastEnabled                        *bool              `json:"broadcastEnabled"`
+	WebhookOnCreationURLs                   []string           `json:"webhookOnCreationURLs"`
+	WebhookOnCreationEnabled                *bool              `json:"webhookOnCreationEnabled"`
+	MessageOnJoin                           *string            `json:"messageOnJoin"`
+	MessageOnJoinEnabled                    *bool              `json:"messageOnJoinEnabled"`
+	RetrospectiveReminderIntervalSeconds    *float64           `json:"retrospectiveReminderIntervalSeconds"`
+	RetrospectiveTemplate                   *string            `json:"retrospectiveTemplate"`
+	RetrospectiveEnabled                    *bool              `json:"retrospectiveEnabled"`
+	WebhookOnStatusUpdateURLs               []string           `json:"webhookOnStatusUpdateURLs"`
+	WebhookOnStatusUpdateEnabled            *bool              `json:"webhookOnStatusUpdateEnabled"`
+	SignalAnyKeywords                       []string           `json:"signalAnyKeywords"`
+	SignalAnyKeywordsEnabled                *bool              `json:"signalAnyKeywordsEnabled"`
+	CategorizeChannelEnabled                *bool              `json:"categorizeChannelEnabled"`
+	CategoryName                            *string            `json:"categoryName"`
+	RunSummaryTemplateEnabled               *bool              `json:"runSummaryTemplateEnabled"`
+	RunSummaryTemplate                      *string            `json:"runSummaryTemplate"`
+	ChannelNameTemplate                     *string            `json:"channelNameTemplate"`
+	ChannelNameTemplateLocked               *bool              `json:"channelNameTemplateLocked"`
+	Checklists                              []ChecklistUpdates `json:"checklists"`
+	CreateChannelMemberOnNewParticipant     *bool              `json:"createChannelMemberOnNewParticipant"`
+	RemoveChannelMemberOnRemovedParticipant *bool              `json:"removeChannelMemberOnRemovedParticipant"`
+	ChannelId                               *string            `json:"channelId"`
+	ChannelMode                             *string            `json:"channelMode"`
+}
+
+type PropertyField struct {
+	Id       string                `json:"id"`
+	Name     string                `json:"name"`
+	Type     EnumPropertyFieldType `json:"type"`
+	GroupID  string                `json:"groupID"`
+	Attrs    PropertyFieldAttrs    `json:"attrs"`
+	CreateAt float64               `json:"createAt"`
+	UpdateAt float64               `json:"updateAt"`
+	DeleteAt float64               `json:"deleteAt"`
+}
+
+type PropertyFieldAttrs struct {
+	Visibility string           `json:"visibility"`
+	SortOrder  float64          `json:"sortOrder"`
+	Options    []PropertyOption `json:"options"`
+	ParentID   *string          `json:"parentID"`
+	ValueType  *string          `json:"valueType"`
+}
+
+type PropertyFieldAttrsInput struct {
+	Visibility *string               `json:"visibility"`
+	SortOrder  *float64              `json:"sortOrder"`
+	Options    []PropertyOptionInput `json:"options"`
+	ParentID   *string               `json:"parentID"`
+	ValueType  *string               `json:"valueType"`
+}
+
+type PropertyFieldInput struct {
+	Name  string                   `json:"name"`
+	Type  EnumPropertyFieldType    `json:"type"`
+	Attrs *PropertyFieldAttrsInput `json:"attrs"`
+}
+
+type PropertyOption struct {
+	Id    string  `json:"id"`
+	Name  string  `json:"name"`
+	Color *string `json:"color"`
+}
+
+type PropertyOptionInput struct {
+	Id    *string `json:"id"`
+	Name  string  `json:"name"`
+	Color *string `json:"color"`
+}
+
+type PropertyValue struct {
+	Id       string  `json:"id"`
+	FieldID  string  `json:"fieldID"`
+	Value    *JSON   `json:"value"`
+	CreateAt float64 `json:"createAt"`
+	UpdateAt float64 `json:"updateAt"`
+	DeleteAt float64 `json:"deleteAt"`
+}
 type Run struct {
 	Id                                      string              `json:"id"`
 	PlaybookID                              string              `json:"playbookID"`
@@ -367,10 +338,44 @@ type RunEdge struct {
 	Node   Run    `json:"node"`
 }
 
+type RunUpdates struct {
+	Name                                    *string  `json:"name"`
+	Summary                                 *string  `json:"summary"`
+	CreateChannelMemberOnNewParticipant     *bool    `json:"createChannelMemberOnNewParticipant"`
+	RemoveChannelMemberOnRemovedParticipant *bool    `json:"removeChannelMemberOnRemovedParticipant"`
+	StatusUpdateBroadcastChannelsEnabled    *bool    `json:"statusUpdateBroadcastChannelsEnabled"`
+	StatusUpdateBroadcastWebhooksEnabled    *bool    `json:"statusUpdateBroadcastWebhooksEnabled"`
+	BroadcastChannelIDs                     []string `json:"broadcastChannelIDs"`
+	WebhookOnStatusUpdateURLs               []string `json:"webhookOnStatusUpdateURLs"`
+	ChannelID                               *string  `json:"channelID"`
+}
+
 type StatusPost struct {
 	Id       string  `json:"id"`
 	CreateAt float64 `json:"createAt"`
 	DeleteAt float64 `json:"deleteAt"`
+}
+
+type TaskAction struct {
+	Trigger Trigger  `json:"trigger"`
+	Actions []Action `json:"actions"`
+}
+
+type TaskActionUpdates struct {
+	Trigger TriggerUpdates  `json:"trigger"`
+	Actions []ActionUpdates `json:"actions"`
+}
+
+type TaskRequirement struct {
+	Id    string `json:"id"`
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type TaskRequirementUpdates struct {
+	Id    string `json:"id"`
+	Label string `json:"label"`
+	Value string `json:"value"`
 }
 
 type TimelineEvent struct {
@@ -385,68 +390,63 @@ type TimelineEvent struct {
 	CreatorUserID string  `json:"creatorUserID"`
 }
 
-type RunUpdates struct {
-	Name                                    *string  `json:"name"`
-	Summary                                 *string  `json:"summary"`
-	CreateChannelMemberOnNewParticipant     *bool    `json:"createChannelMemberOnNewParticipant"`
-	RemoveChannelMemberOnRemovedParticipant *bool    `json:"removeChannelMemberOnRemovedParticipant"`
-	StatusUpdateBroadcastChannelsEnabled    *bool    `json:"statusUpdateBroadcastChannelsEnabled"`
-	StatusUpdateBroadcastWebhooksEnabled    *bool    `json:"statusUpdateBroadcastWebhooksEnabled"`
-	BroadcastChannelIDs                     []string `json:"broadcastChannelIDs"`
-	WebhookOnStatusUpdateURLs               []string `json:"webhookOnStatusUpdateURLs"`
-	ChannelID                               *string  `json:"channelID"`
+type Trigger struct {
+	Type    string `json:"type"`
+	Payload string `json:"payload"`
 }
 
-type PropertyOptionInput struct {
-	Id    *string `json:"id"`
-	Name  string  `json:"name"`
-	Color *string `json:"color"`
+type TriggerUpdates struct {
+	Type    string `json:"type"`
+	Payload string `json:"payload"`
 }
 
-type PropertyFieldAttrsInput struct {
-	Visibility *string               `json:"visibility"`
-	SortOrder  *float64              `json:"sortOrder"`
-	Options    []PropertyOptionInput `json:"options"`
-	ParentID   *string               `json:"parentID"`
-	ValueType  *string               `json:"valueType"`
+type __Directive struct {
+	Name        string                    `json:"name"`
+	Description *string                   `json:"description"`
+	Locations   []Enum__DirectiveLocation `json:"locations"`
+	Args        []__InputValue            `json:"args"`
 }
 
-type PropertyFieldInput struct {
-	Name  string                   `json:"name"`
-	Type  EnumPropertyFieldType    `json:"type"`
-	Attrs *PropertyFieldAttrsInput `json:"attrs"`
+type __EnumValue struct {
+	Name              string  `json:"name"`
+	Description       *string `json:"description"`
+	IsDeprecated      bool    `json:"isDeprecated"`
+	DeprecationReason *string `json:"deprecationReason"`
 }
 
-type PropertyOption struct {
-	Id    string  `json:"id"`
-	Name  string  `json:"name"`
-	Color *string `json:"color"`
+type __Field struct {
+	Name              string         `json:"name"`
+	Description       *string        `json:"description"`
+	Args              []__InputValue `json:"args"`
+	Type              __Type         `json:"type"`
+	IsDeprecated      bool           `json:"isDeprecated"`
+	DeprecationReason *string        `json:"deprecationReason"`
 }
 
-type PropertyFieldAttrs struct {
-	Visibility string           `json:"visibility"`
-	SortOrder  float64          `json:"sortOrder"`
-	Options    []PropertyOption `json:"options"`
-	ParentID   *string          `json:"parentID"`
-	ValueType  *string          `json:"valueType"`
+type __InputValue struct {
+	Name         string  `json:"name"`
+	Description  *string `json:"description"`
+	Type         __Type  `json:"type"`
+	DefaultValue *string `json:"defaultValue"`
 }
 
-type PropertyField struct {
-	Id       string                `json:"id"`
-	Name     string                `json:"name"`
-	Type     EnumPropertyFieldType `json:"type"`
-	GroupID  string                `json:"groupID"`
-	Attrs    PropertyFieldAttrs    `json:"attrs"`
-	CreateAt float64               `json:"createAt"`
-	UpdateAt float64               `json:"updateAt"`
-	DeleteAt float64               `json:"deleteAt"`
+type __Schema struct {
+	Types            []__Type      `json:"types"`
+	QueryType        __Type        `json:"queryType"`
+	MutationType     *__Type       `json:"mutationType"`
+	SubscriptionType *__Type       `json:"subscriptionType"`
+	Directives       []__Directive `json:"directives"`
 }
 
-type PropertyValue struct {
-	Id       string  `json:"id"`
-	FieldID  string  `json:"fieldID"`
-	Value    *JSON   `json:"value"`
-	CreateAt float64 `json:"createAt"`
-	UpdateAt float64 `json:"updateAt"`
-	DeleteAt float64 `json:"deleteAt"`
+type __Type struct {
+	Kind          Enum__TypeKind `json:"kind"`
+	Name          *string        `json:"name"`
+	Description   *string        `json:"description"`
+	Fields        []__Field      `json:"fields"`
+	Interfaces    []__Type       `json:"interfaces"`
+	PossibleTypes []__Type       `json:"possibleTypes"`
+	EnumValues    []__EnumValue  `json:"enumValues"`
+	InputFields   []__InputValue `json:"inputFields"`
+	OfType        *__Type        `json:"ofType"`
 }
+
