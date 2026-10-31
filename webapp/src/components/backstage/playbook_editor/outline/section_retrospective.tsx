@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
@@ -55,6 +55,14 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
     const archived = playbook.delete_at !== 0;
     const inputsDisabled = !playbook.retrospective_enabled || archived || !canEdit;
 
+    // Keep the latest playbook (including optimistic metric edits) so chained
+    // savePlaybook calls do not race and overwrite each other with stale metrics.
+    const playbookRef = useRef(playbook);
+    const saveChainRef = useRef(Promise.resolve());
+    useEffect(() => {
+        playbookRef.current = playbook;
+    }, [playbook]);
+
     if (!retrospectiveAccess) {
         return null;
     }
@@ -94,9 +102,18 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
                 <Metrics
                     playbook={convertToPlaybookWithChecklist(playbook, propertyFields || [])} // TODO reduce prop scope to min-essentials
                     setPlaybook={async (update) => {
-                        const playbookWithChecklist = convertToPlaybookWithChecklist(playbook, propertyFields || []);
-                        await savePlaybook({...playbook, ...typeof update === 'function' ? update(playbookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
-                        refetch();
+                        // Serialize metric saves: save-then-delete (and similar) must apply
+                        // against the previous optimistic result, not a stale render closure.
+                        const run = async () => {
+                            const current = convertToPlaybookWithChecklist(playbookRef.current, propertyFields || []);
+                            const next = typeof update === 'function' ? update(current) : {...current, ...update};
+                            playbookRef.current = {...playbookRef.current, ...next};
+                            await savePlaybook({...playbookRef.current}); // TODO replace with graphql / useUpdatePlaybook
+                            refetch();
+                        };
+                        const chained = saveChainRef.current.then(run, run);
+                        saveChainRef.current = chained.then(() => undefined, () => undefined);
+                        await chained;
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
