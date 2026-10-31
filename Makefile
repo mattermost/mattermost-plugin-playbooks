@@ -378,7 +378,7 @@ graphql:
 	$(GO) install github.com/jkrajniak/graphql-codegen-go@v1.2.1
 	cd server && $(GOBIN)/graphql-codegen-go -schemas api/schema.graphqls -packageName graphql -out graphql/models.go
 	# graphql-codegen-go emits enums via map iteration (nondeterministic); normalize for stable CI diffs.
-	python3 build/bin/normalize-graphql-models.py server/graphql/models.go
+	python3 build/normalize-graphql-models.py server/graphql/models.go
 
 
 ## Reset the plugin, effectively disabling and re-enabling it on the server.
