@@ -19,7 +19,6 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {ArrowLeftIcon, CloseIcon} from '@mattermost/compass-icons/components';
 import {Button} from '@mattermost/shared/components/button';
-import {ApolloProvider} from '@apollo/client';
 import {useStore} from 'react-redux';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from '@mattermost/types/store';
@@ -27,7 +26,6 @@ import General from 'mattermost-redux/constants/general';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {useCanCreatePlaybooksInTeam, usePlaybook, usePlaybookAttributes} from 'src/hooks';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
@@ -58,7 +56,7 @@ export const makeModalDefinition = (
     onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 ) => ({
     modalId: ID,
-    dialogType: ApolloWrappedModal,
+    dialogType: RunPlaybookModal,
     dialogProps: {playbookId, triggerChannelId, teamId, onRunCreated},
 });
 
@@ -1211,9 +1209,3 @@ const MultiuserRemoveButton = styled.button`
         color: var(--error-text);
     }
 `;
-
-const ApolloWrappedModal = (props: Props) => {
-    const client = getPlaybooksGraphQLClient();
-    return <ApolloProvider client={client}><RunPlaybookModal {...props}/></ApolloProvider>;
-};
-
