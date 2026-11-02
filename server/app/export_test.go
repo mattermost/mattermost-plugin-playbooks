@@ -65,10 +65,9 @@ func TestGeneratePlaybookExport(t *testing.T) {
 
 }
 
-func definesExports(t *testing.T, thing interface{}) {
+func definesExports(t *testing.T, thing any) {
 	inType := reflect.TypeOf(thing)
-	for i := 0; i < inType.NumField(); i++ {
-		field := inType.Field(i)
+	for field := range inType.Fields() {
 		tag := strings.TrimSpace(field.Tag.Get("export"))
 		if tag == "" {
 			t.Errorf("%s struct does not define export for field %s. Please define this struct tag, see comment above playbook struct.", inType.Name(), field.Name)
@@ -134,26 +133,26 @@ func TestGeneratePlaybookExportWithProperties(t *testing.T) {
 	require.NoError(t, err)
 
 	// Unmarshal to verify structure
-	var result map[string]interface{}
+	var result map[string]any
 	err = json.Unmarshal(output, &result)
 	require.NoError(t, err)
 
 	// Verify properties are present
-	props, ok := result["properties"].([]interface{})
+	props, ok := result["properties"].([]any)
 	require.True(t, ok, "properties should be present in export")
 	require.Len(t, props, 1)
 
 	// Verify conditions are present
-	conds, ok := result["conditions"].([]interface{})
+	conds, ok := result["conditions"].([]any)
 	require.True(t, ok, "conditions should be present in export")
 	require.Len(t, conds, 1)
 
 	// Verify checklist item has condition ID
-	checklists, ok := result["checklists"].([]interface{})
+	checklists, ok := result["checklists"].([]any)
 	require.True(t, ok, "checklists should be present in export")
-	checklist := checklists[0].(map[string]interface{})
-	items := checklist["items"].([]interface{})
-	item := items[0].(map[string]interface{})
+	checklist := checklists[0].(map[string]any)
+	items := checklist["items"].([]any)
+	item := items[0].(map[string]any)
 	assert.Equal(t, "cond1", item["condition_id"])
 }
 
