@@ -40,7 +40,7 @@ import DotMenu, {
 import {createPlaybookRun, playbookExportProps} from 'src/client';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
-import {usePlaybookMembership} from 'src/graphql/hooks';
+import {usePlaybookMembership} from 'src/hooks/playbooks';
 import {Timestamp} from 'src/webapp_globals';
 import {openPlaybookRunModal} from 'src/actions';
 

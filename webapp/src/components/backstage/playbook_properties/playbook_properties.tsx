@@ -28,7 +28,7 @@ import {
 
 import {useAppDispatch} from 'src/hooks/redux';
 
-import {usePlaybook} from 'src/graphql/hooks';
+import {usePlaybook} from 'src/hooks/playbooks';
 import {PropertyField, PropertyFieldInput, PropertyFieldType} from 'src/types/properties';
 
 import GenericModal from 'src/components/widgets/generic_modal';

@@ -195,7 +195,6 @@ endif
 .PHONY: webapp
 webapp: webapp/node_modules
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && $(NPM) run graphql;
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build;
 else
@@ -373,12 +372,13 @@ disable: detach
 enable:
 	./build/bin/pluginctl enable $(PLUGIN_ID)
 
-## Generate derived types from schema files
+## Generate derived Go types from the GraphQL schema (server still serves GraphQL).
 .PHONY: graphql
 graphql:
-	cd webapp && npm run graphql
 	$(GO) install github.com/jkrajniak/graphql-codegen-go@v1.2.1
 	cd server && $(GOBIN)/graphql-codegen-go -schemas api/schema.graphqls -packageName graphql -out graphql/models.go
+	# graphql-codegen-go emits enums via map iteration (nondeterministic); normalize for stable CI diffs.
+	python3 build/normalize-graphql-models.py server/graphql/models.go
 
 
 ## Reset the plugin, effectively disabling and re-enabling it on the server.
