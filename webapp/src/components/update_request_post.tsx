@@ -63,15 +63,15 @@ const UpdateRequestPost = (props: Props) => {
                 // If playbookRunId is missing (could be in old existent reminders), fall back
                 // to the first in-progress run for the channel (enough for old
                 // one-run-per-channel cases without post props).
-                // Match GraphQL runs(sort:"", direction:"") → Validate defaults
-                // (create_at ASC), made explicit so REST empty-sort remapping
-                // cannot diverge if defaults change.
+                // GraphQL runs(sort:"", direction:"") skips Validate and hits the
+                // store empty-sort default (ID ASC). REST Validate would remap
+                // empty sort to create_at, so set id/asc explicitly for parity.
                 const result = await fetchPlaybookRuns({
                     page: 0,
                     per_page: 1,
                     channel_id: props.post.channel_id,
                     statuses: [RunStatus.InProgress],
-                    sort: 'create_at',
+                    sort: 'id',
                     direction: 'asc',
                     skip_extras: true,
                     skip_checklists: true,
