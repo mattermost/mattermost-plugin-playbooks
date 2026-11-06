@@ -291,6 +291,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	RunID             string
 	UserIDs           []string
+	GroupIDs          []string
 	ForceAddToChannel bool
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -299,12 +300,11 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	// When user is joining run RunView permission is enough, otherwise user need manage permissions
-	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
-		if err := c.permissions.RunView(userID, args.RunID); err != nil {
-			return "", errors.Wrap(err, "attempted to join run without permissions")
-		}
-	} else {
+	// Gate permissions before expensive group resolution. Any request that
+	// includes group IDs or adds other users requires RunManageProperties;
+	// a self-join only needs RunView.
+	hasGroups := len(args.GroupIDs) > 0
+	if hasGroups || !updatesOnlyRequesterMembership(userID, args.UserIDs) {
 		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
 			return "", errors.Wrap(err, "attempted to modify participants without permissions")
 		}
@@ -316,9 +316,31 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		if err := app.EnsureRunIsActive(playbookRun); err != nil {
 			return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
 		}
+	} else {
+		if err := c.permissions.RunView(userID, args.RunID); err != nil {
+			return "", errors.Wrap(err, "attempted to join run without permissions")
+		}
 	}
 
-	if _, err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, args.ForceAddToChannel, true); err != nil {
+	// Filter group IDs to only those the requesting user is authorized to view,
+	// then resolve their members into user IDs.
+	authorizedGroupIDs := app.FilterAuthorizedGroupIDs(args.GroupIDs, userID, c.pluginAPI, c.logger)
+	allUserIDs := make([]string, len(args.UserIDs))
+	copy(allUserIDs, args.UserIDs)
+	allUserIDs = append(allUserIDs, app.ResolveGroupMembers(authorizedGroupIDs, c.pluginAPI, c.logger)...)
+
+	// Deduplicate user IDs
+	seen := make(map[string]struct{}, len(allUserIDs))
+	unique := make([]string, 0, len(allUserIDs))
+	for _, uid := range allUserIDs {
+		if _, ok := seen[uid]; !ok {
+			seen[uid] = struct{}{}
+			unique = append(unique, uid)
+		}
+	}
+	allUserIDs = unique
+
+	if _, err := c.playbookRunService.AddParticipants(args.RunID, allUserIDs, userID, args.ForceAddToChannel, true); err != nil {
 		return "", errors.Wrap(err, "failed to add participant from run")
 	}
 
