@@ -4,6 +4,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -120,5 +121,37 @@ func TestCategories(t *testing.T) {
 		cat, err := categoryStore.Get(categoryID1)
 		require.NoError(t, err)
 		require.Equal(t, cat.Name, "cat2")
+	})
+}
+
+func TestGetFavoriteCategoryReturnsLookupError(t *testing.T) {
+	db := setupTestDB(t)
+	categoryStore := setupCategoryStore(t, db)
+	service := app.NewCategoryService(categoryStore, nil)
+
+	teamID := model.NewId()
+	userID := model.NewId()
+	item := app.CategoryItem{ItemID: model.NewId(), Type: app.PlaybookItemType}
+
+	t.Run("missing favorite category is not favorited", func(t *testing.T) {
+		_, err := categoryStore.GetFavoriteCategory(teamID, userID)
+		require.ErrorIs(t, err, sql.ErrNoRows)
+
+		isFav, err := service.IsItemFavorite(item, teamID, userID)
+		require.NoError(t, err)
+		require.False(t, isFav)
+	})
+
+	t.Run("database error is not treated as not favorited", func(t *testing.T) {
+		_, err := db.Exec(`ALTER TABLE IR_Category RENAME TO IR_Category_lookup_broken`)
+		require.NoError(t, err)
+
+		_, err = categoryStore.GetFavoriteCategory(teamID, userID)
+		require.Error(t, err)
+		require.NotErrorIs(t, err, sql.ErrNoRows)
+
+		isFav, err := service.IsItemFavorite(item, teamID, userID)
+		require.Error(t, err)
+		require.False(t, isFav)
 	})
 }
