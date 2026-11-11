@@ -703,6 +703,18 @@ export const isFavoriteItem = async (teamID: string, itemID: string, itemType: s
     return Boolean(data);
 };
 
+export const setRunFavorite = async (playbookRunId: string, favorite: boolean) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/favorite`, {
+        method: favorite ? 'PUT' : 'DELETE',
+    });
+};
+
+export const setPlaybookFavorite = async (playbookId: string, favorite: boolean) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/favorite`, {
+        method: favorite ? 'PUT' : 'DELETE',
+    });
+};
+
 export const fetchMyCategories = async (teamID: string): Promise<Category[]> => {
     const queryParams = `?team_id=${teamID}`;
     const data = await doGet(`${apiUrl}/my_categories${queryParams}`);

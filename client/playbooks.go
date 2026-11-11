@@ -223,6 +223,27 @@ func (s *PlaybooksService) Stats(ctx context.Context, playbookID string) (*Playb
 	return stats, nil
 }
 
+// AddFavorite marks the playbook as a favorite for the current user.
+func (s *PlaybooksService) AddFavorite(ctx context.Context, playbookID string) error {
+	return s.setFavorite(ctx, http.MethodPut, playbookID)
+}
+
+// RemoveFavorite removes the playbook from the current user's favorites.
+func (s *PlaybooksService) RemoveFavorite(ctx context.Context, playbookID string) error {
+	return s.setFavorite(ctx, http.MethodDelete, playbookID)
+}
+
+func (s *PlaybooksService) setFavorite(ctx context.Context, method, playbookID string) error {
+	favoriteURL := fmt.Sprintf("playbooks/%s/favorite", playbookID)
+	req, err := s.client.newAPIRequest(method, favoriteURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
 func (s *PlaybooksService) AutoFollow(ctx context.Context, playbookID string, userID string) error {
 	followsURL := fmt.Sprintf("playbooks/%s/autofollows/%s", playbookID, userID)
 	req, err := s.client.newAPIRequest(http.MethodPut, followsURL, nil)
