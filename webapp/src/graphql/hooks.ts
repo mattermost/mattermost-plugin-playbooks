@@ -81,13 +81,20 @@ export const useUpdatePlaybookFavorite = (id: string|undefined) => {
         if (id === undefined) {
             return;
         }
-        await setPlaybookFavorite(id, favorite);
-        refreshLHS();
+        try {
+            await setPlaybookFavorite(id, favorite);
+        } catch (error) {
+            // Swallow so callers (which don't await) don't produce unhandled rejections;
+            // the refresh below resyncs the UI with the server state.
+            console.error('Failed to update playbook favorite', error); // eslint-disable-line no-console
+        } finally {
+            refreshLHS();
 
-        // Keep Apollo playbook query in sync until usePlaybook moves to REST.
-        await apolloClient.refetchQueries({
-            include: [PlaybookDocument],
-        });
+            // Keep Apollo playbook query in sync until usePlaybook moves to REST.
+            await apolloClient.refetchQueries({
+                include: [PlaybookDocument],
+            });
+        }
     }, [apolloClient, id, refreshLHS]);
 };
 
@@ -111,8 +118,15 @@ export const useSetRunFavorite = (id: string|undefined) => {
         if (id === undefined) {
             return;
         }
-        await setRunFavorite(id, fav);
-        refreshLHS();
+        try {
+            await setRunFavorite(id, fav);
+        } catch (error) {
+            // Swallow so callers (which don't await) don't produce unhandled rejections;
+            // the refresh below resyncs the UI with the server state.
+            console.error('Failed to update run favorite', error); // eslint-disable-line no-console
+        } finally {
+            refreshLHS();
+        }
     }, [id, refreshLHS]);
 };
 
