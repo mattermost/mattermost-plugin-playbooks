@@ -94,6 +94,9 @@ type Playbook struct {
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
+
+	// IsFavorite is populated on list responses when requested; not persisted on the playbook row.
+	IsFavorite bool `json:"is_favorite" export:"-"`
 }
 
 const (
@@ -763,6 +766,9 @@ func (o PlaybookFilterOptions) Validate() (PlaybookFilterOptions, error) {
 	options := o.Clone()
 
 	if options.PerPage <= 0 {
+		options.PerPage = PerPageDefault
+	}
+	if options.PerPage > PerPageDefault {
 		options.PerPage = PerPageDefault
 	}
 

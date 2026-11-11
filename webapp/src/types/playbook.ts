@@ -34,6 +34,9 @@ export interface Playbook {
     default_playbook_admin_role?: string;
     active_runs: number;
     admin_only_edit: boolean;
+
+    /** Populated on list responses when include_favorite is requested. */
+    is_favorite?: boolean;
 }
 
 export interface PlaybookMember {
@@ -106,6 +109,8 @@ export interface FetchPlaybooksParams {
     direction?: 'asc' | 'desc';
     search_term?: string;
     with_archived?: boolean;
+    with_membership_only?: boolean;
+    include_favorite?: boolean;
 }
 
 export interface FetchPlaybooksReturn {

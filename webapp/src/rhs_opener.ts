@@ -4,7 +4,6 @@
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {ApolloClient, NormalizedCacheObject, gql} from '@apollo/client';
 
 import {matchPath} from 'react-router-dom';
 
@@ -15,29 +14,9 @@ import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 import {receivedTeamPlaybookRunConnections, toggleRHS} from 'src/actions';
 import {browserHistory} from 'src/webapp_globals';
+import {fetchPlaybookRuns} from 'src/client';
 
-const RunsOnTeamQuery = gql`
-    query RunsOnTeamQuery(
-        $participant: String!,
-        $teamID: String!,
-        $status: String!,
-    ) {
-        runs(
-            teamID: $teamID,
-            statuses: [$status],
-            participantOrFollowerID: $participant,
-        ) {
-            edges {
-                node {
-                    channel_id: channelID
-                    team_id: teamID
-                }
-            }
-        }
-    }
-`;
-
-export function makeRHSOpener(store: Store, graphqlClient: ApolloClient<NormalizedCacheObject>): () => Promise<void> {
+export function makeRHSOpener(store: Store): () => Promise<void> {
     let currentTeamId = '';
     let currentChannelId = '';
     let currentChannelIsPlaybookRun = false;
@@ -63,16 +42,24 @@ export function makeRHSOpener(store: Store, graphqlClient: ApolloClient<Normaliz
             currentTeamId = currentTeam.id;
             const currentUserId = getCurrentUserId(state);
 
-            const fetched = await graphqlClient.query({
-                query: RunsOnTeamQuery,
-                variables: {
-                    participant: currentUserId,
-                    teamID: currentTeam.id,
-                    status: PlaybookRunStatus.InProgress,
-                },
+            const fetched = await fetchPlaybookRuns({
+                page: 0,
+                per_page: 1000,
+                team_id: currentTeam.id,
+                statuses: [PlaybookRunStatus.InProgress],
+                participant_or_follower_id: currentUserId,
+
+                // Match the old GraphQL connections query: favourited runs that the
+                // user neither participates in nor follows must still map channels.
+                include_favorites: true,
+                skip_extras: true,
+                skip_checklists: true,
             });
 
-            const runs = fetched.data.runs.edges.map((edge: any) => edge.node);
+            const runs = (fetched.items ?? []).map((run) => ({
+                channel_id: run.channel_id,
+                team_id: run.team_id,
+            }));
             store.dispatch(receivedTeamPlaybookRunConnections(runs));
         }
 

@@ -1,19 +1,20 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import styled from 'styled-components';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
 
-import {useQuery} from '@apollo/client';
-
 import {useAppSelector} from 'src/hooks/redux';
 
 import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
-
-import {graphql} from 'src/graphql/generated';
 
 import {pluginUrl} from 'src/browser_routing';
 
@@ -21,8 +22,10 @@ import {Mark, mark} from 'src/performance_telemetry';
 
 import {LHSPlaybookDotMenu} from 'src/components/backstage/lhs_playbook_dot_menu';
 import {LHSRunDotMenu} from 'src/components/backstage/lhs_run_dot_menu';
-import {PlaybookRunType as GraphQLPlaybookRunType} from 'src/graphql/generated/graphql';
-import {PlaybookRunType} from 'src/types/playbook_run';
+import {subscribeLHSRefresh} from 'src/components/backstage/lhs_navigation';
+import {PlaybookRun, PlaybookRunType, RunStatus} from 'src/types/playbook_run';
+import {clientFetchPlaybooks, fetchPlaybookRuns} from 'src/client';
+import {Playbook} from 'src/types/playbook';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -31,69 +34,102 @@ import {ItemContainer, StyledNavLink} from './item';
 export const RunsCategoryName = 'runsCategory';
 export const PlaybooksCategoryName = 'playbooksCategory';
 
-export const playbookLHSQueryDocument = graphql(/* GraphQL */`
-    query PlaybookLHS($userID: String!, $teamID: String!, $types: [PlaybookRunType!]) {
-        runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"], types: $types){
-            edges {
-                node {
-                    id
-                    name
-                    isFavorite
-                    playbookID
-                    ownerUserID
-                    participantIDs
-                    followers
-                    type
-                }
-            }
-        }
-        playbooks (teamID: $teamID, withMembershipOnly: true) {
-            id
-            title
-            isFavorite
-            public
-        }
-    }
-`);
-
 const pollInterval = 60000; // Poll every minute for updates
+
+type LHSData = {
+    runs: PlaybookRun[];
+    playbooks: Playbook[];
+};
 
 const useLHSData = (teamID: string) => {
     const normalizeCategoryName = useReservedCategoryTitleMapper();
-    const {data, error, startPolling, stopPolling} = useQuery(playbookLHSQueryDocument, {
-        variables: {
-            userID: 'me',
-            teamID,
+    const [data, setData] = useState<LHSData | undefined>();
+    const [error, setError] = useState<Error | undefined>();
+    const [refreshKey, setRefreshKey] = useState(0);
+    const latestRequest = useRef(0);
 
-            // GraphQL still types this variable with its generated enum until the LHS moves to REST.
-            types: [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist] as GraphQLPlaybookRunType[],
-        },
-        fetchPolicy: 'cache-and-network',
-    });
+    const load = useCallback(async () => {
+        if (!teamID) {
+            return;
+        }
+        const requestID = ++latestRequest.current;
+        try {
+            const [runsResult, playbooksResult] = await Promise.all([
+                fetchPlaybookRuns({
+                    page: 0,
+                    per_page: 1000,
+                    team_id: teamID,
+                    sort: 'name',
+                    direction: 'ASC',
+                    statuses: [RunStatus.InProgress],
+                    types: [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist],
+                    participant_or_follower_id: 'me',
+                    include_favorites: true,
+                    skip_extras: true,
+                    skip_checklists: true,
+                    include_favorite: true,
+                    include_followers: true,
+                }),
+                clientFetchPlaybooks(teamID, {
+                    page: 0,
+                    per_page: 1000,
+                    with_membership_only: true,
+                    include_favorite: true,
+                }),
+            ]);
+            if (requestID !== latestRequest.current) {
+                return;
+            }
+            setData({
+                runs: runsResult.items ?? [],
+                playbooks: playbooksResult?.items ?? [],
+            });
+            setError(undefined);
+        } catch (err) {
+            if (requestID !== latestRequest.current) {
+                return;
+            }
+            setError(err instanceof Error ? err : new Error(String(err)));
+        }
+    }, [teamID]);
 
     useEffect(() => {
+        load();
+    }, [load, refreshKey]);
+
+    useEffect(() => {
+        return subscribeLHSRefresh(() => setRefreshKey((key) => key + 1));
+    }, []);
+
+    useEffect(() => {
+        let timer: ReturnType<typeof setInterval> | undefined;
         const focus = () => {
-            startPolling(pollInterval);
+            timer = setInterval(() => setRefreshKey((key) => key + 1), pollInterval);
         };
         const blur = () => {
-            stopPolling();
+            if (timer) {
+                clearInterval(timer);
+                timer = undefined;
+            }
         };
         window.addEventListener('focus', focus);
         window.addEventListener('blur', blur);
+        if (document.hasFocus()) {
+            focus();
+        }
 
         return () => {
+            blur();
             window.removeEventListener('focus', focus);
             window.removeEventListener('blur', blur);
         };
-    }, [startPolling, stopPolling]);
+    }, []);
 
     if (error || !data) {
-        return {groups: [], ready: false};
+        return {groups: [] as SidebarGroup[], ready: false};
     }
 
-    // Extract from pagination
-    const runs = data.runs.edges.map((edge) => edge.node);
-    const playbooks = data.playbooks;
+    const {runs, playbooks} = data;
 
     const playbookItems = playbooks.map((pb) => {
         const icon = pb.public ? 'icon-book-outline' : 'icon-book-lock-outline';
@@ -109,9 +145,9 @@ const useLHSData = (teamID: string) => {
             itemMenu: (
                 <LHSPlaybookDotMenu
                     playbookId={pb.id}
-                    isFavorite={pb.isFavorite}
+                    isFavorite={Boolean(pb.is_favorite)}
                 />),
-            isFavorite: pb.isFavorite,
+            isFavorite: Boolean(pb.is_favorite),
             className: '',
         };
     });
@@ -119,7 +155,6 @@ const useLHSData = (teamID: string) => {
     const playbooksWithoutFavorites = playbookItems.filter((group) => !group.isFavorite);
 
     const hasViewerAccessToPlaybook = (playbookId: string) => {
-        // if the run's playbook is visible to the user, then they have permanent access to the run
         return playbooks.find((pb) => pb.id === playbookId) !== undefined;
     };
 
@@ -137,13 +172,13 @@ const useLHSData = (teamID: string) => {
             itemMenu: (
                 <LHSRunDotMenu
                     playbookRunId={run.id}
-                    isFavorite={run.isFavorite}
-                    ownerUserId={run.ownerUserID}
-                    participantIDs={run.participantIDs}
-                    followerIDs={run.followers}
-                    hasPermanentViewerAccess={hasViewerAccessToPlaybook(run.playbookID)}
+                    isFavorite={Boolean(run.is_favorite)}
+                    ownerUserId={run.owner_user_id}
+                    participantIDs={run.participant_ids}
+                    followerIDs={run.followers ?? []}
+                    hasPermanentViewerAccess={hasViewerAccessToPlaybook(run.playbook_id)}
                 />),
-            isFavorite: run.isFavorite,
+            isFavorite: Boolean(run.is_favorite),
             className: '',
         };
     });
@@ -176,7 +211,7 @@ const useLHSData = (teamID: string) => {
         ].concat(groups);
     }
 
-    return {groups, ready: true};
+    return {groups: groups as SidebarGroup[], ready: true};
 };
 
 const ViewAllRuns = () => {

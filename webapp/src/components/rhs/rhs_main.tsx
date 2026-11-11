@@ -1,13 +1,16 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import styled from 'styled-components';
-
-import {useQuery} from '@apollo/client';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
@@ -17,133 +20,165 @@ import {ToastProvider} from 'src/components/backstage/toast_banner';
 import {navigateToChannel} from 'src/browser_routing';
 import {usePlaybooksCrud} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {RunStatus} from 'src/types/playbook_run';
-
-import {graphql} from 'src/graphql/generated/gql';
+import {PlaybookRun, RunStatus} from 'src/types/playbook_run';
+import {fetchPlaybookRuns} from 'src/client';
+import {subscribeRHSRefresh} from 'src/rhs_refresh';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
 import RHSHome from './rhs_home';
 
-const RHSRunsQuery = graphql(/* GraphQL */`
-    query RHSRuns(
-        $channelID: String!,
-        $sort: String!,
-        $direction: String!,
-        $status: String!,
-        $first: Int,
-        $after: String,
-    ) {
-        runs(
-            channelID: $channelID,
-            sort: $sort,
-            direction: $direction,
-            statuses: [$status],
-            first: $first,
-            after: $after,
-        ) {
-            totalCount
-            edges {
-                node {
-                    id
-                    name
-                    participantIDs
-                    ownerUserID
-                    playbookID
-                    playbook {
-                        title
-                    }
-                    numTasksClosed
-                    numTasks
-                    lastUpdatedAt
-                    type
-                    currentStatus
-                    channelID
-                    teamID
-                    propertyFields {
-                        id
-                        name
-                        type
-                        attrs {
-                            sort_order: sortOrder
-                            options {
-                                id
-                                name
-                                color
-                            }
-                            parent_id: parentID
-                        }
-                    }
-                }
-            }
-            pageInfo {
-                endCursor
-                hasNextPage
-            }
-        }
-    }
-`);
+export {notifyRHSRefresh, subscribeRHSRefresh} from 'src/rhs_refresh';
+
+const pageSize = 8;
+
+type RunListItem = {
+    id: string
+    name: string
+    participantIDs: string[]
+    ownerUserID: string
+    playbookID: string
+    playbook?: {title: string} | null
+    numTasksClosed: number
+    numTasks: number
+    lastUpdatedAt: number
+    type: PlaybookRun['type']
+    currentStatus: RunStatus
+    channelID: string
+    teamID: string
+};
+
+function mapRun(run: PlaybookRun): RunListItem {
+    return {
+        id: run.id,
+        name: run.name,
+        participantIDs: run.participant_ids,
+        ownerUserID: run.owner_user_id,
+        playbookID: run.playbook_id,
+        playbook: run.playbook_title ? {title: run.playbook_title} : null,
+        numTasksClosed: run.task_completed ?? 0,
+        numTasks: run.task_total ?? 0,
+        lastUpdatedAt: run.update_at || run.create_at,
+        type: run.type,
+        currentStatus: run.current_status,
+        channelID: run.channel_id,
+        teamID: run.team_id,
+    };
+}
+
+type StatusState = {
+    runs: RunListItem[]
+    total: number
+    page: number
+    hasMore: boolean
+    loaded: boolean
+};
+
+const emptyStatusState = (): StatusState => ({
+    runs: [],
+    total: 0,
+    page: 0,
+    hasMore: false,
+    loaded: false,
+});
 
 const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) => {
-    const inProgressResult = useQuery(RHSRunsQuery, {
-        variables: {
-            channelID,
-            sort: listOptions.sort,
-            direction: listOptions.direction,
-            first: 8,
-            status: 'InProgress',
-        },
-        fetchPolicy: 'cache-and-network',
-    });
-    const runsInProgress = inProgressResult.data?.runs.edges.map((edge) => edge.node);
-    const numRunsInProgress = inProgressResult.data?.runs.totalCount ?? 0;
-    const hasMoreInProgress = inProgressResult.data?.runs.pageInfo.hasNextPage ?? false;
+    const [inProgress, setInProgress] = useState<StatusState>(emptyStatusState);
+    const [finished, setFinished] = useState<StatusState>(emptyStatusState);
+    const [error, setError] = useState<Error | undefined>();
+    const [refreshKey, setRefreshKey] = useState(0);
+    const latestRequest = useRef(0);
+    const inFlightMore = useRef({inProgress: false, finished: false});
 
-    const finishedResult = useQuery(RHSRunsQuery, {
-        variables: {
-            channelID,
+    const fetchStatus = useCallback(async (status: RunStatus, page: number, append: boolean) => {
+        if (!channelID) {
+            return;
+        }
+        const requestID = latestRequest.current;
+        const result = await fetchPlaybookRuns({
+            page,
+            per_page: pageSize,
+            channel_id: channelID,
             sort: listOptions.sort,
             direction: listOptions.direction,
-            first: 8,
-            status: 'Finished',
-        },
-        fetchPolicy: 'cache-and-network',
-    });
-    const runsFinished = finishedResult.data?.runs.edges.map((edge) => edge.node);
-    const numRunsFinished = finishedResult.data?.runs.totalCount ?? 0;
-    const hasMoreFinished = finishedResult.data?.runs.pageInfo.hasNextPage ?? false;
+            statuses: [status],
+            skip_extras: true,
+            include_playbook_title: true,
+        });
+        if (requestID !== latestRequest.current) {
+            return;
+        }
+        const mapped = (result.items ?? []).map(mapRun);
+        const apply = (prev: StatusState): StatusState => ({
+            runs: append ? [...prev.runs, ...mapped] : mapped,
+            total: result.total_count,
+            page,
+            hasMore: result.has_more,
+            loaded: true,
+        });
+
+        if (status === RunStatus.InProgress) {
+            setInProgress(apply);
+        } else {
+            setFinished(apply);
+        }
+    }, [channelID, listOptions.direction, listOptions.sort]);
+
+    // Reset lists only when the channel changes so a refresh does not unmount
+    // RHSRunDetails (Apollo refetch kept existing data visible).
+    useEffect(() => {
+        setInProgress(emptyStatusState());
+        setFinished(emptyStatusState());
+    }, [channelID]);
+
+    useEffect(() => {
+        latestRequest.current += 1;
+        setError(undefined);
+
+        (async () => {
+            try {
+                await Promise.all([
+                    fetchStatus(RunStatus.InProgress, 0, false),
+                    fetchStatus(RunStatus.Finished, 0, false),
+                ]);
+            } catch (err) {
+                setError(err instanceof Error ? err : new Error(String(err)));
+            }
+        })();
+    }, [channelID, fetchStatus, refreshKey]);
+
+    useEffect(() => subscribeRHSRefresh(() => setRefreshKey((key) => key + 1)), []);
 
     const getMoreInProgress = () => {
-        return inProgressResult.fetchMore({
-            variables: {
-                after: inProgressResult.data?.runs.pageInfo.endCursor,
-            },
+        if (!inProgress.hasMore || inFlightMore.current.inProgress) {
+            return Promise.resolve();
+        }
+        inFlightMore.current.inProgress = true;
+        return fetchStatus(RunStatus.InProgress, inProgress.page + 1, true).finally(() => {
+            inFlightMore.current.inProgress = false;
         });
     };
 
     const getMoreFinished = () => {
-        return finishedResult.fetchMore({
-            variables: {
-                after: finishedResult.data?.runs.pageInfo.endCursor,
-            },
+        if (!finished.hasMore || inFlightMore.current.finished) {
+            return Promise.resolve();
+        }
+        inFlightMore.current.finished = true;
+        return fetchStatus(RunStatus.Finished, finished.page + 1, true).finally(() => {
+            inFlightMore.current.finished = false;
         });
     };
 
-    const error = inProgressResult.error || finishedResult.error;
-
-    const refetch = () => {
-        inProgressResult.refetch();
-        finishedResult.refetch();
-    };
+    const refetch = () => setRefreshKey((key) => key + 1);
 
     return {
-        runsInProgress,
-        numRunsInProgress,
-        runsFinished,
-        numRunsFinished,
+        runsInProgress: inProgress.loaded ? inProgress.runs : undefined,
+        numRunsInProgress: inProgress.total,
+        runsFinished: finished.loaded ? finished.runs : undefined,
+        numRunsFinished: finished.total,
         getMoreInProgress,
         getMoreFinished,
-        hasMoreInProgress,
-        hasMoreFinished,
+        hasMoreInProgress: inProgress.hasMore,
+        hasMoreFinished: finished.hasMore,
         refetch,
         error,
     };
@@ -186,25 +221,35 @@ const RightHandSidebar = () => {
     const {isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
 
     useEffect(() => {
-        // reset filter state
+        // reset filter state and selection when leaving a channel so we never
+        // auto-select against the previous channel's still-mounted run list.
         setListOptions(defaultListOptions);
+        setCurrentRunId(undefined);
+        autoSelectCheckedForChannel.current = undefined;
     }, [currentChannelId]);
 
     // auto-select single in-progress run in channel if applicable
     useEffect(() => {
         if (currentChannelId && currentChannelId !== autoSelectCheckedForChannel.current) {
             setCurrentRunId(() => {
-                if (fetchedRuns.runsInProgress) {
-                    autoSelectCheckedForChannel.current = currentChannelId; // mark that we've checked this channel
-
-                    if (fetchedRuns.runsInProgress.length === 1) {
-                        return fetchedRuns.runsInProgress[0].id; // auto-select the single in-progress run
-                    }
-
-                    return undefined; // no auto-select
+                if (!fetchedRuns.runsInProgress) {
+                    return undefined; // clear immediately - wait until runsInProgress is loaded
                 }
 
-                return undefined; // clear immediately - wait until runsInProgress is loaded
+                // Ignore stale lists from the previous channel that can still be
+                // visible for one render before the channel-change reset commits.
+                const runsForChannel = fetchedRuns.runsInProgress.filter((run) => run.channelID === currentChannelId);
+                if (runsForChannel.length !== fetchedRuns.runsInProgress.length) {
+                    return undefined;
+                }
+
+                autoSelectCheckedForChannel.current = currentChannelId; // mark that we've checked this channel
+
+                if (runsForChannel.length === 1) {
+                    return runsForChannel[0].id; // auto-select the single in-progress run
+                }
+
+                return undefined; // no auto-select
             });
         }
     }, [currentChannelId, fetchedRuns.runsInProgress]);
@@ -305,4 +350,3 @@ const RHSWrapped = () => {
 };
 
 export default RHSWrapped;
-

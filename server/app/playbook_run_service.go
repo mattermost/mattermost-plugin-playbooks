@@ -299,6 +299,10 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 			results.Items[i].PropertyValues = values
 		}
 		results.Items[i].ComputeTaskProgress()
+		if options.SkipChecklists {
+			results.Items[i].Checklists = nil
+			results.Items[i].ItemsOrder = nil
+		}
 	}
 
 	return results, nil
@@ -5382,6 +5386,15 @@ func (s *PlaybookRunServiceImpl) GetFollowers(playbookRunID string) ([]string, e
 		return nil, errors.Wrapf(err, "failed to get followers for the run `%s`", playbookRunID)
 	}
 
+	return followers, nil
+}
+
+// GetFollowersForRuns returns followers keyed by run ID for the given run IDs.
+func (s *PlaybookRunServiceImpl) GetFollowersForRuns(playbookRunIDs []string) (map[string][]string, error) {
+	followers, err := s.store.GetFollowersForRuns(playbookRunIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get followers for runs")
+	}
 	return followers, nil
 }
 
