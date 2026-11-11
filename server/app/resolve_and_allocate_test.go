@@ -97,6 +97,12 @@ func (s *allocPlaybookServiceStub) AddPlaybookMember(string, string) error {
 func (s *allocPlaybookServiceStub) RemovePlaybookMember(string, string) error {
 	panic("not called")
 }
+func (s *allocPlaybookServiceStub) GraphqlUpdate(string, map[string]interface{}) error {
+	panic("not called")
+}
+func (s *allocPlaybookServiceStub) ValidateRunNumberPrefixUnique(string, string, string) error {
+	panic("not called")
+}
 
 // allocPropertyServiceStub is a minimal PropertyService stub: returns fixed fields and
 // passes through SanitizePropertyValue unchanged. Methods resolveAndAllocate never calls panic.

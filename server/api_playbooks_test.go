@@ -2680,7 +2680,7 @@ func TestPatchPlaybook(t *testing.T) {
 
 		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": "INC"})
 		defer resp.Body.Close()
-		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
 		require.NoError(t, err)
@@ -2697,7 +2697,7 @@ func TestPatchPlaybook(t *testing.T) {
 
 		resp := patchPlaybook(e.ServerClient, id, map[string]any{"channel_name_template": "Incident {SEQ}"})
 		resp.Body.Close()
-		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		// client.Playbook does not expose channel_name_template, so verify via raw GET.
 		getURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", e.ServerClient.URL, id)
@@ -2731,7 +2731,7 @@ func TestPatchPlaybook(t *testing.T) {
 
 		resp := patchPlaybook(e.ServerClient, id1, map[string]any{"run_number_prefix": "DUPE"})
 		resp.Body.Close()
-		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		resp2 := patchPlaybook(e.ServerClient, id2, map[string]any{"run_number_prefix": "DUPE"})
 		defer resp2.Body.Close()
@@ -2816,7 +2816,7 @@ func TestPatchPlaybook(t *testing.T) {
 		max32 := strings.Repeat("A", 32)
 		resp := patchPlaybook(e.ServerClient, id, map[string]any{"run_number_prefix": max32})
 		defer resp.Body.Close()
-		require.Equal(t, http.StatusNoContent, resp.StatusCode, "32-char prefix is on the inclusive boundary and must be accepted")
+		require.Equal(t, http.StatusOK, resp.StatusCode, "32-char prefix is on the inclusive boundary and must be accepted")
 	})
 
 	t.Run("prefix at 33 chars rejected", func(t *testing.T) {
@@ -2846,7 +2846,7 @@ func TestPatchPlaybook(t *testing.T) {
 		template := strings.Repeat("A", 1024)
 		resp := patchPlaybook(e.ServerClient, id, map[string]any{"channel_name_template": template})
 		defer resp.Body.Close()
-		require.Equal(t, http.StatusNoContent, resp.StatusCode, "1024-char template is on the inclusive boundary and must be accepted")
+		require.Equal(t, http.StatusOK, resp.StatusCode, "1024-char template is on the inclusive boundary and must be accepted")
 	})
 
 	t.Run("channel template over 1024 chars rejected", func(t *testing.T) {
@@ -2881,12 +2881,146 @@ func TestPatchPlaybook(t *testing.T) {
 
 		resp := patchPlaybook(e.ServerAdminClient, id, map[string]any{"channel_name_template": "{Zone}"})
 		resp.Body.Close()
-		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		// Attempt to delete the field that the template references.
 		delErr := e.PlaybooksAdminClient.Playbooks.DeletePropertyField(context.Background(), id, field.ID)
 		require.Error(t, delErr, "deleting a field referenced by the channel name template must fail")
 		requireErrorWithStatusCode(t, delErr, http.StatusBadRequest)
+	})
+
+	t.Run("title update returns 200 with updated playbook body", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Title Before Patch",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{"title": "Title After Patch"})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var updated client.Playbook
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&updated))
+		assert.Equal(t, "Title After Patch", updated.Title)
+		assert.Equal(t, id, updated.ID)
+
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		assert.Equal(t, "Title After Patch", pb.Title)
+	})
+
+	t.Run("checklist update with assignee requires invites enabled", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Checklist Preassign Fail",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{
+			"checklists": []map[string]any{
+				{
+					"title": "Stage",
+					"items": []map[string]any{
+						{
+							"title":                      "task",
+							"description":                "",
+							"state":                      "",
+							"state_modified":             0,
+							"assignee_id":                e.RegularUser.Id,
+							"assignee_modified":          0,
+							"assignee_type":              "",
+							"assignee_property_field_id": "",
+							"command":                    "",
+							"command_last_run":           0,
+							"due_date":                   0,
+							"condition_id":               "",
+						},
+					},
+				},
+			},
+			"invited_user_ids": []string{e.RegularUser.Id},
+		})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("checklist update with assignee and invites succeeds", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Checklist Preassign OK",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{
+			"checklists": []map[string]any{
+				{
+					"title": "Stage",
+					"items": []map[string]any{
+						{
+							"title":                      "task",
+							"description":                "desc",
+							"state":                      "",
+							"state_modified":             0,
+							"assignee_id":                e.RegularUser.Id,
+							"assignee_modified":          0,
+							"assignee_type":              "",
+							"assignee_property_field_id": "",
+							"command":                    "",
+							"command_last_run":           0,
+							"due_date":                   0,
+							"condition_id":               "",
+						},
+					},
+				},
+			},
+			"invited_user_ids":     []string{e.RegularUser.Id},
+			"invite_users_enabled": true,
+		})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		require.Len(t, pb.Checklists, 1)
+		require.Len(t, pb.Checklists[0].Items, 1)
+		assert.Equal(t, "task", pb.Checklists[0].Items[0].Title)
+		assert.Equal(t, e.RegularUser.Id, pb.Checklists[0].Items[0].AssigneeID)
+		assert.True(t, pb.InviteUsersEnabled)
+	})
+
+	t.Run("oversized title rejected", func(t *testing.T) {
+		resp := patchPlaybook(e.ServerClient, e.BasicPlaybook.ID, map[string]any{
+			"title": strings.Repeat("A", 1025),
+		})
+		defer resp.Body.Close()
+		// Title length is enforced by the DB column (VARCHAR 1024), same as create.
+		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("rejects link_existing_channel mode when new_channel_only is true", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "New Channel Only Patch Guard",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		pb.NewChannelOnly = true
+		pb.ChannelMode = client.PlaybookRunCreateNewChannel
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		resp := patchPlaybook(e.ServerClient, id, map[string]any{
+			"channel_mode": client.PlaybookRunLinkExistingChannel.String(),
+		})
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 }
 
@@ -2930,7 +3064,7 @@ func TestSequentialIDFrozenAtCreation(t *testing.T) {
 		return resp
 	}()
 	patchResp.Body.Close()
-	require.Equal(t, http.StatusNoContent, patchResp.StatusCode)
+	require.Equal(t, http.StatusOK, patchResp.StatusCode)
 
 	// Re-fetch the original run and verify SequentialID is unchanged (frozen).
 	refetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
