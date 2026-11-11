@@ -235,8 +235,7 @@ func (c *categoryStore) AddItemToFavoriteCategory(item app.CategoryItem, teamID,
 	}
 	for _, favItem := range favoriteCategory.Items {
 		if favItem.ItemID == item.ItemID && favItem.Type == item.Type {
-			// Already favorited: adding is idempotent.
-			return nil
+			return errors.New("Item already is favorite")
 		}
 	}
 	if err := c.AddItemToCategory(item, favoriteCategory.ID); err != nil {

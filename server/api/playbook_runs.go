@@ -1204,14 +1204,24 @@ func (h *PlaybookRunHandler) setRunFavorite(c *Context, w http.ResponseWriter, r
 	}
 
 	item := app.CategoryItem{ItemID: playbookRun.ID, Type: app.RunItemType}
-	if favorite {
-		err = h.categoryService.AddFavorite(item, playbookRun.TeamID, userID)
-	} else {
-		err = h.categoryService.DeleteFavorite(item, playbookRun.TeamID, userID)
-	}
+
+	// REST favorite endpoints are idempotent: skip when already in the target state.
+	// (The shared category service errors in that case, which GraphQL relies on.)
+	isFavorite, err := h.categoryService.IsItemFavorite(item, playbookRun.TeamID, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
+	}
+	if isFavorite != favorite {
+		if favorite {
+			err = h.categoryService.AddFavorite(item, playbookRun.TeamID, userID)
+		} else {
+			err = h.categoryService.DeleteFavorite(item, playbookRun.TeamID, userID)
+		}
+		if err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

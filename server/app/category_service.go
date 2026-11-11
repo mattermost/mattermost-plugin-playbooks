@@ -113,8 +113,7 @@ func (c *categoryService) DeleteFavorite(item CategoryItem, teamID, userID strin
 		}
 	}
 	if !found {
-		// Not favorited: removing is idempotent.
-		return nil
+		return errors.New("Item is not favorited")
 	}
 	if err := c.store.DeleteItemFromCategory(item, favoriteCategory.ID); err != nil {
 		return errors.Wrap(err, "can't delete item from favorite category")
