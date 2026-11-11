@@ -964,7 +964,7 @@ paths:
       summary: Favorite a playbook run
       description: |
         Marks the run as a favorite for the current user. Requires permission to view the run
-        (same as the GraphQL `setRunFavorite` mutation). Returns an error if the run is already a favorite.
+        (same as the GraphQL `setRunFavorite` mutation). Idempotent: succeeds if the run is already a favorite.
       operationId: addPlaybookRunFavorite
       security:
         - BearerAuth: []
@@ -995,7 +995,7 @@ paths:
       summary: Unfavorite a playbook run
       description: |
         Removes the run from the current user's favorites. Requires permission to view the run
-        (same as the GraphQL `setRunFavorite` mutation). Returns an error if the run is not a favorite.
+        (same as the GraphQL `setRunFavorite` mutation). Idempotent: succeeds if the run is not a favorite.
       operationId: removePlaybookRunFavorite
       security:
         - BearerAuth: []
@@ -1904,7 +1904,7 @@ paths:
       description: |
         Marks the playbook as a favorite for the current user. Requires permission to view the playbook
         (same as the GraphQL `updatePlaybookFavorite` mutation). Archived playbooks cannot be favorited.
-        Returns an error if the playbook is already a favorite.
+        Idempotent: succeeds if the playbook is already a favorite.
       operationId: addPlaybookFavorite
       security:
         - BearerAuth: []
@@ -1937,7 +1937,7 @@ paths:
       description: |
         Removes the playbook from the current user's favorites. Requires permission to view the playbook
         (same as the GraphQL `updatePlaybookFavorite` mutation). Archived playbooks cannot be modified.
-        Returns an error if the playbook is not a favorite.
+        Idempotent: succeeds if the playbook is not a favorite.
       operationId: removePlaybookFavorite
       security:
         - BearerAuth: []

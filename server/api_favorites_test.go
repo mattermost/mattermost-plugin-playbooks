@@ -55,27 +55,36 @@ func TestRunFavoriteREST(t *testing.T) {
 		require.False(t, isFavorite(t, e.PlaybooksClient, run.ID))
 	})
 
-	t.Run("favoriting twice is rejected", func(t *testing.T) {
+	t.Run("favoriting twice is idempotent", func(t *testing.T) {
 		run := createRun(t)
 
 		err := e.PlaybooksClient.PlaybookRuns.AddFavorite(context.Background(), run.ID)
 		require.NoError(t, err)
 
 		err = e.PlaybooksClient.PlaybookRuns.AddFavorite(context.Background(), run.ID)
-		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		require.NoError(t, err)
+		require.True(t, isFavorite(t, e.PlaybooksClient, run.ID))
 	})
 
-	t.Run("unfavoriting when not favorite is rejected", func(t *testing.T) {
+	t.Run("unfavoriting when not favorite is idempotent", func(t *testing.T) {
 		run := createRun(t)
 
 		err := e.PlaybooksClient.PlaybookRuns.RemoveFavorite(context.Background(), run.ID)
-		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		require.NoError(t, err)
+		require.False(t, isFavorite(t, e.PlaybooksClient, run.ID))
 	})
 
 	t.Run("user not on the team cannot favorite", func(t *testing.T) {
 		run := createRun(t)
 
 		err := e.PlaybooksClientNotInTeam.PlaybookRuns.AddFavorite(context.Background(), run.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("user not on the team cannot unfavorite", func(t *testing.T) {
+		run := createRun(t)
+
+		err := e.PlaybooksClientNotInTeam.PlaybookRuns.RemoveFavorite(context.Background(), run.ID)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 }
@@ -116,5 +125,25 @@ func TestPlaybookFavoriteREST(t *testing.T) {
 	t.Run("favorite private playbook without access is rejected", func(t *testing.T) {
 		err := e.PlaybooksClient.Playbooks.AddFavorite(context.Background(), e.PrivatePlaybookNoMembers.ID)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("unfavorite private playbook without access is rejected", func(t *testing.T) {
+		err := e.PlaybooksClient.Playbooks.RemoveFavorite(context.Background(), e.PrivatePlaybookNoMembers.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("favoriting twice is idempotent", func(t *testing.T) {
+		err := e.PlaybooksClient2.Playbooks.AddFavorite(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		err = e.PlaybooksClient2.Playbooks.AddFavorite(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+	})
+
+	t.Run("archived playbook cannot be favorited or unfavorited", func(t *testing.T) {
+		err := e.PlaybooksClient.Playbooks.AddFavorite(context.Background(), e.ArchivedPlaybook.ID)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		err = e.PlaybooksClient.Playbooks.RemoveFavorite(context.Background(), e.ArchivedPlaybook.ID)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 }
