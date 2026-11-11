@@ -192,7 +192,9 @@ func (c *categoryStore) GetFavoriteCategory(teamID, userID string) (app.Category
 		"c.TeamID": teamID,
 		"c.UserID": userID,
 	}))
-	if err == sql.ErrNoRows {
+	if err != nil {
+		// Include sql.ErrNoRows. A later getItems call would replace any other error
+		// with an empty list, and callers would treat the lookup failure as not favorited.
 		return app.Category{}, err
 	}
 	category.Items, err = c.getItems(category.ID)
