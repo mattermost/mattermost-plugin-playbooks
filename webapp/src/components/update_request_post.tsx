@@ -16,7 +16,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 import PostText from 'src/components/post_text';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
-import {fetchPlaybookRun, fetchPlaybookRuns, resetReminder} from 'src/client';
+import {fetchPlaybookRun, resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
 import {
     Mode,
@@ -27,7 +27,7 @@ import {
 import {nearest} from 'src/utils';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
-import {PlaybookRun, RunStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 interface Props {
     post: Post;
@@ -51,33 +51,21 @@ const UpdateRequestPost = (props: Props) => {
         setLoading(true);
 
         const load = async () => {
-            try {
-                if (playbookRunId) {
-                    const fetched = await fetchPlaybookRun(playbookRunId);
-                    if (!cancelled) {
-                        setRun(fetched);
-                    }
-                    return;
-                }
-
-                // If playbookRunId is missing (could be in old existent reminders), fall back
-                // to the first in-progress run for the channel (enough for old
-                // one-run-per-channel cases without post props).
-                // GraphQL runs(sort:"", direction:"") skips Validate and hits the
-                // store empty-sort default (ID ASC). REST Validate would remap
-                // empty sort to create_at, so set id/asc explicitly for parity.
-                const result = await fetchPlaybookRuns({
-                    page: 0,
-                    per_page: 1,
-                    channel_id: props.post.channel_id,
-                    statuses: [RunStatus.InProgress],
-                    sort: 'id',
-                    direction: 'asc',
-                    skip_extras: true,
-                    skip_checklists: true,
-                });
+            // A missing id cannot be resolved to the run that created the post.
+            // The replaced query skipped the channel lookup, so leave run unset
+            // and keep the original message.
+            if (!playbookRunId) {
                 if (!cancelled) {
-                    setRun(result.items?.[0] ?? null);
+                    setRun(null);
+                    setLoading(false);
+                }
+                return;
+            }
+
+            try {
+                const fetched = await fetchPlaybookRun(playbookRunId);
+                if (!cancelled) {
+                    setRun(fetched);
                 }
             } catch {
                 if (!cancelled) {
