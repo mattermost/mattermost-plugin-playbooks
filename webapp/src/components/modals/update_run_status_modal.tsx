@@ -4,6 +4,7 @@
 import React, {
     ComponentProps,
     ReactNode,
+    useEffect,
     useMemo,
     useState,
 } from 'react';
@@ -39,7 +40,7 @@ import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
 import {pluginUrl} from 'src/browser_routing';
-import {postStatusUpdate} from 'src/client';
+import {fetchPlaybookRun, postStatusUpdate} from 'src/client';
 import {nearest} from 'src/utils';
 
 import WarningIcon from 'src/components/assets/icons/warning_icon';
@@ -151,17 +152,38 @@ export const UpdateRunStatusModal = ({
     // the run, mirroring the gating used by the standalone Finish controls. When blocked we hide
     // the "Also mark the run as finished" checkbox so the user cannot trigger a finish that the
     // server would reject.
-    const [run] = useRun(playbookRunId);
+    const [restRun] = useRun(playbookRunId);
     const [metadata] = useRunMetadata(playbookRunId);
-    const [playbook] = usePlaybook(run?.playbook_id);
+    const [playbook] = usePlaybook(restRun?.playbook_id);
     const followers = metadata?.followers ?? [];
 
     // `usePlaybook(undefined)` resolves to null while the run is still loading, so treat both
     // null and undefined as "not yet known" — passing undefined keeps the checkbox hidden during
     // load (the hook blocks on undefined) and prevents a flash of the checkbox for a blocked user.
     const ownerGroupOnlyActions = playbook == null ? undefined : (playbook.owner_group_only_actions ?? false);
-    const isOwner = run?.owner_user_id === currentUserId;
+    const isOwner = restRun?.owner_user_id === currentUserId;
     const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
+
+    // Network read on open. useRun returns the stored copy and does not refetch when the
+    // run is already in Redux, so status posts, the reminder, the name, the team, broadcast
+    // channels, and checklist item state must come from this fetch, not from that copy.
+    const [run, setRun] = useState<PlaybookRun | null>(null);
+    useEffect(() => {
+        let cancelled = false;
+        setRun(null);
+        fetchPlaybookRun(playbookRunId).then((fetched) => {
+            if (!cancelled) {
+                setRun(fetched ?? null);
+            }
+        }).catch(() => {
+            if (!cancelled) {
+                setRun(null);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [playbookRunId]);
 
     const [message, setMessage] = useState(providedMessage);
     const defaultMessage = useDefaultMessage(run);

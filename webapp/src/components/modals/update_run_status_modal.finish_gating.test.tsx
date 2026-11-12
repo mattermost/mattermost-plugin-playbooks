@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import renderer from 'react-test-renderer';
+import renderer, {act} from 'react-test-renderer';
 
 import {UpdateRunStatusModal} from './update_run_status_modal';
 
@@ -58,6 +58,12 @@ const restRunStub = {
     previous_reminder: 0,
     reminder_timer_default_seconds: 0,
 };
+
+const mockFetchPlaybookRun = jest.fn();
+jest.mock('src/client', () => ({
+    fetchPlaybookRun: (...args: unknown[]) => mockFetchPlaybookRun(...args),
+    postStatusUpdate: jest.fn(),
+}));
 
 const mockUseRun = jest.fn();
 const mockUseRunMetadata = jest.fn();
@@ -135,6 +141,7 @@ describe('UpdateRunStatusModal — finish checkbox gating', () => {
         mockUseRun.mockReturnValue([{...restRunStub}]);
         mockUseRunMetadata.mockReturnValue([{followers: []}]);
         mockUsePlaybook.mockReturnValue([{owner_group_only_actions: true}]);
+        mockFetchPlaybookRun.mockReturnValue(new Promise(() => undefined));
     });
 
     it('hides the "mark as finished" checkbox when the user is blocked by the owner-only restriction', () => {
@@ -183,5 +190,30 @@ describe('UpdateRunStatusModal — finish checkbox gating', () => {
         renderModal();
 
         expect(mockIsBlockedByOwnerOnly).toHaveBeenCalledWith(undefined, false);
+    });
+
+    it('loads the status fields from fetchPlaybookRun instead of the cached run', async () => {
+        mockUseRun.mockReturnValue([{...restRunStub, name: 'Cached name', team_id: 'team-cached'}]);
+        mockFetchPlaybookRun.mockResolvedValue({
+            ...restRunStub,
+            name: 'Server name',
+            team_id: 'team-server',
+            broadcast_channel_ids: ['channel-broadcast'],
+            status_update_broadcast_channels_enabled: true,
+            checklists: [{items: [{state: 'Open'}]}],
+            status_posts: [],
+            reminder_message_template: 'server template',
+        });
+
+        let tree: renderer.ReactTestRenderer;
+        await act(async () => {
+            tree = renderer.create(<UpdateRunStatusModal {...baseProps}/>);
+        });
+
+        expect(mockFetchPlaybookRun).toHaveBeenCalledWith('run-1');
+        const json = JSON.stringify(tree!.toJSON());
+        expect(json).toContain('Server name');
+        expect(json).not.toContain('Cached name');
+        expect(mockUseRun).toHaveBeenCalledWith('run-1');
     });
 });
