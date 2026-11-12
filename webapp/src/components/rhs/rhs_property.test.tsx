@@ -10,7 +10,7 @@ import {PropertyField} from 'src/types/properties';
 
 import RHSProperty from './rhs_property';
 
-jest.mock('src/graphql/hooks', () => ({
+jest.mock('src/hooks/playbooks', () => ({
     useSetRunPropertyValue: jest.fn(() => [jest.fn().mockResolvedValue({data: {}, errors: undefined})]),
 }));
 

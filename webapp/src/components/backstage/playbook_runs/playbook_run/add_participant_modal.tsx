@@ -15,7 +15,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {useManageRunMembership} from 'src/graphql/hooks';
+import {useManageRunMembership} from 'src/hooks/playbooks';
 
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 

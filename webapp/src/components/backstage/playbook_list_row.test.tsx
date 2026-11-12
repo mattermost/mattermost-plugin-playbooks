@@ -35,7 +35,7 @@ jest.mock('src/hooks', () => ({
     useHasPlaybookPermission: () => true,
     useHasTeamPermission: () => true,
 }));
-jest.mock('src/graphql/hooks', () => ({
+jest.mock('src/hooks/playbooks', () => ({
     usePlaybookMembership: () => ({join: jest.fn(), leave: jest.fn()}),
 }));
 jest.mock('src/client', () => ({

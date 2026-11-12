@@ -12,7 +12,7 @@ import PlaybookProperties from './playbook_properties';
 
 const mockDispatch = jest.fn();
 jest.mock('src/hooks/redux', () => ({useAppDispatch: () => mockDispatch}));
-jest.mock('src/graphql/hooks', () => ({usePlaybook: () => [{id: 'pb-1', delete_at: 0}, {loading: false, error: null}]}));
+jest.mock('src/hooks/playbooks', () => ({usePlaybook: () => [{id: 'pb-1', delete_at: 0}, {loading: false, error: null}]}));
 jest.mock('src/hooks', () => ({usePlaybookAttributes: () => mockProperties}));
 jest.mock('src/components/backstage/toast_banner', () => ({useToaster: () => ({add: jest.fn()})}));
 jest.mock('src/actions', () => ({
