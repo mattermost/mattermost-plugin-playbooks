@@ -70,3 +70,6 @@ var ErrInvalidOwner = errors.New("invalid owner")
 
 // ErrChannelArchived occurs when trying to modify a run whose linked channel has been archived.
 var ErrChannelArchived = errors.New("channel is archived")
+
+// ErrChecklistItemChanged occurs when a checklist item no longer matches what the caller expected.
+var ErrChecklistItemChanged = errors.New("checklist item changed")

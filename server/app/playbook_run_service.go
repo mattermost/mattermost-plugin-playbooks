@@ -3034,7 +3034,7 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 
 // RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
 // item.
-func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error) {
+func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int, expected *ExpectedChecklistItem) (string, error) {
 	playbookRun, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return "", err
@@ -3049,6 +3049,10 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	}
 
 	itemToRun := playbookRun.Checklists[checklistNumber].Items[itemNumber]
+	if expected != nil && !checklistItemMatchesExpected(itemToRun, *expected) {
+		return "", errors.Wrapf(ErrChecklistItemChanged, "checklist item %d in checklist %d of run `%s` no longer matches the item the user saw", itemNumber, checklistNumber, playbookRunID)
+	}
+
 	if strings.TrimSpace(itemToRun.Command) == "" {
 		return "", errors.New("no slash command associated with this checklist item")
 	}
@@ -3124,6 +3128,14 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, updatedRun)
 
 	return cmdResponse.TriggerId, nil
+}
+
+func checklistItemMatchesExpected(item ChecklistItem, expected ExpectedChecklistItem) bool {
+	if expected.ID != "" && item.ID != expected.ID {
+		return false
+	}
+
+	return item.Command == expected.Command
 }
 
 func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {

@@ -1266,6 +1266,13 @@ type ModifyCheckedStateOptions struct {
 	RequirementValues map[string]string
 }
 
+// ExpectedChecklistItem is the checklist item a caller saw when asking to run its slash command.
+type ExpectedChecklistItem struct {
+	// ID is optional; when empty, only the command is compared.
+	ID      string
+	Command string
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -1372,7 +1379,9 @@ type PlaybookRunService interface {
 	SetTaskActionsToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, taskActions []TaskAction) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
-	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
+	// When expected is non-nil, the command is only executed if the stored item still matches it;
+	// otherwise ErrChecklistItemChanged is returned.
+	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int, expected *ExpectedChecklistItem) (string, error)
 
 	// DuplicateChecklistItem duplicates the checklist item.
 	DuplicateChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error

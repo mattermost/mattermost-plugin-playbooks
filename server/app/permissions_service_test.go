@@ -697,7 +697,7 @@ func (s *stubRunService) SetDueDate(string, string, int64, int, int) error {
 func (s *stubRunService) SetTaskActionsToChecklistItem(string, string, int, int, []TaskAction) error {
 	panic("stubRunService: SetTaskActionsToChecklistItem not implemented")
 }
-func (s *stubRunService) RunChecklistItemSlashCommand(string, string, int, int) (string, error) {
+func (s *stubRunService) RunChecklistItemSlashCommand(string, string, int, int, *ExpectedChecklistItem) (string, error) {
 	panic("stubRunService: RunChecklistItemSlashCommand not implemented")
 }
 func (s *stubRunService) DuplicateChecklistItem(string, string, int, int) error {

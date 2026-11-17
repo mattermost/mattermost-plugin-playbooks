@@ -1708,16 +1708,31 @@ func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	// Check the body is empty
-	if _, err := r.Body.Read(make([]byte, 1)); err != io.EOF {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "request body must be empty", nil)
+	// An empty body runs whatever command is stored, for clients that predate the expected item check.
+	var params struct {
+		ItemID  string  `json:"item_id"`
+		Command *string `json:"command"`
+	}
+	var expected *app.ExpectedChecklistItem
+	err = json.NewDecoder(r.Body).Decode(&params)
+	switch {
+	case errors.Is(err, io.EOF):
+	case err != nil:
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
 		return
+	case params.Command == nil:
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "command is required when a request body is provided", nil)
+		return
+	default:
+		expected = &app.ExpectedChecklistItem{ID: params.ItemID, Command: *params.Command}
 	}
 
-	triggerID, err := h.playbookRunService.RunChecklistItemSlashCommand(playbookRunID, userID, checklistNum, itemNum)
+	triggerID, err := h.playbookRunService.RunChecklistItemSlashCommand(playbookRunID, userID, checklistNum, itemNum, expected)
 	if err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+		} else if errors.Is(err, app.ErrChecklistItemChanged) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, "The task has changed since it was loaded. Review the updated task before running its command.", err)
 		} else {
 			h.HandleError(w, c.logger, err)
 		}

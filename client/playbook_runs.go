@@ -424,6 +424,24 @@ func (s *PlaybookRunService) RunItemCommand(ctx context.Context, playbookRunID s
 	return err
 }
 
+// RunItemCommandIfUnchanged runs the item's slash command only if the item still has the given
+// command and, when itemID is non-empty, the given ID. Otherwise the server responds with 409 Conflict.
+func (s *PlaybookRunService) RunItemCommandIfUnchanged(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, itemID string, command string) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/run", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		ItemID  string `json:"item_id,omitempty"`
+		Command string `json:"command"`
+	}{itemID, command}
+
+	req, err := s.client.newAPIRequest(http.MethodPost, createURL, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
 func (s *PlaybookRunService) SetItemDueDate(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, duedate int64) error {
 	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/duedate", playbookRunID, checklistIdx, itemIdx)
 	body := struct {

@@ -2799,6 +2799,101 @@ func TestChecklisItem_SetCommand(t *testing.T) {
 	})
 }
 
+func TestChecklistItem_RunCommandIfUnchanged(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+
+	err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+		Title: "Test Checklist",
+		Items: []client.ChecklistItem{{Title: "Test Item"}},
+	})
+	require.NoError(t, err)
+
+	err = e.PlaybooksClient.PlaybookRuns.SetItemCommand(context.Background(), run.ID, 0, 0, "/playbook todo")
+	require.NoError(t, err)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	item := run.Checklists[0].Items[0]
+	require.NotEmpty(t, item.ID)
+
+	getCommandLastRun := func(t *testing.T) int64 {
+		t.Helper()
+		current, getErr := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, getErr)
+		return current.Checklists[0].Items[0].CommandLastRun
+	}
+
+	postRawRunBody := func(t *testing.T, body string) int {
+		t.Helper()
+		apiURL := fmt.Sprintf("%s/plugins/playbooks/api/v0/runs/%s/checklists/0/item/0/run", e.ServerClient.URL, run.ID)
+		req, reqErr := http.NewRequest(http.MethodPost, apiURL, strings.NewReader(body))
+		require.NoError(t, reqErr)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+e.ServerClient.AuthToken)
+
+		resp, reqErr := http.DefaultClient.Do(req)
+		require.NoError(t, reqErr)
+		_ = resp.Body.Close()
+		return resp.StatusCode
+	}
+
+	t.Run("refuses to run when the command differs from the one the user saw", func(t *testing.T) {
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommandIfUnchanged(context.Background(), run.ID, 0, 0, item.ID, "/echo Hello")
+		requireErrorWithStatusCode(t, err, http.StatusConflict)
+		require.Zero(t, getCommandLastRun(t))
+	})
+
+	t.Run("refuses to run when the item at the position is a different item", func(t *testing.T) {
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommandIfUnchanged(context.Background(), run.ID, 0, 0, model.NewId(), item.Command)
+		requireErrorWithStatusCode(t, err, http.StatusConflict)
+		require.Zero(t, getCommandLastRun(t))
+	})
+
+	t.Run("refuses to run when a body omits the command", func(t *testing.T) {
+		require.Equal(t, http.StatusBadRequest, postRawRunBody(t, fmt.Sprintf(`{"item_id": %q}`, item.ID)))
+		require.Zero(t, getCommandLastRun(t))
+	})
+
+	t.Run("refuses to run on a malformed body", func(t *testing.T) {
+		require.Equal(t, http.StatusBadRequest, postRawRunBody(t, "not json"))
+		require.Zero(t, getCommandLastRun(t))
+	})
+
+	t.Run("checks permissions before comparing the item", func(t *testing.T) {
+		err = e.PlaybooksClient2.PlaybookRuns.RunItemCommandIfUnchanged(context.Background(), run.ID, 0, 0, item.ID, "/echo Hello")
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("runs when the item matches", func(t *testing.T) {
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommandIfUnchanged(context.Background(), run.ID, 0, 0, item.ID, item.Command)
+		require.NoError(t, err)
+		require.NotZero(t, getCommandLastRun(t))
+	})
+
+	t.Run("runs when only the command is provided and matches", func(t *testing.T) {
+		lastRun := getCommandLastRun(t)
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommandIfUnchanged(context.Background(), run.ID, 0, 0, "", item.Command)
+		require.NoError(t, err)
+		require.Less(t, lastRun, getCommandLastRun(t))
+	})
+
+	t.Run("an empty body still runs the stored command", func(t *testing.T) {
+		lastRun := getCommandLastRun(t)
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 0)
+		require.NoError(t, err)
+		require.Less(t, lastRun, getCommandLastRun(t))
+	})
+}
+
 func TestChecklistItem_RunCommandRequiresChannelPostPermission(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
