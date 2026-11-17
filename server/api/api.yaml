@@ -1315,7 +1315,7 @@ paths:
         403:
           $ref: "#/components/responses/403"
         409:
-          description: The item no longer matches the provided item ID or command; nothing was run.
+          description: The item no longer exists or no longer matches the provided item ID or command; nothing was run.
           content:
             application/json:
               schema:

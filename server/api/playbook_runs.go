@@ -1714,11 +1714,15 @@ func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.
 		Command *string `json:"command"`
 	}
 	var expected *app.ExpectedChecklistItem
-	err = json.NewDecoder(r.Body).Decode(&params)
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&params)
 	switch {
 	case errors.Is(err, io.EOF):
 	case err != nil:
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
+		return
+	case !errors.Is(decoder.Decode(&json.RawMessage{}), io.EOF):
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "request body must contain a single JSON object", nil)
 		return
 	case params.Command == nil:
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "command is required when a request body is provided", nil)

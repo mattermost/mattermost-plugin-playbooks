@@ -3035,9 +3035,9 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 // RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
 // item.
 func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int, expected *ExpectedChecklistItem) (string, error) {
-	playbookRun, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
 	if !CanPostToChannel(userID, playbookRun.ChannelID, s.pluginAPI) {
@@ -3045,6 +3045,9 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	}
 
 	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklistNumber, itemNumber) {
+		if expected != nil {
+			return "", errors.Wrapf(ErrChecklistItemChanged, "checklist item %d in checklist %d of run `%s` no longer exists", itemNumber, checklistNumber, playbookRunID)
+		}
 		return "", errors.New("invalid checklist item indices")
 	}
 

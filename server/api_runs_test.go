@@ -2868,6 +2868,20 @@ func TestChecklistItem_RunCommandIfUnchanged(t *testing.T) {
 		require.Zero(t, getCommandLastRun(t))
 	})
 
+	t.Run("refuses to run when a matching body is followed by trailing data", func(t *testing.T) {
+		require.Equal(t, http.StatusBadRequest, postRawRunBody(t, fmt.Sprintf(`{"command": %q}garbage`, item.Command)))
+		require.Equal(t, http.StatusBadRequest, postRawRunBody(t, fmt.Sprintf(`{"command": %q} {}`, item.Command)))
+		require.Zero(t, getCommandLastRun(t))
+	})
+
+	t.Run("reports a conflict when the expected item no longer exists", func(t *testing.T) {
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommandIfUnchanged(context.Background(), run.ID, 0, 1, item.ID, item.Command)
+		requireErrorWithStatusCode(t, err, http.StatusConflict)
+
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 1)
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+	})
+
 	t.Run("checks permissions before comparing the item", func(t *testing.T) {
 		err = e.PlaybooksClient2.PlaybookRuns.RunItemCommandIfUnchanged(context.Background(), run.ID, 0, 0, item.ID, "/echo Hello")
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
