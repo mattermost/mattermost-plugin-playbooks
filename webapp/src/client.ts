@@ -197,14 +197,25 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
-export async function clientRunChecklistItemSlashCommand(dispatch: Dispatch, playbookRunId: string, checklistNumber: number, itemNumber: number) {
+export async function clientRunChecklistItemSlashCommand(
+    dispatch: Dispatch,
+    playbookRunId: string,
+    checklistNumber: number,
+    itemNumber: number,
+    expectedItem: {id?: string, command: string},
+): Promise<{error?: ClientError}> {
     try {
-        const data = await doPost(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNumber}/item/${itemNumber}/run`);
-        if (data.trigger_id) {
+        const data = await doPost(
+            `${apiUrl}/runs/${playbookRunId}/checklists/${checklistNumber}/item/${itemNumber}/run`,
+            JSON.stringify({item_id: expectedItem.id, command: expectedItem.command}),
+        );
+        if (data?.trigger_id) {
             dispatch({type: IntegrationTypes.RECEIVED_DIALOG_TRIGGER_ID, data: data.trigger_id});
         }
+        return {};
     } catch (error) {
         console.error(error); //eslint-disable-line no-console
+        return {error: error as ClientError};
     }
 }
 

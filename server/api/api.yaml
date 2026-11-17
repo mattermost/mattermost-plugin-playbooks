@@ -1247,8 +1247,12 @@ paths:
           $ref: "#/components/responses/500"
 
   /plugins/playbooks/api/v0/runs/{id}/checklists/{checklist}/item/{item}/run:
-    put:
+    post:
       summary: Run an item's slash command
+      description: >
+        Runs the slash command stored on the item, as the requesting user. Clients should send the
+        command they displayed (and the item's ID) so the server can refuse to run a command the
+        user has not seen. An empty body runs the stored command without that check.
       operationId: itemRun
       security:
         - BearerAuth: []
@@ -1276,11 +1280,29 @@ paths:
           example: 2
           schema:
             type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                item_id:
+                  type: string
+                  description: ID of the item the user saw. When set, the command only runs if the item at this position still has this ID.
+                  example: 6f6nsgxzoq84fqh1dnlyivgafd
+                command:
+                  type: string
+                  description: Command the user saw. The command only runs if it matches the one stored on the item.
+                  example: /echo Hello
+              required:
+                - command
       x-codeSamples:
         - lang: curl
           source: |
             curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/run' \
-            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -d '{"item_id": "6f6nsgxzoq84fqh1dnlyivgafd", "command": "/echo Hello"}'
       responses:
         200:
           description: Item's slash command successfully executed.
@@ -1290,6 +1312,14 @@ paths:
                 $ref: "#/components/schemas/TriggerIdReturn"
         400:
           $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        409:
+          description: The item no longer matches the provided item ID or command; nothing was run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         500:
           $ref: "#/components/responses/500"
 

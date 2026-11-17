@@ -600,6 +600,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 command_last_run={props.checklistItem.command_last_run}
                 disabled={!isEditing && (props.readOnly || isSkipped())}
                 itemNum={props.itemNum}
+                itemId={props.checklistItem.id}
                 playbookRunId={props.playbookRunId}
                 isEditing={isEditing}
                 onChangeCommand={onCommandChange}

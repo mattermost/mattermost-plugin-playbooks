@@ -9,7 +9,10 @@ import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {useAppDispatch} from 'src/hooks/redux';
 
-import {clientRunChecklistItemSlashCommand} from 'src/client';
+import {clientRunChecklistItemSlashCommand, fetchPlaybookRun} from 'src/client';
+import {playbookRunUpdated} from 'src/actions';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import CommandInput from 'src/components/command_input';
 import {CallsSlashCommandPrefix} from 'src/constants';
@@ -27,6 +30,7 @@ interface CommandProps {
     playbookRunId?: string;
     checklistNum: number;
     itemNum: number;
+    itemId?: string;
 
     disabled: boolean;
     command_last_run: number;
@@ -44,12 +48,35 @@ const Command = (props: CommandProps) => {
     const [running, setRunning] = useState(false);
     const [command, setCommand] = useState(props.command);
     const dispatch = useAppDispatch();
+    const toaster = useToaster();
 
     const [playbookRun] = useRun(String(props.playbookRunId));
     const [commandOpen, setCommandOpen] = useState(false);
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
+
+    const runCommand = async () => {
+        const playbookRunId = props.playbookRunId || '';
+        const displayedCommand = props.command;
+        const {error} = await clientRunChecklistItemSlashCommand(dispatch, playbookRunId, props.checklistNum, props.itemNum, {
+            id: props.itemId,
+            command: displayedCommand,
+        });
+
+        if (error?.status_code === 409) {
+            toaster.add({
+                content: formatMessage({defaultMessage: 'This task was changed and its command was not run. Review the updated task and try again.'}),
+                toastStyle: ToastStyle.Failure,
+            });
+            fetchPlaybookRun(playbookRunId).then((run) => dispatch(playbookRunUpdated(run))).catch(() => undefined);
+            return;
+        }
+
+        if (!error && displayedCommand.startsWith(CallsSlashCommandPrefix) && playbookRun) {
+            runCallsSlashCommand(displayedCommand, playbookRun.channel_id, playbookRun.team_id);
+        }
+    };
 
     const placeholder = (
         <PlaceholderDiv
@@ -79,10 +106,7 @@ const Command = (props: CommandProps) => {
             onClick={() => {
                 if (!running) {
                     setRunning(true);
-                    clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId || '', props.checklistNum, props.itemNum);
-                    if (props.command?.startsWith(CallsSlashCommandPrefix) && playbookRun) {
-                        runCallsSlashCommand(props.command, playbookRun.channel_id, playbookRun.team_id);
-                    }
+                    runCommand();
                 }
             }}
         >
