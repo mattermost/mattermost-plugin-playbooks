@@ -22,10 +22,12 @@ const (
 	// alias of a field resolves it again, so one key is all a client needs below the root.
 	maxNestedFieldKeys = 1
 
-	// maxQueryFieldSelections and maxQuerySelectionDepth bound the walk itself, so that
-	// fragments spread at every level cannot expand into more work than the query shows.
+	// maxQueryFieldSelections bounds the field selections an operation expands into. Execution
+	// expands every fragment spread separately, so fragments that spread the next one twice grow
+	// exponentially while the query text grows linearly.
 	maxQueryFieldSelections = 2000
-	maxQuerySelectionDepth  = 16
+
+	maxQuerySelectionDepth = 16
 )
 
 // checkGraphQLQueryLimits rejects documents that would resolve the same field under several
@@ -41,8 +43,17 @@ func checkGraphQLQueryLimits(query string) error {
 		return errors.Wrap(err, "unable to parse query")
 	}
 
+	expansion := &expansionCounter{fragments: doc.fragments, costs: map[string]int{}, expanding: map[string]bool{}}
 	checker := &queryLimitChecker{fragments: doc.fragments}
 	for _, operation := range doc.operations {
+		cost, err := expansion.selectionSetCost(operation)
+		if err != nil {
+			return err
+		}
+		if cost > maxQueryFieldSelections {
+			return errors.Errorf("query exceeds the maximum of %d field selections", maxQueryFieldSelections)
+		}
+
 		if err := checker.checkSelectionSets([][]gqlSelection{operation}, 0); err != nil {
 			return err
 		}
@@ -51,9 +62,64 @@ func checkGraphQLQueryLimits(query string) error {
 	return nil
 }
 
+// expansionCounter counts field selections the way execution expands them: every spread of a
+// fragment adds all of its selections again. Fragment costs are memoized and saturate just above
+// the limit, so the count stays linear in the query text however much it would expand.
+type expansionCounter struct {
+	fragments map[string][]gqlSelection
+	costs     map[string]int
+	expanding map[string]bool
+}
+
+func (e *expansionCounter) selectionSetCost(set []gqlSelection) (int, error) {
+	total := 0
+	for _, selection := range set {
+		var cost int
+		var err error
+		switch {
+		case selection.field != nil:
+			cost, err = e.selectionSetCost(selection.field.children)
+			cost++
+		case selection.spread != "":
+			cost, err = e.fragmentCost(selection.spread)
+		default:
+			cost, err = e.selectionSetCost(selection.inline)
+		}
+		if err != nil {
+			return 0, err
+		}
+		total = min(total+cost, maxQueryFieldSelections+1)
+	}
+	return total, nil
+}
+
+func (e *expansionCounter) fragmentCost(name string) (int, error) {
+	if cost, ok := e.costs[name]; ok {
+		return cost, nil
+	}
+	if e.expanding[name] {
+		return 0, errors.Errorf("fragment %q spreads itself", name)
+	}
+	fragment, ok := e.fragments[name]
+	if !ok {
+		return 0, errors.Errorf("unknown fragment %q", name)
+	}
+
+	e.expanding[name] = true
+	cost, err := e.selectionSetCost(fragment)
+	delete(e.expanding, name)
+	if err != nil {
+		return 0, err
+	}
+
+	e.costs[name] = cost
+	return cost, nil
+}
+
+// queryLimitChecker runs after expansionCounter, which has rejected unknown fragments and
+// cycles and bounded the expanded size.
 type queryLimitChecker struct {
-	fragments  map[string][]gqlSelection
-	selections int
+	fragments map[string][]gqlSelection
 }
 
 type fieldGroup struct {
@@ -71,8 +137,7 @@ func (c *queryLimitChecker) checkSelectionSets(sets [][]gqlSelection, depth int)
 
 	groups := map[string]*fieldGroup{}
 	var keys []string
-	visitedFragments := map[string]bool{}
-	if err := c.collectFields(sets, groups, &keys, visitedFragments, map[string]bool{}); err != nil {
+	if err := c.collectFields(sets, groups, &keys, map[string]bool{}); err != nil {
 		return err
 	}
 
@@ -100,16 +165,13 @@ func (c *queryLimitChecker) checkSelectionSets(sets [][]gqlSelection, depth int)
 	return nil
 }
 
-func (c *queryLimitChecker) collectFields(sets [][]gqlSelection, groups map[string]*fieldGroup, keys *[]string, visited, expanding map[string]bool) error {
+// collectFields gathers the fields of merged selection sets by response key. A fragment spread
+// more than once adds the same keys again, so each is collected once per object.
+func (c *queryLimitChecker) collectFields(sets [][]gqlSelection, groups map[string]*fieldGroup, keys *[]string, visited map[string]bool) error {
 	for _, set := range sets {
 		for _, selection := range set {
 			switch {
 			case selection.field != nil:
-				c.selections++
-				if c.selections > maxQueryFieldSelections {
-					return errors.Errorf("query exceeds the maximum of %d field selections", maxQueryFieldSelections)
-				}
-
 				field := selection.field
 				group, ok := groups[field.key]
 				if !ok {
@@ -124,26 +186,16 @@ func (c *queryLimitChecker) collectFields(sets [][]gqlSelection, groups map[stri
 				}
 
 			case selection.spread != "":
-				name := selection.spread
-				if expanding[name] {
-					return errors.Errorf("fragment %q spreads itself", name)
-				}
-				if visited[name] {
+				if visited[selection.spread] {
 					continue
 				}
-				fragment, ok := c.fragments[name]
-				if !ok {
-					return errors.Errorf("unknown fragment %q", name)
-				}
-				visited[name] = true
-				expanding[name] = true
-				if err := c.collectFields([][]gqlSelection{fragment}, groups, keys, visited, expanding); err != nil {
+				visited[selection.spread] = true
+				if err := c.collectFields([][]gqlSelection{c.fragments[selection.spread]}, groups, keys, visited); err != nil {
 					return err
 				}
-				delete(expanding, name)
 
 			default:
-				if err := c.collectFields([][]gqlSelection{selection.inline}, groups, keys, visited, expanding); err != nil {
+				if err := c.collectFields([][]gqlSelection{selection.inline}, groups, keys, visited); err != nil {
 					return err
 				}
 			}

@@ -234,7 +234,7 @@ func TestCheckGraphQLQueryLimitsFailsClosed(t *testing.T) {
 		},
 		"a fragment cycle through a nested field": {
 			query: `query Q { run(id: "x") { ...F } } fragment F on Run { playbook { runs { ...F } } }`,
-			want:  "maximum selection depth",
+			want:  `fragment "F" spreads itself`,
 		},
 		"an over-long query": {
 			query: `query Q { run(id: "x") { id } }` + strings.Repeat(" ", maxGraphQLQueryLength),
@@ -261,5 +261,31 @@ func TestCheckGraphQLQueryLimitsFailsClosed(t *testing.T) {
 		err := checkGraphQLQueryLimits(query.String())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "maximum of 2000 field selections")
+	})
+
+	t.Run("fragments spread twice on the same object", func(t *testing.T) {
+		// Response keys merge, but execution expands each spread separately: 2^24 selections.
+		var query strings.Builder
+		query.WriteString(`query Q { run(id: "x") { ...F0 } }`)
+		for i := range 24 {
+			fmt.Fprintf(&query, " fragment F%d on Run { ...F%d ...F%d }", i, i+1, i+1)
+		}
+		query.WriteString(" fragment F24 on Run { id }")
+
+		err := checkGraphQLQueryLimits(query.String())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "maximum of 2000 field selections")
+	})
+
+	t.Run("a fragment spread up to the limit", func(t *testing.T) {
+		var query strings.Builder
+		query.WriteString(`query Q { run(id: "x") { ...F0 } }`)
+		for i := range 9 {
+			fmt.Fprintf(&query, " fragment F%d on Run { ...F%d ...F%d }", i, i+1, i+1)
+		}
+		query.WriteString(" fragment F9 on Run { id name summary }")
+
+		// 1 run + 2^9 * 3 fields = 1537 selections.
+		assert.NoError(t, checkGraphQLQueryLimits(query.String()))
 	})
 }
