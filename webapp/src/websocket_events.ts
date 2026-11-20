@@ -9,7 +9,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {Dispatch} from 'src/types/store';
 
-import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus, StatusPost} from 'src/types/playbook_run';
 import {Condition} from 'src/types/conditions';
 
 import {navigateToUrl} from 'src/browser_routing';
@@ -37,6 +37,7 @@ import {
     clientId,
     getRun,
     globalSettings,
+    myPlaybookRunsByTeam,
     myPlaybookRunsMap,
 } from 'src/selectors';
 import {PlaybookRunUpdate} from 'src/types/websocket_events';
@@ -51,14 +52,29 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
             return;
         }
 
+        // Match the LHS first-load query: refresh only in-progress runs.
+        // Other fetchPlaybookRuns callers keep their own status filters.
         const fetched = await fetchPlaybookRuns({
             page: 0,
             per_page: 0,
             team_id: currentTeam.id,
             participant_id: currentUserId,
+            statuses: [PlaybookRunStatus.InProgress],
         });
 
         dispatch(receivedTeamPlaybookRuns(fetched.items));
+
+        // A run that finished during the disconnect is no longer in this response,
+        // but Redux still has it as in progress. Refetch those individually.
+        const fetchedIDs = new Set(fetched.items.map((run) => run.id));
+        const runsByTeam = myPlaybookRunsByTeam(getState()) || {};
+        const teamRuns = runsByTeam[currentTeam.id];
+        const localRuns = teamRuns ? Object.values(teamRuns) : [];
+        const staleRuns = localRuns.filter((run) => (
+            run.current_status === PlaybookRunStatus.InProgress && !fetchedIDs.has(run.id)
+        ));
+
+        await Promise.all(staleRuns.map((run) => fetchAndUpdatePlaybookRun(run.id, dispatch)));
     };
 }
 
@@ -248,14 +264,12 @@ export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: 
 };
 
 // Helper function to fetch and update a playbook run when state is missing
-function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
-    fetchPlaybookRun(runId)
-        .then((playbookRun) => {
-            dispatch(playbookRunUpdated(playbookRun));
-        })
-        .catch(() => {
-            // Error fetching playbook run
-        });
+function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch): Promise<void> {
+    return fetchPlaybookRun(runId).then((playbookRun) => {
+        dispatch(playbookRunUpdated(playbookRun));
+    }).catch(() => {
+        // Error fetching playbook run
+    });
 }
 
 export function handleWebsocketSettingsChanged(getState: GetStateFunc, dispatch: Dispatch) {

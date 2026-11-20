@@ -6,8 +6,10 @@ import configureStore, {MockStoreEnhanced} from 'redux-mock-store';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {BaseWebSocketMessage} from '@mattermost/client';
 
+import * as client from 'src/client';
+
 import {handleReconnect, handleWebsocketPlaybookRunUpdatedIncremental} from './websocket_events';
-import {WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED} from './types/actions';
+import {PLAYBOOK_RUN_UPDATED, RECEIVED_TEAM_PLAYBOOK_RUNS, WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED} from './types/actions';
 
 import {PlaybookRun, PlaybookRunStatus} from './types/playbook_run';
 import {ChecklistUpdate, PlaybookRunUpdate} from './types/websocket_events';
@@ -16,11 +18,58 @@ import {PlaybookRunType} from './graphql/generated/graphql';
 
 const mockStore = configureStore<GlobalState, DispatchFunc>();
 
-// No mocks needed for these specific tests
+jest.mock('src/client', () => {
+    const actual = jest.requireActual('src/client');
+    return {
+        ...actual,
+        fetchPlaybookRuns: jest.fn((...args: unknown[]) => actual.fetchPlaybookRuns(...args)),
+        fetchPlaybookRun: jest.fn((...args: unknown[]) => actual.fetchPlaybookRun(...args)),
+    };
+});
 
-// We don't need to mock the client module since our tests don't interact with it directly
+const fetchPlaybookRuns = client.fetchPlaybookRuns as jest.Mock;
+const fetchPlaybookRun = client.fetchPlaybookRun as jest.Mock;
 
 describe('handleReconnect', () => {
+    const team = {id: 'team_id', delete_at: 0};
+
+    const makeRun = (id: string, status: PlaybookRunStatus): PlaybookRun => ({
+        id,
+        team_id: team.id,
+        channel_id: `channel_${id}`,
+        current_status: status,
+    } as PlaybookRun);
+
+    const stateWithRuns = (runs: PlaybookRun[]) => ({
+        entities: {
+            users: {
+                currentUserId: 'user_id',
+            },
+            teams: {
+                currentTeamId: team.id,
+                teams: {
+                    [team.id]: team,
+                },
+            },
+        },
+        'plugins-playbooks': {
+            myPlaybookRunsByTeam: {
+                [team.id]: Object.fromEntries(runs.map((run) => [run.channel_id, run])),
+            },
+        },
+    } as unknown as GlobalState);
+
+    beforeEach(() => {
+        fetchPlaybookRuns.mockClear();
+        fetchPlaybookRun.mockClear();
+    });
+
+    afterEach(() => {
+        const actual = jest.requireActual('src/client');
+        fetchPlaybookRuns.mockImplementation((...args: unknown[]) => actual.fetchPlaybookRuns(...args));
+        fetchPlaybookRun.mockImplementation((...args: unknown[]) => actual.fetchPlaybookRun(...args));
+    });
+
     it('does nothing if there is no current team', async () => {
         const initialState = {
             entities: {
@@ -41,7 +90,6 @@ describe('handleReconnect', () => {
     });
 
     it('does nothing if there is no current user', async () => {
-        const team = {id: 'team_id', delete_at: 0};
         const initialState = {
             entities: {
                 users: {
@@ -60,6 +108,67 @@ describe('handleReconnect', () => {
         const reconnectHandler = handleReconnect(store.getState, store.dispatch);
         const result = await reconnectHandler();
         expect(result).toBeUndefined();
+        expect(fetchPlaybookRuns).not.toHaveBeenCalled();
+    });
+
+    it('fetches only in-progress runs for the current team and user', async () => {
+        const inProgress = makeRun('run_in_progress', PlaybookRunStatus.InProgress);
+        const finished = makeRun('run_finished', PlaybookRunStatus.Finished);
+        const store = mockStore(stateWithRuns([inProgress, finished]));
+        fetchPlaybookRuns.mockResolvedValue({
+            items: [inProgress],
+            total_count: 1,
+            page_count: 1,
+            has_more: false,
+        });
+
+        await handleReconnect(store.getState, store.dispatch)();
+
+        expect(fetchPlaybookRuns).toHaveBeenCalledWith({
+            page: 0,
+            per_page: 0,
+            team_id: team.id,
+            participant_id: 'user_id',
+            statuses: [PlaybookRunStatus.InProgress],
+        });
+        expect(store.getActions()).toEqual([{
+            type: RECEIVED_TEAM_PLAYBOOK_RUNS,
+            playbookRuns: [inProgress],
+        }]);
+        expect(fetchPlaybookRun).not.toHaveBeenCalled();
+    });
+
+    it('refetches local in-progress runs missing from the filtered response', async () => {
+        const stillActive = makeRun('run_active', PlaybookRunStatus.InProgress);
+        const finishedDuringGap = makeRun('run_finished_during_gap', PlaybookRunStatus.InProgress);
+        const alreadyFinished = makeRun('run_already_finished', PlaybookRunStatus.Finished);
+        const refreshed = {
+            ...finishedDuringGap,
+            current_status: PlaybookRunStatus.Finished,
+        };
+        const store = mockStore(stateWithRuns([stillActive, finishedDuringGap, alreadyFinished]));
+        fetchPlaybookRuns.mockResolvedValue({
+            items: [stillActive],
+            total_count: 1,
+            page_count: 1,
+            has_more: false,
+        });
+        fetchPlaybookRun.mockResolvedValue(refreshed);
+
+        await handleReconnect(store.getState, store.dispatch)();
+
+        expect(fetchPlaybookRun).toHaveBeenCalledTimes(1);
+        expect(fetchPlaybookRun).toHaveBeenCalledWith(finishedDuringGap.id);
+        expect(store.getActions()).toEqual([
+            {
+                type: RECEIVED_TEAM_PLAYBOOK_RUNS,
+                playbookRuns: [stillActive],
+            },
+            {
+                type: PLAYBOOK_RUN_UPDATED,
+                playbookRun: refreshed,
+            },
+        ]);
     });
 });
 
