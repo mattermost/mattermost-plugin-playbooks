@@ -258,6 +258,15 @@ type PlaybookRun struct {
 	// excluded; Skipped items count as completed. See ComputeTaskProgress.
 	TaskTotal     int `json:"task_total"`
 	TaskCompleted int `json:"task_completed"`
+
+	// IsFavorite is populated on list responses when requested; not persisted on the run row.
+	IsFavorite bool `json:"is_favorite"`
+
+	// Followers is populated on list responses when requested; not persisted on the run row.
+	Followers []string `json:"followers,omitempty"`
+
+	// PlaybookTitle is populated on list responses when requested; not persisted on the run row.
+	PlaybookTitle string `json:"playbook_title,omitempty"`
 }
 
 func (r *PlaybookRun) ComputeTaskProgress() {
@@ -885,6 +894,7 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 
 	newPlaybookRun.PropertyFields = append([]PropertyField(nil), r.PropertyFields...)
 	newPlaybookRun.PropertyValues = append([]PropertyValue(nil), r.PropertyValues...)
+	newPlaybookRun.Followers = append([]string(nil), r.Followers...)
 
 	return &newPlaybookRun
 }
@@ -1488,6 +1498,9 @@ type PlaybookRunService interface {
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
 
+	// GetFollowersForRuns returns followers keyed by run ID for the given run IDs.
+	GetFollowersForRuns(playbookRunIDs []string) (map[string][]string, error)
+
 	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 	RestorePlaybookRun(playbookRunID, userID string) error
 
@@ -1596,6 +1609,9 @@ type PlaybookRunStore interface {
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
+
+	// GetFollowersForRuns returns followers keyed by run ID for the given run IDs.
+	GetFollowersForRuns(playbookRunIDs []string) (map[string][]string, error)
 
 	// GetRunsActiveTotal returns number of active runs
 	GetRunsActiveTotal() (int64, error)
@@ -1727,7 +1743,10 @@ type PlaybookRunFilterOptions struct {
 	ActivitySince int64 `url:"since,omitempty"`
 
 	// Skip getting extra information (like timeline events and status posts). Used by GraphQL to limit the amount of data retrieved.
-	SkipExtras bool
+	SkipExtras bool `url:"skip_extras,omitempty"`
+
+	// SkipChecklists clears checklist payloads from list items after task progress is computed.
+	SkipChecklists bool `url:"skip_checklists,omitempty"`
 
 	// OmitEnded determines whether to omit runs that have ended (EndAt > 0).
 	// If true, only active runs (EndAt = 0) are returned.
@@ -1752,6 +1771,9 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	options := o.Clone()
 
 	if options.PerPage <= 0 {
+		options.PerPage = PerPageDefault
+	}
+	if options.PerPage > PerPageDefault {
 		options.PerPage = PerPageDefault
 	}
 

@@ -87,6 +87,15 @@ export interface PlaybookRun {
 
     /** Computed server-side; closed or skipped counts as completed. */
     task_completed?: number;
+
+    /** Populated on list responses when include_favorite is requested. */
+    is_favorite?: boolean;
+
+    /** Populated on list responses when include_followers is requested. */
+    followers?: string[];
+
+    /** Populated on list responses when include_playbook_title is requested. */
+    playbook_title?: string;
 }
 
 export interface PlaybookRunConnection extends Partial<PlaybookRun> {
@@ -146,10 +155,18 @@ export interface FetchPlaybookRunsParams {
     participant_or_follower_id?: string;
     search_term?: string;
     playbook_id?: string;
+    channel_id?: string;
     active_gte?: number;
     active_lt?: number;
     started_gte?: number;
     started_lt?: number;
+    include_favorites?: boolean;
+    skip_extras?: boolean;
+    skip_checklists?: boolean;
+    include_favorite?: boolean;
+    include_followers?: boolean;
+    include_playbook_title?: boolean;
+    omit_ended?: boolean;
 }
 
 export interface FetchPlaybookRunsParamsTime {
