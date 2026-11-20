@@ -228,6 +228,7 @@ func (c UpdateChecklist) GetItems() []app.ChecklistItemCommon {
 }
 
 type UpdateChecklistItem struct {
+	ID                      *string                `json:"id"`
 	Title                   string                 `json:"title"`
 	State                   string                 `json:"state"`
 	StateModified           float64                `json:"state_modified"`

@@ -86,6 +86,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("/duplicate", withContext(handler.duplicatePlaybook)).Methods(http.MethodPost)
+	playbookRouter.HandleFunc("/timing", withContext(handler.updatePlaybookTiming)).Methods(http.MethodPut)
 
 	propertyFieldsRouter := playbookRouter.PathPrefix("/property_fields").Subrouter()
 	propertyFieldsRouter.HandleFunc("", withContext(handler.getPlaybookPropertyFields)).Methods(http.MethodGet)
@@ -108,7 +109,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	return handler
 }
 
-func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook) bool {
+func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook, previousTimingMetrics []app.TimingMetric) bool {
 	if playbook.WebhookOnCreationEnabled {
 		if err := app.ValidateWebhookURLs(playbook.WebhookOnCreationURLs); err != nil {
 			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
@@ -132,6 +133,11 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 
 	if err := app.ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return false
+	}
+
+	if err := validateTiming(playbook, previousTimingMetrics); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid timing metrics", err)
 		return false
 	}
 
@@ -225,7 +231,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		}
 	}
 
-	if !h.validPlaybook(w, c.logger, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook, nil) {
 		return
 	}
 
@@ -315,6 +321,12 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	if _, ok := rawFields["channel_name_template_locked"]; !ok {
 		playbook.ChannelNameTemplateLocked = oldPlaybook.ChannelNameTemplateLocked
 	}
+	if _, ok := rawFields["playbook_type"]; !ok {
+		playbook.PlaybookType = oldPlaybook.PlaybookType
+	}
+	if _, ok := rawFields["timing_metrics"]; !ok {
+		playbook.TimingMetrics = oldPlaybook.TimingMetrics
+	}
 
 	if err = h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
@@ -333,7 +345,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	// Preserve server-managed counters that must not be set via REST PUT.
 	playbook.NextRunNumber = oldPlaybook.NextRunNumber
 
-	if !h.validPlaybook(w, c.logger, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook, oldPlaybook.TimingMetrics) {
 		return
 	}
 
@@ -854,7 +866,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if !h.validPlaybook(w, c.logger, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook, nil) {
 		return
 	}
 

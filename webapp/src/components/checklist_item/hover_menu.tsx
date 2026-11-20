@@ -69,6 +69,8 @@ export interface Props {
     onAddRequirement?: () => void;
     hasRequirements?: boolean;
     requirementsDisabledReason?: string;
+    itemState?: ChecklistItemState | string;
+    onBlock?: () => void;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -77,8 +79,23 @@ const ChecklistItemHoverMenu = (props: Props) => {
     if (props.isEditing) {
         return null;
     }
+
+    const inRun = props.playbookRunId !== undefined && !props.isChannelChecklist;
+    const isOpen = props.itemState === ChecklistItemState.Open;
+    const isBlocked = props.itemState === ChecklistItemState.Blocked;
+    const canStart = inRun && isOpen;
+    const canBlock = inRun && (isOpen || props.itemState === ChecklistItemState.InProgress);
+
     return (
         <HoverMenu>
+            {canStart &&
+                <ChecklistHoverMenuButton
+                    data-testid='hover-menu-start-button'
+                    title={formatMessage({defaultMessage: 'Start task'})}
+                    className={'icon-play-outline icon-12 btn-icon'}
+                    onClick={() => props.onChange?.(ChecklistItemState.InProgress)}
+                />
+            }
             {props.description !== '' &&
                 <ToggleDescriptionButton
                     title={formatMessage({defaultMessage: 'Toggle description'})}
@@ -211,6 +228,33 @@ const ChecklistItemHoverMenu = (props: Props) => {
                         })}
                     </>
                 )}
+                {canStart &&
+                    <StyledDropdownMenuItem
+                        data-testid='task-menu-start'
+                        onClick={() => props.onChange?.(ChecklistItemState.InProgress)}
+                    >
+                        <DropdownIcon className='icon-play-outline icon-16'/>
+                        {formatMessage({defaultMessage: 'Start task'})}
+                    </StyledDropdownMenuItem>
+                }
+                {canBlock &&
+                    <StyledDropdownMenuItem
+                        data-testid='task-menu-block'
+                        onClick={() => props.onBlock?.()}
+                    >
+                        <DropdownIcon className='icon-alert-outline icon-16'/>
+                        {formatMessage({defaultMessage: 'Mark as blocked'})}
+                    </StyledDropdownMenuItem>
+                }
+                {inRun && isBlocked &&
+                    <StyledDropdownMenuItem
+                        data-testid='task-menu-unblock'
+                        onClick={() => props.onChange?.(ChecklistItemState.InProgress)}
+                    >
+                        <DropdownIcon className='icon-play-outline icon-16'/>
+                        {formatMessage({defaultMessage: 'Unblock task'})}
+                    </StyledDropdownMenuItem>
+                }
                 {props.playbookRunId !== undefined &&
                     <StyledDropdownMenuItem
                         onClick={() => props.onChange?.(props.isSkipped ? ChecklistItemState.Open : ChecklistItemState.Skip)}

@@ -42,6 +42,7 @@ query Playbook($id: String!) {
 		checklists {
 			title
 			items {
+				id
 				title
 				description
 				state

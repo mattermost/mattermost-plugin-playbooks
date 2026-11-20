@@ -37,7 +37,8 @@ const filterTasks = (checklistItems: PlaybookRunChecklistItem[], userId: string,
             if (item.assignee_id !== userId && !filters.includes(Filter.FilterRunOwner)) {
                 return false;
             }
-            if (item.state !== ChecklistItemState.Open && !filters.includes(Filter.FilterChecked)) {
+            const isDone = item.state === ChecklistItemState.Closed || item.state === ChecklistItemState.Skip;
+            if (isDone && !filters.includes(Filter.FilterChecked)) {
                 return false;
             }
             if (item.assignee_id === '' && item.playbook_run_owner_user_id !== userId && filters.includes(Filter.FilterRunOwner)) {

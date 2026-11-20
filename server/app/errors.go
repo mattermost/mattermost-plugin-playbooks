@@ -41,6 +41,9 @@ var ErrPlaybookRunActive = errors.New("already active")
 // ErrMalformedPlaybookRun occurs when a playbook run is not valid.
 var ErrMalformedPlaybookRun = errors.New("malformed")
 
+// ErrPlaybookRunChanged occurs when a playbook run was updated after it was loaded for a change.
+var ErrPlaybookRunChanged = errors.New("playbook run changed since it was loaded")
+
 // ErrMalformedCondition occurs when a condition is not valid.
 var ErrMalformedCondition = errors.New("malformed condition")
 

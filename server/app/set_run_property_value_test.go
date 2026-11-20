@@ -117,6 +117,15 @@ func (s *stubRunStoreGetOnly) CreatePlaybookRun(_ *PlaybookRun) (*PlaybookRun, e
 func (s *stubRunStoreGetOnly) UpdatePlaybookRun(_ *PlaybookRun) (*PlaybookRun, error) {
 	panic("not implemented")
 }
+func (s *stubRunStoreGetOnly) UpdatePlaybookRunWithStateChanges(_ *PlaybookRun, _ []ChecklistItemStateChange) (*PlaybookRun, error) {
+	panic("not implemented")
+}
+func (s *stubRunStoreGetOnly) GetChecklistItemStateChanges(_ string) ([]ChecklistItemStateChange, error) {
+	panic("not implemented")
+}
+func (s *stubRunStoreGetOnly) GetChecklistItemStateChangesForRuns(_ []string) (map[string][]ChecklistItemStateChange, error) {
+	panic("not implemented")
+}
 func (s *stubRunStoreGetOnly) GraphqlUpdate(_ string, _ map[string]interface{}) error {
 	panic("not implemented")
 }

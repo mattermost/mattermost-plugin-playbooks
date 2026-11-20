@@ -68,6 +68,8 @@ import TaskActions from './task_actions';
 import {haveAtleastOneEnabledAction} from './task_actions_modal';
 import EditRequirementsModal from './edit_requirements_modal';
 import FillRequirementsModal from './fill_requirements_modal';
+import BlockTaskModal from './block_task_modal';
+import TaskTiming from './task_timing';
 import RequirementsAccordion from './requirements_accordion';
 
 export enum ButtonsFormat {
@@ -94,7 +96,7 @@ interface ChecklistItemProps {
     teamId?: string;
     channelId?: string;
     timelineEvents?: TimelineEvent[];
-    onChange?: (item: ChecklistItemState, requirementValues?: Record<string, string>) => ReturnType<typeof setChecklistItemState> | undefined;
+    onChange?: (item: ChecklistItemState, requirementValues?: Record<string, string>, blockedReason?: string, blockedByUserIds?: string[]) => ReturnType<typeof setChecklistItemState> | undefined;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     readOnly: boolean;
@@ -189,6 +191,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [showAddRequirementModal, setShowAddRequirementModal] = useState(false);
     const [showFillRequirementsModal, setShowFillRequirementsModal] = useState(false);
     const [fillRequirementsEditMode, setFillRequirementsEditMode] = useState(false);
+    const [showBlockModal, setShowBlockModal] = useState(false);
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
 
     const requirements = props.checklistItem.requirements || [];
@@ -839,6 +842,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 formatMessage({defaultMessage: 'Disable the message trigger before adding task requirements.'}) :
                                 undefined
                         }
+                        itemState={props.checklistItem.state}
+                        onBlock={() => setShowBlockModal(true)}
                     />
                     }
                     <DragButton
@@ -904,6 +909,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                             setShowFillRequirementsModal(true);
                         } : undefined}
                     />
+                )}
+                {props.playbookRunId && !props.isChannelChecklist && !isEditing && (
+                    <TaskTiming item={props.checklistItem}/>
                 )}
                 {isEditing && renderAssigneeEditor()}
                 {renderRow()}
@@ -974,6 +982,23 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     onCancel={() => {
                         setShowFillRequirementsModal(false);
                         setFillRequirementsEditMode(false);
+                    }}
+                />
+            )}
+            {showBlockModal && (
+                <BlockTaskModal
+                    taskTitle={props.checklistItem.title}
+                    onCancel={() => setShowBlockModal(false)}
+                    onConfirm={async (reason: string, blockedByUserIds: string[]) => {
+                        const response = await props.onChange?.(ChecklistItemState.Blocked, undefined, reason, blockedByUserIds);
+                        if (response?.error) {
+                            toaster.add({
+                                content: formatMessage({defaultMessage: 'Failed to mark the task as blocked.'}),
+                                toastStyle: ToastStyle.Failure,
+                            });
+                            return;
+                        }
+                        setShowBlockModal(false);
                     }}
                 />
             )}
