@@ -650,6 +650,18 @@ export const autoFollowPlaybook = async (playbookId: string, userId: string) => 
     });
 };
 
+export const addPlaybookMember = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/members/${userId}`, {
+        method: 'PUT',
+    });
+};
+
+export const removePlaybookMember = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/members/${userId}`, {
+        method: 'DELETE',
+    });
+};
+
 export const autoUnfollowPlaybook = async (playbookId: string, userId: string) => {
     await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
         method: 'DELETE',
