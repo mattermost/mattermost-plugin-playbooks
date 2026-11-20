@@ -491,11 +491,18 @@ type gqlToken struct {
 }
 
 type gqlLexer struct {
-	src string
-	pos int
+	src         string
+	pos         int
+	afterDollar bool
 }
 
 func (l *gqlLexer) next() (gqlToken, error) {
+	tok, err := l.scan()
+	l.afterDollar = err == nil && tok.kind == tokPunct && tok.value == "$"
+	return tok, err
+}
+
+func (l *gqlLexer) scan() (gqlToken, error) {
 	l.skipIgnored()
 	if l.pos >= len(l.src) {
 		return gqlToken{kind: tokEOF, offset: l.pos}, nil
@@ -518,8 +525,16 @@ func (l *gqlLexer) next() (gqlToken, error) {
 		return gqlToken{kind: tokValue, value: l.src[start:l.pos], offset: start}, nil
 
 	case ch == '"':
+		// graphql-go reads a string after `$` as a variable description, and reads a description
+		// directly followed by a quote as raw text up to the next `"""`, ignoring escapes.
+		if l.afterDollar {
+			return gqlToken{}, errors.Errorf("variable descriptions are not supported at offset %d", start)
+		}
 		if err := l.skipString(); err != nil {
 			return gqlToken{}, err
+		}
+		if l.pos < len(l.src) && l.src[l.pos] == '"' {
+			return gqlToken{}, errors.Errorf("a string directly followed by a quote is not supported at offset %d", start)
 		}
 		return gqlToken{kind: tokValue, value: `""`, offset: start}, nil
 

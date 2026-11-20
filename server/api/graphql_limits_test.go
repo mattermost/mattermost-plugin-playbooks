@@ -229,6 +229,12 @@ func TestCheckGraphQLQueryLimitsFailsClosed(t *testing.T) {
 			query: `query Q { run(id: [""" "]) { id } ` + repeated(`a%d: run(id: "x") { id }`, 10) + ` b: run(id: [" """]) { id } }`,
 			want:  "block strings are not supported",
 		},
+		"a variable description": {query: `query Q($ "d" id: String!) { run(id: $id) { id } }`, want: "variable descriptions are not supported"},
+		"adjacent strings":       {query: `query Q { run(id: ["a""b"]) { id } }`, want: "directly followed by a quote"},
+		"aliases hidden by a variable description": {
+			query: `query Q($"a""x\""" id: String!) { run(id: $id) { id } ` + repeated(`a%d: run(id: $id) { id }`, 10) + " } # \") { run(id: \"x\") { id } }",
+			want:  "variable descriptions are not supported",
+		},
 		"an unknown fragment":         {query: `query Q { run(id: "x") { ...Missing } }`, want: `unknown fragment "Missing"`},
 		"a fragment defined twice":    {query: `query Q { run(id: "x") { ...F } } fragment F on Run { id } fragment F on Run { name }`, want: "defined more than once"},
 		"a fragment spreading itself": {query: `query Q { run(id: "x") { ...F } } fragment F on Run { id ...F }`, want: `fragment "F" spreads itself`},
