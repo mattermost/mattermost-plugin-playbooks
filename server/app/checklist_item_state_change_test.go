@@ -6,6 +6,7 @@ package app
 import (
 	"testing"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -119,4 +120,43 @@ func TestRestoreChecklistRecordsStateChanges(t *testing.T) {
 	require.Len(t, h.store.stateChanges, 2)
 	requireStateChange(t, h.store.stateChanges[0], "skipped", ChecklistItemStateSkipped, ChecklistItemStateOpen, restoredAt)
 	requireStateChange(t, h.store.stateChanges[1], "closed", ChecklistItemStateClosed, ChecklistItemStateOpen, restoredAt)
+}
+
+func TestTaskStateChangesRacingOtherWrites(t *testing.T) {
+	t.Run("a change that loses a race is applied again on top of the other write", func(t *testing.T) {
+		h := newTaskStateServiceWithItems(t, itemWithState("item1", ChecklistItemStateOpen), itemWithState("item2", ChecklistItemStateOpen))
+		h.store.races = 1
+		h.store.raceWrite = func(run *PlaybookRun) {
+			run.Checklists[0].Items[1].State = ChecklistItemStateClosed
+		}
+
+		require.NoError(t, h.svc.ModifyCheckedState("run1", "user1", ChecklistItemStateClosed, 0, 0))
+
+		assert.Equal(t, ChecklistItemStateClosed, h.store.run.Checklists[0].Items[0].State)
+		assert.Equal(t, ChecklistItemStateClosed, h.store.run.Checklists[0].Items[1].State, "the other write must not be lost")
+		require.Len(t, h.store.stateChanges, 1)
+	})
+
+	t.Run("gives up when the run keeps changing", func(t *testing.T) {
+		h := newTaskStateService(t, itemWithState("item1", ChecklistItemStateOpen))
+		h.store.races = maxRunChangedAttempts
+
+		err := h.svc.SkipChecklistItem("run1", "user1", 0, 0)
+
+		assert.ErrorIs(t, err, ErrPlaybookRunChanged)
+		assert.Empty(t, h.store.stateChanges)
+		assert.Equal(t, ChecklistItemStateOpen, h.store.item().State)
+	})
+}
+
+func TestTaskStateChangesOnRunsWithoutItemIDs(t *testing.T) {
+	h := newTaskStateService(t, itemWithState("", ChecklistItemStateOpen))
+	h.store.run.Checklists[0].ID = ""
+
+	require.NoError(t, h.svc.ModifyCheckedState("run1", "user1", ChecklistItemStateInProgress, 0, 0))
+
+	require.Len(t, h.store.stateChanges, 1)
+	assert.True(t, model.IsValidId(h.store.stateChanges[0].ItemID))
+	assert.Equal(t, h.store.item().ID, h.store.stateChanges[0].ItemID, "the change must be recorded under the ID stored on the item")
+	assert.Equal(t, h.store.run.Checklists[0].ID, h.store.stateChanges[0].ChecklistID)
 }

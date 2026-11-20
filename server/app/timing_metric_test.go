@@ -40,19 +40,36 @@ func TestValidateTimingMetrics(t *testing.T) {
 		metrics := []TimingMetric{valid(), valid()}
 		metrics[1].Name = "Second"
 
-		require.NoError(t, ValidateTimingMetrics(metrics, checklists))
+		require.NoError(t, ValidateTimingMetrics(metrics, checklists, nil))
 
 		assert.True(t, model.IsValidId(metrics[0].ID))
 		assert.NotEqual(t, metrics[0].ID, metrics[1].ID)
 		assert.Equal(t, "Time to acknowledge", metrics[0].Name)
 	})
 
-	t.Run("skips the task check when no checklists are given", func(t *testing.T) {
+	t.Run("keeps a metric whose task was removed after it was set up", func(t *testing.T) {
 		metric := valid()
+		metric.ID = model.NewId()
 		metric.End = taskFinished("removed")
 
-		assert.NoError(t, ValidateTimingMetrics([]TimingMetric{metric}, nil))
-		assert.Error(t, ValidateTimingMetrics([]TimingMetric{metric}, checklists))
+		assert.NoError(t, ValidateTimingMetrics([]TimingMetric{metric}, checklists, []TimingMetric{metric}))
+
+		renamed := metric
+		renamed.Name = "Renamed"
+		assert.NoError(t, ValidateTimingMetrics([]TimingMetric{renamed}, checklists, []TimingMetric{metric}))
+	})
+
+	t.Run("rejects pointing a metric at a task that is not in the playbook", func(t *testing.T) {
+		previous := valid()
+		previous.ID = model.NewId()
+		moved := previous
+		moved.End = taskFinished("removed")
+		other := moved
+		other.ID = model.NewId()
+
+		assert.Error(t, ValidateTimingMetrics([]TimingMetric{moved}, checklists, []TimingMetric{previous}))
+		assert.Error(t, ValidateTimingMetrics([]TimingMetric{other}, checklists, []TimingMetric{{ID: previous.ID, End: taskFinished("removed")}}))
+		assert.Error(t, ValidateTimingMetrics([]TimingMetric{moved}, checklists, nil))
 	})
 
 	for name, mutate := range map[string]func(*TimingMetric){
@@ -68,7 +85,7 @@ func TestValidateTimingMetrics(t *testing.T) {
 		t.Run("rejects a metric "+name, func(t *testing.T) {
 			metric := valid()
 			mutate(&metric)
-			assert.Error(t, ValidateTimingMetrics([]TimingMetric{metric}, checklists))
+			assert.Error(t, ValidateTimingMetrics([]TimingMetric{metric}, checklists, nil))
 		})
 	}
 
@@ -77,7 +94,7 @@ func TestValidateTimingMetrics(t *testing.T) {
 		for i := range metrics {
 			metrics[i] = valid()
 		}
-		assert.Error(t, ValidateTimingMetrics(metrics, checklists))
+		assert.Error(t, ValidateTimingMetrics(metrics, checklists, nil))
 	})
 }
 
@@ -88,9 +105,10 @@ func TestEnsureChecklistItemIDs(t *testing.T) {
 		{Items: []ChecklistItem{{ID: kept}}},
 	}
 
-	EnsureChecklistItemIDs(checklists)
+	replaced := EnsureChecklistItemIDs(checklists)
 
 	assert.Equal(t, kept, checklists[0].Items[0].ID, "valid IDs are kept so metrics stay bound")
+	assert.Equal(t, map[string]string{"temp_item_1": checklists[0].Items[2].ID}, replaced, "only replaced IDs a metric could refer to are reported")
 	seen := map[string]bool{}
 	for _, checklist := range checklists {
 		for _, item := range checklist.Items {
@@ -99,6 +117,19 @@ func TestEnsureChecklistItemIDs(t *testing.T) {
 			seen[item.ID] = true
 		}
 	}
+}
+
+func TestRebindTimingMetrics(t *testing.T) {
+	metrics := []TimingMetric{
+		{Start: taskStarted("temp_1"), End: taskFinished("temp_1")},
+		{Start: runStarted(), End: taskFinished("kept")},
+	}
+
+	RebindTimingMetrics(metrics, map[string]string{"temp_1": "new1"})
+
+	assert.Equal(t, taskStarted("new1"), metrics[0].Start)
+	assert.Equal(t, taskFinished("new1"), metrics[0].End)
+	assert.Equal(t, taskFinished("kept"), metrics[1].End)
 }
 
 func TestComputeTimingMetrics(t *testing.T) {
@@ -175,6 +206,30 @@ func TestComputeTimingMetrics(t *testing.T) {
 		timing := ComputeRunTiming(run, nil, 10000)
 
 		assert.Equal(t, TimingMetricStatusNotReached, metric(t, timing).Status)
+	})
+
+	t.Run("ignores tasks finished after the run ended", func(t *testing.T) {
+		run := metricRun(mtta)
+		run.EndAt = 1000 + 5*minute
+		timing := ComputeRunTiming(run, []ChecklistItemStateChange{
+			change("ack", open, closed, 1000+10*minute),
+		}, 1000+20*minute)
+
+		result := metric(t, timing)
+		assert.Equal(t, TimingMetricStatusNotReached, result.Status)
+		assert.Zero(t, result.EndedAt)
+	})
+
+	t.Run("unmeasurable when the end was reached before the start", func(t *testing.T) {
+		m := TimingMetric{ID: "m2", Name: "Contain after ack", TargetMillis: 15 * minute, Start: taskStarted("contain"), End: taskFinished("ack")}
+		timing := ComputeRunTiming(metricRun(m), []ChecklistItemStateChange{
+			change("ack", open, closed, 3000),
+			change("contain", open, started, 9000),
+		}, 10000)
+
+		result := metric(t, timing)
+		assert.Equal(t, TimingMetricStatusUnmeasurable, result.Status)
+		assert.Zero(t, result.ValueMillis)
 	})
 
 	t.Run("unmeasurable when the task was removed", func(t *testing.T) {

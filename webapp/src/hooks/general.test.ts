@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {renderHook} from '@testing-library/react';
+import {act, renderHook} from '@testing-library/react';
 import {getProfilesByIds, getProfilesInTeam} from 'mattermost-redux/actions/users';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
@@ -12,6 +12,7 @@ import {
     useEnsureProfile,
     useEnsureProfiles,
     useProfilesInTeam,
+    useThing,
 } from './general';
 
 jest.mock('mattermost-redux/actions/users', () => ({
@@ -401,3 +402,24 @@ describe('useProfilesInTeam', () => {
     });
 });
 
+describe('useThing', () => {
+    it('ignores the response of a request that a newer one replaced', async () => {
+        jest.spyOn(reduxHooks, 'useAppSelector').mockReturnValue(null);
+        const resolvers: Array<(value: string) => void> = [];
+        const fetchFunc = jest.fn(() => new Promise<string>((resolve) => resolvers.push(resolve)));
+
+        const {result, rerender} = renderHook(({version}) => useThing('run1', fetchFunc, undefined, [version]), {initialProps: {version: 1}});
+        rerender({version: 2});
+        expect(fetchFunc).toHaveBeenCalledTimes(2);
+
+        await act(async () => {
+            resolvers[1]('newer');
+        });
+        await act(async () => {
+            resolvers[0]('older');
+        });
+
+        expect(result.current[0]).toBe('newer');
+        jest.restoreAllMocks();
+    });
+});

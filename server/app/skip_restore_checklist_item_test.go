@@ -24,6 +24,10 @@ type stubTaskStateStore struct {
 	events       []*TimelineEvent
 	stateChanges []ChecklistItemStateChange
 	updates      int
+
+	// races makes that many state-change writes lose to a concurrent write made by raceWrite.
+	races     int
+	raceWrite func(run *PlaybookRun)
 }
 
 func (s *stubTaskStateStore) GetPlaybookRun(_ string) (*PlaybookRun, error) {
@@ -35,6 +39,13 @@ func (s *stubTaskStateStore) UpdatePlaybookRun(run *PlaybookRun) (*PlaybookRun, 
 }
 
 func (s *stubTaskStateStore) UpdatePlaybookRunWithStateChanges(run *PlaybookRun, changes []ChecklistItemStateChange) (*PlaybookRun, error) {
+	if s.races > 0 {
+		s.races--
+		if s.raceWrite != nil {
+			s.raceWrite(s.run)
+		}
+		return nil, ErrPlaybookRunChanged
+	}
 	s.updates++
 	s.run = run.Clone()
 	s.stateChanges = append(s.stateChanges, changes...)

@@ -16,11 +16,14 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
-func validateTiming(playbook *app.Playbook) error {
+// validateTiming assigns the task IDs the store would, so metrics are checked against the tasks
+// they will be stored with. previous holds the metrics the playbook had before this save.
+func validateTiming(playbook *app.Playbook, previous []app.TimingMetric) error {
 	if err := app.ValidatePlaybookType(playbook.PlaybookType); err != nil {
 		return err
 	}
-	return app.ValidateTimingMetrics(playbook.TimingMetrics, nil)
+	app.RebindTimingMetrics(playbook.TimingMetrics, app.EnsureChecklistItemIDs(playbook.Checklists))
+	return app.ValidateTimingMetrics(playbook.TimingMetrics, playbook.Checklists, previous)
 }
 
 type playbookTiming struct {
@@ -61,7 +64,7 @@ func (h *PlaybookHandler) updatePlaybookTiming(c *Context, w http.ResponseWriter
 	if params.TimingMetrics == nil {
 		params.TimingMetrics = []app.TimingMetric{}
 	}
-	if err := app.ValidateTimingMetrics(params.TimingMetrics, playbook.Checklists); err != nil {
+	if err := app.ValidateTimingMetrics(params.TimingMetrics, playbook.Checklists, playbook.TimingMetrics); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid timing metrics", err)
 		return
 	}

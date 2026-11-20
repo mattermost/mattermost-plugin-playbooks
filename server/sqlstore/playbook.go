@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -1237,8 +1238,12 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 		for _, checklist := range playbook.Checklists {
 			checklists = append(checklists, checklist.Clone())
 		}
-		app.EnsureChecklistItemIDs(checklists)
+		replaced := app.EnsureChecklistItemIDs(checklists)
 		playbook.Checklists = checklists
+		if len(replaced) > 0 {
+			playbook.TimingMetrics = slices.Clone(playbook.TimingMetrics)
+			app.RebindTimingMetrics(playbook.TimingMetrics, replaced)
+		}
 	}
 
 	checklistsJSON, err := json.Marshal(playbook.Checklists)

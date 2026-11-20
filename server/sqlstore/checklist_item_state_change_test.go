@@ -61,6 +61,34 @@ func TestChecklistItemStateChanges(t *testing.T) {
 		assert.Equal(t, expected, changes[0])
 	})
 
+	t.Run("a write from a run loaded before another write is refused", func(t *testing.T) {
+		run := createRun(t)
+		first, err := store.GetPlaybookRun(run.ID)
+		require.NoError(t, err)
+		second, err := store.GetPlaybookRun(run.ID)
+		require.NoError(t, err)
+
+		first.Checklists[0].Items[0].State = app.ChecklistItemStateClosed
+		_, err = store.UpdatePlaybookRunWithStateChanges(first, []app.ChecklistItemStateChange{
+			changeFor(first, 0, app.ChecklistItemStateOpen, app.ChecklistItemStateClosed, 1000),
+		})
+		require.NoError(t, err)
+
+		second.Checklists[0].Items[1].State = app.ChecklistItemStateClosed
+		_, err = store.UpdatePlaybookRunWithStateChanges(second, []app.ChecklistItemStateChange{
+			changeFor(second, 1, app.ChecklistItemStateOpen, app.ChecklistItemStateClosed, 1000),
+		})
+		require.ErrorIs(t, err, app.ErrPlaybookRunChanged)
+
+		stored, err := store.GetPlaybookRun(run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.ChecklistItemStateClosed, stored.Checklists[0].Items[0].State)
+		assert.Equal(t, app.ChecklistItemStateOpen, stored.Checklists[0].Items[1].State)
+		changes, err := store.GetChecklistItemStateChanges(run.ID)
+		require.NoError(t, err)
+		assert.Len(t, changes, 1)
+	})
+
 	t.Run("a rejected state change rolls back the run update", func(t *testing.T) {
 		run := createRun(t)
 		other := createRun(t)

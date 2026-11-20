@@ -50,12 +50,12 @@ const SectionTiming = ({playbookId, checklists, playbookType, timingMetrics, can
     const {formatMessage} = useIntl();
     const toaster = useToaster();
     const [draft, setDraft] = useState<TimingMetric | null>(null);
-    const [draftIndex, setDraftIndex] = useState(-1);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         setDraft(null);
-        setDraftIndex(-1);
+        setEditingId(null);
     }, [playbookId]);
 
     const tasks = useMemo(() => checklists.flatMap((checklist) => checklist.items.filter((item) => item.id).map((item) => ({
@@ -98,14 +98,20 @@ const SectionTiming = ({playbookId, checklists, playbookType, timingMetrics, can
             return;
         }
         const next = [...timingMetrics];
-        if (draftIndex >= 0) {
-            next[draftIndex] = draft;
+        if (editingId) {
+            const index = next.findIndex((metric) => metric.id === editingId);
+            if (index < 0) {
+                setDraft(null);
+                setEditingId(null);
+                return;
+            }
+            next[index] = draft;
         } else {
             next.push(draft);
         }
         if (await save(playbookType, next)) {
             setDraft(null);
-            setDraftIndex(-1);
+            setEditingId(null);
         }
     };
 
@@ -171,14 +177,19 @@ const SectionTiming = ({playbookId, checklists, playbookType, timingMetrics, can
                             <TertiaryButton
                                 onClick={() => {
                                     setDraft({...metric});
-                                    setDraftIndex(index);
+                                    setEditingId(metric.id);
                                 }}
                             >
                                 {formatMessage({defaultMessage: 'Edit'})}
                             </TertiaryButton>
                             <TertiaryButton
                                 disabled={saving}
-                                onClick={() => save(playbookType, timingMetrics.filter((_, i) => i !== index))}
+                                onClick={async () => {
+                                    if (await save(playbookType, timingMetrics.filter((_, i) => i !== index)) && metric.id === editingId) {
+                                        setDraft(null);
+                                        setEditingId(null);
+                                    }
+                                }}
                             >
                                 {formatMessage({defaultMessage: 'Remove'})}
                             </TertiaryButton>
@@ -257,7 +268,7 @@ const SectionTiming = ({playbookId, checklists, playbookType, timingMetrics, can
                         <TertiaryButton
                             onClick={() => {
                                 setDraft(null);
-                                setDraftIndex(-1);
+                                setEditingId(null);
                             }}
                         >
                             {formatMessage({defaultMessage: 'Cancel'})}
@@ -278,7 +289,7 @@ const SectionTiming = ({playbookId, checklists, playbookType, timingMetrics, can
                     data-testid='timing-metric-add'
                     onClick={() => {
                         setDraft(emptyMetric());
-                        setDraftIndex(-1);
+                        setEditingId(null);
                     }}
                 >
                     <i className='icon-plus icon-16'/>

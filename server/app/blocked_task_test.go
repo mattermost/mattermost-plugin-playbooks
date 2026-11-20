@@ -162,6 +162,7 @@ type blockedByAPI struct {
 	stubTaskStateAPI
 	users   map[string]*model.User
 	members map[string]bool
+	viewers map[string]bool
 }
 
 func (a *blockedByAPI) GetUser(userID string) (*model.User, *model.AppError) {
@@ -176,6 +177,10 @@ func (a *blockedByAPI) GetChannelMember(_, userID string) (*model.ChannelMember,
 		return &model.ChannelMember{UserId: userID}, nil
 	}
 	return nil, model.NewAppError("GetChannelMember", "not_found", nil, "", 404)
+}
+
+func (a *blockedByAPI) HasPermissionToChannel(userID, _ string, _ *model.Permission) bool {
+	return a.viewers[userID]
 }
 
 func (a *blockedByAPI) GetConfig() *model.Config {
@@ -209,12 +214,15 @@ func newBlockedByService(t *testing.T) (taskStateService, *blockedByPoster) {
 			"outsider": {Id: "outsider", Username: "bob"},
 			"bot1":     {Id: "bot1", Username: "bot", IsBot: true},
 			"gone":     {Id: "gone", Username: "gone", DeleteAt: 1},
+			"stranger": {Id: "stranger", Username: "eve"},
 		},
 		members: map[string]bool{"user1": true, "member1": true},
+		viewers: map[string]bool{"user1": true, "member1": true, "outsider": true},
 	}
 	poster := &blockedByPoster{dms: map[string]*model.Post{}}
 	h.svc.api = api
 	h.svc.pluginAPI = pluginapi.NewClient(api, nil)
+	h.svc.permissions = NewPermissionsService(nil, h.svc, h.svc.pluginAPI, nil, nil)
 	h.svc.poster = poster
 	h.store.run.Name = "Database outage"
 	return h, poster
@@ -273,10 +281,11 @@ func TestBlockedBy(t *testing.T) {
 			tooMany[i] = model.NewId()
 		}
 		for name, userIDs := range map[string][]string{
-			"for an unknown user": {"missing"},
-			"for a bot":           {"bot1"},
-			"for a deleted user":  {"gone"},
-			"for too many users":  tooMany,
+			"for an unknown user":                {"missing"},
+			"for a bot":                          {"bot1"},
+			"for a deleted user":                 {"gone"},
+			"for too many users":                 tooMany,
+			"for a user who cannot view the run": {"outsider", "stranger"},
 		} {
 			t.Run(name, func(t *testing.T) {
 				h, poster := newBlockedByService(t)

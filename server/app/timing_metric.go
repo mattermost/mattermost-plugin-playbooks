@@ -4,6 +4,7 @@
 package app
 
 import (
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -88,27 +89,29 @@ func isTaskPoint(pointType string) bool {
 	return pointType == TimingPointTaskStarted || pointType == TimingPointTaskFinished
 }
 
-// ValidateTimingMetrics normalizes metrics in place, assigning IDs to new ones. When checklists is
-// not nil, every task point must refer to one of its tasks; otherwise a task that was removed
-// later only makes the metric unmeasurable.
-func ValidateTimingMetrics(metrics []TimingMetric, checklists []Checklist) error {
+// ValidateTimingMetrics normalizes metrics in place, assigning IDs to new ones. Every task point
+// must refer to one of the checklists' tasks, unless the same metric in previous already had that
+// point: a task removed after its metric was set up only makes the metric unmeasurable.
+func ValidateTimingMetrics(metrics []TimingMetric, checklists []Checklist, previous []TimingMetric) error {
 	if len(metrics) > MaxTimingMetricsPerPlaybook {
 		return errors.Errorf("a playbook can have at most %d timing metrics", MaxTimingMetricsPerPlaybook)
 	}
 
-	var itemIDs map[string]bool
-	if checklists != nil {
-		itemIDs = make(map[string]bool)
-		for _, checklist := range checklists {
-			for _, item := range checklist.Items {
-				itemIDs[item.ID] = true
-			}
+	itemIDs := make(map[string]bool)
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			itemIDs[item.ID] = true
 		}
+	}
+	previousPoints := make(map[string][]TimingPoint, len(previous))
+	for _, metric := range previous {
+		previousPoints[metric.ID] = append(previousPoints[metric.ID], metric.Start, metric.End)
 	}
 
 	seen := make(map[string]bool)
 	for i := range metrics {
 		metric := &metrics[i]
+		known := previousPoints[metric.ID]
 		if !model.IsValidId(metric.ID) || seen[metric.ID] {
 			metric.ID = model.NewId()
 		}
@@ -128,7 +131,7 @@ func ValidateTimingMetrics(metrics []TimingMetric, checklists []Checklist) error
 			return errors.New("timing metric target cannot be negative")
 		}
 		for _, point := range []*TimingPoint{&metric.Start, &metric.End} {
-			if err := validateTimingPoint(point, itemIDs); err != nil {
+			if err := validateTimingPoint(point, itemIDs, known); err != nil {
 				return errors.Wrapf(err, "timing metric %q", metric.Name)
 			}
 		}
@@ -143,13 +146,13 @@ func ValidateTimingMetrics(metrics []TimingMetric, checklists []Checklist) error
 	return nil
 }
 
-func validateTimingPoint(point *TimingPoint, itemIDs map[string]bool) error {
+func validateTimingPoint(point *TimingPoint, itemIDs map[string]bool, known []TimingPoint) error {
 	switch {
 	case point.Type == TimingPointRunStarted:
 		point.ItemID = ""
 		return nil
 	case isTaskPoint(point.Type):
-		if point.ItemID == "" || (itemIDs != nil && !itemIDs[point.ItemID]) {
+		if point.ItemID == "" || (!itemIDs[point.ItemID] && !slices.Contains(known, *point)) {
 			return errors.New("refers to a task that is not in the playbook")
 		}
 		return nil
@@ -177,15 +180,33 @@ func isIndustryName(name string) bool {
 
 // EnsureChecklistItemIDs gives every checklist item a unique, valid ID, keeping the ones it
 // already has so timing metrics stay bound to their tasks across edits.
-func EnsureChecklistItemIDs(checklists []Checklist) {
+// It returns each replaced ID that was not a duplicate, mapped to the ID that replaced it.
+func EnsureChecklistItemIDs(checklists []Checklist) map[string]string {
 	seen := make(map[string]bool)
+	replaced := make(map[string]string)
 	for i := range checklists {
 		for j := range checklists[i].Items {
 			id := &checklists[i].Items[j].ID
 			if !model.IsValidId(*id) || seen[*id] {
-				*id = model.NewId()
+				newID := model.NewId()
+				if _, ok := replaced[*id]; *id != "" && !seen[*id] && !ok {
+					replaced[*id] = newID
+				}
+				*id = newID
 			}
 			seen[*id] = true
+		}
+	}
+	return replaced
+}
+
+// RebindTimingMetrics points task points at the IDs that replaced the ones they referred to.
+func RebindTimingMetrics(metrics []TimingMetric, replaced map[string]string) {
+	for i := range metrics {
+		for _, point := range []*TimingPoint{&metrics[i].Start, &metrics[i].End} {
+			if newID, ok := replaced[point.ItemID]; ok && isTaskPoint(point.Type) {
+				point.ItemID = newID
+			}
 		}
 	}
 }
@@ -209,10 +230,10 @@ func computeTimingMetrics(run *PlaybookRun, items map[string]ChecklistItemTiming
 		result.EndedAt = end
 
 		switch {
-		case !startOK || !endOK:
+		case !startOK || !endOK, start > 0 && end > 0 && end < start:
 			result.Status = TimingMetricStatusUnmeasurable
 		case start > 0 && end > 0:
-			result.ValueMillis = max(end-start, 0)
+			result.ValueMillis = end - start
 			result.Status = TimingMetricStatusDone
 			if metric.TargetMillis > 0 {
 				result.Status = TimingMetricStatusMet

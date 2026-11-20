@@ -15,8 +15,8 @@ import (
 // MaxBlockedByUsers bounds how many users a task can be blocked by.
 const MaxBlockedByUsers = 10
 
-// notifyBlockedBy tells each user a task is blocked on. Channel members are mentioned in the run
-// channel; everyone else gets a DM linking to the run.
+// notifyBlockedBy tells each user a task is blocked on who can view the run. Channel members are
+// mentioned in the run channel; everyone else gets a DM linking to the run.
 func (s *PlaybookRunServiceImpl) notifyBlockedBy(run *PlaybookRun, actorID string, item ChecklistItem) {
 	if len(item.BlockedByUserIDs) == 0 {
 		return
@@ -32,7 +32,7 @@ func (s *PlaybookRunServiceImpl) notifyBlockedBy(run *PlaybookRun, actorID strin
 	reason := quoteMarkdown(item.BlockedReason)
 
 	var mentions []string
-	for _, userID := range item.BlockedByUserIDs {
+	for _, userID := range s.permissions.FilterRunViewers(item.BlockedByUserIDs, run) {
 		if userID == actorID {
 			continue
 		}
@@ -46,7 +46,6 @@ func (s *PlaybookRunServiceImpl) notifyBlockedBy(run *PlaybookRun, actorID strin
 			mentions = append(mentions, "@"+user.Username)
 			continue
 		}
-
 		message := fmt.Sprintf("%s marked **%s** in [%s](%s) as blocked on you.\n%s", actorName, task, run.Name, s.runURL(run.ID), reason)
 		if err := s.poster.DM(userID, &model.Post{Message: message}); err != nil {
 			logger.WithError(err).WithField("user_id", userID).Warn("failed to DM user blocking a task")

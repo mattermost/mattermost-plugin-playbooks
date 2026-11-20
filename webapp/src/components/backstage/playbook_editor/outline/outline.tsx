@@ -90,8 +90,13 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         }
         setNewChannelOnlyOverride(new_channel_only);
         savingNewChannelOnly.current = true;
-        const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
-        savePlaybook(updated)
+        clientFetchPlaybook(restPlaybook.id)
+            .then((latest) => {
+                if (!latest) {
+                    throw new Error('Unable to fetch latest playbook before save');
+                }
+                return savePlaybook({...latest, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : latest.channel_mode});
+            })
             .then(() => {
                 refetch();
             })

@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 
@@ -71,8 +72,12 @@ func (e timingTestEnv) do(c *model.Client4, method, path string, body any) (int,
 		return resp.StatusCode, nil
 	}
 	defer resp.Body.Close()
+	raw, err := io.ReadAll(resp.Body)
+	require.NoError(e.T, err)
 	var result map[string]any
-	require.NoError(e.T, json.NewDecoder(resp.Body).Decode(&result))
+	if len(raw) > 0 {
+		require.NoError(e.T, json.Unmarshal(raw, &result))
+	}
 	return resp.StatusCode, result
 }
 
@@ -211,5 +216,61 @@ func TestGetTimingReport(t *testing.T) {
 	t.Run("rejects users who cannot view the playbook", func(t *testing.T) {
 		status, _ := e.do(e.loginClient(e.RegularUser2), http.MethodGet, reportPath(""), nil)
 		assert.Equal(t, http.StatusForbidden, status)
+	})
+}
+
+func TestPlaybookSaveKeepsTimingMetricsOnTasks(t *testing.T) {
+	e := setupTimingTest(t)
+	path := "/playbooks/" + e.playbookID
+	getPlaybook := func() map[string]any {
+		status, playbook := e.do(e.ServerClient, http.MethodGet, path, nil)
+		require.Equal(t, http.StatusOK, status)
+		return playbook
+	}
+	items := func(playbook map[string]any) []any {
+		return playbook["checklists"].([]any)[0].(map[string]any)["items"].([]any)
+	}
+	metricEnd := func(playbook map[string]any) string {
+		metrics := playbook["timing_metrics"].([]any)
+		require.Len(t, metrics, 1)
+		return metrics[0].(map[string]any)["end"].(map[string]any)["item_id"].(string)
+	}
+
+	t.Run("a metric on a task added in the same save follows the task's stored ID", func(t *testing.T) {
+		playbook := getPlaybook()
+		checklist := playbook["checklists"].([]any)[0].(map[string]any)
+		checklist["items"] = append(items(playbook), map[string]any{"id": "temp_recover", "title": "Recover"})
+		metric := e.mtta()
+		metric["end"] = map[string]any{"type": app.TimingPointTaskFinished, "item_id": "temp_recover"}
+		playbook["timing_metrics"] = []any{metric}
+
+		status, _ := e.do(e.ServerClient, http.MethodPut, path, playbook)
+		require.Equal(t, http.StatusOK, status)
+
+		saved := getPlaybook()
+		recoverID := items(saved)[2].(map[string]any)["id"].(string)
+		assert.True(t, model.IsValidId(recoverID))
+		assert.Equal(t, recoverID, metricEnd(saved))
+	})
+
+	t.Run("rejects a new metric on a task that is not in the playbook", func(t *testing.T) {
+		playbook := getPlaybook()
+		metric := e.mtta()
+		metric["end"] = map[string]any{"type": app.TimingPointTaskFinished, "item_id": model.NewId()}
+		playbook["timing_metrics"] = []any{metric}
+
+		status, _ := e.do(e.ServerClient, http.MethodPut, path, playbook)
+		assert.Equal(t, http.StatusBadRequest, status)
+	})
+
+	t.Run("removing a task keeps the metric that measured it", func(t *testing.T) {
+		playbook := getPlaybook()
+		boundTo := metricEnd(playbook)
+		checklist := playbook["checklists"].([]any)[0].(map[string]any)
+		checklist["items"] = items(playbook)[:2]
+
+		status, _ := e.do(e.ServerClient, http.MethodPut, path, playbook)
+		require.Equal(t, http.StatusOK, status)
+		assert.Equal(t, boundTo, metricEnd(getPlaybook()))
 	})
 }

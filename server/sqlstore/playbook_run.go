@@ -490,6 +490,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
+	playbookRun.UpdateAt = playbookRun.CreateAt
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
@@ -566,12 +567,17 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 
 // UpdatePlaybookRun updates a playbook run.
 func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
-	return s.UpdatePlaybookRunWithStateChanges(playbookRun, nil)
+	return s.updatePlaybookRun(playbookRun, nil, false)
 }
 
 // UpdatePlaybookRunWithStateChanges updates a playbook run and appends the checklist item state
-// changes in the same transaction.
+// changes in the same transaction. It fails with app.ErrPlaybookRunChanged when the run was updated
+// after playbookRun was loaded, so the caller can reload the run and apply its change again.
 func (s *playbookRunStore) UpdatePlaybookRunWithStateChanges(playbookRun *app.PlaybookRun, changes []app.ChecklistItemStateChange) (*app.PlaybookRun, error) {
+	return s.updatePlaybookRun(playbookRun, changes, true)
+}
+
+func (s *playbookRunStore) updatePlaybookRun(playbookRun *app.PlaybookRun, changes []app.ChecklistItemStateChange, failIfChanged bool) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
 	}
@@ -579,8 +585,9 @@ func (s *playbookRunStore) UpdatePlaybookRunWithStateChanges(playbookRun *app.Pl
 		return nil, errors.New("ID should not be empty")
 	}
 
-	// Always ensure UpdateAt is set to current time when updating
-	playbookRun.UpdateAt = model.GetMillis()
+	loadedUpdateAt := playbookRun.UpdateAt
+	// UpdateAt must move forward on every write so a concurrent writer can tell the run changed.
+	playbookRun.UpdateAt = max(model.GetMillis(), loadedUpdateAt+1)
 
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
@@ -594,6 +601,16 @@ func (s *playbookRunStore) UpdatePlaybookRunWithStateChanges(playbookRun *app.Pl
 		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
+
+	if failIfChanged {
+		var storedUpdateAt int64
+		if err = tx.Get(&storedUpdateAt, "SELECT UpdateAt FROM IR_Incident WHERE ID = $1 FOR UPDATE", playbookRun.ID); err != nil {
+			return nil, errors.Wrapf(err, "failed to lock playbook run with id '%s'", playbookRun.ID)
+		}
+		if storedUpdateAt != loadedUpdateAt {
+			return nil, app.ErrPlaybookRunChanged
+		}
+	}
 
 	// When adding a PlaybookRun column #3: add to this SetMap (if it is a column that can be updated)
 	_, err = s.store.execBuilder(tx, sq.

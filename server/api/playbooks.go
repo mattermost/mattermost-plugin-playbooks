@@ -109,7 +109,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	return handler
 }
 
-func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook) bool {
+func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook, previousTimingMetrics []app.TimingMetric) bool {
 	if playbook.WebhookOnCreationEnabled {
 		if err := app.ValidateWebhookURLs(playbook.WebhookOnCreationURLs); err != nil {
 			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
@@ -136,7 +136,7 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 		return false
 	}
 
-	if err := validateTiming(playbook); err != nil {
+	if err := validateTiming(playbook, previousTimingMetrics); err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid timing metrics", err)
 		return false
 	}
@@ -231,7 +231,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		}
 	}
 
-	if !h.validPlaybook(w, c.logger, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook, nil) {
 		return
 	}
 
@@ -345,7 +345,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	// Preserve server-managed counters that must not be set via REST PUT.
 	playbook.NextRunNumber = oldPlaybook.NextRunNumber
 
-	if !h.validPlaybook(w, c.logger, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook, oldPlaybook.TimingMetrics) {
 		return
 	}
 
@@ -866,7 +866,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if !h.validPlaybook(w, c.logger, &playbook) {
+	if !h.validPlaybook(w, c.logger, &playbook, nil) {
 		return
 	}
 

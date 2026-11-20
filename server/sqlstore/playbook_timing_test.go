@@ -49,3 +49,25 @@ func TestPlaybookTiming(t *testing.T) {
 	assert.True(t, model.IsValidId(updated.Checklists[0].Items[2].ID))
 	assert.Equal(t, saved.TimingMetrics, updated.TimingMetrics)
 }
+
+func TestPlaybookTimingFollowsReplacedTaskIDs(t *testing.T) {
+	db := setupTestDB(t)
+	store := setupPlaybookStore(t, db)
+
+	playbook := NewPBBuilder().WithTitle("Incident").WithTeamID(model.NewId()).ToPlaybook()
+	playbook.Checklists = []app.Checklist{{Title: "Triage", Items: []app.ChecklistItem{{ID: "temp_item_1", Title: "Acknowledge"}}}}
+	playbook.TimingMetrics = []app.TimingMetric{{
+		ID:    model.NewId(),
+		Name:  "Acknowledge",
+		Start: app.TimingPoint{Type: app.TimingPointRunStarted},
+		End:   app.TimingPoint{Type: app.TimingPointTaskFinished, ItemID: "temp_item_1"},
+	}}
+
+	id, err := store.Create(playbook)
+	require.NoError(t, err)
+
+	saved, err := store.Get(id)
+	require.NoError(t, err)
+	assert.Equal(t, saved.Checklists[0].Items[0].ID, saved.TimingMetrics[0].End.ItemID)
+	assert.Equal(t, "temp_item_1", playbook.TimingMetrics[0].End.ItemID, "the caller's metrics are not modified")
+}

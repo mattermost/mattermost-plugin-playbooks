@@ -317,26 +317,35 @@ export function useThing<T extends NonNullable<any>>(
             setIsFetching(false);
             setThing(null);
             setError(null);
-            return;
+            return undefined;
         }
 
         if (thingFromState) {
             setThing(thingFromState);
             setIsFetching(false);
-            return;
+            return undefined;
         }
 
+        let superseded = false;
         fetchFunc(id)
             .then((res) => {
-                setThing(res);
+                if (!superseded) {
+                    setThing(res);
+                }
             })
             .catch((err) => {
+                if (superseded) {
+                    return;
+                }
                 if (err instanceof ClientError) {
                     setError(err);
                 }
                 setThing(null);
             });
         setIsFetching(false);
+        return () => {
+            superseded = true;
+        };
     }, [thingFromState, id, ...deps]);
 
     const metadata = {

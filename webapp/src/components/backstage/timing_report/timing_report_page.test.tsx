@@ -212,4 +212,10 @@ describe('rowsToCSV', () => {
         expect(header).toBe('run_id,run_name,playbook_id,exercise,run_create_at,run_end_at,metric_name,industry_name,target_millis,value_millis,status');
         expect(line).toBe(`run1,"Outage, ""east""",pb1,false,1000,0,Time to acknowledge,MTTA,${15 * MINUTE},${10 * MINUTE},met`);
     });
+
+    it('keeps text that looks like a formula from being evaluated, but leaves numbers alone', () => {
+        const [, line] = rowsToCSV([{...row, run_name: '=HYPERLINK("http://x")', metric_name: '@SUM(A1)', value_millis: -1}]).split('\n');
+
+        expect(line).toBe(`run1,"'=HYPERLINK(""http://x"")",pb1,false,1000,0,'@SUM(A1),MTTA,${15 * MINUTE},-1,met`);
+    });
 });

@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {IntlProvider} from 'react-intl';
 import {
     fireEvent,
@@ -166,6 +166,48 @@ describe('SectionTiming', () => {
 
         await waitFor(() => expect(onSaved).toHaveBeenCalledWith(PlaybookType.Operational, []));
         expect(updatePlaybookTiming).toHaveBeenCalledWith('pb1', PlaybookType.Operational, []);
+    });
+
+    it('saves an edited metric in place after another metric was removed', async () => {
+        jest.mocked(updatePlaybookTiming).mockImplementation(async (_id, playbookType, timingMetrics) => ({playbook_type: playbookType, timing_metrics: timingMetrics}) as any);
+        const metrics = ['A', 'B', 'C'].map((name) => ({...acknowledgeMetric, id: `metric-${name}`, name}));
+        const Stateful = () => {
+            const [timingMetrics, setTimingMetrics] = useState(metrics);
+            return (
+                <SectionTiming
+                    playbookId='pb1'
+                    checklists={checklists}
+                    playbookType={PlaybookType.Operational}
+                    timingMetrics={timingMetrics}
+                    canEdit={true}
+                    onSaved={(_, next) => setTimingMetrics(next)}
+                />
+            );
+        };
+        render(
+            <IntlProvider locale='en'>
+                <Stateful/>
+            </IntlProvider>,
+        );
+
+        fireEvent.click(screen.getAllByText('Edit')[1]);
+        fireEvent.click(screen.getAllByText('Remove')[0]);
+        await waitFor(() => expect(screen.getAllByTestId('playbook-timing-metric')).toHaveLength(2));
+        fireEvent.change(screen.getByTestId('timing-metric-name'), {target: {value: 'B edited'}});
+        fireEvent.click(saveButton());
+
+        await waitFor(() => expect(updatePlaybookTiming).toHaveBeenCalledTimes(2));
+        expect(jest.mocked(updatePlaybookTiming).mock.calls[1][2].map((metric) => metric.name)).toEqual(['B edited', 'C']);
+    });
+
+    it('drops the edit when the metric being edited is removed', async () => {
+        jest.mocked(updatePlaybookTiming).mockResolvedValue({playbook_type: PlaybookType.Operational, timing_metrics: []} as any);
+        renderSection({timingMetrics: [acknowledgeMetric]});
+
+        fireEvent.click(screen.getByText('Edit'));
+        fireEvent.click(screen.getByText('Remove'));
+
+        await waitFor(() => expect(screen.queryByTestId('playbook-timing-form')).toBeNull());
     });
 
     it('is read-only for users who cannot edit the playbook', () => {

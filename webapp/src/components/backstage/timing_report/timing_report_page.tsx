@@ -28,8 +28,12 @@ const ROW_COLUMNS: Array<keyof TimingReportRow> = [
 ];
 
 const csvCell = (value: unknown) => {
-    const text = String(value ?? '');
-    return (/[",\n]/).test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    let text = String(value ?? '');
+    if (typeof value === 'string' && (/^[=+\-@\t\r]/).test(text)) {
+        // Keeps spreadsheets from evaluating user-entered text as a formula.
+        text = `'${text}`;
+    }
+    return (/[",\n\r]/).test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
 export const rowsToCSV = (rows: TimingReportRow[]) => [

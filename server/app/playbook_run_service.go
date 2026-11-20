@@ -2360,11 +2360,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	return nil
 }
 
-// ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
-// any action if the checklist item is already in the given checked state.
-// When checking off a task that has requirements, opts may supply RequirementValues; all
-// requirements must have non-empty values or the call fails.
-func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int, opts ...ModifyCheckedStateOptions) error {
+func (s *PlaybookRunServiceImpl) modifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int, opts ...ModifyCheckedStateOptions) error {
 	auditRec := plugin.MakeAuditRecord("modifyChecklistItemState", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -2405,7 +2401,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	}
 
 	if newState == ChecklistItemStateBlocked && newState != itemToCheck.State {
-		blockedByUserIDs, err = s.validateBlock(itemToCheck, blockedReason, blockedByUserIDs)
+		blockedByUserIDs, err = s.validateBlock(playbookRunToModify, itemToCheck, blockedReason, blockedByUserIDs)
 		if err != nil {
 			return err
 		}
@@ -2562,7 +2558,7 @@ func taskStateAction(fromState, toState string) string {
 
 // validateBlock checks that the item may move to the blocked state with the given reason and
 // returns the deduplicated users it is blocked by.
-func (s *PlaybookRunServiceImpl) validateBlock(item ChecklistItem, reason string, blockedByUserIDs []string) ([]string, error) {
+func (s *PlaybookRunServiceImpl) validateBlock(run *PlaybookRun, item ChecklistItem, reason string, blockedByUserIDs []string) ([]string, error) {
 	if item.State != ChecklistItemStateOpen && item.State != ChecklistItemStateInProgress {
 		return nil, errors.Wrap(ErrMalformedPlaybookRun, "only open or started tasks can be blocked")
 	}
@@ -2589,6 +2585,14 @@ func (s *PlaybookRunServiceImpl) validateBlock(item ChecklistItem, reason string
 		user, err := s.pluginAPI.User.Get(userID)
 		if err != nil || user.DeleteAt != 0 || user.IsBot {
 			return nil, errors.Wrapf(ErrMalformedPlaybookRun, "user %s cannot be set as blocking the task", userID)
+		}
+	}
+	if len(userIDs) > 0 {
+		viewers := s.permissions.FilterRunViewers(userIDs, run)
+		for _, userID := range userIDs {
+			if !slices.Contains(viewers, userID) {
+				return nil, errors.Wrapf(ErrMalformedPlaybookRun, "user %s cannot view this run, so cannot be set as blocking the task", userID)
+			}
 		}
 	}
 	return userIDs, nil
@@ -3551,8 +3555,7 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 	return nil
 }
 
-// SkipChecklist skips the checklist
-func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, checklistNumber int) error {
+func (s *PlaybookRunServiceImpl) skipChecklist(playbookRunID, userID string, checklistNumber int) error {
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
 	if err != nil {
 		return err
@@ -3591,8 +3594,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 	return nil
 }
 
-// RestoreChecklist restores the skipped checklist
-func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, checklistNumber int) error {
+func (s *PlaybookRunServiceImpl) restoreChecklist(playbookRunID, userID string, checklistNumber int) error {
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
 	if err != nil {
 		return err
@@ -3630,8 +3632,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 	return nil
 }
 
-// SkipChecklistItem skips the item at the given index from the given checklist
-func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+func (s *PlaybookRunServiceImpl) skipChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
 	auditRec := plugin.MakeAuditRecord("skipChecklistItem", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -3731,8 +3732,7 @@ func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, use
 	return nil
 }
 
-// RestoreChecklistItem restores the item at the given index from the given checklist
-func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+func (s *PlaybookRunServiceImpl) restoreChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
 	auditRec := plugin.MakeAuditRecord("restoreChecklistItem", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -4168,6 +4168,7 @@ func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID str
 		return nil, errors.New("invalid checklist number")
 	}
 
+	fillMissingChecklistIDs(playbookRunToModify.Checklists)
 	return playbookRunToModify, nil
 }
 

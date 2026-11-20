@@ -724,6 +724,28 @@ describe('Outline — handleNewChannelOnlyChange', () => {
         // Override stays at the toggled value until refetch updates restPlaybook
         expect(capturedNewChannelOnly).toBe(true);
     });
+
+    it('saves on top of the latest playbook so changes made since it loaded are kept', async () => {
+        mockSavePlaybook.mockResolvedValue({} as any);
+        const timingMetrics = [{id: 'metric-1', name: 'Time to acknowledge'}];
+        mockClientFetchPlaybook.mockResolvedValue({...makeRestPlaybook(false), playbook_type: 'exercise', timing_metrics: timingMetrics} as any);
+
+        renderer.create(
+            <Outline
+                playbook={makePlaybook()}
+                refetch={jest.fn()}
+                restPlaybook={{...makeRestPlaybook(false), playbook_type: '', timing_metrics: []}}
+            />,
+        );
+
+        await act(async () => {
+            capturedOnNewChannelOnlyChange!({new_channel_only: true});
+        });
+
+        expect(mockSavePlaybook).toHaveBeenCalledWith(
+            expect.objectContaining({new_channel_only: true, playbook_type: 'exercise', timing_metrics: timingMetrics}),
+        );
+    });
 });
 
 // --- Tests: auto-archive optimistic state ---
