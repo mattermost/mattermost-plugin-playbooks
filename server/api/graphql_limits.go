@@ -557,20 +557,10 @@ func (l *gqlLexer) skipIgnored() {
 
 func (l *gqlLexer) skipString() error {
 	start := l.pos
+	// graphql-go reads `"""` in a query as an empty string followed by a new string, so a block
+	// string here would hide selections from this check that the executor still runs.
 	if len(l.src)-l.pos >= 3 && l.src[l.pos:l.pos+3] == `"""` {
-		l.pos += 3
-		for l.pos < len(l.src) {
-			switch {
-			case len(l.src)-l.pos >= 4 && l.src[l.pos:l.pos+4] == `\"""`:
-				l.pos += 4
-			case len(l.src)-l.pos >= 3 && l.src[l.pos:l.pos+3] == `"""`:
-				l.pos += 3
-				return nil
-			default:
-				l.pos++
-			}
-		}
-		return errors.Errorf("unterminated string at offset %d", start)
+		return errors.Errorf("block strings are not supported at offset %d", start)
 	}
 
 	l.pos++

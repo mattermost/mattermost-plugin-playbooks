@@ -203,8 +203,7 @@ func TestCheckGraphQLQueryLimitsAllowsMergedSelections(t *testing.T) {
 		"three root lookups":                            `query Q { ` + repeated(`a%d: run(id: "`+runID+`") { id }`, 3) + ` }`,
 		"the same nested field under different parents": `query Q { run(id: "` + runID + `") { checklists { title items { title } } } }`,
 		"punctuation and keywords inside strings":       `query Q { run(id: "{ a: followers b: followers } ... on \" #") { id } }`,
-		"block strings":                                 `query Q { run(id: """ { a: x } \""" b: y """) { id } }`,
-		"comments":                                      "query Q { # a: followers b: followers {\n run(id: \"" + runID + "\") { id } }",
+		"comments": "query Q { # a: followers b: followers {\n run(id: \"" + runID + "\") { id } }",
 		"variables with defaults and directives": `query Q($id: String! = "x", $flag: Boolean = true) @dir {
 			run(id: $id) { id @include(if: $flag) name @skip(if: false) }
 		}`,
@@ -221,10 +220,15 @@ func TestCheckGraphQLQueryLimitsFailsClosed(t *testing.T) {
 		query string
 		want  string
 	}{
-		"an empty document":           {query: "", want: "no operation"},
-		"an unterminated string":      {query: `query Q { run(id: "abc) { id } }`, want: "unterminated string"},
-		"an unterminated block":       {query: `query Q { run(id: "x") { id }`, want: "unexpected end"},
-		"an unknown character":        {query: `query Q { run(id: "x") { id; } }`, want: "unexpected character"},
+		"an empty document":      {query: "", want: "no operation"},
+		"an unterminated string": {query: `query Q { run(id: "abc) { id } }`, want: "unterminated string"},
+		"an unterminated block":  {query: `query Q { run(id: "x") { id }`, want: "unexpected end"},
+		"an unknown character":   {query: `query Q { run(id: "x") { id; } }`, want: "unexpected character"},
+		"a block string":         {query: `query Q { run(id: """x""") { id } }`, want: "block strings are not supported"},
+		"aliases hidden by a block string": {
+			query: `query Q { run(id: [""" "]) { id } ` + repeated(`a%d: run(id: "x") { id }`, 10) + ` b: run(id: [" """]) { id } }`,
+			want:  "block strings are not supported",
+		},
 		"an unknown fragment":         {query: `query Q { run(id: "x") { ...Missing } }`, want: `unknown fragment "Missing"`},
 		"a fragment defined twice":    {query: `query Q { run(id: "x") { ...F } } fragment F on Run { id } fragment F on Run { name }`, want: "defined more than once"},
 		"a fragment spreading itself": {query: `query Q { run(id: "x") { ...F } } fragment F on Run { id ...F }`, want: `fragment "F" spreads itself`},
