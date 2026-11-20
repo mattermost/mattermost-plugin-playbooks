@@ -11,10 +11,9 @@ import * as client from 'src/client';
 import {handleReconnect, handleWebsocketPlaybookRunUpdatedIncremental} from './websocket_events';
 import {PLAYBOOK_RUN_UPDATED, RECEIVED_TEAM_PLAYBOOK_RUNS, WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED} from './types/actions';
 
-import {PlaybookRun, PlaybookRunStatus} from './types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus, PlaybookRunType} from './types/playbook_run';
 import {ChecklistUpdate, PlaybookRunUpdate} from './types/websocket_events';
 import {TimelineEvent, TimelineEventType} from './types/rhs';
-import {PlaybookRunType} from './graphql/generated/graphql';
 
 const mockStore = configureStore<GlobalState, DispatchFunc>();
 

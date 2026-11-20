@@ -1,14 +1,27 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {PropertyField, PropertyValue} from 'src/types/properties';
 
 import {TimelineEvent} from 'src/types/rhs';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
-// Re-export for backward compatibility
-export {RunStatus as PlaybookRunStatus};
+/** Matches the server run type strings and the former GraphQL PlaybookRunType enum. */
+export const PlaybookRunType = {
+    ChannelChecklist: 'channelChecklist',
+    Playbook: 'playbook',
+} as const;
+export type PlaybookRunType = (typeof PlaybookRunType)[keyof typeof PlaybookRunType];
+
+/** Matches the server CurrentStatus strings and the former GraphQL RunStatus enum. */
+export const RunStatus = {
+    Finished: 'Finished',
+    InProgress: 'InProgress',
+} as const;
+export type RunStatus = (typeof RunStatus)[keyof typeof RunStatus];
+
+/** Alias kept for call sites that already use PlaybookRunStatus. */
+export const PlaybookRunStatus = RunStatus;
 
 export interface PlaybookRun {
     id: string;

@@ -10,10 +10,10 @@ import {ChevronDownIcon, ChevronUpIcon} from '@mattermost/compass-icons/componen
 import {UserProfile} from '@mattermost/types/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import {PlaybookRun, PlaybookRunStatus, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {fetchPlaybookRun, setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';

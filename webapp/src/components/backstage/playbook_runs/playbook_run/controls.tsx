@@ -20,12 +20,12 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
+import {PlaybookRun, PlaybookRunType, playbookRunIsActive} from 'src/types/playbook_run';
+
 import {useAppSelector} from 'src/hooks/redux';
 
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {copyToClipboard} from 'src/utils';
 
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/backstage/shared';

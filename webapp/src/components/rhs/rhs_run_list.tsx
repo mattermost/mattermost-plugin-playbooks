@@ -42,7 +42,7 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 
-import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
+import {PlaybookRunType, RunStatus} from 'src/types/playbook_run';
 import {useTextOverflow} from 'src/hooks';
 import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
 

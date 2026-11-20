@@ -17,7 +17,7 @@ import {ToastProvider} from 'src/components/backstage/toast_banner';
 import {navigateToChannel} from 'src/browser_routing';
 import {usePlaybooksCrud} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {RunStatus} from 'src/graphql/generated/graphql';
+import {RunStatus} from 'src/types/playbook_run';
 
 import {graphql} from 'src/graphql/generated/gql';
 

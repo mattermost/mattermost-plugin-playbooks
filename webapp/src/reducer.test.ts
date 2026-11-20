@@ -1,11 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {PlaybookRun, PlaybookRunType} from 'src/types/playbook_run';
 import {REMOVED_FROM_CHANNEL} from 'src/types/actions';
 import reducer from 'src/reducer';
 import {websocketPlaybookRunIncrementalUpdateReceived} from 'src/actions';
-import {PlaybookRun} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 describe('myPlaybookRunsByTeam', () => {
     // @ts-ignore
