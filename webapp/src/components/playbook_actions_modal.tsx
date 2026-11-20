@@ -11,7 +11,7 @@ import {hidePlaybookActionsModal} from 'src/actions';
 import {isPlaybookActionsModalVisible} from 'src/selectors';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
-import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/hooks/playbooks';
 import ActionsModal, {ActionsContainer, TriggersContainer} from 'src/components/actions_modal';
 import {CategorizeChannelChildren, WelcomeActionChildren} from 'src/components/actions_modal_action_children';
 

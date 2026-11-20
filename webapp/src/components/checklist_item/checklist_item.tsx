@@ -39,7 +39,7 @@ import {
     TaskRequirement,
     isRoleBasedAssigneeType,
 } from 'src/types/playbook';
-import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
+import {useUpdateRunItemTaskActions} from 'src/hooks/playbooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
 import {TimelineEvent} from 'src/types/rhs';

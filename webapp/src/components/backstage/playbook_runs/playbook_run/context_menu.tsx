@@ -23,7 +23,7 @@ import {DropdownMenu, TitleButton} from 'src/components/dot_menu';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {SemiBoldHeading} from 'src/styles/headings';
-import {useManageRunMembership} from 'src/graphql/hooks';
+import {useManageRunMembership} from 'src/hooks/playbooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';

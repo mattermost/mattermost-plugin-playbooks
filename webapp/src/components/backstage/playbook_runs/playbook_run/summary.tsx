@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
 
-import {useUpdateRun} from 'src/graphql/hooks';
+import {useUpdateRun} from 'src/hooks/playbooks';
 import MarkdownEdit from 'src/components/markdown_edit';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Timestamp} from 'src/webapp_globals';
