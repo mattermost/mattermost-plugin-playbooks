@@ -543,6 +543,14 @@ type PlaybookService interface {
 	// setting for a playbook.
 	UpdateChannelNameTemplateLocked(playbookID string, locked bool, userID string) error
 
+	// GraphqlUpdate applies a partial field update using a setmap (same path as the
+	// GraphQL updatePlaybook mutation and PATCH /playbooks/{id}).
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
+	// ValidateRunNumberPrefixUnique returns ErrDuplicateEntry if prefix is already used by
+	// another active playbook on the team. Pass excludeID of the playbook being updated.
+	ValidateRunNumberPrefixUnique(teamID, prefix, excludeID string) error
+
 	// GetTeamPlaybookSchemeRoles returns the playbook role names the team's scheme assigns,
 	// falling back to the built-in roles when the team has no scheme.
 	GetTeamPlaybookSchemeRoles(teamID string) (PlaybookSchemeRoles, error)
