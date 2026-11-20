@@ -1,24 +1,20 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
-import {ApolloProvider, useQuery} from '@apollo/client';
 import {BookLockOutlineIcon, BookOutlineIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
-
-import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
-import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {PresetTemplate, PresetTemplates} from 'src/components/templates/template_data';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {PlaybookPermissionsParams, useHasPlaybookPermission} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {savePlaybook} from 'src/client';
-import {setPlaybookDefaults} from 'src/types/playbook';
+import {clientFetchPlaybooks, savePlaybook} from 'src/client';
+import {Playbook, setPlaybookDefaults} from 'src/types/playbook';
 
 interface Props {
     teamID: string;
@@ -32,57 +28,34 @@ interface Props {
     onSelectPlaybook: (playbookId: string) => void;
 }
 
-const PlaybookModalFieldsFragment = graphql(/* GraphQL */`
-    fragment PlaybookModalFields on Playbook {
-        id
-        title
-        description
-        is_favorite: isFavorite
-        public
-        team_id: teamID
-        members {
-            user_id: userID
-            scheme_roles: schemeRoles
-        }
-        default_playbook_member_role: defaultPlaybookMemberRole
-        last_run_at: lastRunAt
-        active_runs: activeRuns
-    }
-`);
-
-const PlaybooksModalQuery = graphql(/* GraphQL */`
-    query PlaybooksModal($channelID: String!, $teamID: String!, $searchTerm: String!) {
-        channelPlaybooks: 	runs(
-            channelID: $channelID,
-            first: 1000,
-        ) {
-            edges {
-                node {
-                    playbookID
-                }
-            }
-        }
-        yourPlaybooks: playbooks (teamID: $teamID, withMembershipOnly: true, searchTerm: $searchTerm) {
-            id
-            ...PlaybookModalFields
-        }
-        allPlaybooks: playbooks (teamID: $teamID, withMembershipOnly: false, searchTerm: $searchTerm) {
-            id
-            ...PlaybookModalFields
-        }
-    }
-`);
-
 const PlaybooksSelector = (props: Props) => {
     const {formatMessage} = useIntl();
-    const {data, loading} = useQuery(PlaybooksModalQuery, {
-        variables: {
-            teamID: props.teamID,
-            searchTerm: props.searchTerm,
-            channelID: props.channelID,
-        },
-        fetchPolicy: 'cache-and-network',
-    });
+    const [yourPlaybooks, setYourPlaybooks] = useState<Playbook[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        clientFetchPlaybooks(props.teamID, {
+            page: 0,
+            per_page: 1000,
+            with_membership_only: true,
+            search_term: props.searchTerm || undefined,
+        }).then((result) => {
+            if (!cancelled) {
+                setYourPlaybooks(result?.items ?? []);
+                setLoading(false);
+            }
+        }).catch(() => {
+            if (!cancelled) {
+                setYourPlaybooks([]);
+                setLoading(false);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [props.teamID, props.searchTerm]);
 
     // Prepare template list once on mount
     const templatesList = useMemo(() => PresetTemplates, []);
@@ -91,12 +64,10 @@ const PlaybooksSelector = (props: Props) => {
     // -> 1) YOUR PLAYBOOKS - playbooks the user is a member of
     // -> 2) PRE-BUILT PLAYBOOKS - preset templates
     const groups = useMemo(() => {
-        const groupYours = data?.yourPlaybooks || [];
-
         return [
             {
                 title: formatMessage({defaultMessage: 'YOUR PLAYBOOKS'}),
-                list: groupYours,
+                list: yourPlaybooks,
                 hideIfEmpty: true,
                 isTemplates: false,
             },
@@ -107,7 +78,7 @@ const PlaybooksSelector = (props: Props) => {
                 isTemplates: true,
             },
         ];
-    }, [data?.yourPlaybooks, formatMessage, templatesList]);
+    }, [yourPlaybooks, formatMessage, templatesList]);
 
     if (loading) {
         return <LoadingContainer><LoadingSpinner/></LoadingContainer>;
@@ -140,16 +111,13 @@ const PlaybooksSelector = (props: Props) => {
                                         />
                                     ))
                                 ) : (
-                                    (group.list as Array<FragmentType<typeof PlaybookModalFieldsFragment>>)?.map((playbook) => {
-                                        const playbookData = getFragmentData(PlaybookModalFieldsFragment, playbook);
-                                        return (
-                                            <PlaybookRow
-                                                key={`item-${playbookData.id}`}
-                                                playbook={playbook}
-                                                onSelectPlaybook={props.onSelectPlaybook}
-                                            />
-                                        );
-                                    })
+                                    (group.list as Playbook[])?.map((playbook) => (
+                                        <PlaybookRow
+                                            key={`item-${playbook.id}`}
+                                            playbook={playbook}
+                                            onSelectPlaybook={props.onSelectPlaybook}
+                                        />
+                                    ))
                                 )}
                             </Group>
                         </React.Fragment>
@@ -162,13 +130,13 @@ const PlaybooksSelector = (props: Props) => {
 
 interface PlaybookRowProps {
     onSelectPlaybook: (playbookId: string) => void;
-    playbook: FragmentType<typeof PlaybookModalFieldsFragment>;
+    playbook: Playbook;
 }
 
 const PlaybookRow = (props: PlaybookRowProps) => {
     const {formatMessage} = useIntl();
     const hasPermission = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook as Maybe<PlaybookPermissionsParams>);
-    const playbook = getFragmentData(PlaybookModalFieldsFragment, props.playbook);
+    const playbook = props.playbook;
 
     const iconProps = {
         size: 18,
@@ -264,11 +232,7 @@ const TemplateRow = (props: TemplateRowProps) => {
     );
 };
 
-const WrappedPlaybooksSelector = (props: Props) => {
-    const client = getPlaybooksGraphQLClient();
-    return <ApolloProvider client={client}><PlaybooksSelector {...props}/></ApolloProvider>;
-};
-export default WrappedPlaybooksSelector;
+export default PlaybooksSelector;
 
 const Dot = styled.span`
     margin: 0 5px;
