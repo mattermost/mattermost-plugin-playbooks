@@ -137,6 +137,40 @@ func TestTaskStateChangesRacingOtherWrites(t *testing.T) {
 		require.Len(t, h.store.stateChanges, 1)
 	})
 
+	t.Run("a retry after the tasks were reordered changes the task the user picked", func(t *testing.T) {
+		h := newTaskStateServiceWithItems(t, itemWithState("item1", ChecklistItemStateInProgress), itemWithState("item2", ChecklistItemStateInProgress))
+		h.store.races = 1
+		h.store.raceWrite = func(run *PlaybookRun) {
+			items := run.Checklists[0].Items
+			items[0], items[1] = items[1], items[0]
+		}
+
+		require.NoError(t, h.svc.ModifyCheckedState("run1", "user1", ChecklistItemStateBlocked, 0, 0, ModifyCheckedStateOptions{BlockedReason: "Waiting on legal"}))
+
+		items := h.store.run.Checklists[0].Items
+		assert.Equal(t, "item2", items[0].ID)
+		assert.Equal(t, ChecklistItemStateInProgress, items[0].State)
+		assert.Empty(t, items[0].BlockedReason)
+		assert.Equal(t, ChecklistItemStateBlocked, items[1].State)
+		assert.Equal(t, "Waiting on legal", items[1].BlockedReason)
+		require.Len(t, h.store.stateChanges, 1)
+		assert.Equal(t, "item1", h.store.stateChanges[0].ItemID)
+	})
+
+	t.Run("a retry fails when the task the user picked was removed", func(t *testing.T) {
+		h := newTaskStateServiceWithItems(t, itemWithState("item1", ChecklistItemStateOpen), itemWithState("item2", ChecklistItemStateOpen))
+		h.store.races = 1
+		h.store.raceWrite = func(run *PlaybookRun) {
+			run.Checklists[0].Items = run.Checklists[0].Items[1:]
+		}
+
+		err := h.svc.SkipChecklistItem("run1", "user1", 0, 0)
+
+		assert.ErrorIs(t, err, ErrNotFound)
+		assert.Equal(t, ChecklistItemStateOpen, h.store.item().State, "the task now first in the list must be left alone")
+		assert.Empty(t, h.store.stateChanges)
+	})
+
 	t.Run("gives up when the run keeps changing", func(t *testing.T) {
 		h := newTaskStateService(t, itemWithState("item1", ChecklistItemStateOpen))
 		h.store.races = maxRunChangedAttempts

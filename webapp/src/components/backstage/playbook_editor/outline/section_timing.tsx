@@ -175,6 +175,7 @@ const SectionTiming = ({playbookId, checklists, playbookType, timingMetrics, can
                     {canEdit && (
                         <MetricActions>
                             <TertiaryButton
+                                disabled={saving}
                                 onClick={() => {
                                     setDraft({...metric});
                                     setEditingId(metric.id);
@@ -287,6 +288,7 @@ const SectionTiming = ({playbookId, checklists, playbookType, timingMetrics, can
             {canEdit && !draft && (
                 <AddButton
                     data-testid='timing-metric-add'
+                    disabled={saving}
                     onClick={() => {
                         setDraft(emptyMetric());
                         setEditingId(null);

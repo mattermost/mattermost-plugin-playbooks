@@ -127,6 +127,22 @@ func TestComputeRunTiming(t *testing.T) {
 		assert.Equal(t, int64(2000), timing.WaitingMillis)
 	})
 
+	t.Run("unblocking after the run ended leaves the run as it was when it ended", func(t *testing.T) {
+		run := timingRun("a")
+		run.EndAt = 5000
+
+		timing := ComputeRunTiming(run, []ChecklistItemStateChange{
+			change("a", open, blocked, 2000),
+			change("a", blocked, started, 8000),
+		}, 10000)
+
+		item := itemTiming(t, timing, "a")
+		assert.Equal(t, int64(2000), item.BlockedSince)
+		assert.Equal(t, int64(3000), item.BlockedMillis)
+		assert.Zero(t, item.StartedAt)
+		assert.Equal(t, 1, timing.BlockedItems)
+	})
+
 	t.Run("items removed from the run and items with no changes are left out", func(t *testing.T) {
 		timing := ComputeRunTiming(timingRun("a", "b"), []ChecklistItemStateChange{
 			change("a", open, started, 2000),

@@ -806,7 +806,7 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 func (s *playbookRunStore) BumpRunUpdatedAt(playbookRunID string) error {
 	if _, err := s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
-		Set("UpdateAt", model.GetMillis()).
+		Set("UpdateAt", nextUpdateAt()).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to bump UpdateAt for playbook run '%s'", playbookRunID)
 	}
@@ -1124,7 +1124,7 @@ func (s *playbookRunStore) ChangeCreationDate(playbookRunID string, creationTime
 	updateQuery := s.queryBuilder.Update("IR_Incident").
 		Where(sq.Eq{"ID": playbookRunID}).
 		Set("CreateAt", model.GetMillisForTime(creationTimestamp)).
-		Set("UpdateAt", model.GetMillis())
+		Set("UpdateAt", nextUpdateAt())
 
 	sqlResult, err := s.store.execBuilder(s.store.db, updateQuery)
 	if err != nil {
@@ -1178,7 +1178,7 @@ func (s *playbookRunStore) SetBroadcastChannelIDsToRootID(playbookRunID string, 
 		sq.Update("IR_Incident").
 			SetMap(map[string]interface{}{
 				"ChannelIDToRootID": data,
-				"UpdateAt":          model.GetMillis(),
+				"UpdateAt":          nextUpdateAt(),
 			}).
 			Where(sq.Eq{"ID": playbookRunID}))
 	if err != nil {
@@ -1748,7 +1748,7 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 func (s *playbookRunStore) touchPlaybookRun(playbookRunID string) error {
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
-		Set("UpdateAt", model.GetMillis()).
+		Set("UpdateAt", nextUpdateAt()).
 		Where(sq.Eq{"ID": playbookRunID}))
 
 	return err
@@ -1941,4 +1941,10 @@ func queryStarted(query sq.SelectBuilder, start int64, end int64) sq.SelectBuild
 			sq.GtOrEq{"i.CreateAt": start},
 			sq.Lt{"i.CreateAt": end},
 		})
+}
+
+// nextUpdateAt moves a run's UpdateAt forward even within the same millisecond, so writers that
+// compare it against a loaded run always see that the run changed.
+func nextUpdateAt() sq.Sqlizer {
+	return sq.Expr("GREATEST(UpdateAt + 1, ?)", model.GetMillis())
 }

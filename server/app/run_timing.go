@@ -129,13 +129,13 @@ func computeItemTiming(checklistID, itemID string, changes []ChecklistItemStateC
 	var blocked []interval
 	var blockedStart int64
 	for _, change := range changes {
-		if change.FromState == ChecklistItemStateBlocked && blockedStart > 0 {
-			blocked = appendClipped(blocked, blockedStart, change.ChangedAt, runEnd)
-			blockedStart = 0
-		}
 		// Tasks can still be changed once the run ends, but the run's clock has stopped.
 		if change.ChangedAt > runEnd {
 			continue
+		}
+		if change.FromState == ChecklistItemStateBlocked && blockedStart > 0 {
+			blocked = appendClipped(blocked, blockedStart, change.ChangedAt, runEnd)
+			blockedStart = 0
 		}
 		if change.FromState == ChecklistItemStateClosed && timing.FinishedAt > 0 {
 			timing.Reopened = true

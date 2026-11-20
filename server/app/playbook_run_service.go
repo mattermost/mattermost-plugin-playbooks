@@ -2360,7 +2360,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) modifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int, opts ...ModifyCheckedStateOptions) error {
+func (s *PlaybookRunServiceImpl) modifyCheckedState(playbookRunID, userID, newState string, target *checklistTarget, opts ...ModifyCheckedStateOptions) error {
 	auditRec := plugin.MakeAuditRecord("modifyChecklistItemState", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -2368,10 +2368,10 @@ func (s *PlaybookRunServiceImpl) modifyCheckedState(playbookRunID, userID, newSt
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
 	model.AddEventParameterToAuditRec(auditRec, "newState", newState)
-	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
-	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", target.checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", target.itemNumber)
 
-	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	playbookRunToModify, checklistNumber, itemNumber, err := s.checklistItemTargetVerify(playbookRunID, target)
 	if err != nil {
 		return err
 	}
@@ -3555,8 +3555,8 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) skipChecklist(playbookRunID, userID string, checklistNumber int) error {
-	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+func (s *PlaybookRunServiceImpl) skipChecklist(playbookRunID, userID string, target *checklistTarget) error {
+	playbookRunToModify, checklistNumber, _, err := s.checklistTargetVerify(playbookRunID, target)
 	if err != nil {
 		return err
 	}
@@ -3594,8 +3594,8 @@ func (s *PlaybookRunServiceImpl) skipChecklist(playbookRunID, userID string, che
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) restoreChecklist(playbookRunID, userID string, checklistNumber int) error {
-	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+func (s *PlaybookRunServiceImpl) restoreChecklist(playbookRunID, userID string, target *checklistTarget) error {
+	playbookRunToModify, checklistNumber, _, err := s.checklistTargetVerify(playbookRunID, target)
 	if err != nil {
 		return err
 	}
@@ -3632,17 +3632,17 @@ func (s *PlaybookRunServiceImpl) restoreChecklist(playbookRunID, userID string, 
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) skipChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+func (s *PlaybookRunServiceImpl) skipChecklistItem(playbookRunID, userID string, target *checklistTarget) error {
 	auditRec := plugin.MakeAuditRecord("skipChecklistItem", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
 	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
-	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", target.checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", target.itemNumber)
 
-	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	playbookRunToModify, checklistNumber, itemNumber, err := s.checklistItemTargetVerify(playbookRunID, target)
 	if err != nil {
 		return err
 	}
@@ -3732,17 +3732,17 @@ func (s *PlaybookRunServiceImpl) createTaskStateModifiedEvent(playbookRunID, use
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) restoreChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+func (s *PlaybookRunServiceImpl) restoreChecklistItem(playbookRunID, userID string, target *checklistTarget) error {
 	auditRec := plugin.MakeAuditRecord("restoreChecklistItem", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
 	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
-	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", target.checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", target.itemNumber)
 
-	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	playbookRunToModify, checklistNumber, itemNumber, err := s.checklistItemTargetVerify(playbookRunID, target)
 	if err != nil {
 		return err
 	}

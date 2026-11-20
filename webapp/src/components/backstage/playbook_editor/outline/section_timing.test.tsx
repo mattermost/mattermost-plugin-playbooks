@@ -4,6 +4,7 @@
 import React, {useState} from 'react';
 import {IntlProvider} from 'react-intl';
 import {
+    act,
     fireEvent,
     render,
     screen,
@@ -208,6 +209,25 @@ describe('SectionTiming', () => {
         fireEvent.click(screen.getByText('Remove'));
 
         await waitFor(() => expect(screen.queryByTestId('playbook-timing-form')).toBeNull());
+    });
+
+    it('does not let another draft start while a removal is saving', async () => {
+        let finishRemoval: (value: any) => void = () => undefined;
+        jest.mocked(updatePlaybookTiming).mockReturnValue(new Promise((resolve) => {
+            finishRemoval = resolve;
+        }));
+        const metrics = ['A', 'B'].map((name) => ({...acknowledgeMetric, id: `metric-${name}`, name}));
+        renderSection({timingMetrics: metrics});
+
+        fireEvent.click(screen.getAllByText('Edit')[0]);
+        fireEvent.click(screen.getAllByText('Remove')[0]);
+
+        expect(screen.getAllByText('Edit').every((button) => isDisabled(button.closest('button') as HTMLElement))).toBe(true);
+
+        await act(async () => {
+            finishRemoval({playbook_type: PlaybookType.Operational, timing_metrics: [metrics[1]]});
+        });
+        expect(screen.queryByTestId('playbook-timing-form')).toBeNull();
     });
 
     it('is read-only for users who cannot edit the playbook', () => {
