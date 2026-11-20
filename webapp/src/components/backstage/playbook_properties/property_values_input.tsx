@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
@@ -120,13 +120,14 @@ const ClickableMultiValue = (props: {
     disabled?: boolean;
 }) => {
     const [editValue, setEditValue] = useState(props.data.label);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         setEditValue(props.data.label);
     }, [props.data.label]);
 
     const onDropdownChange = (open: boolean) => {
+        setIsOpen(open);
         if (!open) {
             handleRename();
             setEditValue(props.data.label);
@@ -165,12 +166,16 @@ const ClickableMultiValue = (props: {
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         e.stopPropagation();
+
+        // Enter during IME composition confirms a candidate, not the edit
+        if (e.nativeEvent.isComposing) {
+            return;
+        }
         if (e.key === 'Enter') {
-            handleRename();
-            inputRef.current?.blur();
+            onDropdownChange(false);
         } else if (e.key === 'Escape') {
             setEditValue(props.data.label);
-            inputRef.current?.blur();
+            setIsOpen(false);
         }
     };
 
@@ -188,9 +193,10 @@ const ClickableMultiValue = (props: {
 
     return (
         <Dropdown
+            isOpen={isOpen}
             onOpenChange={onDropdownChange}
             target={
-                <MultiValueContainer>
+                <MultiValueContainer onClick={() => onDropdownChange(!isOpen)}>
                     <MultiValueLabel>{props.data.label}</MultiValueLabel>
                 </MultiValueContainer>
             }
@@ -198,7 +204,6 @@ const ClickableMultiValue = (props: {
             <DropdownMenu>
                 <DropdownInputContainer>
                     <RenameInput
-                        ref={inputRef}
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onFocus={(e) => e.target.select()}

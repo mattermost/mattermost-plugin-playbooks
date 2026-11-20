@@ -4968,7 +4968,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	// Check if any user is the owner
 	for _, userID := range userIDs {
 		if playbookRun.OwnerUserID == userID {
-			return errors.New("owner user can't leave the run")
+			return errors.Wrap(ErrMalformedPlaybookRun, "owner user can't leave the run")
 		}
 	}
 

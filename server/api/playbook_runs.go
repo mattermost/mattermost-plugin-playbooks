@@ -142,6 +142,11 @@ func NewPlaybookRunHandler(
 	retrospectiveRouter.HandleFunc("", withContext(handler.updateRetrospective)).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", withContext(handler.publishRetrospective)).Methods(http.MethodPost)
 
+	// Participants routes check permissions per request: joining or leaving only needs RunView.
+	participantsRouter := playbookRunRouter.PathPrefix("/participants").Subrouter()
+	participantsRouter.HandleFunc("", withContext(handler.addParticipants)).Methods(http.MethodPost)
+	participantsRouter.HandleFunc("", withContext(handler.removeParticipants)).Methods(http.MethodDelete)
+
 	followersRouter := playbookRunRouter.PathPrefix("/followers").Subrouter()
 	followersRouter.HandleFunc("", withContext(handler.follow)).Methods(http.MethodPut)
 	followersRouter.HandleFunc("", withContext(handler.unfollow)).Methods(http.MethodDelete)
@@ -293,6 +298,25 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if err := addRunSettingsToSetmap(h.pluginAPI, h.permissions, userID, playbookRun, runSettingsUpdate{
+		ChannelID:                               updates.ChannelID,
+		CreateChannelMemberOnNewParticipant:     updates.CreateChannelMemberOnNewParticipant,
+		RemoveChannelMemberOnRemovedParticipant: updates.RemoveChannelMemberOnRemovedParticipant,
+		StatusUpdateBroadcastChannelsEnabled:    updates.StatusUpdateBroadcastChannelsEnabled,
+		StatusUpdateBroadcastWebhooksEnabled:    updates.StatusUpdateBroadcastWebhooksEnabled,
+		BroadcastChannelIDs:                     updates.BroadcastChannelIDs,
+		WebhookOnStatusUpdateURLs:               updates.WebhookOnStatusUpdateURLs,
+	}, fieldsToUpdate); err != nil {
+		h.handleRunUpdateError(w, c.logger, err)
+		return
+	}
+
 	// Update using GraphqlUpdate
 	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
 		h.HandleError(w, c.logger, err)
@@ -307,6 +331,82 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	}
 
 	ReturnJSON(w, updatedPlaybookRun, http.StatusOK)
+}
+
+// addParticipants handles POST /runs/{id}/participants.
+func (h *PlaybookRunHandler) addParticipants(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	opts, ok := h.decodeParticipantsOptions(c, w, r)
+	if !ok {
+		return
+	}
+
+	if err := checkChangeRunParticipantsPermissions(h.permissions, h.playbookRunService, userID, playbookRunID, opts.UserIDs); err != nil {
+		h.handleRunUpdateError(w, c.logger, err)
+		return
+	}
+
+	if _, err := h.playbookRunService.AddParticipants(playbookRunID, opts.UserIDs, userID, opts.ForceAddToChannel, true); err != nil {
+		h.handleRunUpdateError(w, c.logger, errors.Wrap(err, "failed to add participants to run"))
+		return
+	}
+
+	h.returnPlaybookRun(c, w, playbookRunID)
+}
+
+// removeParticipants handles DELETE /runs/{id}/participants.
+func (h *PlaybookRunHandler) removeParticipants(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	opts, ok := h.decodeParticipantsOptions(c, w, r)
+	if !ok {
+		return
+	}
+
+	if err := checkChangeRunParticipantsPermissions(h.permissions, h.playbookRunService, userID, playbookRunID, opts.UserIDs); err != nil {
+		h.handleRunUpdateError(w, c.logger, err)
+		return
+	}
+
+	if err := h.playbookRunService.RemoveParticipants(playbookRunID, opts.UserIDs, userID); err != nil {
+		h.handleRunUpdateError(w, c.logger, errors.Wrap(err, "failed to remove participants from run"))
+		return
+	}
+
+	for _, removedUserID := range opts.UserIDs {
+		if err := h.playbookRunService.Unfollow(playbookRunID, removedUserID); err != nil {
+			h.HandleError(w, c.logger, errors.Wrap(err, "failed to unfollow run for removed participant"))
+			return
+		}
+	}
+
+	h.returnPlaybookRun(c, w, playbookRunID)
+}
+
+func (h *PlaybookRunHandler) decodeParticipantsOptions(c *Context, w http.ResponseWriter, r *http.Request) (client.PlaybookRunParticipantsOptions, bool) {
+	var opts client.PlaybookRunParticipantsOptions
+	if err := json.NewDecoder(r.Body).Decode(&opts); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
+		return opts, false
+	}
+	if len(opts.UserIDs) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "user_ids must not be empty", errors.New("user_ids is empty"))
+		return opts, false
+	}
+	return opts, true
+}
+
+func (h *PlaybookRunHandler) returnPlaybookRun(c *Context, w http.ResponseWriter, playbookRunID string) {
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, playbookRun, http.StatusOK)
 }
 
 // createPlaybookRunFromDialog handles the interactive dialog submission when a user presses confirm on

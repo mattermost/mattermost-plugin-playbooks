@@ -214,71 +214,20 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	setmap := map[string]interface{}{}
 	addToSetmap(setmap, "Name", args.Updates.Name)
 	addToSetmap(setmap, "Description", args.Updates.Summary)
-	addToSetmap(setmap, "CreateChannelMemberOnNewParticipant", args.Updates.CreateChannelMemberOnNewParticipant)
-	addToSetmap(setmap, "RemoveChannelMemberOnRemovedParticipant", args.Updates.RemoveChannelMemberOnRemovedParticipant)
-	addToSetmap(setmap, "StatusUpdateBroadcastChannelsEnabled", args.Updates.StatusUpdateBroadcastChannelsEnabled)
-	addToSetmap(setmap, "StatusUpdateBroadcastWebhooksEnabled", args.Updates.StatusUpdateBroadcastWebhooksEnabled)
-
-	if args.Updates.ChannelID != nil {
-		channel, err := c.pluginAPI.Channel.Get(*args.Updates.ChannelID)
-		if err != nil {
-			return "", errors.Wrapf(err, "failed to get channel")
-		}
-
-		// Channel linking validation:
-		// - Playbook runs cannot be moved to DM/GM channels (only checklists can)
-		// - Checklists can move to DM/GM (TeamID updated to empty)
-		// - Team channels must be in the same team as the run
-		emptyTeamID := ""
-		if channel.IsGroupOrDirect() {
-			if playbookRun.Type == app.RunTypePlaybook {
-				return "", errors.Wrap(app.ErrMalformedPlaybookRun, "playbook runs cannot be moved to direct or group message channels")
-			}
-			// Checklist moving to a DM/GM channel — update TeamID to empty
-			addToSetmap(setmap, "TeamID", &emptyTeamID)
-		} else if playbookRun.TeamID == "" {
-			// DM/GM run moving to a team channel — update TeamID to the channel's team
-			addToSetmap(setmap, "TeamID", &channel.TeamId)
-		} else if channel.TeamId != playbookRun.TeamID {
-			return "", errors.Wrap(app.ErrMalformedPlaybookRun, "channel not in given team")
-		}
-
-		permission := model.PermissionManagePublicChannelProperties
-		permissionMessage := "You are not able to manage public channel properties"
-		if channel.Type == model.ChannelTypePrivate {
-			permission = model.PermissionManagePrivateChannelProperties
-			permissionMessage = "You are not able to manage private channel properties"
-		} else if channel.IsGroupOrDirect() {
-			permission = model.PermissionReadChannel
-			permissionMessage = "You do not have access to this channel"
-		}
-
-		if !c.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
-			return "", errors.Wrap(app.ErrNoPermissions, permissionMessage)
-		}
-		addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
-		// The new channel was not created by this run, so clear the flag to prevent
-		// auto-archive from archiving a channel that was not created for this run.
-		falseVal := false
-		addToSetmap(setmap, "ChannelCreatedByRun", &falseVal)
-	}
-
 	if args.Updates.Summary != nil {
 		addToSetmap(setmap, "SummaryModifiedAt", &now)
 	}
 
-	if args.Updates.BroadcastChannelIDs != nil {
-		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, playbookRun.BroadcastChannelIDs); err != nil {
-			return "", err
-		}
-		addConcatToSetmap(setmap, "ConcatenatedBroadcastChannelIDs", args.Updates.BroadcastChannelIDs)
-	}
-
-	if args.Updates.WebhookOnStatusUpdateURLs != nil {
-		if err := app.ValidateWebhookURLs(*args.Updates.WebhookOnStatusUpdateURLs); err != nil {
-			return "", err
-		}
-		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
+	if err := addRunSettingsToSetmap(c.pluginAPI, c.permissions, userID, playbookRun, runSettingsUpdate{
+		ChannelID:                               args.Updates.ChannelID,
+		CreateChannelMemberOnNewParticipant:     args.Updates.CreateChannelMemberOnNewParticipant,
+		RemoveChannelMemberOnRemovedParticipant: args.Updates.RemoveChannelMemberOnRemovedParticipant,
+		StatusUpdateBroadcastChannelsEnabled:    args.Updates.StatusUpdateBroadcastChannelsEnabled,
+		StatusUpdateBroadcastWebhooksEnabled:    args.Updates.StatusUpdateBroadcastWebhooksEnabled,
+		BroadcastChannelIDs:                     args.Updates.BroadcastChannelIDs,
+		WebhookOnStatusUpdateURLs:               args.Updates.WebhookOnStatusUpdateURLs,
+	}, setmap); err != nil {
+		return "", err
 	}
 
 	if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
@@ -299,23 +248,8 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	// When user is joining run RunView permission is enough, otherwise user need manage permissions
-	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
-		if err := c.permissions.RunView(userID, args.RunID); err != nil {
-			return "", errors.Wrap(err, "attempted to join run without permissions")
-		}
-	} else {
-		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-			return "", errors.Wrap(err, "attempted to modify participants without permissions")
-		}
-
-		playbookRun, err := c.playbookRunService.GetPlaybookRun(args.RunID)
-		if err != nil {
-			return "", err
-		}
-		if err := app.EnsureRunIsActive(playbookRun); err != nil {
-			return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
-		}
+	if err := checkChangeRunParticipantsPermissions(c.permissions, c.playbookRunService, userID, args.RunID, args.UserIDs); err != nil {
+		return "", participantsGraphQLError(err)
 	}
 
 	if _, err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, args.ForceAddToChannel, true); err != nil {
@@ -335,23 +269,8 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	// When user is leaving run RunView permission is enough, otherwise user need manage permissions
-	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
-		if err := c.permissions.RunView(userID, args.RunID); err != nil {
-			return "", errors.Wrap(err, "attempted to modify participants without permissions")
-		}
-	} else {
-		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-			return "", errors.Wrap(err, "attempted to modify participants without permissions")
-		}
-
-		playbookRun, err := c.playbookRunService.GetPlaybookRun(args.RunID)
-		if err != nil {
-			return "", err
-		}
-		if err := app.EnsureRunIsActive(playbookRun); err != nil {
-			return "", newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
-		}
+	if err := checkChangeRunParticipantsPermissions(c.permissions, c.playbookRunService, userID, args.RunID, args.UserIDs); err != nil {
+		return "", participantsGraphQLError(err)
 	}
 
 	if err := c.playbookRunService.RemoveParticipants(args.RunID, args.UserIDs, userID); err != nil {
@@ -396,8 +315,12 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 	return "", nil
 }
 
-func updatesOnlyRequesterMembership(requesterUserID string, userIDs []string) bool {
-	return len(userIDs) == 1 && userIDs[0] == requesterUserID
+// participantsGraphQLError exposes the finished-run reason to GraphQL clients, as other run mutations do.
+func participantsGraphQLError(err error) error {
+	if errors.Is(err, app.ErrPlaybookRunNotActive) {
+		return newGraphQLError(errors.Wrap(err, "cannot modify a finished run"))
+	}
+	return err
 }
 
 func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct {
