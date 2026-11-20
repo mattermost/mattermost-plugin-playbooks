@@ -5,6 +5,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -644,6 +645,78 @@ func TestMigrations(t *testing.T) {
 			Where(sq.Eq{"IsFollower": true}))
 		require.NoError(t, err)
 		require.Equal(t, int64(1), count)
+	})
+
+	t.Run("playbook checklist item ID backfill", func(t *testing.T) {
+		db := setupTestDB(t)
+		sqlStore := &SQLStore{
+			db,
+			builder,
+			scheduler,
+		}
+
+		setupChannelsTable(t, db)
+		setupPostsTable(t, db)
+		setupKVStoreTable(t, db)
+		setupTeamMembersTable(t, db)
+		setupChannelMembersTable(t, db)
+		setupBotsTable(t, db)
+
+		migrateUpTo(t, sqlStore, semver.MustParse("0.70.0"))
+
+		keptID := model.NewId()
+		insertPlaybook := func(checklistsJSON string) string {
+			id := model.NewId()
+			_, err := sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Playbook").
+				SetMap(map[string]interface{}{
+					"ID":                                   id,
+					"ChecklistsJSON":                       []byte(checklistsJSON),
+					"Title":                                "Playbook",
+					"Description":                          "",
+					"TeamID":                               model.NewId(),
+					"CreatePublicIncident":                 true,
+					"CreateAt":                             0,
+					"DeleteAt":                             0,
+					"NumStages":                            0,
+					"NumSteps":                             0,
+					"ReminderTimerDefaultSeconds":          0,
+					"RetrospectiveReminderIntervalSeconds": 0,
+					"UpdateAt":                             0,
+					"ExportChannelOnFinishedEnabled":       false,
+				}))
+			require.NoError(t, err)
+			return id
+		}
+		checklistsOf := func(id string) []byte {
+			var checklistsJSON []byte
+			err := sqlStore.getBuilder(sqlStore.db, &checklistsJSON, sqlStore.builder.
+				Select("ChecklistsJSON").From("IR_Playbook").Where(sq.Eq{"ID": id}))
+			require.NoError(t, err)
+			return checklistsJSON
+		}
+
+		missingIDs := insertPlaybook(`[{"title":"A","items":[{"title":"one"},{"id":"temp_1","title":"two"}]},{"title":"B","items":[{"id":"` + keptID + `","title":"three"},{"id":"` + keptID + `","title":"dup"}]}]`)
+		unreadable := insertPlaybook(`{}`)
+
+		migrateFrom(t, sqlStore, semver.MustParse("0.70.0"))
+
+		var checklists []app.Checklist
+		require.NoError(t, json.Unmarshal(checklistsOf(missingIDs), &checklists))
+		require.Len(t, checklists, 2)
+
+		seen := map[string]bool{}
+		for _, checklist := range checklists {
+			for _, item := range checklist.Items {
+				assert.True(t, model.IsValidId(item.ID), "item %q has invalid ID %q", item.Title, item.ID)
+				assert.False(t, seen[item.ID], "duplicate ID %q", item.ID)
+				seen[item.ID] = true
+			}
+		}
+		assert.Equal(t, "one", checklists[0].Items[0].Title)
+		assert.Equal(t, keptID, checklists[1].Items[0].ID)
+
+		assert.JSONEq(t, `{}`, string(checklistsOf(unreadable)))
 	})
 }
 

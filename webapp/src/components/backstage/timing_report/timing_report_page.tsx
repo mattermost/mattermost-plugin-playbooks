@@ -318,7 +318,7 @@ const Card = styled.div`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 8px;
     background: var(--center-channel-bg);
-    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
 `;
 
 const CardTitle = styled.div`

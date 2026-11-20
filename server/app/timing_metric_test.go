@@ -248,3 +248,66 @@ func TestAggregateTimingSteps(t *testing.T) {
 	assert.Equal(t, TimingReportStep{ItemID: "ack", Title: "Acknowledge", ChecklistTitle: "Triage", FinishedRuns: 2, TimedRuns: 1, MedianMillis: 2000}, steps[0])
 	assert.Equal(t, TimingReportStep{ItemID: "contain", Title: "Contain", ChecklistTitle: "Triage", FinishedRuns: 1, TimedRuns: 1, MedianMillis: 3000, BlockedRuns: 1, BlockCount: 2, MedianBlockedMillis: 1500}, steps[1])
 }
+
+type timingReportStore struct {
+	PlaybookRunStore
+	runs    []PlaybookRun
+	hasMore bool
+	options PlaybookRunFilterOptions
+}
+
+func (s *timingReportStore) GetPlaybookRuns(_ RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
+	s.options = options
+	return &GetPlaybookRunsResults{Items: s.runs, HasMore: s.hasMore}, nil
+}
+
+func (s *timingReportStore) GetChecklistItemStateChangesForRuns(runIDs []string) (map[string][]ChecklistItemStateChange, error) {
+	changes := make(map[string][]ChecklistItemStateChange, len(runIDs))
+	for _, id := range runIDs {
+		changes[id] = []ChecklistItemStateChange{{RunID: id, ChecklistID: "checklist1", ItemID: "ack", FromState: ChecklistItemStateOpen, ToState: ChecklistItemStateClosed, ChangedAt: 1000 + 10*minute}}
+	}
+	return changes, nil
+}
+
+func TestGetTimingReport(t *testing.T) {
+	mtta := TimingMetric{ID: "m1", Name: "Acknowledge", IndustryName: "MTTA", TargetMillis: 15 * minute, Start: runStarted(), End: taskFinished("ack")}
+	newRun := func(id string, exercise bool) PlaybookRun {
+		run := *metricRun(mtta)
+		run.ID = id
+		run.Exercise = exercise
+		return run
+	}
+	newService := func(store *timingReportStore) *PlaybookRunServiceImpl {
+		return &PlaybookRunServiceImpl{store: store, licenseChecker: &stubLicenseCheckerNoAttributes{}}
+	}
+
+	t.Run("leaves out exercise runs unless asked", func(t *testing.T) {
+		store := &timingReportStore{runs: []PlaybookRun{newRun("real", false), newRun("drill", true)}}
+		svc := newService(store)
+
+		report, err := svc.GetTimingReport(RequesterInfo{UserID: "user1"}, TimingReportOptions{TeamID: "team1"})
+		require.NoError(t, err)
+		assert.Equal(t, 1, report.RunCount)
+		require.Len(t, report.Rows, 1)
+		assert.Equal(t, "real", report.Rows[0].RunID)
+
+		report, err = svc.GetTimingReport(RequesterInfo{UserID: "user1"}, TimingReportOptions{TeamID: "team1", IncludeExercises: true})
+		require.NoError(t, err)
+		assert.Equal(t, 2, report.RunCount)
+		require.Len(t, report.Metrics, 1)
+		assert.Equal(t, 2, report.Metrics[0].MetCount)
+	})
+
+	t.Run("reads a bounded page of playbook runs and flags truncation", func(t *testing.T) {
+		store := &timingReportStore{runs: []PlaybookRun{newRun("real", false)}, hasMore: true}
+
+		report, err := newService(store).GetTimingReport(RequesterInfo{UserID: "user1"}, TimingReportOptions{TeamID: "team1", StartedGTE: 500})
+		require.NoError(t, err)
+
+		assert.True(t, report.Truncated)
+		assert.Equal(t, MaxTimingReportRuns, store.options.PerPage)
+		assert.Equal(t, []string{RunTypePlaybook}, store.options.Types)
+		assert.Equal(t, int64(500), store.options.StartedGTE)
+		assert.Empty(t, report.Steps, "steps need a playbook filter")
+	})
+}
