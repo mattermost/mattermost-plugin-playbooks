@@ -11,7 +11,7 @@ import {PropertyField} from 'src/types/properties';
 import RHSProperty from './rhs_property';
 
 jest.mock('src/graphql/hooks', () => ({
-    useSetRunPropertyValue: jest.fn(() => [jest.fn().mockResolvedValue({errors: []})]),
+    useSetRunPropertyValue: jest.fn(() => [jest.fn().mockResolvedValue({data: {}, errors: undefined})]),
 }));
 
 jest.mock('src/components/backstage/toast_banner', () => ({

@@ -1035,6 +1035,19 @@ export async function fetchPlaybookPropertyFields(playbookId: string, updatedSin
     return data;
 }
 
+export async function fetchPlaybookPropertyField(playbookId: string, propertyId: string): Promise<PropertyField | undefined> {
+    const fields = await fetchPlaybookPropertyFields(playbookId);
+    return fields.find((field) => field.id === propertyId);
+}
+
+export async function setRunPropertyValue(runId: string, propertyFieldId: string, value: unknown) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/runs/${runId}/property_fields/${propertyFieldId}/value`, {
+        method: 'PUT',
+        body: JSON.stringify({value}),
+    });
+    return data;
+}
+
 export async function createPlaybookPropertyField(playbookId: string, propertyField: PropertyFieldInput): Promise<PropertyField> {
     const url = `${apiUrl}/playbooks/${playbookId}/property_fields`;
     const data = await doPost<PropertyField>(url, JSON.stringify(propertyField));
