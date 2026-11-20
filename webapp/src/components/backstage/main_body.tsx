@@ -28,6 +28,7 @@ import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl, pluginUrl} from 'src/browser_routing';
 import ErrorPage from 'src/components/error_page';
 import RunsPage from 'src/components/backstage/runs_page';
+import TimingReportPage from 'src/components/backstage/timing_report/timing_report_page';
 import {usePreviousTeamId} from 'src/hooks';
 
 const useInitTeamRoutingLogic = () => {
@@ -116,6 +117,12 @@ const MainBody = () => {
                 exact={true}
             >
                 <RunsPage/>
+            </Route>
+            <Route
+                path={`${match.url}/timing-report`}
+                exact={true}
+            >
+                <TimingReportPage/>
             </Route>
             <Route path={`${match.url}/error`}>
                 <ErrorPage/>

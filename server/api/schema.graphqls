@@ -104,6 +104,7 @@ input ChecklistUpdates {
 }
 
 input ChecklistItemUpdates {
+	id: String
 	title: String!
 	description: String!
 	state: String!
@@ -207,6 +208,7 @@ type Member {
 }
 
 type ChecklistItem {
+	id: String!
 	title: String!
 	description: String!
 	state: String!

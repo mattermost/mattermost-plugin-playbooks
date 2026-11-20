@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ReactNode, useState} from 'react';
+import React, {ReactNode, useMemo, useState} from 'react';
 
 import styled, {css} from 'styled-components';
 import {Team} from '@mattermost/types/teams';
@@ -14,6 +14,7 @@ import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {useAppDispatch} from 'src/hooks/redux';
+import {useEnsureProfiles, useFormattedUsernames} from 'src/hooks';
 
 import {
     ParticipantsChangedDetails,
@@ -149,8 +150,24 @@ interface Props {
     editable: boolean;
 }
 
+const NO_USERS: string[] = [];
+
+const blockedByUserIds = (event: TimelineEvent): string[] => {
+    if (event.event_type !== TimelineEventType.TaskStateModified) {
+        return NO_USERS;
+    }
+    try {
+        return (JSON.parse(event.details) as TaskStateModifiedDetails).blocked_by_user_ids || NO_USERS;
+    } catch {
+        return NO_USERS;
+    }
+};
+
 const TimelineEventItem = (props: Props) => {
     const dispatch = useAppDispatch();
+    const blockedByIds = useMemo(() => blockedByUserIds(props.event), [props.event]);
+    useEnsureProfiles(blockedByIds);
+    const blockedByNames = useFormattedUsernames(blockedByIds);
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const markdownOptions = {
@@ -224,7 +241,7 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: event.summary});
         case TimelineEventType.TaskStateModified: {
             const user = event.subject_display_name;
-            const {action, task: name} = parsedDetails as TaskStateModifiedDetails;
+            const {action, task: name, blocked_reason: blockedReason} = parsedDetails as TaskStateModifiedDetails;
 
             switch (action) {
             case 'check':
@@ -237,6 +254,21 @@ const TimelineEventItem = (props: Props) => {
                 return formatMessage({defaultMessage: '{user} restored checklist item "{name}"'}, {user, name});
             case 'requirements_updated':
                 return formatMessage({defaultMessage: '{user} updated requirements for checklist item "{name}"'}, {user, name});
+            case 'start':
+                return formatMessage({defaultMessage: '{user} started checklist item "{name}"'}, {user, name});
+            case 'block':
+                if (blockedByNames.length > 0) {
+                    return formatMessage(
+                        {defaultMessage: '{user} marked checklist item "{name}" as blocked by {blockers}: {reason}'},
+                        {user, name, blockers: formatList(blockedByNames.map((n) => '@' + n)), reason: blockedReason},
+                    );
+                }
+                if (blockedReason) {
+                    return formatMessage({defaultMessage: '{user} marked checklist item "{name}" as blocked: {reason}'}, {user, name, reason: blockedReason});
+                }
+                return formatMessage({defaultMessage: '{user} marked checklist item "{name}" as blocked'}, {user, name});
+            case 'unblock':
+                return formatMessage({defaultMessage: '{user} unblocked checklist item "{name}"'}, {user, name});
             default:
                 return (event.subject_display_name + ' ' + event.summary).replace(/\*\*/g, '"');
             }

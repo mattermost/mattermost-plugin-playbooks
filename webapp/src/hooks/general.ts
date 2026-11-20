@@ -49,6 +49,7 @@ import {
     fetchPlaybookRunStatusUpdates,
     fetchPlaybookRuns,
     fetchPlaybookStats,
+    fetchRunTiming,
 } from 'src/client';
 import {playbookRunUpdated} from 'src/actions';
 import {resolve} from 'src/utils';
@@ -379,6 +380,10 @@ export function useRunMetadata(id: PlaybookRun['id'] | undefined, deps: Dependen
  */
 export function useRunStatusUpdates(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
     return useThing(id, fetchPlaybookRunStatusUpdates, noopSelector, deps);
+}
+
+export function useRunTiming(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
+    return useThing(id, fetchRunTiming, noopSelector, deps);
 }
 
 export function useChannel(channelId: string) {

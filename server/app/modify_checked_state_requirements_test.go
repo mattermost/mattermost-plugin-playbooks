@@ -39,11 +39,17 @@ type stubRunStoreForCheckedState struct {
 	updatedRun     *PlaybookRun
 	updateCalls    int
 	timelineEvents []*TimelineEvent
+	stateChanges   []ChecklistItemStateChange
 }
 
 func (s *stubRunStoreForCheckedState) UpdatePlaybookRun(run *PlaybookRun) (*PlaybookRun, error) {
+	return s.UpdatePlaybookRunWithStateChanges(run, nil)
+}
+
+func (s *stubRunStoreForCheckedState) UpdatePlaybookRunWithStateChanges(run *PlaybookRun, changes []ChecklistItemStateChange) (*PlaybookRun, error) {
 	s.updateCalls++
 	s.updatedRun = run.Clone()
+	s.stateChanges = append(s.stateChanges, changes...)
 	return run, nil
 }
 

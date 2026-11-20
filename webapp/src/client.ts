@@ -37,6 +37,8 @@ import {EmptyPlaybookStats, PlaybookStats, SiteStats} from 'src/types/stats';
 
 import manifest from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
+import {RunTiming} from './types/run_timing';
+import {PlaybookType, TimingMetric, TimingReport} from './types/timing_metrics';
 import {Category} from './types/category';
 import {InsightsResponse} from './types/insights';
 import {Condition} from './types/conditions';
@@ -152,6 +154,29 @@ export async function fetchPlaybookRunMetadata(id: string) {
     const data = await doGet<Metadata>(`${apiUrl}/runs/${id}/metadata`);
 
     return data;
+}
+
+export async function fetchRunTiming(id: string) {
+    return doGet<RunTiming>(`${apiUrl}/runs/${id}/timing`);
+}
+
+export interface TimingReportQuery {
+    team_id?: string;
+    playbook_id?: string;
+    include_exercises?: boolean;
+    started_gte?: number;
+}
+
+export async function fetchTimingReport(query: TimingReportQuery) {
+    const params = qs.stringify(query, {addQueryPrefix: true, skipNulls: true});
+    return doGet<TimingReport>(`${apiUrl}/runs/timing-report${params}`);
+}
+
+export async function updatePlaybookTiming(playbookId: string, playbookType: PlaybookType, timingMetrics: TimingMetric[]) {
+    return doPut<{playbook_type: PlaybookType, timing_metrics: TimingMetric[]}>(
+        `${apiUrl}/playbooks/${playbookId}/timing`,
+        JSON.stringify({playbook_type: playbookType, timing_metrics: timingMetrics}),
+    );
 }
 
 export async function fetchPlaybookRunByChannel(channelId: string) {
@@ -396,12 +421,16 @@ export async function setChecklistItemState(
     newState: ChecklistItemState,
     itemID?: string,
     requirementValues?: Record<string, string>,
+    blockedReason?: string,
+    blockedByUserIds?: string[],
 ) {
     // Include item ID in request body when available (for incremental updates)
     const body = JSON.stringify({
         new_state: newState,
         ...(itemID && {item_id: itemID}),
         ...(requirementValues && {requirement_values: requirementValues}),
+        ...(blockedReason && {blocked_reason: blockedReason}),
+        ...(blockedByUserIds?.length && {blocked_by_user_ids: blockedByUserIds}),
     });
     try {
         return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`, body);

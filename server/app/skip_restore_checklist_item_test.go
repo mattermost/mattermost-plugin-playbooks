@@ -20,9 +20,10 @@ import (
 // which is intentional — these tests must not reach them.
 type stubTaskStateStore struct {
 	PlaybookRunStore
-	run     *PlaybookRun
-	events  []*TimelineEvent
-	updates int
+	run          *PlaybookRun
+	events       []*TimelineEvent
+	stateChanges []ChecklistItemStateChange
+	updates      int
 }
 
 func (s *stubTaskStateStore) GetPlaybookRun(_ string) (*PlaybookRun, error) {
@@ -30,8 +31,13 @@ func (s *stubTaskStateStore) GetPlaybookRun(_ string) (*PlaybookRun, error) {
 }
 
 func (s *stubTaskStateStore) UpdatePlaybookRun(run *PlaybookRun) (*PlaybookRun, error) {
+	return s.UpdatePlaybookRunWithStateChanges(run, nil)
+}
+
+func (s *stubTaskStateStore) UpdatePlaybookRunWithStateChanges(run *PlaybookRun, changes []ChecklistItemStateChange) (*PlaybookRun, error) {
 	s.updates++
 	s.run = run.Clone()
+	s.stateChanges = append(s.stateChanges, changes...)
 	return s.run.Clone(), nil
 }
 

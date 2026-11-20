@@ -254,6 +254,11 @@ type PlaybookRun struct {
 	// behaviour reflects the setting at start time and avoids a DB lookup on every finish.
 	AutoArchiveChannel bool `json:"-"`
 
+	// TimingMetrics and Exercise are snapshotted from the playbook at run creation, so editing
+	// the playbook never changes the numbers of runs already started.
+	TimingMetrics []TimingMetric `json:"timing_metrics"`
+	Exercise      bool           `json:"exercise"`
+
 	// TaskTotal and TaskCompleted are computed from Checklists; not persisted. Hidden items are
 	// excluded; Skipped items count as completed. See ComputeTaskProgress.
 	TaskTotal     int `json:"task_total"`
@@ -878,6 +883,7 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), r.WebhookOnCreationURLs...)
 	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
 	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
+	newPlaybookRun.TimingMetrics = append([]TimingMetric(nil), r.TimingMetrics...)
 	newPlaybookRun.BroadcastChannelIDs = append([]string(nil), r.BroadcastChannelIDs...)
 
 	// Clear ItemsOrder to prevent data inconsistency, same as Checklist.Clone()
@@ -1264,6 +1270,12 @@ const (
 type ModifyCheckedStateOptions struct {
 	// RequirementValues maps requirement IDs to the values filled in when checking off a task.
 	RequirementValues map[string]string
+
+	// BlockedReason is required when the new state is blocked.
+	BlockedReason string
+
+	// BlockedByUserIDs are the users the task is waiting on. Each is notified.
+	BlockedByUserIDs []string
 }
 
 // PlaybookRunService is the playbook run service interface.
@@ -1326,6 +1338,12 @@ type PlaybookRunService interface {
 
 	// GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
 	GetPlaybookRunMetadata(playbookRunID string, hasChannelAccess bool) (*Metadata, error)
+
+	// GetRunTiming computes item and run timing from the run's checklist item state changes.
+	GetRunTiming(playbookRunID string) (*RunTiming, error)
+
+	// GetTimingReport aggregates timing metrics across the playbook runs the requester can view.
+	GetTimingReport(requesterInfo RequesterInfo, options TimingReportOptions) (*TimingReport, error)
 
 	// GetPlaybookRunsForChannelByUser get the playbookRuns associated with this channel and user.
 	GetPlaybookRunsForChannelByUser(channelID string, userID string) ([]PlaybookRun, error)
@@ -1526,6 +1544,17 @@ type PlaybookRunStore interface {
 
 	// UpdatePlaybookRun updates a playbook run.
 	UpdatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
+
+	// UpdatePlaybookRunWithStateChanges updates a playbook run and appends the checklist item
+	// state changes in the same transaction, so the log can never disagree with the run.
+	UpdatePlaybookRunWithStateChanges(playbookRun *PlaybookRun, changes []ChecklistItemStateChange) (*PlaybookRun, error)
+
+	// GetChecklistItemStateChanges returns every recorded checklist item state change for the
+	// run, oldest first.
+	GetChecklistItemStateChanges(playbookRunID string) ([]ChecklistItemStateChange, error)
+
+	// GetChecklistItemStateChangesForRuns returns the state changes of each run, keyed by run ID.
+	GetChecklistItemStateChangesForRuns(playbookRunIDs []string) (map[string][]ChecklistItemStateChange, error)
 
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error

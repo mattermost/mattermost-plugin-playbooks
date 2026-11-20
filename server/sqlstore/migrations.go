@@ -6,6 +6,7 @@ package sqlstore
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -1809,4 +1810,98 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.69.0"),
+		toVersion:   semver.MustParse("0.70.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_ChecklistItemStateChange (
+					ID TEXT PRIMARY KEY,
+					RunID TEXT NOT NULL,
+					ChecklistID TEXT NOT NULL,
+					ItemID TEXT NOT NULL,
+					FromState TEXT NOT NULL,
+					ToState TEXT NOT NULL,
+					UserID TEXT NOT NULL,
+					ChangedAt BIGINT NOT NULL,
+					BlockedReason TEXT NOT NULL DEFAULT ''
+				)
+			`); err != nil {
+				return errors.Wrapf(err, "failed creating table IR_ChecklistItemStateChange")
+			}
+
+			if _, err := e.Exec(createPGIndex("IR_ChecklistItemStateChange_RunID_ChangedAt", "IR_ChecklistItemStateChange", "RunID, ChangedAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_ChecklistItemStateChange_RunID_ChangedAt")
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.70.0"),
+		toVersion:   semver.MustParse("0.71.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_ChecklistItemStateChange", "BlockedByUserIDs", "TEXT NOT NULL DEFAULT ''"); err != nil {
+				return errors.Wrapf(err, "failed adding column BlockedByUserIDs to IR_ChecklistItemStateChange")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "PlaybookType", "VARCHAR(32) NOT NULL DEFAULT ''"); err != nil {
+				return errors.Wrapf(err, "failed adding column PlaybookType to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "TimingMetricsJSON", "JSON NOT NULL DEFAULT '[]'"); err != nil {
+				return errors.Wrapf(err, "failed adding column TimingMetricsJSON to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "TimingMetricsJSON", "JSON NOT NULL DEFAULT '[]'"); err != nil {
+				return errors.Wrapf(err, "failed adding column TimingMetricsJSON to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "Exercise", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column Exercise to IR_Incident")
+			}
+			return backfillPlaybookChecklistItemIDs(e)
+		},
+	},
+}
+
+// backfillPlaybookChecklistItemIDs gives existing playbook tasks the stable IDs timing metrics
+// bind to. Playbooks used to store tasks without IDs, leaving runs to generate their own.
+func backfillPlaybookChecklistItemIDs(e sqlx.Ext) error {
+	var playbooks []struct {
+		ID             string
+		ChecklistsJSON json.RawMessage
+	}
+	if err := sqlx.Select(e, &playbooks, "SELECT ID, ChecklistsJSON FROM IR_Playbook"); err != nil {
+		return errors.Wrap(err, "failed to read playbook checklists")
+	}
+
+	for _, playbook := range playbooks {
+		if len(playbook.ChecklistsJSON) == 0 {
+			continue
+		}
+		var checklists []app.Checklist
+		if err := json.Unmarshal(playbook.ChecklistsJSON, &checklists); err != nil {
+			logrus.WithError(err).WithField("playbook_id", playbook.ID).Warn("skipping item ID backfill for unreadable playbook checklists")
+			continue
+		}
+		before := checklistItemIDs(checklists)
+		app.EnsureChecklistItemIDs(checklists)
+		if slices.Equal(before, checklistItemIDs(checklists)) {
+			continue
+		}
+		checklistsJSON, err := json.Marshal(checklists)
+		if err != nil {
+			return errors.Wrapf(err, "failed to encode checklists of playbook %s", playbook.ID)
+		}
+		if _, err := e.Exec("UPDATE IR_Playbook SET ChecklistsJSON = $1 WHERE ID = $2", checklistsJSON, playbook.ID); err != nil {
+			return errors.Wrapf(err, "failed to update checklists of playbook %s", playbook.ID)
+		}
+	}
+	return nil
+}
+
+func checklistItemIDs(checklists []app.Checklist) []string {
+	var ids []string
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			ids = append(ids, item.ID)
+		}
+	}
+	return ids
 }

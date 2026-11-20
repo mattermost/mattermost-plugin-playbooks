@@ -86,6 +86,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("/duplicate", withContext(handler.duplicatePlaybook)).Methods(http.MethodPost)
+	playbookRouter.HandleFunc("/timing", withContext(handler.updatePlaybookTiming)).Methods(http.MethodPut)
 
 	propertyFieldsRouter := playbookRouter.PathPrefix("/property_fields").Subrouter()
 	propertyFieldsRouter.HandleFunc("", withContext(handler.getPlaybookPropertyFields)).Methods(http.MethodGet)
@@ -132,6 +133,11 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 
 	if err := app.ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return false
+	}
+
+	if err := validateTiming(playbook); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid timing metrics", err)
 		return false
 	}
 
@@ -314,6 +320,12 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 	if _, ok := rawFields["channel_name_template_locked"]; !ok {
 		playbook.ChannelNameTemplateLocked = oldPlaybook.ChannelNameTemplateLocked
+	}
+	if _, ok := rawFields["playbook_type"]; !ok {
+		playbook.PlaybookType = oldPlaybook.PlaybookType
+	}
+	if _, ok := rawFields["timing_metrics"]; !ok {
+		playbook.TimingMetrics = oldPlaybook.TimingMetrics
 	}
 
 	if err = h.validateMetrics(playbook); err != nil {

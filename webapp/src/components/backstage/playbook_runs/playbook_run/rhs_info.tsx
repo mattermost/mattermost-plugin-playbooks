@@ -8,6 +8,7 @@ import {Channel} from '@mattermost/types/channels';
 import RHSInfoOverview from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_overview';
 import RHSInfoProperties from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_properties';
 import RHSInfoMetrics from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_metrics';
+import RHSInfoWaitingTime from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_waiting_time';
 import RHSInfoActivity from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_activity';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {Metadata, PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
@@ -52,6 +53,7 @@ const RHSInfo = (props: Props) => {
                 run={props.run}
                 editable={editable}
             />
+            <RHSInfoWaitingTime run={props.run}/>
             {props.run.retrospective_enabled ? (
                 <RHSInfoMetrics
                     runID={props.run.id}

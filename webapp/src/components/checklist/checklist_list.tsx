@@ -81,6 +81,7 @@ interface Props {
 
 // Omitting a field silently drops it from the mutation and the server resets it to its zero value.
 export const mapChecklistItemToInput = (ci: ChecklistItem) => ({
+    id: ci.id || '',
     title: ci.title,
     description: ci.description,
     state: ci.state,
@@ -173,6 +174,7 @@ const ChecklistList = ({
                 items: cl.items.map((ci) => {
                     return {
                         ...ci,
+                        id: ci.id || '',
                         state_modified: ci.state_modified || 0,
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,

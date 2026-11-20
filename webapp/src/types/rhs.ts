@@ -78,8 +78,10 @@ export interface UserJoinedLeftDetails {
 }
 
 export interface TaskStateModifiedDetails {
-    action: string | 'check' | 'uncheck' | 'skip' | 'restore' | 'requirements_updated';
+    action: string | 'check' | 'uncheck' | 'skip' | 'restore' | 'requirements_updated' | 'start' | 'block' | 'unblock';
     task: string;
+    blocked_reason?: string;
+    blocked_by_user_ids?: string[];
 
     // Stable checklist-item id, added so attribution can join event→item by identity instead of the
     // timestamp+title heuristic. Absent on events created before this field was introduced.

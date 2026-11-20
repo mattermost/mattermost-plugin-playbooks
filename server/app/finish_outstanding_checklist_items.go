@@ -13,7 +13,7 @@ func CountOutstandingChecklistItemsForFinishRun(checklists []Checklist) int {
 			if item.ConditionAction == ConditionActionHidden {
 				continue
 			}
-			if item.State == ChecklistItemStateOpen || item.State == ChecklistItemStateInProgress {
+			if item.State == ChecklistItemStateOpen || item.State == ChecklistItemStateInProgress || item.State == ChecklistItemStateBlocked {
 				n++
 			}
 		}
