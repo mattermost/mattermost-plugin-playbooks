@@ -76,7 +76,7 @@ const CheckIcon = () => (
     >
         <path
             d='M3 7.5l2.5 2.5L11 4.5'
-            stroke='#fff'
+            stroke='currentColor'
             strokeWidth='2'
             strokeLinecap='round'
             strokeLinejoin='round'
@@ -94,7 +94,7 @@ const BangIcon = () => (
     >
         <path
             d='M7 3v5'
-            stroke='#fff'
+            stroke='currentColor'
             strokeWidth='2'
             strokeLinecap='round'
         />
@@ -102,14 +102,14 @@ const BangIcon = () => (
             cx='7'
             cy='10.8'
             r='1.1'
-            fill='#fff'
+            fill='currentColor'
         />
     </svg>
 );
 
-const GREEN = 'var(--online-indicator, #06d6a0)';
-const BLUE = 'var(--button-bg, #1c58d9)';
-const RED = 'var(--dnd-indicator, #d24b4e)';
+const GREEN = 'var(--online-indicator)';
+const BLUE = 'var(--button-bg)';
+const RED = 'var(--dnd-indicator)';
 const GRAY = 'rgba(var(--center-channel-color-rgb), 0.24)';
 
 const markerColor = (status: PhaseStatus) => {
@@ -131,7 +131,7 @@ const Container = styled.div`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
     background: var(--center-channel-bg);
-    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
+    box-shadow: 0 2px 3px rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const Steps = styled.div`
@@ -168,6 +168,7 @@ const Marker = styled.div<{$status: PhaseStatus}>`
     border: 2px solid ${({$status}) => markerColor($status)};
     border-radius: 50%;
     background: var(--center-channel-bg);
+    color: var(--button-color);
 
     ${({$status}) => ($status === 'done' || $status === 'blocked') && css`
         background: ${markerColor($status)};
