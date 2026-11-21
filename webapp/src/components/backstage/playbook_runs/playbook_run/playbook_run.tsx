@@ -32,6 +32,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
+import PhaseTimeline from './phase_timeline';
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
 import Checklists from './checklists';
@@ -253,6 +254,9 @@ const PlaybookRunDetails = () => {
                 </Header>
                 <Main>
                     <Body>
+                        {playbookRun.use_checklists_as_phases && (
+                            <PhaseTimeline phases={playbookRun.phases ?? []}/>
+                        )}
                         <Summary
                             id={PlaybookRunIDs.SectionSummary}
                             playbookRun={playbookRun}

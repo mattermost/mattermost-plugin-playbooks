@@ -20,6 +20,7 @@ import {
     AccountPlusOutlineIcon,
     CheckCircleOutlineIcon,
     PlayIcon,
+    TimelineTextOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
 import {useAppDispatch} from 'src/hooks/redux';
@@ -61,9 +62,11 @@ interface Props {
     restPlaybook?: PlaybookWithChecklist;
     autoArchiveChannel: boolean;
     onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
+    usePhases?: boolean;
+    onUsePhasesChange?: () => void;
 }
 
-const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange}: Props) => {
+const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange, usePhases = false, onUsePhasesChange}: Props) => {
     const [restPlaybookLocal] = useRestPlaybook(playbook.id);
     const restPlaybook = restPlaybookProp ?? restPlaybookLocal;
     const [fieldNames, setFieldNames] = useState<string[] | undefined>(undefined);
@@ -387,6 +390,31 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                     />
                 </Setting>
             </StyledSection>
+
+            {onUsePhasesChange && (
+                <StyledSection>
+                    <StyledSectionTitle>
+                        <TimelineTextOutlineIcon
+                            size={22}
+                            aria-hidden={true}
+                        />
+                        <FormattedMessage defaultMessage='Run phases'/>
+                    </StyledSectionTitle>
+                    <Setting id={'use-checklists-as-phases'}>
+                        <AutomationTitle>
+                            <div data-testid='use-checklists-as-phases-toggle'>
+                                <Toggle
+                                    disabled={disabled}
+                                    isChecked={usePhases}
+                                    onChange={onUsePhasesChange}
+                                >
+                                    <FormattedMessage defaultMessage='Use task lists as phases'/>
+                                </Toggle>
+                            </div>
+                        </AutomationTitle>
+                    </Setting>
+                </StyledSection>
+            )}
 
             <StyledSection>
                 <StyledSectionTitle>

@@ -130,6 +130,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	} else {
 		currentRun.ComputeTaskProgress()
 	}
+	s.PopulatePhases(currentRun)
 
 	if previousRun != nil {
 		previousRun.ComputeTaskProgress()
@@ -4687,6 +4688,8 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 			return
 		}
 	}
+
+	s.PopulatePhases(playbookRun)
 
 	s.PublishRunEventToViewers(playbookRunUpdatedWSEvent, playbookRun, playbookRun, sendWSOptions.AdditionalUserIDs...)
 }

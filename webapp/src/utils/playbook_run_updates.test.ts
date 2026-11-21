@@ -341,5 +341,17 @@ describe('playbook_run_updates utilities', () => {
             expect(result.owner_user_id).toBe('new-owner');
             expect(result.property_values).toEqual(runWithProperties.property_values);
         });
+
+        it('applies server-computed phases even when the run had none yet', () => {
+            const phases = [{checklist_id: 'checklist_1', title: 'Test Checklist', status: 'started' as const, timestamp: 1500}];
+            const update = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {phases},
+            };
+
+            expect(testPlaybookRun.phases).toBeUndefined();
+            expect(applyIncrementalUpdate(testPlaybookRun, update).phases).toEqual(phases);
+        });
     });
 });

@@ -73,6 +73,7 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_id: string;
     new_channel_only: boolean;
     auto_archive_channel: boolean;
+    use_checklists_as_phases?: boolean;
 
     playbook_type?: PlaybookType;
     timing_metrics?: TimingMetric[];

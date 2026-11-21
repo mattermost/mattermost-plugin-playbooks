@@ -91,6 +91,9 @@ type Playbook struct {
 
 	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
 
+	// UseChecklistsAsPhases shows the run's checklists as a phase timeline on the run page.
+	UseChecklistsAsPhases bool `json:"use_checklists_as_phases" export:"use_checklists_as_phases"`
+
 	// PlaybookType is PlaybookTypeOperational or PlaybookTypeExercise. Exercise runs are left
 	// out of timing reports by default.
 	PlaybookType string `json:"playbook_type" export:"playbook_type"`

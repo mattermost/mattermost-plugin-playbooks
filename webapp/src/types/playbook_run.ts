@@ -33,6 +33,10 @@ export interface PlaybookRun {
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
     status_update_enabled: boolean;
+    use_checklists_as_phases?: boolean;
+
+    /** Computed by the server when use_checklists_as_phases is set. */
+    phases?: RunPhase[];
     broadcast_channel_ids: string[];
     status_update_broadcast_webhooks_enabled: boolean;
     webhook_on_status_update_urls: string[];
@@ -184,4 +188,15 @@ export function isRun(run: undefined | null | PlaybookRun | PlaybookRunConnectio
         return id != null && id.length > 0;
     }
     return false;
+}
+
+export type PhaseStatus = 'not_started' | 'started' | 'done' | 'blocked';
+
+export interface RunPhase {
+    checklist_id: string;
+    title: string;
+    status: PhaseStatus;
+
+    /** Epoch millis; 0 when the phase has not started. */
+    timestamp: number;
 }

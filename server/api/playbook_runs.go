@@ -713,6 +713,7 @@ func (h *PlaybookRunHandler) getPlaybookRun(c *Context, w http.ResponseWriter, r
 		h.HandleError(w, c.logger, err)
 		return
 	}
+	h.playbookRunService.PopulatePhases(playbookRunToGet)
 
 	ReturnJSON(w, playbookRunToGet, http.StatusOK)
 }

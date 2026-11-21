@@ -1858,6 +1858,19 @@ var migrations = []Migration{
 			return backfillPlaybookChecklistItemIDs(e)
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.71.0"),
+		toVersion:   semver.MustParse("0.72.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Playbook", "UseChecklistsAsPhases", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column UseChecklistsAsPhases to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "UseChecklistsAsPhases", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column UseChecklistsAsPhases to IR_Incident")
+			}
+			return nil
+		},
+	},
 }
 
 // backfillPlaybookChecklistItemIDs gives existing playbook tasks the stable IDs timing metrics

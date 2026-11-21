@@ -61,6 +61,9 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
     const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
+    const [usePhasesOverride, setUsePhasesOverride] = useState<boolean | undefined>(undefined);
+    const savingUsePhases = useRef(false);
+    const effectiveUsePhases = usePhasesOverride ?? restPlaybook?.use_checklists_as_phases ?? false;
     const [bulkEditMode, setBulkEditMode] = useState(false);
     const latestToggleReq = useRef(0);
     const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
@@ -109,6 +112,33 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
             })
             .finally(() => {
                 savingNewChannelOnly.current = false;
+            });
+    };
+
+    const toggleUseChecklistsAsPhases = () => {
+        if (archived || !canEdit || !restPlaybook || savingUsePhases.current) {
+            return;
+        }
+        const prev = effectiveUsePhases;
+        setUsePhasesOverride(!prev);
+        savingUsePhases.current = true;
+        clientFetchPlaybook(restPlaybook.id)
+            .then((latest) => {
+                if (!latest) {
+                    throw new Error('Unable to fetch latest playbook before save');
+                }
+                return savePlaybook({...latest, use_checklists_as_phases: !prev});
+            })
+            .then(() => refetch())
+            .catch(() => {
+                setUsePhasesOverride(prev);
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+            })
+            .finally(() => {
+                savingUsePhases.current = false;
             });
     };
 
@@ -327,6 +357,8 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                     restPlaybook={restPlaybook}
                     autoArchiveChannel={effectiveAutoArchive}
                     onAutoArchiveChange={handleAutoArchiveChange}
+                    usePhases={effectiveUsePhases}
+                    onUsePhasesChange={restPlaybook ? toggleUseChecklistsAsPhases : undefined}
                 />
             </Section>
             {showAdminSettings && (

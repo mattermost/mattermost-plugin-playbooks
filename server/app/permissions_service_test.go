@@ -607,6 +607,8 @@ func (s *stubRunService) GetPlaybookRun(playbookRunID string) (*PlaybookRun, err
 	return s.run, s.err
 }
 
+func (s *stubRunService) PopulatePhases(*PlaybookRun) {}
+
 func (s *stubRunService) GetPlaybookRuns(RequesterInfo, PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
 	panic("stubRunService: GetPlaybookRuns not implemented")
 }

@@ -233,7 +233,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type",
 			"i.RunNumber", "i.SequentialID",
-			"i.ChannelCreatedByRun", "i.AutoArchivedChannel", "i.AutoArchiveChannel",
+			"i.ChannelCreatedByRun", "i.AutoArchivedChannel", "i.AutoArchiveChannel", "i.UseChecklistsAsPhases",
 			"i.TimingMetricsJSON", "i.Exercise").
 		Column(participantsCol).
 		From("IR_Incident AS i")
@@ -549,6 +549,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"ChannelCreatedByRun":                     rawPlaybookRun.ChannelCreatedByRun,
 			"AutoArchivedChannel":                     rawPlaybookRun.AutoArchivedChannel,
 			"AutoArchiveChannel":                      rawPlaybookRun.AutoArchiveChannel,
+			"UseChecklistsAsPhases":                   rawPlaybookRun.UseChecklistsAsPhases,
 			"TimingMetricsJSON":                       rawPlaybookRun.TimingMetricsJSON,
 			"Exercise":                                rawPlaybookRun.Exercise,
 			// Preserved for backwards compatibility with v1.2

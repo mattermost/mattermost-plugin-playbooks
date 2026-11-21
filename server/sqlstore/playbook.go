@@ -174,6 +174,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.OwnerGroupOnlyActions",
 			"p.NewChannelOnly",
 			"p.AutoArchiveChannel",
+			"p.UseChecklistsAsPhases",
 			"p.ChecklistsJSON",
 			"p.PlaybookType",
 			"p.TimingMetricsJSON",
@@ -293,6 +294,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"OwnerGroupOnlyActions": rawPlaybook.OwnerGroupOnlyActions,
 			"NewChannelOnly":        rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":    rawPlaybook.AutoArchiveChannel,
+			"UseChecklistsAsPhases": rawPlaybook.UseChecklistsAsPhases,
 			"PlaybookType":          rawPlaybook.PlaybookType,
 			"TimingMetricsJSON":     rawPlaybook.TimingMetricsJSON,
 		}))
@@ -754,6 +756,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"OwnerGroupOnlyActions":                   rawPlaybook.OwnerGroupOnlyActions,
 			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
+			"UseChecklistsAsPhases":                   rawPlaybook.UseChecklistsAsPhases,
 			"PlaybookType":                            rawPlaybook.PlaybookType,
 			"TimingMetricsJSON":                       rawPlaybook.TimingMetricsJSON,
 		}).

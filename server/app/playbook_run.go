@@ -254,6 +254,10 @@ type PlaybookRun struct {
 	// behaviour reflects the setting at start time and avoids a DB lookup on every finish.
 	AutoArchiveChannel bool `json:"-"`
 
+	// UseChecklistsAsPhases is snapshotted from the playbook at run creation. When set, the run
+	// page shows its checklists as a phase timeline.
+	UseChecklistsAsPhases bool `json:"use_checklists_as_phases"`
+
 	// TimingMetrics and Exercise are snapshotted from the playbook at run creation, so editing
 	// the playbook never changes the numbers of runs already started.
 	TimingMetrics []TimingMetric `json:"timing_metrics"`
@@ -263,6 +267,10 @@ type PlaybookRun struct {
 	// excluded; Skipped items count as completed. See ComputeTaskProgress.
 	TaskTotal     int `json:"task_total"`
 	TaskCompleted int `json:"task_completed"`
+
+	// Phases are computed from Checklists when UseChecklistsAsPhases is set; not persisted. They
+	// are only filled in on REST and websocket payloads, see PlaybookRunService.PopulatePhases.
+	Phases []RunPhase `json:"phases,omitempty"`
 }
 
 func (r *PlaybookRun) ComputeTaskProgress() {
@@ -644,6 +652,11 @@ func detectChecklistChanges(previous, current *PlaybookRun, changes map[string]i
 	if len(checklistDeletes) > 0 {
 		changes["_checklist_deletes"] = checklistDeletes
 	}
+
+	// Phases derive from the checklists, so they only need resending when those changed.
+	if current.Phases != nil && (len(checklistUpdates) > 0 || len(checklistDeletes) > 0) {
+		changes["phases"] = current.Phases
+	}
 }
 
 // detectPropertyChanges compares property fields and values between two PlaybookRun objects
@@ -1011,6 +1024,7 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source str
 	}
 
 	r.CreateChannelMemberOnNewParticipant = playbook.CreateChannelMemberOnNewParticipant
+	r.UseChecklistsAsPhases = playbook.UseChecklistsAsPhases
 	r.RemoveChannelMemberOnRemovedParticipant = playbook.RemoveChannelMemberOnRemovedParticipant
 
 	r.Type = RunTypePlaybook
@@ -1332,6 +1346,10 @@ type PlaybookRunService interface {
 
 	// GetPlaybookRun gets a playbook run by ID with property fields and values. Returns error if it could not be found.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
+
+	// PopulatePhases fills in the run's computed Phases. It is not part of GetPlaybookRun so that
+	// GraphQL, which reads runs through it, is unaffected.
+	PopulatePhases(run *PlaybookRun)
 
 	// SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
 	SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
