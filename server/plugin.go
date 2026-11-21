@@ -276,6 +276,23 @@ func (p *Plugin) OnActivate() error {
 		},
 	)
 
+	reportSvc := app.NewReportService(
+		p.playbookRunService,
+		p.playbookService,
+		p.permissions,
+		pluginAPIClient,
+		auditorService,
+		app.DefaultReportConfig(),
+	)
+	api.RegisterExportHandler(api.NewExportHandler(
+		pluginAPIClient,
+		p.config,
+		p.permissions,
+		p.playbookRunService,
+		p.playbookService,
+		reportSvc,
+	))
+
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
 	if flag != nil {
