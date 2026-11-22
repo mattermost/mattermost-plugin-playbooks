@@ -17,6 +17,13 @@ jest.mock('react-intl', () => {
     };
 });
 
+const NOW = Date.UTC(2026, 0, 1, 18, 0);
+const MINUTE = 60 * 1000;
+
+jest.mock('src/hooks', () => ({
+    useNow: () => ({valueOf: () => Date.UTC(2026, 0, 1, 18, 0)}),
+}));
+
 const render = (phases: RunPhase[]) => renderer.create(<PhaseTimeline phases={phases}/>);
 
 describe('PhaseTimeline', () => {
@@ -41,11 +48,17 @@ describe('PhaseTimeline', () => {
         ]);
     });
 
-    it('shows the time only for phases that have one', () => {
+    it('shows elapsed time, and nothing for phases that have not started', () => {
         const text = JSON.stringify(render([
-            {checklist_id: 'a', title: 'A', status: 'done', timestamp: Date.UTC(2026, 0, 1, 14, 44)},
-            {checklist_id: 'b', title: 'B', status: 'not_started', timestamp: 0},
+            {checklist_id: 'a', title: 'A', status: 'done', timestamp: NOW - (125 * MINUTE)},
+            {checklist_id: 'b', title: 'B', status: 'started', timestamp: NOW - (45 * MINUTE)},
+            {checklist_id: 'c', title: 'C', status: 'blocked', timestamp: NOW - (5 * MINUTE)},
+            {checklist_id: 'd', title: 'D', status: 'not_started', timestamp: 0},
         ]).toJSON());
-        expect(text).toContain('02:44 PM');
+
+        expect(text).toContain('2h ago');
+        expect(text).toContain('for 45m');
+        expect(text).toContain('for 5m');
+        expect(text).not.toContain('PM');
     });
 });

@@ -4,6 +4,10 @@
 import React from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
+import {Duration} from 'luxon';
+
+import {useNow} from 'src/hooks';
+import {formatDuration} from 'src/components/formatted_duration';
 
 import {PhaseStatus, RunPhase} from 'src/types/playbook_run';
 
@@ -13,11 +17,23 @@ interface Props {
 }
 
 const PhaseTimeline = ({id, phases}: Props) => {
-    const {formatMessage, formatTime} = useIntl();
+    const {formatMessage} = useIntl();
+    const now = useNow(30000).valueOf();
 
     if (phases.length === 0) {
         return null;
     }
+
+    const elapsed = (phase: RunPhase) => {
+        if (!phase.timestamp) {
+            return null;
+        }
+        const duration = formatDuration(Duration.fromMillis(Math.max(0, now - phase.timestamp)), 'narrow', 'truncate');
+        if (phase.status === 'done') {
+            return formatMessage({defaultMessage: '{duration} ago'}, {duration});
+        }
+        return formatMessage({defaultMessage: 'for {duration}'}, {duration});
+    };
 
     const statusLabel = (status: PhaseStatus) => {
         switch (status) {
@@ -58,7 +74,7 @@ const PhaseTimeline = ({id, phases}: Props) => {
                             {phase.status === 'blocked' && <BangIcon/>}
                         </Marker>
                         <Label $status={phase.status}>{phase.title}</Label>
-                        <Time>{phase.timestamp ? formatTime(phase.timestamp, {hour: '2-digit', minute: '2-digit'}) : null}</Time>
+                        <Time>{elapsed(phase)}</Time>
                     </Step>
                 ))}
             </Steps>
