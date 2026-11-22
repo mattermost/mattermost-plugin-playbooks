@@ -343,7 +343,7 @@ describe('playbook_run_updates utilities', () => {
         });
 
         it('applies server-computed phases even when the run had none yet', () => {
-            const phases = [{checklist_id: 'checklist_1', title: 'Test Checklist', status: 'started' as const, timestamp: 1500}];
+            const phases = [{checklist_id: 'checklist_1', title: 'Test Checklist', status: 'started' as const, started_at: 1500, ended_at: 0}];
             const update = {
                 id: testPlaybookRun.id,
                 playbook_run_updated_at: 2000,

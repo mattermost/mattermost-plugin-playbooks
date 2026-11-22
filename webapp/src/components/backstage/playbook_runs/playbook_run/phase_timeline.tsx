@@ -24,15 +24,13 @@ const PhaseTimeline = ({id, phases}: Props) => {
         return null;
     }
 
+    // How long the phase has taken: from its start until now, or until it was done.
     const elapsed = (phase: RunPhase) => {
-        if (!phase.timestamp) {
+        if (!phase.started_at) {
             return null;
         }
-        const duration = formatDuration(Duration.fromMillis(Math.max(0, now - phase.timestamp)), 'narrow', 'truncate');
-        if (phase.status === 'done') {
-            return formatMessage({defaultMessage: '{duration} ago'}, {duration});
-        }
-        return formatMessage({defaultMessage: 'for {duration}'}, {duration});
+        const millis = (phase.ended_at || now) - phase.started_at;
+        return formatDuration(Duration.fromMillis(Math.max(0, millis)), 'narrow');
     };
 
     const statusLabel = (status: PhaseStatus) => {

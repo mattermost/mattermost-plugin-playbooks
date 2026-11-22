@@ -33,10 +33,10 @@ describe('PhaseTimeline', () => {
 
     it('labels every phase with its status', () => {
         const root = render([
-            {checklist_id: 'triage', title: 'Triage', status: 'done', timestamp: Date.UTC(2026, 0, 1, 14, 44)},
-            {checklist_id: 'containment', title: 'Containment', status: 'blocked', timestamp: Date.UTC(2026, 0, 1, 16, 39)},
-            {checklist_id: 'eradication', title: 'Eradication', status: 'started', timestamp: Date.UTC(2026, 0, 1, 17, 10)},
-            {checklist_id: 'recovery', title: 'Recovery', status: 'not_started', timestamp: 0},
+            {checklist_id: 'triage', title: 'Triage', status: 'done', started_at: Date.UTC(2026, 0, 1, 14, 44), ended_at: 0},
+            {checklist_id: 'containment', title: 'Containment', status: 'blocked', started_at: Date.UTC(2026, 0, 1, 14, 44), ended_at: 0},
+            {checklist_id: 'eradication', title: 'Eradication', status: 'started', started_at: Date.UTC(2026, 0, 1, 14, 44), ended_at: 0},
+            {checklist_id: 'recovery', title: 'Recovery', status: 'not_started', started_at: 0, ended_at: 0},
         ]).root;
 
         const labels = root.findAll((n) => n.type === 'div' && n.props.role === 'listitem').map((n) => n.props['aria-label']);
@@ -48,17 +48,18 @@ describe('PhaseTimeline', () => {
         ]);
     });
 
-    it('shows elapsed time, and nothing for phases that have not started', () => {
+    it('shows how long each phase took, until now while active and until done once finished', () => {
         const text = JSON.stringify(render([
-            {checklist_id: 'a', title: 'A', status: 'done', timestamp: NOW - (125 * MINUTE)},
-            {checklist_id: 'b', title: 'B', status: 'started', timestamp: NOW - (45 * MINUTE)},
-            {checklist_id: 'c', title: 'C', status: 'blocked', timestamp: NOW - (5 * MINUTE)},
-            {checklist_id: 'd', title: 'D', status: 'not_started', timestamp: 0},
+            {checklist_id: 'a', title: 'A', status: 'done', started_at: NOW - (200 * MINUTE), ended_at: NOW - (75 * MINUTE)},
+            {checklist_id: 'b', title: 'B', status: 'started', started_at: NOW - (45 * MINUTE), ended_at: 0},
+            {checklist_id: 'c', title: 'C', status: 'blocked', started_at: NOW - (10 * MINUTE), ended_at: 0},
+            {checklist_id: 'd', title: 'D', status: 'not_started', started_at: 0, ended_at: 0},
         ]).toJSON());
 
-        expect(text).toContain('2h ago');
-        expect(text).toContain('for 45m');
-        expect(text).toContain('for 5m');
-        expect(text).not.toContain('PM');
+        // Done: 125 minutes from start to end. Active: from start to now.
+        expect(text).toContain('2h, 5m');
+        expect(text).toContain('45m');
+        expect(text).toContain('10m');
+        expect(text).not.toContain('ago');
     });
 });

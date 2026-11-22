@@ -23,17 +23,20 @@ type RunPhase struct {
 	Title       string      `json:"title"`
 	Status      PhaseStatus `json:"status"`
 
-	// Timestamp depends on Status: when the phase first became active (started), when its current
-	// block began (blocked), when its last task was finished (done). 0 when not started.
-	Timestamp int64 `json:"timestamp"`
+	// StartedAt is when the phase first had activity, 0 if it has not started.
+	StartedAt int64 `json:"started_at"`
+
+	// EndedAt is when the phase's last task was finished, 0 unless the phase is done. An active
+	// phase has run from StartedAt until now.
+	EndedAt int64 `json:"ended_at"`
 }
 
 // ComputePhases maps each checklist to a phase. A phase is blocked if any task is blocked, done
 // once every task is closed or skipped, started once any task is in progress or closed, and not
 // started otherwise. Hidden tasks are ignored, and a phase without tasks is not started.
 //
-// Timestamps come from the task state changes (oldest first). A task with no recorded change, such
-// as one that moved before changes were recorded, falls back to its StateModified.
+// StartedAt and EndedAt come from the task state changes (oldest first). A task with no recorded
+// change, such as one that moved before changes were recorded, falls back to its StateModified.
 func ComputePhases(checklists []Checklist, changes []ChecklistItemStateChange) []RunPhase {
 	byItem := make(map[string][]ChecklistItemStateChange)
 	for _, change := range changes {
@@ -53,8 +56,7 @@ func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateCha
 	var (
 		total, finished  int
 		blocked, started bool
-		firstActive      int64 // earliest moment any task became in progress or closed
-		blockedSince     int64 // earliest start of a current block
+		firstActive      int64 // earliest moment any task became in progress, closed or blocked
 		lastFinished     int64 // latest moment a task was finished
 	)
 	for _, item := range checklist.Items {
@@ -67,8 +69,6 @@ func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateCha
 		switch item.State {
 		case ChecklistItemStateBlocked:
 			blocked = true
-			since := lastChangeInto(itemChanges, ChecklistItemStateBlocked, item.StateModified)
-			blockedSince = earliest(blockedSince, since)
 		case ChecklistItemStateClosed, ChecklistItemStateSkipped:
 			finished++
 			lastFinished = max(lastFinished, lastChangeInto(itemChanges, item.State, item.StateModified))
@@ -85,21 +85,25 @@ func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateCha
 	switch {
 	case blocked:
 		phase.Status = PhaseStatusBlocked
-		phase.Timestamp = blockedSince
+		phase.StartedAt = firstActive
 	case total > 0 && finished == total:
 		phase.Status = PhaseStatusDone
-		phase.Timestamp = lastFinished
+		phase.EndedAt = lastFinished
+		phase.StartedAt = firstActive
+		if phase.StartedAt == 0 {
+			phase.StartedAt = lastFinished
+		}
 	case started:
 		phase.Status = PhaseStatusStarted
-		phase.Timestamp = firstActive
+		phase.StartedAt = firstActive
 	}
 	return phase
 }
 
-// firstActiveAt is when a task first became in progress or closed, falling back to fallback.
+// firstActiveAt is when a task first became in progress, closed or blocked, falling back to fallback.
 func firstActiveAt(changes []ChecklistItemStateChange, fallback int64) int64 {
 	for _, change := range changes {
-		if change.ToState == ChecklistItemStateInProgress || change.ToState == ChecklistItemStateClosed {
+		if change.ToState == ChecklistItemStateInProgress || change.ToState == ChecklistItemStateClosed || change.ToState == ChecklistItemStateBlocked {
 			return change.ChangedAt
 		}
 	}

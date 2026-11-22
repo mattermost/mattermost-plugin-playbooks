@@ -197,6 +197,9 @@ export interface RunPhase {
     title: string;
     status: PhaseStatus;
 
-    /** Epoch millis; 0 when the phase has not started. */
-    timestamp: number;
+    /** Epoch millis of the phase's first activity; 0 when it has not started. */
+    started_at: number;
+
+    /** Epoch millis when the phase was done; 0 while it is still active. */
+    ended_at: number;
 }
