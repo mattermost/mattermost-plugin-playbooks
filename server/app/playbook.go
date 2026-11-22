@@ -14,6 +14,7 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 )
 
@@ -108,6 +109,15 @@ const (
 )
 
 const MaxMetricsPerPlaybook = 4
+
+// ValidateMetricType returns an error unless metricType is one of the supported metric types.
+func ValidateMetricType(metricType string) error {
+	switch metricType {
+	case MetricTypeDuration, MetricTypeCurrency, MetricTypeInteger:
+		return nil
+	}
+	return errors.Errorf("unknown metric type: %q", metricType)
+}
 
 type PlaybookMember struct {
 	UserID      string   `json:"user_id"`
@@ -953,11 +963,21 @@ func (cpm *ChannelPlaybookMode) UnmarshalText(text []byte) error {
 
 // Scan parses a ChannelPlaybookMode back from the DB
 func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
-	txt, ok := src.(string) //postgres
-	if !ok {
+	var txt []byte
+	switch v := src.(type) {
+	case string: //postgres
+		txt = []byte(v)
+	case []byte:
+		txt = v
+	case nil:
+	default:
 		return fmt.Errorf("could not cast to string: %v", src)
 	}
-	return cpm.UnmarshalText([]byte(txt))
+	if err := cpm.UnmarshalText(txt); err != nil {
+		logrus.WithError(err).Warn("unknown stored channel mode, falling back to create_new_channel")
+		*cpm = PlaybookRunCreateNewChannel
+	}
+	return nil
 }
 
 // CleanChecklistIDs cleans checklist IDs against existing checklists.

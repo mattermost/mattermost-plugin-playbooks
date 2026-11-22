@@ -858,6 +858,11 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	if err := h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
+		return
+	}
+
 	importFields := make([]app.PropertyField, 0, len(importBlock.Properties))
 	for _, epf := range importBlock.Properties {
 		var pf app.PropertyField
@@ -897,6 +902,9 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 	//check if titles are unique
 	titles := make(map[string]bool)
 	for _, m := range pb.Metrics {
+		if err := app.ValidateMetricType(m.Type); err != nil {
+			return err
+		}
 		if titles[m.Title] {
 			return errors.Errorf("metrics names must be unique")
 		}
