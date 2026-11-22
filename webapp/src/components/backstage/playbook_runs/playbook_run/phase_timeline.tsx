@@ -41,7 +41,7 @@ const PhaseTimeline = ({id, phases}: Props) => {
                 {phases.map((phase, i) => (
                     <Step
                         // eslint-disable-next-line react/no-array-index-key
-                        key={i}
+                        key={phase.checklist_id || i}
                         role='listitem'
                         aria-label={formatMessage({defaultMessage: '{phase}: {status}'}, {phase: phase.title, status: statusLabel(phase.status)})}
                         data-status={phase.status}

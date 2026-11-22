@@ -327,6 +327,9 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	if _, ok := rawFields["timing_metrics"]; !ok {
 		playbook.TimingMetrics = oldPlaybook.TimingMetrics
 	}
+	if _, ok := rawFields["use_checklists_as_phases"]; !ok {
+		playbook.UseChecklistsAsPhases = oldPlaybook.UseChecklistsAsPhases
+	}
 
 	if err = h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)

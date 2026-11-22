@@ -4,6 +4,7 @@
 package app
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -121,25 +122,105 @@ func TestComputePhases(t *testing.T) {
 	})
 }
 
-func TestDetectChangedFieldsPhases(t *testing.T) {
-	previous := &PlaybookRun{Checklists: []Checklist{{ID: "c1", Items: []ChecklistItem{{ID: "a"}}}}}
-	phases := []RunPhase{{ChecklistID: "c1", Status: PhaseStatusStarted}}
+// phasesStore stubs the only store call the phase code makes.
+type phasesStore struct {
+	PlaybookRunStore
+	changes []ChecklistItemStateChange
+	err     error
+	reads   int
+}
 
-	t.Run("resent when checklists changed", func(t *testing.T) {
-		current := &PlaybookRun{
-			Checklists: []Checklist{{ID: "c1", Items: []ChecklistItem{{ID: "a", State: ChecklistItemStateInProgress}}}},
-			Phases:     phases,
-		}
-		assert.Equal(t, phases, DetectChangedFields(previous, current)["phases"])
+func (p *phasesStore) GetChecklistItemStateChanges(string) ([]ChecklistItemStateChange, error) {
+	p.reads++
+	return p.changes, p.err
+}
+
+func phasesRun(enabled bool, items ...ChecklistItem) *PlaybookRun {
+	return &PlaybookRun{ID: "run1", UseChecklistsAsPhases: enabled, Checklists: phaseChecklist(items...)}
+}
+
+func TestPopulatePhases(t *testing.T) {
+	t.Run("clears phases when the run does not use them, without reading the log", func(t *testing.T) {
+		store := &phasesStore{}
+		run := phasesRun(false, phaseItem("a", ChecklistItemStateClosed, 10))
+		run.Phases = []RunPhase{{Title: "stale"}}
+
+		(&PlaybookRunServiceImpl{store: store}).PopulatePhases(run)
+
+		assert.Nil(t, run.Phases)
+		assert.Zero(t, store.reads)
 	})
 
-	t.Run("not sent when checklists are unchanged", func(t *testing.T) {
-		current := &PlaybookRun{Checklists: previous.Checklists, Phases: phases}
-		assert.NotContains(t, DetectChangedFields(previous, current), "phases")
+	t.Run("computes phases from the state change log", func(t *testing.T) {
+		store := &phasesStore{changes: []ChecklistItemStateChange{phaseChange("a", ChecklistItemStateInProgress, 20)}}
+		run := phasesRun(true, phaseItem("a", ChecklistItemStateInProgress, 90))
+
+		(&PlaybookRunServiceImpl{store: store}).PopulatePhases(run)
+
+		require.Len(t, run.Phases, 1)
+		assert.Equal(t, PhaseStatusStarted, run.Phases[0].Status)
+		assert.Equal(t, int64(20), run.Phases[0].Timestamp)
 	})
 
-	t.Run("not sent for runs without phases", func(t *testing.T) {
-		current := &PlaybookRun{Checklists: []Checklist{{ID: "c1", Items: []ChecklistItem{{ID: "a", State: ChecklistItemStateInProgress}}}}}
-		assert.NotContains(t, DetectChangedFields(previous, current), "phases")
+	t.Run("a log read failure only costs the exact timestamps", func(t *testing.T) {
+		store := &phasesStore{err: errors.New("boom")}
+		run := phasesRun(true, phaseItem("a", ChecklistItemStateInProgress, 90))
+
+		(&PlaybookRunServiceImpl{store: store}).PopulatePhases(run)
+
+		require.Len(t, run.Phases, 1)
+		assert.Equal(t, PhaseStatusStarted, run.Phases[0].Status)
+		assert.Equal(t, int64(90), run.Phases[0].Timestamp)
+	})
+
+	t.Run("tolerates a nil run", func(t *testing.T) {
+		assert.NotPanics(t, func() { (&PlaybookRunServiceImpl{store: &phasesStore{}}).PopulatePhases(nil) })
+	})
+}
+
+func TestAddPhasesToChanges(t *testing.T) {
+	item := phaseItem("a", ChecklistItemStateInProgress, 90)
+
+	t.Run("adds phases when checklists changed", func(t *testing.T) {
+		store := &phasesStore{}
+		changes := map[string]interface{}{"checklists": []ChecklistUpdate{{ID: "c1"}}}
+
+		(&PlaybookRunServiceImpl{store: store}).addPhasesToChanges(phasesRun(true, item), changes)
+
+		phases, ok := changes["phases"].([]RunPhase)
+		require.True(t, ok)
+		require.Len(t, phases, 1)
+		assert.Equal(t, PhaseStatusStarted, phases[0].Status)
+	})
+
+	t.Run("adds phases when a checklist was deleted", func(t *testing.T) {
+		changes := map[string]interface{}{"_checklist_deletes": []string{"c1"}}
+
+		run := &PlaybookRun{ID: "run1", UseChecklistsAsPhases: true}
+		(&PlaybookRunServiceImpl{store: &phasesStore{}}).addPhasesToChanges(run, changes)
+
+		phases, ok := changes["phases"].([]RunPhase)
+		require.True(t, ok)
+		assert.Empty(t, phases)
+	})
+
+	t.Run("does not touch the log for unrelated changes", func(t *testing.T) {
+		store := &phasesStore{}
+		changes := map[string]interface{}{"summary": "new"}
+
+		(&PlaybookRunServiceImpl{store: store}).addPhasesToChanges(phasesRun(true, item), changes)
+
+		assert.NotContains(t, changes, "phases")
+		assert.Zero(t, store.reads)
+	})
+
+	t.Run("ignores runs without phases", func(t *testing.T) {
+		store := &phasesStore{}
+		changes := map[string]interface{}{"checklists": []ChecklistUpdate{{ID: "c1"}}}
+
+		(&PlaybookRunServiceImpl{store: store}).addPhasesToChanges(phasesRun(false, item), changes)
+
+		assert.NotContains(t, changes, "phases")
+		assert.Zero(t, store.reads)
 	})
 }

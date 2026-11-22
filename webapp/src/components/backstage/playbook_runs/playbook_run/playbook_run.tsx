@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 import {useUpdateEffect} from 'react-use';
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -12,6 +12,8 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
+import {playbookRunUpdated} from 'src/actions';
+import {fetchPlaybookRun} from 'src/client';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {
@@ -106,6 +108,21 @@ const PlaybookRunDetails = () => {
     useEnsureProfiles(playbookRun?.participant_ids ?? []);
 
     const RHS = useRHS(playbookRun);
+
+    // Runs put into the store by websocket events or list fetches may lack the server-computed phases.
+    const fetchingPhases = useRef(false);
+    useEffect(() => {
+        if (!playbookRun?.use_checklists_as_phases || playbookRun.phases || !playbookRun.checklists.length || fetchingPhases.current) {
+            return;
+        }
+        fetchingPhases.current = true;
+        fetchPlaybookRun(playbookRun.id)
+            .then((run) => dispatch(playbookRunUpdated(run)))
+            .catch(() => undefined)
+            .finally(() => {
+                fetchingPhases.current = false;
+            });
+    }, [dispatch, playbookRun?.id, playbookRun?.use_checklists_as_phases, playbookRun?.phases, playbookRun?.checklists.length]);
 
     useUpdateEffect(() => {
         resetFilters();

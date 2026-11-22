@@ -652,11 +652,6 @@ func detectChecklistChanges(previous, current *PlaybookRun, changes map[string]i
 	if len(checklistDeletes) > 0 {
 		changes["_checklist_deletes"] = checklistDeletes
 	}
-
-	// Phases derive from the checklists, so they only need resending when those changed.
-	if current.Phases != nil && (len(checklistUpdates) > 0 || len(checklistDeletes) > 0) {
-		changes["phases"] = current.Phases
-	}
 }
 
 // detectPropertyChanges compares property fields and values between two PlaybookRun objects

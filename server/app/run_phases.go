@@ -144,3 +144,19 @@ func (s *PlaybookRunServiceImpl) PopulatePhases(run *PlaybookRun) {
 	}
 	run.Phases = ComputePhases(run.Checklists, changes)
 }
+
+// addPhasesToChanges resends the run's phases in an incremental update, but only when its
+// checklists changed, since phases derive from them. The state change log is only read then.
+func (s *PlaybookRunServiceImpl) addPhasesToChanges(run *PlaybookRun, changes map[string]interface{}) {
+	if run == nil || !run.UseChecklistsAsPhases {
+		return
+	}
+	_, checklistsChanged := changes["checklists"]
+	_, checklistsDeleted := changes["_checklist_deletes"]
+	if !checklistsChanged && !checklistsDeleted {
+		return
+	}
+
+	s.PopulatePhases(run)
+	changes["phases"] = run.Phases
+}

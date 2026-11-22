@@ -130,7 +130,6 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	} else {
 		currentRun.ComputeTaskProgress()
 	}
-	s.PopulatePhases(currentRun)
 
 	if previousRun != nil {
 		previousRun.ComputeTaskProgress()
@@ -142,6 +141,8 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		// No changes detected, nothing to send
 		return
 	}
+
+	s.addPhasesToChanges(currentRun, changedFields)
 
 	// Extract checklist deletes from changed fields
 	var checklistDeletes []string
