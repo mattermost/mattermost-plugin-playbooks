@@ -96,9 +96,10 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
                     setPlaybook={async (update) => {
                         const playbookWithChecklist = convertToPlaybookWithChecklist(playbook, propertyFields || []);
 
-                        // The GraphQL playbook lacks REST-only settings (e.g. use_checklists_as_phases), so
-                        // start from the REST playbook or saving would reset them.
-                        const latest = await clientFetchPlaybook(playbook.id);
+                        // The GraphQL playbook lacks REST-only settings (e.g. auto_archive_channel), so
+                        // start from the REST playbook or saving would reset them. If it cannot be
+                        // fetched, save as before rather than failing the edit.
+                        const latest = await clientFetchPlaybook(playbook.id).catch(() => undefined);
                         await savePlaybook({...latest, ...playbook, ...typeof update === 'function' ? update(playbookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
                         refetch();
                     }}

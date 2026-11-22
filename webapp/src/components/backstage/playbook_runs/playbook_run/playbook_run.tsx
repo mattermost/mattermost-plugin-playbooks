@@ -110,17 +110,20 @@ const PlaybookRunDetails = () => {
     const RHS = useRHS(playbookRun);
 
     // Runs put into the store by websocket events or list fetches may lack the server-computed phases.
-    const fetchingPhases = useRef(false);
+    const fetchingPhasesFor = useRef<string | null>(null);
     useEffect(() => {
-        if (!playbookRun?.use_checklists_as_phases || playbookRun.phases || !playbookRun.checklists.length || fetchingPhases.current) {
+        if (!playbookRun?.use_checklists_as_phases || playbookRun.phases || !playbookRun.checklists.length || fetchingPhasesFor.current === playbookRun.id) {
             return;
         }
-        fetchingPhases.current = true;
-        fetchPlaybookRun(playbookRun.id)
+        const runId = playbookRun.id;
+        fetchingPhasesFor.current = runId;
+        fetchPlaybookRun(runId)
             .then((run) => dispatch(playbookRunUpdated(run)))
             .catch(() => undefined)
             .finally(() => {
-                fetchingPhases.current = false;
+                if (fetchingPhasesFor.current === runId) {
+                    fetchingPhasesFor.current = null;
+                }
             });
     }, [dispatch, playbookRun?.id, playbookRun?.use_checklists_as_phases, playbookRun?.phases, playbookRun?.checklists.length]);
 

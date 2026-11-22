@@ -152,6 +152,34 @@ func phasesRun(enabled bool, items ...ChecklistItem) *PlaybookRun {
 	return &PlaybookRun{ID: "run1", UseChecklistsAsPhases: enabled, Checklists: phaseChecklist(items...)}
 }
 
+func TestCapPhasesAtRunEnd(t *testing.T) {
+	phases := func() []RunPhase {
+		return []RunPhase{
+			{Status: PhaseStatusDone, StartedAt: 10, EndedAt: 30},
+			{Status: PhaseStatusStarted, StartedAt: 40},
+			{Status: PhaseStatusBlocked, StartedAt: 50},
+			{Status: PhaseStatusNotStarted},
+		}
+	}
+
+	t.Run("leaves phases of a run that is still going", func(t *testing.T) {
+		assert.Equal(t, phases(), capPhasesAtRunEnd(phases(), 0))
+	})
+
+	t.Run("ends active phases at the run's end and leaves the rest", func(t *testing.T) {
+		got := capPhasesAtRunEnd(phases(), 100)
+		assert.Equal(t, int64(30), got[0].EndedAt)
+		assert.Equal(t, int64(100), got[1].EndedAt)
+		assert.Equal(t, int64(100), got[2].EndedAt)
+		assert.Zero(t, got[3].EndedAt)
+	})
+
+	t.Run("never ends a phase before it started", func(t *testing.T) {
+		got := capPhasesAtRunEnd([]RunPhase{{Status: PhaseStatusStarted, StartedAt: 200}}, 100)
+		assert.Equal(t, int64(200), got[0].EndedAt)
+	})
+}
+
 func TestPopulatePhases(t *testing.T) {
 	t.Run("clears phases when the run does not use them, without reading the log", func(t *testing.T) {
 		store := &phasesStore{}
@@ -184,6 +212,18 @@ func TestPopulatePhases(t *testing.T) {
 		require.Len(t, run.Phases, 1)
 		assert.Equal(t, PhaseStatusStarted, run.Phases[0].Status)
 		assert.Equal(t, int64(90), run.Phases[0].StartedAt)
+	})
+
+	t.Run("stops the clock of active phases when the run has ended", func(t *testing.T) {
+		store := &phasesStore{changes: []ChecklistItemStateChange{phaseChange("a", ChecklistItemStateInProgress, 20)}}
+		run := phasesRun(true, phaseItem("a", ChecklistItemStateInProgress, 20))
+		run.EndAt = 500
+
+		(&PlaybookRunServiceImpl{store: store}).PopulatePhases(run)
+
+		require.Len(t, run.Phases, 1)
+		assert.Equal(t, PhaseStatusStarted, run.Phases[0].Status)
+		assert.Equal(t, int64(500), run.Phases[0].EndedAt)
 	})
 
 	t.Run("tolerates a nil run", func(t *testing.T) {

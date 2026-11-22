@@ -26,8 +26,9 @@ type RunPhase struct {
 	// StartedAt is when the phase first had activity, 0 if it has not started.
 	StartedAt int64 `json:"started_at"`
 
-	// EndedAt is when the phase's last task was finished, 0 unless the phase is done. An active
-	// phase has run from StartedAt until now.
+	// EndedAt is when the phase's last task was finished, or when the run ended if the phase was
+	// still active then. 0 while the phase is active in a run that is still going, in which case
+	// the phase has run from StartedAt until now.
 	EndedAt int64 `json:"ended_at"`
 }
 
@@ -146,7 +147,7 @@ func (s *PlaybookRunServiceImpl) PopulatePhases(run *PlaybookRun) {
 	if err != nil {
 		logrus.WithError(err).WithField("playbook_run_id", run.ID).Warn("failed to read state changes for run phases")
 	}
-	run.Phases = ComputePhases(run.Checklists, changes)
+	run.Phases = capPhasesAtRunEnd(ComputePhases(run.Checklists, changes), run.EndAt)
 }
 
 // addPhasesToChanges resends the run's phases in an incremental update, but only when its
@@ -163,4 +164,18 @@ func (s *PlaybookRunServiceImpl) addPhasesToChanges(run *PlaybookRun, changes ma
 
 	s.PopulatePhases(run)
 	changes["phases"] = run.Phases
+}
+
+// capPhasesAtRunEnd stops the clock of phases still active when the run ended, so a finished run's
+// phases do not keep growing. It matches how run timing treats an ended run.
+func capPhasesAtRunEnd(phases []RunPhase, runEndAt int64) []RunPhase {
+	if runEndAt <= 0 {
+		return phases
+	}
+	for i := range phases {
+		if phases[i].StartedAt > 0 && phases[i].EndedAt == 0 {
+			phases[i].EndedAt = max(runEndAt, phases[i].StartedAt)
+		}
+	}
+	return phases
 }

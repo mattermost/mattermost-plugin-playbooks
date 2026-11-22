@@ -73,6 +73,21 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
     const playbookType = timingOverride?.playbookType ?? restPlaybook?.playbook_type ?? PlaybookType.Operational;
     const timingMetrics = timingOverride?.timingMetrics ?? restPlaybook?.timing_metrics ?? [];
 
+    // Settings are saved by fetching the latest playbook and PUTting it whole, so two saves in
+    // flight at once could each overwrite the other's change. Run them one after another.
+    const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+    const saveWithLatest = (playbookId: string, change: (latest: PlaybookWithChecklist) => PlaybookWithChecklist) => {
+        const save = () => clientFetchPlaybook(playbookId).then((latest) => {
+            if (!latest) {
+                throw new Error('Unable to fetch latest playbook before save');
+            }
+            return savePlaybook(change(latest));
+        });
+        const next = saveQueue.current.then(save, save);
+        saveQueue.current = next.catch(() => undefined);
+        return next;
+    };
+
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
             ...checklistCollapseState,
@@ -93,13 +108,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         }
         setNewChannelOnlyOverride(new_channel_only);
         savingNewChannelOnly.current = true;
-        clientFetchPlaybook(restPlaybook.id)
-            .then((latest) => {
-                if (!latest) {
-                    throw new Error('Unable to fetch latest playbook before save');
-                }
-                return savePlaybook({...latest, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : latest.channel_mode});
-            })
+        saveWithLatest(restPlaybook.id, (latest) => ({...latest, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : latest.channel_mode}))
             .then(() => {
                 refetch();
             })
@@ -122,13 +131,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         const prev = effectiveUsePhases;
         setUsePhasesOverride(!prev);
         savingUsePhases.current = true;
-        clientFetchPlaybook(restPlaybook.id)
-            .then((latest) => {
-                if (!latest) {
-                    throw new Error('Unable to fetch latest playbook before save');
-                }
-                return savePlaybook({...latest, use_checklists_as_phases: !prev});
-            })
+        saveWithLatest(restPlaybook.id, (latest) => ({...latest, use_checklists_as_phases: !prev}))
             .then(() => refetch())
             .catch(() => {
                 setUsePhasesOverride(prev);
@@ -160,13 +163,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                 updated.auto_archive_channel === false &&
                 restPlaybook?.channel_mode === 'link_existing_channel';
             setAutoArchiveOverride(updated.auto_archive_channel);
-            clientFetchPlaybook(playbook.id)
-                .then((latest) => {
-                    if (!latest) {
-                        throw new Error('Unable to fetch latest playbook before save');
-                    }
-                    return savePlaybook({...latest, auto_archive_channel: updated.auto_archive_channel});
-                })
+            saveWithLatest(playbook.id, (latest) => ({...latest, auto_archive_channel: updated.auto_archive_channel}))
                 .then(() => refetch())
                 .catch(() => {
                     if (!isForcedLinkedReset) {
@@ -197,13 +194,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         const reqID = latestToggleReq.current;
         const prev = effectiveAdminOnlyEdit;
         setAdminOnlyEditOverride(value);
-        clientFetchPlaybook(playbook.id)
-            .then((latest) => {
-                if (!latest) {
-                    throw new Error('Unable to fetch latest playbook before save');
-                }
-                return savePlaybook({...latest, admin_only_edit: value});
-            })
+        saveWithLatest(playbook.id, (latest) => ({...latest, admin_only_edit: value}))
             .then(() => refetch())
             .catch(() => {
                 if (reqID === latestToggleReq.current) {
@@ -224,11 +215,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         setIsSavingOwnerGroupOnlyActions(true);
         setOwnerGroupOnlyActionsOverride(updated.owner_group_only_actions);
         try {
-            const latest = await clientFetchPlaybook(restPlaybook.id);
-            if (!latest) {
-                throw new Error('Unable to fetch latest playbook before save');
-            }
-            await savePlaybook({...latest, owner_group_only_actions: updated.owner_group_only_actions});
+            await saveWithLatest(restPlaybook.id, (latest) => ({...latest, owner_group_only_actions: updated.owner_group_only_actions}));
         } catch {
             setOwnerGroupOnlyActionsOverride(prev);
             toaster.add({
