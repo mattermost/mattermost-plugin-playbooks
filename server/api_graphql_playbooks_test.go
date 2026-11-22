@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1166,15 +1168,18 @@ func TestUpdatePlaybook_ValueValidationDoesNotBypassPermissions(t *testing.T) {
 	e.CreateBasic()
 	e.CreateGuest()
 
-	createPlaybook := func(t *testing.T, public bool) string {
+	createPlaybook := func(t *testing.T, public bool, adminIsMember bool) string {
+		members := []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+		}
+		if adminIsMember {
+			members = append(members, client.PlaybookMember{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}})
+		}
 		id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-			Title:  "ValidationPermissionsPlaybook",
-			TeamID: e.BasicTeam.Id,
-			Public: public,
-			Members: []client.PlaybookMember{
-				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
-				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
-			},
+			Title:       "ValidationPermissionsPlaybook",
+			TeamID:      e.BasicTeam.Id,
+			Public:      public,
+			Members:     members,
 			ChannelMode: client.PlaybookRunCreateNewChannel,
 		})
 		require.NoError(t, err)
@@ -1185,6 +1190,7 @@ func TestUpdatePlaybook_ValueValidationDoesNotBypassPermissions(t *testing.T) {
 		name         string
 		public       bool
 		archive      bool
+		excludeAdmin bool
 		client       *client.Client
 		expectError  bool
 		expectedMode client.ChannelPlaybookMode
@@ -1223,6 +1229,7 @@ func TestUpdatePlaybook_ValueValidationDoesNotBypassPermissions(t *testing.T) {
 		},
 		{
 			name:         "non-member sysadmin can change channelMode of a private playbook",
+			excludeAdmin: true,
 			client:       e.PlaybooksAdminClient,
 			expectedMode: client.PlaybookRunLinkExistingChannel,
 		},
@@ -1230,9 +1237,16 @@ func TestUpdatePlaybook_ValueValidationDoesNotBypassPermissions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			playbookID := createPlaybook(t, tc.public)
+			playbookID := createPlaybook(t, tc.public, !tc.excludeAdmin)
 			if tc.archive {
 				require.NoError(t, e.PlaybooksAdminClient.Playbooks.Archive(context.Background(), playbookID))
+			}
+			if tc.excludeAdmin {
+				stored, getErr := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+				require.NoError(t, getErr)
+				for _, m := range stored.Members {
+					require.NotEqual(t, e.AdminUser.Id, m.UserID, "sysadmin must not be in the stored member list before the update")
+				}
 			}
 
 			err := gqlDoPlaybookUpdate(tc.client, playbookID, map[string]any{"channelMode": "link_existing_channel"})
@@ -1349,6 +1363,119 @@ func TestAddMetric_PersistedValuesRemainReadable(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdatePlaybook_MetricTypeValidation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createPlaybook := func(t *testing.T) *client.Playbook {
+		id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "MetricTypeUpdatePlaybook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			Metrics: []client.PlaybookMetricConfig{
+				{Title: "existing", Type: app.MetricTypeCurrency},
+			},
+		})
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), id)
+		require.NoError(t, err)
+		require.Len(t, pb.Metrics, 1)
+		return pb
+	}
+
+	t.Run("existing metric without type keeps its stored type", func(t *testing.T) {
+		pb := createPlaybook(t)
+		existingID := pb.Metrics[0].ID
+
+		pb.Metrics[0].Type = ""
+		pb.Metrics[0].Title = "renamed"
+		require.NoError(t, e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb))
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pb.ID)
+		require.NoError(t, err)
+		require.Len(t, updated.Metrics, 1)
+		assert.Equal(t, existingID, updated.Metrics[0].ID)
+		assert.Equal(t, "renamed", updated.Metrics[0].Title)
+		assert.Equal(t, app.MetricTypeCurrency, updated.Metrics[0].Type)
+	})
+
+	t.Run("existing metric with a different type keeps its stored type", func(t *testing.T) {
+		pb := createPlaybook(t)
+
+		pb.Metrics[0].Type = "not_a_metric_type"
+		require.NoError(t, e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb))
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pb.ID)
+		require.NoError(t, err)
+		require.Len(t, updated.Metrics, 1)
+		assert.Equal(t, app.MetricTypeCurrency, updated.Metrics[0].Type)
+	})
+
+	t.Run("new metric needs a valid type", func(t *testing.T) {
+		for name, metricType := range map[string]string{
+			"missing": "",
+			"unknown": "not_a_metric_type",
+		} {
+			t.Run(name, func(t *testing.T) {
+				pb := createPlaybook(t)
+				pb.Metrics = append(pb.Metrics, client.PlaybookMetricConfig{Title: "new", Type: metricType})
+
+				err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+				requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+				stored, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pb.ID)
+				require.NoError(t, err)
+				require.Len(t, stored.Metrics, 1)
+			})
+		}
+	})
+
+	t.Run("metric id from another playbook still needs a valid type", func(t *testing.T) {
+		pb := createPlaybook(t)
+		other := createPlaybook(t)
+
+		pb.Metrics = append(pb.Metrics, client.PlaybookMetricConfig{
+			ID:    other.Metrics[0].ID,
+			Title: "foreign",
+			Type:  "not_a_metric_type",
+		})
+		err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("unknown metric id still needs a valid type", func(t *testing.T) {
+		pb := createPlaybook(t)
+
+		pb.Metrics = append(pb.Metrics, client.PlaybookMetricConfig{
+			ID:    model.NewId(),
+			Title: "unknown id",
+		})
+		err := e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("import with metric id and invalid type is rejected", func(t *testing.T) {
+		exported, err := e.PlaybooksAdminClient.Playbooks.Export(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+
+		var payload map[string]any
+		require.NoError(t, json.Unmarshal(exported, &payload))
+		payload["metrics"] = []map[string]any{
+			{"id": model.NewId(), "title": "imported", "type": "not_a_metric_type"},
+		}
+		body, err := json.Marshal(payload)
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksAdminClient.Playbooks.Import(context.Background(), body, e.BasicTeam.Id)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
 }
 
 // TestCorruptedPlaybookRowRemainsUsable seeds a playbook row with values the old GraphQL
