@@ -96,11 +96,15 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
                     setPlaybook={async (update) => {
                         const playbookWithChecklist = convertToPlaybookWithChecklist(playbook, propertyFields || []);
 
+                        // Run the updater before anything is awaited: Metrics reads values the updater sets
+                        // (the new metric count) right after calling setPlaybook.
+                        const updated = typeof update === 'function' ? update(playbookWithChecklist) : update;
+
                         // The GraphQL playbook lacks REST-only settings (e.g. auto_archive_channel), so
                         // start from the REST playbook or saving would reset them. If it cannot be
                         // fetched, save as before rather than failing the edit.
                         const latest = await clientFetchPlaybook(playbook.id).catch(() => undefined);
-                        await savePlaybook({...latest, ...playbook, ...typeof update === 'function' ? update(playbookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
+                        await savePlaybook({...latest, ...playbook, ...updated}); // TODO replace with graphql / useUpdatePlaybook
                         refetch();
                     }}
                     curEditingMetric={curEditingMetric}
