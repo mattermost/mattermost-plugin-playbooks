@@ -101,7 +101,14 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
 
     const anySelected = rows.some((r) => sections[r.key]);
 
-    const headerText = surface === 'run' ? formatMessage({defaultMessage: 'Export run report'}) : formatMessage({defaultMessage: 'Export playbook'});
+    let confirmText = <FormattedMessage defaultMessage='Download'/>;
+    if (exporting) {
+        confirmText = <FormattedMessage defaultMessage='Exporting…'/>;
+    } else if (format === 'pdf') {
+        confirmText = <FormattedMessage defaultMessage='Print'/>;
+    }
+
+    const headerText = surface === 'run' ? formatMessage({defaultMessage: 'Export run report'}) : formatMessage({defaultMessage: 'Export playbook report'});
 
     return (
         <GenericModal
@@ -112,7 +119,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
             handleCancel={onCancel}
             handleConfirm={confirm}
             autoCloseOnConfirmButton={false}
-            confirmButtonText={exporting ? <FormattedMessage defaultMessage='Exporting…'/> : <FormattedMessage defaultMessage='Download'/>}
+            confirmButtonText={confirmText}
             cancelButtonText={<FormattedMessage defaultMessage='Cancel'/>}
             isConfirmDisabled={!anySelected || exporting}
             showCancel={true}

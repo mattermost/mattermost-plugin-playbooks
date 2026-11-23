@@ -33,9 +33,9 @@ type Configuration struct {
 	// These features may have in-progress UI, bugs, and other issues.
 	EnableExperimentalFeatures bool `json:"enableexperimentalfeatures"`
 
-	// Report export (MM-68715 epic). Reports render server-side to HTML; the
-	// client downloads the HTML or browser-prints it to PDF.
-	EnablePDFReports            bool `json:"enablepdfreports"`
+	// Report export (MM-68715 epic). Reports render server-side to HTML or
+	// Markdown; the client downloads them or browser-prints the HTML to PDF.
+	EnableReports               bool `json:"enablereports"`
 	MaxRunReportPosts           int  `json:"maxrunreportposts"`
 	MaxRunReportBytes           int  `json:"maxrunreportbytes"`
 	MaxConcurrentReports        int  `json:"maxconcurrentreports"`
@@ -74,7 +74,7 @@ func (c *Configuration) serialize() map[string]any {
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	ret["enableincrementalupdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
-	ret["EnablePDFReports"] = c.EnablePDFReports
+	ret["EnableReports"] = c.EnableReports
 	ret["MaxRunReportPosts"] = c.MaxRunReportPosts
 	ret["MaxRunReportBytes"] = c.MaxRunReportBytes
 	ret["MaxConcurrentReports"] = c.MaxConcurrentReports

@@ -6,7 +6,7 @@ import {
     BookOutlineIcon,
     BullhornOutlineIcon,
     CloseIcon,
-    FilePdfOutlineIcon,
+    FileTextOutlineIcon,
     FlagOutlineIcon,
     LightningBoltOutlineIcon,
     LinkVariantIcon,
@@ -245,11 +245,11 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
     );
 };
 
-export const DownloadRunPDFMenuItem = (props: {onClick: () => void}) => {
+export const ExportRunReportMenuItem = (props: {onClick: () => void}) => {
     return (
         <StyledDropdownMenuItem onClick={props.onClick}>
-            <FilePdfOutlineIcon size={18}/>
-            <FormattedMessage defaultMessage='Download as PDF'/>
+            <FileTextOutlineIcon size={18}/>
+            <FormattedMessage defaultMessage='Export report'/>
         </StyledDropdownMenuItem>
     );
 };

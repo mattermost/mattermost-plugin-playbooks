@@ -9,7 +9,7 @@
 // continue to write report.RenderUser, report.ResolverTable, etc.
 package coretypes
 
-// RenderUser carries only the display fields the PDF renderer needs —
+// RenderUser carries only the display fields the report writers need —
 // never emails, never auth fields, never anything raw from model.User.
 type RenderUser struct {
 	UserID      string

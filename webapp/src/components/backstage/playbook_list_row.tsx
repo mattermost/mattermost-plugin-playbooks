@@ -15,7 +15,7 @@ import {
     DotsVerticalIcon,
     ExportVariantIcon,
     EyeOutlineIcon,
-    FilePdfOutlineIcon,
+    FileTextOutlineIcon,
     PencilOutlineIcon,
     PlayOutlineIcon,
     RestoreIcon,
@@ -136,13 +136,13 @@ const PlaybookListRow = (props: Props) => {
     const {formatMessage} = useIntl();
 
     const {join, leave} = usePlaybookMembership(props.playbook.id, currentUser.id);
-    const [showPDFModal, setShowPDFModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const exportReport = useReportExport();
     const reportsEnabled = useAppSelector(selectReportsEnabled);
 
-    const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat) => {
+    const onReportConfirm = async (sections: SectionFlags, format: ExportFormat) => {
         await exportReport({kind: 'playbook', id: props.playbook.id}, sections, format);
-        setShowPDFModal(false);
+        setShowReportModal(false);
     };
 
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
@@ -310,10 +310,10 @@ const PlaybookListRow = (props: Props) => {
                     </DropdownMenuItemStyled>
                     {reportsEnabled && (
                         <DropdownMenuItem
-                            onClick={() => setShowPDFModal(true)}
+                            onClick={() => setShowReportModal(true)}
                         >
-                            <FilePdfOutlineIcon size={18}/>
-                            <FormattedMessage defaultMessage='Download as PDF'/>
+                            <FileTextOutlineIcon size={18}/>
+                            <FormattedMessage defaultMessage='Export report'/>
                         </DropdownMenuItem>
                     )}
                     {currentUserPlaybookMember && (
@@ -364,12 +364,12 @@ const PlaybookListRow = (props: Props) => {
                     )}
                 </DotMenu>
             </ActionCol>
-            {showPDFModal && (
+            {showReportModal && (
                 <ExportOptionsModal
                     surface='playbook'
                     defaults={{}}
-                    onConfirm={onPDFConfirm}
-                    onCancel={() => setShowPDFModal(false)}
+                    onConfirm={onReportConfirm}
+                    onCancel={() => setShowReportModal(false)}
                 />
             )}
         </PlaybookItem>

@@ -50,10 +50,10 @@
         "default": true
       },
       {
-        "key": "EnablePDFReports",
+        "key": "EnableReports",
         "type": "bool",
-        "display_name": "Enable PDF Reports",
-        "help_text": "When true, exposes the report export endpoints for playbook runs and playbooks. Reports download as HTML; users save them as PDF via their browser's print dialog.",
+        "display_name": "Enable Reports",
+        "help_text": "When true, users can export playbook runs and playbooks as reports: HTML, Markdown, or PDF through their browser's print dialog.",
         "default": true
       },
       {
