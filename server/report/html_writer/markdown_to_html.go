@@ -13,8 +13,6 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
-
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 )
 
 // markdownToHTML converts a Mattermost-flavored markdown string to sanitized
@@ -33,12 +31,7 @@ import (
 // Standard markdown fidelity is sufficient for v1; Mattermost token-to-HTML
 // rendering (mentions, channel links, emoji) ships in a follow-up (see plan
 // §3.6.6 polish item).
-//
-// rt is accepted for forward-compatibility with that follow-up; it is
-// currently unused.
-func markdownToHTML(md string, rt report.ResolverTable) template.HTML {
-	_ = rt // reserved for MM-token resolution in a future phase
-
+func markdownToHTML(md string) template.HTML {
 	src := strings.TrimSpace(md)
 	if src == "" {
 		return ""

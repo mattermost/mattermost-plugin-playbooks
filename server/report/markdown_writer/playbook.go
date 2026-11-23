@@ -6,225 +6,79 @@ package markdown_writer //nolint:staticcheck
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 )
 
-// RenderPlaybookMarkdown walks pc and returns canonical Mattermost-flavored
-// markdown for a playbook template report. The output is byte-stable for
-// fixed inputs and is the source of truth for the `.md` export path.
-func RenderPlaybookMarkdown(pc report.PlaybookRenderContext) []byte {
+// RenderPlaybookMarkdown prints r as Mattermost-flavored markdown. The
+// output is byte-stable for a fixed report, and @mentions are inert.
+func RenderPlaybookMarkdown(r *report.PlaybookReport) []byte {
 	var b bytes.Buffer
 
-	writePlaybookHeader(&b, pc)
-	writePlaybookDescription(&b, pc)
-	writePlaybookMembers(&b, pc)
-	writePlaybookChecklistTemplates(&b, pc)
-	writePlaybookStatusUpdates(&b, pc)
-	writePlaybookRetrospective(&b, pc)
-	writePlaybookAutomations(&b, pc)
-	writeFooter(&b, pc.GeneratedAtMillis)
+	writeHeading(&b, 1, r.Title)
+	writeMetaStrip(&b, r.Meta)
+	writeStats(&b, r.Stats)
+
+	writeHeading(&b, 2, r.Description.Title)
+	if r.Description.Body == "" {
+		writeEmpty(&b, r.Description.Empty)
+	}
+	writeBody(&b, r.Description.Body)
+
+	writeHeading(&b, 2, r.Members.Title)
+	if len(r.Members.Members) == 0 {
+		writeEmpty(&b, r.Members.Empty)
+	} else {
+		for _, m := range r.Members.Members {
+			if m.Roles == "" {
+				fmt.Fprintf(&b, "- %s\n", escapeText(m.Name))
+				continue
+			}
+			fmt.Fprintf(&b, "- %s (%s)\n", escapeText(m.Name), escapeText(m.Roles))
+		}
+		b.WriteString("\n")
+	}
+
+	writeChecklists(&b, r.Checklists)
+
+	for _, s := range r.Settings() {
+		writeHeading(&b, 2, s.Title)
+		if !s.Configured {
+			writeEmpty(&b, s.Empty)
+			continue
+		}
+		writeMetaStrip(&b, s.Meta)
+		writeBody(&b, s.Template)
+		writeMetrics(&b, s.MetricsTitle, s.Metrics, "- **%s** (%s)\n")
+	}
+
+	a := r.Automations
+	writeHeading(&b, 2, a.Title)
+	if !a.Configured {
+		writeEmpty(&b, a.Empty)
+	} else {
+		// Channel references are left unescaped so they stay channel links.
+		writeList(&b, a.BroadcastChannels, func(s string) string { return s })
+		for _, l := range a.CodeLists() {
+			writeList(&b, l, codeSpan)
+		}
+	}
+
+	writeFooter(&b, r.Footer)
 
 	return inertMentions(b.Bytes())
 }
 
-func writePlaybookHeader(b *bytes.Buffer, pc report.PlaybookRenderContext) {
-	title := escapeText(pc.Playbook.Title)
-	if title == "" {
-		title = "(untitled playbook)"
-	}
-	writeHeading(b, 1, title)
-
-	visibility := "Private"
-	if pc.Playbook.Public {
-		visibility = "Public"
-	}
-	items := []metaItem{
-		{Key: "Type", Value: visibility},
-		{Key: "Generated", Value: formatDate(pc.GeneratedAtMillis)},
-	}
-	writeMetaStrip(b, items)
-	b.WriteString("\n")
-}
-
-func writePlaybookDescription(b *bytes.Buffer, pc report.PlaybookRenderContext) {
-	writeHeading(b, 2, "Description")
-	if strings.TrimSpace(pc.Playbook.Description) == "" {
-		writeEmpty(b, "description")
+// writeList writes a titled bulleted list, each item shown by format, or the
+// list's empty state.
+func writeList(b *bytes.Buffer, l report.List, format func(string) string) {
+	writeHeading(b, 3, l.Title)
+	if len(l.Items) == 0 {
+		writeEmpty(b, l.Empty)
 		return
 	}
-	writeBody(b, pc.Playbook.Description)
-}
-
-func writePlaybookMembers(b *bytes.Buffer, pc report.PlaybookRenderContext) {
-	writeHeading(b, 2, "Members")
-	if len(pc.Members) == 0 {
-		writeEmpty(b, "members")
-		return
-	}
-	for _, m := range pc.Members {
-		user := resolveUser(pc.Resolvers, m.UserID)
-		if len(m.Roles) == 0 {
-			fmt.Fprintf(b, "- %s\n", user)
-			continue
-		}
-		fmt.Fprintf(b, "- %s (%s)\n", user, strings.Join(m.Roles, ", "))
+	for _, item := range l.Items {
+		fmt.Fprintf(b, "- %s\n", format(item))
 	}
 	b.WriteString("\n")
-}
-
-func writePlaybookChecklistTemplates(b *bytes.Buffer, pc report.PlaybookRenderContext) {
-	writeHeading(b, 2, "Checklist Templates")
-	if len(pc.ChecklistTemplates) == 0 {
-		writeEmpty(b, "checklist templates")
-		return
-	}
-	for i, cl := range pc.ChecklistTemplates {
-		writeChecklist(b, cl, pc.Resolvers, true, fmt.Sprintf("Checklist %d", i+1))
-	}
-}
-
-func writePlaybookStatusUpdates(b *bytes.Buffer, pc report.PlaybookRenderContext) {
-	writeHeading(b, 2, "Status Updates")
-	cfg := pc.StatusUpdateConfig
-	tmpl := strings.TrimSpace(cfg.Template)
-	if !cfg.Enabled && tmpl == "" && cfg.Cadence == "" {
-		writeEmpty(b, "status update configuration")
-		return
-	}
-	items := []metaItem{
-		{Key: "Enabled", Value: enabledLabel(cfg.Enabled)},
-	}
-	if cfg.Cadence != "" {
-		items = append(items, metaItem{Key: "Cadence", Value: cfg.Cadence})
-	}
-	writeMetaStrip(b, items)
-	b.WriteString("\n")
-	if tmpl != "" {
-		writeBody(b, tmpl)
-	}
-}
-
-func writePlaybookRetrospective(b *bytes.Buffer, pc report.PlaybookRenderContext) {
-	writeHeading(b, 2, "Retrospective")
-	cfg := pc.RetrospectiveConfig
-	tmpl := strings.TrimSpace(cfg.Template)
-	hasMetrics := len(cfg.Metrics) > 0
-	if !cfg.Enabled && tmpl == "" && cfg.ReminderCadence == "" && !hasMetrics {
-		writeEmpty(b, "retrospective configuration")
-		return
-	}
-	items := []metaItem{
-		{Key: "Enabled", Value: enabledLabel(cfg.Enabled)},
-	}
-	if cfg.ReminderCadence != "" {
-		items = append(items, metaItem{Key: "Cadence", Value: cfg.ReminderCadence})
-	}
-	writeMetaStrip(b, items)
-	b.WriteString("\n")
-	if tmpl != "" {
-		writeBody(b, tmpl)
-	}
-	if !hasMetrics {
-		return
-	}
-	b.WriteString("**Metrics**\n\n")
-	for _, m := range cfg.Metrics {
-		fmt.Fprintf(b, "- **%s** (%s, target %s)\n", escapeText(m.Title), m.Type, formatMetricTarget(m))
-		writeMetricDescription(b, m.Description)
-	}
-	b.WriteString("\n")
-}
-
-// formatMetricTarget renders the target field for a metric in a
-// type-appropriate way.
-func formatMetricTarget(m report.RenderMetric) string {
-	switch m.Type {
-	case "duration":
-		s := formatDuration(m.Target)
-		if s == "" {
-			return "0s"
-		}
-		return s
-	case "currency":
-		return fmt.Sprintf("%.2f", float64(m.Target)/100.0)
-	case "integer":
-		fallthrough
-	default:
-		return fmt.Sprintf("%d", m.Target)
-	}
-}
-
-func writePlaybookAutomations(b *bytes.Buffer, pc report.PlaybookRenderContext) {
-	writeHeading(b, 2, "Automations")
-
-	hasAny := len(pc.BroadcastChannels) > 0 ||
-		len(pc.WebhooksOnCreation) > 0 ||
-		len(pc.WebhooksOnStatus) > 0 ||
-		len(pc.SignalKeywords) > 0
-
-	if !hasAny {
-		writeEmpty(b, "automations")
-		return
-	}
-
-	writeHeading(b, 3, "Broadcast Channels")
-	if len(pc.BroadcastChannels) == 0 {
-		writeEmpty(b, "broadcast channels")
-	} else {
-		for _, ch := range pc.BroadcastChannels {
-			ref := "~" + ch.Name
-			if ch.Name == "" {
-				ref = redactedChannel
-			}
-			fmt.Fprintf(b, "- %s\n", ref)
-		}
-		b.WriteString("\n")
-	}
-
-	writeHeading(b, 3, "Webhooks on Run Creation")
-	writePlaybookWebhookList(b, pc.WebhooksOnCreation, "webhooks on run creation")
-
-	writeHeading(b, 3, "Webhooks on Status Update")
-	writePlaybookWebhookList(b, pc.WebhooksOnStatus, "webhooks on status update")
-
-	writeHeading(b, 3, "Signal Keywords")
-	if len(pc.SignalKeywords) == 0 {
-		writeEmpty(b, "signal keywords")
-	} else {
-		for _, k := range pc.SignalKeywords {
-			fmt.Fprintf(b, "- %s\n", codeSpan(k))
-		}
-		b.WriteString("\n")
-	}
-}
-
-// writePlaybookWebhookList emits one webhook per line in a code-fenced
-// inline form. Per plan §3.6.5 / MF-1: prefer Full when present (caller
-// has PlaybookManage); otherwise fall back to HostMasked. Never
-// reconstruct.
-func writePlaybookWebhookList(b *bytes.Buffer, hooks []report.RenderWebhook, emptyThing string) {
-	if len(hooks) == 0 {
-		writeEmpty(b, emptyThing)
-		return
-	}
-	for _, h := range hooks {
-		val := h.Full
-		if val == "" {
-			val = h.HostMasked
-		}
-		if val == "" {
-			continue
-		}
-		fmt.Fprintf(b, "- %s\n", codeSpan(val))
-	}
-	b.WriteString("\n")
-}
-
-func enabledLabel(b bool) string {
-	if b {
-		return "Enabled"
-	}
-	return "Disabled"
 }

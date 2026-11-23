@@ -95,7 +95,6 @@ func (s *ReportService) AssembleRunReportContext(
 	runID string,
 	userID string,
 	sections report.SectionFlags,
-	locale string,
 ) (report.RenderContext, ResolverStats, error) {
 	if err := s.permissionsService.RunView(userID, runID); err != nil {
 		return report.RenderContext{}, ResolverStats{}, err
@@ -244,7 +243,6 @@ func (s *ReportService) AssemblePlaybookReportContext(
 	playbookID string,
 	userID string,
 	sections report.SectionFlags,
-	locale string,
 	hasPlaybookManage bool,
 ) (report.PlaybookRenderContext, ResolverStats, error) {
 	if err := s.permissionsService.PlaybookView(userID, playbookID); err != nil {

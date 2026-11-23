@@ -1,138 +1,73 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// Package markdown_writer walks a report.RenderContext (or
-// PlaybookRenderContext) and emits canonical Mattermost-flavored markdown.
+// Package markdown_writer prints a report.RunReport or report.PlaybookReport
+// as Mattermost-flavored markdown.
 //
-// This package backs the `.md` export path.
+// This package backs the `.md` export path. Plain-text fields are escaped
+// with escapeText; Markdown bodies are emitted as they are. Every @mention in
+// the finished document is then made inert by inertMentions.
 package markdown_writer //nolint:staticcheck
 
 import (
 	"bytes"
 	"fmt"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 // metaSep is the separator used between key/value items in a metadata strip:
 // two spaces, middle-dot, two spaces.
 const metaSep = "  ·  "
 
-// redactedUser is the deny sentinel for an unresolvable user.
-const redactedUser = "@_redacted_user_"
-
-// redactedChannel is the deny sentinel for an unresolvable channel.
-const redactedChannel = "~_redacted_channel_"
-
-// resolveUser returns "@<username>" for a known user, or the redacted
-// sentinel when the ID is empty or absent from the resolver table.
-func resolveUser(rt report.ResolverTable, id string) string {
-	if id == "" {
-		return redactedUser
-	}
-	if u, ok := rt.Users[id]; ok {
-		if u.Username != "" {
-			return "@" + u.Username
-		}
-	}
-	return redactedUser
-}
-
-// formatDate formats a Unix-millis timestamp as "YYYY-MM-DD HH:MM" UTC.
-// Zero or negative values render as the empty string so callers can decide
-// whether to omit the field entirely.
-func formatDate(ms int64) string {
-	if ms <= 0 {
-		return ""
-	}
-	return time.UnixMilli(ms).UTC().Format("2006-01-02 15:04")
-}
-
-// formatDuration renders a millisecond duration in the highest two units:
-// "4m 30s", "2h 15m", "1d 4h". Zero or negative values render as an empty
-// string.
-func formatDuration(ms int64) string {
-	if ms <= 0 {
-		return ""
-	}
-	d := time.Duration(ms) * time.Millisecond
-
-	days := int64(d / (24 * time.Hour))
-	d -= time.Duration(days) * 24 * time.Hour
-	hours := int64(d / time.Hour)
-	d -= time.Duration(hours) * time.Hour
-	mins := int64(d / time.Minute)
-	d -= time.Duration(mins) * time.Minute
-	secs := int64(d / time.Second)
-
-	// Highest two units only.
-	switch {
-	case days > 0:
-		return fmt.Sprintf("%dd %dh", days, hours)
-	case hours > 0:
-		return fmt.Sprintf("%dh %dm", hours, mins)
-	case mins > 0:
-		return fmt.Sprintf("%dm %ds", mins, secs)
-	default:
-		return fmt.Sprintf("%ds", secs)
-	}
-}
-
-// statusDisplay renders the canonical display string for a run status code.
-func statusDisplay(code string) string {
-	switch code {
-	case coretypes.RunStatusInProgress:
-		return "In Progress"
-	case coretypes.RunStatusFinished:
-		return "Finished"
-	default:
-		return code
-	}
-}
-
-// metaItem is a single key/value pair in a metadata strip.
-type metaItem struct {
-	Key   string
-	Value string
-}
-
-// writeMetaStrip writes a single-line metadata strip in the canonical
-// `**Key**: value  ·  **Key**: value` form, followed by a trailing newline.
-// Items with empty Value are skipped.
-func writeMetaStrip(b *bytes.Buffer, items []metaItem) {
-	parts := make([]string, 0, len(items))
-	for _, it := range items {
-		if it.Value == "" {
+// writeMetaStrip writes a metadata strip in the canonical
+// `**Key**: value  ·  **Key**: value` form as its own paragraph. Fields with
+// an empty Value are skipped.
+func writeMetaStrip(b *bytes.Buffer, fields []report.Field) {
+	parts := make([]string, 0, len(fields))
+	for _, f := range fields {
+		if f.Value == "" {
 			continue
 		}
-		parts = append(parts, fmt.Sprintf("**%s**: %s", it.Key, it.Value))
+		parts = append(parts, fmt.Sprintf("**%s**: %s", escapeText(f.Label), escapeText(f.Value)))
 	}
 	if len(parts) == 0 {
 		return
 	}
 	b.WriteString(strings.Join(parts, metaSep))
-	b.WriteString("\n")
+	b.WriteString("\n\n")
+}
+
+// writeStats writes headline figures as a metadata strip, each hint in
+// parentheses after its value.
+func writeStats(b *bytes.Buffer, stats []report.Stat) {
+	fields := make([]report.Field, 0, len(stats))
+	for _, s := range stats {
+		value := s.Value
+		if s.Hint != "" {
+			value += " (" + s.Hint + ")"
+		}
+		fields = append(fields, report.Field{Label: s.Label, Value: value})
+	}
+	writeMetaStrip(b, fields)
 }
 
 // writeHeading writes a heading line ("# ", "## ", "### ") followed by a
-// blank line.
+// blank line. text is plain text.
 func writeHeading(b *bytes.Buffer, level int, text string) {
 	for range level {
 		b.WriteByte('#')
 	}
 	b.WriteByte(' ')
-	b.WriteString(text)
+	b.WriteString(escapeText(text))
 	b.WriteString("\n\n")
 }
 
-// writeMetricDescription writes a metric's plain-text description under its
-// bullet, one escaped line per source line.
-func writeMetricDescription(b *bytes.Buffer, desc string) {
-	for ln := range strings.SplitSeq(strings.TrimSpace(desc), "\n") {
+// writeIndentedText writes plain text under a bullet, one escaped line per
+// source line.
+func writeIndentedText(b *bytes.Buffer, text string) {
+	for ln := range strings.SplitSeq(text, "\n") {
 		if ln = escapeText(ln); ln != "" {
 			b.WriteString("  ")
 			b.WriteString(ln)
@@ -150,17 +85,16 @@ func codeSpan(s string) string {
 	return "`" + s + "`"
 }
 
-// writeEmpty writes the italic empty-section placeholder.
-func writeEmpty(b *bytes.Buffer, thing string) {
-	b.WriteString("_No ")
-	b.WriteString(thing)
-	b.WriteString("._\n\n")
+// writeEmpty writes an italic empty-section placeholder.
+func writeEmpty(b *bytes.Buffer, text string) {
+	b.WriteString("_")
+	b.WriteString(escapeText(text))
+	b.WriteString("_\n\n")
 }
 
-// writeBody writes a markdown body (passed through as-is, trimmed) followed
-// by a blank line. Empty bodies are skipped.
+// writeBody writes a markdown body as it is, followed by a blank line.
+// Empty bodies are skipped.
 func writeBody(b *bytes.Buffer, body string) {
-	body = strings.TrimSpace(body)
 	if body == "" {
 		return
 	}
@@ -169,196 +103,161 @@ func writeBody(b *bytes.Buffer, body string) {
 }
 
 // writeFooter writes the trailing horizontal rule + generated-at line.
-func writeFooter(b *bytes.Buffer, generatedAtMs int64) {
-	b.WriteString("---\n\n")
-	when := formatDate(generatedAtMs)
-	if when == "" {
-		when = "unknown"
+func writeFooter(b *bytes.Buffer, footer string) {
+	if footer == "" {
+		return
 	}
-	fmt.Fprintf(b, "_Generated %s UTC._\n", when)
+	b.WriteString("---\n\n_")
+	b.WriteString(escapeText(footer))
+	b.WriteString("_\n")
 }
 
-// countClosed returns (done, total) for a checklist item slice. "Done"
-// counts both Closed and Skipped (matches the HTML report).
-func countClosed(items []report.RenderChecklistItem) (int, int) {
-	done := 0
-	for _, it := range items {
-		if it.State == coretypes.ChecklistItemStateClosed || it.State == coretypes.ChecklistItemStateSkipped {
-			done++
-		}
+// writeMetrics writes a bold "Metrics" line and one bullet per metric, with
+// format laying out the metric's title and value.
+func writeMetrics(b *bytes.Buffer, title string, metrics []report.Metric, format string) {
+	if len(metrics) == 0 {
+		return
 	}
-	return done, len(items)
+	fmt.Fprintf(b, "**%s**\n\n", escapeText(title))
+	for _, m := range metrics {
+		fmt.Fprintf(b, format, escapeText(m.Title), escapeText(m.Value))
+		writeIndentedText(b, m.Description)
+	}
+	b.WriteString("\n")
 }
 
-// taskBullet returns the markdown task-list bullet for a checklist state.
-func taskBullet(state string) string {
-	switch state {
-	case coretypes.ChecklistItemStateClosed:
+// taskBullet returns the markdown task-list bullet for a task.
+func taskBullet(it report.ChecklistItem) string {
+	switch {
+	case it.Done:
 		return "- [x] "
-	case coretypes.ChecklistItemStateSkipped:
+	case it.Skipped:
 		return "- [-] "
 	default:
 		return "- [ ] "
 	}
 }
 
-// writeChecklist writes a single checklist (header + items) using the
-// canonical format. When omitAssigneeMeta is true (playbook templates),
-// the assignee/due meta line is suppressed.
-func writeChecklist(b *bytes.Buffer, cl report.RenderChecklist, rt report.ResolverTable, omitAssigneeMeta bool, fallbackTitle string) {
-	title := escapeText(cl.Title)
-	if title == "" {
-		title = fallbackTitle
-	}
-	done, total := countClosed(cl.Items)
-	pct := 0
-	if total > 0 {
-		pct = (done * 100) / total
-	}
-	writeHeading(b, 3, fmt.Sprintf("%s (%d/%d · %d%%)", title, done, total, pct))
-
-	if len(cl.Items) == 0 {
-		writeEmpty(b, "tasks")
+// writeChecklists writes each checklist (header + items), or the section's
+// empty state when there is none.
+func writeChecklists(b *bytes.Buffer, s report.ChecklistSection) {
+	writeHeading(b, 2, s.Title)
+	if len(s.Checklists) == 0 {
+		writeEmpty(b, s.Empty)
 		return
 	}
-
-	for _, it := range cl.Items {
-		b.WriteString(taskBullet(it.State))
-		b.WriteString(it.Title)
-		b.WriteString("\n")
-
-		meta := buildTaskMeta(it, rt, omitAssigneeMeta)
-		if meta != "" {
-			b.WriteString("  *(")
-			b.WriteString(meta)
-			b.WriteString(")*\n")
+	for _, cl := range s.Checklists {
+		writeHeading(b, 3, fmt.Sprintf("%s (%s)", cl.Title, cl.Progress))
+		if len(cl.Items) == 0 {
+			writeEmpty(b, cl.Empty)
+			continue
 		}
-		if desc := strings.TrimSpace(it.Description); desc != "" {
+		for _, it := range cl.Items {
+			b.WriteString(taskBullet(it))
+			b.WriteString(it.Title)
 			b.WriteString("\n")
-			for ln := range strings.SplitSeq(desc, "\n") {
-				b.WriteString("    ")
-				b.WriteString(ln)
+
+			var meta []string
+			if it.Assignee != "" {
+				meta = append(meta, escapeText(it.Assignee))
+			}
+			if it.Due != "" {
+				meta = append(meta, escapeText(it.Due))
+			}
+			if it.Command != "" {
+				meta = append(meta, codeSpan(it.Command))
+			}
+			if len(meta) > 0 {
+				b.WriteString("  *(")
+				b.WriteString(strings.Join(meta, " · "))
+				b.WriteString(")*\n")
+			}
+			if it.Description != "" {
 				b.WriteString("\n")
+				for ln := range strings.SplitSeq(it.Description, "\n") {
+					b.WriteString("    ")
+					b.WriteString(ln)
+					b.WriteString("\n")
+				}
 			}
 		}
+		b.WriteString("\n")
 	}
+}
+
+// writeQuotedPost writes a transcript post as a block quote: a header line,
+// then the body with each line prefixed by bodyPrefix.
+func writeQuotedPost(b *bytes.Buffer, header string, body string, bodyPrefix string) {
+	b.WriteString("> ")
+	b.WriteString(header)
 	b.WriteString("\n")
-}
-
-// buildTaskMeta composes the parenthesized meta string that sits under a
-// task bullet. For run instances: "Assignee: @x, Due: YYYY-MM-DD,
-// Command: `/foo bar`". For playbook templates (omitAssignee=true):
-// "Command: `/foo bar`" only — playbook templates have no assignee or
-// due-date instance. Returns empty when no meta is applicable.
-func buildTaskMeta(it report.RenderChecklistItem, rt report.ResolverTable, omitAssignee bool) string {
-	parts := make([]string, 0, 3)
-	if !omitAssignee {
-		if it.AssigneeID != "" {
-			parts = append(parts, "Assignee: "+resolveUser(rt, it.AssigneeID))
-		} else {
-			parts = append(parts, "Unassigned")
-		}
-		if it.DueAtMs > 0 {
-			parts = append(parts, "Due: "+formatDate(it.DueAtMs))
-		}
-	}
-	if it.Command != "" {
-		parts = append(parts, "Command: "+codeSpan(it.Command))
-	}
-	return strings.Join(parts, ", ")
-}
-
-// writeTranscriptThreaded renders posts as root + collated replies (per
-// report.CollateThreads — grouping is by RootID, with CreateAt used only
-// for display order). Orphan replies whose parent isn't in the slice
-// render under a dedicated subsection so the reader knows the parent
-// existed and is missing.
-func writeTranscriptThreaded(b *bytes.Buffer, posts []report.RenderPost, rt report.ResolverTable) {
-	threads, orphans := report.CollateThreads(posts)
-	for ti, thread := range threads {
-		for i, p := range thread {
-			writeTranscriptPost(b, p, rt, i > 0)
-		}
-		if ti < len(threads)-1 || len(orphans) > 0 {
-			b.WriteString(">\n")
-		}
-	}
-	if len(orphans) > 0 {
-		b.WriteString("\n_Orphan replies (parent message is outside this transcript)_\n\n")
-		for i, p := range orphans {
-			writeTranscriptPost(b, p, rt, true)
-			if i < len(orphans)-1 {
-				b.WriteString(">\n")
-			}
-		}
-	}
-	b.WriteString("\n")
-}
-
-// writeTranscriptChronological renders posts in strict CreateAt order.
-// Replies carry a ↳ indicator and reference their parent. Orphans render
-// with a "(parent not in transcript)" suffix.
-func writeTranscriptChronological(b *bytes.Buffer, posts []report.RenderPost, rt report.ResolverTable) {
-	ordered := make([]report.RenderPost, len(posts))
-	copy(ordered, posts)
-	sort.SliceStable(ordered, func(i, j int) bool {
-		return ordered[i].CreateAt < ordered[j].CreateAt
-	})
-	// Build PostID → author lookup for reply parent labels.
-	authorOf := make(map[string]string, len(ordered))
-	for _, p := range ordered {
-		authorOf[p.PostID] = resolveUser(rt, p.AuthorID)
-	}
-	for i, p := range ordered {
-		author := resolveUser(rt, p.AuthorID)
-		when := formatDate(p.CreateAt)
-		switch {
-		case p.RootID == "":
-			fmt.Fprintf(b, "> **%s** — %s\n", author, when)
-		case authorOf[p.RootID] != "":
-			fmt.Fprintf(b, "> ↳ **%s** — %s  *(reply to %s)*\n", author, when, authorOf[p.RootID])
-		default:
-			fmt.Fprintf(b, "> ↳ **%s** — %s  *(reply to message not in transcript)*\n", author, when)
-		}
-		body := strings.TrimSpace(p.Message)
-		if body != "" {
-			for ln := range strings.SplitSeq(body, "\n") {
-				b.WriteString("> ")
-				b.WriteString(ln)
-				b.WriteString("\n")
-			}
-		}
-		if i < len(ordered)-1 {
-			b.WriteString(">\n")
-		}
-	}
-	b.WriteString("\n")
-}
-
-// writeTranscriptPost writes a single post in the transcript. isReply
-// switches between root (`> **@user** — ts`) and reply (`> ↳ **@user** — ts`)
-// chrome, with body lines re-indented accordingly.
-func writeTranscriptPost(b *bytes.Buffer, p report.RenderPost, rt report.ResolverTable, isReply bool) {
-	author := resolveUser(rt, p.AuthorID)
-	when := formatDate(p.CreateAt)
-
-	if isReply {
-		fmt.Fprintf(b, "> ↳ **%s** — %s\n", author, when)
-	} else {
-		fmt.Fprintf(b, "> **%s** — %s\n", author, when)
-	}
-
-	body := strings.TrimSpace(p.Message)
 	if body == "" {
 		return
 	}
 	for ln := range strings.SplitSeq(body, "\n") {
-		if isReply {
-			b.WriteString(">   ")
-		} else {
-			b.WriteString("> ")
-		}
+		b.WriteString(bodyPrefix)
 		b.WriteString(ln)
 		b.WriteString("\n")
+	}
+}
+
+func postHeader(p report.Post, reply bool) string {
+	header := fmt.Sprintf("**%s** — %s", escapeText(p.Author), escapeText(p.Date))
+	if reply {
+		header = "↳ " + header
+	}
+	if p.ParentLabel != "" {
+		header += "  *(" + escapeText(p.ParentLabel) + ")*"
+	}
+	return header
+}
+
+// writeTranscript writes the transcript threaded (each root followed by its
+// replies, then any orphan replies under their own heading) or in
+// chronological order.
+func writeTranscript(b *bytes.Buffer, s report.TranscriptSection) {
+	writeHeading(b, 2, s.Title)
+
+	switch {
+	case !s.HasPosts():
+		writeEmpty(b, s.Empty)
+	case s.Chronological:
+		for i, p := range s.Posts {
+			if i > 0 {
+				b.WriteString(">\n")
+			}
+			writeQuotedPost(b, postHeader(p, p.IsReply), p.Body, "> ")
+		}
+		b.WriteString("\n")
+	default:
+		for i, t := range s.Threads {
+			if i > 0 {
+				b.WriteString(">\n")
+			}
+			writeQuotedPost(b, postHeader(t.Post, false), t.Body, "> ")
+			for _, reply := range t.Replies {
+				writeQuotedPost(b, postHeader(reply, true), reply.Body, ">   ")
+			}
+		}
+		if len(s.Orphans) > 0 {
+			if len(s.Threads) > 0 {
+				b.WriteString("\n")
+			}
+			fmt.Fprintf(b, "**%s**\n\n", escapeText(s.OrphansTitle))
+			writeEmpty(b, s.OrphansNote)
+			for i, p := range s.Orphans {
+				if i > 0 {
+					b.WriteString(">\n")
+				}
+				writeQuotedPost(b, postHeader(p, true), p.Body, ">   ")
+			}
+		}
+		b.WriteString("\n")
+	}
+
+	if s.Truncated != "" {
+		b.WriteString("> _")
+		b.WriteString(escapeText(s.Truncated))
+		b.WriteString("_\n\n")
 	}
 }

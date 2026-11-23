@@ -1,0 +1,496 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+package report
+
+import (
+	"cmp"
+	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/mattermost/mattermost/server/public/shared/i18n"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
+)
+
+const (
+	dateLayout      = "2006-01-02 15:04"
+	dateLayoutZoned = "2006-01-02 15:04 MST"
+)
+
+// builder carries what every part of a report is built with.
+type builder struct {
+	T   i18n.TranslateFunc
+	loc *time.Location
+	rt  ResolverTable
+}
+
+func newBuilder(rt ResolverTable, opts Options) *builder {
+	return &builder{T: opts.T, loc: cmp.Or(opts.Location, time.UTC), rt: rt}
+}
+
+// lang turns a Mattermost locale such as "pt-BR" or "zh_Hans" into a BCP 47
+// tag.
+func lang(locale string) string {
+	return strings.ReplaceAll(cmp.Or(locale, "en"), "_", "-")
+}
+
+// BuildRun turns rc into a translated, display-ready run report.
+func BuildRun(rc RenderContext, opts Options) *RunReport {
+	b := newBuilder(rc.Resolvers, opts)
+	T := b.T
+
+	r := &RunReport{
+		Lang:              lang(opts.Locale),
+		Title:             cmp.Or(strings.TrimSpace(rc.Run.Name), T("app.report.run.untitled")),
+		ParticipantsLabel: T("app.report.run.participants"),
+		Footer:            b.footer(rc.GeneratedAtMillis),
+	}
+
+	switch rc.Run.Status {
+	case "":
+	case coretypes.RunStatusInProgress:
+		r.Status, r.StatusKind = Field{T("app.report.run.status"), T("app.report.run.status.in_progress")}, StatusInProgress
+	case coretypes.RunStatusFinished:
+		r.Status, r.StatusKind = Field{T("app.report.run.status"), T("app.report.run.status.finished")}, StatusFinished
+	default:
+		r.Status, r.StatusKind = Field{T("app.report.run.status"), rc.Run.Status}, StatusOther
+	}
+
+	done, total := 0, 0
+	for _, cl := range rc.Checklists {
+		d, t := countDone(cl.Items)
+		done += d
+		total += t
+	}
+	tasks := Stat{Label: T("app.report.run.stat.tasks"), Value: fmt.Sprintf("%d/%d", done, total)}
+	if total > 0 {
+		tasks.Hint = T("app.report.run.stat.tasks_complete", map[string]any{"Percent": done * 100 / total})
+	}
+	r.Stats = []Stat{
+		tasks,
+		{Label: T("app.report.run.stat.updates"), Value: strconv.Itoa(len(rc.StatusUpdates))},
+		{Label: T("app.report.run.stat.participants"), Value: strconv.Itoa(len(rc.Participants))},
+		{Label: T("app.report.run.stat.duration"), Value: cmp.Or(b.runDuration(rc), "—")},
+	}
+
+	r.Meta = []Field{{T("app.report.run.owner"), b.inlineUserName(rc.Owner)}}
+	for _, f := range []Field{
+		{T("app.report.run.started"), b.date(rc.Run.StartTimeMs)},
+		{T("app.report.run.ended"), b.date(rc.Run.EndTimeMs)},
+		{T("app.report.run.playbook"), rc.Run.PlaybookTitle},
+	} {
+		if f.Value != "" {
+			r.Meta = append(r.Meta, f)
+		}
+	}
+	for _, u := range rc.Participants {
+		r.Participants = append(r.Participants, b.inlineUserName(u))
+	}
+
+	r.Summary = BodySection{
+		Section: Section{T("app.report.run.summary.title"), T("app.report.run.summary.empty")},
+		Body:    strings.TrimSpace(rc.Run.Summary),
+	}
+
+	r.Timeline.Section = Section{T("app.report.run.timeline.title"), T("app.report.run.timeline.empty")}
+	for _, ev := range rc.TimelineEvents {
+		r.Timeline.Events = append(r.Timeline.Events, b.timelineEvent(ev))
+	}
+
+	r.StatusUpdates = StatusUpdateSection{
+		Section:   Section{T("app.report.run.status_updates.title"), T("app.report.run.status_updates.empty")},
+		NoMessage: T("app.report.run.status_updates.no_message"),
+	}
+	for _, su := range rc.StatusUpdates {
+		r.StatusUpdates.Updates = append(r.StatusUpdates.Updates, b.post(su.AuthorID, su.CreateAt, su.Message))
+	}
+
+	r.Tasks.Section = Section{T("app.report.run.tasks.title"), T("app.report.run.tasks.empty")}
+	for i, cl := range rc.Checklists {
+		r.Tasks.Checklists = append(r.Tasks.Checklists, b.checklist(cl, i, false))
+	}
+
+	r.Retrospective = RetrospectiveSection{
+		Section:      Section{T("app.report.run.retrospective.title"), T("app.report.run.retrospective.empty")},
+		Body:         strings.TrimSpace(rc.Retrospective.Body),
+		MetricsTitle: T("app.report.metrics.title"),
+	}
+	for _, m := range rc.Retrospective.Metrics {
+		value := T("app.report.metric.not_set")
+		if m.HasValue {
+			value = b.metricValue(m.Type, m.Value)
+		}
+		r.Retrospective.Metrics = append(r.Retrospective.Metrics, Metric{
+			Title:       m.Title,
+			Value:       value,
+			Description: strings.TrimSpace(m.Description),
+		})
+	}
+
+	r.Transcript = b.transcript(rc)
+	return r
+}
+
+// BuildPlaybook turns pc into a translated, display-ready playbook report.
+func BuildPlaybook(pc PlaybookRenderContext, opts Options) *PlaybookReport {
+	b := newBuilder(pc.Resolvers, opts)
+	T := b.T
+
+	r := &PlaybookReport{
+		Lang:       lang(opts.Locale),
+		Title:      cmp.Or(strings.TrimSpace(pc.Playbook.Title), T("app.report.playbook.untitled")),
+		Visibility: T("app.report.playbook.private"),
+		Footer:     b.footer(pc.GeneratedAtMillis),
+	}
+	if pc.Playbook.Public {
+		r.Visibility = T("app.report.playbook.public")
+	}
+	r.Meta = []Field{{T("app.report.playbook.visibility"), r.Visibility}}
+	if generated := b.date(pc.GeneratedAtMillis); generated != "" {
+		r.Meta = append(r.Meta, Field{T("app.report.playbook.generated"), generated})
+	}
+
+	r.Description = BodySection{
+		Section: Section{T("app.report.playbook.description.title"), T("app.report.playbook.description.empty")},
+		Body:    strings.TrimSpace(pc.Playbook.Description),
+	}
+
+	// Members go through the resolver table only, so a member the requester
+	// cannot see shows as an unknown user.
+	r.Members.Section = Section{T("app.report.playbook.members.title"), T("app.report.playbook.members.empty")}
+	for _, m := range pc.Members {
+		roles := make([]string, 0, len(m.Roles))
+		for _, role := range m.Roles {
+			roles = append(roles, b.role(role))
+		}
+		r.Members.Members = append(r.Members.Members, Member{Name: b.userName(m.UserID), Roles: strings.Join(roles, ", ")})
+	}
+
+	r.Checklists.Section = Section{T("app.report.playbook.checklists.title"), T("app.report.playbook.checklists.empty")}
+	for i, cl := range pc.ChecklistTemplates {
+		r.Checklists.Checklists = append(r.Checklists.Checklists, b.checklist(cl, i, true))
+	}
+
+	su := pc.StatusUpdateConfig
+	r.StatusUpdates = SettingsSection{
+		Section:  Section{T("app.report.playbook.status_updates.title"), T("app.report.playbook.status_updates.empty")},
+		Meta:     b.settingsMeta(su.Enabled, su.Cadence),
+		Template: strings.TrimSpace(su.Template),
+	}
+	r.StatusUpdates.Configured = su.Enabled || r.StatusUpdates.Template != "" || su.Cadence != ""
+
+	retro := pc.RetrospectiveConfig
+	r.Retrospective = SettingsSection{
+		Section:      Section{T("app.report.playbook.retrospective.title"), T("app.report.playbook.retrospective.empty")},
+		Meta:         b.settingsMeta(retro.Enabled, retro.ReminderCadence),
+		Template:     strings.TrimSpace(retro.Template),
+		MetricsTitle: T("app.report.metrics.title"),
+	}
+	r.Retrospective.Configured = retro.Enabled || r.Retrospective.Template != "" || retro.ReminderCadence != "" || len(retro.Metrics) > 0
+	for _, m := range retro.Metrics {
+		r.Retrospective.Metrics = append(r.Retrospective.Metrics, Metric{
+			Title: m.Title,
+			Value: T("app.report.metric.type_and_target", map[string]any{
+				"Type":   b.metricType(m.Type),
+				"Target": b.metricValue(m.Type, m.Target),
+			}),
+			Description: strings.TrimSpace(m.Description),
+		})
+	}
+
+	a := AutomationsSection{
+		Section:            Section{T("app.report.playbook.automations.title"), T("app.report.playbook.automations.empty")},
+		BroadcastChannels:  List{Section: Section{T("app.report.playbook.broadcast_channels.title"), T("app.report.playbook.broadcast_channels.empty")}},
+		WebhooksOnCreation: List{Section: Section{T("app.report.playbook.webhooks_on_creation.title"), T("app.report.playbook.webhooks_on_creation.empty")}},
+		WebhooksOnStatus:   List{Section: Section{T("app.report.playbook.webhooks_on_status.title"), T("app.report.playbook.webhooks_on_status.empty")}},
+		SignalKeywords:     List{Section: Section{T("app.report.playbook.signal_keywords.title"), T("app.report.playbook.signal_keywords.empty")}, Items: pc.SignalKeywords},
+	}
+	for _, ch := range pc.BroadcastChannels {
+		name := T("app.report.unknown_channel")
+		if ch.Name != "" {
+			name = "~" + ch.Name
+		}
+		a.BroadcastChannels.Items = append(a.BroadcastChannels.Items, name)
+	}
+	a.WebhooksOnCreation.Items = webhookItems(pc.WebhooksOnCreation)
+	a.WebhooksOnStatus.Items = webhookItems(pc.WebhooksOnStatus)
+	a.Configured = len(a.BroadcastChannels.Items)+len(a.WebhooksOnCreation.Items)+len(a.WebhooksOnStatus.Items)+len(a.SignalKeywords.Items) > 0
+	r.Automations = a
+
+	r.Stats = []Stat{
+		{Label: T("app.report.playbook.stat.checklists"), Value: strconv.Itoa(len(pc.ChecklistTemplates))},
+		{Label: T("app.report.playbook.stat.members"), Value: strconv.Itoa(len(pc.Members))},
+		{Label: T("app.report.playbook.stat.broadcasts"), Value: strconv.Itoa(len(pc.BroadcastChannels))},
+		{Label: T("app.report.playbook.stat.webhooks"), Value: strconv.Itoa(len(a.WebhooksOnCreation.Items) + len(a.WebhooksOnStatus.Items))},
+	}
+	return r
+}
+
+// webhookItems shows each webhook in full when the requester may see it,
+// masked otherwise, never reconstructing one.
+func webhookItems(hooks []RenderWebhook) []string {
+	var items []string
+	for _, h := range hooks {
+		if v := cmp.Or(h.Full, h.HostMasked); v != "" {
+			items = append(items, v)
+		}
+	}
+	return items
+}
+
+func (b *builder) settingsMeta(enabled bool, cadence string) []Field {
+	T := b.T
+	value := T("app.report.playbook.disabled")
+	if enabled {
+		value = T("app.report.playbook.enabled")
+	}
+	meta := []Field{{T("app.report.playbook.enabled_label"), value}}
+	if cadence != "" {
+		meta = append(meta, Field{T("app.report.playbook.cadence"), cadence})
+	}
+	return meta
+}
+
+func (b *builder) role(role string) string {
+	switch role {
+	case "playbook_admin":
+		return b.T("app.report.playbook.role.admin")
+	case "playbook_member":
+		return b.T("app.report.playbook.role.member")
+	default:
+		return role
+	}
+}
+
+func (b *builder) checklist(cl RenderChecklist, index int, isTemplate bool) Checklist {
+	T := b.T
+	done, total := countDone(cl.Items)
+	out := Checklist{
+		Title: cmp.Or(strings.TrimSpace(cl.Title), T("app.report.checklist.untitled", map[string]any{"Number": index + 1})),
+	}
+	if isTemplate {
+		out.Progress = T("app.report.checklist.task_count", total, map[string]any{"Count": total})
+	} else {
+		pct := 0
+		if total > 0 {
+			pct = done * 100 / total
+		}
+		out.Progress = T("app.report.checklist.progress", map[string]any{"Done": done, "Total": total, "Percent": pct})
+	}
+	if total == 0 {
+		out.Empty = T("app.report.checklist.empty")
+	}
+
+	for _, it := range cl.Items {
+		item := ChecklistItem{
+			Done:        it.State == coretypes.ChecklistItemStateClosed,
+			Skipped:     it.State == coretypes.ChecklistItemStateSkipped,
+			Title:       it.Title,
+			Command:     it.Command,
+			Description: strings.TrimSpace(it.Description),
+		}
+		// Playbook templates have no assignee or due date of their own.
+		if !isTemplate {
+			if it.DueAtMs > 0 {
+				item.Due = T("app.report.checklist.due", map[string]any{"Date": b.date(it.DueAtMs)})
+			}
+			if it.AssigneeID != "" {
+				item.Assignee = b.userName(it.AssigneeID)
+			} else if item.Due != "" || item.Command != "" {
+				item.Assignee = T("app.report.checklist.unassigned")
+			}
+		}
+		out.Items = append(out.Items, item)
+	}
+	return out
+}
+
+// countDone returns (done, total) for a checklist; done counts closed and
+// skipped tasks.
+func countDone(items []RenderChecklistItem) (int, int) {
+	done := 0
+	for _, it := range items {
+		if it.State == coretypes.ChecklistItemStateClosed || it.State == coretypes.ChecklistItemStateSkipped {
+			done++
+		}
+	}
+	return done, len(items)
+}
+
+func (b *builder) transcript(rc RenderContext) TranscriptSection {
+	T := b.T
+	s := TranscriptSection{
+		Section:       Section{Title: T("app.report.run.transcript.title")},
+		Chronological: rc.TranscriptMode == coretypes.TranscriptModeChronological,
+	}
+
+	// System messages (posts with a type) are left out.
+	posts := make([]RenderPost, 0, len(rc.Transcript))
+	for _, p := range rc.Transcript {
+		if p.Type == "" {
+			posts = append(posts, p)
+		}
+	}
+
+	switch {
+	case len(rc.Transcript) == 0 && rc.TranscriptOmittedReason == coretypes.TranscriptOmittedNotMember:
+		s.Empty = T("app.report.run.transcript.not_member")
+	case len(rc.Transcript) == 0 && rc.TranscriptOmittedReason == coretypes.TranscriptOmittedNoChannel:
+		s.Empty = T("app.report.run.transcript.no_channel")
+	default:
+		// Either the section was not requested or the channel had no posts
+		// in the run's window; "No transcript." is honest in both cases.
+		s.Empty = T("app.report.run.transcript.empty")
+	}
+
+	if s.Chronological {
+		sort.SliceStable(posts, func(i, j int) bool { return posts[i].CreateAt < posts[j].CreateAt })
+		authors := make(map[string]string, len(posts))
+		for _, p := range posts {
+			authors[p.PostID] = b.userName(p.AuthorID)
+		}
+		for _, p := range posts {
+			post := b.post(p.AuthorID, p.CreateAt, p.Message)
+			if p.RootID != "" {
+				post.IsReply = true
+				post.ParentLabel = T("app.report.run.transcript.reply_to_missing")
+				if author, ok := authors[p.RootID]; ok {
+					post.ParentLabel = T("app.report.run.transcript.reply_to", map[string]any{"Author": author})
+				}
+			}
+			s.Posts = append(s.Posts, post)
+		}
+	} else {
+		threads, orphans := CollateThreads(posts)
+		for _, thread := range threads {
+			t := Thread{Post: b.post(thread[0].AuthorID, thread[0].CreateAt, thread[0].Message)}
+			for _, reply := range thread[1:] {
+				t.Replies = append(t.Replies, b.post(reply.AuthorID, reply.CreateAt, reply.Message))
+			}
+			s.Threads = append(s.Threads, t)
+		}
+		for _, p := range orphans {
+			s.Orphans = append(s.Orphans, b.post(p.AuthorID, p.CreateAt, p.Message))
+		}
+		s.OrphansTitle = T("app.report.run.transcript.orphans_title")
+		s.OrphansNote = T("app.report.run.transcript.orphans_note")
+	}
+
+	if rc.TranscriptTruncation.Hit {
+		count := rc.TranscriptTruncation.Posts
+		if count == 0 {
+			count = len(posts)
+		}
+		s.Truncated = T("app.report.run.transcript.truncated", count, map[string]any{"Count": count})
+	}
+	return s
+}
+
+func (b *builder) post(authorID string, createAt int64, message string) Post {
+	return Post{Author: b.userName(authorID), Date: b.date(createAt), Body: strings.TrimSpace(message)}
+}
+
+// userName shows a user from the resolver table as "@username", or by
+// display name when they have no username, or as an unknown user when the
+// requester cannot see them.
+func (b *builder) userName(id string) string {
+	if u, ok := b.rt.Users[id]; ok && id != "" {
+		if u.Username != "" {
+			return "@" + u.Username
+		}
+		if u.DisplayName != "" {
+			return u.DisplayName
+		}
+	}
+	return b.T("app.report.unknown_user")
+}
+
+// inlineUserName shows a user the caller already resolved, falling back to
+// the resolver table.
+func (b *builder) inlineUserName(u RenderUser) string {
+	if u.Username != "" {
+		return "@" + u.Username
+	}
+	if u.DisplayName != "" {
+		return u.DisplayName
+	}
+	return b.userName(u.UserID)
+}
+
+func (b *builder) date(ms int64) string {
+	if ms <= 0 {
+		return ""
+	}
+	return time.UnixMilli(ms).In(b.loc).Format(dateLayout)
+}
+
+func (b *builder) footer(generatedAtMs int64) string {
+	if generatedAtMs <= 0 {
+		return ""
+	}
+	return b.T("app.report.footer.generated", map[string]any{
+		"Time": time.UnixMilli(generatedAtMs).In(b.loc).Format(dateLayoutZoned),
+	})
+}
+
+// runDuration is how long the run lasted, or has lasted when the report was
+// generated if it is still in progress.
+func (b *builder) runDuration(rc RenderContext) string {
+	start, end := rc.Run.StartTimeMs, rc.Run.EndTimeMs
+	if end <= 0 {
+		end = rc.GeneratedAtMillis
+	}
+	if start <= 0 || end <= start {
+		return ""
+	}
+	return b.duration(end - start)
+}
+
+// duration shows a duration in its two largest units, such as "2h 15m".
+func (b *builder) duration(ms int64) string {
+	d := time.Duration(max(ms, 0)) * time.Millisecond
+	args := map[string]any{
+		"Days":    int64(d / (24 * time.Hour)),
+		"Hours":   int64(d/time.Hour) % 24,
+		"Minutes": int64(d/time.Minute) % 60,
+		"Seconds": int64(d/time.Second) % 60,
+	}
+	switch {
+	case d >= 24*time.Hour:
+		return b.T("app.report.duration.days_hours", args)
+	case d >= time.Hour:
+		return b.T("app.report.duration.hours_minutes", args)
+	case d >= time.Minute:
+		return b.T("app.report.duration.minutes_seconds", args)
+	default:
+		return b.T("app.report.duration.seconds", args)
+	}
+}
+
+func (b *builder) metricValue(metricType string, v int64) string {
+	switch metricType {
+	case "duration":
+		return b.duration(v)
+	case "currency":
+		return fmt.Sprintf("%.2f", float64(v)/100.0)
+	default:
+		return strconv.FormatInt(v, 10)
+	}
+}
+
+func (b *builder) metricType(metricType string) string {
+	switch metricType {
+	case "duration":
+		return b.T("app.report.metric.type.duration")
+	case "currency":
+		return b.T("app.report.metric.type.currency")
+	case "integer":
+		return b.T("app.report.metric.type.integer")
+	default:
+		return metricType
+	}
+}

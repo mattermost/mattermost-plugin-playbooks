@@ -5,7 +5,6 @@ package report
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 )
 
@@ -22,39 +21,6 @@ const (
 	CategoryCommand       TimelineEventCategory = "command"
 	CategoryOther         TimelineEventCategory = "other"
 )
-
-// FormattedTimelineEvent is the renderer-friendly shape produced from a
-// raw RenderTimelineEvent. Fields are pre-formatted strings ready to flow
-// into a markdown or HTML template without further interpretation.
-type FormattedTimelineEvent struct {
-	EventType string                // raw type (for debugging / CSS hooks)
-	Category  TimelineEventCategory // grouping bucket
-	TypeLabel string                // short human label, e.g. "Owner changed"
-	Headline  string                // primary line, markdown allowed. Always non-empty.
-	Detail    string                // secondary line if useful, markdown allowed. May be empty.
-}
-
-// unknownActor is the deny sentinel used when SubjectID / CreatorID cannot
-// be resolved against the resolver table. Matches the html_writer
-// convention of failing closed rather than leaking IDs.
-const unknownActorLabel = "Unknown user"
-
-// fallbackHeadline is the generic placeholder when an unknown event type
-// has no summary text to display.
-const fallbackHeadline = "Timeline event"
-
-// resolveActorMention returns "@username" from a user ID using the resolver
-// table, falling back to "Unknown user" if the user is not visible. Matches
-// the same deny-by-default pattern as the markdown emitter's resolveUser.
-func resolveActorMention(rt ResolverTable, userID string) string {
-	if userID == "" {
-		return unknownActorLabel
-	}
-	if u, ok := rt.Users[userID]; ok && u.Username != "" {
-		return "@" + u.Username
-	}
-	return unknownActorLabel
-}
 
 // taskStateDetails is the parsed shape of TaskStateModified's Details JSON.
 type taskStateDetails struct {
@@ -98,203 +64,143 @@ func pickActorID(ev RenderTimelineEvent) string {
 	return ev.CreatorID
 }
 
-// taskActionVerb translates the JSON "action" token to a past-tense verb
-// for headline composition.
-func taskActionVerb(action string) string {
-	switch action {
-	case "check":
-		return "checked"
-	case "uncheck":
-		return "unchecked"
-	case "skip":
-		return "skipped"
-	case "restore":
-		return "restored"
-	default:
-		return "updated"
-	}
-}
-
-// FormatTimelineEvent transforms a raw RenderTimelineEvent into a rendered
-// shape. Synthesizes a sensible Headline when ev.Summary is empty, parses
-// JSON Details for known event types, and resolves SubjectID/CreatorID
-// against the resolver table for inline names.
-func FormatTimelineEvent(ev RenderTimelineEvent, rt ResolverTable) FormattedTimelineEvent {
+// timelineEvent turns a raw RenderTimelineEvent into a timeline line. The
+// event's Summary is its headline when set; otherwise a headline naming the
+// actor is synthesized. JSON Details are parsed for task events and dropped
+// for the rest, so raw payloads never reach the report.
+func (b *builder) timelineEvent(ev RenderTimelineEvent) TimelineEvent {
+	T := b.T
 	summary := strings.TrimSpace(ev.Summary)
 	details := strings.TrimSpace(ev.Details)
-	actor := resolveActorMention(rt, pickActorID(ev))
+	args := map[string]any{"Actor": b.userName(pickActorID(ev))}
 
-	// Default detail handling: drop unrecognized JSON blobs (rather than
-	// rendering noise) and pass plain text through unchanged. Per-type
-	// branches below override this when they have specific extraction
-	// rules (e.g., TaskStateModified pulls fields into the headline).
-	defaultDetail := details
-	if looksLikeJSON(details) {
-		defaultDetail = ""
-	}
-
-	f := FormattedTimelineEvent{
-		EventType: ev.EventType,
+	f := TimelineEvent{
+		Date:      b.date(ev.CreateAt),
 		Category:  CategoryOther,
-		TypeLabel: "Event",
+		TypeLabel: T("app.report.timeline.event.label"),
 		Headline:  summary,
-		Detail:    defaultDetail,
+	}
+	if !looksLikeJSON(details) {
+		f.Detail = details
 	}
 
+	// fallback is the headline when the event has no summary.
+	var fallback string
 	switch ev.EventType {
 	case "incident_created":
-		f.TypeLabel = "Run created"
 		f.Category = CategoryLifecycle
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s created this run", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.incident_created.label")
+		fallback = T("app.report.timeline.incident_created.headline", args)
 	case "task_state_modified":
-		f.TypeLabel = "Task updated"
 		f.Category = CategoryTasks
-		td := parseTaskStateDetails(details)
-		if td.Item != "" || td.Action != "" {
-			// Successfully parsed structured details. Compose a clean
-			// headline and drop the raw JSON from the detail field.
-			verb := taskActionVerb(td.Action)
-			item := td.Item
-			if item == "" {
-				item = "a task"
-			} else {
-				item = "'" + item + "'"
-			}
-			f.Headline = fmt.Sprintf("%s %s task %s", actor, verb, item)
+		f.TypeLabel = T("app.report.timeline.task_state_modified.label")
+		fallback = T("app.report.timeline.task_state_modified.headline", args)
+		if td := parseTaskStateDetails(details); td.Item != "" || td.Action != "" {
+			args["Item"] = td.Item
+			f.Headline = b.taskHeadline(td, args)
 			f.Detail = ""
-		} else if summary == "" {
-			f.Headline = fmt.Sprintf("%s updated a task", actor)
 		}
-
 	case "status_updated":
-		f.TypeLabel = "Status update posted"
 		f.Category = CategoryStatus
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s posted a status update", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.status_updated.label")
+		fallback = T("app.report.timeline.status_updated.headline", args)
 	case "status_update_requested":
-		f.TypeLabel = "Status update requested"
 		f.Category = CategoryStatus
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s requested a status update", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.status_update_requested.label")
+		fallback = T("app.report.timeline.status_update_requested.headline", args)
 	case "owner_changed":
-		f.TypeLabel = "Owner changed"
 		f.Category = CategoryPeople
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s changed owner", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.owner_changed.label")
+		fallback = T("app.report.timeline.owner_changed.headline", args)
 	case "assignee_changed":
-		f.TypeLabel = "Task reassigned"
 		f.Category = CategoryPeople
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s reassigned a task", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.assignee_changed.label")
+		fallback = T("app.report.timeline.assignee_changed.headline", args)
 	case "ran_slash_command":
-		f.TypeLabel = "Slash command"
 		f.Category = CategoryCommand
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s ran a slash command", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.ran_slash_command.label")
+		fallback = T("app.report.timeline.ran_slash_command.headline", args)
 	case "event_from_post":
-		f.TypeLabel = "Channel post"
-		f.Category = CategoryOther
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s posted in the channel", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.event_from_post.label")
+		fallback = T("app.report.timeline.event_from_post.headline", args)
 	case "user_joined_left":
-		f.TypeLabel = "Channel membership"
 		f.Category = CategoryPeople
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s joined or left", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.user_joined_left.label")
+		fallback = T("app.report.timeline.user_joined_left.headline", args)
 	case "participants_changed":
-		f.TypeLabel = "Participants changed"
 		f.Category = CategoryPeople
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s changed participants", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.participants_changed.label")
+		fallback = T("app.report.timeline.participants_changed.headline", args)
 	case "published_retrospective":
-		f.TypeLabel = "Retrospective published"
 		f.Category = CategoryRetrospective
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s published the retrospective", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.published_retrospective.label")
+		fallback = T("app.report.timeline.published_retrospective.headline", args)
 	case "canceled_retrospective":
-		f.TypeLabel = "Retrospective canceled"
 		f.Category = CategoryRetrospective
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s canceled the retrospective", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.canceled_retrospective.label")
+		fallback = T("app.report.timeline.canceled_retrospective.headline", args)
 	case "run_finished":
-		f.TypeLabel = "Run finished"
 		f.Category = CategoryLifecycle
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s marked this run finished", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.run_finished.label")
+		fallback = T("app.report.timeline.run_finished.headline", args)
 	case "run_restored":
-		f.TypeLabel = "Run restored"
 		f.Category = CategoryLifecycle
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s restored this run", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.run_restored.label")
+		fallback = T("app.report.timeline.run_restored.headline", args)
 	case "status_update_snoozed":
-		f.TypeLabel = "Status updates snoozed"
 		f.Category = CategoryStatus
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s snoozed status updates", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.status_update_snoozed.label")
+		fallback = T("app.report.timeline.status_update_snoozed.headline", args)
 	case "status_updates_enabled":
-		f.TypeLabel = "Status updates enabled"
 		f.Category = CategoryStatus
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s enabled status updates", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.status_updates_enabled.label")
+		fallback = T("app.report.timeline.status_updates_enabled.headline", args)
 	case "status_updates_disabled":
-		f.TypeLabel = "Status updates disabled"
 		f.Category = CategoryStatus
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s disabled status updates", actor)
-		}
-
+		f.TypeLabel = T("app.report.timeline.status_updates_disabled.label")
+		fallback = T("app.report.timeline.status_updates_disabled.headline", args)
 	case "property_changed":
-		f.TypeLabel = "Property changed"
-		f.Category = CategoryOther
-		if summary == "" {
-			f.Headline = fmt.Sprintf("%s changed a property", actor)
-		}
-
-	default:
-		// Unknown event type: keep generic label and synthesize a fallback
-		// headline when even the Summary is empty.
-		if f.Headline == "" {
-			f.Headline = fallbackHeadline
-		}
+		f.TypeLabel = T("app.report.timeline.property_changed.label")
+		fallback = T("app.report.timeline.property_changed.headline", args)
 	}
 
-	// Final safety net: a known event type with an empty branch (shouldn't
-	// happen given the rules above, but be defensive) still gets a non-empty
-	// headline so renderers never emit a blank line.
+	if f.Headline == "" {
+		f.Headline = fallback
+	}
 	if strings.TrimSpace(f.Headline) == "" {
-		f.Headline = fallbackHeadline
+		f.Headline = T("app.report.timeline.event.headline")
 	}
-
 	return f
+}
+
+// taskHeadline is the headline of a task event whose details say what
+// happened to which task.
+func (b *builder) taskHeadline(td taskStateDetails, args map[string]any) string {
+	T := b.T
+	if td.Item == "" {
+		switch td.Action {
+		case "check":
+			return T("app.report.timeline.task.checked_a_task", args)
+		case "uncheck":
+			return T("app.report.timeline.task.unchecked_a_task", args)
+		case "skip":
+			return T("app.report.timeline.task.skipped_a_task", args)
+		case "restore":
+			return T("app.report.timeline.task.restored_a_task", args)
+		default:
+			return T("app.report.timeline.task.updated_a_task", args)
+		}
+	}
+	switch td.Action {
+	case "check":
+		return T("app.report.timeline.task.checked", args)
+	case "uncheck":
+		return T("app.report.timeline.task.unchecked", args)
+	case "skip":
+		return T("app.report.timeline.task.skipped", args)
+	case "restore":
+		return T("app.report.timeline.task.restored", args)
+	default:
+		return T("app.report.timeline.task.updated", args)
+	}
 }

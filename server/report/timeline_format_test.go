@@ -20,7 +20,12 @@ func resolverWithAlice() ResolverTable {
 	}
 }
 
-func TestFormatTimelineEvent_PerType(t *testing.T) {
+// formatEvent builds one timeline line in English, in UTC.
+func formatEvent(ev RenderTimelineEvent, rt ResolverTable) TimelineEvent {
+	return newBuilder(rt, testOptions()).timelineEvent(ev)
+}
+
+func TestTimelineEvent_PerType(t *testing.T) {
 	rt := resolverWithAlice()
 
 	cases := []struct {
@@ -173,7 +178,7 @@ func TestFormatTimelineEvent_PerType(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name+"/with-summary", func(t *testing.T) {
 			ev := RenderTimelineEvent{EventType: tc.eventType, Summary: tc.summary, SubjectID: "u1"}
-			f := FormatTimelineEvent(ev, rt)
+			f := formatEvent(ev, rt)
 			require.Equal(t, tc.wantLabel, f.TypeLabel)
 			require.Equal(t, tc.wantCategory, f.Category)
 			if tc.wantHeadlineFull != "" {
@@ -188,7 +193,7 @@ func TestFormatTimelineEvent_PerType(t *testing.T) {
 
 		t.Run(tc.name+"/no-summary", func(t *testing.T) {
 			ev := RenderTimelineEvent{EventType: tc.eventType, Summary: "", SubjectID: "u1"}
-			f := FormatTimelineEvent(ev, rt)
+			f := formatEvent(ev, rt)
 			require.Equal(t, tc.wantLabel, f.TypeLabel)
 			require.Equal(t, tc.wantCategory, f.Category)
 			require.NotEmpty(t, f.Headline, "headline must never be blank")
@@ -197,7 +202,7 @@ func TestFormatTimelineEvent_PerType(t *testing.T) {
 	}
 }
 
-func TestFormatTimelineEvent_TaskStateModified_ParsesJSON(t *testing.T) {
+func TestTimelineEvent_TaskStateModified_ParsesJSON(t *testing.T) {
 	rt := resolverWithAlice()
 	ev := RenderTimelineEvent{
 		EventType: "task_state_modified",
@@ -205,7 +210,7 @@ func TestFormatTimelineEvent_TaskStateModified_ParsesJSON(t *testing.T) {
 		Details:   `{"item":"Page on-call","action":"check"}`,
 		SubjectID: "u1",
 	}
-	f := FormatTimelineEvent(ev, rt)
+	f := formatEvent(ev, rt)
 	require.Equal(t, "Task updated", f.TypeLabel)
 	require.Equal(t, CategoryTasks, f.Category)
 	require.Contains(t, f.Headline, "@alice")
@@ -214,7 +219,7 @@ func TestFormatTimelineEvent_TaskStateModified_ParsesJSON(t *testing.T) {
 	require.Empty(t, f.Detail, "raw JSON details must not leak into Detail")
 }
 
-func TestFormatTimelineEvent_TaskStateModified_AllActionVerbs(t *testing.T) {
+func TestTimelineEvent_TaskStateModified_AllActionVerbs(t *testing.T) {
 	rt := resolverWithAlice()
 	for action, verb := range map[string]string{
 		"check":   "checked",
@@ -227,12 +232,12 @@ func TestFormatTimelineEvent_TaskStateModified_AllActionVerbs(t *testing.T) {
 			Details:   `{"item":"T","action":"` + action + `"}`,
 			SubjectID: "u1",
 		}
-		f := FormatTimelineEvent(ev, rt)
+		f := formatEvent(ev, rt)
 		require.Contains(t, f.Headline, verb, "action %q should map to verb %q", action, verb)
 	}
 }
 
-func TestFormatTimelineEvent_TaskStateModified_InvalidJSONFallsBackToSummary(t *testing.T) {
+func TestTimelineEvent_TaskStateModified_InvalidJSONFallsBackToSummary(t *testing.T) {
 	rt := resolverWithAlice()
 	ev := RenderTimelineEvent{
 		EventType: "task_state_modified",
@@ -240,43 +245,47 @@ func TestFormatTimelineEvent_TaskStateModified_InvalidJSONFallsBackToSummary(t *
 		Details:   `{not json`,
 		SubjectID: "u1",
 	}
-	f := FormatTimelineEvent(ev, rt)
+	f := formatEvent(ev, rt)
 	require.Equal(t, "Task updated", f.TypeLabel)
 	require.Equal(t, "fallback summary", f.Headline)
 	// Details opened with '{' so it looked like JSON: default rule drops it.
 	require.Empty(t, f.Detail)
 }
 
-func TestFormatTimelineEvent_UnknownEventType(t *testing.T) {
+func TestTimelineEvent_UnknownEventType(t *testing.T) {
 	rt := resolverWithAlice()
 
 	// With summary: passes through.
 	ev := RenderTimelineEvent{EventType: "totally_unknown", Summary: "hello", SubjectID: "u1"}
-	f := FormatTimelineEvent(ev, rt)
+	f := formatEvent(ev, rt)
 	require.Equal(t, "Event", f.TypeLabel)
 	require.Equal(t, CategoryOther, f.Category)
 	require.Equal(t, "hello", f.Headline)
 
 	// No summary: fallback headline.
 	ev2 := RenderTimelineEvent{EventType: "totally_unknown", Summary: "", SubjectID: "u1"}
-	f2 := FormatTimelineEvent(ev2, rt)
+	f2 := formatEvent(ev2, rt)
 	require.Equal(t, "Event", f2.TypeLabel)
 	require.Equal(t, CategoryOther, f2.Category)
 	require.Equal(t, "Timeline event", f2.Headline)
 }
 
-func TestResolveActorMention_MissingUser(t *testing.T) {
-	rt := ResolverTable{Users: map[string]RenderUser{}}
-	require.Equal(t, "Unknown user", resolveActorMention(rt, "ghost"))
-	require.Equal(t, "Unknown user", resolveActorMention(rt, ""))
-}
-
-func TestResolveActorMention_KnownUser(t *testing.T) {
+func TestUserName(t *testing.T) {
 	rt := resolverWithAlice()
-	require.Equal(t, "@alice", resolveActorMention(rt, "u1"))
+	rt.Users["u4"] = RenderUser{UserID: "u4", DisplayName: "Dana Display"}
+	b := newBuilder(rt, testOptions())
+	require.Equal(t, "@alice", b.userName("u1"))
+	require.Equal(t, "Dana Display", b.userName("u4"), "a user without a username shows by display name")
+	require.Equal(t, "Unknown user", b.userName("ghost"))
+	require.Equal(t, "Unknown user", b.userName(""))
 }
 
-func TestFormatTimelineEvent_PlainTextDetailsPassThrough(t *testing.T) {
+func TestTimelineEvent_TaskStateModified_NoItem(t *testing.T) {
+	ev := RenderTimelineEvent{EventType: "task_state_modified", Details: `{"action":"skip"}`, SubjectID: "u1"}
+	require.Equal(t, "@alice skipped a task", formatEvent(ev, resolverWithAlice()).Headline)
+}
+
+func TestTimelineEvent_PlainTextDetailsPassThrough(t *testing.T) {
 	rt := resolverWithAlice()
 	// owner_changed has no specific Details parsing, so plain-text Details
 	// should reach the Detail field unmodified.
@@ -286,11 +295,11 @@ func TestFormatTimelineEvent_PlainTextDetailsPassThrough(t *testing.T) {
 		Details:   "Owner transferred due to handoff.",
 		SubjectID: "u1",
 	}
-	f := FormatTimelineEvent(ev, rt)
+	f := formatEvent(ev, rt)
 	require.Equal(t, "Owner transferred due to handoff.", f.Detail)
 }
 
-func TestFormatTimelineEvent_UnknownJSONDetailsSuppressed(t *testing.T) {
+func TestTimelineEvent_UnknownJSONDetailsSuppressed(t *testing.T) {
 	rt := resolverWithAlice()
 	// Unknown event type with JSON-looking Details: must not leak the blob.
 	ev := RenderTimelineEvent{
@@ -299,12 +308,12 @@ func TestFormatTimelineEvent_UnknownJSONDetailsSuppressed(t *testing.T) {
 		Details:   `{"foo":"bar"}`,
 		SubjectID: "u1",
 	}
-	f := FormatTimelineEvent(ev, rt)
+	f := formatEvent(ev, rt)
 	require.Equal(t, "something happened", f.Headline)
 	require.Empty(t, f.Detail, "unrecognized JSON details must be dropped")
 }
 
-func TestFormatTimelineEvent_HeadlineNeverEmpty(t *testing.T) {
+func TestTimelineEvent_HeadlineNeverEmpty(t *testing.T) {
 	// Every known event type with no summary and no actor must still produce
 	// a non-empty Headline.
 	rt := ResolverTable{Users: map[string]RenderUser{}}
@@ -318,7 +327,7 @@ func TestFormatTimelineEvent_HeadlineNeverEmpty(t *testing.T) {
 		"unknown_type_xyz",
 	}
 	for _, et := range types {
-		f := FormatTimelineEvent(RenderTimelineEvent{EventType: et}, rt)
+		f := formatEvent(RenderTimelineEvent{EventType: et}, rt)
 		require.NotEmpty(t, strings.TrimSpace(f.Headline), "event type %q produced empty headline", et)
 	}
 }

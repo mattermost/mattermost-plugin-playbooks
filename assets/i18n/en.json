@@ -4,6 +4,556 @@
     "translation": "Unable to execute command."
   },
   {
+    "id": "app.report.checklist.due",
+    "translation": "Due: {{.Date}}"
+  },
+  {
+    "id": "app.report.checklist.empty",
+    "translation": "No tasks."
+  },
+  {
+    "id": "app.report.checklist.progress",
+    "translation": "{{.Done}}/{{.Total}} · {{.Percent}}%"
+  },
+  {
+    "id": "app.report.checklist.task_count",
+    "translation": {
+      "one": "{{.Count}} task",
+      "other": "{{.Count}} tasks"
+    }
+  },
+  {
+    "id": "app.report.checklist.unassigned",
+    "translation": "Unassigned"
+  },
+  {
+    "id": "app.report.checklist.untitled",
+    "translation": "Checklist {{.Number}}"
+  },
+  {
+    "id": "app.report.duration.days_hours",
+    "translation": "{{.Days}}d {{.Hours}}h"
+  },
+  {
+    "id": "app.report.duration.hours_minutes",
+    "translation": "{{.Hours}}h {{.Minutes}}m"
+  },
+  {
+    "id": "app.report.duration.minutes_seconds",
+    "translation": "{{.Minutes}}m {{.Seconds}}s"
+  },
+  {
+    "id": "app.report.duration.seconds",
+    "translation": "{{.Seconds}}s"
+  },
+  {
+    "id": "app.report.footer.generated",
+    "translation": "Generated {{.Time}}."
+  },
+  {
+    "id": "app.report.metric.not_set",
+    "translation": "not set"
+  },
+  {
+    "id": "app.report.metric.type.currency",
+    "translation": "currency"
+  },
+  {
+    "id": "app.report.metric.type.duration",
+    "translation": "duration"
+  },
+  {
+    "id": "app.report.metric.type.integer",
+    "translation": "integer"
+  },
+  {
+    "id": "app.report.metric.type_and_target",
+    "translation": "{{.Type}}, target {{.Target}}"
+  },
+  {
+    "id": "app.report.metrics.title",
+    "translation": "Metrics"
+  },
+  {
+    "id": "app.report.playbook.automations.empty",
+    "translation": "No automations."
+  },
+  {
+    "id": "app.report.playbook.automations.title",
+    "translation": "Automations"
+  },
+  {
+    "id": "app.report.playbook.broadcast_channels.empty",
+    "translation": "No broadcast channels."
+  },
+  {
+    "id": "app.report.playbook.broadcast_channels.title",
+    "translation": "Broadcast Channels"
+  },
+  {
+    "id": "app.report.playbook.cadence",
+    "translation": "Cadence"
+  },
+  {
+    "id": "app.report.playbook.checklists.empty",
+    "translation": "No checklist templates."
+  },
+  {
+    "id": "app.report.playbook.checklists.title",
+    "translation": "Checklist Templates"
+  },
+  {
+    "id": "app.report.playbook.description.empty",
+    "translation": "No description."
+  },
+  {
+    "id": "app.report.playbook.description.title",
+    "translation": "Description"
+  },
+  {
+    "id": "app.report.playbook.disabled",
+    "translation": "Disabled"
+  },
+  {
+    "id": "app.report.playbook.enabled",
+    "translation": "Enabled"
+  },
+  {
+    "id": "app.report.playbook.enabled_label",
+    "translation": "Enabled"
+  },
+  {
+    "id": "app.report.playbook.generated",
+    "translation": "Generated"
+  },
+  {
+    "id": "app.report.playbook.members.empty",
+    "translation": "No members."
+  },
+  {
+    "id": "app.report.playbook.members.title",
+    "translation": "Members"
+  },
+  {
+    "id": "app.report.playbook.private",
+    "translation": "Private"
+  },
+  {
+    "id": "app.report.playbook.public",
+    "translation": "Public"
+  },
+  {
+    "id": "app.report.playbook.retrospective.empty",
+    "translation": "No retrospective configuration."
+  },
+  {
+    "id": "app.report.playbook.retrospective.title",
+    "translation": "Retrospective"
+  },
+  {
+    "id": "app.report.playbook.role.admin",
+    "translation": "Admin"
+  },
+  {
+    "id": "app.report.playbook.role.member",
+    "translation": "Member"
+  },
+  {
+    "id": "app.report.playbook.signal_keywords.empty",
+    "translation": "No signal keywords."
+  },
+  {
+    "id": "app.report.playbook.signal_keywords.title",
+    "translation": "Signal Keywords"
+  },
+  {
+    "id": "app.report.playbook.stat.broadcasts",
+    "translation": "Broadcasts"
+  },
+  {
+    "id": "app.report.playbook.stat.checklists",
+    "translation": "Checklists"
+  },
+  {
+    "id": "app.report.playbook.stat.members",
+    "translation": "Members"
+  },
+  {
+    "id": "app.report.playbook.stat.webhooks",
+    "translation": "Webhooks"
+  },
+  {
+    "id": "app.report.playbook.status_updates.empty",
+    "translation": "No status update configuration."
+  },
+  {
+    "id": "app.report.playbook.status_updates.title",
+    "translation": "Status Updates"
+  },
+  {
+    "id": "app.report.playbook.untitled",
+    "translation": "(untitled playbook)"
+  },
+  {
+    "id": "app.report.playbook.visibility",
+    "translation": "Visibility"
+  },
+  {
+    "id": "app.report.playbook.webhooks_on_creation.empty",
+    "translation": "No webhooks on run creation."
+  },
+  {
+    "id": "app.report.playbook.webhooks_on_creation.title",
+    "translation": "Webhooks on Run Creation"
+  },
+  {
+    "id": "app.report.playbook.webhooks_on_status.empty",
+    "translation": "No webhooks on status update."
+  },
+  {
+    "id": "app.report.playbook.webhooks_on_status.title",
+    "translation": "Webhooks on Status Update"
+  },
+  {
+    "id": "app.report.run.ended",
+    "translation": "Ended"
+  },
+  {
+    "id": "app.report.run.owner",
+    "translation": "Owner"
+  },
+  {
+    "id": "app.report.run.participants",
+    "translation": "Participants"
+  },
+  {
+    "id": "app.report.run.playbook",
+    "translation": "Playbook"
+  },
+  {
+    "id": "app.report.run.retrospective.empty",
+    "translation": "No retrospective."
+  },
+  {
+    "id": "app.report.run.retrospective.title",
+    "translation": "Retrospective"
+  },
+  {
+    "id": "app.report.run.started",
+    "translation": "Started"
+  },
+  {
+    "id": "app.report.run.stat.duration",
+    "translation": "Duration"
+  },
+  {
+    "id": "app.report.run.stat.participants",
+    "translation": "Participants"
+  },
+  {
+    "id": "app.report.run.stat.tasks",
+    "translation": "Tasks"
+  },
+  {
+    "id": "app.report.run.stat.tasks_complete",
+    "translation": "{{.Percent}}% complete"
+  },
+  {
+    "id": "app.report.run.stat.updates",
+    "translation": "Updates"
+  },
+  {
+    "id": "app.report.run.status",
+    "translation": "Status"
+  },
+  {
+    "id": "app.report.run.status.finished",
+    "translation": "Finished"
+  },
+  {
+    "id": "app.report.run.status.in_progress",
+    "translation": "In Progress"
+  },
+  {
+    "id": "app.report.run.status_updates.empty",
+    "translation": "No status updates."
+  },
+  {
+    "id": "app.report.run.status_updates.no_message",
+    "translation": "No message."
+  },
+  {
+    "id": "app.report.run.status_updates.title",
+    "translation": "Status Updates"
+  },
+  {
+    "id": "app.report.run.summary.empty",
+    "translation": "No summary."
+  },
+  {
+    "id": "app.report.run.summary.title",
+    "translation": "Summary"
+  },
+  {
+    "id": "app.report.run.tasks.empty",
+    "translation": "No tasks."
+  },
+  {
+    "id": "app.report.run.tasks.title",
+    "translation": "Tasks"
+  },
+  {
+    "id": "app.report.run.timeline.empty",
+    "translation": "No timeline events."
+  },
+  {
+    "id": "app.report.run.timeline.title",
+    "translation": "Timeline"
+  },
+  {
+    "id": "app.report.run.transcript.empty",
+    "translation": "No transcript."
+  },
+  {
+    "id": "app.report.run.transcript.no_channel",
+    "translation": "Transcript unavailable — this run has no associated channel."
+  },
+  {
+    "id": "app.report.run.transcript.not_member",
+    "translation": "Transcript omitted — you are not a member of the run's channel."
+  },
+  {
+    "id": "app.report.run.transcript.orphans_note",
+    "translation": "Parent message is outside this transcript."
+  },
+  {
+    "id": "app.report.run.transcript.orphans_title",
+    "translation": "Orphan replies"
+  },
+  {
+    "id": "app.report.run.transcript.reply_to",
+    "translation": "reply to {{.Author}}"
+  },
+  {
+    "id": "app.report.run.transcript.reply_to_missing",
+    "translation": "reply to message not in transcript"
+  },
+  {
+    "id": "app.report.run.transcript.title",
+    "translation": "Transcript"
+  },
+  {
+    "id": "app.report.run.transcript.truncated",
+    "translation": {
+      "one": "Transcript truncated ({{.Count}} post shown).",
+      "other": "Transcript truncated ({{.Count}} posts shown)."
+    }
+  },
+  {
+    "id": "app.report.run.untitled",
+    "translation": "(untitled run)"
+  },
+  {
+    "id": "app.report.timeline.assignee_changed.headline",
+    "translation": "{{.Actor}} reassigned a task"
+  },
+  {
+    "id": "app.report.timeline.assignee_changed.label",
+    "translation": "Task reassigned"
+  },
+  {
+    "id": "app.report.timeline.canceled_retrospective.headline",
+    "translation": "{{.Actor}} canceled the retrospective"
+  },
+  {
+    "id": "app.report.timeline.canceled_retrospective.label",
+    "translation": "Retrospective canceled"
+  },
+  {
+    "id": "app.report.timeline.event.headline",
+    "translation": "Timeline event"
+  },
+  {
+    "id": "app.report.timeline.event.label",
+    "translation": "Event"
+  },
+  {
+    "id": "app.report.timeline.event_from_post.headline",
+    "translation": "{{.Actor}} posted in the channel"
+  },
+  {
+    "id": "app.report.timeline.event_from_post.label",
+    "translation": "Channel post"
+  },
+  {
+    "id": "app.report.timeline.incident_created.headline",
+    "translation": "{{.Actor}} created this run"
+  },
+  {
+    "id": "app.report.timeline.incident_created.label",
+    "translation": "Run created"
+  },
+  {
+    "id": "app.report.timeline.owner_changed.headline",
+    "translation": "{{.Actor}} changed owner"
+  },
+  {
+    "id": "app.report.timeline.owner_changed.label",
+    "translation": "Owner changed"
+  },
+  {
+    "id": "app.report.timeline.participants_changed.headline",
+    "translation": "{{.Actor}} changed participants"
+  },
+  {
+    "id": "app.report.timeline.participants_changed.label",
+    "translation": "Participants changed"
+  },
+  {
+    "id": "app.report.timeline.property_changed.headline",
+    "translation": "{{.Actor}} changed a property"
+  },
+  {
+    "id": "app.report.timeline.property_changed.label",
+    "translation": "Property changed"
+  },
+  {
+    "id": "app.report.timeline.published_retrospective.headline",
+    "translation": "{{.Actor}} published the retrospective"
+  },
+  {
+    "id": "app.report.timeline.published_retrospective.label",
+    "translation": "Retrospective published"
+  },
+  {
+    "id": "app.report.timeline.ran_slash_command.headline",
+    "translation": "{{.Actor}} ran a slash command"
+  },
+  {
+    "id": "app.report.timeline.ran_slash_command.label",
+    "translation": "Slash command"
+  },
+  {
+    "id": "app.report.timeline.run_finished.headline",
+    "translation": "{{.Actor}} marked this run finished"
+  },
+  {
+    "id": "app.report.timeline.run_finished.label",
+    "translation": "Run finished"
+  },
+  {
+    "id": "app.report.timeline.run_restored.headline",
+    "translation": "{{.Actor}} restored this run"
+  },
+  {
+    "id": "app.report.timeline.run_restored.label",
+    "translation": "Run restored"
+  },
+  {
+    "id": "app.report.timeline.status_update_requested.headline",
+    "translation": "{{.Actor}} requested a status update"
+  },
+  {
+    "id": "app.report.timeline.status_update_requested.label",
+    "translation": "Status update requested"
+  },
+  {
+    "id": "app.report.timeline.status_update_snoozed.headline",
+    "translation": "{{.Actor}} snoozed status updates"
+  },
+  {
+    "id": "app.report.timeline.status_update_snoozed.label",
+    "translation": "Status updates snoozed"
+  },
+  {
+    "id": "app.report.timeline.status_updated.headline",
+    "translation": "{{.Actor}} posted a status update"
+  },
+  {
+    "id": "app.report.timeline.status_updated.label",
+    "translation": "Status update posted"
+  },
+  {
+    "id": "app.report.timeline.status_updates_disabled.headline",
+    "translation": "{{.Actor}} disabled status updates"
+  },
+  {
+    "id": "app.report.timeline.status_updates_disabled.label",
+    "translation": "Status updates disabled"
+  },
+  {
+    "id": "app.report.timeline.status_updates_enabled.headline",
+    "translation": "{{.Actor}} enabled status updates"
+  },
+  {
+    "id": "app.report.timeline.status_updates_enabled.label",
+    "translation": "Status updates enabled"
+  },
+  {
+    "id": "app.report.timeline.task.checked",
+    "translation": "{{.Actor}} checked task '{{.Item}}'"
+  },
+  {
+    "id": "app.report.timeline.task.checked_a_task",
+    "translation": "{{.Actor}} checked a task"
+  },
+  {
+    "id": "app.report.timeline.task.restored",
+    "translation": "{{.Actor}} restored task '{{.Item}}'"
+  },
+  {
+    "id": "app.report.timeline.task.restored_a_task",
+    "translation": "{{.Actor}} restored a task"
+  },
+  {
+    "id": "app.report.timeline.task.skipped",
+    "translation": "{{.Actor}} skipped task '{{.Item}}'"
+  },
+  {
+    "id": "app.report.timeline.task.skipped_a_task",
+    "translation": "{{.Actor}} skipped a task"
+  },
+  {
+    "id": "app.report.timeline.task.unchecked",
+    "translation": "{{.Actor}} unchecked task '{{.Item}}'"
+  },
+  {
+    "id": "app.report.timeline.task.unchecked_a_task",
+    "translation": "{{.Actor}} unchecked a task"
+  },
+  {
+    "id": "app.report.timeline.task.updated",
+    "translation": "{{.Actor}} updated task '{{.Item}}'"
+  },
+  {
+    "id": "app.report.timeline.task.updated_a_task",
+    "translation": "{{.Actor}} updated a task"
+  },
+  {
+    "id": "app.report.timeline.task_state_modified.headline",
+    "translation": "{{.Actor}} updated a task"
+  },
+  {
+    "id": "app.report.timeline.task_state_modified.label",
+    "translation": "Task updated"
+  },
+  {
+    "id": "app.report.timeline.user_joined_left.headline",
+    "translation": "{{.Actor}} joined or left"
+  },
+  {
+    "id": "app.report.timeline.user_joined_left.label",
+    "translation": "Channel membership"
+  },
+  {
+    "id": "app.report.unknown_channel",
+    "translation": "Unknown channel"
+  },
+  {
+    "id": "app.report.unknown_user",
+    "translation": "Unknown user"
+  },
+  {
     "id": "app.user.digest.message_truncated",
     "translation": "Some items were omitted because this message was too long. [View all runs](/playbooks/runs)"
   },

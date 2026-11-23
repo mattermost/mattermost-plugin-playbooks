@@ -4,6 +4,7 @@
 package api
 
 import (
+	"cmp"
 	"context"
 	"crypto/subtle"
 	"fmt"
@@ -22,6 +23,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/shared/i18n"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
@@ -58,8 +60,8 @@ type ResolverStats = app.ResolverStats
 // ReportService is the contract the app-layer ReportService satisfies. It is
 // declared here as an interface so this handler can be exercised in isolation.
 type ReportService interface {
-	AssembleRunReportContext(ctx context.Context, runID, userID string, sections report.SectionFlags, locale string) (report.RenderContext, ResolverStats, error)
-	AssemblePlaybookReportContext(ctx context.Context, playbookID, userID string, sections report.SectionFlags, locale string, hasPlaybookManage bool) (report.PlaybookRenderContext, ResolverStats, error)
+	AssembleRunReportContext(ctx context.Context, runID, userID string, sections report.SectionFlags) (report.RenderContext, ResolverStats, error)
+	AssemblePlaybookReportContext(ctx context.Context, playbookID, userID string, sections report.SectionFlags, hasPlaybookManage bool) (report.PlaybookRenderContext, ResolverStats, error)
 }
 
 // ExportHandler owns the GET .../report?format=md|html surfaces for both runs
@@ -200,9 +202,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 	}
 	defer h.releaseRenderSlot()
 
-	locale := h.resolveLocale(userID)
-
-	rc, resolverStats, asmErr := h.reportService.AssembleRunReportContext(ctx, run.ID, userID, sections, locale)
+	rc, resolverStats, asmErr := h.reportService.AssembleRunReportContext(ctx, run.ID, userID, sections)
 	if asmErr != nil {
 		h.logAndAuditFailure(logger, event, userID, run.ID, correlationID, sections, asmErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
@@ -212,12 +212,13 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 
 	filename := reportFilename(rc.Run.Name, "run-"+run.ID, rc.GeneratedAtMillis)
 
+	view := report.BuildRun(rc, h.reportOptions(userID))
 	var data []byte
 	var renderErr error
 	if format == formatMarkdown {
-		data = markdown_writer.RenderRunMarkdown(rc)
+		data = markdown_writer.RenderRunMarkdown(view)
 	} else {
-		data, renderErr = html_writer.RenderRunHTML(rc, html_writer.Options{Title: rc.Run.Name, PageSize: "A4"})
+		data, renderErr = html_writer.RenderRunHTML(view, html_writer.Options{PageSize: "A4"})
 	}
 	if renderErr != nil {
 		h.logAndAuditFailure(logger, event, userID, run.ID, correlationID, sections, renderErr)
@@ -280,9 +281,7 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 	}
 	defer h.releaseRenderSlot()
 
-	locale := h.resolveLocale(userID)
-
-	pc, resolverStats, asmErr := h.reportService.AssemblePlaybookReportContext(ctx, pb.ID, userID, sections, locale, hasPlaybookManage)
+	pc, resolverStats, asmErr := h.reportService.AssemblePlaybookReportContext(ctx, pb.ID, userID, sections, hasPlaybookManage)
 	if asmErr != nil {
 		h.logAndAuditFailure(logger, event, userID, pb.ID, correlationID, sections, asmErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
@@ -291,12 +290,13 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 
 	filename := reportFilename(pc.Playbook.Title, "playbook-"+pb.ID, pc.GeneratedAtMillis)
 
+	view := report.BuildPlaybook(pc, h.reportOptions(userID))
 	var data []byte
 	var renderErr error
 	if format == formatMarkdown {
-		data = markdown_writer.RenderPlaybookMarkdown(pc)
+		data = markdown_writer.RenderPlaybookMarkdown(view)
 	} else {
-		data, renderErr = html_writer.RenderPlaybookHTML(pc, html_writer.Options{Title: pc.Playbook.Title, PageSize: "A4"})
+		data, renderErr = html_writer.RenderPlaybookHTML(view, html_writer.Options{PageSize: "A4"})
 	}
 	if renderErr != nil {
 		h.logAndAuditFailure(logger, event, userID, pb.ID, correlationID, sections, renderErr)
@@ -410,13 +410,16 @@ func readSessionToken(r *http.Request) string {
 	return ""
 }
 
-// resolveLocale reads the requester's profile locale. Falls back to "en".
-func (h *ExportHandler) resolveLocale(userID string) string {
-	user, err := h.pluginAPI.User.Get(userID)
-	if err != nil || user == nil || user.Locale == "" {
-		return "en"
+// reportOptions loads the requester once to translate the report into their
+// language and show times in their time zone, falling back to English and
+// UTC.
+func (h *ExportHandler) reportOptions(userID string) report.Options {
+	locale, location := "en", time.UTC
+	if user, err := h.pluginAPI.User.Get(userID); err == nil && user != nil {
+		locale = cmp.Or(user.Locale, locale)
+		location = user.GetTimezoneLocation()
 	}
-	return user.Locale
+	return report.Options{T: i18n.GetUserTranslations(locale), Locale: locale, Location: location}
 }
 
 // acquireRenderSlot returns true when the request obtains a slot; false on

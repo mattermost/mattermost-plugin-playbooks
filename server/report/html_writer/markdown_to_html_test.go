@@ -7,20 +7,7 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
-
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 )
-
-// emptyResolvers returns an empty but non-nil resolver table for tests that
-// don't exercise mention / channel resolution.
-func emptyResolvers() report.ResolverTable {
-	return report.ResolverTable{
-		Users:      map[string]report.RenderUser{},
-		Channels:   map[string]report.RenderChannel{},
-		Files:      map[string]report.RenderFile{},
-		Permalinks: map[string]report.RenderPostPreview{},
-	}
-}
 
 // TestMarkdownToHTML_XSSCorpus walks a corpus of historically dangerous
 // markdown / raw-HTML inputs and verifies the sanitizer leaves no exploit
@@ -86,7 +73,7 @@ func TestMarkdownToHTML_XSSCorpus(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := string(markdownToHTML(tc.in, emptyResolvers()))
+			got := string(markdownToHTML(tc.in))
 			lower := strings.ToLower(got)
 			for _, forbidden := range tc.mustNotContain {
 				if strings.Contains(lower, strings.ToLower(forbidden)) {
@@ -144,7 +131,7 @@ func TestMarkdownToHTML_PositiveFormatting(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := string(markdownToHTML(tc.in, emptyResolvers()))
+			got := string(markdownToHTML(tc.in))
 			for _, want := range tc.mustContain {
 				if !strings.Contains(got, want) {
 					t.Fatalf("output missing expected substring %q\n--- output ---\n%s", want, got)
@@ -158,7 +145,7 @@ func TestMarkdownToHTML_PositiveFormatting(t *testing.T) {
 // fragment rather than a stray <p></p>.
 func TestMarkdownToHTML_EmptyInput(t *testing.T) {
 	for _, in := range []string{"", "   ", "\n\n"} {
-		got := string(markdownToHTML(in, emptyResolvers()))
+		got := string(markdownToHTML(in))
 		if got != "" {
 			t.Fatalf("expected empty output for input %q, got %q", in, got)
 		}
@@ -174,7 +161,7 @@ func TestMarkdownToHTML_ValidUTF8(t *testing.T) {
 		"emoji: \xe2\x98\x83 snowman",
 	}
 	for _, in := range inputs {
-		got := []byte(markdownToHTML(in, emptyResolvers()))
+		got := []byte(markdownToHTML(in))
 		if !utf8.Valid(got) {
 			t.Fatalf("non-UTF-8 output for input %q: %x", in, got)
 		}

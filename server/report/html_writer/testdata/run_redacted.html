@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>Login failures</title>
+  <style>
+:root {
+  --font-sans:  -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono:  "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
+                Courier, monospace;
+}
+body { font-family: var(--font-sans); }
+code, pre { font-family: var(--font-mono); }
+</style>
+  
+<style>
+ 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-size: 14px; line-height: 1.5; color: #1e1f22; background: #fff; padding: 24px; }
+
+ 
+@page {
+  size: A4;
+  margin: 18mm 16mm;
+}
+
+ 
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+h2 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; border-bottom: 1px solid #e0e0e0; padding-bottom: 6px; }
+h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
+p { margin: 8px 0; }
+a { color: #166aab; text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul, ol { margin: 8px 0 8px 24px; }
+li { margin: 2px 0; }
+code { font-family: var(--font-mono); font-size: 13px; background: #f0f0f0; border-radius: 3px; padding: 1px 5px; }
+pre { font-family: var(--font-mono); font-size: 12px; background: #f0f0f0; border-radius: 4px; padding: 10px 12px; overflow-x: auto; margin: 8px 0; }
+pre code { background: transparent; padding: 0; }
+blockquote { border-left: 3px solid #d8d8d8; padding: 4px 12px; margin: 8px 0; color: #4f5660; }
+table { border-collapse: collapse; margin: 8px 0; }
+th, td { border: 1px solid #e0e0e0; padding: 6px 10px; text-align: left; }
+th { background: #f8f9fb; font-weight: 600; }
+
+ 
+.status-pill { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.status-pill--inprogress { background: #e8f4fd; color: #166aab; }
+.status-pill--finished   { background: #e8f5e8; color: #1f6b35; }
+.status-pill--neutral    { background: #f0f0f0; color: #4f5660; }
+
+ 
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
+.stat-card { background: #f8f9fb; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px 12px; }
+.stat-card__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #72767d; }
+.stat-card__value { font-size: 22px; font-weight: 700; margin-top: 4px; color: #1e1f22; }
+.stat-card__hint  { font-size: 11px; color: #72767d; margin-top: 2px; }
+
+ 
+.meta-strip { font-size: 13px; color: #72767d; margin: 8px 0 16px; }
+.meta-strip strong { color: #1e1f22; }
+
+ 
+.card { border: 1px solid #e0e0e0; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
+.card__header { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #1e1f22; }
+
+ 
+.boxed-md { background: #f8f9fb; border-left: 3px solid #d8d8d8; border-radius: 0 4px 4px 0; padding: 12px 16px; margin: 8px 0; }
+.boxed-md > :first-child { margin-top: 0; }
+.boxed-md > :last-child { margin-bottom: 0; }
+
+ 
+.checklist { margin: 8px 0; }
+.task { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; }
+.task input[type=checkbox] { margin-top: 3px; flex-shrink: 0; }
+.task--skipped { opacity: .55; text-decoration: line-through; }
+.task__body { flex: 1; min-width: 0; }
+.task__title { font-size: 14px; color: #1e1f22; }
+.task__meta { font-size: 12px; color: #72767d; margin-top: 2px; }
+.task__meta-cmd { font-family: var(--font-mono); font-size: 12px; background: rgba(63, 67, 80, 0.06); color: #1e1f22; border-radius: 3px; padding: 1px 5px; }
+.task__desc { font-size: 13px; background: #f8f9fb; border-radius: 4px; padding: 6px 10px; margin-top: 4px; }
+
+ 
+.member-grid { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.member-chip { background: #f0f0f0; border-radius: 12px; padding: 3px 10px; font-size: 13px; }
+
+ 
+.timeline-event { display: grid; grid-template-columns: 140px 140px 1fr; gap: 12px; margin: 8px 0; font-size: 13px; align-items: start; padding: 6px 0; border-top: 1px solid #f0f0f0; }
+.timeline-event:first-of-type { border-top: none; }
+.timeline-event__date { color: #72767d; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.timeline-event__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #72767d; padding: 2px 8px; background: rgba(63, 67, 80, 0.06); border-radius: 12px; text-align: center; align-self: start; }
+.timeline-event__headline { color: #1e1f22; }
+.timeline-event__detail { color: #72767d; margin-top: 4px; font-size: 12px; }
+
+ 
+.timeline-event--lifecycle .timeline-event__label { background: rgba(28, 88, 217, 0.10); color: #1c58d9; }
+.timeline-event--tasks     .timeline-event__label { background: rgba(31, 107, 53, 0.10); color: #1f6b35; }
+.timeline-event--status    .timeline-event__label { background: rgba(22, 106, 171, 0.10); color: #166aab; }
+.timeline-event--people    .timeline-event__label { background: rgba(120, 67, 152, 0.10); color: #784398; }
+.timeline-event--retrospective .timeline-event__label { background: rgba(204, 142, 53, 0.10); color: #cc8e35; }
+.timeline-event--command   .timeline-event__label { background: rgba(63, 67, 80, 0.10); color: #3f4350; }
+
+ 
+.transcript-thread { border-left: 3px solid #e0e0e0; padding-left: 12px; margin: 12px 0; }
+.transcript-reply  { border-left: 3px solid #f0f0f0; padding-left: 10px; margin: 8px 0 8px 16px; }
+.transcript-reply--orphan { border-left-color: #f4cb47; }
+.transcript-orphans-heading { font-size: 13px; font-weight: 600; color: #72767d; margin: 20px 0 4px; }
+.transcript-orphans-note { font-size: 12px; margin: 0 0 8px; }
+.msg-header { font-size: 12px; font-weight: 600; color: #1e1f22; margin-bottom: 4px; }
+.msg-header span  { font-weight: 400; color: #72767d; margin-left: 6px; }
+.msg-body { font-size: 13px; }
+.msg-body > :first-child { margin-top: 0; }
+.msg-body > :last-child { margin-bottom: 0; }
+
+ 
+.divider { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+
+ 
+.muted { color: #72767d; font-style: italic; font-size: 13px; margin: 8px 0; }
+
+ 
+@media print {
+  body { padding: 0; }
+  h2 { page-break-before: auto; }
+  .card, .boxed-md, .transcript-thread { break-inside: avoid; }
+  a[href]::after { content: " (" attr(href) ")"; font-size: 10px; color: #72767d; }
+  a[href^="#"]::after { content: ""; }
+}
+</style>
+
+</head>
+<body>
+  <h1>Login failures</h1>
+  <span class="status-pill status-pill--inprogress">In Progress</span>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-card__label">Tasks</div>
+      <div class="stat-card__value">1/2</div>
+      <div class="stat-card__hint">50% complete</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Updates</div>
+      <div class="stat-card__value">2</div>
+      
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Participants</div>
+      <div class="stat-card__value">3</div>
+      
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Duration</div>
+      <div class="stat-card__value">3h 0m</div>
+      
+    </div>
+  </div>
+
+  <p class="meta-strip">
+    <strong>Owner:</strong> Unknown user · <strong>Started:</strong> 2023-11-14 22:13
+  </p>
+  <div class="member-grid">
+    <span class="member-chip">@bob</span><span class="member-chip">Dana Display</span><span class="member-chip">Unknown user</span>
+  </div>
+
+  <h2>Summary</h2>
+  <p class="muted">No summary.</p>
+
+  <h2>Timeline</h2>
+  <div class="timeline-event timeline-event--lifecycle">
+    <span class="timeline-event__date">2023-11-14 22:13</span>
+    <span class="timeline-event__label">Run created</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Dana Display created this run</div>
+      
+    </div>
+  </div>
+  
+  <div class="timeline-event timeline-event--people">
+    <span class="timeline-event__date">2023-11-14 22:16</span>
+    <span class="timeline-event__label">Task reassigned</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Unknown user reassigned a task</div>
+      
+    </div>
+  </div>
+  
+  <div class="timeline-event timeline-event--tasks">
+    <span class="timeline-event__date">2023-11-14 22:17</span>
+    <span class="timeline-event__label">Task updated</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Unknown user restored task &#39;Check IdP&#39;</div>
+      
+    </div>
+  </div>
+  
+
+  <h2>Status Updates</h2>
+  <div class="card">
+    <div class="card__header">Dana Display — 2023-11-14 22:18</div>
+    <div class="boxed-md"><p>Checking the identity provider.</p>
+</div>
+  </div>
+  
+  <div class="card">
+    <div class="card__header">Unknown user — 2023-11-14 22:23</div>
+    <div class="boxed-md"><p>Rolled back the config.</p>
+</div>
+  </div>
+  
+
+  <h2>Tasks</h2>
+  <h3>Triage (1/2 · 50%)</h3>
+  <div class="checklist">
+    <div class="task">
+      <input type="checkbox"  disabled>
+      <div class="task__body">
+        <div class="task__title">Check IdP</div>
+        <div class="task__meta">Dana Display</div>
+        
+      </div>
+    </div>
+    
+    <div class="task">
+      <input type="checkbox" checked disabled>
+      <div class="task__body">
+        <div class="task__title">Check certificates</div>
+        <div class="task__meta">Unknown user</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  
+
+  <h2>Retrospective</h2>
+  <p class="muted">No retrospective.</p>
+  <h2>Transcript</h2>
+    <div class="transcript-thread">
+      <div class="msg-header">Dana Display<span>2023-11-14 22:15</span></div>
+      <div class="msg-body"><p>Seeing 500s from SSO.</p>
+</div>
+      <div class="transcript-reply">
+        <div class="msg-header">↳ Unknown user<span>2023-11-14 22:16</span></div>
+        <div class="msg-body"><p>Confirmed.</p>
+</div>
+      </div>
+    </div>
+  <hr class="divider">
+  <p class="muted">Generated 2023-11-15 01:13 UTC.</p>
+</body>
+</html>

@@ -9,206 +9,67 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
-// RenderRunMarkdown walks rc and returns Mattermost-flavored markdown for a
-// playbook-run report. The output is byte-stable for fixed inputs, and
-// @mentions are inert so pasting it into Mattermost notifies no one.
-func RenderRunMarkdown(rc report.RenderContext) []byte {
+// RenderRunMarkdown prints r as Mattermost-flavored markdown. The output is
+// byte-stable for a fixed report, and @mentions are inert so pasting it into
+// Mattermost notifies no one.
+func RenderRunMarkdown(r *report.RunReport) []byte {
 	var b bytes.Buffer
 
-	writeRunHeader(&b, rc)
-	writeRunSummary(&b, rc)
-	writeRunTimeline(&b, rc)
-	writeRunStatusUpdates(&b, rc)
-	writeRunTasks(&b, rc)
-	writeRunRetrospective(&b, rc)
-	writeRunTranscript(&b, rc)
-	writeFooter(&b, rc.GeneratedAtMillis)
-
-	return inertMentions(b.Bytes())
-}
-
-func writeRunHeader(b *bytes.Buffer, rc report.RenderContext) {
-	name := escapeText(rc.Run.Name)
-	if name == "" {
-		name = "(untitled run)"
+	writeHeading(&b, 1, r.Title)
+	writeMetaStrip(&b, append([]report.Field{r.Status}, r.Meta...))
+	writeStats(&b, r.Stats)
+	if len(r.Participants) > 0 {
+		writeMetaStrip(&b, []report.Field{{Label: r.ParticipantsLabel, Value: strings.Join(r.Participants, ", ")}})
 	}
-	writeHeading(b, 1, name)
 
-	owner := rc.Owner.Username
-	if owner != "" {
-		owner = "@" + owner
+	writeHeading(&b, 2, r.Summary.Title)
+	if r.Summary.Body == "" {
+		writeEmpty(&b, r.Summary.Empty)
+	}
+	writeBody(&b, r.Summary.Body)
+
+	writeHeading(&b, 2, r.Timeline.Title)
+	if len(r.Timeline.Events) == 0 {
+		writeEmpty(&b, r.Timeline.Empty)
 	} else {
-		owner = resolveUser(rc.Resolvers, rc.Owner.UserID)
-	}
-
-	items := []metaItem{
-		{Key: "Status", Value: statusDisplay(rc.Run.Status)},
-		{Key: "Owner", Value: owner},
-		{Key: "Started", Value: formatDate(rc.Run.StartTimeMs)},
-	}
-	if rc.Run.EndTimeMs > 0 {
-		items = append(items, metaItem{Key: "Ended", Value: formatDate(rc.Run.EndTimeMs)})
-	}
-	if rc.Run.PlaybookTitle != "" {
-		items = append(items, metaItem{Key: "Playbook", Value: escapeText(rc.Run.PlaybookTitle)})
-	}
-	writeMetaStrip(b, items)
-	b.WriteString("\n")
-}
-
-func writeRunSummary(b *bytes.Buffer, rc report.RenderContext) {
-	writeHeading(b, 2, "Summary")
-	if strings.TrimSpace(rc.Run.Summary) == "" {
-		writeEmpty(b, "summary")
-		return
-	}
-	writeBody(b, rc.Run.Summary)
-}
-
-func writeRunTimeline(b *bytes.Buffer, rc report.RenderContext) {
-	writeHeading(b, 2, "Timeline")
-	if len(rc.TimelineEvents) == 0 {
-		writeEmpty(b, "timeline events")
-		return
-	}
-	for _, ev := range rc.TimelineEvents {
-		f := report.FormatTimelineEvent(ev, rc.Resolvers)
-		when := formatDate(ev.CreateAt)
-		fmt.Fprintf(b, "- **%s** · _%s_ — %s\n", when, f.TypeLabel, f.Headline)
-		if f.Detail != "" {
-			for ln := range strings.SplitSeq(f.Detail, "\n") {
-				b.WriteString("  ")
-				b.WriteString(ln)
-				b.WriteString("\n")
+		for _, ev := range r.Timeline.Events {
+			fmt.Fprintf(&b, "- **%s** · _%s_ — %s\n", escapeText(ev.Date), escapeText(ev.TypeLabel), ev.Headline)
+			if ev.Detail != "" {
+				for ln := range strings.SplitSeq(ev.Detail, "\n") {
+					b.WriteString("  ")
+					b.WriteString(ln)
+					b.WriteString("\n")
+				}
 			}
 		}
+		b.WriteString("\n")
 	}
-	b.WriteString("\n")
-}
 
-func writeRunStatusUpdates(b *bytes.Buffer, rc report.RenderContext) {
-	writeHeading(b, 2, "Status Updates")
-	if len(rc.StatusUpdates) == 0 {
-		writeEmpty(b, "status updates")
-		return
+	writeHeading(&b, 2, r.StatusUpdates.Title)
+	if len(r.StatusUpdates.Updates) == 0 {
+		writeEmpty(&b, r.StatusUpdates.Empty)
 	}
-	for _, su := range rc.StatusUpdates {
-		author := resolveUser(rc.Resolvers, su.AuthorID)
-		writeHeading(b, 3, fmt.Sprintf("%s — %s", author, formatDate(su.CreateAt)))
-		if strings.TrimSpace(su.Message) == "" {
-			writeEmpty(b, "message")
-			continue
+	for _, su := range r.StatusUpdates.Updates {
+		writeHeading(&b, 3, fmt.Sprintf("%s — %s", su.Author, su.Date))
+		if su.Body == "" {
+			writeEmpty(&b, r.StatusUpdates.NoMessage)
 		}
-		writeBody(b, su.Message)
-	}
-}
-
-func writeRunTasks(b *bytes.Buffer, rc report.RenderContext) {
-	writeHeading(b, 2, "Tasks")
-	if len(rc.Checklists) == 0 {
-		writeEmpty(b, "tasks")
-		return
-	}
-	for i, cl := range rc.Checklists {
-		writeChecklist(b, cl, rc.Resolvers, false, fmt.Sprintf("Checklist %d", i+1))
-	}
-}
-
-func writeRunRetrospective(b *bytes.Buffer, rc report.RenderContext) {
-	writeHeading(b, 2, "Retrospective")
-	body := strings.TrimSpace(rc.Retrospective.Body)
-	hasMetrics := len(rc.Retrospective.Metrics) > 0
-	if body == "" && !hasMetrics {
-		writeEmpty(b, "retrospective")
-		return
-	}
-	if body != "" {
-		writeBody(b, body)
-	}
-	if !hasMetrics {
-		return
-	}
-	b.WriteString("**Metrics**\n\n")
-	for _, m := range rc.Retrospective.Metrics {
-		fmt.Fprintf(b, "- **%s** — %s\n", escapeText(m.Title), formatMetricValue(m))
-		writeMetricDescription(b, m.Description)
-	}
-	b.WriteString("\n")
-}
-
-// formatMetricValue renders one metric's value as a single inline string
-// for the markdown body.
-func formatMetricValue(m report.RenderMetric) string {
-	if !m.HasValue {
-		return "not set"
-	}
-	switch m.Type {
-	case "duration":
-		return formatDuration(m.Value)
-	case "currency":
-		return fmt.Sprintf("%.2f", float64(m.Value)/100.0)
-	case "integer":
-		fallthrough
-	default:
-		return fmt.Sprintf("%d", m.Value)
-	}
-}
-
-func writeRunTranscript(b *bytes.Buffer, rc report.RenderContext) {
-	writeHeading(b, 2, "Transcript")
-
-	if len(rc.Transcript) == 0 {
-		switch rc.TranscriptOmittedReason {
-		case coretypes.TranscriptOmittedNotMember:
-			b.WriteString("_Transcript omitted — you are not a member of the run's channel._\n\n")
-		case coretypes.TranscriptOmittedNoChannel:
-			b.WriteString("_Transcript unavailable — this run has no associated channel._\n\n")
-		default:
-			// Either the section was not requested, or it was requested and
-			// the channel simply had no posts in the run's time window. We
-			// don't have enough signal at the renderer to distinguish, but
-			// "No transcript." is honest in both cases (rather than
-			// fabricating a membership error).
-			b.WriteString("_No transcript._\n\n")
-		}
-		if rc.TranscriptTruncation.Hit {
-			fmt.Fprintf(b, "> _Transcript truncated (post-cap, %d posts shown)._\n\n", rc.TranscriptTruncation.Posts)
-		}
-		return
+		writeBody(&b, su.Body)
 	}
 
-	// Filter out system messages (Type != ""). Posts with empty Type are
-	// regular user posts and are kept.
-	filtered := make([]report.RenderPost, 0, len(rc.Transcript))
-	for _, p := range rc.Transcript {
-		if p.Type != "" {
-			continue
-		}
-		filtered = append(filtered, p)
-	}
+	writeChecklists(&b, r.Tasks)
 
-	if len(filtered) == 0 {
-		b.WriteString("_No transcript._\n\n")
-		if rc.TranscriptTruncation.Hit {
-			fmt.Fprintf(b, "> _Transcript truncated (post-cap, %d posts shown)._\n\n", rc.TranscriptTruncation.Posts)
-		}
-		return
+	writeHeading(&b, 2, r.Retrospective.Title)
+	if r.Retrospective.Body == "" && len(r.Retrospective.Metrics) == 0 {
+		writeEmpty(&b, r.Retrospective.Empty)
 	}
+	writeBody(&b, r.Retrospective.Body)
+	writeMetrics(&b, r.Retrospective.MetricsTitle, r.Retrospective.Metrics, "- **%s** — %s\n")
 
-	if rc.TranscriptMode == coretypes.TranscriptModeChronological {
-		writeTranscriptChronological(b, filtered, rc.Resolvers)
-	} else {
-		writeTranscriptThreaded(b, filtered, rc.Resolvers)
-	}
+	writeTranscript(&b, r.Transcript)
+	writeFooter(&b, r.Footer)
 
-	if rc.TranscriptTruncation.Hit {
-		count := rc.TranscriptTruncation.Posts
-		if count == 0 {
-			count = len(filtered)
-		}
-		fmt.Fprintf(b, "> _Transcript truncated (post-cap, %d posts shown)._\n\n", count)
-	}
+	return inertMentions(b.Bytes())
 }

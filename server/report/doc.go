@@ -2,11 +2,15 @@
 // See LICENSE.txt for license information.
 
 // Package report holds the sanitized DTOs (RenderContext,
-// PlaybookRenderContext, RenderUser, RenderChannel, etc.) that the report
-// writers consume. The package is intentionally pure: it depends on no
-// other plugin package (no server/app, no pluginapi, no net/http).
+// PlaybookRenderContext, RenderUser, RenderChannel, etc.) that ReportService
+// assembles, and BuildRun / BuildPlaybook, which turn them into a single
+// translated, display-ready view model (RunReport, PlaybookReport) in the
+// requester's language and time zone. The package is intentionally pure: it
+// depends on no other plugin package (no server/app, no pluginapi, no
+// net/http).
 //
-// Concrete output formats live in sibling packages:
+// Concrete output formats live in sibling packages and only print the view
+// model:
 //
 //	report/markdown_writer — Mattermost-flavored markdown
 //	report/html_writer     — self-contained HTML document (downloaded
