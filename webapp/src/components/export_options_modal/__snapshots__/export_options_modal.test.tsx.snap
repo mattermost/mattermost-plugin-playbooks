@@ -6,14 +6,17 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
 >
   <div
     className="Body-jPQbxz gCtmSH"
+    ref={null}
   >
     <div
       className="FormatSelector-fRuKVN frSyxO"
+      ref={null}
     >
       <button
         className="FormatButton-jpoeiq kywyMA"
         data-testid="format-button-pdf"
         onClick={[Function]}
+        ref={null}
         selected={true}
       >
         <i
@@ -25,6 +28,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
         className="FormatButton-jpoeiq fCAij"
         data-testid="format-button-html"
         onClick={[Function]}
+        ref={null}
         selected={false}
       >
         <i
@@ -36,6 +40,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
         className="FormatButton-jpoeiq fCAij"
         data-testid="format-button-md"
         onClick={[Function]}
+        ref={null}
         selected={false}
       >
         <i
@@ -47,20 +52,24 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
     <p
       className="FormatHint-lnvEeT kBHaCo"
       data-testid="format-hint"
+      ref={null}
     >
       Opens your browser print dialog — choose "Save as PDF".
     </p>
     <p
       className="Description-dTdaMR caPvRr"
+      ref={null}
     >
       Select the sections to include in the export.
     </p>
     <div
       className="Toggles-hAkmHW UekAt"
+      ref={null}
     >
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-playbookOverview"
+        ref={null}
       >
         <input
           checked={true}
@@ -74,6 +83,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-playbookChecklistTemplates"
+        ref={null}
       >
         <input
           checked={true}
@@ -87,6 +97,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-playbookSettings"
+        ref={null}
       >
         <input
           checked={true}
@@ -108,14 +119,17 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
 >
   <div
     className="Body-jPQbxz gCtmSH"
+    ref={null}
   >
     <div
       className="FormatSelector-fRuKVN frSyxO"
+      ref={null}
     >
       <button
         className="FormatButton-jpoeiq kywyMA"
         data-testid="format-button-pdf"
         onClick={[Function]}
+        ref={null}
         selected={true}
       >
         <i
@@ -127,6 +141,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
         className="FormatButton-jpoeiq fCAij"
         data-testid="format-button-html"
         onClick={[Function]}
+        ref={null}
         selected={false}
       >
         <i
@@ -138,6 +153,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
         className="FormatButton-jpoeiq fCAij"
         data-testid="format-button-md"
         onClick={[Function]}
+        ref={null}
         selected={false}
       >
         <i
@@ -149,20 +165,24 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
     <p
       className="FormatHint-lnvEeT kBHaCo"
       data-testid="format-hint"
+      ref={null}
     >
       Opens your browser print dialog — choose "Save as PDF".
     </p>
     <p
       className="Description-dTdaMR caPvRr"
+      ref={null}
     >
       Select the sections to include in the export.
     </p>
     <div
       className="Toggles-hAkmHW UekAt"
+      ref={null}
     >
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-cover"
+        ref={null}
       >
         <input
           checked={true}
@@ -176,6 +196,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-executiveSummary"
+        ref={null}
       >
         <input
           checked={true}
@@ -189,6 +210,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-timeline"
+        ref={null}
       >
         <input
           checked={true}
@@ -202,6 +224,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-statusUpdates"
+        ref={null}
       >
         <input
           checked={true}
@@ -215,6 +238,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-checklists"
+        ref={null}
       >
         <input
           checked={true}
@@ -228,6 +252,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-retrospective"
+        ref={null}
       >
         <input
           checked={true}
@@ -241,6 +266,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       <label
         className="ToggleLabel-biakKb mducf"
         data-testid="section-toggle-transcript"
+        ref={null}
       >
         <input
           checked={false}
