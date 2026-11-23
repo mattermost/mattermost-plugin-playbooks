@@ -47,7 +47,7 @@ type ResolverStats struct {
 
 // ReportService orchestrates assembly of sanitized RenderContext /
 // PlaybookRenderContext values for the renderer. All permission scoping
-// happens here; the renderer is data-in / PDF-out.
+// happens here; the writers only turn the data into HTML or Markdown.
 type ReportService struct {
 	runService         PlaybookRunService
 	playbookService    PlaybookService
@@ -998,7 +998,7 @@ func dedupNonEmpty(in []string, maxLen int) []string {
 
 // capLookups truncates the three resolver target slices to a combined budget,
 // preferring users > channels > files. The order matches the visual hierarchy
-// of references in the rendered PDF.
+// of references in the rendered report.
 func capLookups(users, channels, files []string, budget int) ([]string, []string, []string) {
 	if budget <= 0 {
 		return nil, nil, nil

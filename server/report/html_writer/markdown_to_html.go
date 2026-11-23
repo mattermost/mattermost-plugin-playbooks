@@ -71,8 +71,8 @@ func markdownToHTML(md string, rt report.ResolverTable) template.HTML {
 // htmlSanitizerPolicy returns the bluemonday policy used to scrub goldmark
 // output before it lands in a template. UGCPolicy is the well-known
 // permissive-but-safe baseline for user-generated content; we tighten it
-// slightly by re-asserting the allowed URL schemes (the same allowlist
-// the typed PDF renderer enforces — http / https / mailto only).
+// slightly by re-asserting the allowed URL schemes: http / https / mailto
+// only.
 func htmlSanitizerPolicy() *bluemonday.Policy {
 	p := bluemonday.UGCPolicy()
 	p.AllowURLSchemes("http", "https", "mailto")

@@ -139,9 +139,8 @@ func writeRunRetrospective(b *bytes.Buffer, rc report.RenderContext) {
 	b.WriteString("\n")
 }
 
-// formatMetricValue renders one metric's value (and target hint) as a
-// single string for the markdown body. The PDF renderer is responsible
-// for fancy formatting; the markdown form keeps it inline-friendly.
+// formatMetricValue renders one metric's value as a single inline string
+// for the markdown body.
 func formatMetricValue(m report.RenderMetric) string {
 	if !m.HasValue {
 		return "not set"

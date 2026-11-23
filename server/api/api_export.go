@@ -5,10 +5,7 @@ package api
 
 import (
 	"context"
-	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -21,7 +18,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/sync/singleflight"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
@@ -51,8 +47,8 @@ const (
 	filenameMaxLen = 80
 
 	// exportIntentHeader is the optional client-supplied hint recorded in
-	// the audit log ("pdf-fallback" when the client will browser-print the
-	// HTML, "html-direct" when downloading it as HTML).
+	// the audit log for HTML exports: "print" when the client will
+	// browser-print the HTML to PDF, "download" when saving it as HTML.
 	exportIntentHeader = "X-Playbooks-Export-Intent"
 )
 
@@ -84,10 +80,6 @@ type ExportHandler struct {
 	// from config.
 	renderSemOnce sync.Once
 	renderSem     chan struct{}
-
-	// sf coalesces identical in-flight renders. Keyed on
-	// (kind|format|id|userID|sectionsHash).
-	sf singleflight.Group
 }
 
 // registeredExportHandler holds the active ExportHandler used by the route
@@ -226,12 +218,13 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 
 	filename := reportFilename(rc.Run.Name, "run-"+run.ID, rc.GeneratedAtMillis)
 
-	data, renderErr := h.render(exportKey("run", format, run.ID, userID, sections), func() ([]byte, error) {
-		if format == formatMarkdown {
-			return markdown_writer.RenderRunMarkdown(rc), nil
-		}
-		return html_writer.RenderRunHTML(rc, html_writer.Options{Title: rc.Run.Name, PageSize: "A4"})
-	})
+	var data []byte
+	var renderErr error
+	if format == formatMarkdown {
+		data = markdown_writer.RenderRunMarkdown(rc)
+	} else {
+		data, renderErr = html_writer.RenderRunHTML(rc, html_writer.Options{Title: rc.Run.Name, PageSize: "A4"})
+	}
 	if renderErr != nil {
 		h.logAndAuditFailure(logger, event, userID, run.ID, correlationID, sections, renderErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", renderErr)
@@ -304,12 +297,13 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 
 	filename := reportFilename(pc.Playbook.Title, "playbook-"+pb.ID, pc.GeneratedAtMillis)
 
-	data, renderErr := h.render(exportKey("playbook", format, pb.ID, userID, sections), func() ([]byte, error) {
-		if format == formatMarkdown {
-			return markdown_writer.RenderPlaybookMarkdown(pc), nil
-		}
-		return html_writer.RenderPlaybookHTML(pc, html_writer.Options{Title: pc.Playbook.Title, PageSize: "A4"})
-	})
+	var data []byte
+	var renderErr error
+	if format == formatMarkdown {
+		data = markdown_writer.RenderPlaybookMarkdown(pc)
+	} else {
+		data, renderErr = html_writer.RenderPlaybookHTML(pc, html_writer.Options{Title: pc.Playbook.Title, PageSize: "A4"})
+	}
 	if renderErr != nil {
 		h.logAndAuditFailure(logger, event, userID, pb.ID, correlationID, sections, renderErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", renderErr)
@@ -319,24 +313,12 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 	h.auditSuccess(logger, event, userID, pb.ID, correlationID, sections, resolverStats, report.Truncation{}, len(data), exportIntent(r, format))
 }
 
-// render coalesces identical in-flight renders and returns a private copy of
-// the result.
-func (h *ExportHandler) render(key string, fn func() ([]byte, error)) ([]byte, error) {
-	v, err, _ := h.sf.Do(key, func() (any, error) {
-		return fn()
-	})
-	if err != nil {
-		return nil, err
-	}
-	b, _ := v.([]byte)
-	return append([]byte(nil), b...), nil
-}
-
 // ---- response writers ----
 
-// writeReportResponse emits the report with a hardened header set: strict
-// CSP, nosniff, frame-deny, referrer-policy. The client either downloads it or,
-// for HTML, browser-prints it to PDF.
+// writeReportResponse emits the report as an attachment. The client either
+// downloads it or, for HTML, browser-prints it to PDF. Browsers never render
+// an attachment, so the headers only guard against sniffing and caching; the
+// HTML report carries its own Content-Security-Policy for when it's opened.
 func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string, data []byte, filename string, correlationID string, trunc report.Truncation) {
 	contentType := "text/html; charset=utf-8"
 	if format == formatMarkdown {
@@ -346,10 +328,7 @@ func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string
 	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
 	w.Header().Set("Content-Disposition", buildContentDisposition(filename, format))
 	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Content-Security-Policy", cspHeader())
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("X-Frame-Options", "DENY")
-	w.Header().Set("Referrer-Policy", "no-referrer")
 	if correlationID != "" {
 		w.Header().Set("X-Request-ID", correlationID)
 	}
@@ -374,7 +353,7 @@ func (h *ExportHandler) reportsEnabled() bool {
 	if cfg == nil {
 		return true
 	}
-	return cfg.EnablePDFReports
+	return cfg.EnableReports
 }
 
 // verifyCSRF defends a GET-with-side-effects endpoint against cross-origin
@@ -596,14 +575,6 @@ func sectionsToList(s report.SectionFlags) []string {
 	return out
 }
 
-// exportKey is the single-flight coalescing key. It folds the kind, format,
-// id, user, and section-flag JSON into a stable string.
-func exportKey(kind, format, id, userID string, s report.SectionFlags) string {
-	flags, _ := json.Marshal(s)
-	sum := sha256.Sum256(flags)
-	return strings.Join([]string{kind, format, id, userID, hex.EncodeToString(sum[:])}, "|")
-}
-
 // exportEvent returns the audit event name for a kind ("run" | "playbook")
 // and format, e.g. "run_exported_md".
 func exportEvent(kind, format string) string {
@@ -619,7 +590,7 @@ func exportIntent(r *http.Request, format string) string {
 	if intent := r.Header.Get(exportIntentHeader); intent != "" {
 		return intent
 	}
-	return "html-direct"
+	return "download"
 }
 
 // parseTranscriptMode normalizes the ?transcript_mode= query param. Unknown
@@ -700,15 +671,4 @@ func correlationFromRequest(r *http.Request) string {
 		return id
 	}
 	return model.NewId()
-}
-
-// cspHeader is the strict Content-Security-Policy applied to the inline HTML
-// report. It forbids scripts, network fetches, and framing entirely; inline
-// styles are allowed only because the document embeds its own <style> blocks.
-func cspHeader() string {
-	return "default-src 'none'; script-src 'none'; object-src 'none'; " +
-		"connect-src 'none'; worker-src 'none'; media-src 'none'; " +
-		"style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-		"font-src 'self' data:; base-uri 'none'; form-action 'none'; " +
-		"frame-ancestors 'none'"
 }

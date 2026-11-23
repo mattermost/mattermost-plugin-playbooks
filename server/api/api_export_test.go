@@ -136,24 +136,6 @@ func TestExport_CorrelationFromRequest(t *testing.T) {
 	})
 }
 
-func TestExport_ExportKey_StableAndDistinct(t *testing.T) {
-	a := exportKey("run", "html", "abc", "user1", report.SectionFlags{Cover: true})
-	b := exportKey("run", "html", "abc", "user1", report.SectionFlags{Cover: true})
-	assert.Equal(t, a, b, "same inputs must produce same key")
-
-	c := exportKey("run", "html", "abc", "user2", report.SectionFlags{Cover: true})
-	assert.NotEqual(t, a, c, "different user must produce different key")
-
-	d := exportKey("run", "html", "abc", "user1", report.SectionFlags{Timeline: true})
-	assert.NotEqual(t, a, d, "different sections must produce different key")
-
-	e := exportKey("playbook", "html", "abc", "user1", report.SectionFlags{Cover: true})
-	assert.NotEqual(t, a, e, "different kind must produce different key")
-
-	f := exportKey("run", "md", "abc", "user1", report.SectionFlags{Cover: true})
-	assert.NotEqual(t, a, f, "different format must produce different key")
-}
-
 func TestExport_ReadSessionToken(t *testing.T) {
 	t.Run("cookie", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)

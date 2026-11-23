@@ -43,8 +43,8 @@ import ExportOptionsModal, {
 
 import {
     CopyRunLinkMenuItem,
-    DownloadRunPDFMenuItem,
     ExportChannelLogsMenuItem,
+    ExportRunReportMenuItem,
     FavoriteRunMenuItem,
     FinishRunMenuItem,
     LeaveRunMenuItem,
@@ -80,7 +80,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const currentUserId = useAppSelector(getCurrentUserId);
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const [showExportModal, setShowExportModal] = useState(false);
-    const [showPDFExportModal, setShowPDFExportModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const showRunActionsFromRedux = useAppSelector(isRunActionsModalVisible);
     const [showRunActionsFromMenu, setShowRunActionsFromMenu] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -173,8 +173,8 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                         setShowModal={setShowExportModal}
                     />
                     {reportsEnabled && (
-                        <DownloadRunPDFMenuItem
-                            onClick={() => setShowPDFExportModal(true)}
+                        <ExportRunReportMenuItem
+                            onClick={() => setShowReportModal(true)}
                         />
                     )}
                     <SaveAsPlaybookMenuItem
@@ -225,15 +225,15 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 }}
             />
             {leaveRunConfirmModal}
-            {showPDFExportModal && (
+            {showReportModal && (
                 <ExportOptionsModal
                     surface='run'
                     defaults={{}}
                     onConfirm={async (sections: SectionFlags, format: ExportFormat, transcriptMode: TranscriptMode) => {
                         await exportReport({kind: 'run', id: playbookRun.id}, sections, format, transcriptMode);
-                        setShowPDFExportModal(false);
+                        setShowReportModal(false);
                     }}
-                    onCancel={() => setShowPDFExportModal(false)}
+                    onCancel={() => setShowReportModal(false)}
                 />
             )}
         </>

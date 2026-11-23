@@ -15,12 +15,9 @@ import (
 
 // TestPackagePurity asserts that no .go file under server/report directly
 // imports server/app, pluginapi, or net/http. This enforces plan §3.6.7
-// (resolver layering — pre-resolution table) at the source level.
-//
-// Note: maroto v2 transitively pulls net/http via pdfcpu/pkg/api — that's
-// unavoidable. What this test prevents is a future commit accidentally
-// adding a direct import that would let arbitrary I/O escape the
-// renderer's trust boundary.
+// (resolver layering — pre-resolution table) at the source level, so a
+// future commit can't add a direct import that would let arbitrary I/O
+// escape the renderer's trust boundary.
 func TestPackagePurity(t *testing.T) {
 	root := "."
 

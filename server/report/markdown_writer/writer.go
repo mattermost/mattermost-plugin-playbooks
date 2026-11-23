@@ -179,7 +179,7 @@ func writeFooter(b *bytes.Buffer, generatedAtMs int64) {
 }
 
 // countClosed returns (done, total) for a checklist item slice. "Done"
-// counts both Closed and Skipped (matches the PDF renderer).
+// counts both Closed and Skipped (matches the HTML report).
 func countClosed(items []report.RenderChecklistItem) (int, int) {
 	done := 0
 	for _, it := range items {

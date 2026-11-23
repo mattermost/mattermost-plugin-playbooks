@@ -833,7 +833,7 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
     return [href, filename];
 };
 
-export type PDFExportSections = {
+export type ReportSections = {
     cover?: boolean;
     executiveSummary?: boolean;
     timeline?: boolean;
@@ -867,7 +867,7 @@ export type ReportExport = {
     truncated: boolean;
 };
 
-const SECTION_KEY_TO_PARAM: Record<keyof PDFExportSections, string> = {
+const SECTION_KEY_TO_PARAM: Record<keyof ReportSections, string> = {
     cover: 'cover',
     executiveSummary: 'summary',
     timeline: 'timeline',
@@ -880,8 +880,8 @@ const SECTION_KEY_TO_PARAM: Record<keyof PDFExportSections, string> = {
     playbookSettings: 'settings',
 };
 
-const sectionsToQueryString = (sections: PDFExportSections): string => {
-    const keys = Object.keys(sections) as (keyof PDFExportSections)[];
+const sectionsToQueryString = (sections: ReportSections): string => {
+    const keys = Object.keys(sections) as (keyof ReportSections)[];
     return keys
         .filter((k) => sections[k])
         .map((k) => SECTION_KEY_TO_PARAM[k])
@@ -899,7 +899,7 @@ const parseFilenameFromDisposition = (disposition: string | null, fallback: stri
 
 export type TranscriptMode = 'threaded' | 'chronological';
 
-const fetchReport = async (path: string, format: ReportFormat, sections: PDFExportSections, transcriptMode?: TranscriptMode): Promise<ReportExport> => {
+const fetchReport = async (path: string, format: ReportFormat, sections: ReportSections, transcriptMode?: TranscriptMode): Promise<ReportExport> => {
     const serverFormat = format === 'md' ? 'md' : 'html';
     const params = new URLSearchParams({format: serverFormat});
     const list = sectionsToQueryString(sections);
@@ -911,7 +911,7 @@ const fetchReport = async (path: string, format: ReportFormat, sections: PDFExpo
     }
 
     // The intent is recorded in the server's audit log for HTML exports.
-    const headers: Record<string, string> = serverFormat === 'html' ? {'X-Playbooks-Export-Intent': format === 'pdf' ? 'pdf-fallback' : 'html-direct'} : {};
+    const headers: Record<string, string> = serverFormat === 'html' ? {'X-Playbooks-Export-Intent': format === 'pdf' ? 'print' : 'download'} : {};
     const resp = await fetch(`${apiUrl}${path}?${params}`, Client4.getOptions({method: 'GET', headers}));
     if (!resp.ok) {
         let message = resp.statusText;
@@ -930,11 +930,11 @@ const fetchReport = async (path: string, format: ReportFormat, sections: PDFExpo
     };
 };
 
-export function exportRunReport(runID: string, format: ReportFormat, sections: PDFExportSections, transcriptMode?: TranscriptMode): Promise<ReportExport> {
+export function exportRunReport(runID: string, format: ReportFormat, sections: ReportSections, transcriptMode?: TranscriptMode): Promise<ReportExport> {
     return fetchReport(`/runs/${runID}/report`, format, sections, transcriptMode);
 }
 
-export function exportPlaybookReport(playbookID: string, format: ReportFormat, sections: PDFExportSections): Promise<ReportExport> {
+export function exportPlaybookReport(playbookID: string, format: ReportFormat, sections: ReportSections): Promise<ReportExport> {
     return fetchReport(`/playbooks/${playbookID}/report`, format, sections);
 }
 
