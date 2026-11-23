@@ -7,11 +7,13 @@ import {IntlProvider} from 'react-intl';
 
 // Track the most-recently rendered handleConfirm so tests can trigger it.
 let capturedHandleConfirm: (() => void) | undefined;
+let capturedConfirmDisabled: boolean | undefined;
 
 jest.mock('src/components/widgets/generic_modal', () => {
     const ReactImpl = jest.requireActual('react');
-    const MockGenericModal = (props: {handleConfirm?: () => void; children: React.ReactNode}) => {
+    const MockGenericModal = (props: {handleConfirm?: () => void; isConfirmDisabled?: boolean; children: React.ReactNode}) => {
         capturedHandleConfirm = props.handleConfirm;
+        capturedConfirmDisabled = props.isConfirmDisabled;
         return ReactImpl.createElement('div', {'data-testid': 'mock-generic-modal'}, props.children);
     };
     return {
@@ -146,6 +148,40 @@ describe('ExportOptionsModal', () => {
         });
 
         expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'html', 'threaded');
+    });
+
+    it('onConfirm receives the md format when Markdown is selected', () => {
+        const {tree, onConfirm} = render({surface: 'run'});
+        const mdBtn = tree.root.findByProps({'data-testid': 'format-button-md'});
+        act(() => {
+            mdBtn.props.onClick();
+        });
+        expect(mdBtn.props.selected).toBe(true);
+        expect(tree.root.findAllByProps({'data-testid': 'format-hint'})).toHaveLength(0);
+        act(() => {
+            capturedHandleConfirm?.();
+        });
+
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'md', 'threaded');
+    });
+
+    it('disables confirm while the export runs', async () => {
+        const {onConfirm} = render({surface: 'run'});
+        let finish!: () => void;
+        onConfirm.mockReturnValue(new Promise<void>((resolve) => {
+            finish = resolve;
+        }));
+
+        expect(capturedConfirmDisabled).toBe(false);
+        act(() => {
+            capturedHandleConfirm?.();
+        });
+        expect(capturedConfirmDisabled).toBe(true);
+
+        await act(async () => {
+            finish();
+        });
+        expect(capturedConfirmDisabled).toBe(false);
     });
 
     it('matches snapshot for run surface', () => {

@@ -846,20 +846,23 @@ export type PDFExportSections = {
     playbookSettings?: boolean;
 };
 
-export class PDFExportError extends Error {
+export class ReportExportError extends Error {
     status: number;
     requestId: string | null;
 
     constructor(status: number, message: string, requestId: string | null) {
         super(message);
-        this.name = 'PDFExportError';
+        this.name = 'ReportExportError';
         this.status = status;
         this.requestId = requestId;
     }
 }
 
-export type PDFExportResult = {
-    blob: Blob;
+// ReportFormat is what the user picks. PDF is the HTML report, printed by the browser.
+export type ReportFormat = 'md' | 'html' | 'pdf';
+
+export type ReportExport = {
+    content: string;
     filename: string;
     truncated: boolean;
 };
@@ -896,12 +899,20 @@ const parseFilenameFromDisposition = (disposition: string | null, fallback: stri
 
 export type TranscriptMode = 'threaded' | 'chronological';
 
-const fetchExportBlob = async (url: string, fallbackFilename: string, extraHeaders: Record<string, string> = {}): Promise<PDFExportResult> => {
-    const options = Client4.getOptions({
-        method: 'GET',
-        headers: {Accept: 'text/html', ...extraHeaders},
-    });
-    const resp = await fetch(url, options);
+const fetchReport = async (path: string, format: ReportFormat, sections: PDFExportSections, transcriptMode?: TranscriptMode): Promise<ReportExport> => {
+    const serverFormat = format === 'md' ? 'md' : 'html';
+    const params = new URLSearchParams({format: serverFormat});
+    const list = sectionsToQueryString(sections);
+    if (list) {
+        params.set('sections', list);
+    }
+    if (transcriptMode && transcriptMode !== 'threaded') {
+        params.set('transcript_mode', transcriptMode);
+    }
+
+    // The intent is recorded in the server's audit log for HTML exports.
+    const headers: Record<string, string> = serverFormat === 'html' ? {'X-Playbooks-Export-Intent': format === 'pdf' ? 'pdf-fallback' : 'html-direct'} : {};
+    const resp = await fetch(`${apiUrl}${path}?${params}`, Client4.getOptions({method: 'GET', headers}));
     if (!resp.ok) {
         let message = resp.statusText;
         try {
@@ -910,70 +921,80 @@ const fetchExportBlob = async (url: string, fallbackFilename: string, extraHeade
         } catch {
             // body wasn't JSON; keep statusText
         }
-        throw new PDFExportError(resp.status, message, resp.headers.get('X-Request-ID'));
+        throw new ReportExportError(resp.status, message, resp.headers.get('X-Request-ID'));
     }
-    const blob = await resp.blob();
     return {
-        blob,
-        filename: parseFilenameFromDisposition(resp.headers.get('Content-Disposition'), fallbackFilename),
+        content: await resp.text(),
+        filename: parseFilenameFromDisposition(resp.headers.get('Content-Disposition'), `report.${serverFormat}`),
         truncated: resp.headers.get('X-Playbooks-Report-Truncated') === 'true',
     };
 };
 
-// exportRunReportHTML fetches a run report as HTML. When forPrint is true the
-// caller browser-prints the blob to PDF; otherwise it downloads the HTML.
-export async function exportRunReportHTML(runID: string, sections: PDFExportSections, forPrint = false, transcriptMode?: TranscriptMode): Promise<PDFExportResult> {
-    const params = new URLSearchParams();
-    const list = sectionsToQueryString(sections);
-    if (list) {
-        params.set('sections', list);
-    }
-    if (transcriptMode && transcriptMode !== 'threaded') {
-        params.set('transcript_mode', transcriptMode);
-    }
-    const query = params.toString();
-    const url = `${apiUrl}/runs/${runID}/report.html${query ? `?${query}` : ''}`;
-    return fetchExportBlob(url, `run_${runID}.html`, {'X-Playbooks-Export-Intent': forPrint ? 'pdf-fallback' : 'html-direct'});
+export function exportRunReport(runID: string, format: ReportFormat, sections: PDFExportSections, transcriptMode?: TranscriptMode): Promise<ReportExport> {
+    return fetchReport(`/runs/${runID}/report`, format, sections, transcriptMode);
 }
 
-export async function exportPlaybookHTML(playbookID: string, sections: PDFExportSections, forPrint = false): Promise<PDFExportResult> {
-    const params = new URLSearchParams();
-    const list = sectionsToQueryString(sections);
-    if (list) {
-        params.set('sections', list);
-    }
-    const query = params.toString();
-    const url = `${apiUrl}/playbooks/${playbookID}/report.html${query ? `?${query}` : ''}`;
-    return fetchExportBlob(url, `playbook_${playbookID}.html`, {'X-Playbooks-Export-Intent': forPrint ? 'pdf-fallback' : 'html-direct'});
+export function exportPlaybookReport(playbookID: string, format: ReportFormat, sections: PDFExportSections): Promise<ReportExport> {
+    return fetchReport(`/playbooks/${playbookID}/report`, format, sections);
 }
 
-// triggerBrowserPrint opens the HTML blob in a popup and triggers window.print()
-// so the user can Save as PDF. Uses both the load event and a setTimeout
-// backstop for Safari/Firefox blob-URL timing quirks.
-export function triggerBrowserPrint(blob: Blob): void {
-    const url = URL.createObjectURL(blob);
-    const popup = window.open(url, '_blank');
-    if (!popup) {
-        // Popup was blocked — fall back to navigating the current tab.
-        window.location.href = url;
-        return;
+// saveReport downloads the report, or for PDF opens the browser's print dialog on it.
+export function saveReport(report: ReportExport, format: ReportFormat): void {
+    if (format === 'pdf') {
+        printReport(report);
+    } else {
+        downloadReport(report);
     }
-    let printed = false;
-    const doPrint = () => {
-        if (printed) {
-            return;
-        }
-        printed = true;
-        popup.focus();
-        popup.print();
+}
 
-        // Revoke the blob URL after a delay to allow the print dialog to open.
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    };
-    popup.addEventListener('load', doPrint, {once: true});
+// Revoking the object URL synchronously after click() can cancel the download in some browsers.
+const REVOKE_OBJECT_URL_DELAY_MS = 40 * 1000;
 
-    // Backstop: some browsers (Safari, older Firefox) don't fire load on blob URLs.
-    setTimeout(doPrint, 500);
+function downloadReport({content, filename}: ReportExport) {
+    const href = URL.createObjectURL(new Blob([content]));
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(href), REVOKE_OBJECT_URL_DELAY_MS);
+}
+
+// The frame and the page title of the last print, cleaned up on the next one in case afterprint
+// never fired.
+let printFrame: HTMLIFrameElement | undefined;
+let pageTitle: string | undefined;
+
+function endPrint() {
+    printFrame?.remove();
+    printFrame = undefined;
+    if (pageTitle !== undefined) {
+        document.title = pageTitle;
+        pageTitle = undefined;
+    }
+}
+
+// printReport prints the HTML report from a hidden iframe, so popup blockers can't interfere.
+// The report is static HTML with no scripts, so the iframe gets only what print() needs: same
+// origin so this page can call print() on it, and modals so the print dialog may open.
+// Chrome suggests the PDF file name from the page title, so the title is the report's file
+// name while printing.
+function printReport({content, filename}: ReportExport) {
+    endPrint();
+    const frame = document.createElement('iframe');
+    printFrame = frame;
+    frame.setAttribute('sandbox', 'allow-modals allow-same-origin');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = 'position: fixed; right: 0; bottom: 0; width: 0; height: 0; border: 0;';
+    frame.addEventListener('load', () => {
+        frame.contentWindow?.addEventListener('afterprint', endPrint);
+        pageTitle = document.title;
+        document.title = filename.replace(/\.[^.]*$/, '');
+        frame.contentWindow?.print();
+    }, {once: true});
+    frame.srcdoc = content;
+    document.body.appendChild(frame);
 }
 
 export async function fetchChannelExportAvailable(): Promise<boolean> {
@@ -984,20 +1005,6 @@ export async function fetchChannelExportAvailable(): Promise<boolean> {
         return false;
     }
 }
-
-export const triggerPDFDownload = (result: PDFExportResult) => {
-    const url = URL.createObjectURL(result.blob);
-    try {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = result.filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    } finally {
-        setTimeout(() => URL.revokeObjectURL(url), 0);
-    }
-};
 
 export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
     const queryParams = qs.stringify({

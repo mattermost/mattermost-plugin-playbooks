@@ -5,11 +5,12 @@ import React, {useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 
+import type {ReportFormat} from 'src/client';
 import GenericModal from 'src/components/widgets/generic_modal';
 
 export type Surface = 'run' | 'playbook';
 
-export type ExportFormat = 'html' | 'pdf';
+export type ExportFormat = ReportFormat;
 
 export type TranscriptMode = 'threaded' | 'chronological';
 
@@ -29,7 +30,10 @@ export type SectionFlags = {
 export type ExportOptionsModalProps = {
     surface: Surface;
     defaults: SectionFlags;
-    onConfirm: (sections: SectionFlags, format: ExportFormat, transcriptMode: TranscriptMode) => void;
+
+    // onConfirm runs the export. The modal stays open, showing "Exporting…", until the
+    // returned promise settles; the caller closes it.
+    onConfirm: (sections: SectionFlags, format: ExportFormat, transcriptMode: TranscriptMode) => Promise<void>;
     onCancel: () => void;
     channelExportAvailable?: boolean;
 };
@@ -66,6 +70,16 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
     const [sections, setSections] = useState<SectionFlags>({...baseDefaults, ...defaults});
     const [format, setFormat] = useState<ExportFormat>('pdf');
     const [transcriptMode, setTranscriptMode] = useState<TranscriptMode>('threaded');
+    const [exporting, setExporting] = useState(false);
+
+    const confirm = async () => {
+        setExporting(true);
+        try {
+            await onConfirm(sections, format, transcriptMode);
+        } finally {
+            setExporting(false);
+        }
+    };
 
     const rows: ToggleRow[] = surface === 'run' ? [
         {key: 'cover', label: formatMessage({defaultMessage: 'Cover page'})},
@@ -87,9 +101,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
 
     const anySelected = rows.some((r) => sections[r.key]);
 
-    const headerText = surface === 'run' ?
-        formatMessage({defaultMessage: 'Export run report'}) :
-        formatMessage({defaultMessage: 'Export playbook'});
+    const headerText = surface === 'run' ? formatMessage({defaultMessage: 'Export run report'}) : formatMessage({defaultMessage: 'Export playbook'});
 
     return (
         <GenericModal
@@ -98,10 +110,11 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
             show={true}
             onHide={onCancel}
             handleCancel={onCancel}
-            handleConfirm={() => onConfirm(sections, format, transcriptMode)}
-            confirmButtonText={<FormattedMessage defaultMessage='Download'/>}
+            handleConfirm={confirm}
+            autoCloseOnConfirmButton={false}
+            confirmButtonText={exporting ? <FormattedMessage defaultMessage='Exporting…'/> : <FormattedMessage defaultMessage='Download'/>}
             cancelButtonText={<FormattedMessage defaultMessage='Cancel'/>}
-            isConfirmDisabled={!anySelected}
+            isConfirmDisabled={!anySelected || exporting}
             showCancel={true}
         >
             <Body>
@@ -121,6 +134,14 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                     >
                         <i className='icon icon-code-tags'/>
                         <FormattedMessage defaultMessage='HTML'/>
+                    </FormatButton>
+                    <FormatButton
+                        data-testid='format-button-md'
+                        selected={format === 'md'}
+                        onClick={() => setFormat('md')}
+                    >
+                        <i className='icon icon-file-text-outline'/>
+                        <FormattedMessage defaultMessage='Markdown'/>
                     </FormatButton>
                 </FormatSelector>
                 {format === 'pdf' && (
