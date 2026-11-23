@@ -32,11 +32,13 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err = c.permissions.PlaybookView(userID, playbookID); err != nil {
+	// Charged before the permission check, which loads the playbook too, so lookups that fail
+	// it still count against the request.
+	if err = c.recordBudget.reserve(1); err != nil {
 		return nil, err
 	}
 
-	if err = c.recordBudget.reserve(1); err != nil {
+	if err = c.permissions.PlaybookView(userID, playbookID); err != nil {
 		return nil, err
 	}
 
