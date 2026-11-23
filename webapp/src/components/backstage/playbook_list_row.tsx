@@ -189,7 +189,7 @@ const PlaybookListRow = (props: Props) => {
     }
 
     const [exportHref, exportFilename] = playbookExportProps(props.playbook);
-    return (
+    const row = (
         <PlaybookItem
             key={props.playbook.id}
             onClick={props.onClick}
@@ -364,6 +364,15 @@ const PlaybookListRow = (props: Props) => {
                     )}
                 </DotMenu>
             </ActionCol>
+        </PlaybookItem>
+    );
+
+    // The modal renders in a portal, but React still bubbles its clicks to the
+    // component that renders it. Keep it outside PlaybookItem, whose onClick
+    // opens the playbook.
+    return (
+        <>
+            {row}
             {showReportModal && (
                 <ExportOptionsModal
                     surface='playbook'
@@ -372,7 +381,7 @@ const PlaybookListRow = (props: Props) => {
                     onCancel={() => setShowReportModal(false)}
                 />
             )}
-        </PlaybookItem>
+        </>
     );
 };
 
