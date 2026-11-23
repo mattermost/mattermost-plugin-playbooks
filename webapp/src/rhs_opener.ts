@@ -14,6 +14,7 @@ import {currentPlaybookRun, inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'sr
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 import {receivedTeamPlaybookRunConnections, toggleRHS} from 'src/actions';
+import {isChannelEmbedded} from 'src/components/embedded_checklist/embedded_run_registry';
 import {browserHistory} from 'src/webapp_globals';
 
 const RunsOnTeamQuery = gql`
@@ -108,6 +109,11 @@ export function makeRHSOpener(store: Store, graphqlClient: ApolloClient<Normaliz
         if (forceRHSOpen) {
             //@ts-ignore thunk
             store.dispatch(toggleRHS());
+            return;
+        }
+
+        // Don't open the RHS when another plugin shows this channel's checklist itself.
+        if (isChannelEmbedded(currentChannel.id)) {
             return;
         }
 

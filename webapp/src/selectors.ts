@@ -21,7 +21,7 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {Team} from '@mattermost/types/teams';
 
 import manifest from 'src/manifest';
-import {PlaybookRunStatus, playbookRunIsActive} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus, playbookRunIsActive} from 'src/types/playbook_run';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
 import {
@@ -75,6 +75,8 @@ export const myPlaybookRunsByTeam = (state: GlobalState) => pluginState(state).m
  *
  * teamId and channelId are optional, when they are passed run will be found efficiently
  */
+export const getRunById = (state: GlobalState, playbookRunId: string): PlaybookRun | undefined => myPlaybookRuns(state)?.[playbookRunId];
+
 export const getRun = (playbookRunId: string, teamId?: string, channelId?: string) => {
     return (state: GlobalState) => {
         const runsByTeam = myPlaybookRunsByTeam(state);

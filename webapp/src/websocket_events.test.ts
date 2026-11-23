@@ -8,6 +8,8 @@ import {BaseWebSocketMessage} from '@mattermost/client';
 
 import * as client from 'src/client';
 
+import {registerEmbeddedRun, resetEmbeddedRegistry} from 'src/components/embedded_checklist/embedded_run_registry';
+
 import {handleReconnect, handleWebsocketPlaybookRunUpdatedIncremental} from './websocket_events';
 import {PLAYBOOK_RUN_UPDATED, RECEIVED_TEAM_PLAYBOOK_RUNS, WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED} from './types/actions';
 
@@ -169,6 +171,50 @@ describe('handleReconnect', () => {
                 playbookRun: refreshed,
             },
         ]);
+    });
+
+    describe('mounted embedded checklists', () => {
+        afterEach(() => {
+            resetEmbeddedRegistry();
+        });
+
+        it('refetches a mounted embedded run the viewer does not participate in', async () => {
+            const embedded = {...makeRun('run_embedded', PlaybookRunStatus.InProgress), name: 'fresh'};
+            const store = mockStore(stateWithRuns([]));
+            fetchPlaybookRuns.mockResolvedValue({items: [], total_count: 0, page_count: 1, has_more: false});
+            fetchPlaybookRun.mockResolvedValue(embedded);
+            registerEmbeddedRun('run_embedded');
+
+            await handleReconnect(store.getState, store.dispatch)();
+
+            expect(fetchPlaybookRun).toHaveBeenCalledTimes(1);
+            expect(fetchPlaybookRun).toHaveBeenCalledWith('run_embedded');
+            expect(store.getActions()).toContainEqual({type: PLAYBOOK_RUN_UPDATED, playbookRun: embedded});
+        });
+
+        it('refetches a mounted embedded run even when there is no current team', async () => {
+            const embedded = makeRun('run_embedded', PlaybookRunStatus.InProgress);
+            const store = mockStore({
+                entities: {users: {currentUserId: 'user_id'}, teams: {currentTeamId: '', teams: {}}},
+            } as unknown as GlobalState);
+            fetchPlaybookRun.mockResolvedValue(embedded);
+            registerEmbeddedRun('run_embedded');
+
+            await handleReconnect(store.getState, store.dispatch)();
+
+            expect(fetchPlaybookRuns).not.toHaveBeenCalled();
+            expect(store.getActions()).toEqual([{type: PLAYBOOK_RUN_UPDATED, playbookRun: embedded}]);
+        });
+
+        it('does not refetch a run once its embed has unmounted', async () => {
+            const store = mockStore(stateWithRuns([]));
+            fetchPlaybookRuns.mockResolvedValue({items: [], total_count: 0, page_count: 1, has_more: false});
+            registerEmbeddedRun('run_embedded')();
+
+            await handleReconnect(store.getState, store.dispatch)();
+
+            expect(fetchPlaybookRun).not.toHaveBeenCalled();
+        });
     });
 });
 

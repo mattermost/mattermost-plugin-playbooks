@@ -41,10 +41,11 @@ import {
     myPlaybookRunsMap,
 } from 'src/selectors';
 import {PlaybookRunUpdate} from 'src/types/websocket_events';
+import {refetchEmbeddedRuns} from 'src/components/embedded_checklist/embedded_run_registry';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
 export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
-    return async (): Promise<void> => {
+    const refetchTeamRuns = async (): Promise<void> => {
         const currentTeam = getCurrentTeam(getState());
         const currentUserId = getCurrentUserId(getState());
 
@@ -75,6 +76,10 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
         ));
 
         await Promise.all(staleRuns.map((run) => fetchAndUpdatePlaybookRun(run.id, dispatch)));
+    };
+
+    return async (): Promise<void> => {
+        await Promise.all([refetchTeamRuns(), refetchEmbeddedRuns(dispatch)]);
     };
 }
 

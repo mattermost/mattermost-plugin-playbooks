@@ -54,14 +54,16 @@ interface Props {
     onTaskAdded?: () => void;
     onBackClick?: () => void;
     ownerGroupOnlyActions?: boolean;
+    buttonsFormat?: ItemButtonsFormat;
 }
 
 export enum ChecklistParent {
     RHS = 'rhs',
     RunDetails = 'run_details',
+    Embedded = 'embedded',
 }
 
-const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded, onBackClick, ownerGroupOnlyActions}: Props) => {
+const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded, onBackClick, ownerGroupOnlyActions, buttonsFormat}: Props) => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const stateKey = parentContainer + '_' + playbookRun.id;
@@ -184,6 +186,10 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
     ) : <>{formatMessage({defaultMessage: 'Tasks'})}</>;
 
     const itemButtonsFormat = () => {
+        if (buttonsFormat) {
+            return buttonsFormat;
+        }
+
         if (parentContainer === ChecklistParent.RHS) {
             return ItemButtonsFormat.Short;
         }
@@ -281,7 +287,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 ownerGroupOnlyActions={ownerGroupOnlyActions}
                 isOwner={playbookRun.owner_user_id === myUser.id}
             />
-            {showRunDetailsChecklistsStep && (
+            {showRunDetailsChecklistsStep && parentContainer !== ChecklistParent.Embedded && (
                 <TutorialTourTip
                     title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
                     screen={<FormattedMessage defaultMessage='Assign, check off, or skip tasks to ensure the team is clear on how to move toward the finish line together.'/>}
