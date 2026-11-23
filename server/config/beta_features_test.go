@@ -26,9 +26,25 @@ func TestIsTaskRequirementsEnabled(t *testing.T) {
 	})
 }
 
+func TestIsReportsEnabled(t *testing.T) {
+	t.Run("disabled by default", func(t *testing.T) {
+		svc := &ServiceImpl{configuration: &Configuration{}}
+		assert.False(t, svc.IsReportsEnabled())
+	})
+
+	t.Run("enabled when reports is true", func(t *testing.T) {
+		svc := &ServiceImpl{
+			configuration: &Configuration{
+				BetaFeatures: BetaFeaturesConfig{Reports: true},
+			},
+		}
+		assert.True(t, svc.IsReportsEnabled())
+	})
+}
+
 func TestSerializeIncludesBetaFeatures(t *testing.T) {
 	cfg := &Configuration{
-		BetaFeatures: BetaFeaturesConfig{TaskRequirements: true},
+		BetaFeatures: BetaFeaturesConfig{TaskRequirements: true, Reports: true},
 	}
 	serialized := cfg.serialize()
 
@@ -38,4 +54,5 @@ func TestSerializeIncludesBetaFeatures(t *testing.T) {
 	beta, ok := raw.(map[string]any)
 	require.True(t, ok, "BetaFeatures must serialize as map[string]any for plugin RPC/gob")
 	assert.Equal(t, true, beta["task_requirements"])
+	assert.Equal(t, true, beta["reports"])
 }

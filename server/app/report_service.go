@@ -19,21 +19,19 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
-// ReportConfig is the caps + flags used during report assembly.
+// ReportConfig is the caps used during report assembly.
 type ReportConfig struct {
 	MaxRunReportPosts           int
 	MaxRunReportBytes           int64
 	MaxResolverLookupsPerExport int
-	ExportTranscriptDefault     bool
 }
 
-// DefaultReportConfig returns the documented defaults from plan §3.6.8.
+// DefaultReportConfig returns the caps every report uses.
 func DefaultReportConfig() ReportConfig {
 	return ReportConfig{
 		MaxRunReportPosts:           5000,
 		MaxRunReportBytes:           50 * 1024 * 1024,
 		MaxResolverLookupsPerExport: 500,
-		ExportTranscriptDefault:     false,
 	}
 }
 
@@ -64,24 +62,14 @@ func NewReportService(
 	permissionsService *PermissionsService,
 	pluginAPI *pluginapi.Client,
 	auditor Auditor,
-	cfg ReportConfig,
 ) *ReportService {
-	if cfg.MaxRunReportPosts == 0 {
-		cfg.MaxRunReportPosts = DefaultReportConfig().MaxRunReportPosts
-	}
-	if cfg.MaxRunReportBytes == 0 {
-		cfg.MaxRunReportBytes = DefaultReportConfig().MaxRunReportBytes
-	}
-	if cfg.MaxResolverLookupsPerExport == 0 {
-		cfg.MaxResolverLookupsPerExport = DefaultReportConfig().MaxResolverLookupsPerExport
-	}
 	return &ReportService{
 		runService:         runService,
 		playbookService:    playbookService,
 		permissionsService: permissionsService,
 		pluginAPI:          pluginAPI,
 		auditor:            auditor,
-		config:             cfg,
+		config:             DefaultReportConfig(),
 	}
 }
 

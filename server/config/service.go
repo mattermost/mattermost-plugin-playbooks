@@ -202,6 +202,9 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 		if oldConfig.BetaFeatures.TaskRequirements != configuration.BetaFeatures.TaskRequirements {
 			settingsPayload["enable_task_requirements"] = configuration.BetaFeatures.TaskRequirements
 		}
+		if oldConfig.BetaFeatures.Reports != configuration.BetaFeatures.Reports {
+			settingsPayload["enable_reports"] = configuration.BetaFeatures.Reports
+		}
 	}
 
 	if c.websocketPublisher != nil && len(settingsPayload) > 0 {
@@ -304,4 +307,9 @@ func (c *ServiceImpl) IsExperimentalFeaturesEnabled() bool {
 // IsTaskRequirementsEnabled returns true when the task requirements beta feature is enabled.
 func (c *ServiceImpl) IsTaskRequirementsEnabled() bool {
 	return c.GetConfiguration().BetaFeatures.TaskRequirements
+}
+
+// IsReportsEnabled returns true when the reports beta feature is enabled.
+func (c *ServiceImpl) IsReportsEnabled() bool {
+	return c.GetConfiguration().BetaFeatures.Reports
 }

@@ -17,8 +17,8 @@ import (
 )
 
 func TestExport_ParseSectionsQuery_Run(t *testing.T) {
-	t.Run("empty returns defaults with transcript default off", func(t *testing.T) {
-		s, err := parseSectionsQuery("", sectionFlagsForRun, false)
+	t.Run("empty returns defaults without the transcript", func(t *testing.T) {
+		s, err := parseSectionsQuery("", sectionFlagsForRun)
 		require.NoError(t, err)
 		assert.True(t, s.Cover)
 		assert.True(t, s.ExecutiveSummary)
@@ -29,14 +29,8 @@ func TestExport_ParseSectionsQuery_Run(t *testing.T) {
 		assert.False(t, s.Transcript)
 	})
 
-	t.Run("empty honors transcript default on", func(t *testing.T) {
-		s, err := parseSectionsQuery("", sectionFlagsForRun, true)
-		require.NoError(t, err)
-		assert.True(t, s.Transcript)
-	})
-
 	t.Run("explicit subset", func(t *testing.T) {
-		s, err := parseSectionsQuery("cover,summary", sectionFlagsForRun, false)
+		s, err := parseSectionsQuery("cover,summary", sectionFlagsForRun)
 		require.NoError(t, err)
 		assert.True(t, s.Cover)
 		assert.True(t, s.ExecutiveSummary)
@@ -45,13 +39,13 @@ func TestExport_ParseSectionsQuery_Run(t *testing.T) {
 	})
 
 	t.Run("unknown token is rejected", func(t *testing.T) {
-		_, err := parseSectionsQuery("cover,bogus", sectionFlagsForRun, false)
+		_, err := parseSectionsQuery("cover,bogus", sectionFlagsForRun)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "bogus")
 	})
 
 	t.Run("token whitespace and case", func(t *testing.T) {
-		s, err := parseSectionsQuery(" COVER , Timeline ", sectionFlagsForRun, false)
+		s, err := parseSectionsQuery(" COVER , Timeline ", sectionFlagsForRun)
 		require.NoError(t, err)
 		assert.True(t, s.Cover)
 		assert.True(t, s.Timeline)
@@ -60,7 +54,7 @@ func TestExport_ParseSectionsQuery_Run(t *testing.T) {
 
 func TestExport_ParseSectionsQuery_Playbook(t *testing.T) {
 	t.Run("empty returns full playbook set", func(t *testing.T) {
-		s, err := parseSectionsQuery("", sectionFlagsForPlaybook, false)
+		s, err := parseSectionsQuery("", sectionFlagsForPlaybook)
 		require.NoError(t, err)
 		assert.True(t, s.PlaybookOverview)
 		assert.True(t, s.PlaybookChecklistTemplates)
@@ -68,7 +62,7 @@ func TestExport_ParseSectionsQuery_Playbook(t *testing.T) {
 	})
 
 	t.Run("explicit subset", func(t *testing.T) {
-		s, err := parseSectionsQuery("overview", sectionFlagsForPlaybook, false)
+		s, err := parseSectionsQuery("overview", sectionFlagsForPlaybook)
 		require.NoError(t, err)
 		assert.True(t, s.PlaybookOverview)
 		assert.False(t, s.PlaybookChecklistTemplates)
@@ -76,7 +70,7 @@ func TestExport_ParseSectionsQuery_Playbook(t *testing.T) {
 	})
 
 	t.Run("unknown token is rejected", func(t *testing.T) {
-		_, err := parseSectionsQuery("overview,bogus", sectionFlagsForPlaybook, false)
+		_, err := parseSectionsQuery("overview,bogus", sectionFlagsForPlaybook)
 		require.Error(t, err)
 	})
 }

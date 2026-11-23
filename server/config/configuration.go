@@ -33,15 +33,6 @@ type Configuration struct {
 	// These features may have in-progress UI, bugs, and other issues.
 	EnableExperimentalFeatures bool `json:"enableexperimentalfeatures"`
 
-	// Report export (MM-68715 epic). Reports render server-side to HTML or
-	// Markdown; the client downloads them or browser-prints the HTML to PDF.
-	EnableReports               bool `json:"enablereports"`
-	MaxRunReportPosts           int  `json:"maxrunreportposts"`
-	MaxRunReportBytes           int  `json:"maxrunreportbytes"`
-	MaxConcurrentReports        int  `json:"maxconcurrentreports"`
-	MaxResolverLookupsPerExport int  `json:"maxresolverlookupsperexport"`
-	ExportTranscriptDefault     bool `json:"exporttranscriptdefault"`
-
 	// BetaFeatures holds individual beta feature toggles (task requirements, etc.).
 	// Stored as a JSON object in plugin settings; disabled by default.
 	BetaFeatures BetaFeaturesConfig `json:"betafeatures"`
@@ -54,6 +45,8 @@ type Configuration struct {
 // BetaFeaturesConfig stores per-feature beta toggles from the System Console accordion.
 type BetaFeaturesConfig struct {
 	TaskRequirements bool `json:"task_requirements"`
+	// Reports enables exporting runs and playbooks as HTML, Markdown or PDF.
+	Reports bool `json:"reports"`
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -74,16 +67,11 @@ func (c *Configuration) serialize() map[string]any {
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	ret["enableincrementalupdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
-	ret["EnableReports"] = c.EnableReports
-	ret["MaxRunReportPosts"] = c.MaxRunReportPosts
-	ret["MaxRunReportBytes"] = c.MaxRunReportBytes
-	ret["MaxConcurrentReports"] = c.MaxConcurrentReports
-	ret["MaxResolverLookupsPerExport"] = c.MaxResolverLookupsPerExport
-	ret["ExportTranscriptDefault"] = c.ExportTranscriptDefault
 	// Store as a plain map so SavePluginConfig can gob-encode across plugin RPC
 	// without registering a custom type.
 	ret["BetaFeatures"] = map[string]any{
 		"task_requirements": c.BetaFeatures.TaskRequirements,
+		"reports":           c.BetaFeatures.Reports,
 	}
 	ret["ExposeMCPExternal"] = c.ExposeMCPExternal
 	return ret

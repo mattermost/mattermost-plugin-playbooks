@@ -61,7 +61,32 @@ describe('BetaFeaturesSetting', () => {
             checkbox.props.onChange();
         });
 
-        expect(onChange).toHaveBeenCalledWith('BetaFeatures', {task_requirements: true});
+        expect(onChange).toHaveBeenCalledWith('BetaFeatures', {task_requirements: true, reports: false});
         expect(setSaveNeeded).toHaveBeenCalled();
+    });
+
+    it('expands and toggles reports', () => {
+        const onChange = jest.fn();
+        const component = renderer.create(
+            <BetaFeaturesSetting
+                {...baseProps}
+                onChange={onChange}
+                value={{task_requirements: true}}
+            />,
+        );
+
+        const header = component.root.findByProps({'aria-expanded': false});
+        act(() => {
+            header.props.onClick();
+        });
+
+        const checkbox = component.root.findByProps({'data-testid': 'beta-feature-reports'});
+        expect(checkbox.props.checked).toBe(false);
+
+        act(() => {
+            checkbox.props.onChange();
+        });
+
+        expect(onChange).toHaveBeenCalledWith('BetaFeatures', {task_requirements: true, reports: true});
     });
 });

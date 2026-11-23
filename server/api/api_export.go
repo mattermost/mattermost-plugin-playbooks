@@ -38,9 +38,8 @@ const (
 	// exportRetryAfterSeconds is sent in the Retry-After header on 429.
 	exportRetryAfterSeconds = 5
 
-	// defaultMaxConcurrentReports is the fallback semaphore size when config
-	// is unset or non-positive.
-	defaultMaxConcurrentReports = 4
+	// maxConcurrentReports bounds concurrent renders; more get a 429.
+	maxConcurrentReports = 4
 
 	// filenameMaxLen bounds the ASCII portion of the Content-Disposition
 	// filename per plan §6.4 D5.
@@ -76,10 +75,8 @@ type ExportHandler struct {
 	playbookService    app.PlaybookService
 	reportService      ReportService
 
-	// renderSem bounds concurrent renders. Sized lazily on first request
-	// from config.
-	renderSemOnce sync.Once
-	renderSem     chan struct{}
+	// renderSem bounds concurrent renders.
+	renderSem chan struct{}
 }
 
 // registeredExportHandler holds the active ExportHandler used by the route
@@ -148,6 +145,7 @@ func NewExportHandler(
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
 		reportService:      reportService,
+		renderSem:          make(chan struct{}, maxConcurrentReports),
 	}
 }
 
@@ -177,11 +175,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	transcriptDefault := false
-	if cfg := h.config.GetConfiguration(); cfg != nil {
-		transcriptDefault = cfg.ExportTranscriptDefault
-	}
-	sections, err := parseSectionsQuery(r.URL.Query().Get("sections"), sectionFlagsForRun, transcriptDefault)
+	sections, err := parseSectionsQuery(r.URL.Query().Get("sections"), sectionFlagsForRun)
 	if err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return
@@ -260,7 +254,7 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 		return
 	}
 
-	sections, err := parseSectionsQuery(r.URL.Query().Get("sections"), sectionFlagsForPlaybook, false)
+	sections, err := parseSectionsQuery(r.URL.Query().Get("sections"), sectionFlagsForPlaybook)
 	if err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return
@@ -344,16 +338,9 @@ func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string
 
 // ---- gating helpers ----
 
-// reportsEnabled returns true when the plugin config permits exports.
+// reportsEnabled returns true when the reports beta feature is enabled.
 func (h *ExportHandler) reportsEnabled() bool {
-	if h.config == nil {
-		return true
-	}
-	cfg := h.config.GetConfiguration()
-	if cfg == nil {
-		return true
-	}
-	return cfg.EnableReports
+	return h.config != nil && h.config.IsReportsEnabled()
 }
 
 // verifyCSRF defends a GET-with-side-effects endpoint against cross-origin
@@ -435,13 +422,6 @@ func (h *ExportHandler) resolveLocale(userID string) string {
 // acquireRenderSlot returns true when the request obtains a slot; false on
 // saturation (caller should respond 429).
 func (h *ExportHandler) acquireRenderSlot(ctx context.Context) bool {
-	h.renderSemOnce.Do(func() {
-		max := defaultMaxConcurrentReports
-		if cfg := h.config.GetConfiguration(); cfg != nil && cfg.MaxConcurrentReports > 0 {
-			max = cfg.MaxConcurrentReports
-		}
-		h.renderSem = make(chan struct{}, max)
-	})
 	select {
 	case h.renderSem <- struct{}{}:
 		return true
@@ -453,9 +433,6 @@ func (h *ExportHandler) acquireRenderSlot(ctx context.Context) bool {
 }
 
 func (h *ExportHandler) releaseRenderSlot() {
-	if h.renderSem == nil {
-		return
-	}
 	select {
 	case <-h.renderSem:
 	default:
@@ -528,12 +505,10 @@ var (
 
 // parseSectionsQuery interprets the ?sections= query param. Empty/missing
 // returns the default set for the surface; an unknown token returns an error.
-func parseSectionsQuery(raw string, catalog map[string]func(*report.SectionFlags), transcriptDefault bool) (report.SectionFlags, error) {
+func parseSectionsQuery(raw string, catalog map[string]func(*report.SectionFlags)) (report.SectionFlags, error) {
 	if raw == "" {
 		if _, runSurface := catalog["timeline"]; runSurface {
-			s := report.DefaultRunSections()
-			s.Transcript = transcriptDefault
-			return s, nil
+			return report.DefaultRunSections(), nil
 		}
 		return report.DefaultPlaybookSections(), nil
 	}

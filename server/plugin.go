@@ -282,7 +282,6 @@ func (p *Plugin) OnActivate() error {
 		p.permissions,
 		pluginAPIClient,
 		auditorService,
-		app.DefaultReportConfig(),
 	)
 	api.RegisterExportHandler(api.NewExportHandler(
 		pluginAPIClient,

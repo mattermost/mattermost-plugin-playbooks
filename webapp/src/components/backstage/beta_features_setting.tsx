@@ -7,6 +7,7 @@ import styled from 'styled-components';
 
 export type BetaFeaturesValue = {
     task_requirements?: boolean;
+    reports?: boolean;
 };
 
 type Props = {
@@ -19,6 +20,7 @@ type Props = {
 
 const defaultValue: BetaFeaturesValue = {
     task_requirements: false,
+    reports: false,
 };
 
 const BetaFeaturesSetting = ({id, value, disabled, onChange, setSaveNeeded}: Props) => {
@@ -87,6 +89,25 @@ const BetaFeaturesSetting = ({id, value, disabled, onChange, setSaveNeeded}: Pro
                                 </FeatureName>
                                 <FeatureHelp>
                                     {formatMessage({defaultMessage: 'Require users to fill in labeled fields when checking off a task.'})}
+                                </FeatureHelp>
+                            </FeatureCopy>
+                        </CheckboxLabel>
+                    </FeatureRow>
+                    <FeatureRow>
+                        <CheckboxLabel>
+                            <Checkbox
+                                type='checkbox'
+                                checked={Boolean(features.reports)}
+                                disabled={disabled}
+                                onChange={() => toggleFeature('reports')}
+                                data-testid='beta-feature-reports'
+                            />
+                            <FeatureCopy>
+                                <FeatureName>
+                                    {formatMessage({defaultMessage: 'Reports'})}
+                                </FeatureName>
+                                <FeatureHelp>
+                                    {formatMessage({defaultMessage: 'Let users export runs and playbooks as PDF, HTML or Markdown reports.'})}
                                 </FeatureHelp>
                             </FeatureCopy>
                         </CheckboxLabel>
