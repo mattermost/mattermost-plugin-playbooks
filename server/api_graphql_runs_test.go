@@ -211,8 +211,6 @@ func TestGraphQLRunListRecordBudget(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	// Seeding a handful of runs keeps the alias count needed to exhaust the
-	// server's per-request budget small enough to send in one query.
 	const seededRuns = 10
 	for i := 1; i < seededRuns; i++ {
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
@@ -268,18 +266,18 @@ func TestGraphQLRunListRecordBudget(t *testing.T) {
 	})
 
 	t.Run("a query repeating runs under many aliases is rejected", func(t *testing.T) {
-		// 600 aliases over 10 seeded runs asks for 6000 records, past the budget,
-		// so the request is refused part way through rather than resolving in full.
+		// Refused before anything resolves, one alias past the root field limit.
 		var result runsResult
 		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
-			Query:         aliasedRunsQuery(600),
+			Query:         aliasedRunsQuery(4),
 			OperationName: "Runs",
 			Variables:     map[string]any{"userID": "me"},
 		}, &result)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, result.Errors)
-		assert.Contains(t, result.Errors[0].Message, "records per request")
+		assert.Contains(t, result.Errors[0].Message, `requests the field "runs" more than 3 times`)
+		assert.Empty(t, result.Data)
 	})
 
 	t.Run("a query listing both runs and playbooks resolves in full", func(t *testing.T) {
@@ -322,6 +320,73 @@ func TestGraphQLRunListRecordBudget(t *testing.T) {
 		assert.Len(t, result.Data.ChannelRuns.Edges, seededRuns)
 		assert.NotEmpty(t, result.Data.YourPlaybooks)
 		assert.NotEmpty(t, result.Data.AllPlaybooks)
+	})
+}
+
+func TestGraphQLRepeatedFieldsAreRejected(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	type runResult struct {
+		Data   map[string]any
+		Errors []struct {
+			Message string
+		}
+	}
+
+	query := func(t *testing.T, body string) runResult {
+		t.Helper()
+
+		var result runResult
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         body,
+			OperationName: "Probe",
+			Variables:     map[string]any{"id": e.BasicRun.ID},
+		}, &result)
+		require.NoError(t, err)
+		return result
+	}
+
+	t.Run("a field resolved once per run is answered", func(t *testing.T) {
+		result := query(t, `query Probe($id: String!) { run(id: $id) { id followers retrospective } }`)
+
+		require.Empty(t, result.Errors)
+		require.NotNil(t, result.Data["run"])
+	})
+
+	t.Run("a field repeated under aliases is refused before it resolves", func(t *testing.T) {
+		var aliases strings.Builder
+		for i := range 700 {
+			fmt.Fprintf(&aliases, "a%d: retrospective ", i)
+		}
+		result := query(t, `query Probe($id: String!) { run(id: $id) { `+aliases.String()+` } }`)
+
+		require.Len(t, result.Errors, 1)
+		assert.Contains(t, result.Errors[0].Message, `requests the field "retrospective" more than 1 time`)
+		assert.Empty(t, result.Data)
+	})
+
+	t.Run("aliases stacked through a fragment are refused", func(t *testing.T) {
+		result := query(t, `query Probe($id: String!) {
+			r0: run(id: $id) { ...F }
+			r1: run(id: $id) { ...F }
+		}
+		fragment F on Run { a0: followers a1: followers }`)
+
+		require.Len(t, result.Errors, 1)
+		assert.Contains(t, result.Errors[0].Message, `requests the field "followers" more than 1 time`)
+		assert.Empty(t, result.Data)
+	})
+
+	t.Run("root lookups of runs the user cannot view are refused past the root limit", func(t *testing.T) {
+		var lookups strings.Builder
+		for i := range 500 {
+			fmt.Fprintf(&lookups, "a%d: run(id: \"%s\") { id } ", i, model.NewId())
+		}
+		result := query(t, `query Probe { `+lookups.String()+` }`)
+
+		require.Len(t, result.Errors, 1)
+		assert.Contains(t, result.Errors[0].Message, `requests the field "run" more than 3 times`)
 	})
 }
 
