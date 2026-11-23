@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -110,14 +111,16 @@ func TestExport_SafeFilename(t *testing.T) {
 	}
 }
 
-func TestExport_BuildDispositionFor(t *testing.T) {
-	inline := buildDispositionFor("Incident_Report", "html", false)
-	assert.Contains(t, inline, `inline;`)
-	assert.Contains(t, inline, `filename="Incident_Report.html"`)
-	assert.Contains(t, inline, `filename*=UTF-8''Incident_Report.html`)
+func TestExport_BuildContentDisposition(t *testing.T) {
+	got := buildContentDisposition("Incident_Report", "md")
+	assert.Equal(t, `attachment; filename="Incident_Report.md"; filename*=UTF-8''Incident_Report.md`, got)
+}
 
-	attach := buildDispositionFor("Incident_Report", "html", true)
-	assert.Contains(t, attach, `attachment;`)
+func TestExport_ReportFilename(t *testing.T) {
+	generatedAt := time.Date(2026, 11, 23, 14, 5, 0, 0, time.UTC).UnixMilli()
+	assert.Equal(t, "Database_outage_2026-11-23T14-05", reportFilename("Database outage", "run-abc", generatedAt))
+	assert.Equal(t, "run-abc_2026-11-23T14-05", reportFilename("", "run-abc", generatedAt))
+	assert.Regexp(t, `^run-abc_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}$`, reportFilename("", "run-abc", 0))
 }
 
 func TestExport_CorrelationFromRequest(t *testing.T) {
@@ -134,18 +137,21 @@ func TestExport_CorrelationFromRequest(t *testing.T) {
 }
 
 func TestExport_ExportKey_StableAndDistinct(t *testing.T) {
-	a := exportKey("run", "abc", "user1", report.SectionFlags{Cover: true})
-	b := exportKey("run", "abc", "user1", report.SectionFlags{Cover: true})
+	a := exportKey("run", "html", "abc", "user1", report.SectionFlags{Cover: true})
+	b := exportKey("run", "html", "abc", "user1", report.SectionFlags{Cover: true})
 	assert.Equal(t, a, b, "same inputs must produce same key")
 
-	c := exportKey("run", "abc", "user2", report.SectionFlags{Cover: true})
+	c := exportKey("run", "html", "abc", "user2", report.SectionFlags{Cover: true})
 	assert.NotEqual(t, a, c, "different user must produce different key")
 
-	d := exportKey("run", "abc", "user1", report.SectionFlags{Timeline: true})
+	d := exportKey("run", "html", "abc", "user1", report.SectionFlags{Timeline: true})
 	assert.NotEqual(t, a, d, "different sections must produce different key")
 
-	e := exportKey("playbook", "abc", "user1", report.SectionFlags{Cover: true})
+	e := exportKey("playbook", "html", "abc", "user1", report.SectionFlags{Cover: true})
 	assert.NotEqual(t, a, e, "different kind must produce different key")
+
+	f := exportKey("run", "md", "abc", "user1", report.SectionFlags{Cover: true})
+	assert.NotEqual(t, a, f, "different format must produce different key")
 }
 
 func TestExport_ReadSessionToken(t *testing.T) {

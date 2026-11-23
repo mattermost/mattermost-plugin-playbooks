@@ -32,6 +32,17 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
         />
         HTML
       </button>
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-md"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-file-text-outline"
+        />
+        Markdown
+      </button>
     </div>
     <p
       className="FormatHint-lnvEeT kBHaCo"
@@ -122,6 +133,17 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
           className="icon icon-code-tags"
         />
         HTML
+      </button>
+      <button
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-md"
+        onClick={[Function]}
+        selected={false}
+      >
+        <i
+          className="icon icon-file-text-outline"
+        />
+        Markdown
       </button>
     </div>
     <p

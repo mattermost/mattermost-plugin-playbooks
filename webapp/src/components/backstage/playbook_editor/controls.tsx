@@ -35,6 +35,7 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
+import {selectReportsEnabled} from 'src/selectors';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {
@@ -50,15 +51,11 @@ import {
     autoUnfollowPlaybook,
     duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchPlaybookFollowers,
-    exportPlaybookHTML,
     getSiteUrl,
     playbookExportProps,
     restorePlaybook,
-    triggerBrowserPrint,
-    triggerPDFDownload,
 } from 'src/client';
-import ExportOptionsModal, {ExportFormat, SectionFlags} from 'src/components/export_options_modal';
-import {ToastStyle} from 'src/components/backstage/toast';
+import ExportOptionsModal, {ExportFormat, SectionFlags, useReportExport} from 'src/components/export_options_modal';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
@@ -382,29 +379,14 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEd
     const refreshLHS = useLHSRefresh();
     const {add: addToast} = useToaster();
     const [showPDFModal, setShowPDFModal] = useState(false);
+    const exportReport = useReportExport();
+    const reportsEnabled = useAppSelector(selectReportsEnabled);
 
     const currentUserId = useAppSelector(getCurrentUserId);
 
-    const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat = 'pdf') => {
+    const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat) => {
+        await exportReport({kind: 'playbook', id: playbook.id}, sections, format);
         setShowPDFModal(false);
-        try {
-            if (format === 'html') {
-                const result = await exportPlaybookHTML(playbook.id, sections, false);
-                triggerPDFDownload(result);
-                return;
-            }
-
-            // format === 'pdf' — browser-print the HTML.
-            const html = await exportPlaybookHTML(playbook.id, sections, true);
-            triggerBrowserPrint(html.blob);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export.'});
-            const requestId = (err as {requestId?: string | null})?.requestId;
-            addToast({
-                content: requestId ? `${message} (ref: ${requestId})` : message,
-                toastStyle: ToastStyle.Failure,
-            });
-        }
     };
 
     const archived = playbook.delete_at !== 0;
@@ -476,12 +458,14 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEd
                     <ExportVariantIcon size={18}/>
                     <FormattedMessage defaultMessage='Export'/>
                 </DropdownMenuItemStyled>
-                <DropdownMenuItem
-                    onClick={() => setShowPDFModal(true)}
-                >
-                    <FilePdfOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Download as PDF'/>
-                </DropdownMenuItem>
+                {reportsEnabled && (
+                    <DropdownMenuItem
+                        onClick={() => setShowPDFModal(true)}
+                    >
+                        <FilePdfOutlineIcon size={18}/>
+                        <FormattedMessage defaultMessage='Download as PDF'/>
+                    </DropdownMenuItem>
+                )}
                 {isEligibleToMakePrivate && (
                     <DropdownMenuItemStyled
                         role={'button'}

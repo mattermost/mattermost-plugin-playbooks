@@ -6,10 +6,11 @@
 // writers consume. The package is intentionally pure: it depends on no
 // other plugin package (no server/app, no pluginapi, no net/http).
 //
-// The report output lives in a sibling package:
+// Concrete output formats live in sibling packages:
 //
-//	report/html_writer — self-contained HTML document (downloaded directly,
-//	                     or browser-printed to PDF by the client)
+//	report/markdown_writer — Mattermost-flavored markdown
+//	report/html_writer     — self-contained HTML document (downloaded
+//	                         directly, or browser-printed to PDF by the client)
 //
 // All dynamic input arrives as sanitized DTOs from a caller (server/app's
 // ReportService) that owns permission scoping, batched lookups, and

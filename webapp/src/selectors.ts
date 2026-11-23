@@ -60,6 +60,9 @@ export const globalSettings = (state: GlobalState): GlobalSettings | null => plu
 export const selectTaskRequirementsEnabled = (state: GlobalState): boolean =>
     Boolean(globalSettings(state)?.enable_task_requirements);
 
+export const selectReportsEnabled = (state: GlobalState): boolean =>
+    Boolean(globalSettings(state)?.enable_reports);
+
 /**
  * @returns runs indexed by playbookRunId->playbookRun
  */

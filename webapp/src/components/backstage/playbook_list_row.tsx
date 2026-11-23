@@ -28,7 +28,7 @@ import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
-import {isCurrentUserAdmin} from 'src/selectors';
+import {isCurrentUserAdmin, selectReportsEnabled} from 'src/selectors';
 import {Playbook} from 'src/types/playbook';
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
 
@@ -39,16 +39,8 @@ import DotMenu, {
     DropdownMenuItemStyled,
     iconSplitStyling,
 } from 'src/components/dot_menu';
-import {
-    createPlaybookRun,
-    exportPlaybookHTML,
-    playbookExportProps,
-    triggerBrowserPrint,
-    triggerPDFDownload,
-} from 'src/client';
-import ExportOptionsModal, {ExportFormat, SectionFlags} from 'src/components/export_options_modal';
-import {useToaster} from 'src/components/backstage/toast_banner';
-import {ToastStyle} from 'src/components/backstage/toast';
+import {createPlaybookRun, playbookExportProps} from 'src/client';
+import ExportOptionsModal, {ExportFormat, SectionFlags, useReportExport} from 'src/components/export_options_modal';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
@@ -145,28 +137,12 @@ const PlaybookListRow = (props: Props) => {
 
     const {join, leave} = usePlaybookMembership(props.playbook.id, currentUser.id);
     const [showPDFModal, setShowPDFModal] = useState(false);
-    const addToast = useToaster().add;
+    const exportReport = useReportExport();
+    const reportsEnabled = useAppSelector(selectReportsEnabled);
 
-    const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat = 'pdf') => {
+    const onPDFConfirm = async (sections: SectionFlags, format: ExportFormat) => {
+        await exportReport({kind: 'playbook', id: props.playbook.id}, sections, format);
         setShowPDFModal(false);
-        try {
-            if (format === 'html') {
-                const result = await exportPlaybookHTML(props.playbook.id, sections, false);
-                triggerPDFDownload(result);
-                return;
-            }
-
-            // format === 'pdf' — browser-print the HTML.
-            const html = await exportPlaybookHTML(props.playbook.id, sections, true);
-            triggerBrowserPrint(html.blob);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : formatMessage({defaultMessage: 'Failed to export.'});
-            const requestId = (err as {requestId?: string | null})?.requestId;
-            addToast({
-                content: requestId ? `${message} (ref: ${requestId})` : message,
-                toastStyle: ToastStyle.Failure,
-            });
-        }
     };
 
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
@@ -332,12 +308,14 @@ const PlaybookListRow = (props: Props) => {
                         <ExportVariantIcon size={18}/>
                         <FormattedMessage defaultMessage='Export'/>
                     </DropdownMenuItemStyled>
-                    <DropdownMenuItem
-                        onClick={() => setShowPDFModal(true)}
-                    >
-                        <FilePdfOutlineIcon size={18}/>
-                        <FormattedMessage defaultMessage='Download as PDF'/>
-                    </DropdownMenuItem>
+                    {reportsEnabled && (
+                        <DropdownMenuItem
+                            onClick={() => setShowPDFModal(true)}
+                        >
+                            <FilePdfOutlineIcon size={18}/>
+                            <FormattedMessage defaultMessage='Download as PDF'/>
+                        </DropdownMenuItem>
+                    )}
                     {currentUserPlaybookMember && (
                         <>
                             <div className='MenuGroup menu-divider'/>
