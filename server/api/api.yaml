@@ -2411,12 +2411,6 @@ paths:
           schema:
             type: string
             enum: [threaded, chronological]
-        - name: X-CSRF-Token
-          in: header
-          required: true
-          description: Session CSRF token, constant-time compared against the session record.
-          schema:
-            type: string
       responses:
         200:
           description: The report (atomic; full body buffered before any header is sent).
@@ -2454,12 +2448,6 @@ paths:
                 type: string
         400:
           description: Missing or unknown `format`, or an unknown section token in the `sections` query.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        403:
-          description: CSRF token missing or mismatched.
           content:
             application/json:
               schema:
@@ -2539,12 +2527,6 @@ paths:
           schema:
             type: string
             example: overview,checklists
-        - name: X-CSRF-Token
-          in: header
-          required: true
-          description: Session CSRF token, constant-time compared against the session record.
-          schema:
-            type: string
       responses:
         200:
           description: The report (atomic; full body buffered before any header is sent).
@@ -2568,8 +2550,6 @@ paths:
                 type: string
         400:
           $ref: "#/components/responses/400"
-        403:
-          $ref: "#/components/responses/403"
         404:
           $ref: "#/components/responses/404"
         429:

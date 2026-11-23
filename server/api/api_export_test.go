@@ -130,23 +130,6 @@ func TestExport_CorrelationFromRequest(t *testing.T) {
 	})
 }
 
-func TestExport_ReadSessionToken(t *testing.T) {
-	t.Run("cookie", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.AddCookie(&http.Cookie{Name: "MMAUTHTOKEN", Value: "cookie-token"})
-		assert.Equal(t, "cookie-token", readSessionToken(req))
-	})
-	t.Run("bearer", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Header.Set("Authorization", "Bearer abc-bearer")
-		assert.Equal(t, "abc-bearer", readSessionToken(req))
-	})
-	t.Run("none", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		assert.Equal(t, "", readSessionToken(req))
-	})
-}
-
 func TestExport_CollapseUnderscores(t *testing.T) {
 	assert.Equal(t, "a_b_c", collapseUnderscores("a___b__c"))
 	assert.Equal(t, "abc", collapseUnderscores("abc"))

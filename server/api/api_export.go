@@ -6,7 +6,6 @@ package api
 import (
 	"cmp"
 	"context"
-	"crypto/subtle"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -18,7 +17,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
@@ -54,7 +52,7 @@ const (
 )
 
 // ResolverStats is aliased to the app-layer type the ReportService
-// produces. The handler folds the values into audit records.
+// produces alongside each report context.
 type ResolverStats = app.ResolverStats
 
 // ReportService is the contract the app-layer ReportService satisfies. It is
@@ -162,16 +160,14 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		WithField("correlation_id", correlationID).
 		WithField("export_kind", "run").
 		WithField("export_format", format)
-	event := exportEvent("run", format)
 
 	if !h.reportsEnabled() {
 		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "not found", nil)
 		return
 	}
-	if err := h.verifyCSRF(r); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "CSRF check failed", err)
-		return
-	}
+
+	auditRec := newExportAuditRecord(r, userID, "run", runID, format)
+	defer h.pluginAPI.Audit.Record(auditRec)
 	if format != formatMarkdown && format != formatHTML {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "format must be md or html", nil)
 		return
@@ -182,6 +178,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return
 	}
+	model.AddEventParameterToAuditRec(auditRec, "sections", sectionsToList(sections))
 
 	run, runErr := h.playbookRunService.GetPlaybookRun(runID)
 	if runErr != nil {
@@ -202,9 +199,8 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 	}
 	defer h.releaseRenderSlot()
 
-	rc, resolverStats, asmErr := h.reportService.AssembleRunReportContext(ctx, run.ID, userID, sections)
+	rc, _, asmErr := h.reportService.AssembleRunReportContext(ctx, run.ID, userID, sections)
 	if asmErr != nil {
-		h.logAndAuditFailure(logger, event, userID, run.ID, correlationID, sections, asmErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
 		return
 	}
@@ -221,12 +217,12 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		data, renderErr = html_writer.RenderRunHTML(view, html_writer.Options{PageSize: "A4"})
 	}
 	if renderErr != nil {
-		h.logAndAuditFailure(logger, event, userID, run.ID, correlationID, sections, renderErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", renderErr)
 		return
 	}
 	h.writeReportResponse(w, format, data, filename, correlationID, rc.TranscriptTruncation)
-	h.auditSuccess(logger, event, userID, run.ID, correlationID, sections, resolverStats, rc.TranscriptTruncation, len(data), exportIntent(r, format))
+	auditRec.AddMeta("truncated", rc.TranscriptTruncation.Hit)
+	auditRec.Success()
 }
 
 // exportPlaybook is the handler for GET /playbooks/{id}/report?format=md|html.
@@ -240,16 +236,14 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 		WithField("correlation_id", correlationID).
 		WithField("export_kind", "playbook").
 		WithField("export_format", format)
-	event := exportEvent("playbook", format)
 
 	if !h.reportsEnabled() {
 		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "not found", nil)
 		return
 	}
-	if err := h.verifyCSRF(r); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "CSRF check failed", err)
-		return
-	}
+
+	auditRec := newExportAuditRecord(r, userID, "playbook", playbookID, format)
+	defer h.pluginAPI.Audit.Record(auditRec)
 	if format != formatMarkdown && format != formatHTML {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "format must be md or html", nil)
 		return
@@ -260,6 +254,7 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return
 	}
+	model.AddEventParameterToAuditRec(auditRec, "sections", sectionsToList(sections))
 
 	pb, pbErr := h.playbookService.Get(playbookID)
 	if pbErr != nil {
@@ -281,9 +276,8 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 	}
 	defer h.releaseRenderSlot()
 
-	pc, resolverStats, asmErr := h.reportService.AssemblePlaybookReportContext(ctx, pb.ID, userID, sections, hasPlaybookManage)
+	pc, _, asmErr := h.reportService.AssemblePlaybookReportContext(ctx, pb.ID, userID, sections, hasPlaybookManage)
 	if asmErr != nil {
-		h.logAndAuditFailure(logger, event, userID, pb.ID, correlationID, sections, asmErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
 		return
 	}
@@ -299,12 +293,11 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 		data, renderErr = html_writer.RenderPlaybookHTML(view, html_writer.Options{PageSize: "A4"})
 	}
 	if renderErr != nil {
-		h.logAndAuditFailure(logger, event, userID, pb.ID, correlationID, sections, renderErr)
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", renderErr)
 		return
 	}
 	h.writeReportResponse(w, format, data, filename, correlationID, report.Truncation{})
-	h.auditSuccess(logger, event, userID, pb.ID, correlationID, sections, resolverStats, report.Truncation{}, len(data), exportIntent(r, format))
+	auditRec.Success()
 }
 
 // ---- response writers ----
@@ -343,73 +336,6 @@ func (h *ExportHandler) reportsEnabled() bool {
 	return h.config != nil && h.config.IsReportsEnabled()
 }
 
-// verifyCSRF defends a GET-with-side-effects endpoint against cross-origin
-// abuse via the triple-defense: CSRF token, X-Requested-With, or same-site
-// Origin/Referer.
-func (h *ExportHandler) verifyCSRF(r *http.Request) error {
-	if h.csrfTokenMatchesSession(r) {
-		return nil
-	}
-	if strings.EqualFold(r.Header.Get("X-Requested-With"), "XMLHttpRequest") {
-		return nil
-	}
-	if h.originIsSameSite(r) {
-		return nil
-	}
-	return errors.New("CSRF: no matching defense (X-CSRF-Token / X-Requested-With / same-Origin)")
-}
-
-func (h *ExportHandler) csrfTokenMatchesSession(r *http.Request) bool {
-	headerToken := r.Header.Get("X-CSRF-Token")
-	if headerToken == "" {
-		return false
-	}
-	sessionID := readSessionToken(r)
-	if sessionID == "" {
-		return false
-	}
-	session, err := h.pluginAPI.Session.Get(sessionID)
-	if err != nil || session == nil {
-		return false
-	}
-	return subtle.ConstantTimeCompare([]byte(headerToken), []byte(session.GetCSRF())) == 1
-}
-
-func (h *ExportHandler) originIsSameSite(r *http.Request) bool {
-	siteURL := h.siteURL()
-	if siteURL == "" {
-		return false
-	}
-	if origin := r.Header.Get("Origin"); origin != "" {
-		return strings.HasPrefix(origin, siteURL)
-	}
-	if referer := r.Header.Get("Referer"); referer != "" {
-		return strings.HasPrefix(referer, siteURL)
-	}
-	return false
-}
-
-func (h *ExportHandler) siteURL() string {
-	cfg := h.pluginAPI.Configuration.GetConfig()
-	if cfg == nil || cfg.ServiceSettings.SiteURL == nil {
-		return ""
-	}
-	return *cfg.ServiceSettings.SiteURL
-}
-
-// readSessionToken returns the session ID from the standard MM cookie or
-// Authorization header; empty when neither is present.
-func readSessionToken(r *http.Request) string {
-	if c, err := r.Cookie(model.SessionCookieToken); err == nil && c.Value != "" {
-		return c.Value
-	}
-	auth := r.Header.Get("Authorization")
-	if after, ok := strings.CutPrefix(auth, "Bearer "); ok {
-		return strings.TrimSpace(after)
-	}
-	return ""
-}
-
 // reportOptions loads the requester once to translate the report into their
 // language and show times in their time zone, falling back to English and
 // UTC.
@@ -444,45 +370,20 @@ func (h *ExportHandler) releaseRenderSlot() {
 
 // ---- audit ----
 
-func (h *ExportHandler) logAndAuditFailure(logger logrus.FieldLogger, event, userID, resourceID, correlationID string, sections report.SectionFlags, internalErr error) {
-	rec := plugin.MakeAuditRecord(event, model.AuditStatusFail)
-	model.AddEventParameterToAuditRec(rec, "user_id", userID)
-	model.AddEventParameterToAuditRec(rec, "resource_id", resourceID)
-	model.AddEventParameterToAuditRec(rec, "correlation_id", correlationID)
-	model.AddEventParameterToAuditRec(rec, "sections", sectionsToList(sections))
-	if internalErr != nil {
-		rec.AddErrorCode(http.StatusInternalServerError)
-		rec.AddMeta("error", internalErr.Error())
+// newExportAuditRecord starts the exportReport audit record for a request.
+// It stays a failure unless the handler marks it successful after writing
+// the report.
+func newExportAuditRecord(r *http.Request, userID, kind, id, format string) *model.AuditRecord {
+	rec := plugin.MakeAuditRecord("exportReport", model.AuditStatusFail)
+	rec.Actor.UserId = userID
+	rec.AddMeta(model.AuditKeyAPIPath, r.URL.Path)
+	model.AddEventParameterToAuditRec(rec, "kind", kind)
+	model.AddEventParameterToAuditRec(rec, "id", id)
+	model.AddEventParameterToAuditRec(rec, "format", format)
+	if intent := r.Header.Get(exportIntentHeader); intent != "" {
+		model.AddEventParameterToAuditRec(rec, "intent", intent)
 	}
-	logger.WithError(internalErr).WithFields(logrus.Fields{
-		"event":          event,
-		"user_id":        userID,
-		"resource_id":    resourceID,
-		"correlation_id": correlationID,
-	}).Warn("playbooks export failed")
-	_ = rec
-}
-
-func (h *ExportHandler) auditSuccess(logger logrus.FieldLogger, event, userID, resourceID, correlationID string, sections report.SectionFlags, stats ResolverStats, trunc report.Truncation, bytesWritten int, intent string) {
-	fields := logrus.Fields{
-		"event":            event,
-		"user_id":          userID,
-		"resource_id":      resourceID,
-		"correlation_id":   correlationID,
-		"sections":         sectionsToList(sections),
-		"resolver_lookups": stats.Lookups,
-		"resolver_cached":  stats.Cached,
-		"resolver_cap_hit": stats.CapHit,
-		"truncated":        trunc.Hit,
-		"truncated_reason": trunc.Reason,
-		"truncated_posts":  trunc.Posts,
-		"truncated_bytes":  trunc.Bytes,
-		"bytes_written":    bytesWritten,
-	}
-	if intent != "" {
-		fields["intent"] = intent
-	}
-	logger.WithFields(fields).Info("playbooks export succeeded")
+	return rec
 }
 
 // ---- helpers (file-scoped, no receiver) ----
@@ -551,24 +452,6 @@ func sectionsToList(s report.SectionFlags) []string {
 	add("playbook_settings", s.PlaybookSettings)
 	sort.Strings(out)
 	return out
-}
-
-// exportEvent returns the audit event name for a kind ("run" | "playbook")
-// and format, e.g. "run_exported_md".
-func exportEvent(kind, format string) string {
-	return kind + "_exported_" + format
-}
-
-// exportIntent returns the client-supplied intent recorded in the audit log.
-// It only applies to HTML exports.
-func exportIntent(r *http.Request, format string) string {
-	if format != formatHTML {
-		return ""
-	}
-	if intent := r.Header.Get(exportIntentHeader); intent != "" {
-		return intent
-	}
-	return "download"
 }
 
 // parseTranscriptMode normalizes the ?transcript_mode= query param. Unknown
