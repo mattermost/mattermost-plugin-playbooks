@@ -27,7 +27,7 @@ jest.mock('react-redux', () => ({
     useSelector: () => ({timezone: {useAutomaticTimezone: 'false', manualTimezone: 'Europe/Berlin', automaticTimezone: ''}}),
 }));
 
-import ExportOptionsModal, {SectionFlags} from './export_options_modal';
+import ExportOptionsModal from './export_options_modal';
 
 const wrap = (ui: React.ReactNode) => (
     <IntlProvider
@@ -42,7 +42,6 @@ const findCheckboxes = (instance: renderer.ReactTestInstance) =>
     instance.findAllByType('input').filter((n) => n.props.type === 'checkbox');
 
 type RenderOverrides = Partial<{
-    defaults: SectionFlags;
     channelExportAvailable: boolean;
 }>;
 
@@ -53,7 +52,6 @@ const render = (overrides: RenderOverrides = {}) => {
     act(() => {
         tree = renderer.create(wrap(
             <ExportOptionsModal
-                defaults={overrides.defaults ?? {}}
                 onConfirm={onConfirm}
                 onCancel={onCancel}
                 channelExportAvailable={overrides.channelExportAvailable}
@@ -76,7 +74,7 @@ describe('ExportOptionsModal', () => {
     });
 
     it('always includes the executive summary and status updates', () => {
-        const {tree} = render({defaults: {executiveSummary: false, statusUpdates: false}});
+        const {tree} = render();
         for (const key of ['executiveSummary', 'statusUpdates']) {
             const input = tree.root.findByProps({'data-testid': `section-toggle-${key}`}).findByType('input');
             expect(input.props.checked).toBe(true);

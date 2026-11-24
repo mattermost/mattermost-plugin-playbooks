@@ -9,13 +9,11 @@ import (
 	"encoding/json"
 	"slices"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
@@ -23,37 +21,26 @@ import (
 
 // ReportConfig is the caps used during report assembly.
 type ReportConfig struct {
-	MaxRunReportPosts           int
-	MaxRunReportBytes           int64
-	MaxResolverLookupsPerExport int
+	MaxRunReportPosts int
+	MaxRunReportBytes int64
 }
 
 // DefaultReportConfig returns the caps every report uses.
 func DefaultReportConfig() ReportConfig {
 	return ReportConfig{
-		MaxRunReportPosts:           5000,
-		MaxRunReportBytes:           50 * 1024 * 1024,
-		MaxResolverLookupsPerExport: 500,
+		MaxRunReportPosts: 5000,
+		MaxRunReportBytes: 50 * 1024 * 1024,
 	}
 }
 
-// ResolverStats describes a single resolver-table build invocation. It is
-// emitted by the handler into the audit record.
-type ResolverStats struct {
-	Lookups int
-	Cached  int
-	CapHit  bool
-}
-
 // ReportService orchestrates assembly of the sanitized RenderContext for
-// the renderer. All permission scoping
-// happens here; the writers only turn the data into HTML or Markdown.
+// the renderer. All permission scoping happens here; the writers only turn
+// the data into HTML or Markdown.
 type ReportService struct {
 	runService         PlaybookRunService
 	playbookService    PlaybookService
 	permissionsService *PermissionsService
 	pluginAPI          *pluginapi.Client
-	auditor            Auditor
 	config             ReportConfig
 }
 
@@ -63,21 +50,14 @@ func NewReportService(
 	playbookService PlaybookService,
 	permissionsService *PermissionsService,
 	pluginAPI *pluginapi.Client,
-	auditor Auditor,
 ) *ReportService {
 	return &ReportService{
 		runService:         runService,
 		playbookService:    playbookService,
 		permissionsService: permissionsService,
 		pluginAPI:          pluginAPI,
-		auditor:            auditor,
 		config:             DefaultReportConfig(),
 	}
-}
-
-// Config returns the active configuration (used by handlers to compute caps).
-func (s *ReportService) Config() ReportConfig {
-	return s.config
 }
 
 // channelPostsIterOpts configures channelPostsIterator behavior.
@@ -97,14 +77,14 @@ func (s *ReportService) AssembleRunReportContext(
 	runID string,
 	userID string,
 	sections report.SectionFlags,
-) (report.RenderContext, ResolverStats, error) {
+) (report.RenderContext, error) {
 	if err := s.permissionsService.RunView(userID, runID); err != nil {
-		return report.RenderContext{}, ResolverStats{}, err
+		return report.RenderContext{}, err
 	}
 
 	run, err := s.runService.GetPlaybookRun(runID)
 	if err != nil {
-		return report.RenderContext{}, ResolverStats{}, errors.Wrap(err, "failed to load run")
+		return report.RenderContext{}, errors.Wrap(err, "failed to load run")
 	}
 
 	rc := report.RenderContext{
@@ -137,29 +117,6 @@ func (s *ReportService) AssembleRunReportContext(
 	rc.Participants = make([]report.RenderUser, 0, len(run.ParticipantIDs))
 	for _, pid := range run.ParticipantIDs {
 		rc.Participants = append(rc.Participants, userCache[pid])
-	}
-
-	if ch, cerr := s.pluginAPI.Channel.Get(run.ChannelID); cerr == nil {
-		rc.Channel = report.RenderChannel{
-			ChannelID:   ch.Id,
-			Name:        ch.Name,
-			DisplayName: ch.DisplayName,
-			Type:        string(ch.Type),
-		}
-	} else {
-		rc.Channel = report.RenderChannel{ChannelID: run.ChannelID}
-	}
-
-	if run.TeamID != "" {
-		if team, terr := s.pluginAPI.Team.Get(run.TeamID); terr == nil {
-			rc.Team = report.RenderTeam{
-				TeamID:      team.Id,
-				Name:        team.Name,
-				DisplayName: team.DisplayName,
-			}
-		} else {
-			rc.Team = report.RenderTeam{TeamID: run.TeamID}
-		}
 	}
 
 	if sections.StatusUpdates {
@@ -199,7 +156,7 @@ func (s *ReportService) AssembleRunReportContext(
 				})
 				transcript, tErr := drainTranscript(ctx, iter, s.config.MaxRunReportPosts, s.config.MaxRunReportBytes)
 				if tErr != nil && !errors.Is(tErr, context.Canceled) {
-					return report.RenderContext{}, ResolverStats{}, errors.Wrap(tErr, "failed to assemble transcript")
+					return report.RenderContext{}, errors.Wrap(tErr, "failed to assemble transcript")
 				}
 				rc.Transcript = transcript.posts
 				rc.TranscriptTruncation = transcript.truncation
@@ -213,36 +170,22 @@ func (s *ReportService) AssembleRunReportContext(
 		}
 	}
 
-	users, channelNames, fileIDs := extractResolverTargets(&rc)
-	table, stats, rerr := s.buildResolverTable(ctx, userID, users, channelNames, fileIDs, s.config)
-	if rerr != nil {
-		return report.RenderContext{}, ResolverStats{}, rerr
-	}
-	rc.Resolvers = table
-	seedResolverUsers(&rc.Resolvers, userCache)
-
+	rc.Resolvers = report.ResolverTable{Users: knownUsers(userCache)}
 	rc.GeneratedAtMillis = time.Now().UnixMilli()
-	return rc, stats, nil
+	return rc, nil
 }
 
-// seedResolverUsers folds the per-run user cache (owner, participants,
-// timeline actors, assignees, post authors) into the resolver table so the
-// renderer can look up display names for any user already loaded by the run
-// assembly — without paying for another batch fetch. Targets the requester
-// could not see remain zero-value in the table per §3.6.6.
-func seedResolverUsers(rt *report.ResolverTable, userCache map[string]report.RenderUser) {
-	if rt.Users == nil {
-		rt.Users = make(map[string]report.RenderUser, len(userCache))
-	}
+// knownUsers is the users the run's assembly loaded (owner, participants,
+// timeline actors, assignees, status and post authors), without the ones
+// that could not be loaded, which the report shows as unknown users.
+func knownUsers(userCache map[string]report.RenderUser) map[string]report.RenderUser {
+	users := make(map[string]report.RenderUser, len(userCache))
 	for id, u := range userCache {
-		if _, ok := rt.Users[id]; ok {
-			continue
+		if u.DisplayName != "" || u.Username != "" {
+			users[id] = u
 		}
-		if u.DisplayName == "" && u.Username == "" {
-			continue
-		}
-		rt.Users[id] = u
 	}
+	return users
 }
 
 // channelPostsIterator returns a paging iterator over a channel's posts,
@@ -322,7 +265,6 @@ func (s *ReportService) channelPostsIterator(channelID string, startMs, endMs in
 					Message:  post.Message,
 					RootID:   post.RootId,
 					Type:     post.Type,
-					Files:    filesFromPost(s.pluginAPI, post),
 				})
 			}
 			if len(out) > 0 {
@@ -339,7 +281,7 @@ type transcriptDrain struct {
 }
 
 // drainTranscript consumes the iterator into a slice, enforcing the post-cap
-// and the byte-cap (approximated by Message + Name bytes).
+// and the byte-cap (counted in message bytes).
 func drainTranscript(ctx context.Context, iter postIterator, maxPosts int, maxBytes int64) (transcriptDrain, error) {
 	var (
 		out      []report.RenderPost
@@ -365,9 +307,6 @@ func drainTranscript(ctx context.Context, iter postIterator, maxPosts int, maxBy
 				}, nil
 			}
 			postBytes := int64(len(p.Message))
-			for _, f := range p.Files {
-				postBytes += int64(len(f.Name))
-			}
 			if maxBytes > 0 && bytesSum+postBytes > maxBytes {
 				return transcriptDrain{
 					posts: out,
@@ -443,180 +382,6 @@ func renderUserFromModel(u *model.User) report.RenderUser {
 		DisplayName: display,
 		Nickname:    strings.TrimSpace(u.Nickname),
 	}
-}
-
-// buildResolverTable does the permission-scoped pre-resolution for the
-// markdown extension. Each target gets one lookup; permissions denials are
-// recorded as zero-value entries so the deny path is byte-identical to
-// "not found" (plan §3.6.6).
-func (s *ReportService) buildResolverTable(
-	ctx context.Context,
-	requesterUserID string,
-	userIDs, channelNames, fileIDs []string,
-	caps ReportConfig,
-) (report.ResolverTable, ResolverStats, error) {
-	table := report.ResolverTable{
-		Users:      map[string]report.RenderUser{},
-		Channels:   map[string]report.RenderChannel{},
-		Files:      map[string]report.RenderFile{},
-		Permalinks: map[string]report.RenderPostPreview{},
-	}
-	stats := ResolverStats{}
-
-	uniqUsers := dedupNonEmpty(userIDs, 26)
-	uniqChannels := dedupNonEmpty(channelNames, 64)
-	uniqFiles := dedupNonEmpty(fileIDs, 26)
-
-	total := len(uniqUsers) + len(uniqChannels) + len(uniqFiles)
-	if caps.MaxResolverLookupsPerExport > 0 && total > caps.MaxResolverLookupsPerExport {
-		stats.CapHit = true
-		uniqUsers, uniqChannels, uniqFiles = capLookups(uniqUsers, uniqChannels, uniqFiles, caps.MaxResolverLookupsPerExport)
-	}
-
-	var (
-		mu sync.Mutex
-		eg errgroup.Group
-	)
-	eg.SetLimit(4)
-
-	for _, id := range uniqUsers {
-		eg.Go(func() error {
-			lookupCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
-			defer cancel()
-			ru := s.resolveUserForRequester(lookupCtx, requesterUserID, id)
-			mu.Lock()
-			table.Users[id] = ru
-			stats.Lookups++
-			mu.Unlock()
-			return nil
-		})
-	}
-
-	for _, name := range uniqChannels {
-		eg.Go(func() error {
-			lookupCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
-			defer cancel()
-			rc := s.resolveChannelForRequester(lookupCtx, requesterUserID, name)
-			mu.Lock()
-			table.Channels[name] = rc
-			stats.Lookups++
-			mu.Unlock()
-			return nil
-		})
-	}
-
-	for _, fid := range uniqFiles {
-		eg.Go(func() error {
-			lookupCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
-			defer cancel()
-			rf := s.resolveFileForRequester(lookupCtx, requesterUserID, fid)
-			mu.Lock()
-			table.Files[fid] = rf
-			stats.Lookups++
-			mu.Unlock()
-			return nil
-		})
-	}
-
-	if err := eg.Wait(); err != nil {
-		return table, stats, err
-	}
-	return table, stats, nil
-}
-
-func (s *ReportService) resolveUserForRequester(ctx context.Context, requesterID, targetID string) report.RenderUser {
-	if ctx.Err() != nil {
-		return report.RenderUser{}
-	}
-	u, err := s.pluginAPI.User.Get(targetID)
-	if err != nil || u == nil {
-		return report.RenderUser{}
-	}
-	if !s.requesterCanSeeUser(requesterID, u) {
-		return report.RenderUser{}
-	}
-	return renderUserFromModel(u)
-}
-
-// requesterCanSeeUser is a conservative shared-team visibility check. It
-// returns true when the target is the requester, when both are system users
-// the requester can administer, or when the two share at least one team.
-func (s *ReportService) requesterCanSeeUser(requesterID string, target *model.User) bool {
-	if target == nil || target.Id == "" {
-		return false
-	}
-	if target.Id == requesterID {
-		return true
-	}
-	members, err := s.pluginAPI.Team.ListMembersForUser(target.Id, 0, 200)
-	if err != nil || len(members) == 0 {
-		return false
-	}
-	for _, tm := range members {
-		if s.pluginAPI.User.HasPermissionToTeam(requesterID, tm.TeamId, model.PermissionViewTeam) {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *ReportService) resolveChannelForRequester(ctx context.Context, requesterID, channelName string) report.RenderChannel {
-	if ctx.Err() != nil {
-		return report.RenderChannel{}
-	}
-	ch, err := s.lookupChannelByIDOrName(channelName)
-	if err != nil || ch == nil {
-		return report.RenderChannel{}
-	}
-	if !s.pluginAPI.User.HasPermissionToChannel(requesterID, ch.Id, model.PermissionReadChannel) {
-		return report.RenderChannel{}
-	}
-	return report.RenderChannel{
-		ChannelID:   ch.Id,
-		Name:        ch.Name,
-		DisplayName: ch.DisplayName,
-		Type:        string(ch.Type),
-	}
-}
-
-func (s *ReportService) lookupChannelByIDOrName(target string) (*model.Channel, error) {
-	if ch, err := s.pluginAPI.Channel.Get(target); err == nil {
-		return ch, nil
-	}
-	return nil, errors.New("channel not found by id or name")
-}
-
-func (s *ReportService) resolveFileForRequester(ctx context.Context, requesterID, fileID string) report.RenderFile {
-	if ctx.Err() != nil {
-		return report.RenderFile{}
-	}
-	info, err := s.pluginAPI.File.GetInfo(fileID)
-	if err != nil || info == nil {
-		return report.RenderFile{}
-	}
-	if info.PostId == "" {
-		return report.RenderFile{}
-	}
-	post, err := s.pluginAPI.Post.GetPost(info.PostId)
-	if err != nil || post == nil {
-		return report.RenderFile{}
-	}
-	if !s.pluginAPI.User.HasPermissionToChannel(requesterID, post.ChannelId, model.PermissionReadChannel) {
-		return report.RenderFile{}
-	}
-	return report.RenderFile{
-		FileID: info.Id,
-		Name:   info.Name,
-		Size:   info.Size,
-		Kind:   fileKindFromMime(info.MimeType),
-	}
-}
-
-// extractResolverTargets is a stub. T1's markdown walker will return the real
-// (user, channel, file) target sets; until that lands the resolver table is
-// pre-built empty.
-func extractResolverTargets(rc *report.RenderContext) ([]string, []string, []string) {
-	return nil, nil, nil
 }
 
 // collectRunUserIDs gathers every user identifier referenced by the run's
@@ -758,9 +523,8 @@ func buildChecklists(in []Checklist, stateUsers map[string]string) []report.Rend
 // its title or type would be meaningless in the report.
 func buildRetrospective(run *PlaybookRun, metricConfigs []PlaybookMetricConfig) report.RenderRetrospective {
 	return report.RenderRetrospective{
-		Body:        run.Retrospective,
-		PublishedMs: run.RetrospectivePublishedAt,
-		Metrics:     metricsFromConfigs(metricConfigs, runMetricValueLookup(run)),
+		Body:    run.Retrospective,
+		Metrics: metricsFromConfigs(metricConfigs, runMetricValueLookup(run)),
 	}
 }
 
@@ -807,91 +571,4 @@ func metricTypeFromConfig(t string) string {
 		return "integer"
 	}
 	return t
-}
-
-func fileKindFromMime(mime string) string {
-	mime = strings.ToLower(mime)
-	switch {
-	case strings.HasPrefix(mime, "image/"):
-		return "image"
-	case strings.HasPrefix(mime, "audio/"):
-		return "audio"
-	case strings.HasPrefix(mime, "video/"):
-		return "video"
-	case strings.HasPrefix(mime, "application/pdf"),
-		strings.HasPrefix(mime, "application/msword"),
-		strings.HasPrefix(mime, "application/vnd."),
-		strings.HasPrefix(mime, "text/"):
-		return "doc"
-	}
-	return "other"
-}
-
-func filesFromPost(api *pluginapi.Client, post *model.Post) []report.RenderFile {
-	if post == nil || len(post.FileIds) == 0 {
-		return nil
-	}
-	out := make([]report.RenderFile, 0, len(post.FileIds))
-	for _, fid := range post.FileIds {
-		info, err := api.File.GetInfo(fid)
-		if err != nil || info == nil {
-			out = append(out, report.RenderFile{FileID: fid})
-			continue
-		}
-		out = append(out, report.RenderFile{
-			FileID: info.Id,
-			Name:   info.Name,
-			Size:   info.Size,
-			Kind:   fileKindFromMime(info.MimeType),
-		})
-	}
-	return out
-}
-
-// dedupNonEmpty returns the unique values of in that are non-empty and within
-// the length cap. Order is preserved so capLookups can drop the tail
-// deterministically.
-func dedupNonEmpty(in []string, maxLen int) []string {
-	seen := make(map[string]struct{}, len(in))
-	out := make([]string, 0, len(in))
-	for _, v := range in {
-		v = strings.TrimSpace(v)
-		if v == "" {
-			continue
-		}
-		if maxLen > 0 && len(v) > maxLen {
-			continue
-		}
-		if _, ok := seen[v]; ok {
-			continue
-		}
-		seen[v] = struct{}{}
-		out = append(out, v)
-	}
-	return out
-}
-
-// capLookups truncates the three resolver target slices to a combined budget,
-// preferring users > channels > files. The order matches the visual hierarchy
-// of references in the rendered report.
-func capLookups(users, channels, files []string, budget int) ([]string, []string, []string) {
-	if budget <= 0 {
-		return nil, nil, nil
-	}
-	take := func(in []string) []string {
-		if budget <= 0 {
-			return nil
-		}
-		if len(in) <= budget {
-			budget -= len(in)
-			return in
-		}
-		out := in[:budget]
-		budget = 0
-		return out
-	}
-	users = take(users)
-	channels = take(channels)
-	files = take(files)
-	return users, channels, files
 }

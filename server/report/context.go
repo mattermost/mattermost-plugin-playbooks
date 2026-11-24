@@ -5,15 +5,11 @@ package report
 
 import "github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 
-// Render* DTOs live in the coretypes sub-package so the markdown extension
-// can reference them without forming an import cycle with this package.
-// Callers continue to use report.RenderUser / report.ResolverTable / etc.
+// RenderUser and ResolverTable live in the coretypes sub-package; callers
+// use them as report.RenderUser and report.ResolverTable.
 type (
-	RenderUser        = coretypes.RenderUser
-	RenderChannel     = coretypes.RenderChannel
-	RenderFile        = coretypes.RenderFile
-	RenderPostPreview = coretypes.RenderPostPreview
-	ResolverTable     = coretypes.ResolverTable
+	RenderUser    = coretypes.RenderUser
+	ResolverTable = coretypes.ResolverTable
 )
 
 // RenderContext is the sanitized input to RenderRun. All fields are
@@ -37,12 +33,6 @@ type RenderContext struct {
 
 	// Participants are users participating in the run, in stable order.
 	Participants []RenderUser
-
-	// Channel is the run's channel (display only — name, header, purpose).
-	Channel RenderChannel
-
-	// Team is the run's team (display only — name, display name).
-	Team RenderTeam
 
 	// StatusUpdates are the run's status posts, in chronological order.
 	StatusUpdates []RenderStatusUpdate
@@ -76,10 +66,7 @@ type RenderContext struct {
 	// caller's section flags as appropriate).
 	TranscriptOmittedReason string
 
-	// Resolvers is the pre-built lookup table populated by ReportService
-	// for the markdown extension. Targets the requester cannot see are
-	// represented as zero-value entries (deny path byte-identical to
-	// "not found") per plan §3.6.6.
+	// Resolvers holds the users the report names.
 	Resolvers ResolverTable
 
 	// GeneratedAtMillis is the wall-clock time when assembly completed
@@ -97,13 +84,6 @@ type RenderRun struct {
 	EndTimeMs     int64 // 0 if still in progress
 	PlaybookID    string
 	PlaybookTitle string
-}
-
-// RenderTeam carries only display information for a team.
-type RenderTeam struct {
-	TeamID      string
-	Name        string
-	DisplayName string
 }
 
 // RenderStatusUpdate is one status post in a run's update stream.
@@ -146,9 +126,8 @@ type RenderChecklistItem struct {
 
 // RenderRetrospective is the run's retrospective text + metrics.
 type RenderRetrospective struct {
-	Body        string // markdown body
-	PublishedMs int64
-	Metrics     []RenderMetric
+	Body    string // markdown body
+	Metrics []RenderMetric
 }
 
 // RenderMetric is one configured metric (with optional measured value).
@@ -166,10 +145,9 @@ type RenderPost struct {
 	PostID   string
 	AuthorID string
 	CreateAt int64
-	Message  string // markdown body (passes through the MM markdown extension)
+	Message  string // markdown body
 	RootID   string // empty if not a reply
 	Type     string // post type — used to filter system noise
-	Files    []RenderFile
 }
 
 // Truncation records whether a section was truncated by a cap.

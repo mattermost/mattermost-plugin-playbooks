@@ -281,7 +281,6 @@ func (p *Plugin) OnActivate() error {
 		p.playbookService,
 		p.permissions,
 		pluginAPIClient,
-		auditorService,
 	)
 	api.RegisterExportHandler(api.NewExportHandler(
 		pluginAPIClient,

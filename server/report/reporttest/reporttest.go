@@ -196,8 +196,7 @@ func TypicalRun() report.RenderContext {
 			},
 		},
 		Retrospective: report.RenderRetrospective{
-			Body:        "## What went well\n- Quick paging",
-			PublishedMs: Base + 2*hour + 30*minute,
+			Body: "## What went well\n- Quick paging",
 			Metrics: []report.RenderMetric{
 				{ID: "m1", Title: "Time to detect", Description: "Measured from\nalert to ack", Type: "duration", Value: 3 * minute, HasValue: true},
 				{ID: "m2", Title: "Cost", Type: "currency", Value: 12345, HasValue: true},

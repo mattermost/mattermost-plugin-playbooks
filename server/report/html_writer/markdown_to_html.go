@@ -29,9 +29,8 @@ import (
 //     attribute (onerror, onclick, style, etc.) and dangerous URL schemes
 //     on href/src (only http, https, mailto survive on links).
 //
-// Standard markdown fidelity is sufficient for v1; Mattermost token-to-HTML
-// rendering (mentions, channel links, emoji) ships in a follow-up (see plan
-// §3.6.6 polish item).
+// Mattermost-specific rendering (mentions, channel links, emoji) is not
+// supported; those stay as plain text.
 func markdownToHTML(md string) template.HTML {
 	if strings.TrimSpace(md) == "" {
 		return ""

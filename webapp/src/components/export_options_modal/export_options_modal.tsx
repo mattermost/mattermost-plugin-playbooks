@@ -27,7 +27,6 @@ export type SectionFlags = {
 };
 
 export type ExportOptionsModalProps = {
-    defaults: SectionFlags;
 
     // onConfirm runs the export. The modal stays open, showing "Exporting…", until the
     // returned promise settles; the caller closes it.
@@ -55,9 +54,9 @@ const DEFAULT_SECTIONS: SectionFlags = {
     transcript: true,
 };
 
-const ExportOptionsModal = ({defaults, onConfirm, onCancel, channelExportAvailable = false}: ExportOptionsModalProps) => {
+const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false}: ExportOptionsModalProps) => {
     const {formatMessage} = useIntl();
-    const [sections, setSections] = useState<SectionFlags>({...DEFAULT_SECTIONS, ...defaults});
+    const [sections, setSections] = useState<SectionFlags>(DEFAULT_SECTIONS);
     const [format, setFormat] = useState<ExportFormat>('pdf');
     const [transcriptMode, setTranscriptMode] = useState<TranscriptMode>('threaded');
 

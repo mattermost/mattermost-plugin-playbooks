@@ -29,60 +29,6 @@ func newTestReportService(api *plugintest.API) *ReportService {
 	}
 }
 
-func TestReportServiceDedupNonEmpty(t *testing.T) {
-	t.Run("dedups, trims, drops over-length", func(t *testing.T) {
-		long := strings.Repeat("a", 27)
-		out := dedupNonEmpty([]string{"abc", " abc ", "", "  ", long, "def"}, 26)
-		require.Equal(t, []string{"abc", "def"}, out)
-	})
-
-	t.Run("zero maxLen disables length cap", func(t *testing.T) {
-		long := strings.Repeat("a", 27)
-		out := dedupNonEmpty([]string{long}, 0)
-		require.Equal(t, []string{long}, out)
-	})
-}
-
-func TestReportServiceCapLookups(t *testing.T) {
-	t.Run("budget exhausts users first then channels then files", func(t *testing.T) {
-		u, c, f := capLookups(
-			[]string{"u1", "u2", "u3"},
-			[]string{"c1", "c2"},
-			[]string{"f1", "f2"},
-			4,
-		)
-		require.Equal(t, []string{"u1", "u2", "u3"}, u)
-		require.Equal(t, []string{"c1"}, c)
-		require.Empty(t, f)
-	})
-
-	t.Run("zero budget yields nothing", func(t *testing.T) {
-		u, c, f := capLookups([]string{"u"}, []string{"c"}, []string{"f"}, 0)
-		require.Empty(t, u)
-		require.Empty(t, c)
-		require.Empty(t, f)
-	})
-}
-
-func TestReportServiceFileKindFromMime(t *testing.T) {
-	cases := map[string]string{
-		"image/png":           "image",
-		"audio/mpeg":          "audio",
-		"video/mp4":           "video",
-		"application/pdf":     "doc",
-		"application/msword":  "doc",
-		"application/vnd.foo": "doc",
-		"text/plain":          "doc",
-		"application/octet":   "other",
-		"":                    "other",
-	}
-	for mime, want := range cases {
-		t.Run(mime, func(t *testing.T) {
-			require.Equal(t, want, fileKindFromMime(mime))
-		})
-	}
-}
-
 func TestReportServiceRenderUserFromModel(t *testing.T) {
 	t.Run("uses first+last when present", func(t *testing.T) {
 		u := &model.User{Id: "uid", Username: "alice", FirstName: "Al", LastName: "Ice"}
@@ -270,8 +216,6 @@ func TestReportServiceContextSanitizationInvariant(t *testing.T) {
 	rc := report.RenderContext{
 		Owner:        report.RenderUser{UserID: "u1"},
 		Participants: []report.RenderUser{{UserID: "u2"}},
-		Channel:      report.RenderChannel{ChannelID: "c1"},
-		Team:         report.RenderTeam{TeamID: "t1"},
 		StatusUpdates: []report.RenderStatusUpdate{
 			{PostID: "p1", AuthorID: "u1", Message: "hi"},
 		},
@@ -281,12 +225,10 @@ func TestReportServiceContextSanitizationInvariant(t *testing.T) {
 		},
 		Retrospective: report.RenderRetrospective{Body: "done"},
 		Transcript: []report.RenderPost{
-			{PostID: "p2", Files: []report.RenderFile{{FileID: "f1"}}},
+			{PostID: "p2"},
 		},
 		Resolvers: report.ResolverTable{
-			Users:    map[string]report.RenderUser{"u1": {UserID: "u1"}},
-			Channels: map[string]report.RenderChannel{"c1": {ChannelID: "c1"}},
-			Files:    map[string]report.RenderFile{"f1": {FileID: "f1"}},
+			Users: map[string]report.RenderUser{"u1": {UserID: "u1"}},
 		},
 	}
 	requireNoRawModelTypes(t, reflect.ValueOf(rc))
@@ -330,154 +272,6 @@ func requireNoRawModelTypes(t *testing.T, v reflect.Value) {
 		}
 	}
 	visit(v)
-}
-
-func TestReportServiceBuildResolverTableCapHit(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
-	svc.config.MaxResolverLookupsPerExport = 1
-
-	users := []string{model.NewId(), model.NewId(), model.NewId()}
-	api.On("GetUser", users[0]).Return((*model.User)(nil), &model.AppError{Message: "nope"})
-
-	table, stats, err := svc.buildResolverTable(
-		context.Background(),
-		model.NewId(),
-		users,
-		nil,
-		nil,
-		svc.config,
-	)
-	require.NoError(t, err)
-	require.True(t, stats.CapHit)
-	require.Equal(t, 1, stats.Lookups)
-	require.Len(t, table.Users, 1)
-}
-
-func TestReportServiceBuildResolverTableUserDeniedYieldsZero(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
-
-	requester := model.NewId()
-	target := &model.User{Id: model.NewId(), Username: "bob"}
-	teamID := model.NewId()
-
-	api.On("GetUser", target.Id).Return(target, nil)
-	api.On("GetTeamMembersForUser", target.Id, 0, 200).Return(
-		[]*model.TeamMember{{TeamId: teamID, UserId: target.Id}},
-		nil,
-	)
-	api.On("HasPermissionToTeam", requester, teamID, model.PermissionViewTeam).Return(false)
-
-	table, stats, err := svc.buildResolverTable(
-		context.Background(),
-		requester,
-		[]string{target.Id},
-		nil,
-		nil,
-		svc.config,
-	)
-	require.NoError(t, err)
-	require.Equal(t, 1, stats.Lookups)
-	require.False(t, stats.CapHit)
-	require.Equal(t, report.RenderUser{}, table.Users[target.Id])
-}
-
-func TestReportServiceBuildResolverTableChannelDenied(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
-	requester := model.NewId()
-	channelID := model.NewId()
-
-	api.On("GetChannel", channelID).Return(&model.Channel{
-		Id:   channelID,
-		Name: "ops-room",
-		Type: model.ChannelTypeOpen,
-	}, nil)
-	api.On("HasPermissionToChannel", requester, channelID, model.PermissionReadChannel).Return(false)
-
-	table, _, err := svc.buildResolverTable(
-		context.Background(),
-		requester,
-		nil,
-		[]string{channelID},
-		nil,
-		svc.config,
-	)
-	require.NoError(t, err)
-	require.Equal(t, report.RenderChannel{}, table.Channels[channelID])
-}
-
-func TestReportServiceBuildResolverTableChannelAllowed(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
-	requester := model.NewId()
-	channelID := model.NewId()
-
-	api.On("GetChannel", channelID).Return(&model.Channel{
-		Id:          channelID,
-		Name:        "ops-room",
-		DisplayName: "Ops Room",
-		Type:        model.ChannelTypeOpen,
-	}, nil)
-	api.On("HasPermissionToChannel", requester, channelID, model.PermissionReadChannel).Return(true)
-
-	table, _, err := svc.buildResolverTable(
-		context.Background(),
-		requester,
-		nil,
-		[]string{channelID},
-		nil,
-		svc.config,
-	)
-	require.NoError(t, err)
-	got := table.Channels[channelID]
-	require.Equal(t, channelID, got.ChannelID)
-	require.Equal(t, "ops-room", got.Name)
-	require.Equal(t, "Ops Room", got.DisplayName)
-}
-
-func TestReportServiceBuildResolverTableFileDenied(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
-	requester := model.NewId()
-	fileID := model.NewId()
-	postID := model.NewId()
-	channelID := model.NewId()
-
-	api.On("GetFileInfo", fileID).Return(&model.FileInfo{
-		Id:       fileID,
-		PostId:   postID,
-		Name:     "q3.pdf",
-		Size:     1024,
-		MimeType: "application/pdf",
-	}, nil)
-	api.On("GetPost", postID).Return(&model.Post{
-		Id:        postID,
-		ChannelId: channelID,
-	}, nil)
-	api.On("HasPermissionToChannel", requester, channelID, model.PermissionReadChannel).Return(false)
-
-	table, _, err := svc.buildResolverTable(
-		context.Background(),
-		requester,
-		nil,
-		nil,
-		[]string{fileID},
-		svc.config,
-	)
-	require.NoError(t, err)
-	require.Equal(t, report.RenderFile{}, table.Files[fileID])
 }
 
 func TestReportServiceBatchResolveUsers(t *testing.T) {

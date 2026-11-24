@@ -20,32 +20,6 @@ type RenderUser struct {
 	Nickname    string
 }
 
-// RenderChannel carries only display information for a channel.
-type RenderChannel struct {
-	ChannelID   string
-	Name        string
-	DisplayName string
-	Type        string
-}
-
-// RenderFile is a sanitized reference to a file attachment.
-type RenderFile struct {
-	FileID string
-	Name   string
-	Size   int64
-	Kind   string
-}
-
-// RenderPostPreview is a permalink-to-post preview card. Populated only in
-// the MM-68723 / v1.1 enriched markdown story; zero-value in v1.
-type RenderPostPreview struct {
-	PostID   string
-	Author   RenderUser
-	Channel  RenderChannel
-	CreateAt int64
-	Excerpt  string
-}
-
 // Checklist item state values. Mirror the canonical constants in
 // server/app/playbook.go (ChecklistItemStateOpen / InProgress / Closed /
 // Skipped). Re-declared here so the report packages — which cannot import
@@ -101,12 +75,8 @@ const (
 	TranscriptOmittedNoChannel = "no-channel"
 )
 
-// ResolverTable is the pre-built lookup the markdown extension consumes.
-// All map values are zero-initialized when the requester cannot see the
-// target (deny path byte-identical to "not found").
+// ResolverTable holds the users a report names. A user missing from it is
+// shown as an unknown user.
 type ResolverTable struct {
-	Users      map[string]RenderUser
-	Channels   map[string]RenderChannel
-	Files      map[string]RenderFile
-	Permalinks map[string]RenderPostPreview
+	Users map[string]RenderUser
 }

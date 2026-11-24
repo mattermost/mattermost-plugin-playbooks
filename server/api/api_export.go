@@ -51,14 +51,10 @@ const (
 	exportIntentHeader = "X-Playbooks-Export-Intent"
 )
 
-// ResolverStats is aliased to the app-layer type the ReportService
-// produces alongside each report context.
-type ResolverStats = app.ResolverStats
-
 // ReportService is the contract the app-layer ReportService satisfies. It is
 // declared here as an interface so this handler can be exercised in isolation.
 type ReportService interface {
-	AssembleRunReportContext(ctx context.Context, runID, userID string, sections report.SectionFlags) (report.RenderContext, ResolverStats, error)
+	AssembleRunReportContext(ctx context.Context, runID, userID string, sections report.SectionFlags) (report.RenderContext, error)
 }
 
 // ExportHandler owns the GET /runs/{id}/report?format=md|html endpoint. The HTML is downloaded directly, or browser-printed to PDF by
@@ -196,7 +192,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 	}
 	defer h.releaseRenderSlot()
 
-	rc, _, asmErr := h.reportService.AssembleRunReportContext(ctx, run.ID, userID, sections)
+	rc, asmErr := h.reportService.AssembleRunReportContext(ctx, run.ID, userID, sections)
 	if asmErr != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
 		return
