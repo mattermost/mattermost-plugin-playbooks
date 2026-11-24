@@ -83,8 +83,10 @@ describe('playbooks > report export', {testIsolation: true}, () => {
         });
 
         if (timeZone) {
-            // # Pick the time zone; its menu renders outside the modal
-            cy.findByTestId('time-zone-field').find('input').type(timeZone);
+            // # Pick the time zone; its menu renders outside the modal. The picked
+            // value's clock icon covers the input, so open the select first.
+            cy.findByTestId('time-zone-field').find('.playbooks-rselect__control').click();
+            cy.focused().type(timeZone);
             cy.get('.playbooks-rselect__option').contains(timeZone).click();
         }
 
