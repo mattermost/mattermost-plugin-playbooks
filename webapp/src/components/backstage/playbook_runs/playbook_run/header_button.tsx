@@ -64,6 +64,7 @@ const StyledHeaderIcon = styled(Icon)<{isActive: boolean; size?: number, clicked
     margin-left: 4px;
     width: ${(props) => (props.size ?? 28)}px;
     height: ${(props) => (props.size ?? 28)}px;
+    flex-shrink: 0;
 
     ${({clicked}) => !clicked && css`
         &:hover {

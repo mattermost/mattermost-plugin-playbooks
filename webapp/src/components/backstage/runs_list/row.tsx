@@ -71,6 +71,7 @@ const NameRow = styled.div`
 
 const RunName = styled.div`
     flex: 1 1 auto;
+    width: 0;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;

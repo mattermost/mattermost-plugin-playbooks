@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -296,6 +297,27 @@ func TestRunCreation(t *testing.T) {
 		assert.NotNil(t, run)
 		assert.Equal(t, app.RunTypePlaybook, run.Type, "Run with playbook ID should have RunTypePlaybook")
 		assert.Equal(t, e.BasicPlaybook.ID, run.PlaybookID)
+	})
+
+	t.Run("100-character name is stored in full and channel display name is truncated", func(t *testing.T) {
+		name := strings.Repeat("é", 100)
+		require.Greater(t, utf8.RuneCountInString(name), model.ChannelDisplayNameMaxRunes)
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        name,
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, name, fetched.Name)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		assert.Equal(t, string([]rune(name)[:model.ChannelDisplayNameMaxRunes]), channel.DisplayName)
 	})
 
 	t.Run("can't without owner", func(t *testing.T) {
