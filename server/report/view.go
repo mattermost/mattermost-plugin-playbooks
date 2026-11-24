@@ -158,8 +158,8 @@ type ChecklistItem struct {
 	Skipped bool
 	// Title is Markdown.
 	Title string
-	// Assignee is the assignee, or "Unassigned", shown only on tasks that
-	// have an assignee, a due date or a command.
+	// Assignee is "Assigned to <user>", or "Unassigned", shown only on tasks
+	// that have an assignee, a due date or a command.
 	Assignee string
 	// Due is "Due: <date>" or empty.
 	Due     string

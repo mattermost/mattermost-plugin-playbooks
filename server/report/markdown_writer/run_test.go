@@ -28,7 +28,7 @@ func TestRenderRunMarkdown_ResolverDenyPaths(t *testing.T) {
 
 	require.Contains(t, got, "**Owner**: Unknown user")
 	require.Contains(t, got, "### Unknown user · ")
-	require.Contains(t, got, "- [x] Page on-call\n  *(Unknown user · Checked off by Unknown user on ")
+	require.Contains(t, got, "- [x] Page on-call\n  *(Assigned to Unknown user · Checked off by Unknown user on ")
 	require.Contains(t, got, "> **Unknown user** · ")
 	require.Contains(t, got, "> ↳ **Unknown user** · ")
 }

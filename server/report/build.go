@@ -191,7 +191,7 @@ func (b *builder) checklist(cl RenderChecklist, index int) Checklist {
 			item.Due = T("app.report.checklist.due", map[string]any{"Date": b.date(it.DueAtMs)})
 		}
 		if it.AssigneeID != "" {
-			item.Assignee = b.userName(it.AssigneeID)
+			item.Assignee = T("app.report.checklist.assigned_to", map[string]any{"User": b.userName(it.AssigneeID)})
 		} else if item.Due != "" || item.Command != "" {
 			item.Assignee = T("app.report.checklist.unassigned")
 		}

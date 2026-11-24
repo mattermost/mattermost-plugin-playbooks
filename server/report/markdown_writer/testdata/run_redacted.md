@@ -35,9 +35,9 @@ _No retrospective._
 ### Triage (1/2 · 50%)
 
 - [ ] Check IdP
-  *(Dana Display)*
+  *(Assigned to Dana Display)*
 - [-] Check certificates
-  *(Unknown user · Skipped by Unknown user on November 14, 2023, 10:19 PM UTC)*
+  *(Assigned to Unknown user · Skipped by Unknown user on November 14, 2023, 10:19 PM UTC)*
 
 ## Chat history
 

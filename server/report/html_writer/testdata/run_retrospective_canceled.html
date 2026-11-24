@@ -90,15 +90,22 @@ th { background: #f8f9fb; font-weight: 600; }
 .boxed-md > :last-child { margin-bottom: 0; }
 
  
-.checklist { margin: 8px 0; }
-.task { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; }
-.task input[type=checkbox] { margin-top: 3px; flex-shrink: 0; }
-.task--skipped { opacity: .55; text-decoration: line-through; }
+.checklist { border: 1px solid #e0e0e0; border-radius: 6px; margin: 16px 0; }
+.checklist__header { margin: 0; padding: 12px 20px; background: #f8f9fb; border-bottom: 1px solid #e0e0e0; border-radius: 6px 6px 0 0; font-size: 16px; font-weight: 600; color: #3f4350; break-after: avoid; }
+.checklist__header span { margin-left: 8px; font-size: 13px; font-weight: 400; color: #72767d; }
+.checklist__body { padding: 8px 20px; }
+.checklist__body > .muted { margin: 8px 0; }
+.task { display: flex; align-items: flex-start; gap: 12px; margin: 12px 0; break-inside: avoid; }
+.task__check { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; border: 1px solid rgba(63, 67, 80, 0.32); border-radius: 3px; background: #fff; }
+.task__check--done { border-color: #1c58d9; background: #1c58d9; }
+.task__check svg { width: 12px; height: 12px; }
+.task--skipped .task__title { text-decoration: line-through; color: #72767d; }
 .task__body { flex: 1; min-width: 0; }
 .task__title { font-size: 14px; color: #1e1f22; }
-.task__meta { font-size: 12px; color: #72767d; margin-top: 2px; }
+.task__meta { font-size: 13px; color: #72767d; margin-top: 6px; }
 .task__meta-cmd { font-family: var(--font-mono); font-size: 12px; background: rgba(63, 67, 80, 0.06); color: #1e1f22; border-radius: 3px; padding: 1px 5px; }
-.task__desc { font-size: 13px; background: #f8f9fb; border-radius: 4px; padding: 6px 10px; margin-top: 4px; }
+.task__desc { font-size: 13px; color: #3f4350; margin-top: 4px; }
+.task__desc ul, .task__desc ol { margin: 4px 0 4px 18px; }
 
  
 .timeline-event { display: grid; grid-template-columns: 140px 1fr; gap: 12px; margin: 8px 0; font-size: 13px; align-items: start; padding: 6px 0; border-top: 1px solid #f0f0f0; }
@@ -136,7 +143,8 @@ th { background: #f8f9fb; font-weight: 600; }
 
  
 @media print {
-  body { padding: 0; }
+   
+  body { padding: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
    
   .cover { min-height: 240mm; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0; border-bottom: none; break-after: page; }
   .section { break-before: page; }

@@ -90,15 +90,22 @@ th { background: #f8f9fb; font-weight: 600; }
 .boxed-md > :last-child { margin-bottom: 0; }
 
  
-.checklist { margin: 8px 0; }
-.task { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; }
-.task input[type=checkbox] { margin-top: 3px; flex-shrink: 0; }
-.task--skipped { opacity: .55; text-decoration: line-through; }
+.checklist { border: 1px solid #e0e0e0; border-radius: 6px; margin: 16px 0; }
+.checklist__header { margin: 0; padding: 12px 20px; background: #f8f9fb; border-bottom: 1px solid #e0e0e0; border-radius: 6px 6px 0 0; font-size: 16px; font-weight: 600; color: #3f4350; break-after: avoid; }
+.checklist__header span { margin-left: 8px; font-size: 13px; font-weight: 400; color: #72767d; }
+.checklist__body { padding: 8px 20px; }
+.checklist__body > .muted { margin: 8px 0; }
+.task { display: flex; align-items: flex-start; gap: 12px; margin: 12px 0; break-inside: avoid; }
+.task__check { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; border: 1px solid rgba(63, 67, 80, 0.32); border-radius: 3px; background: #fff; }
+.task__check--done { border-color: #1c58d9; background: #1c58d9; }
+.task__check svg { width: 12px; height: 12px; }
+.task--skipped .task__title { text-decoration: line-through; color: #72767d; }
 .task__body { flex: 1; min-width: 0; }
 .task__title { font-size: 14px; color: #1e1f22; }
-.task__meta { font-size: 12px; color: #72767d; margin-top: 2px; }
+.task__meta { font-size: 13px; color: #72767d; margin-top: 6px; }
 .task__meta-cmd { font-family: var(--font-mono); font-size: 12px; background: rgba(63, 67, 80, 0.06); color: #1e1f22; border-radius: 3px; padding: 1px 5px; }
-.task__desc { font-size: 13px; background: #f8f9fb; border-radius: 4px; padding: 6px 10px; margin-top: 4px; }
+.task__desc { font-size: 13px; color: #3f4350; margin-top: 4px; }
+.task__desc ul, .task__desc ol { margin: 4px 0 4px 18px; }
 
  
 .timeline-event { display: grid; grid-template-columns: 140px 1fr; gap: 12px; margin: 8px 0; font-size: 13px; align-items: start; padding: 6px 0; border-top: 1px solid #f0f0f0; }
@@ -136,7 +143,8 @@ th { background: #f8f9fb; font-weight: 600; }
 
  
 @media print {
-  body { padding: 0; }
+   
+  body { padding: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
    
   .cover { min-height: 240mm; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0; border-bottom: none; break-after: page; }
   .section { break-before: page; }
@@ -218,68 +226,74 @@ th { background: #f8f9fb; font-weight: 600; }
   </section>
   <section class="section">
   <h2>Task outline</h2>
-  <h3>Initial response (2/4 · 50%)</h3>
   <div class="checklist">
+    <h3 class="checklist__header">Initial response <span>2/4 · 50%</span></h3>
+    <div class="checklist__body">
     <div class="task">
-      <input type="checkbox" checked disabled aria-labelledby="task-0-0">
+      <span class="task__check task__check--done" role="checkbox" aria-checked="true" aria-disabled="true" aria-labelledby="task-0-0"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       <div class="task__body">
         <div class="task__title" id="task-0-0">Page on-call</div>
-        <div class="task__meta">Alice Admin</div>
-        <div class="task__meta">Checked off by Alice Admin on November 14, 2023, 10:23 PM UTC</div>
         
+        <div class="task__meta">Assigned to Alice Admin</div>
+        <div class="task__meta">Checked off by Alice Admin on November 14, 2023, 10:23 PM UTC</div>
       </div>
     </div>
     
     <div class="task task--skipped">
-      <input type="checkbox"  disabled aria-labelledby="task-0-1">
+      <span class="task__check" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="task-0-1"></span>
       <div class="task__body">
         <div class="task__title" id="task-0-1">Open war room</div>
         
-        <div class="task__meta">Skipped on November 14, 2023, 10:24 PM UTC</div>
         
+        <div class="task__meta">Skipped on November 14, 2023, 10:24 PM UTC</div>
       </div>
     </div>
     
     <div class="task">
-      <input type="checkbox"  disabled aria-labelledby="task-0-2">
+      <span class="task__check" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="task-0-2"></span>
       <div class="task__body">
         <div class="task__title" id="task-0-2">Notify <strong>stakeholders</strong></div>
-        <div class="task__meta">Bob Builder · Due: November 14, 2023, 11:13 PM UTC</div>
         
+        <div class="task__meta">Assigned to Bob Builder · Due: November 14, 2023, 11:13 PM UTC</div>
         
       </div>
     </div>
     
     <div class="task">
-      <input type="checkbox"  disabled aria-labelledby="task-0-3">
+      <span class="task__check" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="task-0-3"></span>
       <div class="task__body">
         <div class="task__title" id="task-0-3">Postmortem doc</div>
-        <div class="task__meta">Unassigned · Due: November 16, 2023, 12:13 AM UTC · <code class="task__meta-cmd">/postmortem create</code></div>
-        
         <div class="task__desc"><p>Write it up.<br>
 Share with @carol.</p>
 </div>
-      </div>
-    </div>
-    
-  </div>
-  
-  <h3>Checklist 2 (0/0 · 0%)</h3>
-  <div class="checklist"><p class="muted">No tasks.</p>
-  </div>
-  
-  <h3>Wrap-up (1/1 · 100%)</h3>
-  <div class="checklist">
-    <div class="task">
-      <input type="checkbox" checked disabled aria-labelledby="task-2-0">
-      <div class="task__body">
-        <div class="task__title" id="task-2-0">Close incident</div>
-        <div class="task__meta">Carol Chen</div>
-        <div class="task__meta">Checked off by Bob Builder on November 15, 2023, 12:13 AM UTC</div>
+        <div class="task__meta">Unassigned · Due: November 16, 2023, 12:13 AM UTC · <code class="task__meta-cmd">/postmortem create</code></div>
         
       </div>
     </div>
     
+    </div>
+  </div>
+  
+  <div class="checklist">
+    <h3 class="checklist__header">Checklist 2 <span>0/0 · 0%</span></h3>
+    <div class="checklist__body"><p class="muted">No tasks.</p>
+    </div>
+  </div>
+  
+  <div class="checklist">
+    <h3 class="checklist__header">Wrap-up <span>1/1 · 100%</span></h3>
+    <div class="checklist__body">
+    <div class="task">
+      <span class="task__check task__check--done" role="checkbox" aria-checked="true" aria-disabled="true" aria-labelledby="task-2-0"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="task__body">
+        <div class="task__title" id="task-2-0">Close incident</div>
+        
+        <div class="task__meta">Assigned to Carol Chen</div>
+        <div class="task__meta">Checked off by Bob Builder on November 15, 2023, 12:13 AM UTC</div>
+      </div>
+    </div>
+    
+    </div>
   </div>
   
   </section>

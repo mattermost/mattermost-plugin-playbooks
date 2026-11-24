@@ -4,6 +4,10 @@
     "translation": "Unable to execute command."
   },
   {
+    "id": "app.report.checklist.assigned_to",
+    "translation": "Assigned to {{.User}}"
+  },
+  {
     "id": "app.report.checklist.checked_off",
     "translation": "Checked off on {{.Date}}"
   },

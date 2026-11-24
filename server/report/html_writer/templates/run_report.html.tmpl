@@ -101,20 +101,22 @@ code, pre { font-family: var(--font-mono); }
   <section class="section">
   <h2>{{.Tasks.Title}}</h2>
   {{- range $c, $cl := .Tasks.Checklists}}
-  <h3>{{.Title}} ({{.Progress}})</h3>
   <div class="checklist">
+    <h3 class="checklist__header">{{.Title}} <span>{{.Progress}}</span></h3>
+    <div class="checklist__body">
     {{- range $i, $it := .Items}}
     <div class="task{{if .Skipped}} task--skipped{{end}}">
-      <input type="checkbox" {{if .Done}}checked{{end}} disabled aria-labelledby="task-{{$c}}-{{$i}}">
+      <span class="task__check{{if .Done}} task__check--done{{end}}" role="checkbox" aria-checked="{{.Done}}" aria-disabled="true" aria-labelledby="task-{{$c}}-{{$i}}">{{if .Done}}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{{end}}</span>
       <div class="task__body">
         <div class="task__title" id="task-{{$c}}-{{$i}}">{{markdownInline .Title}}</div>
+        {{if .Description}}<div class="task__desc">{{markdown .Description}}</div>{{end}}
         {{if or .Assignee .Due .Command}}<div class="task__meta">{{.Assignee}}{{if .Due}} · {{.Due}}{{end}}{{if .Command}} · <code class="task__meta-cmd">{{.Command}}</code>{{end}}</div>{{end}}
         {{if .Completed}}<div class="task__meta">{{.Completed}}</div>{{end}}
-        {{if .Description}}<div class="task__desc">{{markdown .Description}}</div>{{end}}
       </div>
     </div>
     {{else}}<p class="muted">{{.Empty}}</p>
     {{- end}}
+    </div>
   </div>
   {{else}}<p class="muted">{{.Tasks.Empty}}</p>{{end}}
   </section>
