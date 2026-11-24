@@ -1219,6 +1219,7 @@ describe('RunPlaybookModal — no template (free-text mode)', () => {
         it.each([
             ['a 67-char name built from a prefix, ticket key and title', 'Technical Escalation: [INC-1234] Database connection pool exhausted'],
             ['a name of exactly 100 chars', 'a'.repeat(100)],
+            ['a name of exactly 100 code points outside the BMP', '😀'.repeat(100)],
         ])('accepts %s', (_, name) => {
             const component = renderModal();
             typeRunName(component, name);
