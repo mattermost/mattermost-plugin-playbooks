@@ -40,8 +40,8 @@ type document struct {
 // RenderRunHTML renders r to a complete self-contained HTML document.
 //
 // The output embeds a strict Content-Security-Policy that forbids all
-// scripts and disallows network fetches; styles are limited to the
-// document's own <style> tags. The client downloads the document or
+// scripts and disallows network fetches; styles, images and fonts are
+// limited to what the document embeds. The client downloads the document or
 // browser-prints it to PDF.
 func RenderRunHTML(r *report.RunReport, opts Options) ([]byte, error) {
 	return execute(runTemplate, newDocument(r, opts))

@@ -98,18 +98,19 @@ func writeBody(b *bytes.Buffer, body string) {
 	if body == "" {
 		return
 	}
-	b.WriteString(closeFences(body))
+	b.WriteString(closeFences(body, 0))
 	b.WriteString("\n\n")
 }
 
 // closeFences closes a fenced code block that body leaves open. Mattermost
 // ends it with the message, but in the report it would run on into
-// everything that follows.
-func closeFences(body string) string {
+// everything that follows. indent is how many spaces the report puts in
+// front of each line, which count towards the three a fence may have.
+func closeFences(body string, indent int) string {
 	var fence string
 	for ln := range strings.SplitSeq(body, "\n") {
 		trimmed := strings.TrimLeft(ln, " ")
-		if len(ln)-len(trimmed) > 3 {
+		if indent+len(ln)-len(trimmed) > 3 {
 			continue
 		}
 		if fence == "" {
@@ -232,7 +233,8 @@ func writeQuotedPost(b *bytes.Buffer, header string, body string, bodyPrefix str
 	if body == "" {
 		return
 	}
-	for ln := range strings.SplitSeq(closeFences(body), "\n") {
+	// bodyPrefix is a quote marker and the space after it, then the indent.
+	for ln := range strings.SplitSeq(closeFences(body, len(bodyPrefix)-len("> ")), "\n") {
 		b.WriteString(bodyPrefix)
 		b.WriteString(ln)
 		b.WriteString("\n")

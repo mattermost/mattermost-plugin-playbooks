@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+        content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
   <title>Login failures</title>
   <style>
 :root {
@@ -104,7 +104,7 @@ th { background: #f8f9fb; font-weight: 600; }
 .timeline-event--tasks     .timeline-event__label { background: rgba(31, 107, 53, 0.10); color: #1f6b35; }
 .timeline-event--status    .timeline-event__label { background: rgba(22, 106, 171, 0.10); color: #166aab; }
 .timeline-event--people    .timeline-event__label { background: rgba(120, 67, 152, 0.10); color: #784398; }
-.timeline-event--retrospective .timeline-event__label { background: rgba(204, 142, 53, 0.10); color: #cc8e35; }
+.timeline-event--retrospective .timeline-event__label { background: rgba(204, 142, 53, 0.10); color: #90601c; }
 .timeline-event--command   .timeline-event__label { background: rgba(63, 67, 80, 0.10); color: #3f4350; }
 
  
@@ -235,9 +235,9 @@ th { background: #f8f9fb; font-weight: 600; }
   <h3>Triage (1/2 · 50%)</h3>
   <div class="checklist">
     <div class="task">
-      <input type="checkbox"  disabled>
+      <input type="checkbox"  disabled aria-labelledby="task-0-0">
       <div class="task__body">
-        <div class="task__title">Check IdP</div>
+        <div class="task__title" id="task-0-0">Check IdP</div>
         <div class="task__meta">Dana Display</div>
         
         
@@ -245,9 +245,9 @@ th { background: #f8f9fb; font-weight: 600; }
     </div>
     
     <div class="task task--skipped">
-      <input type="checkbox"  disabled>
+      <input type="checkbox"  disabled aria-labelledby="task-0-1">
       <div class="task__body">
-        <div class="task__title">Check certificates</div>
+        <div class="task__title" id="task-0-1">Check certificates</div>
         <div class="task__meta">Unknown user</div>
         <div class="task__meta">Skipped by Unknown user on November 14, 2023, 10:19 PM UTC</div>
         

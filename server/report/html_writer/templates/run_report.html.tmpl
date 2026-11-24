@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+        content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
   <title>{{.Report.Title}}</title>
   <style>{{.FontCSS}}</style>
   {{template "_styles" .}}
@@ -62,7 +62,7 @@
   <div class="timeline-event timeline-event--{{.Category}}">
     <span class="timeline-event__label">{{.TypeLabel}}</span>
     <div class="timeline-event__body">
-      <div class="timeline-event__headline">{{markdownInline .Headline}}</div>
+      <div class="timeline-event__headline">{{if .PlainHeadline}}{{.Headline}}{{else}}{{markdownInline .Headline}}{{end}}</div>
       {{if .Detail}}<div class="timeline-event__detail">{{markdownInline .Detail}}</div>{{end}}
       <div class="timeline-event__date">{{.Date}}</div>
     </div>
@@ -88,14 +88,14 @@
   {{- if not .Tasks.Omitted}}
   <section class="section">
   <h2>{{.Tasks.Title}}</h2>
-  {{- range .Tasks.Checklists}}
+  {{- range $c, $cl := .Tasks.Checklists}}
   <h3>{{.Title}} ({{.Progress}})</h3>
   <div class="checklist">
-    {{- range .Items}}
+    {{- range $i, $it := .Items}}
     <div class="task{{if .Skipped}} task--skipped{{end}}">
-      <input type="checkbox" {{if .Done}}checked{{end}} disabled>
+      <input type="checkbox" {{if .Done}}checked{{end}} disabled aria-labelledby="task-{{$c}}-{{$i}}">
       <div class="task__body">
-        <div class="task__title">{{markdownInline .Title}}</div>
+        <div class="task__title" id="task-{{$c}}-{{$i}}">{{markdownInline .Title}}</div>
         {{if or .Assignee .Due .Command}}<div class="task__meta">{{.Assignee}}{{if .Due}} · {{.Due}}{{end}}{{if .Command}} · <code class="task__meta-cmd">{{.Command}}</code>{{end}}</div>{{end}}
         {{if .Completed}}<div class="task__meta">{{.Completed}}</div>{{end}}
         {{if .Description}}<div class="task__desc">{{markdown .Description}}</div>{{end}}

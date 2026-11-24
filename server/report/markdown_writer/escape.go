@@ -4,6 +4,7 @@
 package markdown_writer //nolint:staticcheck
 
 import (
+	"bytes"
 	"regexp"
 	"slices"
 	"strings"
@@ -106,7 +107,13 @@ func inertMentions(md []byte) []byte {
 	for _, r := range ranges {
 		for _, m := range verbatimRe.FindAllIndex(md[r.Start:r.Stop], -1) {
 			if slices.Contains(md[r.Start+m[0]:r.Start+m[1]], '@') {
-				wraps = append(wraps, replacement{r.Start + m[0], r.Start + m[1]})
+				start := r.Start + m[0]
+				// A backslash escaping the "@" would escape the opening backtick
+				// instead, so it goes inside the code span.
+				if backslashes := start - len(bytes.TrimRight(md[:start], `\`)); backslashes%2 == 1 {
+					start--
+				}
+				wraps = append(wraps, replacement{start, r.Start + m[1]})
 			}
 		}
 	}

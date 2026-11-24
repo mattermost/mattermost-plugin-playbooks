@@ -48,7 +48,11 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 			writeEmpty(&b, r.Timeline.Empty)
 		} else {
 			for _, ev := range r.Timeline.Events {
-				fmt.Fprintf(&b, "- **%s** · _%s_ — %s\n", escapeText(ev.Date), escapeText(ev.TypeLabel), ev.Headline)
+				headline := ev.Headline
+				if ev.PlainHeadline {
+					headline = escapeText(headline)
+				}
+				fmt.Fprintf(&b, "- **%s** · _%s_ — %s\n", escapeText(ev.Date), escapeText(ev.TypeLabel), headline)
 				if ev.Detail != "" {
 					for ln := range strings.SplitSeq(ev.Detail, "\n") {
 						b.WriteString("  ")

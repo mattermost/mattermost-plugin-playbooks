@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
@@ -43,6 +44,17 @@ func TestRenderRunMarkdown_PlainTextEscapedBodiesVerbatim(t *testing.T) {
 	require.Contains(t, got, "# \\# Not a heading\n")
 	require.Contains(t, got, "## Executive summary\n\n# A heading\n")
 	require.Contains(t, got, "### \\*not emphasis\\* (2/4 · 50%)\n")
+}
+
+func TestRenderRunMarkdown_PlainHeadlineEscaped(t *testing.T) {
+	rc := reporttest.TypicalRun()
+	rc.Resolvers.Users["u1"] = report.RenderUser{UserID: "u1", DisplayName: "[Mallory](https://example.com)"}
+	opts := reporttest.Options("en", time.UTC)
+	opts.NameFormat = model.ShowFullName
+
+	got := string(RenderRunMarkdown(report.BuildRun(rc, opts)))
+
+	require.Contains(t, got, `\[Mallory\](https://example.com) created this run`)
 }
 
 func TestRenderRunMarkdown_SystemMessagesFilteredFromTranscript(t *testing.T) {

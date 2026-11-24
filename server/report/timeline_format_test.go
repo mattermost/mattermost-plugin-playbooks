@@ -380,3 +380,19 @@ func TestParseTaskStateDetails_Robustness(t *testing.T) {
 	require.Equal(t, "only-item", d4.Item)
 	require.Equal(t, "", d4.Action)
 }
+
+func TestTimelineEvent_HeadlineKind(t *testing.T) {
+	rt := ResolverTable{Users: map[string]RenderUser{"u1": {UserID: "u1", DisplayName: "[Mallory](https://example.com)"}}}
+	opts := testOptions()
+	opts.NameFormat = model.ShowFullName
+
+	// A headline written around a user's name is plain text.
+	f := newBuilder(rt, opts).timelineEvent(RenderTimelineEvent{EventType: "participants_changed", SubjectID: "u1"})
+	require.True(t, f.PlainHeadline)
+	require.Contains(t, f.Headline, "[Mallory](https://example.com)")
+
+	// A stored summary stays Markdown.
+	f = newBuilder(rt, opts).timelineEvent(RenderTimelineEvent{EventType: "owner_changed", Summary: "@a to **@b**"})
+	require.False(t, f.PlainHeadline)
+	require.Equal(t, "@a to **@b**", f.Headline)
+}

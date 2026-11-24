@@ -107,8 +107,10 @@ type TimelineEvent struct {
 	Date      string
 	Category  TimelineEventCategory
 	TypeLabel string
-	// Headline is Markdown and never empty.
-	Headline string
+	// Headline is never empty. A stored summary is Markdown; a headline the
+	// report wrote around a user's name is plain text, with PlainHeadline set.
+	Headline      string
+	PlainHeadline bool
 	// Detail is Markdown; it may be empty.
 	Detail string
 }

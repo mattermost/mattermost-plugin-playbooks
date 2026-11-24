@@ -30,6 +30,8 @@ func TestInertMentions(t *testing.T) {
 		{"inline html", "<b>@all</b>\n", "<b>`@all`</b>\n"},
 		{"list and heading", "## @alice — x\n\n- [ ] task for @bob\n", "## `@alice` — x\n\n- [ ] task for `@bob`\n"},
 		{"no mentions", "# Title\n\nbody\n", "# Title\n\nbody\n"},
+		{"escaped mention", "ping \\@here now\n", "ping `\\@here` now\n"},
+		{"escaped backslash before mention", "ping \\\\@here now\n", "ping \\\\`@here` now\n"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -61,21 +63,24 @@ func TestEscapeText(t *testing.T) {
 func TestCloseFences(t *testing.T) {
 	cases := []struct {
 		name, in, want string
+		indent         int
 	}{
-		{"no fence", "hello", "hello"},
-		{"closed fence", "```\ncode\n```", "```\ncode\n```"},
-		{"open backtick fence", "```go\ncode", "```go\ncode\n```"},
-		{"open tilde fence", "~~~~\ncode\n~~~", "~~~~\ncode\n~~~\n~~~~"},
-		{"longer closing fence", "```\ncode\n`````", "```\ncode\n`````"},
-		{"other fence char does not close", "```\n~~~", "```\n~~~\n```"},
-		{"closing fence with info string does not close", "```\n``` go", "```\n``` go\n```"},
-		{"inline code is not a fence", "```a` b", "```a` b"},
-		{"indented code is not a fence", "    ```", "    ```"},
-		{"two fences", "```\na\n```\n~~~\nb", "```\na\n```\n~~~\nb\n~~~"},
+		{"no fence", "hello", "hello", 0},
+		{"closed fence", "```\ncode\n```", "```\ncode\n```", 0},
+		{"open backtick fence", "```go\ncode", "```go\ncode\n```", 0},
+		{"open tilde fence", "~~~~\ncode\n~~~", "~~~~\ncode\n~~~\n~~~~", 0},
+		{"longer closing fence", "```\ncode\n`````", "```\ncode\n`````", 0},
+		{"other fence char does not close", "```\n~~~", "```\n~~~\n```", 0},
+		{"closing fence with info string does not close", "```\n``` go", "```\n``` go\n```", 0},
+		{"inline code is not a fence", "```a` b", "```a` b", 0},
+		{"indented code is not a fence", "    ```", "    ```", 0},
+		{"two fences", "```\na\n```\n~~~\nb", "```\na\n```\n~~~\nb\n~~~", 0},
+		{"indented as a reply", "  ```\ncode", "  ```\ncode", 2},
+		{"unindented fence in a reply", "```\ncode", "```\ncode\n```", 2},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, closeFences(tc.in))
+			assert.Equal(t, tc.want, closeFences(tc.in, tc.indent))
 		})
 	}
 }

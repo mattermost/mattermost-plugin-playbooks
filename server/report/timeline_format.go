@@ -102,7 +102,7 @@ func (b *builder) timelineEvent(ev RenderTimelineEvent) TimelineEvent {
 		fallback = T("app.report.timeline.task_state_modified.headline", args)
 		if td := parseTaskStateDetails(details); td.Item != "" || td.Action != "" {
 			args["Item"] = td.Item
-			f.Headline = b.taskHeadline(td, args)
+			f.Headline, f.PlainHeadline = b.taskHeadline(td, args), true
 			f.Detail = ""
 		}
 	case "status_updated":
@@ -170,10 +170,10 @@ func (b *builder) timelineEvent(ev RenderTimelineEvent) TimelineEvent {
 	}
 
 	if f.Headline == "" {
-		f.Headline = fallback
+		f.Headline, f.PlainHeadline = fallback, true
 	}
 	if strings.TrimSpace(f.Headline) == "" {
-		f.Headline = T("app.report.timeline.event.headline")
+		f.Headline, f.PlainHeadline = T("app.report.timeline.event.headline"), true
 	}
 	return f
 }
