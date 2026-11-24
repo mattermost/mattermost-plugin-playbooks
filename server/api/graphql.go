@@ -103,6 +103,7 @@ func NewGraphQLHandler(
 	opts := []graphql.SchemaOpt{
 		graphql.UseFieldResolvers(),
 		graphql.MaxParallelism(5),
+		graphql.MaxQueryLength(maxGraphQLQueryLength),
 	}
 
 	if !configService.IsConfiguredForDevelopmentAndTesting() {
@@ -169,6 +170,19 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 			c.logger.Warn("Invalid blank operation name")
 			return
 		}
+	}
+
+	if err := checkGraphQLQueryLimits(params.Query); err != nil {
+		c.logger.WithError(err).WithField("operation", params.OperationName).Warn("Rejected graphql query over limits")
+		response := &graphql.Response{Errors: []*graphql_errors.QueryError{{
+			Message:   err.Error(),
+			Locations: []graphql_errors.Location{{Line: 0, Column: 0}},
+			Rule:      "QueryLimits",
+		}}}
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			c.logger.WithError(err).Warn("Error while writing error response")
+		}
+		return
 	}
 
 	// dataloaders
