@@ -113,6 +113,20 @@ describe('ExportOptionsModal', () => {
         expect(select.props.options).toContainEqual({value: 'America/New_York', label: 'America/New York'});
     });
 
+    it('shows a clock next to the picked time zone but not in the list', () => {
+        const {tree} = render({surface: 'run'});
+        const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
+        const option = {value: 'Asia/Karachi', label: 'Asia/Karachi'};
+        expect(select.props.formatOptionLabel(option, {context: 'menu'})).toBe('Asia/Karachi');
+
+        let value!: renderer.ReactTestRenderer;
+        act(() => {
+            value = renderer.create(select.props.formatOptionLabel(option, {context: 'value'}));
+        });
+        expect(value.root.findAllByType('svg')).toHaveLength(1);
+        expect(JSON.stringify(value.toJSON())).toContain('Asia/Karachi');
+    });
+
     it('has no time zone field on playbook surface', () => {
         const {tree} = render({surface: 'playbook'});
         expect(tree.root.findAllByProps({'data-testid': 'time-zone-field'})).toHaveLength(0);

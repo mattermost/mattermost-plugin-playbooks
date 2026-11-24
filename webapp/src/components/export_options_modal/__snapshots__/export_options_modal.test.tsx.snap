@@ -358,7 +358,24 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
               className="playbooks-rselect__single-value css-1uccc91-singleValue"
               ref={null}
             >
-              Europe/Berlin (your time zone)
+              <span
+                className="TimeZoneValue-kcLlmf fSYlvd"
+                ref={null}
+              >
+                <svg
+                  fill="currentColor"
+                  height={18}
+                  version="1.1"
+                  viewBox="0 0 24 24"
+                  width={18}
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12,20c4.4,0,8-3.6,8-8s-3.6-8-8-8s-8,3.6-8,8S7.6,20,12,20 M12,2c5.5,0,10,4.5,10,10s-4.5,10-10,10S2,17.5,2,12S6.5,2,12,2 M15.535,16.949L11,12.414V7h2v4.586l3.949,3.949L15.535,16.949z"
+                  />
+                </svg>
+                Europe/Berlin (your time zone)
+              </span>
             </div>
             <div
               className="css-b8ldur-Input"
@@ -379,7 +396,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
                   autoComplete="off"
                   autoCorrect="off"
                   disabled={false}
-                  id="react-select-15-input"
+                  id="react-select-16-input"
                   onBlur={[Function]}
                   onChange={[Function]}
                   onFocus={[Function]}

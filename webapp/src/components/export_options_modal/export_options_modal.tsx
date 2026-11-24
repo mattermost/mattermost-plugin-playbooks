@@ -7,6 +7,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getUserCurrentTimezone} from 'mattermost-redux/utils/timezone_utils';
+import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import type {ReportFormat, RunReportOptions} from 'src/client';
 import GenericModal from 'src/components/widgets/generic_modal';
@@ -236,6 +237,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                             options={timeZoneOptions}
                             value={timeZoneOptions.find((o) => o.value === timeZone)}
                             onChange={(option: TimeZoneOption | null) => setTimeZone(option?.value ?? '')}
+                            formatOptionLabel={formatTimeZoneOption}
                             menuPlacement='auto'
                             menuPortalTarget={document.body}
                             styles={{menuPortal: (base: object) => ({...base, zIndex: 10000})}}
@@ -253,6 +255,19 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
 };
 
 export default ExportOptionsModal;
+
+// formatTimeZoneOption puts a clock in front of the picked time zone, but not in the list.
+const formatTimeZoneOption = (option: TimeZoneOption, {context}: {context: 'menu' | 'value'}) => {
+    if (context === 'menu') {
+        return option.label;
+    }
+    return (
+        <TimeZoneValue>
+            <ClockOutlineIcon size={18}/>
+            {option.label}
+        </TimeZoneValue>
+    );
+};
 
 // timeZoneLabel shows an IANA time zone name, such as America/New_York, as
 // "America/New York".
@@ -301,6 +316,17 @@ const TimeZoneField = styled.div`
     gap: 8px;
     padding-top: 16px;
     border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+`;
+
+const TimeZoneValue = styled.span`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    svg {
+        flex-shrink: 0;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+    }
 `;
 
 const TimeZoneLabel = styled.span`
