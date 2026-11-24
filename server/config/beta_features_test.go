@@ -48,8 +48,9 @@ func TestSerializeIncludesBetaFeatures(t *testing.T) {
 	}
 	serialized := cfg.serialize()
 
-	raw, ok := serialized["BetaFeatures"]
-	require.True(t, ok, "serialize() must include BetaFeatures key matching plugin.json")
+	raw, ok := serialized["betafeatures"]
+	require.True(t, ok, "serialize() must include the betafeatures key the System Console saves")
+	assert.NotContains(t, serialized, "BetaFeatures")
 
 	beta, ok := raw.(map[string]any)
 	require.True(t, ok, "BetaFeatures must serialize as map[string]any for plugin RPC/gob")

@@ -29,7 +29,8 @@ describe('playbooks > report export', {testIsolation: true}, () => {
             PluginSettings: {
                 Plugins: {
                     playbooks: {
-                        BetaFeatures: {
+                        // The key the System Console saves: the lowercased plugin.json key.
+                        betafeatures: {
                             reports: enabled,
                         },
                     },

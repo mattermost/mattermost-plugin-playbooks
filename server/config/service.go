@@ -23,6 +23,7 @@ var legacyConfigKeyAliases = map[string]string{
 	"EnableTeamsTabApp":        "enableTeamsTabApp",
 	"TeamsTabAppTenantIDs":     "teamsTabAppTenantIDs",
 	"EnableIncrementalUpdates": "enableincrementalupdates",
+	"BetaFeatures":             "betafeatures",
 }
 
 // WebsocketPublisher defines interface for publishing websocket events

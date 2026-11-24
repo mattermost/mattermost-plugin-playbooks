@@ -58,18 +58,20 @@ func (c *Configuration) Clone() *Configuration {
 
 func (c *Configuration) serialize() map[string]any {
 	ret := make(map[string]any)
-	// Keys with a plugin.json settings_schema entry MUST match that key exactly,
-	// or the console's copy and this one become duplicate keys. See
-	// reconcileLegacyConfigKeys. BotUserID/TeamsTabAppBotUserID have no schema entry.
+	// Keys with a plugin.json settings_schema entry MUST match the key the
+	// System Console saves, or the console's copy and this one become duplicate
+	// keys. See reconcileLegacyConfigKeys. BotUserID/TeamsTabAppBotUserID have no
+	// schema entry.
 	ret["BotUserID"] = c.BotUserID
 	ret["enableTeamsTabApp"] = c.EnableTeamsTabApp
 	ret["teamsTabAppTenantIDs"] = c.TeamsTabAppTenantIDs
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	ret["enableincrementalupdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
-	// Store as a plain map so SavePluginConfig can gob-encode across plugin RPC
-	// without registering a custom type.
-	ret["BetaFeatures"] = map[string]any{
+	// The console saves the BetaFeatures setting under its lowercased key.
+	// Store it as a plain map so SavePluginConfig can gob-encode it across
+	// plugin RPC without registering a custom type.
+	ret["betafeatures"] = map[string]any{
 		"task_requirements": c.BetaFeatures.TaskRequirements,
 		"reports":           c.BetaFeatures.Reports,
 	}

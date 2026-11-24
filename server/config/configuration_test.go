@@ -15,11 +15,15 @@ import (
 )
 
 // TestSerializeKeysMatchPluginManifest guards against the casing mismatch that
-// caused MM-69465. The System Console persists a setting under its plugin.json
-// settings_schema key, while serialize() writes the plugin's own copy. If the two
-// disagree (even only in case), they become distinct keys that LoadPluginConfiguration
-// collapses non-deterministically. This test fails if serialize() can produce a
-// duplicate, either on its own or relative to the manifest.
+// caused MM-69465. The System Console persists a setting under a key derived from
+// its plugin.json settings_schema key, while serialize() writes the plugin's own
+// copy. If the two disagree (even only in case), they become distinct keys that
+// LoadPluginConfiguration collapses non-deterministically. This test fails if
+// serialize() can produce a duplicate, either on its own or relative to the
+// manifest.
+//
+// The console saves every setting under its lowercased key. serialize() writes
+// BetaFeatures that way; the other settings still use their plugin.json key.
 func TestSerializeKeysMatchPluginManifest(t *testing.T) {
 	serialized := (&Configuration{}).serialize()
 
@@ -33,7 +37,11 @@ func TestSerializeKeysMatchPluginManifest(t *testing.T) {
 		}
 	})
 
-	t.Run("every plugin.json settings_schema key is written verbatim by serialize()", func(t *testing.T) {
+	// lowercased lists the settings serialize() writes under the lowercased key
+	// the console saves, rather than the plugin.json key.
+	lowercased := map[string]bool{"BetaFeatures": true}
+
+	t.Run("every plugin.json settings_schema key is written by serialize()", func(t *testing.T) {
 		data, err := os.ReadFile(filepath.Join("..", "..", "plugin.json"))
 		require.NoError(t, err)
 
@@ -48,11 +56,15 @@ func TestSerializeKeysMatchPluginManifest(t *testing.T) {
 		require.NotEmpty(t, manifest.SettingsSchema.Settings, "plugin.json should declare settings")
 
 		for _, setting := range manifest.SettingsSchema.Settings {
-			_, ok := serialized[setting.Key]
+			key := setting.Key
+			if lowercased[key] {
+				key = strings.ToLower(key)
+			}
+			_, ok := serialized[key]
 			assert.Truef(t, ok,
-				"plugin.json settings_schema key %q is not written verbatim by serialize(); "+
+				"serialize() does not write plugin.json settings_schema key %q as %q; "+
 					"the console writes under that key, so a differently cased serialize() key would create a duplicate",
-				setting.Key)
+				setting.Key, key)
 		}
 	})
 }
