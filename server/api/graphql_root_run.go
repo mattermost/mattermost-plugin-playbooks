@@ -42,11 +42,13 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err = c.permissions.RunView(userID, args.ID); err != nil {
+	// Charged before the permission check, which loads the run too, so lookups that fail it
+	// still count against the request.
+	if err = c.recordBudget.reserve(1); err != nil {
 		return nil, err
 	}
 
-	if err = c.recordBudget.reserve(1); err != nil {
+	if err = c.permissions.RunView(userID, args.ID); err != nil {
 		return nil, err
 	}
 
