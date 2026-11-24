@@ -51,6 +51,7 @@ const Badge = styled.div<BadgeProps>`
     top: 1px;
     height: 24px;
     line-height: 24px;
+    white-space: nowrap;
 
     ${(props) => props.$compact && css`
         height: 20px;
