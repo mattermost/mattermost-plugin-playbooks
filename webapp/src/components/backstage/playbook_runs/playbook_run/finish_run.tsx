@@ -35,7 +35,7 @@ const outstandingTasks = (checklists: ChecklistsSubset[]) => {
             if (item.condition_action === 'hidden') {
                 continue;
             }
-            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
+            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress || item.state === ChecklistItemState.Blocked) {
                 count++;
             }
         }

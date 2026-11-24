@@ -8,6 +8,7 @@ import {useIntl} from 'react-intl';
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
+    ChartLineIcon,
     GlobeIcon,
     ImportIcon,
     PlayBoxMultipleOutlineIcon,
@@ -93,6 +94,20 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
             />
         );
 
+        const timingReport = (
+            <MenuItem
+                id='timingReport'
+                show={true}
+                onClick={() => {
+                    navigateToPluginUrl('/timing-report');
+                }}
+                icon={
+                    <IconWrapper><ChartLineIcon size={18}/></IconWrapper>
+                }
+                text={formatMessage({defaultMessage: 'Timing report'})}
+            />
+        );
+
         return (
             <>
                 <MenuGroup noDivider={true}>
@@ -102,6 +117,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 </MenuGroup>
                 <MenuGroup>
                     {browseRuns}
+                    {timingReport}
                 </MenuGroup>
             </>
         );

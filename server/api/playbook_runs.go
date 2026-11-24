@@ -74,10 +74,12 @@ func NewPlaybookRunHandler(
 	playbookRunsRouter.HandleFunc("/checklist-autocomplete", withContext(handler.getChecklistAutocomplete)).Methods(http.MethodGet)
 	playbookRunsRouter.HandleFunc("/checklist-autocomplete-item", withContext(handler.getChecklistAutocompleteItem)).Methods(http.MethodGet)
 	playbookRunsRouter.HandleFunc("/runs-autocomplete", withContext(handler.getChannelRunsAutocomplete)).Methods(http.MethodGet)
+	playbookRunsRouter.HandleFunc("/timing-report", withContext(handler.getTimingReport)).Methods(http.MethodGet)
 
 	playbookRunRouter := playbookRunsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRunRouter.HandleFunc("", withContext(handler.getPlaybookRun)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", withContext(handler.getPlaybookRunMetadata)).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/timing", withContext(handler.getRunTiming)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/status-updates", withContext(handler.getStatusUpdates)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
@@ -742,6 +744,23 @@ func (h *PlaybookRunHandler) getPlaybookRunMetadata(c *Context, w http.ResponseW
 	}
 
 	ReturnJSON(w, playbookRunMetadata, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) getRunTiming(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+		return
+	}
+
+	timing, err := h.playbookRunService.GetRunTiming(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, timing, http.StatusOK)
 }
 
 // getPlaybookRunByChannel handles the /runs/channel/{channel_id} endpoint.
@@ -1468,6 +1487,8 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 	var params struct {
 		NewState          string            `json:"new_state"`
 		RequirementValues map[string]string `json:"requirement_values"`
+		BlockedReason     string            `json:"blocked_reason"`
+		BlockedByUserIDs  []string          `json:"blocked_by_user_ids"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
@@ -1480,8 +1501,12 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 	}
 
 	var opts []app.ModifyCheckedStateOptions
-	if params.RequirementValues != nil {
-		opts = append(opts, app.ModifyCheckedStateOptions{RequirementValues: params.RequirementValues})
+	if params.RequirementValues != nil || params.BlockedReason != "" || len(params.BlockedByUserIDs) > 0 {
+		opts = append(opts, app.ModifyCheckedStateOptions{
+			RequirementValues: params.RequirementValues,
+			BlockedReason:     params.BlockedReason,
+			BlockedByUserIDs:  params.BlockedByUserIDs,
+		})
 	}
 
 	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, opts...); err != nil {

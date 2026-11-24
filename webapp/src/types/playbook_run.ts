@@ -6,6 +6,7 @@ import {PropertyField, PropertyValue} from 'src/types/properties';
 
 import {TimelineEvent} from 'src/types/rhs';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {TimingMetric} from 'src/types/timing_metrics';
 
 // Re-export for backward compatibility
 export {RunStatus as PlaybookRunStatus};
@@ -49,6 +50,8 @@ export interface PlaybookRun {
     retrospective_enabled: boolean;
     participant_ids: string[];
     metrics_data: RunMetricData[];
+    timing_metrics?: TimingMetric[];
+    exercise?: boolean;
 
     /** Whether a channel member should be created when a new participant joins the run */
     create_channel_member_on_new_participant: boolean;

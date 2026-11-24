@@ -71,6 +71,7 @@ func GetOrderByClause(column, direction string) string {
 type sqlPlaybookRun struct {
 	app.PlaybookRun
 	ChecklistsJSON                        json.RawMessage
+	TimingMetricsJSON                     json.RawMessage
 	ConcatenatedInvitedUserIDs            string
 	ConcatenatedInvitedGroupIDs           string
 	ConcatenatedParticipantIDs            string
@@ -232,7 +233,8 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type",
 			"i.RunNumber", "i.SequentialID",
-			"i.ChannelCreatedByRun", "i.AutoArchivedChannel", "i.AutoArchiveChannel").
+			"i.ChannelCreatedByRun", "i.AutoArchivedChannel", "i.AutoArchiveChannel",
+			"i.TimingMetricsJSON", "i.Exercise").
 		Column(participantsCol).
 		From("IR_Incident AS i")
 
@@ -488,6 +490,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
+	playbookRun.UpdateAt = playbookRun.CreateAt
 
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
@@ -546,6 +549,8 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"ChannelCreatedByRun":                     rawPlaybookRun.ChannelCreatedByRun,
 			"AutoArchivedChannel":                     rawPlaybookRun.AutoArchivedChannel,
 			"AutoArchiveChannel":                      rawPlaybookRun.AutoArchiveChannel,
+			"TimingMetricsJSON":                       rawPlaybookRun.TimingMetricsJSON,
+			"Exercise":                                rawPlaybookRun.Exercise,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -562,6 +567,17 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 
 // UpdatePlaybookRun updates a playbook run.
 func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
+	return s.updatePlaybookRun(playbookRun, nil, false)
+}
+
+// UpdatePlaybookRunWithStateChanges updates a playbook run and appends the checklist item state
+// changes in the same transaction. It fails with app.ErrPlaybookRunChanged when the run was updated
+// after playbookRun was loaded, so the caller can reload the run and apply its change again.
+func (s *playbookRunStore) UpdatePlaybookRunWithStateChanges(playbookRun *app.PlaybookRun, changes []app.ChecklistItemStateChange) (*app.PlaybookRun, error) {
+	return s.updatePlaybookRun(playbookRun, changes, true)
+}
+
+func (s *playbookRunStore) updatePlaybookRun(playbookRun *app.PlaybookRun, changes []app.ChecklistItemStateChange, failIfChanged bool) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
 	}
@@ -569,8 +585,9 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, errors.New("ID should not be empty")
 	}
 
-	// Always ensure UpdateAt is set to current time when updating
-	playbookRun.UpdateAt = model.GetMillis()
+	loadedUpdateAt := playbookRun.UpdateAt
+	// UpdateAt must move forward on every write so a concurrent writer can tell the run changed.
+	playbookRun.UpdateAt = max(model.GetMillis(), loadedUpdateAt+1)
 
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
@@ -584,6 +601,16 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
+
+	if failIfChanged {
+		var storedUpdateAt int64
+		if err = tx.Get(&storedUpdateAt, "SELECT UpdateAt FROM IR_Incident WHERE ID = $1 FOR UPDATE", playbookRun.ID); err != nil {
+			return nil, errors.Wrapf(err, "failed to lock playbook run with id '%s'", playbookRun.ID)
+		}
+		if storedUpdateAt != loadedUpdateAt {
+			return nil, app.ErrPlaybookRunChanged
+		}
+	}
 
 	// When adding a PlaybookRun column #3: add to this SetMap (if it is a column that can be updated)
 	_, err = s.store.execBuilder(tx, sq.
@@ -629,11 +656,95 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
 	}
 
+	if err = s.insertChecklistItemStateChanges(tx, playbookRun.ID, changes); err != nil {
+		return nil, err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
 	return playbookRun, nil
+}
+
+func (s *playbookRunStore) insertChecklistItemStateChanges(tx *sqlx.Tx, playbookRunID string, changes []app.ChecklistItemStateChange) error {
+	if len(changes) == 0 {
+		return nil
+	}
+
+	insert := sq.
+		Insert("IR_ChecklistItemStateChange").
+		Columns("ID", "RunID", "ChecklistID", "ItemID", "FromState", "ToState", "UserID", "ChangedAt", "BlockedReason", "BlockedByUserIDs")
+	for _, change := range changes {
+		if change.RunID != playbookRunID {
+			return errors.Errorf("checklist item state change belongs to run '%s', not '%s'", change.RunID, playbookRunID)
+		}
+		if change.ItemID == "" {
+			return errors.New("checklist item state change needs an item ID")
+		}
+		insert = insert.Values(model.NewId(), change.RunID, change.ChecklistID, change.ItemID, change.FromState, change.ToState, change.UserID, change.ChangedAt, change.BlockedReason, strings.Join(change.BlockedByUserIDs, ","))
+	}
+
+	if _, err := s.store.execBuilder(tx, insert); err != nil {
+		return errors.Wrapf(err, "failed to insert checklist item state changes for run with id '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
+type sqlChecklistItemStateChange struct {
+	app.ChecklistItemStateChange
+	ConcatenatedBlockedByUserIDs string
+}
+
+func (s *playbookRunStore) selectChecklistItemStateChanges(where sq.Sqlizer) ([]app.ChecklistItemStateChange, error) {
+	var rows []sqlChecklistItemStateChange
+	err := s.store.selectBuilder(s.store.db, &rows, sq.
+		Select("ID", "RunID", "ChecklistID", "ItemID", "FromState", "ToState", "UserID", "ChangedAt", "BlockedReason", "BlockedByUserIDs AS ConcatenatedBlockedByUserIDs").
+		From("IR_ChecklistItemStateChange").
+		Where(where).
+		OrderBy("ChangedAt ASC", "ID ASC"))
+	if err != nil {
+		return nil, err
+	}
+
+	changes := make([]app.ChecklistItemStateChange, 0, len(rows))
+	for _, row := range rows {
+		change := row.ChecklistItemStateChange
+		if row.ConcatenatedBlockedByUserIDs != "" {
+			change.BlockedByUserIDs = strings.Split(row.ConcatenatedBlockedByUserIDs, ",")
+		}
+		changes = append(changes, change)
+	}
+	return changes, nil
+}
+
+// GetChecklistItemStateChanges returns every recorded checklist item state change for the run,
+// oldest first.
+func (s *playbookRunStore) GetChecklistItemStateChanges(playbookRunID string) ([]app.ChecklistItemStateChange, error) {
+	changes, err := s.selectChecklistItemStateChanges(sq.Eq{"RunID": playbookRunID})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get checklist item state changes for run with id '%s'", playbookRunID)
+	}
+	return changes, nil
+}
+
+// GetChecklistItemStateChangesForRuns returns the state changes of each of the given runs, oldest
+// first, keyed by run ID.
+func (s *playbookRunStore) GetChecklistItemStateChangesForRuns(playbookRunIDs []string) (map[string][]app.ChecklistItemStateChange, error) {
+	byRun := make(map[string][]app.ChecklistItemStateChange, len(playbookRunIDs))
+	if len(playbookRunIDs) == 0 {
+		return byRun, nil
+	}
+
+	changes, err := s.selectChecklistItemStateChanges(sq.Eq{"RunID": playbookRunIDs})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get checklist item state changes for runs")
+	}
+	for _, change := range changes {
+		byRun[change.RunID] = append(byRun[change.RunID], change)
+	}
+	return byRun, nil
 }
 
 func (s *playbookRunStore) UpdateStatus(statusPost *app.SQLStatusPost) error {
@@ -695,7 +806,7 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 func (s *playbookRunStore) BumpRunUpdatedAt(playbookRunID string) error {
 	if _, err := s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
-		Set("UpdateAt", model.GetMillis()).
+		Set("UpdateAt", nextUpdateAt()).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to bump UpdateAt for playbook run '%s'", playbookRunID)
 	}
@@ -1013,7 +1124,7 @@ func (s *playbookRunStore) ChangeCreationDate(playbookRunID string, creationTime
 	updateQuery := s.queryBuilder.Update("IR_Incident").
 		Where(sq.Eq{"ID": playbookRunID}).
 		Set("CreateAt", model.GetMillisForTime(creationTimestamp)).
-		Set("UpdateAt", model.GetMillis())
+		Set("UpdateAt", nextUpdateAt())
 
 	sqlResult, err := s.store.execBuilder(s.store.db, updateQuery)
 	if err != nil {
@@ -1067,7 +1178,7 @@ func (s *playbookRunStore) SetBroadcastChannelIDsToRootID(playbookRunID string, 
 		sq.Update("IR_Incident").
 			SetMap(map[string]interface{}{
 				"ChannelIDToRootID": data,
-				"UpdateAt":          model.GetMillis(),
+				"UpdateAt":          nextUpdateAt(),
 			}).
 			Where(sq.Eq{"ID": playbookRunID}))
 	if err != nil {
@@ -1211,6 +1322,12 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 	playbookRun := rawPlaybookRun.PlaybookRun
 	if err := json.Unmarshal(rawPlaybookRun.ChecklistsJSON, &playbookRun.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for playbook run id: %s", rawPlaybookRun.ID)
+	}
+
+	if len(rawPlaybookRun.TimingMetricsJSON) > 2 {
+		if err := json.Unmarshal(rawPlaybookRun.TimingMetricsJSON, &playbookRun.TimingMetrics); err != nil {
+			return nil, errors.Wrapf(err, "failed to unmarshal timing metrics json for playbook run id: %s", rawPlaybookRun.ID)
+		}
 	}
 
 	playbookRun.InvitedUserIDs = []string(nil)
@@ -1631,7 +1748,7 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 func (s *playbookRunStore) touchPlaybookRun(playbookRunID string) error {
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
-		Set("UpdateAt", model.GetMillis()).
+		Set("UpdateAt", nextUpdateAt()).
 		Where(sq.Eq{"ID": playbookRunID}))
 
 	return err
@@ -1686,9 +1803,15 @@ func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
 		return nil, errors.Errorf("checklist json for playbook run id '%s' is too long (max %d)", playbookRun.ID, maxJSONLength)
 	}
 
+	timingMetricsJSON, err := timingMetricsToJSON(playbookRun.TimingMetrics)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal timing metrics for playbook run id '%s'", playbookRun.ID)
+	}
+
 	return &sqlPlaybookRun{
 		PlaybookRun:                           playbookRun,
 		ChecklistsJSON:                        checklistsJSON,
+		TimingMetricsJSON:                     timingMetricsJSON,
 		ConcatenatedInvitedUserIDs:            strings.Join(playbookRun.InvitedUserIDs, ","),
 		ConcatenatedInvitedGroupIDs:           strings.Join(playbookRun.InvitedGroupIDs, ","),
 		ConcatenatedBroadcastChannelIDs:       strings.Join(playbookRun.BroadcastChannelIDs, ","),
@@ -1818,4 +1941,10 @@ func queryStarted(query sq.SelectBuilder, start int64, end int64) sq.SelectBuild
 			sq.GtOrEq{"i.CreateAt": start},
 			sq.Lt{"i.CreateAt": end},
 		})
+}
+
+// nextUpdateAt moves a run's UpdateAt forward even within the same millisecond, so writers that
+// compare it against a loaded run always see that the run changed.
+func nextUpdateAt() sq.Sqlizer {
+	return sq.Expr("GREATEST(UpdateAt + 1, ?)", model.GetMillis())
 }

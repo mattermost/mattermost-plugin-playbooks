@@ -3,6 +3,7 @@
 
 import {MetricType} from 'src/graphql/generated/graphql';
 import {PropertyField} from 'src/types/properties';
+import {PlaybookType, TimingMetric} from 'src/types/timing_metrics';
 
 export {MetricType};
 
@@ -73,6 +74,9 @@ export interface PlaybookWithChecklist extends Playbook {
     new_channel_only: boolean;
     auto_archive_channel: boolean;
 
+    playbook_type?: PlaybookType;
+    timing_metrics?: TimingMetric[];
+
     run_number_prefix: string;
     next_run_number: number;
     owner_group_only_actions: boolean;
@@ -123,6 +127,7 @@ export enum ChecklistItemState {
     InProgress = 'in_progress',
     Closed = 'closed',
     Skip = 'skipped',
+    Blocked = 'blocked',
 }
 
 export const AssigneeTypeOwner = 'owner';
@@ -138,6 +143,8 @@ export interface ChecklistItem {
     description: string;
     state: ChecklistItemState | string;
     state_modified: number;
+    blocked_reason?: string;
+    blocked_by_user_ids?: string[];
     assignee_id: string;
     assignee_type: string;
     assignee_modified: number;

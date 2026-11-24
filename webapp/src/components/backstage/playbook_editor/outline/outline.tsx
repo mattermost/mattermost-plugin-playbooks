@@ -21,12 +21,14 @@ import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookWithChecklist} from 'src/types/playbook';
+import {Checklist, PlaybookWithChecklist} from 'src/types/playbook';
+import {PlaybookType, TimingMetric} from 'src/types/timing_metrics';
 import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
 
 import StatusUpdates from './section_status_updates';
 import SectionAdminSettings from './section_admin_settings';
 import Retrospective from './section_retrospective';
+import SectionTiming from './section_timing';
 import Actions from './section_actions';
 import ScrollNavBase from './scroll_nav';
 import Section from './section';
@@ -64,6 +66,9 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
     const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
     const savingNewChannelOnly = useRef(false);
     const effectiveNewChannelOnly = newChannelOnlyOverride ?? restPlaybook?.new_channel_only ?? false;
+    const [timingOverride, setTimingOverride] = useState<{playbookType: PlaybookType, timingMetrics: TimingMetric[]} | undefined>(undefined);
+    const playbookType = timingOverride?.playbookType ?? restPlaybook?.playbook_type ?? PlaybookType.Operational;
+    const timingMetrics = timingOverride?.timingMetrics ?? restPlaybook?.timing_metrics ?? [];
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -85,8 +90,13 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         }
         setNewChannelOnlyOverride(new_channel_only);
         savingNewChannelOnly.current = true;
-        const updated = {...restPlaybook, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : restPlaybook.channel_mode};
-        savePlaybook(updated)
+        clientFetchPlaybook(restPlaybook.id)
+            .then((latest) => {
+                if (!latest) {
+                    throw new Error('Unable to fetch latest playbook before save');
+                }
+                return savePlaybook({...latest, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : latest.channel_mode});
+            })
             .then(() => {
                 refetch();
             })
@@ -268,6 +278,21 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                     onExitBulkEdit={() => setBulkEditMode(false)}
                 />
             </Section>
+            {restPlaybook && (
+                <Section
+                    id={'timing'}
+                    title={formatMessage({defaultMessage: 'Timing'})}
+                >
+                    <SectionTiming
+                        playbookId={playbook.id}
+                        checklists={playbook.checklists as Checklist[]}
+                        playbookType={playbookType}
+                        timingMetrics={timingMetrics}
+                        canEdit={canEdit && !archived}
+                        onSaved={(nextType, nextMetrics) => setTimingOverride({playbookType: nextType, timingMetrics: nextMetrics})}
+                    />
+                </Section>
+            )}
             <Section
                 id={'retrospective'}
                 title={formatMessage({defaultMessage: 'Retrospective'})}

@@ -91,6 +91,12 @@ type Playbook struct {
 
 	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
 
+	// PlaybookType is PlaybookTypeOperational or PlaybookTypeExercise. Exercise runs are left
+	// out of timing reports by default.
+	PlaybookType string `json:"playbook_type" export:"playbook_type"`
+
+	TimingMetrics []TimingMetric `json:"timing_metrics" export:"timing_metrics"`
+
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
@@ -150,6 +156,7 @@ func (p Playbook) Clone() Playbook {
 	}
 	newPlaybook.Checklists = newChecklists
 	newPlaybook.Metrics = append([]PlaybookMetricConfig(nil), p.Metrics...)
+	newPlaybook.TimingMetrics = append([]TimingMetric(nil), p.TimingMetrics...)
 	var newMembers []PlaybookMember
 	for _, m := range p.Members {
 		newMembers = append(newMembers, m.Clone())
@@ -303,8 +310,9 @@ type ChecklistItemCommon interface {
 
 // ChecklistItem represents an item in a checklist.
 type ChecklistItem struct {
-	// ID is the identifier of the checklist item.
-	ID string `json:"id" export:"-"`
+	// ID is the identifier of the checklist item. Runs keep the playbook's item IDs, which is
+	// what binds timing metrics to tasks.
+	ID string `json:"id" export:"id"`
 
 	// Title is the content of the checklist item.
 	Title string `json:"title" export:"title"`
@@ -316,6 +324,12 @@ type ChecklistItem struct {
 	// StateModified is the timestamp, in milliseconds since epoch, of the last time the item's
 	// state was modified. 0 if it was never modified.
 	StateModified int64 `json:"state_modified" export:"-"`
+
+	// BlockedReason explains why the item is blocked. Only set while State is "blocked".
+	BlockedReason string `json:"blocked_reason,omitempty" export:"-"`
+
+	// BlockedByUserIDs are the users the item is waiting on. Only set while State is "blocked".
+	BlockedByUserIDs []string `json:"blocked_by_user_ids,omitempty" export:"-"`
 
 	// AssigneeID is the identifier of the user to whom this item is assigned.
 	AssigneeID string `json:"assignee_id" export:"-"`
@@ -652,7 +666,11 @@ const (
 	ChecklistItemStateInProgress = "in_progress"
 	ChecklistItemStateClosed     = "closed"
 	ChecklistItemStateSkipped    = "skipped"
+	ChecklistItemStateBlocked    = "blocked"
 )
+
+// MaxBlockedReasonLength bounds the reason given when blocking a checklist item.
+const MaxBlockedReasonLength = 500
 
 const (
 	// MaxRunNumberPrefixLength is the maximum length for a RunNumberPrefix.
@@ -718,7 +736,8 @@ func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
 		state == ChecklistItemStateInProgress ||
 		state == ChecklistItemStateOpen ||
-		state == ChecklistItemStateSkipped
+		state == ChecklistItemStateSkipped ||
+		state == ChecklistItemStateBlocked
 }
 
 func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {

@@ -9,6 +9,11 @@ import {emptyChecklistItem} from 'src/types/playbook';
 import HoverMenuDefault from './hover_menu';
 import {ChecklistItem} from './checklist_item';
 
+jest.mock('./task_timing', () => ({
+    __esModule: true,
+    default: () => null,
+}));
+
 jest.mock('./hover_menu', () => ({
     __esModule: true,
     default: jest.fn(() => null),

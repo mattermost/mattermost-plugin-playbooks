@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import styled, {css} from 'styled-components';
@@ -30,6 +30,7 @@ import {
 } from 'src/types/playbook';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {currentChecklistAllCollapsed, currentChecklistCollapsedState, currentChecklistItemsFilter} from 'src/selectors';
+import {RunTimingContext, indexRunTiming} from 'src/components/checklist_item/run_timing_context';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
@@ -38,7 +39,7 @@ import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
-import {useParticipateInRun} from 'src/hooks';
+import {useParticipateInRun, useRunTiming} from 'src/hooks';
 import {useOnRestoreRun} from 'src/components/backstage/playbook_runs/playbook_run/restore_run';
 import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
 
@@ -199,6 +200,10 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
 
     const handleResume = useOnRestoreRun(playbookRun, 'rhs');
 
+    const showTiming = playbookRun.type !== PlaybookRunType.ChannelChecklist;
+    const [runTiming] = useRunTiming(showTiming ? playbookRun.id : undefined, [playbookRun.checklists, playbookRun.end_at]);
+    const runTimingContext = useMemo(() => (runTiming ? indexRunTiming(runTiming, finished) : null), [runTiming, finished]);
+
     const checklistsPunchout = useMeasurePunchouts(
         ['pb-checklists-inner-container'],
         [],
@@ -255,18 +260,20 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                     </MainTitle>
                 </MainTitleBG>
             )}
-            <ChecklistList
-                playbookRun={playbookRun}
-                isReadOnly={readOnly}
-                checklistsCollapseState={checklistsState}
-                onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
-                onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
-                showItem={showItem}
-                itemButtonsFormat={itemButtonsFormat()}
-                onReadOnlyInteract={onReadOnlyInteract}
-                autoAddTask={autoAddTask}
-                onTaskAdded={onTaskAdded}
-            />
+            <RunTimingContext.Provider value={runTimingContext}>
+                <ChecklistList
+                    playbookRun={playbookRun}
+                    isReadOnly={readOnly}
+                    checklistsCollapseState={checklistsState}
+                    onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
+                    onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
+                    showItem={showItem}
+                    itemButtonsFormat={itemButtonsFormat()}
+                    onReadOnlyInteract={onReadOnlyInteract}
+                    autoAddTask={autoAddTask}
+                    onTaskAdded={onTaskAdded}
+                />
+            </RunTimingContext.Provider>
             <RHSFooter
                 playbookRun={playbookRun}
                 parentContainer={parentContainer}
@@ -376,7 +383,7 @@ const overdueTasks = (checklists: Checklist[]) => {
     const now = DateTime.now();
     for (const list of checklists) {
         for (const item of list.items) {
-            if ((item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) &&
+            if ((item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress || item.state === ChecklistItemState.Blocked) &&
                 item.due_date > 0 && DateTime.fromMillis(item.due_date) <= now) {
                 count++;
             }

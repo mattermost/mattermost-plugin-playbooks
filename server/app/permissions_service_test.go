@@ -655,6 +655,13 @@ func (s *stubRunService) SetRunPropertyValue(string, string, string, json.RawMes
 func (s *stubRunService) GetPlaybookRunMetadata(string, bool) (*Metadata, error) {
 	panic("stubRunService: GetPlaybookRunMetadata not implemented")
 }
+func (s *stubRunService) GetRunTiming(string) (*RunTiming, error) {
+	panic("stubRunService: GetRunTiming not implemented")
+}
+
+func (s *stubRunService) GetTimingReport(RequesterInfo, TimingReportOptions) (*TimingReport, error) {
+	panic("stubRunService: GetTimingReport not implemented")
+}
 func (s *stubRunService) GetPlaybookRunsForChannelByUser(string, string) ([]PlaybookRun, error) {
 	panic("stubRunService: GetPlaybookRunsForChannelByUser not implemented")
 }

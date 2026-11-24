@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -24,6 +25,7 @@ const pgUniqueViolation = "23505"
 type sqlPlaybook struct {
 	app.Playbook
 	ChecklistsJSON                        json.RawMessage
+	TimingMetricsJSON                     json.RawMessage
 	ConcatenatedInvitedUserIDs            string
 	ConcatenatedInvitedGroupIDs           string
 	ConcatenatedSignalAnyKeywords         string
@@ -173,6 +175,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.NewChannelOnly",
 			"p.AutoArchiveChannel",
 			"p.ChecklistsJSON",
+			"p.PlaybookType",
+			"p.TimingMetricsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
 			"p.RunSummaryTemplateEnabled",
 			"COALESCE(p.RunSummaryTemplate, '') RunSummaryTemplate",
@@ -289,6 +293,8 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"OwnerGroupOnlyActions": rawPlaybook.OwnerGroupOnlyActions,
 			"NewChannelOnly":        rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":    rawPlaybook.AutoArchiveChannel,
+			"PlaybookType":          rawPlaybook.PlaybookType,
+			"TimingMetricsJSON":     rawPlaybook.TimingMetricsJSON,
 		}))
 	if err != nil {
 		if pe, ok := errors.Cause(err).(*pq.Error); ok && pe.Code == pgUniqueViolation {
@@ -658,11 +664,16 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 		return errors.New("id should not be empty")
 	}
 
-	// if checklists are passed and len (as string) is bigger than limit -> fails
-	if _, exists := setmap["ChecklistsJSON"]; exists {
-		if len(string(setmap["ChecklistsJSON"].([]uint8))) > maxJSONLength {
+	if raw, exists := setmap["ChecklistsJSON"]; exists {
+		checklistsJSON, err := withChecklistItemIDs(raw.([]uint8))
+		if err != nil {
+			return errors.Wrapf(err, "failed update playbook with id '%s'", id)
+		}
+		// if checklists are passed and len (as string) is bigger than limit -> fails
+		if len(checklistsJSON) > maxJSONLength {
 			return fmt.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
 		}
+		setmap["ChecklistsJSON"] = checklistsJSON
 	}
 
 	_, err := p.store.execBuilder(p.store.db, sq.
@@ -743,6 +754,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"OwnerGroupOnlyActions":                   rawPlaybook.OwnerGroupOnlyActions,
 			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
+			"PlaybookType":                            rawPlaybook.PlaybookType,
+			"TimingMetricsJSON":                       rawPlaybook.TimingMetricsJSON,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -1220,6 +1233,19 @@ func getSteps(playbook app.Playbook) int {
 }
 
 func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
+	if playbook.Checklists != nil {
+		checklists := make([]app.Checklist, 0, len(playbook.Checklists))
+		for _, checklist := range playbook.Checklists {
+			checklists = append(checklists, checklist.Clone())
+		}
+		replaced := app.EnsureChecklistItemIDs(checklists)
+		playbook.Checklists = checklists
+		if len(replaced) > 0 {
+			playbook.TimingMetrics = slices.Clone(playbook.TimingMetrics)
+			app.RebindTimingMetrics(playbook.TimingMetrics, replaced)
+		}
+	}
+
 	checklistsJSON, err := json.Marshal(playbook.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook id: '%s'", playbook.ID)
@@ -1229,9 +1255,15 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 		return nil, errors.Errorf("checklist json for playbook id '%s' is too long (max %d)", playbook.ID, maxJSONLength)
 	}
 
+	timingMetricsJSON, err := timingMetricsToJSON(playbook.TimingMetrics)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal timing metrics for playbook id: '%s'", playbook.ID)
+	}
+
 	return &sqlPlaybook{
 		Playbook:                              playbook,
 		ChecklistsJSON:                        checklistsJSON,
+		TimingMetricsJSON:                     timingMetricsJSON,
 		ConcatenatedInvitedUserIDs:            strings.Join(playbook.InvitedUserIDs, ","),
 		ConcatenatedInvitedGroupIDs:           strings.Join(playbook.InvitedGroupIDs, ","),
 		ConcatenatedSignalAnyKeywords:         strings.Join(playbook.SignalAnyKeywords, ","),
@@ -1246,6 +1278,12 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	if len(rawPlaybook.ChecklistsJSON) > 0 {
 		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
 			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+		}
+	}
+
+	if len(rawPlaybook.TimingMetricsJSON) > 2 {
+		if err := json.Unmarshal(rawPlaybook.TimingMetricsJSON, &p.TimingMetrics); err != nil {
+			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal timing metrics json for playbook id: '%s'", p.ID)
 		}
 	}
 
@@ -1454,4 +1492,21 @@ func (p *playbookStore) UpdateChannelNameTemplateIfUnchanged(playbookID, oldTemp
 		return false, errors.Wrapf(err, "failed to read rows affected for playbook '%s'", playbookID)
 	}
 	return n > 0, nil
+}
+
+// withChecklistItemIDs fills in missing checklist item IDs in a checklists JSON document.
+func withChecklistItemIDs(checklistsJSON []byte) ([]byte, error) {
+	var checklists []app.Checklist
+	if err := json.Unmarshal(checklistsJSON, &checklists); err != nil {
+		return nil, errors.Wrap(err, "failed to parse checklists")
+	}
+	app.EnsureChecklistItemIDs(checklists)
+	return json.Marshal(checklists)
+}
+
+func timingMetricsToJSON(metrics []app.TimingMetric) (json.RawMessage, error) {
+	if metrics == nil {
+		metrics = []app.TimingMetric{}
+	}
+	return json.Marshal(metrics)
 }

@@ -49,6 +49,7 @@ import {
     fetchPlaybookRunStatusUpdates,
     fetchPlaybookRuns,
     fetchPlaybookStats,
+    fetchRunTiming,
 } from 'src/client';
 import {playbookRunUpdated} from 'src/actions';
 import {resolve} from 'src/utils';
@@ -316,26 +317,35 @@ export function useThing<T extends NonNullable<any>>(
             setIsFetching(false);
             setThing(null);
             setError(null);
-            return;
+            return undefined;
         }
 
         if (thingFromState) {
             setThing(thingFromState);
             setIsFetching(false);
-            return;
+            return undefined;
         }
 
+        let superseded = false;
         fetchFunc(id)
             .then((res) => {
-                setThing(res);
+                if (!superseded) {
+                    setThing(res);
+                }
             })
             .catch((err) => {
+                if (superseded) {
+                    return;
+                }
                 if (err instanceof ClientError) {
                     setError(err);
                 }
                 setThing(null);
             });
         setIsFetching(false);
+        return () => {
+            superseded = true;
+        };
     }, [thingFromState, id, ...deps]);
 
     const metadata = {
@@ -379,6 +389,10 @@ export function useRunMetadata(id: PlaybookRun['id'] | undefined, deps: Dependen
  */
 export function useRunStatusUpdates(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
     return useThing(id, fetchPlaybookRunStatusUpdates, noopSelector, deps);
+}
+
+export function useRunTiming(id: PlaybookRun['id'] | undefined, deps: DependencyList = []) {
+    return useThing(id, fetchRunTiming, noopSelector, deps);
 }
 
 export function useChannel(channelId: string) {
