@@ -45,7 +45,7 @@ _No message._
 - **November 14, 2023, 11:23 PM CET** · Alice Admin checked off checklist item "Page on-call"
 - **November 14, 2023, 11:24 PM CET** · Bob Builder skipped a checklist item
 - **November 14, 2023, 11:33 PM CET** · Assignee Changed
-  Alice Admin changed assignee of checklist item **Notify stakeholders** from **No Assignee** to `@bob`
+  - Alice Admin changed assignee of checklist item **Notify stakeholders** from **No Assignee** to `@bob`
 - **November 14, 2023, 11:58 PM CET** · Bob Builder posted a status update
 - **November 15, 2023, 12:13 AM CET** · Owner changed from `@alice` to `@bob`
 - **November 15, 2023, 12:43 AM CET** · Timeline event
@@ -72,7 +72,7 @@ _No message._
 
 - [x] Page on-call
   *(Assigned to Alice Admin · Checked off by Alice Admin on November 14, 2023, 11:23 PM CET)*
-- [-] Open war room
+- ~~Open war room~~
   *(Skipped on November 14, 2023, 11:24 PM CET)*
 - [ ] Notify **stakeholders**
   *(Assigned to Bob Builder · Due: November 15, 2023, 12:13 AM CET)*

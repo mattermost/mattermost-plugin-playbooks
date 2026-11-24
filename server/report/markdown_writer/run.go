@@ -46,8 +46,17 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 		} else {
 			for _, ev := range r.Timeline.Events {
 				fmt.Fprintf(&b, "- **%s** · %s\n", escapeText(ev.Date), escapeText(ev.Headline))
-				if detail := strings.TrimSpace(escapeText(ev.DetailPlain) + " " + ev.Detail); detail != "" {
-					writeLines(&b, closeFences(detail, 2), "  ")
+				detail := strings.TrimSpace(escapeText(ev.DetailPlain) + " " + ev.Detail)
+				if detail == "" {
+					continue
+				}
+				// The detail is a nested bullet: an indented line would run
+				// on from the headline. Its lines start at the nested item's
+				// content column, so they have no indent of their own.
+				first, rest, _ := strings.Cut(closeFences(detail, 0), "\n")
+				b.WriteString("  - " + first + "\n")
+				if rest != "" {
+					writeLines(&b, rest, "    ")
 				}
 			}
 			b.WriteString("\n")

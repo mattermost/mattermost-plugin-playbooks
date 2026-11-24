@@ -44,7 +44,7 @@ _No message._
 
 - [x] Page on-call
   *(Assigned to Alice Admin · Checked off by Alice Admin on November 14, 2023, 10:23 PM UTC)*
-- [-] Open war room
+- ~~Open war room~~
   *(Skipped on November 14, 2023, 10:24 PM UTC)*
 - [ ] Notify **stakeholders**
   *(Assigned to Bob Builder · Due: November 14, 2023, 11:13 PM UTC)*

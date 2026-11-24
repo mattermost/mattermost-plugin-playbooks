@@ -27,7 +27,7 @@ Rolled back the config.
 
 - **November 14, 2023, 10:13 PM UTC** · Run started by Dana Display
 - **November 14, 2023, 10:16 PM UTC** · Assignee Changed
-  Unknown user
+  - Unknown user
 - **November 14, 2023, 10:17 PM UTC** · Unknown user restored checklist item "Check IdP"
 
 ## Retrospective
@@ -40,7 +40,7 @@ _No retrospective._
 
 - [ ] Check IdP
   *(Assigned to Dana Display)*
-- [-] Check certificates
+- ~~Check certificates~~
   *(Assigned to Unknown user · Skipped by Unknown user on November 14, 2023, 10:19 PM UTC)*
 
 ## Chat history

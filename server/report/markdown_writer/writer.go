@@ -182,13 +182,15 @@ func writeMetrics(b *bytes.Buffer, title string, metrics []report.Metric) {
 	b.WriteString("\n")
 }
 
-// taskBullet returns the markdown task-list bullet for a task.
+// taskBullet returns the markdown task-list bullet for a task. Markdown has
+// no skipped state, so a skipped task is a plain bullet with its title struck
+// through, as the run page shows it.
 func taskBullet(it report.ChecklistItem) string {
 	switch {
 	case it.Done:
 		return "- [x] "
 	case it.Skipped:
-		return "- [-] "
+		return "- "
 	default:
 		return "- [ ] "
 	}
@@ -210,7 +212,11 @@ func writeChecklists(b *bytes.Buffer, s report.ChecklistSection) {
 		}
 		for _, it := range cl.Items {
 			b.WriteString(taskBullet(it))
-			b.WriteString(it.Title)
+			if it.Skipped {
+				b.WriteString("~~" + it.Title + "~~")
+			} else {
+				b.WriteString(it.Title)
+			}
 			b.WriteString("\n")
 
 			var meta []string
