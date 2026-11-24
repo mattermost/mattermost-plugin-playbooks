@@ -6,9 +6,12 @@ _No summary._
 
 **Tasks**: 1/2 (50% complete)  ·  **Updates**: 2  ·  **Participants**: 3  ·  **Duration**: 3h 0m
 
-**Status**: In Progress  ·  **Owner**: Unknown user  ·  **Started**: November 14, 2023, 10:13 PM UTC
+**Run details**
 
-**Participants**: bob, Dana Display, Unknown user
+- **Status**: In Progress
+- **Started**: November 14, 2023, 10:13 PM UTC
+- **Owner**: Unknown user
+- **Participants**: bob, Dana Display, Unknown user
 
 ## Status updates
 

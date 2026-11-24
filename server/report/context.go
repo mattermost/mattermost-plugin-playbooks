@@ -115,6 +115,13 @@ type RenderRun struct {
 	StartTimeMs   int64
 	EndTimeMs     int64 // 0 if still in progress
 	PlaybookTitle string
+	// PlaybookURL links to the playbook; empty without a site URL.
+	PlaybookURL string
+	// ChannelName is the run channel's display name, set only when the
+	// requester can read the channel; ChannelURL links to it and is empty
+	// without a site URL.
+	ChannelName string
+	ChannelURL  string
 }
 
 // RenderStatusUpdate is one status post in a run's update stream.

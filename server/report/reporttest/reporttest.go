@@ -165,6 +165,9 @@ func TypicalRun() report.RenderContext {
 			StartTimeMs:   Base,
 			EndTimeMs:     Base + 2*hour + 15*minute,
 			PlaybookTitle: "Sev1 *Incident* Response",
+			PlaybookURL:   "https://chat.example.com/playbooks/playbooks/pb1",
+			ChannelName:   "Database outage (42)",
+			ChannelURL:    "https://chat.example.com/ops/channels/database-outage-42",
 		},
 		Owner: report.RenderUser{UserID: "u1", DisplayName: "Alice Admin", Username: "alice"},
 		Participants: []report.RenderUser{

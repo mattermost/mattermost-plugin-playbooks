@@ -6,7 +6,6 @@ package markdown_writer //nolint:staticcheck
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 )
@@ -25,10 +24,7 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 	}
 	writeBody(&b, r.Summary.Body)
 	writeStats(&b, r.Stats)
-	writeMetaStrip(&b, append([]report.Field{r.Status}, r.Meta...))
-	if len(r.Participants) > 0 {
-		writeMetaStrip(&b, []report.Field{{Label: r.ParticipantsLabel, Value: strings.Join(r.Participants, ", ")}})
-	}
+	writeDetails(&b, r.DetailsTitle, append([]report.Field{r.Status}, r.Details...))
 
 	writeHeading(&b, 2, r.StatusUpdates.Title)
 	if len(r.StatusUpdates.Updates) == 0 {

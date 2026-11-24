@@ -124,6 +124,14 @@
     "translation": "September"
   },
   {
+    "id": "app.report.run.channel",
+    "translation": "Channel"
+  },
+  {
+    "id": "app.report.run.details.title",
+    "translation": "Run details"
+  },
+  {
     "id": "app.report.run.ended",
     "translation": "Ended"
   },

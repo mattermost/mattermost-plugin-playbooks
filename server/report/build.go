@@ -40,22 +40,21 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 	T := b.T
 
 	r := &RunReport{
-		Lang:              lang(opts.Locale),
-		Title:             cmp.Or(strings.TrimSpace(rc.Run.Name), T("app.report.run.untitled")),
-		Kind:              T("app.report.run.kind"),
-		Generated:         b.date(rc.GeneratedAtMillis),
-		ParticipantsLabel: T("app.report.run.participants"),
-		Footer:            b.footer(rc.GeneratedAtMillis),
+		Lang:      lang(opts.Locale),
+		Title:     cmp.Or(strings.TrimSpace(rc.Run.Name), T("app.report.run.untitled")),
+		Kind:      T("app.report.run.kind"),
+		Generated: b.date(rc.GeneratedAtMillis),
+		Footer:    b.footer(rc.GeneratedAtMillis),
 	}
 
 	switch rc.Run.Status {
 	case "":
 	case RunStatusInProgress:
-		r.Status, r.StatusKind = Field{T("app.report.run.status"), T("app.report.run.status.in_progress")}, StatusInProgress
+		r.Status, r.StatusKind = Field{Label: T("app.report.run.status"), Value: T("app.report.run.status.in_progress")}, StatusInProgress
 	case RunStatusFinished:
-		r.Status, r.StatusKind = Field{T("app.report.run.status"), T("app.report.run.status.finished")}, StatusFinished
+		r.Status, r.StatusKind = Field{Label: T("app.report.run.status"), Value: T("app.report.run.status.finished")}, StatusFinished
 	default:
-		r.Status, r.StatusKind = Field{T("app.report.run.status"), rc.Run.Status}, StatusOther
+		r.Status, r.StatusKind = Field{Label: T("app.report.run.status"), Value: rc.Run.Status}, StatusOther
 	}
 
 	done, total := 0, 0
@@ -75,18 +74,22 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 		{Label: T("app.report.run.stat.duration"), Value: cmp.Or(b.runDuration(rc), "-")},
 	}
 
-	r.Meta = []Field{{T("app.report.run.owner"), b.inlineUserName(rc.Owner)}}
+	participants := make([]string, 0, len(rc.Participants))
+	for _, u := range rc.Participants {
+		participants = append(participants, b.inlineUserName(u))
+	}
+	r.DetailsTitle = T("app.report.run.details.title")
 	for _, f := range []Field{
-		{T("app.report.run.started"), b.date(rc.Run.StartTimeMs)},
-		{T("app.report.run.ended"), b.date(rc.Run.EndTimeMs)},
-		{T("app.report.run.playbook"), rc.Run.PlaybookTitle},
+		{Label: T("app.report.run.started"), Value: b.date(rc.Run.StartTimeMs)},
+		{Label: T("app.report.run.ended"), Value: b.date(rc.Run.EndTimeMs)},
+		{Label: T("app.report.run.owner"), Value: b.inlineUserName(rc.Owner)},
+		{Label: T("app.report.run.participants"), Value: strings.Join(participants, ", ")},
+		{Label: T("app.report.run.channel"), Value: rc.Run.ChannelName, URL: rc.Run.ChannelURL},
+		{Label: T("app.report.run.playbook"), Value: rc.Run.PlaybookTitle, URL: rc.Run.PlaybookURL},
 	} {
 		if f.Value != "" {
-			r.Meta = append(r.Meta, f)
+			r.Details = append(r.Details, f)
 		}
-	}
-	for _, u := range rc.Participants {
-		r.Participants = append(r.Participants, b.inlineUserName(u))
 	}
 
 	r.Summary = BodySection{

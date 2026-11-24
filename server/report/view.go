@@ -44,11 +44,10 @@ type RunReport struct {
 	Status     Field
 	StatusKind StatusKind
 	Stats      []Stat
-	// Meta lists the owner, then the start and end times and the playbook
-	// when known.
-	Meta              []Field
-	ParticipantsLabel string
-	Participants      []string
+	// Details lists the start and end times, the owner, the participants,
+	// the channel and the playbook, each when known, under DetailsTitle.
+	DetailsTitle string
+	Details      []Field
 
 	Summary       BodySection
 	Timeline      TimelineSection
@@ -74,6 +73,8 @@ const (
 type Field struct {
 	Label string
 	Value string
+	// URL links the value when set.
+	URL string
 }
 
 // Stat is a headline figure, with an optional hint under it.

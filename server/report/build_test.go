@@ -44,7 +44,7 @@ func TestBuildRun(t *testing.T) {
 		opts := testOptions()
 		opts.Location = time.FixedZone("CET", 60*60)
 		r := BuildRun(rc, opts)
-		assert.Contains(t, r.Meta, Field{Label: "Started", Value: "November 14, 2023, 11:13 PM CET"})
+		assert.Contains(t, r.Details, Field{Label: "Started", Value: "November 14, 2023, 11:13 PM CET"})
 		assert.Equal(t, "Generated November 14, 2023, 11:13 PM CET.", r.Footer)
 	})
 

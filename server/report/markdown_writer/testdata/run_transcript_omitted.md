@@ -9,9 +9,15 @@ Primary DB failed over. **Resolved** by `@alice`.
 
 **Tasks**: 3/5 (60% complete)  ·  **Updates**: 3  ·  **Participants**: 3  ·  **Duration**: 2h 15m
 
-**Status**: Finished  ·  **Owner**: Alice Admin  ·  **Started**: November 14, 2023, 10:13 PM UTC  ·  **Ended**: November 15, 2023, 12:28 AM UTC  ·  **Playbook**: Sev1 \*Incident\* Response
+**Run details**
 
-**Participants**: Alice Admin, Bob Builder, Carol Chen
+- **Status**: Finished
+- **Started**: November 14, 2023, 10:13 PM UTC
+- **Ended**: November 15, 2023, 12:28 AM UTC
+- **Owner**: Alice Admin
+- **Participants**: Alice Admin, Bob Builder, Carol Chen
+- **Channel**: [Database outage (42)](https://chat.example.com/ops/channels/database-outage-42)
+- **Playbook**: [Sev1 \*Incident\* Response](https://chat.example.com/playbooks/playbooks/pb1)
 
 ## Status updates
 

@@ -63,6 +63,11 @@ func (s *ReportService) AssembleRunReportContext(
 		},
 	}
 
+	var siteURL string
+	if cfg := s.pluginAPI.Configuration.GetConfig(); cfg != nil && cfg.ServiceSettings.SiteURL != nil {
+		siteURL = strings.TrimRight(*cfg.ServiceSettings.SiteURL, "/")
+	}
+
 	// The playbook gives the report its title and the retrospective metrics'
 	// titles and types.
 	var playbook *Playbook
@@ -70,6 +75,22 @@ func (s *ReportService) AssembleRunReportContext(
 		if pb, err := s.playbookService.Get(run.PlaybookID); err == nil {
 			playbook = &pb
 			rc.Run.PlaybookTitle = pb.Title
+			if siteURL != "" {
+				rc.Run.PlaybookURL = getPlaybookDetailsURL(siteURL, run.PlaybookID)
+			}
+		}
+	}
+
+	// The channel is named only to a requester who can read it, so a run
+	// viewer outside a private run channel doesn't learn its name.
+	if run.ChannelID != "" && s.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
+		if channel, err := s.pluginAPI.Channel.Get(run.ChannelID); err == nil {
+			rc.Run.ChannelName = channel.DisplayName
+			if siteURL != "" {
+				if team, err := s.pluginAPI.Team.Get(channel.TeamId); err == nil {
+					rc.Run.ChannelURL = getURLForChannel(siteURL, team.Name, channel)
+				}
+			}
 		}
 	}
 

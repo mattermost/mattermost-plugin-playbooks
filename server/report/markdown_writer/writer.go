@@ -39,6 +39,27 @@ func writeMetaStrip(b *bytes.Buffer, fields []report.Field) {
 	b.WriteString("\n\n")
 }
 
+// writeDetails writes a bold title and one bullet per field with a value,
+// linking the value when the field has a URL.
+func writeDetails(b *bytes.Buffer, title string, fields []report.Field) {
+	fmt.Fprintf(b, "**%s**\n\n", escapeText(title))
+	for _, f := range fields {
+		if f.Value == "" {
+			continue
+		}
+		value := escapeText(f.Value)
+		if f.URL != "" {
+			value = fmt.Sprintf("[%s](%s)", value, linkDestination(f.URL))
+		}
+		fmt.Fprintf(b, "- **%s**: %s\n", escapeText(f.Label), value)
+	}
+	b.WriteString("\n")
+}
+
+// linkDestination percent-encodes the characters that would end a Markdown
+// link destination early.
+var linkDestination = strings.NewReplacer(" ", "%20", "(", "%28", ")", "%29", "<", "%3C", ">", "%3E").Replace
+
 // writeStats writes headline figures as a metadata strip, each hint in
 // parentheses after its value.
 func writeStats(b *bytes.Buffer, stats []report.Stat) {

@@ -31,7 +31,7 @@ code, pre { font-family: var(--font-mono); }
 
   <section class="section">
   <h2>{{.Summary.Title}}</h2>
-  {{if .Summary.Body}}<div class="boxed-md">{{markdown .Summary.Body}}</div>
+  {{if .Summary.Body}}<div class="summary">{{markdown .Summary.Body}}</div>
   {{else}}<p class="muted">{{.Summary.Empty}}</p>{{end}}
 
   <div class="stat-grid">
@@ -44,14 +44,14 @@ code, pre { font-family: var(--font-mono); }
     {{- end}}
   </div>
 
-  <table class="details">
-    {{- range .Meta}}
-    <tr><th>{{.Label}}</th><td>{{.Value}}</td></tr>
-    {{- end}}
-    {{- if .Participants}}
-    <tr><th>{{.ParticipantsLabel}}</th><td>{{range $i, $p := .Participants}}{{if $i}}, {{end}}{{$p}}{{end}}</td></tr>
-    {{- end}}
-  </table>
+  <div class="details">
+    <div class="details__title">{{.DetailsTitle}}</div>
+    <table>
+      {{- range .Details}}
+      <tr><th>{{.Label}}</th><td>{{if .URL}}<a href="{{.URL}}">{{.Value}}</a>{{else}}{{.Value}}{{end}}</td></tr>
+      {{- end}}
+    </table>
+  </div>
   </section>
 
   <section class="section">

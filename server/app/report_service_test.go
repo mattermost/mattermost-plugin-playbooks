@@ -189,6 +189,37 @@ func TestReportServiceBuildRetrospective(t *testing.T) {
 	})
 }
 
+func TestReportServiceChannelLink(t *testing.T) {
+	siteURL := "https://chat.example.com/"
+	run := &PlaybookRun{ChannelID: "c1"}
+
+	t.Run("named and linked for a requester who can read the channel", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+		api.On("HasPermissionToChannel", "u1", "c1", model.PermissionReadChannel).Return(true)
+		api.On("GetChannel", "c1").Return(&model.Channel{Id: "c1", TeamId: "t1", Name: "db-outage", DisplayName: "DB outage", Type: model.ChannelTypePrivate}, nil)
+		api.On("GetTeam", "t1").Return(&model.Team{Id: "t1", Name: "ops"}, nil)
+
+		rc, err := newTestReportService(api).AssembleRunReportContext(context.Background(), run, "u1", report.SectionFlags{})
+		require.NoError(t, err)
+		require.Equal(t, "DB outage", rc.Run.ChannelName)
+		require.Equal(t, "https://chat.example.com/ops/channels/db-outage", rc.Run.ChannelURL)
+	})
+
+	t.Run("left out for a requester who cannot read it", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+		api.On("HasPermissionToChannel", "u2", "c1", model.PermissionReadChannel).Return(false)
+
+		rc, err := newTestReportService(api).AssembleRunReportContext(context.Background(), run, "u2", report.SectionFlags{})
+		require.NoError(t, err)
+		require.Empty(t, rc.Run.ChannelName)
+		require.Empty(t, rc.Run.ChannelURL)
+	})
+}
+
 func TestReportServiceLeavesOutDisabledRetrospective(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("GetConfig").Return(&model.Config{})

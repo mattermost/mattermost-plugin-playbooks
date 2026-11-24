@@ -65,8 +65,16 @@ th { background: #f8f9fb; font-weight: 600; }
 .cover__date { color: #72767d; }
 
  
-.details { width: 100%; margin: 16px 0; }
-.details th { width: 30%; vertical-align: top; }
+.summary { color: #3f4350; }
+.summary > :first-child { margin-top: 0; }
+.details { margin: 24px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; break-inside: avoid; }
+.details__title { padding: 10px 20px; background: #1e325c; color: #fff; font-weight: 600; text-align: center; }
+.details table { width: 100%; margin: 0; }
+.details th, .details td { padding: 8px 20px; border: none; vertical-align: top; }
+.details th { width: 40%; background: #f8f9fb; border-right: 1px solid #e0e0e0; color: #1e1f22; }
+.details tr:first-child > * { padding-top: 14px; }
+.details tr:last-child > * { padding-bottom: 14px; }
+.details a { color: #1c58d9; }
 
  
 .status-pill { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
@@ -75,10 +83,11 @@ th { background: #f8f9fb; font-weight: 600; }
 .status-pill--neutral    { background: #f0f0f0; color: #4f5660; }
 
  
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
-.stat-card { background: #f8f9fb; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px 12px; }
-.stat-card__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #72767d; }
-.stat-card__value { font-size: 22px; font-weight: 700; margin-top: 4px; color: #1e1f22; }
+.stat-grid { display: flex; margin: 24px 0; }
+.stat-card { flex: 1; padding: 0 20px; border-left: 1px solid #e0e0e0; }
+.stat-card:first-child { padding-left: 0; border-left: none; }
+.stat-card__label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .5px; color: #72767d; }
+.stat-card__value { font-size: 28px; font-weight: 600; margin-top: 4px; color: #3f4350; }
 .stat-card__hint  { font-size: 11px; color: #72767d; margin-top: 2px; }
 
  
@@ -195,11 +204,14 @@ th { background: #f8f9fb; font-weight: 600; }
     </div>
   </div>
 
-  <table class="details">
-    <tr><th>Owner</th><td>Unknown user</td></tr>
-    <tr><th>Started</th><td>November 14, 2023, 10:13 PM UTC</td></tr>
-    <tr><th>Participants</th><td>bob, Dana Display, Unknown user</td></tr>
-  </table>
+  <div class="details">
+    <div class="details__title">Run details</div>
+    <table>
+      <tr><th>Started</th><td>November 14, 2023, 10:13 PM UTC</td></tr>
+      <tr><th>Owner</th><td>Unknown user</td></tr>
+      <tr><th>Participants</th><td>bob, Dana Display, Unknown user</td></tr>
+    </table>
+  </div>
   </section>
 
   <section class="section">
