@@ -27,7 +27,7 @@ func TestComputePhases(t *testing.T) {
 	t.Run("not started when every task is open", func(t *testing.T) {
 		phases := ComputePhases(phaseChecklist(phaseItem("a", ChecklistItemStateOpen, 0), phaseItem("b", ChecklistItemStateOpen, 0)), nil)
 		require.Len(t, phases, 1)
-		assert.Equal(t, RunPhase{ChecklistID: "c1", Title: "Phase", Status: PhaseStatusNotStarted}, phases[0])
+		assert.Equal(t, RunPhase{ChecklistID: "c1", Title: "Phase", Status: PhaseStatusNotStarted, Current: true, TasksOpen: 2, TasksTotal: 2}, phases[0])
 	})
 
 	t.Run("an empty checklist is not started", func(t *testing.T) {
@@ -81,14 +81,34 @@ func TestComputePhases(t *testing.T) {
 		assert.Equal(t, int64(40), phases[0].EndedAt)
 	})
 
-	t.Run("a phase of only skipped tasks is done with no elapsed time", func(t *testing.T) {
+	t.Run("a phase of only skipped tasks is skipped, not done, and has no elapsed time", func(t *testing.T) {
 		phases := ComputePhases(
-			phaseChecklist(phaseItem("a", ChecklistItemStateSkipped, 30)),
-			[]ChecklistItemStateChange{phaseChange("a", ChecklistItemStateSkipped, 30)},
+			phaseChecklist(phaseItem("a", ChecklistItemStateSkipped, 30), phaseItem("b", ChecklistItemStateSkipped, 31)),
+			[]ChecklistItemStateChange{phaseChange("a", ChecklistItemStateSkipped, 30), phaseChange("b", ChecklistItemStateSkipped, 31)},
 		)
+		assert.Equal(t, PhaseStatusSkipped, phases[0].Status)
+		assert.Zero(t, phases[0].StartedAt)
+		assert.Zero(t, phases[0].EndedAt)
+		assert.Zero(t, phases[0].TasksOpen)
+	})
+
+	t.Run("closed and skipped tasks together are done", func(t *testing.T) {
+		phases := ComputePhases(phaseChecklist(phaseItem("a", ChecklistItemStateClosed, 10), phaseItem("b", ChecklistItemStateSkipped, 20)), nil)
 		assert.Equal(t, PhaseStatusDone, phases[0].Status)
-		assert.Equal(t, int64(30), phases[0].StartedAt)
-		assert.Equal(t, int64(30), phases[0].EndedAt)
+	})
+
+	t.Run("counts visible tasks that are still open", func(t *testing.T) {
+		hidden := phaseItem("h", ChecklistItemStateOpen, 0)
+		hidden.ConditionAction = ConditionActionHidden
+		phases := ComputePhases(phaseChecklist(
+			phaseItem("a", ChecklistItemStateClosed, 10),
+			phaseItem("b", ChecklistItemStateSkipped, 20),
+			phaseItem("c", ChecklistItemStateInProgress, 30),
+			phaseItem("d", ChecklistItemStateOpen, 0),
+			hidden,
+		), nil)
+		assert.Equal(t, 4, phases[0].TasksTotal)
+		assert.Equal(t, 2, phases[0].TasksOpen)
 	})
 
 	t.Run("blocked when any task is blocked, even if others are done", func(t *testing.T) {
@@ -275,5 +295,126 @@ func TestAddPhasesToChanges(t *testing.T) {
 
 		assert.NotContains(t, changes, "phases")
 		assert.Zero(t, store.reads)
+	})
+}
+
+// phaseList builds a checklist with a single task in the given state.
+func phaseList(id, state string, at int64) Checklist {
+	return Checklist{ID: id, Title: id, Items: []ChecklistItem{{ID: id + "-item", State: state, StateModified: at}}}
+}
+
+func currentPhase(phases []RunPhase) string {
+	for _, phase := range phases {
+		if phase.Current {
+			return phase.ChecklistID
+		}
+	}
+	return ""
+}
+
+func TestCurrentPhase(t *testing.T) {
+	open, doing, closed, skipped, blocked := ChecklistItemStateOpen, ChecklistItemStateInProgress, ChecklistItemStateClosed, ChecklistItemStateSkipped, ChecklistItemStateBlocked
+
+	cases := map[string]struct {
+		lists    []Checklist
+		expected string
+	}{
+		"the first phase when nothing has started": {
+			lists:    []Checklist{phaseList("a", open, 0), phaseList("b", open, 0)},
+			expected: "a",
+		},
+		"the first phase that is not skipped when nothing has started": {
+			lists:    []Checklist{phaseList("a", skipped, 5), phaseList("b", open, 0)},
+			expected: "b",
+		},
+		"the furthest phase where work has started": {
+			lists:    []Checklist{phaseList("a", doing, 10), phaseList("b", doing, 20), phaseList("c", open, 0)},
+			expected: "b",
+		},
+		"a later phase even when an earlier one still has open tasks": {
+			lists: []Checklist{
+				{ID: "a", Title: "a", Items: []ChecklistItem{{ID: "a1", State: closed, StateModified: 10}, {ID: "a2", State: open}}},
+				phaseList("b", doing, 20),
+			},
+			expected: "b",
+		},
+		"a phase with a blocked task counts as started": {
+			lists:    []Checklist{phaseList("a", doing, 10), phaseList("b", blocked, 20), phaseList("c", open, 0)},
+			expected: "b",
+		},
+		"the next phase once the furthest one is done": {
+			lists:    []Checklist{phaseList("a", closed, 10), phaseList("b", open, 0), phaseList("c", open, 0)},
+			expected: "b",
+		},
+		"skipping over skipped phases after a finished one": {
+			lists:    []Checklist{phaseList("a", closed, 10), phaseList("b", skipped, 11), phaseList("c", open, 0)},
+			expected: "c",
+		},
+		"the last phase when everything is finished": {
+			lists:    []Checklist{phaseList("a", closed, 10), phaseList("b", closed, 20)},
+			expected: "b",
+		},
+		"the finished phase when only skipped phases follow": {
+			lists:    []Checklist{phaseList("a", closed, 10), phaseList("b", skipped, 11)},
+			expected: "a",
+		},
+		"a skipped phase never counts as started": {
+			lists:    []Checklist{phaseList("a", doing, 10), phaseList("b", skipped, 20)},
+			expected: "a",
+		},
+		"no phase when every phase is skipped": {
+			lists:    []Checklist{phaseList("a", skipped, 10), phaseList("b", skipped, 20)},
+			expected: "",
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			phases := ComputePhases(tc.lists, nil)
+
+			assert.Equal(t, tc.expected, currentPhase(phases))
+			marked := 0
+			for _, phase := range phases {
+				if phase.Current {
+					marked++
+				}
+			}
+			assert.LessOrEqual(t, marked, 1)
+		})
+	}
+
+	t.Run("no phases", func(t *testing.T) {
+		assert.Empty(t, ComputePhases(nil, nil))
+	})
+}
+
+func TestPhasesEndWhenTheNextOneStarts(t *testing.T) {
+	t.Run("a phase left with open tasks ends when the next phase started", func(t *testing.T) {
+		lists := []Checklist{
+			{ID: "a", Title: "a", Items: []ChecklistItem{{ID: "a1", State: ChecklistItemStateClosed, StateModified: 10}, {ID: "a2", State: ChecklistItemStateOpen}}},
+			phaseList("b", ChecklistItemStateInProgress, 50),
+		}
+		changes := []ChecklistItemStateChange{phaseChange("a1", ChecklistItemStateClosed, 10), phaseChange("b-item", ChecklistItemStateInProgress, 50)}
+
+		phases := ComputePhases(lists, changes)
+
+		assert.Equal(t, PhaseStatusStarted, phases[0].Status)
+		assert.Equal(t, int64(10), phases[0].StartedAt)
+		assert.Equal(t, int64(50), phases[0].EndedAt)
+		assert.Zero(t, phases[1].EndedAt, "the current phase keeps running")
+	})
+
+	t.Run("a finished phase keeps its own end", func(t *testing.T) {
+		lists := []Checklist{phaseList("a", ChecklistItemStateClosed, 20), phaseList("b", ChecklistItemStateInProgress, 50)}
+		phases := ComputePhases(lists, nil)
+
+		assert.Equal(t, int64(20), phases[0].EndedAt)
+	})
+
+	t.Run("a blocked phase the run moved past is also stopped", func(t *testing.T) {
+		lists := []Checklist{phaseList("a", ChecklistItemStateBlocked, 10), phaseList("b", ChecklistItemStateInProgress, 50)}
+		phases := ComputePhases(lists, nil)
+
+		assert.Equal(t, PhaseStatusBlocked, phases[0].Status)
+		assert.Equal(t, int64(50), phases[0].EndedAt)
 	})
 }

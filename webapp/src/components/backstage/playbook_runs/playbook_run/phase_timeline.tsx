@@ -33,17 +33,36 @@ const PhaseTimeline = ({id, phases}: Props) => {
         return formatDuration(Duration.fromMillis(Math.max(0, millis)), 'narrow');
     };
 
-    const statusLabel = (status: PhaseStatus) => {
-        switch (status) {
+    // A phase that has not started but is current is the one up next.
+    const statusLabel = (phase: RunPhase) => {
+        switch (phase.status) {
         case 'done':
             return formatMessage({defaultMessage: 'Done'});
         case 'blocked':
             return formatMessage({defaultMessage: 'Blocked'});
         case 'started':
             return formatMessage({defaultMessage: 'In progress'});
+        case 'skipped':
+            return formatMessage({defaultMessage: 'Skipped'});
         default:
-            return formatMessage({defaultMessage: 'Not started'});
+            return phase.current ? formatMessage({defaultMessage: 'Up next'}) : formatMessage({defaultMessage: 'Not started'});
         }
+    };
+
+    const tooltip = (phase: RunPhase) => {
+        const label = statusLabel(phase);
+        if (phase.tasks_open > 0 && (phase.status === 'started' || phase.status === 'blocked')) {
+            return formatMessage({defaultMessage: '{status}, {open} of {total} tasks open'}, {status: label, open: phase.tasks_open, total: phase.tasks_total});
+        }
+        return label;
+    };
+
+    const ariaLabel = (phase: RunPhase) => {
+        const label = formatMessage({defaultMessage: '{phase}: {status}'}, {phase: phase.title, status: statusLabel(phase)});
+        if (phase.current && phase.status !== 'not_started') {
+            return formatMessage({defaultMessage: '{label}, current phase'}, {label});
+        }
+        return label;
     };
 
     return (
@@ -57,21 +76,29 @@ const PhaseTimeline = ({id, phases}: Props) => {
                         // eslint-disable-next-line react/no-array-index-key
                         key={phase.checklist_id || i}
                         role='listitem'
-                        aria-label={formatMessage({defaultMessage: '{phase}: {status}'}, {phase: phase.title, status: statusLabel(phase.status)})}
+                        aria-label={ariaLabel(phase)}
                         data-status={phase.status}
+                        data-current={phase.current}
                     >
                         {i > 0 && (
                             <Connector $done={phases[i - 1].status === 'done'}/>
                         )}
                         <Marker
                             $status={phase.status}
-                            title={statusLabel(phase.status)}
+                            $current={phase.current}
+                            title={tooltip(phase)}
                         >
                             {phase.status === 'done' && <CheckIcon/>}
-                            {phase.status === 'started' && <Dot/>}
                             {phase.status === 'blocked' && <BangIcon/>}
+                            {phase.status === 'skipped' && <SkipIcon/>}
+                            {(phase.status === 'started' || phase.status === 'not_started') && phase.current && <Dot/>}
                         </Marker>
-                        <Label $status={phase.status}>{phase.title}</Label>
+                        <Label
+                            $status={phase.status}
+                            $current={phase.current}
+                        >
+                            {phase.title}
+                        </Label>
                         <Time>{elapsed(phase)}</Time>
                     </Step>
                 ))}
@@ -121,12 +148,29 @@ const BangIcon = () => (
     </svg>
 );
 
+const SkipIcon = () => (
+    <svg
+        width='14'
+        height='14'
+        viewBox='0 0 14 14'
+        fill='none'
+        aria-hidden={true}
+    >
+        <path
+            d='M4 7h6'
+            stroke='currentColor'
+            strokeWidth='2'
+            strokeLinecap='round'
+        />
+    </svg>
+);
+
 const GREEN = 'var(--online-indicator)';
 const BLUE = 'var(--button-bg)';
 const RED = 'var(--dnd-indicator)';
 const GRAY = 'rgba(var(--center-channel-color-rgb), 0.24)';
 
-const markerColor = (status: PhaseStatus) => {
+const markerColor = (status: PhaseStatus, current: boolean) => {
     switch (status) {
     case 'done':
         return GREEN;
@@ -135,7 +179,7 @@ const markerColor = (status: PhaseStatus) => {
     case 'blocked':
         return RED;
     default:
-        return GRAY;
+        return current ? BLUE : GRAY;
     }
 };
 
@@ -170,7 +214,7 @@ const Connector = styled.div<{$done: boolean}>`
     background: ${({$done}) => ($done ? GREEN : 'rgba(var(--center-channel-color-rgb), 0.16)')};
 `;
 
-const Marker = styled.div<{$status: PhaseStatus}>`
+const Marker = styled.div<{$status: PhaseStatus, $current: boolean}>`
     position: relative;
     z-index: 1;
     display: flex;
@@ -179,13 +223,25 @@ const Marker = styled.div<{$status: PhaseStatus}>`
     box-sizing: border-box;
     align-items: center;
     justify-content: center;
-    border: 2px solid ${({$status}) => markerColor($status)};
+    border: 2px solid ${({$status, $current}) => markerColor($status, $current)};
     border-radius: 50%;
     background: var(--center-channel-bg);
     color: var(--button-color);
 
-    ${({$status}) => ($status === 'done' || $status === 'blocked') && css`
-        background: ${markerColor($status)};
+    ${({$status, $current}) => ($status === 'done' || $status === 'blocked') && css`
+        background: ${markerColor($status, $current)};
+    `}
+
+    /* Started, but the run has moved on: a ring with a faint fill, so it differs by shape and not only hue. */
+    ${({$status, $current}) => $status === 'started' && !$current && css`
+        background: rgba(var(--button-bg-rgb), 0.16);
+    `}
+
+    /* Skipped: a dashed ring, clearly not finished work. */
+    ${({$status}) => $status === 'skipped' && css`
+        border-style: dashed;
+        border-color: rgba(var(--center-channel-color-rgb), 0.4);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     `}
 `;
 
@@ -196,18 +252,24 @@ const Dot = styled.div`
     background: ${BLUE};
 `;
 
-const Label = styled.div<{$status: PhaseStatus}>`
+const Label = styled.div<{$status: PhaseStatus, $current: boolean}>`
     margin-top: 8px;
-    color: ${({$status}) => ($status === 'not_started' ? 'rgba(var(--center-channel-color-rgb), 0.72)' : 'var(--center-channel-color)')};
+    color: var(--center-channel-color);
     font-size: 14px;
-    font-weight: ${({$status}) => ($status === 'not_started' ? 400 : 600)};
+    font-weight: ${({$status, $current}) => ($current || $status === 'done' || $status === 'blocked' ? 600 : 400)};
     text-align: center;
 
+    ${({$status, $current}) => $status === 'not_started' && !$current && css`
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+    `}
+    ${({$status}) => $status === 'skipped' && css`
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+    `}
+    ${({$status, $current}) => ($status === 'started' || $status === 'not_started') && $current && css`
+        color: ${BLUE};
+    `}
     ${({$status}) => $status === 'blocked' && css`
         color: ${RED};
-    `}
-    ${({$status}) => $status === 'started' && css`
-        color: ${BLUE};
     `}
 `;
 

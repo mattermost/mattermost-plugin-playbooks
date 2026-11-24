@@ -15,6 +15,10 @@ const (
 	PhaseStatusStarted    PhaseStatus = "started"
 	PhaseStatusDone       PhaseStatus = "done"
 	PhaseStatusBlocked    PhaseStatus = "blocked"
+
+	// PhaseStatusSkipped is a phase whose tasks were all skipped. It lets the run move on but is
+	// not finished work, so it is kept apart from PhaseStatusDone.
+	PhaseStatusSkipped PhaseStatus = "skipped"
 )
 
 // RunPhase is a checklist presented as a phase of the run. It is computed and never persisted.
@@ -23,18 +27,32 @@ type RunPhase struct {
 	Title       string      `json:"title"`
 	Status      PhaseStatus `json:"status"`
 
+	// Current marks where the run is: the furthest phase where work has started, or the phase up
+	// next once that one is finished. At most one phase is current.
+	Current bool `json:"current"`
+
+	// TasksOpen and TasksTotal count the phase's visible tasks, open being those not yet closed
+	// or skipped.
+	TasksOpen  int `json:"tasks_open"`
+	TasksTotal int `json:"tasks_total"`
+
 	// StartedAt is when the phase first had activity, 0 if it has not started.
 	StartedAt int64 `json:"started_at"`
 
-	// EndedAt is when the phase's last task was finished, or when the run ended if the phase was
-	// still active then. 0 while the phase is active in a run that is still going, in which case
-	// the phase has run from StartedAt until now.
+	// EndedAt is when the phase's last task was finished. A phase the run moved past with tasks
+	// still open ends when the next phase started, and one still active when the run ended ends
+	// then. 0 while the phase is active, in which case it has run from StartedAt until now.
 	EndedAt int64 `json:"ended_at"`
 }
 
 // ComputePhases maps each checklist to a phase. A phase is blocked if any task is blocked, done
-// once every task is closed or skipped, started once any task is in progress or closed, and not
-// started otherwise. Hidden tasks are ignored, and a phase without tasks is not started.
+// once every task is closed or skipped (skipped if none were closed), started once any task is in
+// progress or closed, and not started otherwise. Hidden tasks are ignored, and a phase without
+// tasks is not started.
+//
+// The current phase is the furthest one where work has started, so follow-up tasks left open in an
+// earlier phase do not hold the run back. If that phase is finished, the next one that is not
+// skipped is current. A run where nothing has started is at its first phase that is not skipped.
 //
 // StartedAt and EndedAt come from the task state changes (oldest first). A task with no recorded
 // change, such as one that moved before changes were recorded, falls back to its StateModified.
@@ -48,17 +66,64 @@ func ComputePhases(checklists []Checklist, changes []ChecklistItemStateChange) [
 	for _, checklist := range checklists {
 		phases = append(phases, computePhase(checklist, byItem))
 	}
+	markCurrentPhase(phases)
+	endPhasesAtNextStart(phases)
 	return phases
+}
+
+// hasActivity reports whether work has started in a phase, as opposed to it being untouched or
+// only skipped.
+func (p RunPhase) hasActivity() bool {
+	return p.Status == PhaseStatusStarted || p.Status == PhaseStatusBlocked || p.Status == PhaseStatusDone
+}
+
+func markCurrentPhase(phases []RunPhase) {
+	furthest := -1
+	for i, phase := range phases {
+		if phase.hasActivity() {
+			furthest = i
+		}
+	}
+
+	current := furthest
+	if furthest == -1 || phases[furthest].Status == PhaseStatusDone {
+		for i := furthest + 1; i < len(phases); i++ {
+			if phases[i].Status != PhaseStatusSkipped {
+				current = i
+				break
+			}
+		}
+	}
+	if current >= 0 {
+		phases[current].Current = true
+	}
+}
+
+// endPhasesAtNextStart stops the clock of a phase the run moved past while it still had open
+// tasks, at the moment the next phase to start did.
+func endPhasesAtNextStart(phases []RunPhase) {
+	for i := range phases {
+		if phases[i].StartedAt == 0 || phases[i].EndedAt != 0 {
+			continue
+		}
+		var next int64
+		for _, later := range phases[i+1:] {
+			next = earliest(next, later.StartedAt)
+		}
+		if next > 0 {
+			phases[i].EndedAt = max(next, phases[i].StartedAt)
+		}
+	}
 }
 
 func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateChange) RunPhase {
 	phase := RunPhase{ChecklistID: checklist.ID, Title: checklist.Title, Status: PhaseStatusNotStarted}
 
 	var (
-		total, finished  int
-		blocked, started bool
-		firstActive      int64 // earliest moment any task became in progress, closed or blocked
-		lastFinished     int64 // latest moment a task was finished
+		total, finished, closed int
+		blocked, started        bool
+		firstActive             int64 // earliest moment any task became in progress, closed or blocked
+		lastFinished            int64 // latest moment a task was finished
 	)
 	for _, item := range checklist.Items {
 		if item.ConditionAction == ConditionActionHidden {
@@ -72,6 +137,9 @@ func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateCha
 			blocked = true
 		case ChecklistItemStateClosed, ChecklistItemStateSkipped:
 			finished++
+			if item.State == ChecklistItemStateClosed {
+				closed++
+			}
 			lastFinished = max(lastFinished, lastChangeInto(itemChanges, item.State, item.StateModified))
 		}
 
@@ -83,10 +151,15 @@ func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateCha
 		}
 	}
 
+	phase.TasksTotal = total
+	phase.TasksOpen = total - finished
+
 	switch {
 	case blocked:
 		phase.Status = PhaseStatusBlocked
 		phase.StartedAt = firstActive
+	case total > 0 && finished == total && closed == 0:
+		phase.Status = PhaseStatusSkipped
 	case total > 0 && finished == total:
 		phase.Status = PhaseStatusDone
 		phase.EndedAt = lastFinished

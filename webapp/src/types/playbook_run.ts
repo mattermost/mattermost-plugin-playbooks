@@ -190,12 +190,19 @@ export function isRun(run: undefined | null | PlaybookRun | PlaybookRunConnectio
     return false;
 }
 
-export type PhaseStatus = 'not_started' | 'started' | 'done' | 'blocked';
+export type PhaseStatus = 'not_started' | 'started' | 'done' | 'blocked' | 'skipped';
 
 export interface RunPhase {
     checklist_id: string;
     title: string;
     status: PhaseStatus;
+
+    /** Where the run is: the furthest phase with work started, or the one up next. At most one. */
+    current: boolean;
+
+    /** Visible tasks not yet closed or skipped, and all visible tasks. */
+    tasks_open: number;
+    tasks_total: number;
 
     /** Epoch millis of the phase's first activity; 0 when it has not started. */
     started_at: number;
