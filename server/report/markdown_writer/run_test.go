@@ -46,7 +46,7 @@ func TestRenderRunMarkdown_PlainTextEscapedBodiesVerbatim(t *testing.T) {
 	require.Contains(t, got, "### \\*not emphasis\\* (2/4 · 50%)\n")
 }
 
-func TestRenderRunMarkdown_PlainHeadlineEscaped(t *testing.T) {
+func TestRenderRunMarkdown_TimelineNamesEscaped(t *testing.T) {
 	rc := reporttest.TypicalRun()
 	rc.Users["u1"] = report.RenderUser{UserID: "u1", DisplayName: "[Mallory](https://example.com)"}
 	opts := reporttest.Options("en", time.UTC)
@@ -54,5 +54,5 @@ func TestRenderRunMarkdown_PlainHeadlineEscaped(t *testing.T) {
 
 	got := string(RenderRunMarkdown(report.BuildRun(rc, opts)))
 
-	require.Contains(t, got, `\[Mallory\](https://example.com) created this run`)
+	require.Contains(t, got, `Run started by \[Mallory\](https://example.com)`)
 }

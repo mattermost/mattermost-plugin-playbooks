@@ -25,9 +25,10 @@ Rolled back the config.
 
 ## Timeline
 
-- **November 14, 2023, 10:13 PM UTC** · _Run created_: Dana Display created this run
-- **November 14, 2023, 10:16 PM UTC** · _Task reassigned_: Unknown user reassigned a task
-- **November 14, 2023, 10:17 PM UTC** · _Task updated_: Unknown user restored task 'Check IdP'
+- **November 14, 2023, 10:13 PM UTC** · Run started by Dana Display
+- **November 14, 2023, 10:16 PM UTC** · Assignee Changed
+  Unknown user
+- **November 14, 2023, 10:17 PM UTC** · Unknown user restored checklist item "Check IdP"
 
 ## Retrospective
 

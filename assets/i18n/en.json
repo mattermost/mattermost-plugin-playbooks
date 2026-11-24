@@ -299,204 +299,160 @@
     "translation": "(untitled run)"
   },
   {
-    "id": "app.report.timeline.assignee_changed.headline",
-    "translation": "{{.Actor}} reassigned a task"
+    "id": "app.report.timeline.assignee_changed",
+    "translation": "Assignee Changed"
   },
   {
-    "id": "app.report.timeline.assignee_changed.label",
-    "translation": "Task reassigned"
-  },
-  {
-    "id": "app.report.timeline.canceled_retrospective.headline",
-    "translation": "{{.Actor}} canceled the retrospective"
-  },
-  {
-    "id": "app.report.timeline.canceled_retrospective.label",
-    "translation": "Retrospective canceled"
-  },
-  {
-    "id": "app.report.timeline.event.headline",
+    "id": "app.report.timeline.event",
     "translation": "Timeline event"
   },
   {
-    "id": "app.report.timeline.event.label",
-    "translation": "Event"
+    "id": "app.report.timeline.owner_changed",
+    "translation": "Owner changed from {{.Summary}}"
   },
   {
-    "id": "app.report.timeline.event_from_post.headline",
-    "translation": "{{.Actor}} posted in the channel"
+    "id": "app.report.timeline.participants.added_list",
+    "translation": "{{.Name}} added {{.Users}} to the run"
   },
   {
-    "id": "app.report.timeline.event_from_post.label",
-    "translation": "Channel post"
+    "id": "app.report.timeline.participants.added_many",
+    "translation": "{{.Name}} added {{.Count}} participants to the run"
   },
   {
-    "id": "app.report.timeline.incident_created.headline",
-    "translation": "{{.Actor}} created this run"
+    "id": "app.report.timeline.participants.added_one",
+    "translation": "{{.Name}} added @{{.User}} to the run"
   },
   {
-    "id": "app.report.timeline.incident_created.label",
-    "translation": "Run created"
+    "id": "app.report.timeline.participants.removed_list",
+    "translation": "{{.Name}} removed {{.Users}} from the run"
   },
   {
-    "id": "app.report.timeline.owner_changed.headline",
-    "translation": "{{.Actor}} changed owner"
+    "id": "app.report.timeline.participants.removed_many",
+    "translation": "{{.Name}} removed {{.Count}} participants from the run"
   },
   {
-    "id": "app.report.timeline.owner_changed.label",
-    "translation": "Owner changed"
+    "id": "app.report.timeline.participants.removed_one",
+    "translation": "{{.Name}} removed @{{.User}} from the run"
   },
   {
-    "id": "app.report.timeline.participants_changed.headline",
-    "translation": "{{.Actor}} changed participants"
+    "id": "app.report.timeline.property_cleared",
+    "translation": "{{.Name}} cleared {{.Property}}"
   },
   {
-    "id": "app.report.timeline.participants_changed.label",
-    "translation": "Participants changed"
+    "id": "app.report.timeline.property_set",
+    "translation": "{{.Name}} set {{.Property}} to {{.Value}}"
   },
   {
-    "id": "app.report.timeline.property_changed.headline",
-    "translation": "{{.Actor}} changed a property"
+    "id": "app.report.timeline.property_updated",
+    "translation": "{{.Name}} updated {{.Property}} from {{.Old}} to {{.New}}"
   },
   {
-    "id": "app.report.timeline.property_changed.label",
-    "translation": "Property changed"
+    "id": "app.report.timeline.ran_slash_command",
+    "translation": "Slash Command Executed"
   },
   {
-    "id": "app.report.timeline.published_retrospective.headline",
-    "translation": "{{.Actor}} published the retrospective"
+    "id": "app.report.timeline.retrospective_canceled",
+    "translation": "Retrospective canceled by {{.Name}}"
   },
   {
-    "id": "app.report.timeline.published_retrospective.label",
-    "translation": "Retrospective published"
+    "id": "app.report.timeline.retrospective_disabled",
+    "translation": "Retrospective disabled by {{.Name}}"
   },
   {
-    "id": "app.report.timeline.ran_slash_command.headline",
-    "translation": "{{.Actor}} ran a slash command"
+    "id": "app.report.timeline.retrospective_enabled",
+    "translation": "Retrospective enabled by {{.Name}}"
   },
   {
-    "id": "app.report.timeline.ran_slash_command.label",
-    "translation": "Slash command"
+    "id": "app.report.timeline.retrospective_published",
+    "translation": "Retrospective published by {{.Name}}"
   },
   {
-    "id": "app.report.timeline.run_finished.headline",
-    "translation": "{{.Actor}} marked this run finished"
+    "id": "app.report.timeline.run_finished",
+    "translation": "Run finished by {{.Name}}"
   },
   {
-    "id": "app.report.timeline.run_finished.label",
-    "translation": "Run finished"
+    "id": "app.report.timeline.run_restored",
+    "translation": "Run restored by {{.Name}}"
   },
   {
-    "id": "app.report.timeline.run_restored.headline",
-    "translation": "{{.Actor}} restored this run"
+    "id": "app.report.timeline.run_started",
+    "translation": "Run started by {{.Name}}"
   },
   {
-    "id": "app.report.timeline.run_restored.label",
-    "translation": "Run restored"
+    "id": "app.report.timeline.status_changed",
+    "translation": "{{.Name}} changed status from {{.Summary}}"
   },
   {
-    "id": "app.report.timeline.status_update_requested.headline",
-    "translation": "{{.Actor}} requested a status update"
+    "id": "app.report.timeline.status_posted",
+    "translation": "{{.Name}} posted a status update"
   },
   {
-    "id": "app.report.timeline.status_update_requested.label",
-    "translation": "Status update requested"
+    "id": "app.report.timeline.status_requested",
+    "translation": "{{.Name}} requested a status update"
   },
   {
-    "id": "app.report.timeline.status_update_snoozed.headline",
-    "translation": "{{.Actor}} snoozed status updates"
+    "id": "app.report.timeline.status_snoozed",
+    "translation": "{{.Name}} snoozed a status update"
   },
   {
-    "id": "app.report.timeline.status_update_snoozed.label",
-    "translation": "Status updates snoozed"
+    "id": "app.report.timeline.status_updates_disabled",
+    "translation": "Run status updates disabled by {{.Name}}"
   },
   {
-    "id": "app.report.timeline.status_updated.headline",
-    "translation": "{{.Actor}} posted a status update"
-  },
-  {
-    "id": "app.report.timeline.status_updated.label",
-    "translation": "Status update posted"
-  },
-  {
-    "id": "app.report.timeline.status_updates_disabled.headline",
-    "translation": "{{.Actor}} disabled status updates"
-  },
-  {
-    "id": "app.report.timeline.status_updates_disabled.label",
-    "translation": "Status updates disabled"
-  },
-  {
-    "id": "app.report.timeline.status_updates_enabled.headline",
-    "translation": "{{.Actor}} enabled status updates"
-  },
-  {
-    "id": "app.report.timeline.status_updates_enabled.label",
-    "translation": "Status updates enabled"
+    "id": "app.report.timeline.status_updates_enabled",
+    "translation": "Run status updates enabled by {{.Name}}"
   },
   {
     "id": "app.report.timeline.task.checked",
-    "translation": "{{.Actor}} checked task '{{.Item}}'"
+    "translation": "{{.Name}} checked off checklist item \"{{.Item}}\""
   },
   {
     "id": "app.report.timeline.task.checked_a_task",
-    "translation": "{{.Actor}} checked a task"
+    "translation": "{{.Name}} checked off a checklist item"
   },
   {
     "id": "app.report.timeline.task.requirements_updated",
-    "translation": "{{.Actor}} updated requirements for task '{{.Item}}'"
+    "translation": "{{.Name}} updated requirements for checklist item \"{{.Item}}\""
   },
   {
     "id": "app.report.timeline.task.requirements_updated_a_task",
-    "translation": "{{.Actor}} updated requirements for a task"
+    "translation": "{{.Name}} updated requirements for a checklist item"
   },
   {
     "id": "app.report.timeline.task.restored",
-    "translation": "{{.Actor}} restored task '{{.Item}}'"
+    "translation": "{{.Name}} restored checklist item \"{{.Item}}\""
   },
   {
     "id": "app.report.timeline.task.restored_a_task",
-    "translation": "{{.Actor}} restored a task"
+    "translation": "{{.Name}} restored a checklist item"
   },
   {
     "id": "app.report.timeline.task.skipped",
-    "translation": "{{.Actor}} skipped task '{{.Item}}'"
+    "translation": "{{.Name}} skipped checklist item \"{{.Item}}\""
   },
   {
     "id": "app.report.timeline.task.skipped_a_task",
-    "translation": "{{.Actor}} skipped a task"
+    "translation": "{{.Name}} skipped a checklist item"
   },
   {
     "id": "app.report.timeline.task.unchecked",
-    "translation": "{{.Actor}} unchecked task '{{.Item}}'"
+    "translation": "{{.Name}} unchecked checklist item \"{{.Item}}\""
   },
   {
     "id": "app.report.timeline.task.unchecked_a_task",
-    "translation": "{{.Actor}} unchecked a task"
+    "translation": "{{.Name}} unchecked a checklist item"
   },
   {
     "id": "app.report.timeline.task.updated",
-    "translation": "{{.Actor}} updated task '{{.Item}}'"
+    "translation": "{{.Name}} updated a checklist item"
   },
   {
-    "id": "app.report.timeline.task.updated_a_task",
-    "translation": "{{.Actor}} updated a task"
+    "id": "app.report.timeline.user_joined",
+    "translation": "@{{.User}} joined the run"
   },
   {
-    "id": "app.report.timeline.task_state_modified.headline",
-    "translation": "{{.Actor}} updated a task"
-  },
-  {
-    "id": "app.report.timeline.task_state_modified.label",
-    "translation": "Task updated"
-  },
-  {
-    "id": "app.report.timeline.user_joined_left.headline",
-    "translation": "{{.Actor}} joined or left"
-  },
-  {
-    "id": "app.report.timeline.user_joined_left.label",
-    "translation": "Channel membership"
+    "id": "app.report.timeline.user_left",
+    "translation": "@{{.User}} left the run"
   },
   {
     "id": "app.report.unknown_user",

@@ -20,6 +20,16 @@ code, pre { font-family: var(--font-mono); }
   {{template "_styles" .}}
 </head>
 <body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+    <symbol id="icon-lifecycle" viewBox="0 0 24 24"><path d="M21,11C21,16.55 17.16,21.74 12,23C6.84,21.74 3,16.55 3,11V5L12,1L21,5V11M12,21C15.75,20 19,15.54 19,11.22V6.3L12,3.18L5,6.3V11.22C5,15.54 8.25,20 12,21M11,7H13V13H11V7M11,15H13V17H11V15Z"/></symbol>
+    <symbol id="icon-status" viewBox="0 0 24 24"><path d="M12.4,6l0.4,2H18v6h-3.4l-0.4-2H7V6H12.4 M14,4H5v17h2v-7h5.6l0.4,2h7V6h-5.6"/></symbol>
+    <symbol id="icon-update" viewBox="0 0 24 24"><path d="M21,10.12H14.22L16.96,7.3C14.23,4.6 9.81,4.5 7.08,7.2C4.35,9.91 4.35,14.28 7.08,17C9.81,19.7 14.23,19.7 16.96,17C18.32,15.65 19,14.08 19,12.1H21C21,14.08 20.12,16.65 18.36,18.39C14.85,21.87 9.15,21.87 5.64,18.39C2.14,14.92 2.11,9.28 5.62,5.81C9.13,2.34 14.76,2.34 18.27,5.81L21,3V10.12M12.5,8V12.25L16,14.33L15.28,15.54L11,13V8H12.5Z"/></symbol>
+    <symbol id="icon-tasks" viewBox="0 0 24 24"><path d="M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z"/></symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z"/></symbol>
+    <symbol id="icon-people" viewBox="0 0 24 24"><path d="M19.2,15.9L16,14c0.2-0.3,0.5-0.6,0.7-1c0.8-1.4,1.3-3.2,1.3-5c0-3.6-2.4-6-6-6S6,4.4,6,8c0,1.8,0.5,3.6,1.3,5.1c0.2,0.4,0.4,0.7,0.7,1L4.8,16C3.7,16.4,3,17.6,3,18.8C3,20.6,4.4,22,6.2,22h11.6c1.8,0,3.2-1.4,3.2-3.2 C21,17.6,20.3,16.4,19.2,15.9z M8,8c0-2.8,1.8-4,4-4s4,1.2,4,4c0,1.8-0.6,3.8-1.8,5c-0.6,0.6-1.3,1-2.2,1s-1.6-0.4-2.2-1 C8.6,11.8,8,9.8,8,8z M17.8,20H6.2C5.5,20,5,19.5,5,18.8c0-0.5,0.3-0.9,0.7-1.1l3.9-2.3c0.8,0.4,1.6,0.6,2.4,0.6s1.6-0.2,2.3-0.6 l3.9,2.3c0.4,0.2,0.7,0.6,0.7,1.1C19,19.5,18.5,20,17.8,20z"/></symbol>
+    <symbol id="icon-cancel" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12C4,13.85 4.63,15.55 5.68,16.91L16.91,5.68C15.55,4.63 13.85,4 12,4M12,20A8,8 0 0,0 20,12C20,10.15 19.37,8.45 18.32,7.09L7.09,18.32C8.45,19.37 10.15,20 12,20Z"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><path d="M12,20c4.4,0,8-3.6,8-8s-3.6-8-8-8s-8,3.6-8,8S7.6,20,12,20 M12,2c5.5,0,10,4.5,10,10s-4.5,10-10,10S2,17.5,2,12S6.5,2,12,2 M15.535,16.949L11,12.414V7h2v4.586l3.949,3.949L15.535,16.949z"/></symbol>
+  </svg>
   <section class="cover">
     <h1 class="cover__title">{{.Title}}</h1>
     <p class="cover__kind">{{.Kind}}</p>
@@ -67,16 +77,24 @@ code, pre { font-family: var(--font-mono); }
   {{- if not .Timeline.Omitted}}
   <section class="section">
   <h2>{{.Timeline.Title}}</h2>
-  {{- range .Timeline.Events}}
-  <div class="timeline-event timeline-event--{{.Category}}">
-    <span class="timeline-event__label">{{.TypeLabel}}</span>
-    <div class="timeline-event__body">
-      <div class="timeline-event__headline">{{if .PlainHeadline}}{{.Headline}}{{else}}{{markdownInline .Headline}}{{end}}</div>
-      {{if .Detail}}<div class="timeline-event__detail">{{markdownInline .Detail}}</div>{{end}}
-      <div class="timeline-event__date">{{.Date}}</div>
+  {{- if .Timeline.Events}}
+  <div class="timeline">
+    {{- range .Timeline.Events}}
+    <div class="timeline-event">
+      <span class="timeline-event__icon">{{if .Icon}}<svg aria-hidden="true"><use href="#icon-{{.Icon}}"/></svg>{{end}}</span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">{{.Headline}}</div>
+        {{- if or .DetailPlain .Detail}}
+        <div class="timeline-event__detail">{{.DetailPlain}}{{if and .DetailPlain .Detail}} {{end}}{{markdownInline .Detail}}</div>
+        {{- end}}
+        <div class="timeline-event__date">{{.Date}}</div>
+      </div>
     </div>
+    {{- end}}
   </div>
-  {{else}}<p class="muted">{{.Timeline.Empty}}</p>{{end}}
+  {{- else}}
+  <p class="muted">{{.Timeline.Empty}}</p>
+  {{- end}}
   </section>
   {{- end}}
 

@@ -6,6 +6,7 @@ package markdown_writer //nolint:staticcheck
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 )
@@ -44,13 +45,9 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 			writeEmpty(&b, r.Timeline.Empty)
 		} else {
 			for _, ev := range r.Timeline.Events {
-				headline := ev.Headline
-				if ev.PlainHeadline {
-					headline = escapeText(headline)
-				}
-				fmt.Fprintf(&b, "- **%s** · _%s_: %s\n", escapeText(ev.Date), escapeText(ev.TypeLabel), headline)
-				if ev.Detail != "" {
-					writeLines(&b, closeFences(ev.Detail, 2), "  ")
+				fmt.Fprintf(&b, "- **%s** · %s\n", escapeText(ev.Date), escapeText(ev.Headline))
+				if detail := strings.TrimSpace(escapeText(ev.DetailPlain) + " " + ev.Detail); detail != "" {
+					writeLines(&b, closeFences(detail, 2), "  ")
 				}
 			}
 			b.WriteString("\n")

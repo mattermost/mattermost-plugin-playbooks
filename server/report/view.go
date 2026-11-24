@@ -105,17 +105,16 @@ type TimelineSection struct {
 	Events []TimelineEvent
 }
 
-// TimelineEvent is one line of a run's timeline.
+// TimelineEvent is one line of a run's timeline, worded as on the run page.
 type TimelineEvent struct {
-	Date      string
-	Category  TimelineEventCategory
-	TypeLabel string
-	// Headline is never empty. A stored summary is Markdown; a headline the
-	// report wrote around a user's name is plain text, with PlainHeadline set.
-	Headline      string
-	PlainHeadline bool
-	// Detail is Markdown; it may be empty.
-	Detail string
+	Date string
+	Icon TimelineIcon
+	// Headline is plain text and never empty.
+	Headline string
+	// DetailPlain (plain text) and then Detail (Markdown) are shown under the
+	// headline; either may be empty.
+	DetailPlain string
+	Detail      string
 }
 
 // StatusUpdateSection lists a run's status updates.

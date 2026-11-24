@@ -25,250 +25,60 @@ func formatEvent(ev RenderTimelineEvent, rt map[string]RenderUser) TimelineEvent
 	return newBuilder(rt, testOptions()).timelineEvent(ev)
 }
 
-func TestTimelineEvent_PerType(t *testing.T) {
-	rt := resolverWithAlice()
-
-	cases := []struct {
-		name             string
-		eventType        string
-		summary          string
-		wantLabel        string
-		wantCategory     TimelineEventCategory
-		wantHeadlineFull string // when summary is populated, headline should equal summary
-		wantHeadlineSub  string // when summary is empty, headline should contain this substring
+func TestTimelineEvent(t *testing.T) {
+	rt := map[string]RenderUser{
+		"u1": {UserID: "u1", Username: "alice", DisplayName: "Alice Admin"},
+		"u2": {UserID: "u2", Username: "bob"},
+	}
+	type want struct {
+		icon     TimelineIcon
+		headline string
+		detail   string
+	}
+	for _, tc := range []struct {
+		name string
+		ev   RenderTimelineEvent
+		want want
 	}{
-		{
-			name: "incident_created", eventType: "incident_created",
-			summary:          "Run created",
-			wantLabel:        "Run created",
-			wantCategory:     CategoryLifecycle,
-			wantHeadlineFull: "Run created",
-			wantHeadlineSub:  "alice created this run",
-		},
-		{
-			name: "status_updated", eventType: "status_updated",
-			summary:          "alice posted an update",
-			wantLabel:        "Status update posted",
-			wantCategory:     CategoryStatus,
-			wantHeadlineFull: "alice posted an update",
-			wantHeadlineSub:  "alice posted a status update",
-		},
-		{
-			name: "status_update_requested", eventType: "status_update_requested",
-			summary:          "requested",
-			wantLabel:        "Status update requested",
-			wantCategory:     CategoryStatus,
-			wantHeadlineFull: "requested",
-			wantHeadlineSub:  "alice requested a status update",
-		},
-		{
-			name: "owner_changed", eventType: "owner_changed",
-			summary:          "@old to @new",
-			wantLabel:        "Owner changed",
-			wantCategory:     CategoryPeople,
-			wantHeadlineFull: "@old to @new",
-			wantHeadlineSub:  "alice changed owner",
-		},
-		{
-			name: "assignee_changed", eventType: "assignee_changed",
-			summary:          "task assigned",
-			wantLabel:        "Task reassigned",
-			wantCategory:     CategoryPeople,
-			wantHeadlineFull: "task assigned",
-			wantHeadlineSub:  "alice reassigned a task",
-		},
-		{
-			name: "ran_slash_command", eventType: "ran_slash_command",
-			summary:          "/run cmd",
-			wantLabel:        "Slash command",
-			wantCategory:     CategoryCommand,
-			wantHeadlineFull: "/run cmd",
-			wantHeadlineSub:  "alice ran a slash command",
-		},
-		{
-			name: "event_from_post", eventType: "event_from_post",
-			summary:          "user posted",
-			wantLabel:        "Channel post",
-			wantCategory:     CategoryOther,
-			wantHeadlineFull: "user posted",
-			wantHeadlineSub:  "alice posted in the channel",
-		},
-		{
-			name: "user_joined_left", eventType: "user_joined_left",
-			summary:          "joined",
-			wantLabel:        "Channel membership",
-			wantCategory:     CategoryPeople,
-			wantHeadlineFull: "joined",
-			wantHeadlineSub:  "alice joined or left",
-		},
-		{
-			name: "participants_changed", eventType: "participants_changed",
-			summary:          "added bob",
-			wantLabel:        "Participants changed",
-			wantCategory:     CategoryPeople,
-			wantHeadlineFull: "added bob",
-			wantHeadlineSub:  "alice changed participants",
-		},
-		{
-			name: "published_retrospective", eventType: "published_retrospective",
-			summary:          "Published",
-			wantLabel:        "Retrospective published",
-			wantCategory:     CategoryRetrospective,
-			wantHeadlineFull: "Published",
-			wantHeadlineSub:  "alice published the retrospective",
-		},
-		{
-			name: "canceled_retrospective", eventType: "canceled_retrospective",
-			summary:          "Canceled",
-			wantLabel:        "Retrospective canceled",
-			wantCategory:     CategoryRetrospective,
-			wantHeadlineFull: "Canceled",
-			wantHeadlineSub:  "alice canceled the retrospective",
-		},
-		{
-			name: "run_finished", eventType: "run_finished",
-			summary:          "Finished",
-			wantLabel:        "Run finished",
-			wantCategory:     CategoryLifecycle,
-			wantHeadlineFull: "Finished",
-			wantHeadlineSub:  "alice marked this run finished",
-		},
-		{
-			name: "run_restored", eventType: "run_restored",
-			summary:          "Restored",
-			wantLabel:        "Run restored",
-			wantCategory:     CategoryLifecycle,
-			wantHeadlineFull: "Restored",
-			wantHeadlineSub:  "alice restored this run",
-		},
-		{
-			name: "status_update_snoozed", eventType: "status_update_snoozed",
-			summary:          "Snoozed 1h",
-			wantLabel:        "Status updates snoozed",
-			wantCategory:     CategoryStatus,
-			wantHeadlineFull: "Snoozed 1h",
-			wantHeadlineSub:  "alice snoozed status updates",
-		},
-		{
-			name: "status_updates_enabled", eventType: "status_updates_enabled",
-			summary:          "",
-			wantLabel:        "Status updates enabled",
-			wantCategory:     CategoryStatus,
-			wantHeadlineFull: "",
-			wantHeadlineSub:  "alice enabled status updates",
-		},
-		{
-			name: "status_updates_disabled", eventType: "status_updates_disabled",
-			summary:          "",
-			wantLabel:        "Status updates disabled",
-			wantCategory:     CategoryStatus,
-			wantHeadlineFull: "",
-			wantHeadlineSub:  "alice disabled status updates",
-		},
-		{
-			name: "property_changed", eventType: "property_changed",
-			summary:          "set priority",
-			wantLabel:        "Property changed",
-			wantCategory:     CategoryOther,
-			wantHeadlineFull: "set priority",
-			wantHeadlineSub:  "alice changed a property",
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name+"/with-summary", func(t *testing.T) {
-			ev := RenderTimelineEvent{EventType: tc.eventType, Summary: tc.summary, SubjectID: "u1"}
-			f := formatEvent(ev, rt)
-			require.Equal(t, tc.wantLabel, f.TypeLabel)
-			require.Equal(t, tc.wantCategory, f.Category)
-			if tc.wantHeadlineFull != "" {
-				require.Equal(t, tc.wantHeadlineFull, f.Headline)
-			} else {
-				// Empty-summary path even though this branch is "with-summary":
-				// some events (e.g. status_updates_enabled) have no plausible
-				// non-empty summary; verify synthesized headline.
-				require.Contains(t, f.Headline, tc.wantHeadlineSub)
-			}
-		})
-
-		t.Run(tc.name+"/no-summary", func(t *testing.T) {
-			ev := RenderTimelineEvent{EventType: tc.eventType, Summary: "", SubjectID: "u1"}
-			f := formatEvent(ev, rt)
-			require.Equal(t, tc.wantLabel, f.TypeLabel)
-			require.Equal(t, tc.wantCategory, f.Category)
-			require.NotEmpty(t, f.Headline, "headline must never be blank")
-			require.Contains(t, f.Headline, tc.wantHeadlineSub)
-		})
-	}
-}
-
-func TestTimelineEvent_TaskStateModified_ParsesJSON(t *testing.T) {
-	rt := resolverWithAlice()
-	ev := RenderTimelineEvent{
-		EventType: "task_state_modified",
-		Summary:   "task changed",
-		Details:   `{"item":"Page on-call","action":"check"}`,
-		SubjectID: "u1",
-	}
-	f := formatEvent(ev, rt)
-	require.Equal(t, "Task updated", f.TypeLabel)
-	require.Equal(t, CategoryTasks, f.Category)
-	require.Contains(t, f.Headline, "alice")
-	require.Contains(t, f.Headline, "checked")
-	require.Contains(t, f.Headline, "'Page on-call'")
-	require.Empty(t, f.Detail, "raw JSON details must not leak into Detail")
-}
-
-func TestTimelineEvent_TaskStateModified_AllActionVerbs(t *testing.T) {
-	rt := resolverWithAlice()
-	for action, verb := range map[string]string{
-		"check":                "checked",
-		"uncheck":              "unchecked",
-		"skip":                 "skipped",
-		"restore":              "restored",
-		"requirements_updated": "updated requirements for",
+		{"run started", RenderTimelineEvent{EventType: "incident_created", CreatorID: "u1"}, want{IconLifecycle, "Run started by alice", ""}},
+		{"run finished", RenderTimelineEvent{EventType: "run_finished", SubjectID: "u1"}, want{IconLifecycle, "Run finished by alice", ""}},
+		{"run restored", RenderTimelineEvent{EventType: "run_restored", SubjectID: "u1"}, want{IconLifecycle, "Run restored by alice", ""}},
+		{"status posted", RenderTimelineEvent{EventType: "status_updated", SubjectID: "u1"}, want{IconStatus, "alice posted a status update", ""}},
+		{"status changed", RenderTimelineEvent{EventType: "status_updated", SubjectID: "u1", Summary: "Active to Resolved"}, want{IconStatus, "alice changed status from Active to Resolved", ""}},
+		{"status snoozed", RenderTimelineEvent{EventType: "status_update_snoozed", SubjectID: "u1"}, want{IconStatus, "alice snoozed a status update", ""}},
+		{"status requested", RenderTimelineEvent{EventType: "status_update_requested", SubjectID: "u1"}, want{IconRequested, "alice requested a status update", ""}},
+		{"owner changed", RenderTimelineEvent{EventType: "owner_changed", SubjectID: "u1", Summary: "@alice to @bob"}, want{IconEdit, "Owner changed from @alice to @bob", ""}},
+		{"task checked", RenderTimelineEvent{EventType: "task_state_modified", SubjectID: "u1", Details: `{"action":"check","task":"Page on-call"}`}, want{IconTasks, `alice checked off checklist item "Page on-call"`, ""}},
+		{"task without a title", RenderTimelineEvent{EventType: "task_state_modified", SubjectID: "u1", Details: `{"action":"skip"}`}, want{IconTasks, "alice skipped a checklist item", ""}},
+		{"task with an unknown action", RenderTimelineEvent{EventType: "task_state_modified", SubjectID: "u1", Summary: "renamed **A**"}, want{IconTasks, `alice renamed "A"`, ""}},
+		{"assignee changed", RenderTimelineEvent{EventType: "assignee_changed", SubjectID: "u1", Summary: "changed assignee of checklist item **A** from **No Assignee** to @bob"}, want{IconEdit, "Assignee Changed", "alice changed assignee of checklist item **A** from **No Assignee** to @bob"}},
+		{"slash command", RenderTimelineEvent{EventType: "ran_slash_command", SubjectID: "u1", Summary: "ran the /echo command"}, want{IconEdit, "Slash Command Executed", "alice ran the /echo command"}},
+		{"event from post", RenderTimelineEvent{EventType: "event_from_post", SubjectID: "u1", Summary: "Database failed over"}, want{IconEdit, "Database failed over", ""}},
+		{"user joined", RenderTimelineEvent{EventType: "user_joined_left", SubjectID: "u1", Details: `{"action":"joined","requester":"alice","users":["alice"]}`}, want{IconPeople, "@alice joined the run", ""}},
+		{"user left", RenderTimelineEvent{EventType: "user_joined_left", SubjectID: "u1", Details: `{"action":"left","requester":"alice","users":["alice"]}`}, want{IconPeople, "@alice left the run", ""}},
+		{"user joined, older format", RenderTimelineEvent{EventType: "user_joined_left", Details: `{"title":"@alice joined the channel"}`}, want{IconPeople, "@alice joined the channel", ""}},
+		// The subject is the added user; the requester comes from the details.
+		{"participant added", RenderTimelineEvent{EventType: "participants_changed", SubjectID: "u2", Details: `{"action":"joined","requester":"alice","users":["bob"]}`}, want{IconPeople, "alice added @bob to the run", ""}},
+		{"participants removed", RenderTimelineEvent{EventType: "participants_changed", SubjectID: "u1", Details: `{"action":"left","requester":"alice","users":["bob","carol"]}`}, want{IconPeople, "alice removed 2 participants from the run", "alice removed @bob, @carol from the run"}},
+		{"retrospective published", RenderTimelineEvent{EventType: "published_retrospective", SubjectID: "u1"}, want{IconEdit, "Retrospective published by alice", ""}},
+		{"retrospective canceled", RenderTimelineEvent{EventType: "canceled_retrospective", SubjectID: "u1"}, want{IconCanceled, "Retrospective canceled by alice", ""}},
+		{"status updates enabled", RenderTimelineEvent{EventType: "status_updates_enabled", SubjectID: "u1"}, want{IconSettings, "Run status updates enabled by alice", ""}},
+		{"status updates disabled", RenderTimelineEvent{EventType: "status_updates_disabled", SubjectID: "u1"}, want{IconSettings, "Run status updates disabled by alice", ""}},
+		{"retrospective enabled", RenderTimelineEvent{EventType: "retrospective_enabled", SubjectID: "u1"}, want{IconSettings, "Retrospective enabled by alice", ""}},
+		{"retrospective disabled", RenderTimelineEvent{EventType: "retrospective_disabled", SubjectID: "u1"}, want{IconSettings, "Retrospective disabled by alice", ""}},
+		{"property set", RenderTimelineEvent{EventType: "property_changed", SubjectID: "u1", Details: `{"property_field_name":"Release","old_value_display":null,"new_value_display":"v1.2"}`}, want{IconEdit, "alice set Release to v1.2", ""}},
+		{"property updated", RenderTimelineEvent{EventType: "property_changed", SubjectID: "u1", Details: `{"property_field_name":"Release","old_value_display":"v1.1","new_value_display":"v1.2"}`}, want{IconEdit, "alice updated Release from v1.1 to v1.2", ""}},
+		{"property cleared", RenderTimelineEvent{EventType: "property_changed", SubjectID: "u1", Details: `{"property_field_name":"Release","old_value_display":"v1.1","new_value_display":null}`}, want{IconEdit, "alice cleared Release", ""}},
+		{"unknown actor", RenderTimelineEvent{EventType: "run_finished", SubjectID: "ghost"}, want{IconLifecycle, "Run finished by Unknown user", ""}},
+		{"unknown type with a summary", RenderTimelineEvent{EventType: "channel_archived", Summary: "Channel archived"}, want{"", "Channel archived", ""}},
+		{"unknown type without a summary", RenderTimelineEvent{EventType: "channel_archived"}, want{"", "Timeline event", ""}},
+		{"details that don't parse", RenderTimelineEvent{EventType: "participants_changed", Summary: "alice added bob", Details: "not json"}, want{IconPeople, "alice added bob", ""}},
 	} {
-		ev := RenderTimelineEvent{
-			EventType: "task_state_modified",
-			Details:   `{"task":"T","action":"` + action + `"}`,
-			SubjectID: "u1",
-		}
-		f := formatEvent(ev, rt)
-		require.Contains(t, f.Headline, verb, "action %q should map to verb %q", action, verb)
+		t.Run(tc.name, func(t *testing.T) {
+			f := newBuilder(rt, testOptions()).timelineEvent(tc.ev)
+			require.Equal(t, tc.want, want{f.Icon, f.Headline, strings.TrimSpace(f.DetailPlain + " " + f.Detail)})
+		})
 	}
-}
-
-func TestTimelineEvent_TaskStateModified_InvalidJSONFallsBackToSummary(t *testing.T) {
-	rt := resolverWithAlice()
-	ev := RenderTimelineEvent{
-		EventType: "task_state_modified",
-		Summary:   "fallback summary",
-		Details:   `{not json`,
-		SubjectID: "u1",
-	}
-	f := formatEvent(ev, rt)
-	require.Equal(t, "Task updated", f.TypeLabel)
-	require.Equal(t, "fallback summary", f.Headline)
-	// Details opened with '{' so it looked like JSON: default rule drops it.
-	require.Empty(t, f.Detail)
-}
-
-func TestTimelineEvent_UnknownEventType(t *testing.T) {
-	rt := resolverWithAlice()
-
-	// With summary: passes through.
-	ev := RenderTimelineEvent{EventType: "totally_unknown", Summary: "hello", SubjectID: "u1"}
-	f := formatEvent(ev, rt)
-	require.Equal(t, "Event", f.TypeLabel)
-	require.Equal(t, CategoryOther, f.Category)
-	require.Equal(t, "hello", f.Headline)
-
-	// No summary: fallback headline.
-	ev2 := RenderTimelineEvent{EventType: "totally_unknown", Summary: "", SubjectID: "u1"}
-	f2 := formatEvent(ev2, rt)
-	require.Equal(t, "Event", f2.TypeLabel)
-	require.Equal(t, CategoryOther, f2.Category)
-	require.Equal(t, "Timeline event", f2.Headline)
 }
 
 func TestUserName(t *testing.T) {
@@ -301,64 +111,6 @@ func TestUserName_NameFormat(t *testing.T) {
 	}
 }
 
-func TestTimelineEvent_TaskStateModified_TaskKey(t *testing.T) {
-	// The server records the task title under "task".
-	ev := RenderTimelineEvent{EventType: "task_state_modified", Details: `{"action":"check","task":"Page on-call","item_id":"i1"}`, SubjectID: "u1"}
-	require.Equal(t, "alice checked task 'Page on-call'", formatEvent(ev, resolverWithAlice()).Headline)
-}
-
-func TestTimelineEvent_TaskStateModified_NoItem(t *testing.T) {
-	ev := RenderTimelineEvent{EventType: "task_state_modified", Details: `{"action":"skip"}`, SubjectID: "u1"}
-	require.Equal(t, "alice skipped a task", formatEvent(ev, resolverWithAlice()).Headline)
-}
-
-func TestTimelineEvent_PlainTextDetailsPassThrough(t *testing.T) {
-	rt := resolverWithAlice()
-	// owner_changed has no specific Details parsing, so plain-text Details
-	// should reach the Detail field unmodified.
-	ev := RenderTimelineEvent{
-		EventType: "owner_changed",
-		Summary:   "@old to @new",
-		Details:   "Owner transferred due to handoff.",
-		SubjectID: "u1",
-	}
-	f := formatEvent(ev, rt)
-	require.Equal(t, "Owner transferred due to handoff.", f.Detail)
-}
-
-func TestTimelineEvent_UnknownJSONDetailsSuppressed(t *testing.T) {
-	rt := resolverWithAlice()
-	// Unknown event type with JSON-looking Details: must not leak the blob.
-	ev := RenderTimelineEvent{
-		EventType: "totally_unknown",
-		Summary:   "something happened",
-		Details:   `{"foo":"bar"}`,
-		SubjectID: "u1",
-	}
-	f := formatEvent(ev, rt)
-	require.Equal(t, "something happened", f.Headline)
-	require.Empty(t, f.Detail, "unrecognized JSON details must be dropped")
-}
-
-func TestTimelineEvent_HeadlineNeverEmpty(t *testing.T) {
-	// Every known event type with no summary and no actor must still produce
-	// a non-empty Headline.
-	rt := map[string]RenderUser{}
-	types := []string{
-		"incident_created", "task_state_modified", "status_updated",
-		"status_update_requested", "owner_changed", "assignee_changed",
-		"ran_slash_command", "event_from_post", "user_joined_left",
-		"participants_changed", "published_retrospective", "canceled_retrospective",
-		"run_finished", "run_restored", "status_update_snoozed",
-		"status_updates_enabled", "status_updates_disabled", "property_changed",
-		"unknown_type_xyz",
-	}
-	for _, et := range types {
-		f := formatEvent(RenderTimelineEvent{EventType: et}, rt)
-		require.NotEmpty(t, strings.TrimSpace(f.Headline), "event type %q produced empty headline", et)
-	}
-}
-
 func TestParseTaskStateDetails_Robustness(t *testing.T) {
 	// Valid.
 	d := parseTaskStateDetails(`{"item":"X","action":"check"}`)
@@ -377,20 +129,4 @@ func TestParseTaskStateDetails_Robustness(t *testing.T) {
 	d4 := parseTaskStateDetails(`{"item":"only-item"}`)
 	require.Equal(t, "only-item", d4.Item)
 	require.Equal(t, "", d4.Action)
-}
-
-func TestTimelineEvent_HeadlineKind(t *testing.T) {
-	rt := map[string]RenderUser{"u1": {UserID: "u1", DisplayName: "[Mallory](https://example.com)"}}
-	opts := testOptions()
-	opts.NameFormat = model.ShowFullName
-
-	// A headline written around a user's name is plain text.
-	f := newBuilder(rt, opts).timelineEvent(RenderTimelineEvent{EventType: "participants_changed", SubjectID: "u1"})
-	require.True(t, f.PlainHeadline)
-	require.Contains(t, f.Headline, "[Mallory](https://example.com)")
-
-	// A stored summary stays Markdown.
-	f = newBuilder(rt, opts).timelineEvent(RenderTimelineEvent{EventType: "owner_changed", Summary: "@a to **@b**"})
-	require.False(t, f.PlainHeadline)
-	require.Equal(t, "@a to **@b**", f.Headline)
 }

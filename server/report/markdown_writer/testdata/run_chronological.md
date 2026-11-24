@@ -39,14 +39,17 @@ _No message._
 
 ## Timeline
 
-- **November 14, 2023, 11:13 PM CET** · _Run created_: Alice Admin created this run
-- **November 14, 2023, 11:23 PM CET** · _Task updated_: Alice Admin checked task 'Page on-call'
-- **November 14, 2023, 11:24 PM CET** · _Task updated_: Bob Builder skipped a task
-- **November 14, 2023, 11:58 PM CET** · _Status update posted_: `@bob` posted a status update
-  Mitigated; monitoring.
-- **November 15, 2023, 12:13 AM CET** · _Owner changed_: Bob Builder changed owner
-- **November 15, 2023, 12:43 AM CET** · _Event_: Timeline event
-- **November 15, 2023, 1:28 AM CET** · _Run finished_: Alice Admin marked this run finished
+- **November 14, 2023, 11:13 PM CET** · Run started by Alice Admin
+- **November 14, 2023, 11:14 PM CET** · alice added `@carol` to the run
+- **November 14, 2023, 11:15 PM CET** · Alice Admin set Severity to Sev 2
+- **November 14, 2023, 11:23 PM CET** · Alice Admin checked off checklist item "Page on-call"
+- **November 14, 2023, 11:24 PM CET** · Bob Builder skipped a checklist item
+- **November 14, 2023, 11:33 PM CET** · Assignee Changed
+  Alice Admin changed assignee of checklist item **Notify stakeholders** from **No Assignee** to `@bob`
+- **November 14, 2023, 11:58 PM CET** · Bob Builder posted a status update
+- **November 15, 2023, 12:13 AM CET** · Owner changed from `@alice` to `@bob`
+- **November 15, 2023, 12:43 AM CET** · Timeline event
+- **November 15, 2023, 1:28 AM CET** · Run finished by Alice Admin
 
 ## Retrospective
 
