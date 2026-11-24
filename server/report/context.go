@@ -79,8 +79,13 @@ type RenderContext struct {
 	// Checklists are the run's checklists, in stable order.
 	Checklists []RenderChecklist
 
-	// Retrospective is the run's retrospective body and metrics.
+	// Retrospective is the run's retrospective body and metrics. Its metric
+	// values become the headline figures once it's published, even when its
+	// section is left out.
 	Retrospective RenderRetrospective
+
+	// Attributes are the run's attributes to show, in order.
+	Attributes []RenderAttribute
 
 	// Transcript is the time-filtered channel transcript when requested AND
 	// the requester is a member of the run's channel; empty otherwise.
@@ -183,6 +188,17 @@ type RenderMetric struct {
 	Type        string // "duration" | "currency" | "integer"
 	Value       int64
 	HasValue    bool // distinguishes "0" from "not set"
+}
+
+// RenderAttribute is one of a run's attributes. An attribute with no text,
+// users or date is shown as not set.
+type RenderAttribute struct {
+	Name string
+	// Text is a text value, or the names of the picked options.
+	Text    []string
+	UserIDs []string
+	// DateMs is a date value, in milliseconds since the epoch.
+	DateMs int64
 }
 
 // RenderPost is one chat message in a transcript.

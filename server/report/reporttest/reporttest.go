@@ -224,6 +224,14 @@ func TypicalRun() report.RenderContext {
 				{Title: "Time to escalate", Type: "duration", HasValue: true},
 			},
 		},
+		Attributes: []report.RenderAttribute{
+			{Name: "Severity", Text: []string{"Sev 2"}},
+			{Name: "Users affected", Text: []string{"Alfred Morrison (Marketing), Jane Smith (Sales)"}},
+			{Name: "Responders", UserIDs: []string{"u2", "u3"}},
+			// A date picked without a time is stored as midnight UTC.
+			{Name: "Detected", DateMs: time.Date(2023, 11, 14, 0, 0, 0, 0, time.UTC).UnixMilli()},
+			{Name: "Customer ticket"},
+		},
 		Transcript: []report.RenderPost{
 			{PostID: "tp1", AuthorID: "u1", CreateAt: Base + 2*minute, Message: "Looking into it. @channel"},
 			{PostID: "tp3", AuthorID: "u3", CreateAt: Base + 4*minute, Message: "Dashboards are red:\n\n```\nerror rate 40%\n```"},

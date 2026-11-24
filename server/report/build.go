@@ -6,6 +6,7 @@ package report
 import (
 	"cmp"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -67,11 +68,14 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 	if total > 0 {
 		tasks.Hint = T("app.report.run.stat.tasks_complete", map[string]any{"Percent": done * 100 / total})
 	}
-	r.Stats = []Stat{
-		tasks,
-		{Label: T("app.report.run.stat.updates"), Value: strconv.Itoa(len(rc.StatusUpdates))},
-		{Label: T("app.report.run.stat.participants"), Value: strconv.Itoa(len(rc.Participants))},
-		{Label: T("app.report.run.stat.duration"), Value: cmp.Or(b.runDuration(rc), "-")},
+	r.Stats = b.metricStats(rc.Retrospective)
+	if len(r.Stats) == 0 {
+		r.Stats = []Stat{
+			tasks,
+			{Label: T("app.report.run.stat.updates"), Value: strconv.Itoa(len(rc.StatusUpdates))},
+			{Label: T("app.report.run.stat.participants"), Value: strconv.Itoa(len(rc.Participants))},
+			{Label: T("app.report.run.stat.duration"), Value: cmp.Or(b.runDuration(rc), "-")},
+		}
 	}
 
 	participants := make([]string, 0, len(rc.Participants))
@@ -79,14 +83,20 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 		participants = append(participants, b.inlineUserName(u))
 	}
 	r.DetailsTitle = T("app.report.run.details.title")
-	for _, f := range []Field{
+	details := []Field{
 		{Label: T("app.report.run.started"), Value: b.date(rc.Run.StartTimeMs)},
 		{Label: T("app.report.run.ended"), Value: b.date(rc.Run.EndTimeMs)},
 		{Label: T("app.report.run.owner"), Value: b.inlineUserName(rc.Owner)},
 		{Label: T("app.report.run.participants"), Value: strings.Join(participants, ", ")},
-		{Label: T("app.report.run.channel"), Value: rc.Run.ChannelName, URL: rc.Run.ChannelURL},
-		{Label: T("app.report.run.playbook"), Value: rc.Run.PlaybookTitle, URL: rc.Run.PlaybookURL},
-	} {
+	}
+	for _, a := range rc.Attributes {
+		details = append(details, Field{Label: a.Name, Value: b.attributeValue(a)})
+	}
+	details = append(details,
+		Field{Label: T("app.report.run.channel"), Value: rc.Run.ChannelName, URL: rc.Run.ChannelURL},
+		Field{Label: T("app.report.run.playbook"), Value: rc.Run.PlaybookTitle, URL: rc.Run.PlaybookURL},
+	)
+	for _, f := range details {
 		if f.Value != "" {
 			r.Details = append(r.Details, f)
 		}
@@ -124,6 +134,41 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 	r.Retrospective.Omitted = !rc.Sections.Retrospective
 	r.Transcript.Omitted = !rc.Sections.Transcript
 	return r
+}
+
+// maxMetricStats is how many metrics the headline figures show at most.
+const maxMetricStats = 4
+
+// metricStats shows a published retrospective's measured metrics as the
+// headline figures; it is empty for a draft or canceled one, or when no
+// metric has a value.
+func (b *builder) metricStats(retro RenderRetrospective) []Stat {
+	if !retro.Published {
+		return nil
+	}
+	var stats []Stat
+	for _, m := range retro.Metrics {
+		if m.HasValue && len(stats) < maxMetricStats {
+			stats = append(stats, Stat{Label: m.Title, Value: b.metricValue(m.Type, m.Value)})
+		}
+	}
+	return stats
+}
+
+// attributeValue shows an attribute's text, users and date, or that it is
+// not set.
+func (b *builder) attributeValue(a RenderAttribute) string {
+	parts := slices.Clone(a.Text)
+	for _, id := range a.UserIDs {
+		parts = append(parts, b.userName(id))
+	}
+	if day := b.day(a.DateMs); day != "" {
+		parts = append(parts, day)
+	}
+	if len(parts) == 0 {
+		return b.T("app.report.attribute.not_set")
+	}
+	return strings.Join(parts, ", ")
 }
 
 // retrospective shows a published retrospective as it is, a draft with a
@@ -368,6 +413,23 @@ func (b *builder) date(ms int64) string {
 		"Minute": t.Format("04"),
 		"Period": t.Format("PM"),
 		"Zone":   t.Format("MST"),
+	})
+}
+
+// day shows the date of ms, without a time. A date picked without a time
+// is stored as midnight UTC, so it is shown in UTC to keep its day.
+func (b *builder) day(ms int64) string {
+	if ms <= 0 {
+		return ""
+	}
+	t := time.UnixMilli(ms).In(b.loc)
+	if utc := t.UTC(); utc.Hour() == 0 && utc.Minute() == 0 && utc.Second() == 0 {
+		t = utc
+	}
+	return b.T("app.report.date_only", map[string]any{
+		"Month": b.month(t.Month()),
+		"Day":   t.Day(),
+		"Year":  t.Year(),
 	})
 }
 

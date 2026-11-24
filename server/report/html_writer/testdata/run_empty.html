@@ -83,10 +83,11 @@ th { background: #f8f9fb; font-weight: 600; }
 .status-pill--neutral    { background: #f0f0f0; color: #4f5660; }
 
  
-.stat-grid { display: flex; margin: 24px 0; }
-.stat-card { flex: 1; padding: 0 20px; border-left: 1px solid #e0e0e0; }
+ 
+.stat-grid { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; grid-template-rows: repeat(3, auto); margin: 24px 0; }
+.stat-card { display: grid; grid-row: span 3; grid-template-rows: subgrid; padding: 0 20px; border-left: 1px solid #e0e0e0; }
 .stat-card:first-child { padding-left: 0; border-left: none; }
-.stat-card__label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .5px; color: #72767d; }
+.stat-card__label { align-self: end; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .5px; color: #72767d; }
 .stat-card__value { font-size: 28px; font-weight: 600; margin-top: 4px; color: #3f4350; }
 .stat-card__hint  { font-size: 11px; color: #72767d; margin-top: 2px; }
 

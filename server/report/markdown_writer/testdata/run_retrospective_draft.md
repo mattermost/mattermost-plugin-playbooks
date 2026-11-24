@@ -16,6 +16,11 @@ Primary DB failed over. **Resolved** by `@alice`.
 - **Ended**: November 15, 2023, 12:28 AM UTC
 - **Owner**: Alice Admin
 - **Participants**: Alice Admin, Bob Builder, Carol Chen
+- **Severity**: Sev 2
+- **Users affected**: Alfred Morrison (Marketing), Jane Smith (Sales)
+- **Responders**: Bob Builder, Carol Chen
+- **Detected**: November 14, 2023
+- **Customer ticket**: Not set
 - **Channel**: [Database outage (42)](https://chat.example.com/ops/channels/database-outage-42)
 - **Playbook**: [Sev1 \*Incident\* Response](https://chat.example.com/playbooks/playbooks/pb1)
 

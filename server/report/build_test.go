@@ -71,6 +71,59 @@ func TestBuildRun(t *testing.T) {
 		assert.Equal(t, "Transcript truncated (2 posts shown).", BuildRun(rc, testOptions()).Transcript.Truncated)
 	})
 
+	t.Run("a published retrospective's measured metrics are the headline figures", func(t *testing.T) {
+		labels := func(retro RenderRetrospective) []string {
+			var out []string
+			for _, s := range BuildRun(RenderContext{Retrospective: retro}, testOptions()).Stats {
+				out = append(out, s.Label+"="+s.Value)
+			}
+			return out
+		}
+		metrics := []RenderMetric{
+			{Title: "Detect", Type: "duration", Value: 60_000, HasValue: true},
+			{Title: "Unset", Type: "integer"},
+			{Title: "Cost", Type: "currency", Value: 5, HasValue: true},
+			{Title: "Users", Type: "integer", Value: 3, HasValue: true},
+			{Title: "Zero", Type: "integer", Value: 0, HasValue: true},
+			{Title: "Fifth", Type: "integer", Value: 9, HasValue: true},
+		}
+		generic := []string{"Tasks=0/0", "Updates=0", "Participants=0", "Duration=-"}
+
+		assert.Equal(t, []string{"Detect=1m 0s", "Cost=5", "Users=3", "Zero=0"}, labels(RenderRetrospective{Published: true, Metrics: metrics}))
+		assert.Equal(t, generic, labels(RenderRetrospective{Metrics: metrics}), "a draft's metrics may still change")
+		assert.Equal(t, generic, labels(RenderRetrospective{Canceled: true, Metrics: metrics}))
+		assert.Equal(t, generic, labels(RenderRetrospective{Published: true, Metrics: []RenderMetric{{Title: "Unset"}}}))
+	})
+
+	t.Run("attributes follow the participants in the details", func(t *testing.T) {
+		rc := RenderContext{
+			Users: map[string]RenderUser{"u1": {UserID: "u1", Username: "alice"}},
+			Attributes: []RenderAttribute{
+				{Name: "Severity", Text: []string{"Sev 1", "Sev 2"}},
+				{Name: "Responders", UserIDs: []string{"u1", "ghost"}},
+				// A picked date is midnight UTC and keeps its day anywhere.
+				{Name: "Detected", DateMs: time.Date(2023, 11, 14, 0, 0, 0, 0, time.UTC).UnixMilli()},
+				// Any other time is shown in the report's time zone.
+				{Name: "Due", DateMs: time.Date(2023, 11, 14, 23, 30, 0, 0, time.UTC).UnixMilli()},
+				{Name: "Ticket"},
+			},
+		}
+		opts := testOptions()
+		opts.Location = time.FixedZone("CET", 60*60)
+		var got []string
+		for _, f := range BuildRun(rc, opts).Details {
+			got = append(got, f.Label+": "+f.Value)
+		}
+		assert.Equal(t, []string{
+			"Owner: Unknown user",
+			"Severity: Sev 1, Sev 2",
+			"Responders: alice, Unknown user",
+			"Detected: November 14, 2023",
+			"Due: November 15, 2023",
+			"Ticket: Not set",
+		}, got)
+	})
+
 	t.Run("retrospective notes", func(t *testing.T) {
 		users := map[string]RenderUser{"u1": {UserID: "u1", Username: "alice"}}
 		retro := func(r RenderRetrospective) RetrospectiveSection {

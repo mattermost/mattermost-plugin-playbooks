@@ -282,7 +282,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 		p.permissions,
 		p.playbookRunService,
-		app.NewReportService(p.playbookService, pluginAPIClient),
+		app.NewReportService(p.playbookService, p.propertyService, pluginAPIClient),
 	)
 
 	isTestingEnabled := false

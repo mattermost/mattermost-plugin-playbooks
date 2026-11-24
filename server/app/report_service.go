@@ -30,13 +30,15 @@ const (
 // writers only turn the data into HTML or Markdown.
 type ReportService struct {
 	playbookService PlaybookService
+	propertyService PropertyService
 	pluginAPI       *pluginapi.Client
 }
 
 // NewReportService constructs a ReportService.
-func NewReportService(playbookService PlaybookService, pluginAPI *pluginapi.Client) *ReportService {
+func NewReportService(playbookService PlaybookService, propertyService PropertyService, pluginAPI *pluginapi.Client) *ReportService {
 	return &ReportService{
 		playbookService: playbookService,
+		propertyService: propertyService,
 		pluginAPI:       pluginAPI,
 	}
 }
@@ -103,7 +105,9 @@ func (s *ReportService) AssembleRunReportContext(
 	if sections.Checklists {
 		rc.Checklists = buildChecklists(run.Checklists, taskStateUsers(run.TimelineEvents))
 	}
-	if sections.Retrospective {
+	// The metrics are the headline figures even when the retrospective
+	// section is left out.
+	if run.RetrospectiveEnabled {
 		var metricConfigs []PlaybookMetricConfig
 		if playbook != nil {
 			metricConfigs = playbook.Metrics
@@ -131,7 +135,16 @@ func (s *ReportService) AssembleRunReportContext(
 		}
 	}
 
+	attributes, err := s.buildAttributes(run.ID)
+	if err != nil {
+		return report.RenderContext{}, errors.Wrap(err, "failed to load run attributes")
+	}
+	rc.Attributes = attributes
+
 	userIDs := collectRunUserIDs(run)
+	for _, a := range rc.Attributes {
+		userIDs = append(userIDs, a.UserIDs...)
+	}
 	for _, su := range rc.StatusUpdates {
 		userIDs = append(userIDs, su.AuthorID)
 	}
@@ -153,6 +166,96 @@ func (s *ReportService) AssembleRunReportContext(
 
 	rc.GeneratedAtMillis = time.Now().UnixMilli()
 	return rc, nil
+}
+
+// buildAttributes lists the run's attributes in their playbook order. Hidden
+// attributes are left out, and so are unset ones unless they are always
+// shown. Picked options are named; an option that no longer exists is
+// dropped.
+func (s *ReportService) buildAttributes(runID string) ([]report.RenderAttribute, error) {
+	if s.propertyService == nil {
+		return nil, nil
+	}
+	fields, err := s.propertyService.GetRunPropertyFields(runID)
+	if err != nil {
+		return nil, err
+	}
+	values, err := s.propertyService.GetRunPropertyValues(runID)
+	if err != nil {
+		return nil, err
+	}
+	byField := make(map[string]json.RawMessage, len(values))
+	for _, v := range values {
+		if v.DeleteAt == 0 {
+			byField[v.FieldID] = v.Value
+		}
+	}
+	slices.SortStableFunc(fields, func(a, b PropertyField) int { return cmp.Compare(a.Attrs.SortOrder, b.Attrs.SortOrder) })
+
+	var out []report.RenderAttribute
+	for _, f := range fields {
+		visibility := cmp.Or(f.Attrs.Visibility, PropertyFieldVisibilityDefault)
+		if f.DeleteAt != 0 || visibility == PropertyFieldVisibilityHidden {
+			continue
+		}
+		a := attributeValue(f, byField[f.ID])
+		if len(a.Text) == 0 && len(a.UserIDs) == 0 && a.DateMs == 0 && visibility != PropertyFieldVisibilityAlways {
+			continue
+		}
+		out = append(out, a)
+	}
+	return out, nil
+}
+
+// attributeValue decodes an attribute's stored value; a value that doesn't
+// decode leaves it unset.
+func attributeValue(f PropertyField, raw json.RawMessage) report.RenderAttribute {
+	a := report.RenderAttribute{Name: f.Name}
+	var one string
+	var many []string
+	switch f.Type {
+	case model.PropertyFieldTypeText:
+		if json.Unmarshal(raw, &one) == nil && strings.TrimSpace(one) != "" {
+			a.Text = []string{one}
+		}
+	case model.PropertyFieldTypeSelect:
+		if json.Unmarshal(raw, &one) == nil {
+			a.Text = optionNames(f, []string{one})
+		}
+	case model.PropertyFieldTypeMultiselect:
+		if json.Unmarshal(raw, &many) == nil {
+			a.Text = optionNames(f, many)
+		}
+	case model.PropertyFieldTypeUser:
+		if json.Unmarshal(raw, &one) == nil && one != "" {
+			a.UserIDs = []string{one}
+		}
+	case model.PropertyFieldTypeMultiuser:
+		if json.Unmarshal(raw, &many) == nil {
+			a.UserIDs = slices.DeleteFunc(many, func(id string) bool { return id == "" })
+		}
+	case model.PropertyFieldTypeDate:
+		if json.Unmarshal(raw, &one) == nil {
+			if t, err := time.Parse(time.RFC3339, one); err == nil {
+				a.DateMs = t.UnixMilli()
+			}
+		}
+	}
+	return a
+}
+
+// optionNames names the picked options, in the order picked.
+func optionNames(f PropertyField, ids []string) []string {
+	var names []string
+	for _, id := range ids {
+		for _, o := range f.Attrs.Options {
+			if o != nil && o.GetID() == id {
+				names = append(names, o.GetName())
+				break
+			}
+		}
+	}
+	return names
 }
 
 // fetchTranscript reads a channel's posts from the run's window,

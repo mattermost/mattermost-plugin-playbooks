@@ -5,6 +5,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -218,6 +219,66 @@ func TestReportServiceChannelLink(t *testing.T) {
 		require.Empty(t, rc.Run.ChannelName)
 		require.Empty(t, rc.Run.ChannelURL)
 	})
+}
+
+// fakeAttributes serves a run's attributes.
+type fakeAttributes struct {
+	PropertyService
+	fields []PropertyField
+	values []PropertyValue
+}
+
+func (f fakeAttributes) GetRunPropertyFields(string) ([]PropertyField, error) { return f.fields, nil }
+func (f fakeAttributes) GetRunPropertyValues(string) ([]PropertyValue, error) { return f.values, nil }
+
+func TestReportServiceBuildAttributes(t *testing.T) {
+	field := func(id, name string, typ model.PropertyFieldType, visibility string, order float64, options ...*model.PluginPropertyOption) PropertyField {
+		return PropertyField{
+			PropertyField: model.PropertyField{ID: id, Name: name, Type: typ},
+			Attrs:         Attrs{Visibility: visibility, SortOrder: order, Options: options},
+		}
+	}
+	value := func(fieldID, raw string) PropertyValue {
+		return PropertyValue{FieldID: fieldID, Value: json.RawMessage(raw)}
+	}
+	gone := field("gone", "Deleted", model.PropertyFieldTypeText, "", 0)
+	gone.DeleteAt = 1
+	svc := &ReportService{propertyService: fakeAttributes{
+		fields: []PropertyField{
+			field("date", "Detected", model.PropertyFieldTypeDate, PropertyFieldVisibilityAlways, 6),
+			field("sev", "Severity", model.PropertyFieldTypeSelect, "", 1,
+				model.NewPluginPropertyOption("o1", "Sev 1"), model.NewPluginPropertyOption("o2", "Sev 2")),
+			field("tags", "Tags", model.PropertyFieldTypeMultiselect, PropertyFieldVisibilityWhenSet, 2,
+				model.NewPluginPropertyOption("t1", "db"), model.NewPluginPropertyOption("t2", "network")),
+			field("secret", "Secret", model.PropertyFieldTypeText, PropertyFieldVisibilityHidden, 3),
+			field("note", "Note", model.PropertyFieldTypeText, PropertyFieldVisibilityWhenSet, 4),
+			field("lead", "Lead", model.PropertyFieldTypeUser, "", 5),
+			field("crew", "Crew", model.PropertyFieldTypeMultiuser, "", 7),
+			field("ticket", "Ticket", model.PropertyFieldTypeText, PropertyFieldVisibilityAlways, 8),
+			gone,
+		},
+		values: []PropertyValue{
+			value("sev", `"o2"`),
+			value("tags", `["t2","removed","t1"]`),
+			value("secret", `"hide me"`),
+			value("note", `"  "`),
+			value("lead", `"u1"`),
+			value("crew", `["u2","","u3"]`),
+			value("date", `"2023-11-14T00:00:00Z"`),
+			value("gone", `"x"`),
+		},
+	}}
+
+	attrs, err := svc.buildAttributes("run1")
+	require.NoError(t, err)
+	require.Equal(t, []report.RenderAttribute{
+		{Name: "Severity", Text: []string{"Sev 2"}},
+		{Name: "Tags", Text: []string{"network", "db"}},
+		{Name: "Lead", UserIDs: []string{"u1"}},
+		{Name: "Detected", DateMs: 1699920000000},
+		{Name: "Crew", UserIDs: []string{"u2", "u3"}},
+		{Name: "Ticket"},
+	}, attrs, "hidden, deleted and blank when_set attributes are left out; always ones stay")
 }
 
 func TestReportServiceLeavesOutDisabledRetrospective(t *testing.T) {

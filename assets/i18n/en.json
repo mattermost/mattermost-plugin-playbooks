@@ -4,6 +4,10 @@
     "translation": "Unable to execute command."
   },
   {
+    "id": "app.report.attribute.not_set",
+    "translation": "Not set"
+  },
+  {
     "id": "app.report.checklist.assigned_to",
     "translation": "Assigned to {{.User}}"
   },
@@ -46,6 +50,10 @@
   {
     "id": "app.report.date",
     "translation": "{{.Month}} {{.Day}}, {{.Year}}, {{.Hour12}}:{{.Minute}} {{.Period}} {{.Zone}}"
+  },
+  {
+    "id": "app.report.date_only",
+    "translation": "{{.Month}} {{.Day}}, {{.Year}}"
   },
   {
     "id": "app.report.duration.days_hours",

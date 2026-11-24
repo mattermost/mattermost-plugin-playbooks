@@ -7,7 +7,7 @@ Primary DB failed over. **Resolved** by `@alice`.
 - Replica promoted
 - Traffic drained
 
-**Tasks**: 3/5 (60% complete)  ·  **Updates**: 3  ·  **Participants**: 3  ·  **Duration**: 2h 15m
+**Time to detect**: 3m 0s  ·  **Cost**: 12345  ·  **Customers affected**: 7  ·  **Time to escalate**: 0s
 
 **Run details**
 
@@ -16,6 +16,11 @@ Primary DB failed over. **Resolved** by `@alice`.
 - **Ended**: November 15, 2023, 12:28 AM UTC
 - **Owner**: Alice Admin
 - **Participants**: Alice Admin, Bob Builder, Carol Chen
+- **Severity**: Sev 2
+- **Users affected**: Alfred Morrison (Marketing), Jane Smith (Sales)
+- **Responders**: Bob Builder, Carol Chen
+- **Detected**: November 14, 2023
+- **Customer ticket**: Not set
 - **Channel**: [Database outage (42)](https://chat.example.com/ops/channels/database-outage-42)
 - **Playbook**: [Sev1 \*Incident\* Response](https://chat.example.com/playbooks/playbooks/pb1)
 
