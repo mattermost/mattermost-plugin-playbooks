@@ -102,6 +102,10 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 	logger := c.logger.
 		WithField("export_kind", "run").
 		WithField("export_format", format)
+	// The request ID ties failures as well as reports to the server's logs.
+	if requestID, _ := r.Context().Value(requestIDContextKey).(string); requestID != "" {
+		w.Header().Set("X-Request-ID", requestID)
+	}
 
 	if !h.reportsEnabled() {
 		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "not found", nil)
@@ -177,8 +181,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", renderErr)
 		return
 	}
-	requestID, _ := r.Context().Value(requestIDContextKey).(string)
-	h.writeReportResponse(w, format, data, filename, requestID, rc.TranscriptTruncation)
+	h.writeReportResponse(w, format, data, filename, rc.TranscriptTruncation)
 	auditRec.AddMeta("truncated", rc.TranscriptTruncation.Hit)
 	auditRec.Success()
 }
@@ -189,7 +192,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 // downloads it or, for HTML, browser-prints it to PDF. Browsers never render
 // an attachment, so the headers only guard against sniffing and caching; the
 // HTML report carries its own Content-Security-Policy for when it's opened.
-func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string, data []byte, filename string, requestID string, trunc report.Truncation) {
+func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string, data []byte, filename string, trunc report.Truncation) {
 	contentType := "text/html; charset=utf-8"
 	if format == formatMarkdown {
 		contentType = "text/markdown; charset=utf-8"
@@ -199,9 +202,6 @@ func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string
 	w.Header().Set("Content-Disposition", buildContentDisposition(filename, format))
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if requestID != "" {
-		w.Header().Set("X-Request-ID", requestID)
-	}
 	if trunc.Hit {
 		w.Header().Set("X-Playbooks-Report-Truncated", "true")
 		if trunc.Reason != "" {

@@ -48,7 +48,7 @@ _No message._
 - **Time to detect** — 3m 0s
   Measured from
   alert to ack
-- **Cost** — 123.45
+- **Cost** — 12345
 - **Customers affected** — 7
 - **Time to resolve** — not set
 - **Time to escalate** — 0s

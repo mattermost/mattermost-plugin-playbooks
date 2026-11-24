@@ -91,6 +91,15 @@ func TestReportServiceTaskStateUsers(t *testing.T) {
 	require.Equal(t, int64(50), items[0].StateMs)
 	require.Equal(t, "u3", items[1].StateUserID)
 	require.Empty(t, items[2].StateUserID)
+
+	t.Run("leaves out tasks a condition hides", func(t *testing.T) {
+		checklists := buildChecklists([]Checklist{{Items: []ChecklistItem{
+			{ID: "shown", Title: "Shown"},
+			{ID: "hidden", Title: "Hidden", ConditionAction: ConditionActionHidden},
+		}}}, nil)
+		require.Len(t, checklists[0].Items, 1)
+		require.Equal(t, "Shown", checklists[0].Items[0].Title)
+	})
 }
 
 func TestReportServiceBuildRetrospective(t *testing.T) {
@@ -310,7 +319,8 @@ func TestReportServiceFetchTranscript(t *testing.T) {
 	t.Run("stops when the context ends", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		_, _, err := newTestReportService(&plugintest.API{}).fetchTranscript(ctx, channelID, 0, 0)
+		_, truncation, err := newTestReportService(&plugintest.API{}).fetchTranscript(ctx, channelID, 0, 0)
 		require.ErrorIs(t, err, context.Canceled)
+		require.Equal(t, report.Truncation{Hit: true, Reason: "timeout"}, truncation)
 	})
 }

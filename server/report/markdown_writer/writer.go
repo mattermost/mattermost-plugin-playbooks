@@ -212,7 +212,7 @@ func writeChecklists(b *bytes.Buffer, s report.ChecklistSection) {
 			}
 			if it.Description != "" {
 				b.WriteString("\n")
-				writeLines(b, it.Description, "    ")
+				writeLines(b, closeFences(it.Description, 4), "    ")
 			}
 		}
 		b.WriteString("\n")

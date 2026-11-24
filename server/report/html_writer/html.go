@@ -43,11 +43,13 @@ func RenderRunHTML(r *report.RunReport) ([]byte, error) {
 // markdownInlineToHTML renders a single-line title via the same sanitizer
 // as the block path. goldmark wraps single-paragraph input in <p>…</p>; we
 // strip that wrapper so the result inlines cleanly into headings and task
-// titles.
+// titles. Input of more than one paragraph keeps its wrappers, since
+// stripping only the outer wrapper would leave the tags unbalanced.
 func markdownInlineToHTML(md string) template.HTML {
 	full := string(markdownToHTML(strings.TrimSpace(md)))
 	full = strings.TrimSpace(full)
-	full = strings.TrimPrefix(full, "<p>")
-	full = strings.TrimSuffix(full, "</p>")
+	if strings.HasPrefix(full, "<p>") && strings.HasSuffix(full, "</p>") && strings.Count(full, "<p>") == 1 {
+		full = full[len("<p>") : len(full)-len("</p>")]
+	}
 	return template.HTML(full) //nolint:gosec
 }

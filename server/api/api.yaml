@@ -2368,10 +2368,10 @@ paths:
         Response is always either a complete report OR a canonical JSON
         error — never a partial document.
 
-        When a server-side cap (post count or byte budget) is hit, the
-        response is still 200 with a truncation note; the response also
-        carries `X-Playbooks-Report-Truncated: true` and
-        `X-Playbooks-Report-Truncated-Reason: posts|bytes`.
+        When a server-side cap (post count, byte budget or render timeout)
+        is hit, the response is still 200 with a truncation note; the
+        response also carries `X-Playbooks-Report-Truncated: true` and
+        `X-Playbooks-Report-Truncated-Reason: posts|bytes|timeout`.
       security:
         - BearerAuth: []
       tags:
@@ -2442,11 +2442,11 @@ paths:
               schema:
                 type: string
             X-Playbooks-Report-Truncated:
-              description: Present only when a cap was hit (transcript posts or byte budget); value is `true`.
+              description: Present only when a cap was hit (transcript posts, byte budget or render timeout); value is `true`.
               schema:
                 type: string
             X-Playbooks-Report-Truncated-Reason:
-              description: One of `posts` or `bytes`; present only when truncated.
+              description: One of `posts`, `bytes` or `timeout`; present only when truncated.
               schema:
                 type: string
           content:

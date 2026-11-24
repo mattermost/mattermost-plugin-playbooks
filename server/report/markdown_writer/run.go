@@ -54,7 +54,7 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 				}
 				fmt.Fprintf(&b, "- **%s** · _%s_ — %s\n", escapeText(ev.Date), escapeText(ev.TypeLabel), headline)
 				if ev.Detail != "" {
-					writeLines(&b, ev.Detail, "  ")
+					writeLines(&b, closeFences(ev.Detail, 2), "  ")
 				}
 			}
 			b.WriteString("\n")

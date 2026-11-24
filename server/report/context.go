@@ -87,7 +87,7 @@ type RenderContext struct {
 	Transcript []RenderPost
 
 	// TranscriptTruncation records whether the transcript was cut short by
-	// the post cap or the byte cap.
+	// the post cap, the byte cap or the render timeout.
 	TranscriptTruncation Truncation
 
 	// TranscriptOmittedReason carries the data-layer's explanation when
@@ -181,7 +181,7 @@ type RenderPost struct {
 // Truncation records whether a section was truncated by a cap.
 type Truncation struct {
 	Hit    bool
-	Reason string // "posts" | "bytes" | ""
+	Reason string // "posts" | "bytes" | "timeout" | ""
 }
 
 // SectionFlags selects which sections are included in a render.

@@ -97,7 +97,9 @@ func (s *ReportService) AssembleRunReportContext(
 				rc.TranscriptOmittedReason = report.TranscriptOmittedNotMember
 			} else {
 				posts, truncation, err := s.fetchTranscript(ctx, run.ChannelID, run.CreateAt, run.EndAt)
-				if err != nil && !errors.Is(err, context.Canceled) {
+				// When ctx ends, the posts read so far make a truncated
+				// transcript rather than a failed export.
+				if err != nil && ctx.Err() == nil {
 					return report.RenderContext{}, errors.Wrap(err, "failed to assemble transcript")
 				}
 				rc.Transcript = posts
@@ -114,6 +116,12 @@ func (s *ReportService) AssembleRunReportContext(
 		userIDs = append(userIDs, p.AuthorID)
 	}
 	rc.Users = s.batchResolveUsers(userIDs)
+	if !s.canSeeFullNames(userID) {
+		for id, u := range rc.Users {
+			u.DisplayName = u.Username
+			rc.Users[id] = u
+		}
+	}
 	rc.Owner = rc.Users[run.OwnerUserID]
 	rc.Participants = make([]report.RenderUser, 0, len(run.ParticipantIDs))
 	for _, id := range run.ParticipantIDs {
@@ -127,7 +135,8 @@ func (s *ReportService) AssembleRunReportContext(
 // fetchTranscript reads a channel's posts from the run's window,
 // (startMs, endMs], newest first, leaving out system messages and edit
 // history. It stops at the transcript caps and says so in the Truncation.
-// When ctx ends it returns the posts read so far with ctx's error.
+// When ctx ends it returns the posts read so far, truncated for "timeout",
+// with ctx's error.
 func (s *ReportService) fetchTranscript(ctx context.Context, channelID string, startMs, endMs int64) ([]report.RenderPost, report.Truncation, error) {
 	var (
 		posts []report.RenderPost
@@ -136,7 +145,7 @@ func (s *ReportService) fetchTranscript(ctx context.Context, channelID string, s
 	seen := make(map[string]bool)
 	for page := 0; ; page++ {
 		if err := ctx.Err(); err != nil {
-			return posts, report.Truncation{}, err
+			return posts, report.Truncation{Hit: true, Reason: "timeout"}, err
 		}
 		list, err := s.pluginAPI.Post.GetPostsForChannel(channelID, page, transcriptPageSize)
 		if err != nil {
@@ -228,6 +237,17 @@ func (s *ReportService) resolveUser(id string) report.RenderUser {
 		return report.RenderUser{UserID: id}
 	}
 	return renderUserFromModel(u)
+}
+
+// canSeeFullNames reports whether userID may see other users' full names:
+// everyone may unless the server's privacy settings hide them, and system
+// admins always may.
+func (s *ReportService) canSeeFullNames(userID string) bool {
+	cfg := s.pluginAPI.Configuration.GetConfig()
+	if cfg == nil || cfg.PrivacySettings.ShowFullName == nil || *cfg.PrivacySettings.ShowFullName {
+		return true
+	}
+	return s.pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem)
 }
 
 func renderUserFromModel(u *model.User) report.RenderUser {
@@ -332,6 +352,10 @@ func buildChecklists(in []Checklist, stateUsers map[string]string) []report.Rend
 	for _, c := range in {
 		items := make([]report.RenderChecklistItem, 0, len(c.Items))
 		for _, it := range c.Items {
+			// Tasks a condition hides are not part of the run.
+			if it.ConditionAction == ConditionActionHidden {
+				continue
+			}
 			item := report.RenderChecklistItem{
 				Title:       it.Title,
 				State:       it.State,

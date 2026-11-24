@@ -412,13 +412,12 @@ func (b *builder) duration(ms int64) string {
 	}
 }
 
+// metricValue shows a metric's value. Durations are stored in milliseconds;
+// currency, like integers, is stored and shown as the whole number the user
+// entered.
 func (b *builder) metricValue(metricType string, v int64) string {
-	switch metricType {
-	case "duration":
+	if metricType == "duration" {
 		return b.duration(v)
-	case "currency":
-		return fmt.Sprintf("%.2f", float64(v)/100.0)
-	default:
-		return strconv.FormatInt(v, 10)
 	}
+	return strconv.FormatInt(v, 10)
 }
