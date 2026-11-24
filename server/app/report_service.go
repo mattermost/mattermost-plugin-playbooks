@@ -50,6 +50,8 @@ func (s *ReportService) AssembleRunReportContext(
 	userID string,
 	sections report.SectionFlags,
 ) (report.RenderContext, error) {
+	// The run page leaves out a disabled retrospective, so the report does too.
+	sections.Retrospective = sections.Retrospective && run.RetrospectiveEnabled
 	rc := report.RenderContext{
 		Sections: sections,
 		Run: report.RenderRun{
@@ -397,7 +399,9 @@ func buildChecklists(in []Checklist, stateUsers map[string]string) []report.Rend
 // buildRetrospective joins the run's metric values to the playbook's metric
 // configs, which give each metric its title, description and type. Without
 // the configs (the playbook was deleted or could not be loaded) there is no
-// metric to show: a value without its title or type means nothing.
+// metric to show: a value without its title or type means nothing. A
+// canceled retrospective is named after the last canceled_retrospective
+// timeline event's user; canceling records its time as the publish time.
 func buildRetrospective(run *PlaybookRun, metricConfigs []PlaybookMetricConfig) report.RenderRetrospective {
 	values := make(map[string]int64, len(run.MetricsData))
 	for _, md := range run.MetricsData {
@@ -416,7 +420,22 @@ func buildRetrospective(run *PlaybookRun, metricConfigs []PlaybookMetricConfig) 
 			HasValue:    ok,
 		})
 	}
-	return report.RenderRetrospective{Body: run.Retrospective, Metrics: metrics}
+	retro := report.RenderRetrospective{
+		Body:      run.Retrospective,
+		Metrics:   metrics,
+		Published: run.RetrospectivePublishedAt > 0 && !run.RetrospectiveWasCanceled,
+		Canceled:  run.RetrospectiveWasCanceled,
+	}
+	if retro.Canceled {
+		retro.CanceledAt = run.RetrospectivePublishedAt
+		var last int64
+		for _, ev := range run.TimelineEvents {
+			if ev.EventType == CanceledRetrospective && ev.DeleteAt == 0 && ev.CreateAt >= last {
+				last, retro.CanceledByID = ev.CreateAt, ev.SubjectUserID
+			}
+		}
+	}
+	return retro
 }
 
 func metricTypeFromConfig(t string) string {

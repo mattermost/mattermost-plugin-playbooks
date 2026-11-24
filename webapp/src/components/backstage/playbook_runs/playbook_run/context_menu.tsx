@@ -230,6 +230,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     }}
                     onCancel={() => setShowReportModal(false)}
                     channelExportAvailable={channelExportAvailable}
+                    retrospectiveEnabled={playbookRun.retrospective_enabled}
                 />
             )}
         </>

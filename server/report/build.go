@@ -112,22 +112,7 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 		r.Tasks.Checklists = append(r.Tasks.Checklists, b.checklist(cl, i))
 	}
 
-	r.Retrospective = RetrospectiveSection{
-		Section:      Section{Title: T("app.report.run.retrospective.title"), Empty: T("app.report.run.retrospective.empty")},
-		Body:         trimBody(rc.Retrospective.Body),
-		MetricsTitle: T("app.report.metrics.title"),
-	}
-	for _, m := range rc.Retrospective.Metrics {
-		value := T("app.report.metric.not_set")
-		if m.HasValue {
-			value = b.metricValue(m.Type, m.Value)
-		}
-		r.Retrospective.Metrics = append(r.Retrospective.Metrics, Metric{
-			Title:       m.Title,
-			Value:       value,
-			Description: trimBody(m.Description),
-		})
-	}
+	r.Retrospective = b.retrospective(rc.Retrospective)
 
 	r.Transcript = b.transcript(rc, opts.TranscriptMode)
 
@@ -136,6 +121,47 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 	r.Retrospective.Omitted = !rc.Sections.Retrospective
 	r.Transcript.Omitted = !rc.Sections.Transcript
 	return r
+}
+
+// retrospective shows a published retrospective as it is, a draft with a
+// note saying so, and a canceled one only as a note saying who canceled it
+// and when.
+func (b *builder) retrospective(retro RenderRetrospective) RetrospectiveSection {
+	T := b.T
+	s := RetrospectiveSection{
+		Section:      Section{Title: T("app.report.run.retrospective.title"), Empty: T("app.report.run.retrospective.empty")},
+		MetricsTitle: T("app.report.metrics.title"),
+	}
+	if retro.Canceled {
+		args := map[string]any{"Date": b.date(retro.CanceledAt)}
+		switch {
+		case args["Date"] == "":
+			s.Note = T("app.report.run.retrospective.canceled")
+		case retro.CanceledByID != "":
+			args["User"] = b.userName(retro.CanceledByID)
+			s.Note = T("app.report.run.retrospective.canceled_by", args)
+		default:
+			s.Note = T("app.report.run.retrospective.canceled_on", args)
+		}
+		return s
+	}
+	s.Body = trimBody(retro.Body)
+	for _, m := range retro.Metrics {
+		value := T("app.report.metric.not_set")
+		if m.HasValue {
+			value = b.metricValue(m.Type, m.Value)
+		}
+		s.Metrics = append(s.Metrics, Metric{
+			Title:       m.Title,
+			Value:       value,
+			Description: trimBody(m.Description),
+		})
+	}
+	// An empty draft just has no retrospective yet.
+	if !retro.Published && (s.Body != "" || len(s.Metrics) > 0) {
+		s.Note = T("app.report.run.retrospective.draft")
+	}
+	return s
 }
 
 func (b *builder) checklist(cl RenderChecklist, index int) Checklist {

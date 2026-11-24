@@ -45,6 +45,7 @@ const findCheckboxes = (instance: renderer.ReactTestInstance) =>
 
 type RenderOverrides = Partial<{
     channelExportAvailable: boolean;
+    retrospectiveEnabled: boolean;
 }>;
 
 const render = (overrides: RenderOverrides = {}) => {
@@ -57,6 +58,7 @@ const render = (overrides: RenderOverrides = {}) => {
                 onConfirm={onConfirm}
                 onCancel={onCancel}
                 channelExportAvailable={overrides.channelExportAvailable}
+                retrospectiveEnabled={overrides.retrospectiveEnabled}
             />,
         ));
     });
@@ -245,5 +247,15 @@ describe('ExportOptionsModal', () => {
             capturedHandleCancel?.();
         });
         expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves out a disabled retrospective', () => {
+        const {tree, onConfirm} = render({retrospectiveEnabled: false});
+        expect(tree.root.findAllByProps({'data-testid': 'section-toggle-retrospective'})).toHaveLength(0);
+
+        act(() => {
+            capturedHandleConfirm?.();
+        });
+        expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({retrospective: false}), 'pdf', expect.any(Object));
     });
 });

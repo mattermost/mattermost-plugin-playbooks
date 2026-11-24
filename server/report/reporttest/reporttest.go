@@ -112,6 +112,21 @@ func RunScenarios() []RunScenario {
 	omitted.Transcript = nil
 	omitted.TranscriptOmittedReason = report.TranscriptOmittedNotMember
 
+	// Retrospectives not yet published, and canceled ones, are labelled.
+	retroSections := report.SectionFlags{ExecutiveSummary: true, StatusUpdates: true, Retrospective: true}
+	retroDraft := TypicalRun()
+	retroDraft.Sections = retroSections
+	retroDraft.Retrospective.Published = false
+	retroCanceled := TypicalRun()
+	retroCanceled.Sections = retroSections
+	retroCanceled.Retrospective = report.RenderRetrospective{
+		Body:         "No retrospective for this run.",
+		Metrics:      retroDraft.Retrospective.Metrics,
+		Canceled:     true,
+		CanceledAt:   Base + 3*hour,
+		CanceledByID: "u2",
+	}
+
 	// Only the executive summary, status updates and tasks were selected.
 	sections := TypicalRun()
 	sections.Sections = report.SectionFlags{ExecutiveSummary: true, StatusUpdates: true, Checklists: true}
@@ -134,6 +149,8 @@ func RunScenarios() []RunScenario {
 		{"run_truncated", truncated, en},
 		{"run_transcript_omitted", omitted, en},
 		{"run_sections", sections, en},
+		{"run_retrospective_draft", retroDraft, en},
+		{"run_retrospective_canceled", retroCanceled, en},
 	}
 }
 
@@ -194,7 +211,8 @@ func TypicalRun() report.RenderContext {
 			},
 		},
 		Retrospective: report.RenderRetrospective{
-			Body: "## What went well\n- Quick paging",
+			Published: true,
+			Body:      "## What went well\n- Quick paging",
 			Metrics: []report.RenderMetric{
 				{Title: "Time to detect", Description: "Measured from\nalert to ack", Type: "duration", Value: 3 * minute, HasValue: true},
 				{Title: "Cost", Type: "currency", Value: 12345, HasValue: true},

@@ -82,8 +82,11 @@ code, pre { font-family: var(--font-mono); }
   {{- if not .Retrospective.Omitted}}
   <section class="section">
   <h2>{{.Retrospective.Title}}</h2>
+  {{- if .Retrospective.Note}}
+  <p class="muted">{{.Retrospective.Note}}</p>
+  {{- end}}
   {{if .Retrospective.Body}}<div class="boxed-md">{{markdown .Retrospective.Body}}</div>
-  {{else if not .Retrospective.Metrics}}<p class="muted">{{.Retrospective.Empty}}</p>{{end}}
+  {{else if not (or .Retrospective.Metrics .Retrospective.Note)}}<p class="muted">{{.Retrospective.Empty}}</p>{{end}}
   {{- if .Retrospective.Metrics}}
   <h3>{{.Retrospective.MetricsTitle}}</h3>
   {{- range .Retrospective.Metrics}}

@@ -63,7 +63,9 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 
 	if !r.Retrospective.Omitted {
 		writeHeading(&b, 2, r.Retrospective.Title)
-		if r.Retrospective.Body == "" && len(r.Retrospective.Metrics) == 0 {
+		if r.Retrospective.Note != "" {
+			writeEmpty(&b, r.Retrospective.Note)
+		} else if r.Retrospective.Body == "" && len(r.Retrospective.Metrics) == 0 {
 			writeEmpty(&b, r.Retrospective.Empty)
 		}
 		writeBody(&b, r.Retrospective.Body)

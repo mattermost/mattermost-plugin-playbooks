@@ -162,6 +162,46 @@ func TestReportServiceBuildRetrospective(t *testing.T) {
 	t.Run("no metrics without the playbook's configs", func(t *testing.T) {
 		require.Empty(t, buildRetrospective(run, nil).Metrics)
 	})
+
+	t.Run("published, draft and canceled", func(t *testing.T) {
+		published := &PlaybookRun{RetrospectivePublishedAt: 100}
+		retro := buildRetrospective(published, nil)
+		require.True(t, retro.Published)
+		require.False(t, retro.Canceled)
+
+		require.False(t, buildRetrospective(&PlaybookRun{}, nil).Published, "an unpublished retrospective is a draft")
+
+		canceled := &PlaybookRun{
+			RetrospectivePublishedAt: 300,
+			RetrospectiveWasCanceled: true,
+			TimelineEvents: []TimelineEvent{
+				{EventType: CanceledRetrospective, CreateAt: 200, SubjectUserID: "u2"},
+				{EventType: CanceledRetrospective, CreateAt: 300, SubjectUserID: "u3"},
+				{EventType: CanceledRetrospective, CreateAt: 400, DeleteAt: 500, SubjectUserID: "u4"},
+				{EventType: PublishedRetrospective, CreateAt: 600, SubjectUserID: "u5"},
+			},
+		}
+		retro = buildRetrospective(canceled, nil)
+		require.False(t, retro.Published)
+		require.True(t, retro.Canceled)
+		require.Equal(t, int64(300), retro.CanceledAt)
+		require.Equal(t, "u3", retro.CanceledByID)
+	})
+}
+
+func TestReportServiceLeavesOutDisabledRetrospective(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("GetConfig").Return(&model.Config{})
+	svc := newTestReportService(api)
+	sections := report.SectionFlags{ExecutiveSummary: true, Retrospective: true}
+
+	rc, err := svc.AssembleRunReportContext(context.Background(), &PlaybookRun{RetrospectiveEnabled: false}, "u1", sections)
+	require.NoError(t, err)
+	require.False(t, rc.Sections.Retrospective)
+
+	rc, err = svc.AssembleRunReportContext(context.Background(), &PlaybookRun{RetrospectiveEnabled: true}, "u1", sections)
+	require.NoError(t, err)
+	require.True(t, rc.Sections.Retrospective)
 }
 
 // TestReportServiceContextSanitizationInvariant walks the assembled context

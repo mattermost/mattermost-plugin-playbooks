@@ -71,6 +71,34 @@ func TestBuildRun(t *testing.T) {
 		assert.Equal(t, "Transcript truncated (2 posts shown).", BuildRun(rc, testOptions()).Transcript.Truncated)
 	})
 
+	t.Run("retrospective notes", func(t *testing.T) {
+		users := map[string]RenderUser{"u1": {UserID: "u1", Username: "alice"}}
+		retro := func(r RenderRetrospective) RetrospectiveSection {
+			return BuildRun(RenderContext{Retrospective: r, Users: users}, testOptions()).Retrospective
+		}
+
+		published := retro(RenderRetrospective{Published: true, Body: "done"})
+		assert.Empty(t, published.Note)
+		assert.Equal(t, "done", published.Body)
+
+		draft := retro(RenderRetrospective{Body: "so far"})
+		assert.Equal(t, "Draft: this retrospective hasn't been published yet.", draft.Note)
+		assert.Equal(t, "so far", draft.Body)
+		assert.Empty(t, retro(RenderRetrospective{}).Note, "an empty draft is just no retrospective")
+
+		canceled := retro(RenderRetrospective{
+			Canceled: true, CanceledAt: testStart, CanceledByID: "u1",
+			Body: "No retrospective for this run.", Metrics: []RenderMetric{{Title: "Cost"}},
+		})
+		assert.Equal(t, "The retrospective was canceled by alice on November 14, 2023, 10:13 PM UTC.", canceled.Note)
+		assert.Empty(t, canceled.Body)
+		assert.Empty(t, canceled.Metrics)
+		assert.Equal(t, "The retrospective was canceled on November 14, 2023, 10:13 PM UTC.",
+			retro(RenderRetrospective{Canceled: true, CanceledAt: testStart}).Note)
+		assert.Equal(t, "The retrospective was canceled.",
+			retro(RenderRetrospective{Canceled: true, CanceledByID: "u1"}).Note)
+	})
+
 	t.Run("unassigned is only shown alongside a due date or command", func(t *testing.T) {
 		rc := RenderContext{Checklists: []RenderChecklist{{Items: []RenderChecklistItem{
 			{Title: "plain"},

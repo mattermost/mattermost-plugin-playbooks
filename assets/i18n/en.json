@@ -140,6 +140,22 @@
     "translation": "Playbook"
   },
   {
+    "id": "app.report.run.retrospective.canceled",
+    "translation": "The retrospective was canceled."
+  },
+  {
+    "id": "app.report.run.retrospective.canceled_by",
+    "translation": "The retrospective was canceled by {{.User}} on {{.Date}}."
+  },
+  {
+    "id": "app.report.run.retrospective.canceled_on",
+    "translation": "The retrospective was canceled on {{.Date}}."
+  },
+  {
+    "id": "app.report.run.retrospective.draft",
+    "translation": "Draft: this retrospective hasn't been published yet."
+  },
+  {
     "id": "app.report.run.retrospective.empty",
     "translation": "No retrospective."
   },

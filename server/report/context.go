@@ -158,6 +158,15 @@ type RenderChecklistItem struct {
 type RenderRetrospective struct {
 	Body    string // markdown body
 	Metrics []RenderMetric
+	// Published says the retrospective was published; an unpublished one is
+	// a draft that may still change.
+	Published bool
+	// Canceled says the retrospective was canceled at CanceledAt (0 when
+	// unknown) by CanceledByID (empty when unknown). Its body and metrics
+	// are then left out.
+	Canceled     bool
+	CanceledAt   int64
+	CanceledByID string
 }
 
 // RenderMetric is one configured metric (with optional measured value).

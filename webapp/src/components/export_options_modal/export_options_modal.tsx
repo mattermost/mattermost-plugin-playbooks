@@ -24,6 +24,10 @@ export type ExportOptionsModalProps = {
     onConfirm: (sections: ReportSections, format: ReportFormat, runOptions: RunReportOptions) => Promise<void>;
     onCancel: () => void;
     channelExportAvailable?: boolean;
+
+    // retrospectiveEnabled is false when the run's retrospective is disabled; the report then
+    // leaves it out, as the run page does, so the dialog doesn't offer it.
+    retrospectiveEnabled?: boolean;
 };
 
 type ToggleRow = {
@@ -45,7 +49,7 @@ const DEFAULT_SECTIONS: ReportSections = {
     transcript: true,
 };
 
-const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false}: ExportOptionsModalProps) => {
+const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false, retrospectiveEnabled = true}: ExportOptionsModalProps) => {
     const {formatMessage} = useIntl();
     const [sections, setSections] = useState<ReportSections>(DEFAULT_SECTIONS);
     const [format, setFormat] = useState<ReportFormat>('pdf');
@@ -72,13 +76,13 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
     const confirm = async () => {
         setExporting(true);
         try {
-            await onConfirm(sections, format, {transcriptMode, timeZone});
+            await onConfirm({...sections, retrospective: retrospectiveEnabled && sections.retrospective}, format, {transcriptMode, timeZone});
         } finally {
             setExporting(false);
         }
     };
 
-    const rows: ToggleRow[] = [
+    const allRows: ToggleRow[] = [
         {key: 'executiveSummary', label: formatMessage({defaultMessage: 'Executive summary'}), locked: true},
         {key: 'statusUpdates', label: formatMessage({defaultMessage: 'Status updates'}), locked: true},
         {key: 'timeline', label: formatMessage({defaultMessage: 'Timeline'})},
@@ -86,6 +90,7 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
         {key: 'checklists', label: formatMessage({defaultMessage: 'Task outline'})},
         {key: 'transcript', label: formatMessage({defaultMessage: 'Complete chat history'})},
     ];
+    const rows = allRows.filter((row) => row.key !== 'retrospective' || retrospectiveEnabled);
 
     const toggle = (key: keyof ReportSections) => {
         setSections((prev) => ({...prev, [key]: !prev[key]}));

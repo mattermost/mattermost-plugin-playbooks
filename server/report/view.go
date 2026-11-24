@@ -174,6 +174,9 @@ type ChecklistItem struct {
 // RetrospectiveSection is a run's retrospective.
 type RetrospectiveSection struct {
 	Section
+	// Note says the retrospective is a draft or was canceled; it is empty
+	// for a published one.
+	Note string
 	// Body is Markdown.
 	Body         string
 	MetricsTitle string
