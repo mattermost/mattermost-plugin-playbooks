@@ -223,10 +223,9 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
             {leaveRunConfirmModal}
             {showReportModal && (
                 <ExportOptionsModal
-                    surface='run'
                     defaults={{}}
                     onConfirm={async (sections: SectionFlags, format: ExportFormat, runOptions: RunReportOptions) => {
-                        await exportReport({kind: 'run', id: playbookRun.id}, sections, format, runOptions);
+                        await exportReport(playbookRun.id, sections, format, runOptions);
                         setShowReportModal(false);
                     }}
                     onCancel={() => setShowReportModal(false)}

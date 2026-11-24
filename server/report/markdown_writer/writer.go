@@ -1,8 +1,8 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// Package markdown_writer prints a report.RunReport or report.PlaybookReport
-// as Mattermost-flavored markdown.
+// Package markdown_writer prints a report.RunReport as Mattermost-flavored
+// markdown.
 //
 // This package backs the `.md` export path. Plain-text fields are escaped
 // with escapeText; Markdown bodies are emitted as they are. Every @mention in

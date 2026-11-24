@@ -9,8 +9,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 )
 
-// Options controls how BuildRun and BuildPlaybook translate and localize a
-// report.
+// Options controls how BuildRun translates and localizes a report.
 type Options struct {
 	// T translates every label, title and sentence in the report.
 	T i18n.TranslateFunc
@@ -57,27 +56,6 @@ type RunReport struct {
 	Transcript    TranscriptSection
 
 	// Footer says when the report was generated, with the time zone.
-	Footer string
-}
-
-// PlaybookReport is a playbook report ready to print. See RunReport.
-type PlaybookReport struct {
-	Lang      string
-	Title     string
-	Kind      string
-	Generated string
-	// Visibility is "Public" or "Private", translated.
-	Visibility string
-	Stats      []Stat
-	Meta       []Field
-
-	Description   BodySection
-	Members       MemberSection
-	Checklists    ChecklistSection
-	StatusUpdates SettingsSection
-	Retrospective SettingsSection
-	Automations   AutomationsSection
-
 	Footer string
 }
 
@@ -163,7 +141,7 @@ type ChecklistSection struct {
 // Checklist is one checklist with its progress.
 type Checklist struct {
 	Title string
-	// Progress is "2/4 · 50%" for a run, or "4 tasks" for a playbook.
+	// Progress is "2/4 · 50%".
 	Progress string
 	// Empty is set when the checklist has no tasks.
 	Empty string
@@ -176,13 +154,13 @@ type ChecklistItem struct {
 	Skipped bool
 	// Title is Markdown.
 	Title string
-	// Assignee is the assignee, or "Unassigned", shown only on run tasks
-	// that have an assignee, a due date or a command.
+	// Assignee is the assignee, or "Unassigned", shown only on tasks that
+	// have an assignee, a due date or a command.
 	Assignee string
 	// Due is "Due: <date>" or empty.
 	Due     string
 	Command string
-	// Completed says who checked off or skipped a run task and when; it is
+	// Completed says who checked off or skipped the task and when; it is
 	// empty for open tasks and when that is unknown.
 	Completed string
 	// Description is Markdown.
@@ -198,53 +176,11 @@ type RetrospectiveSection struct {
 	Metrics      []Metric
 }
 
-// Metric is a retrospective metric. For a run Value is the measured value;
-// for a playbook it describes the metric's type and target.
+// Metric is a retrospective metric and its measured value.
 type Metric struct {
 	Title       string
 	Value       string
 	Description string
-}
-
-// MemberSection lists a playbook's members.
-type MemberSection struct {
-	Section
-	Members []Member
-}
-
-// Member is a playbook member and their roles.
-type Member struct {
-	Name  string
-	Roles string
-}
-
-// SettingsSection is a playbook's status update or retrospective settings.
-// When Configured is false only Empty is shown.
-type SettingsSection struct {
-	Section
-	Configured bool
-	Meta       []Field
-	// Template is Markdown.
-	Template     string
-	MetricsTitle string
-	Metrics      []Metric
-}
-
-// AutomationsSection lists a playbook's automations. When Configured is false
-// only Empty is shown.
-type AutomationsSection struct {
-	Section
-	Configured         bool
-	BroadcastChannels  List
-	WebhooksOnCreation List
-	WebhooksOnStatus   List
-	SignalKeywords     List
-}
-
-// List is a titled list of plain-text items.
-type List struct {
-	Section
-	Items []string
 }
 
 // TranscriptSection is a run's channel transcript, threaded or in
@@ -272,16 +208,4 @@ type Thread struct {
 // HasPosts reports whether the transcript has any post to show.
 func (s TranscriptSection) HasPosts() bool {
 	return len(s.Threads) > 0 || len(s.Posts) > 0 || len(s.Orphans) > 0
-}
-
-// Settings lists the playbook's status update and retrospective settings, in
-// display order.
-func (r *PlaybookReport) Settings() []SettingsSection {
-	return []SettingsSection{r.StatusUpdates, r.Retrospective}
-}
-
-// CodeLists lists the automations shown as code: webhooks and signal
-// keywords, in display order.
-func (s AutomationsSection) CodeLists() []List {
-	return []List{s.WebhooksOnCreation, s.WebhooksOnStatus, s.SignalKeywords}
 }

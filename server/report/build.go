@@ -111,7 +111,7 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 
 	r.Tasks.Section = Section{Title: T("app.report.run.tasks.title"), Empty: T("app.report.run.tasks.empty")}
 	for i, cl := range rc.Checklists {
-		r.Tasks.Checklists = append(r.Tasks.Checklists, b.checklist(cl, i, false))
+		r.Tasks.Checklists = append(r.Tasks.Checklists, b.checklist(cl, i))
 	}
 
 	r.Retrospective = RetrospectiveSection{
@@ -140,165 +140,17 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 	return r
 }
 
-// BuildPlaybook turns pc into a translated, display-ready playbook report.
-func BuildPlaybook(pc PlaybookRenderContext, opts Options) *PlaybookReport {
-	b := newBuilder(pc.Resolvers, opts)
-	T := b.T
-
-	r := &PlaybookReport{
-		Lang:       lang(opts.Locale),
-		Title:      cmp.Or(strings.TrimSpace(pc.Playbook.Title), T("app.report.playbook.untitled")),
-		Kind:       T("app.report.playbook.kind"),
-		Generated:  b.date(pc.GeneratedAtMillis),
-		Visibility: T("app.report.playbook.private"),
-		Footer:     b.footer(pc.GeneratedAtMillis),
-	}
-	if pc.Playbook.Public {
-		r.Visibility = T("app.report.playbook.public")
-	}
-	r.Meta = []Field{{T("app.report.playbook.visibility"), r.Visibility}}
-	if generated := b.date(pc.GeneratedAtMillis); generated != "" {
-		r.Meta = append(r.Meta, Field{T("app.report.playbook.generated"), generated})
-	}
-
-	r.Description = BodySection{
-		Section: Section{Title: T("app.report.playbook.description.title"), Empty: T("app.report.playbook.description.empty")},
-		Body:    trimBody(pc.Playbook.Description),
-	}
-
-	// Members go through the resolver table only, so a member the requester
-	// cannot see shows as an unknown user.
-	r.Members.Section = Section{Title: T("app.report.playbook.members.title"), Empty: T("app.report.playbook.members.empty")}
-	for _, m := range pc.Members {
-		roles := make([]string, 0, len(m.Roles))
-		for _, role := range m.Roles {
-			roles = append(roles, b.role(role))
-		}
-		r.Members.Members = append(r.Members.Members, Member{Name: b.userName(m.UserID), Roles: strings.Join(roles, ", ")})
-	}
-
-	r.Checklists.Section = Section{Title: T("app.report.playbook.checklists.title"), Empty: T("app.report.playbook.checklists.empty")}
-	for i, cl := range pc.ChecklistTemplates {
-		r.Checklists.Checklists = append(r.Checklists.Checklists, b.checklist(cl, i, true))
-	}
-
-	su := pc.StatusUpdateConfig
-	r.StatusUpdates = SettingsSection{
-		Section:  Section{Title: T("app.report.playbook.status_updates.title"), Empty: T("app.report.playbook.status_updates.empty")},
-		Meta:     b.settingsMeta(su.Enabled, su.Cadence),
-		Template: trimBody(su.Template),
-	}
-	r.StatusUpdates.Configured = su.Enabled || r.StatusUpdates.Template != "" || su.Cadence != ""
-
-	retro := pc.RetrospectiveConfig
-	r.Retrospective = SettingsSection{
-		Section:      Section{Title: T("app.report.playbook.retrospective.title"), Empty: T("app.report.playbook.retrospective.empty")},
-		Meta:         b.settingsMeta(retro.Enabled, retro.ReminderCadence),
-		Template:     trimBody(retro.Template),
-		MetricsTitle: T("app.report.metrics.title"),
-	}
-	r.Retrospective.Configured = retro.Enabled || r.Retrospective.Template != "" || retro.ReminderCadence != "" || len(retro.Metrics) > 0
-	for _, m := range retro.Metrics {
-		value := b.metricType(m.Type)
-		if m.HasTarget {
-			value = T("app.report.metric.type_and_target", map[string]any{
-				"Type":   value,
-				"Target": b.metricValue(m.Type, m.Target),
-			})
-		}
-		r.Retrospective.Metrics = append(r.Retrospective.Metrics, Metric{
-			Title:       m.Title,
-			Value:       value,
-			Description: trimBody(m.Description),
-		})
-	}
-
-	a := AutomationsSection{
-		Section:            Section{Title: T("app.report.playbook.automations.title"), Empty: T("app.report.playbook.automations.empty")},
-		BroadcastChannels:  List{Section: Section{Title: T("app.report.playbook.broadcast_channels.title"), Empty: T("app.report.playbook.broadcast_channels.empty")}},
-		WebhooksOnCreation: List{Section: Section{Title: T("app.report.playbook.webhooks_on_creation.title"), Empty: T("app.report.playbook.webhooks_on_creation.empty")}},
-		WebhooksOnStatus:   List{Section: Section{Title: T("app.report.playbook.webhooks_on_status.title"), Empty: T("app.report.playbook.webhooks_on_status.empty")}},
-		SignalKeywords:     List{Section: Section{Title: T("app.report.playbook.signal_keywords.title"), Empty: T("app.report.playbook.signal_keywords.empty")}, Items: pc.SignalKeywords},
-	}
-	for _, ch := range pc.BroadcastChannels {
-		name := T("app.report.unknown_channel")
-		if ch.Name != "" {
-			name = "~" + ch.Name
-		}
-		a.BroadcastChannels.Items = append(a.BroadcastChannels.Items, name)
-	}
-	a.WebhooksOnCreation.Items = webhookItems(pc.WebhooksOnCreation)
-	a.WebhooksOnStatus.Items = webhookItems(pc.WebhooksOnStatus)
-	a.Configured = len(a.BroadcastChannels.Items)+len(a.WebhooksOnCreation.Items)+len(a.WebhooksOnStatus.Items)+len(a.SignalKeywords.Items) > 0
-	r.Automations = a
-
-	r.Description.Omitted = !pc.Sections.PlaybookOverview
-	r.Members.Omitted = !pc.Sections.PlaybookOverview
-	r.Checklists.Omitted = !pc.Sections.PlaybookChecklistTemplates
-	r.StatusUpdates.Omitted = !pc.Sections.PlaybookSettings
-	r.Retrospective.Omitted = !pc.Sections.PlaybookSettings
-	r.Automations.Omitted = !pc.Sections.PlaybookSettings
-
-	r.Stats = []Stat{
-		{Label: T("app.report.playbook.stat.checklists"), Value: strconv.Itoa(len(pc.ChecklistTemplates))},
-		{Label: T("app.report.playbook.stat.members"), Value: strconv.Itoa(len(pc.Members))},
-		{Label: T("app.report.playbook.stat.broadcasts"), Value: strconv.Itoa(len(pc.BroadcastChannels))},
-		{Label: T("app.report.playbook.stat.webhooks"), Value: strconv.Itoa(len(a.WebhooksOnCreation.Items) + len(a.WebhooksOnStatus.Items))},
-	}
-	return r
-}
-
-// webhookItems shows each webhook in full when the requester may see it,
-// masked otherwise, never reconstructing one.
-func webhookItems(hooks []RenderWebhook) []string {
-	var items []string
-	for _, h := range hooks {
-		if v := cmp.Or(h.Full, h.HostMasked); v != "" {
-			items = append(items, v)
-		}
-	}
-	return items
-}
-
-func (b *builder) settingsMeta(enabled bool, cadence string) []Field {
-	T := b.T
-	value := T("app.report.playbook.disabled")
-	if enabled {
-		value = T("app.report.playbook.enabled")
-	}
-	meta := []Field{{T("app.report.playbook.enabled_label"), value}}
-	if cadence != "" {
-		meta = append(meta, Field{T("app.report.playbook.cadence"), cadence})
-	}
-	return meta
-}
-
-func (b *builder) role(role string) string {
-	switch role {
-	case "playbook_admin":
-		return b.T("app.report.playbook.role.admin")
-	case "playbook_member":
-		return b.T("app.report.playbook.role.member")
-	default:
-		return role
-	}
-}
-
-func (b *builder) checklist(cl RenderChecklist, index int, isTemplate bool) Checklist {
+func (b *builder) checklist(cl RenderChecklist, index int) Checklist {
 	T := b.T
 	done, total := countDone(cl.Items)
 	out := Checklist{
 		Title: cmp.Or(strings.TrimSpace(cl.Title), T("app.report.checklist.untitled", map[string]any{"Number": index + 1})),
 	}
-	if isTemplate {
-		out.Progress = T("app.report.checklist.task_count", total, map[string]any{"Count": total})
-	} else {
-		pct := 0
-		if total > 0 {
-			pct = done * 100 / total
-		}
-		out.Progress = T("app.report.checklist.progress", map[string]any{"Done": done, "Total": total, "Percent": pct})
+	pct := 0
+	if total > 0 {
+		pct = done * 100 / total
 	}
+	out.Progress = T("app.report.checklist.progress", map[string]any{"Done": done, "Total": total, "Percent": pct})
 	if total == 0 {
 		out.Empty = T("app.report.checklist.empty")
 	}
@@ -311,24 +163,21 @@ func (b *builder) checklist(cl RenderChecklist, index int, isTemplate bool) Chec
 			Command:     it.Command,
 			Description: trimBody(it.Description),
 		}
-		// Playbook templates have no assignee or due date of their own.
-		if !isTemplate {
-			if it.DueAtMs > 0 {
-				item.Due = T("app.report.checklist.due", map[string]any{"Date": b.date(it.DueAtMs)})
-			}
-			if it.AssigneeID != "" {
-				item.Assignee = b.userName(it.AssigneeID)
-			} else if item.Due != "" || item.Command != "" {
-				item.Assignee = T("app.report.checklist.unassigned")
-			}
-			item.Completed = b.completed(it)
+		if it.DueAtMs > 0 {
+			item.Due = T("app.report.checklist.due", map[string]any{"Date": b.date(it.DueAtMs)})
 		}
+		if it.AssigneeID != "" {
+			item.Assignee = b.userName(it.AssigneeID)
+		} else if item.Due != "" || item.Command != "" {
+			item.Assignee = T("app.report.checklist.unassigned")
+		}
+		item.Completed = b.completed(it)
 		out.Items = append(out.Items, item)
 	}
 	return out
 }
 
-// completed says who closed or skipped a run task and when.
+// completed says who closed or skipped a task and when.
 func (b *builder) completed(it RenderChecklistItem) string {
 	date := b.date(it.StateMs)
 	if date == "" {
@@ -583,18 +432,5 @@ func (b *builder) metricValue(metricType string, v int64) string {
 		return fmt.Sprintf("%.2f", float64(v)/100.0)
 	default:
 		return strconv.FormatInt(v, 10)
-	}
-}
-
-func (b *builder) metricType(metricType string) string {
-	switch metricType {
-	case "duration":
-		return b.T("app.report.metric.type.duration")
-	case "currency":
-		return b.T("app.report.metric.type.currency")
-	case "integer":
-		return b.T("app.report.metric.type.integer")
-	default:
-		return metricType
 	}
 }

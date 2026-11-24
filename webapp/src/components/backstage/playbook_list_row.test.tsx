@@ -24,7 +24,6 @@ jest.mock('mattermost-redux/selectors/entities/users', () => ({
 }));
 jest.mock('src/selectors', () => ({
     isCurrentUserAdmin: () => mockSelectors.isAdmin,
-    selectReportsEnabled: () => true,
 }));
 jest.mock('src/hooks/redux', () => ({
     useAppDispatch: () => jest.fn(),

@@ -16,9 +16,9 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
 )
 
-func TestExport_ParseSectionsQuery_Run(t *testing.T) {
+func TestExport_ParseSectionsQuery(t *testing.T) {
 	t.Run("empty returns defaults without the transcript", func(t *testing.T) {
-		s, err := parseSectionsQuery("", sectionFlagsForRun)
+		s, err := parseSectionsQuery("")
 		require.NoError(t, err)
 		assert.True(t, s.ExecutiveSummary)
 		assert.True(t, s.Timeline)
@@ -29,7 +29,7 @@ func TestExport_ParseSectionsQuery_Run(t *testing.T) {
 	})
 
 	t.Run("explicit subset", func(t *testing.T) {
-		s, err := parseSectionsQuery("summary,tasks", sectionFlagsForRun)
+		s, err := parseSectionsQuery("summary,tasks")
 		require.NoError(t, err)
 		assert.True(t, s.ExecutiveSummary)
 		assert.True(t, s.Checklists)
@@ -38,39 +38,16 @@ func TestExport_ParseSectionsQuery_Run(t *testing.T) {
 	})
 
 	t.Run("unknown token is rejected", func(t *testing.T) {
-		_, err := parseSectionsQuery("summary,bogus", sectionFlagsForRun)
+		_, err := parseSectionsQuery("summary,bogus")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "bogus")
 	})
 
 	t.Run("token whitespace and case", func(t *testing.T) {
-		s, err := parseSectionsQuery(" RETRO , Timeline ", sectionFlagsForRun)
+		s, err := parseSectionsQuery(" RETRO , Timeline ")
 		require.NoError(t, err)
 		assert.True(t, s.Retrospective)
 		assert.True(t, s.Timeline)
-	})
-}
-
-func TestExport_ParseSectionsQuery_Playbook(t *testing.T) {
-	t.Run("empty returns full playbook set", func(t *testing.T) {
-		s, err := parseSectionsQuery("", sectionFlagsForPlaybook)
-		require.NoError(t, err)
-		assert.True(t, s.PlaybookOverview)
-		assert.True(t, s.PlaybookChecklistTemplates)
-		assert.True(t, s.PlaybookSettings)
-	})
-
-	t.Run("explicit subset", func(t *testing.T) {
-		s, err := parseSectionsQuery("overview", sectionFlagsForPlaybook)
-		require.NoError(t, err)
-		assert.True(t, s.PlaybookOverview)
-		assert.False(t, s.PlaybookChecklistTemplates)
-		assert.False(t, s.PlaybookSettings)
-	})
-
-	t.Run("unknown token is rejected", func(t *testing.T) {
-		_, err := parseSectionsQuery("overview,bogus", sectionFlagsForPlaybook)
-		require.Error(t, err)
 	})
 }
 

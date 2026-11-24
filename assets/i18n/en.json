@@ -32,13 +32,6 @@
     "translation": "Skipped by {{.User}} on {{.Date}}"
   },
   {
-    "id": "app.report.checklist.task_count",
-    "translation": {
-      "one": "{{.Count}} task",
-      "other": "{{.Count}} tasks"
-    }
-  },
-  {
     "id": "app.report.checklist.unassigned",
     "translation": "Unassigned"
   },
@@ -73,22 +66,6 @@
   {
     "id": "app.report.metric.not_set",
     "translation": "not set"
-  },
-  {
-    "id": "app.report.metric.type.currency",
-    "translation": "currency"
-  },
-  {
-    "id": "app.report.metric.type.duration",
-    "translation": "duration"
-  },
-  {
-    "id": "app.report.metric.type.integer",
-    "translation": "integer"
-  },
-  {
-    "id": "app.report.metric.type_and_target",
-    "translation": "{{.Type}}, target {{.Target}}"
   },
   {
     "id": "app.report.metrics.title",
@@ -141,150 +118,6 @@
   {
     "id": "app.report.month.september",
     "translation": "September"
-  },
-  {
-    "id": "app.report.playbook.automations.empty",
-    "translation": "No automations."
-  },
-  {
-    "id": "app.report.playbook.automations.title",
-    "translation": "Automations"
-  },
-  {
-    "id": "app.report.playbook.broadcast_channels.empty",
-    "translation": "No broadcast channels."
-  },
-  {
-    "id": "app.report.playbook.broadcast_channels.title",
-    "translation": "Broadcast Channels"
-  },
-  {
-    "id": "app.report.playbook.cadence",
-    "translation": "Cadence"
-  },
-  {
-    "id": "app.report.playbook.checklists.empty",
-    "translation": "No checklist templates."
-  },
-  {
-    "id": "app.report.playbook.checklists.title",
-    "translation": "Checklist Templates"
-  },
-  {
-    "id": "app.report.playbook.description.empty",
-    "translation": "No description."
-  },
-  {
-    "id": "app.report.playbook.description.title",
-    "translation": "Description"
-  },
-  {
-    "id": "app.report.playbook.disabled",
-    "translation": "Disabled"
-  },
-  {
-    "id": "app.report.playbook.enabled",
-    "translation": "Enabled"
-  },
-  {
-    "id": "app.report.playbook.enabled_label",
-    "translation": "Enabled"
-  },
-  {
-    "id": "app.report.playbook.generated",
-    "translation": "Generated"
-  },
-  {
-    "id": "app.report.playbook.kind",
-    "translation": "Playbook report"
-  },
-  {
-    "id": "app.report.playbook.members.empty",
-    "translation": "No members."
-  },
-  {
-    "id": "app.report.playbook.members.title",
-    "translation": "Members"
-  },
-  {
-    "id": "app.report.playbook.private",
-    "translation": "Private"
-  },
-  {
-    "id": "app.report.playbook.public",
-    "translation": "Public"
-  },
-  {
-    "id": "app.report.playbook.retrospective.empty",
-    "translation": "No retrospective configuration."
-  },
-  {
-    "id": "app.report.playbook.retrospective.title",
-    "translation": "Retrospective"
-  },
-  {
-    "id": "app.report.playbook.role.admin",
-    "translation": "Admin"
-  },
-  {
-    "id": "app.report.playbook.role.member",
-    "translation": "Member"
-  },
-  {
-    "id": "app.report.playbook.signal_keywords.empty",
-    "translation": "No signal keywords."
-  },
-  {
-    "id": "app.report.playbook.signal_keywords.title",
-    "translation": "Signal Keywords"
-  },
-  {
-    "id": "app.report.playbook.stat.broadcasts",
-    "translation": "Broadcasts"
-  },
-  {
-    "id": "app.report.playbook.stat.checklists",
-    "translation": "Checklists"
-  },
-  {
-    "id": "app.report.playbook.stat.members",
-    "translation": "Members"
-  },
-  {
-    "id": "app.report.playbook.stat.webhooks",
-    "translation": "Webhooks"
-  },
-  {
-    "id": "app.report.playbook.status_updates.empty",
-    "translation": "No status update configuration."
-  },
-  {
-    "id": "app.report.playbook.status_updates.title",
-    "translation": "Status updates"
-  },
-  {
-    "id": "app.report.playbook.untitled",
-    "translation": "(untitled playbook)"
-  },
-  {
-    "id": "app.report.playbook.visibility",
-    "translation": "Visibility"
-  },
-  {
-    "id": "app.report.playbook.webhooks_on_creation.empty",
-    "translation": "No webhooks on run creation."
-  },
-  {
-    "id": "app.report.playbook.webhooks_on_creation.title",
-    "translation": "Webhooks on Run Creation"
-  },
-  {
-    "id": "app.report.playbook.webhooks_on_status.empty",
-    "translation": "No webhooks on status update."
-  },
-  {
-    "id": "app.report.playbook.webhooks_on_status.title",
-    "translation": "Webhooks on Status Update"
   },
   {
     "id": "app.report.run.ended",
@@ -628,10 +461,6 @@
   {
     "id": "app.report.timeline.user_joined_left.label",
     "translation": "Channel membership"
-  },
-  {
-    "id": "app.report.unknown_channel",
-    "translation": "Unknown channel"
   },
   {
     "id": "app.report.unknown_user",

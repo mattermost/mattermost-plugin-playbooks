@@ -87,22 +87,6 @@ type RenderContext struct {
 	GeneratedAtMillis int64
 }
 
-// PlaybookRenderContext is the sanitized input to RenderPlaybook.
-type PlaybookRenderContext struct {
-	Playbook            RenderPlaybook
-	Sections            SectionFlags
-	Members             []RenderPlaybookMember
-	ChecklistTemplates  []RenderChecklist
-	StatusUpdateConfig  RenderStatusUpdateConfig
-	RetrospectiveConfig RenderRetrospectiveConfig
-	BroadcastChannels   []RenderChannel
-	WebhooksOnCreation  []RenderWebhook
-	WebhooksOnStatus    []RenderWebhook
-	SignalKeywords      []string
-	Resolvers           ResolverTable
-	GeneratedAtMillis   int64
-}
-
 // RenderRun is the run's identity and headline state.
 type RenderRun struct {
 	ID            string
@@ -115,33 +99,11 @@ type RenderRun struct {
 	PlaybookTitle string
 }
 
-// RenderPlaybook is the playbook template's identity and configuration.
-type RenderPlaybook struct {
-	ID          string
-	Title       string
-	Description string // markdown body
-	Public      bool
-	TeamID      string
-}
-
 // RenderTeam carries only display information for a team.
 type RenderTeam struct {
 	TeamID      string
 	Name        string
 	DisplayName string
-}
-
-// RenderWebhook is the credentials-aware representation of a webhook URL.
-//
-// HostMasked is always populated (e.g., "https://hooks.slack.com/****").
-// Full is populated only when the requester has PlaybookManage permission;
-// otherwise empty. The playbook section renderer reads Full first, falling
-// back to HostMasked, never reconstructing or guessing.
-//
-// See plan §3.6.5 (MF-1 closure).
-type RenderWebhook struct {
-	HostMasked string
-	Full       string
 }
 
 // RenderStatusUpdate is one status post in a run's update stream.
@@ -162,7 +124,7 @@ type RenderTimelineEvent struct {
 	CreatorID string
 }
 
-// RenderChecklist is one checklist (run instance or playbook template).
+// RenderChecklist is one of the run's checklists.
 type RenderChecklist struct {
 	Title string
 	Items []RenderChecklistItem
@@ -189,38 +151,14 @@ type RenderRetrospective struct {
 	Metrics     []RenderMetric
 }
 
-// RenderStatusUpdateConfig is a playbook's status-update template + cadence.
-type RenderStatusUpdateConfig struct {
-	Enabled  bool
-	Template string // markdown body
-	Cadence  string // human-readable, e.g., "Every 30 minutes"
-}
-
-// RenderRetrospectiveConfig is a playbook's retrospective template + metrics.
-type RenderRetrospectiveConfig struct {
-	Enabled         bool
-	Template        string // markdown body
-	ReminderCadence string // human-readable
-	Metrics         []RenderMetric
-}
-
 // RenderMetric is one configured metric (with optional measured value).
 type RenderMetric struct {
 	ID          string
 	Title       string
 	Description string // markdown body
 	Type        string // "duration" | "currency" | "integer"
-	Target      int64  // type-dependent units
-	HasTarget   bool   // distinguishes a target of 0 from no target
-	Value       int64  // for run instances; zero for playbook templates
-	HasValue    bool   // distinguishes "0" from "not set"
-}
-
-// RenderPlaybookMember is a playbook member with their role.
-type RenderPlaybookMember struct {
-	UserID      string
-	DisplayName string
-	Roles       []string // "playbook_admin" | "playbook_member"
+	Value       int64
+	HasValue    bool // distinguishes "0" from "not set"
 }
 
 // RenderPost is one chat message in a transcript.
@@ -247,9 +185,6 @@ type Truncation struct {
 // Run sections: ExecutiveSummary, Timeline, StatusUpdates, Checklists,
 // Retrospective, Transcript. The executive summary and status updates are
 // always included.
-//
-// Playbook sections: PlaybookOverview, PlaybookChecklistTemplates,
-// PlaybookSettings.
 type SectionFlags struct {
 	ExecutiveSummary bool
 	Timeline         bool
@@ -257,10 +192,6 @@ type SectionFlags struct {
 	Checklists       bool
 	Retrospective    bool
 	Transcript       bool
-
-	PlaybookOverview           bool
-	PlaybookChecklistTemplates bool
-	PlaybookSettings           bool
 }
 
 // DefaultRunSections returns the default section set for a run export:
@@ -273,15 +204,5 @@ func DefaultRunSections() SectionFlags {
 		Checklists:       true,
 		Retrospective:    true,
 		Transcript:       false,
-	}
-}
-
-// DefaultPlaybookSections returns the default section set for a playbook
-// export: all playbook-specific sections enabled.
-func DefaultPlaybookSections() SectionFlags {
-	return SectionFlags{
-		PlaybookOverview:           true,
-		PlaybookChecklistTemplates: true,
-		PlaybookSettings:           true,
 	}
 }

@@ -68,20 +68,8 @@ describe('playbooks > report export', {testIsolation: true}, () => {
         cy.findByTestId('dropdownmenu').should('be.visible');
     };
 
-    const openPlaybookListMenu = (playbookId) => {
-        cy.get(`[data-testid="playbook-item"][data-playbook-id="${playbookId}"]`).within(() => {
-            cy.findByTestId('menuButtonActions').click();
-        });
-        cy.findByTestId('dropdownmenu').should('be.visible');
-    };
-
-    const openPlaybookEditorMenu = () => {
-        cy.findByTestId('playbook-editor-header').findByTestId('menuButton').click();
-        cy.findByTestId('dropdownmenu').should('be.visible');
-    };
-
-    // Opens "Export report" from the open menu, picks a format and, for a run, optionally a
-    // time zone, then clicks Export.
+    // Opens "Export report" from the open menu, picks a format and optionally a time zone,
+    // then clicks Export.
     const exportFromOpenMenu = (format, timeZone) => {
         cy.findByTestId('dropdownmenu').findByText('Export report').click();
 
@@ -216,52 +204,6 @@ describe('playbooks > report export', {testIsolation: true}, () => {
                 });
             });
         });
-
-        // Markdown here and HTML in the list test, so the two downloads never share a filename.
-        it('exports a playbook as Markdown from the playbook editor', () => {
-            cy.intercept('GET', `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/report*`).as('playbookReport');
-
-            // # Open the playbook editor and export the playbook as Markdown
-            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
-            openPlaybookEditorMenu();
-            exportFromOpenMenu('md');
-
-            // * The request succeeds with a Markdown attachment named after the playbook
-            assertReportResponse('@playbookReport', 'md').then((filename) => {
-                expect(filename).to.match(expectedFilename(playbookTitle, 'md'));
-
-                cy.get('#export-options-modal').should('not.exist');
-
-                // * The downloaded file is headed by the playbook title
-                readDownload(filename).then((md) => {
-                    expect(md).to.contain(`# ${playbookTitle}`);
-                });
-            });
-        });
-
-        it('exports a playbook as HTML from the playbooks list', () => {
-            cy.intercept('GET', `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/report*`).as('playbookReport');
-
-            // # Open the playbooks list and export the playbook as HTML
-            cy.visit('/playbooks/playbooks');
-            openPlaybookListMenu(testPlaybook.id);
-            exportFromOpenMenu('html');
-
-            // * The request succeeds with an HTML attachment named after the playbook
-            assertReportResponse('@playbookReport', 'html').then((filename) => {
-                expect(filename).to.match(expectedFilename(playbookTitle, 'html'));
-
-                // * Clicks in the dialog did not open the playbook, and the dialog closed
-                cy.location('pathname').should('equal', '/playbooks/playbooks');
-                cy.get('#export-options-modal').should('not.exist');
-
-                // * The downloaded file is an HTML document containing the playbook title
-                readDownload(filename).then((html) => {
-                    expect(html).to.match(/^<!DOCTYPE html>/i);
-                    expect(html).to.contain(playbookTitle);
-                });
-            });
-        });
     });
 
     describe('with reports disabled', () => {
@@ -280,36 +222,13 @@ describe('playbooks > report export', {testIsolation: true}, () => {
             cy.findByTestId('dropdownmenu').findByText('Export report').should('not.exist');
         });
 
-        it('hides the export in the playbook menus', () => {
-            // # Playbooks list
-            cy.visit('/playbooks/playbooks');
-            openPlaybookListMenu(testPlaybook.id);
-
-            // * Other items are there, the export is not
-            cy.findByTestId('dropdownmenu').findByText('Duplicate').should('be.visible');
-            cy.findByTestId('dropdownmenu').findByText('Export report').should('not.exist');
-
-            // # Playbook editor
-            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
-            openPlaybookEditorMenu();
-
-            // * Other items are there, the export is not
-            cy.findByTestId('dropdownmenu').findByText('Duplicate').should('be.visible');
-            cy.findByTestId('dropdownmenu').findByText('Export report').should('not.exist');
-        });
-
         it('rejects report requests', () => {
-            // * The report endpoints are not found while the feature is off
-            [
-                `/plugins/playbooks/api/v0/runs/${testRun.id}/report?format=html`,
-                `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/report?format=md`,
-            ].forEach((url) => {
-                cy.request({
-                    url,
-                    headers: {'X-Requested-With': 'XMLHttpRequest'},
-                    failOnStatusCode: false,
-                }).its('status').should('equal', 404);
-            });
+            // * The report endpoint is not found while the feature is off
+            cy.request({
+                url: `/plugins/playbooks/api/v0/runs/${testRun.id}/report?format=html`,
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                failOnStatusCode: false,
+            }).its('status').should('equal', 404);
         });
     });
 });

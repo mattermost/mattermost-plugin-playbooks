@@ -7,7 +7,6 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
-	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -46,8 +45,8 @@ type ResolverStats struct {
 	CapHit  bool
 }
 
-// ReportService orchestrates assembly of sanitized RenderContext /
-// PlaybookRenderContext values for the renderer. All permission scoping
+// ReportService orchestrates assembly of the sanitized RenderContext for
+// the renderer. All permission scoping
 // happens here; the writers only turn the data into HTML or Markdown.
 type ReportService struct {
 	runService         PlaybookRunService
@@ -244,122 +243,6 @@ func seedResolverUsers(rt *report.ResolverTable, userCache map[string]report.Ren
 		}
 		rt.Users[id] = u
 	}
-}
-
-// AssemblePlaybookReportContext builds the sanitized PlaybookRenderContext.
-func (s *ReportService) AssemblePlaybookReportContext(
-	ctx context.Context,
-	playbookID string,
-	userID string,
-	sections report.SectionFlags,
-	hasPlaybookManage bool,
-) (report.PlaybookRenderContext, ResolverStats, error) {
-	if err := s.permissionsService.PlaybookView(userID, playbookID); err != nil {
-		return report.PlaybookRenderContext{}, ResolverStats{}, err
-	}
-
-	pb, err := s.playbookService.Get(playbookID)
-	if err != nil {
-		return report.PlaybookRenderContext{}, ResolverStats{}, errors.Wrap(err, "failed to load playbook")
-	}
-
-	pc := report.PlaybookRenderContext{
-		Sections: sections,
-		Playbook: report.RenderPlaybook{
-			ID:          pb.ID,
-			Title:       pb.Title,
-			Description: pb.Description,
-			Public:      pb.Public,
-			TeamID:      pb.TeamID,
-		},
-	}
-
-	seenUsers := make(map[string]struct{}, len(pb.Members))
-	memberIDs := make([]string, 0, len(pb.Members))
-	for _, m := range pb.Members {
-		if _, ok := seenUsers[m.UserID]; ok || m.UserID == "" {
-			continue
-		}
-		seenUsers[m.UserID] = struct{}{}
-		memberIDs = append(memberIDs, m.UserID)
-	}
-	for _, cl := range pb.Checklists {
-		for _, item := range cl.Items {
-			if item.AssigneeID == "" {
-				continue
-			}
-			if _, ok := seenUsers[item.AssigneeID]; ok {
-				continue
-			}
-			seenUsers[item.AssigneeID] = struct{}{}
-			memberIDs = append(memberIDs, item.AssigneeID)
-		}
-	}
-	memberCache := s.batchResolveUsers(memberIDs)
-
-	pc.Members = make([]report.RenderPlaybookMember, 0, len(pb.Members))
-	for _, m := range pb.Members {
-		ru := memberCache[m.UserID]
-		pc.Members = append(pc.Members, report.RenderPlaybookMember{
-			UserID:      m.UserID,
-			DisplayName: ru.DisplayName,
-			Roles:       append([]string(nil), m.SchemeRoles...),
-		})
-	}
-
-	pc.ChecklistTemplates = buildChecklists(pb.Checklists, nil)
-
-	pc.StatusUpdateConfig = report.RenderStatusUpdateConfig{
-		Enabled:  pb.StatusUpdateEnabled,
-		Template: pb.ReminderMessageTemplate,
-		Cadence:  formatCadenceSeconds(pb.ReminderTimerDefaultSeconds),
-	}
-
-	pc.RetrospectiveConfig = report.RenderRetrospectiveConfig{
-		Enabled:         pb.RetrospectiveEnabled,
-		Template:        pb.RetrospectiveTemplate,
-		ReminderCadence: formatCadenceSeconds(pb.RetrospectiveReminderIntervalSeconds),
-		Metrics:         metricsFromConfigs(pb.Metrics, nil),
-	}
-
-	pc.BroadcastChannels = s.broadcastChannels(userID, pb.BroadcastChannelIDs)
-
-	pc.WebhooksOnCreation = redactWebhooks(pb.WebhookOnCreationURLs, hasPlaybookManage)
-	pc.WebhooksOnStatus = redactWebhooks(pb.WebhookOnStatusUpdateURLs, hasPlaybookManage)
-
-	pc.SignalKeywords = append([]string(nil), pb.SignalAnyKeywords...)
-
-	pc.Resolvers = report.ResolverTable{
-		Users:      make(map[string]report.RenderUser, len(memberCache)),
-		Channels:   map[string]report.RenderChannel{},
-		Files:      map[string]report.RenderFile{},
-		Permalinks: map[string]report.RenderPostPreview{},
-	}
-	seedResolverUsers(&pc.Resolvers, memberCache)
-
-	pc.GeneratedAtMillis = time.Now().UnixMilli()
-	return pc, ResolverStats{}, nil
-}
-
-// broadcastChannels names each broadcast channel the requester can read.
-// Playbook viewers may not be able to read every one, and the others keep
-// only their ID.
-func (s *ReportService) broadcastChannels(userID string, channelIDs []string) []report.RenderChannel {
-	out := make([]report.RenderChannel, 0, len(channelIDs))
-	for _, cid := range channelIDs {
-		ch, err := s.pluginAPI.Channel.Get(cid)
-		if err != nil || !s.pluginAPI.User.HasPermissionToChannel(userID, cid, model.PermissionReadChannel) {
-			out = append(out, report.RenderChannel{ChannelID: cid})
-			continue
-		}
-		out = append(out, report.RenderChannel{
-			ChannelID:   ch.Id,
-			Name:        ch.Name,
-			DisplayName: ch.DisplayName,
-			Type:        string(ch.Type),
-		})
-	}
-	return out
 }
 
 // channelPostsIterator returns a paging iterator over a channel's posts,
@@ -838,9 +721,8 @@ func taskStateUsers(events []TimelineEvent) map[string]string {
 	return users
 }
 
-// buildChecklists converts checklists for the report. stateUsers, from
-// taskStateUsers, names who closed or skipped each item; it is nil for
-// playbook templates.
+// buildChecklists converts a run's checklists for the report. stateUsers,
+// from taskStateUsers, names who closed or skipped each item.
 func buildChecklists(in []Checklist, stateUsers map[string]string) []report.RenderChecklist {
 	out := make([]report.RenderChecklist, 0, len(in))
 	for _, c := range in {
@@ -870,7 +752,7 @@ func buildChecklists(in []Checklist, stateUsers map[string]string) []report.Rend
 
 // buildRetrospective composes the retrospective DTO for the run renderer.
 // metricConfigs is the parent playbook's metric configuration (Title,
-// Description, Type, Target); the run-side instance values come from
+// Description, Type); the run-side instance values come from
 // run.MetricsData. When metricConfigs is empty (the playbook was deleted or
 // could not be loaded), there is no metric left to show: a value without
 // its title or type would be meaningless in the report.
@@ -894,11 +776,10 @@ func runMetricValueLookup(run *PlaybookRun) map[string]int64 {
 	return out
 }
 
-// metricsFromConfigs maps the canonical PlaybookMetricConfig list into
-// the renderer DTO, optionally joining run-instance values via
-// valueOverrides (metricID → value). Used for both the playbook surface
-// (values nil) and the run surface (values map from runMetricValueLookup).
-func metricsFromConfigs(configs []PlaybookMetricConfig, valueOverrides map[string]int64) []report.RenderMetric {
+// metricsFromConfigs maps the parent playbook's metric configs into the
+// renderer DTO, joining the run's values (metricID → value) from
+// runMetricValueLookup.
+func metricsFromConfigs(configs []PlaybookMetricConfig, values map[string]int64) []report.RenderMetric {
 	out := make([]report.RenderMetric, 0, len(configs))
 	for _, m := range configs {
 		rm := report.RenderMetric{
@@ -906,10 +787,8 @@ func metricsFromConfigs(configs []PlaybookMetricConfig, valueOverrides map[strin
 			Title:       m.Title,
 			Description: m.Description,
 			Type:        metricTypeFromConfig(m.Type),
-			Target:      m.Target.Int64,
-			HasTarget:   m.Target.Valid,
 		}
-		if val, ok := valueOverrides[m.ID]; ok {
+		if val, ok := values[m.ID]; ok {
 			rm.Value = val
 			rm.HasValue = true
 		}
@@ -928,45 +807,6 @@ func metricTypeFromConfig(t string) string {
 		return "integer"
 	}
 	return t
-}
-
-func formatCadenceSeconds(seconds int64) string {
-	if seconds <= 0 {
-		return ""
-	}
-	d := time.Duration(seconds) * time.Second
-	return d.String()
-}
-
-// redactWebhooks rewrites URL paths and queries, strips userinfo, and only
-// returns the Full URL when the requester has playbook-manage permission
-// (plan §3.6.5 / MF-1).
-func redactWebhooks(urls []string, hasManage bool) []report.RenderWebhook {
-	out := make([]report.RenderWebhook, 0, len(urls))
-	for _, raw := range urls {
-		raw = strings.TrimSpace(raw)
-		if raw == "" {
-			continue
-		}
-		parsed, err := url.Parse(raw)
-		if err != nil || parsed.Host == "" {
-			out = append(out, report.RenderWebhook{HostMasked: "****"})
-			continue
-		}
-		host := parsed.Host
-		masked := parsed.Scheme + "://" + host
-		if parsed.Path != "" || parsed.RawQuery != "" {
-			masked += "/****"
-		}
-		w := report.RenderWebhook{HostMasked: masked}
-		if hasManage {
-			clean := *parsed
-			clean.User = nil
-			w.Full = clean.String()
-		}
-		out = append(out, w)
-	}
-	return out
 }
 
 func fileKindFromMime(mime string) string {

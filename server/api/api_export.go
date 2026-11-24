@@ -59,11 +59,9 @@ type ResolverStats = app.ResolverStats
 // declared here as an interface so this handler can be exercised in isolation.
 type ReportService interface {
 	AssembleRunReportContext(ctx context.Context, runID, userID string, sections report.SectionFlags) (report.RenderContext, ResolverStats, error)
-	AssemblePlaybookReportContext(ctx context.Context, playbookID, userID string, sections report.SectionFlags, hasPlaybookManage bool) (report.PlaybookRenderContext, ResolverStats, error)
 }
 
-// ExportHandler owns the GET .../report?format=md|html surfaces for both runs
-// and playbooks. The HTML is downloaded directly, or browser-printed to PDF by
+// ExportHandler owns the GET /runs/{id}/report?format=md|html endpoint. The HTML is downloaded directly, or browser-printed to PDF by
 // the client. Permission gating, CSRF validation, concurrency throttling,
 // filename safety, audit logging, and atomic buffer-then-write all live here.
 type ExportHandler struct {
@@ -72,7 +70,6 @@ type ExportHandler struct {
 	config             config.Service
 	permissions        *app.PermissionsService
 	playbookRunService app.PlaybookRunService
-	playbookService    app.PlaybookService
 	reportService      ReportService
 
 	// renderSem bounds concurrent renders.
@@ -80,7 +77,7 @@ type ExportHandler struct {
 }
 
 // registeredExportHandler holds the active ExportHandler used by the route
-// registration shims invoked from playbook_runs.go and playbooks.go.
+// registration shim invoked from playbook_runs.go.
 var (
 	exportHandlerMu         sync.RWMutex
 	registeredExportHandler *ExportHandler
@@ -108,23 +105,13 @@ const (
 // registerRunExportRoute mounts the run report endpoint on the per-run
 // subrouter when the ExportHandler is available.
 func registerRunExportRoute(runRouter *mux.Router) {
-	registerExportRoute(runRouter, (*ExportHandler).exportRun)
-}
-
-// registerPlaybookExportRoute mounts the playbook report endpoint on the
-// per-playbook subrouter.
-func registerPlaybookExportRoute(pbRouter *mux.Router) {
-	registerExportRoute(pbRouter, (*ExportHandler).exportPlaybook)
-}
-
-func registerExportRoute(router *mux.Router, fn func(*ExportHandler, *Context, http.ResponseWriter, *http.Request)) {
-	router.HandleFunc("/report", withContext(func(c *Context, w http.ResponseWriter, r *http.Request) {
+	runRouter.HandleFunc("/report", withContext(func(c *Context, w http.ResponseWriter, r *http.Request) {
 		h := currentExportHandler()
 		if h == nil {
 			HandleErrorWithCode(c.logger, w, http.StatusNotFound, "not found", nil)
 			return
 		}
-		fn(h, c, w, r)
+		h.exportRun(c, w, r)
 	})).Methods(http.MethodGet)
 }
 
@@ -134,7 +121,6 @@ func NewExportHandler(
 	cfg config.Service,
 	permissions *app.PermissionsService,
 	playbookRunService app.PlaybookRunService,
-	playbookService app.PlaybookService,
 	reportService ReportService,
 ) *ExportHandler {
 	return &ExportHandler{
@@ -143,7 +129,6 @@ func NewExportHandler(
 		config:             cfg,
 		permissions:        permissions,
 		playbookRunService: playbookRunService,
-		playbookService:    playbookService,
 		reportService:      reportService,
 		renderSem:          make(chan struct{}, maxConcurrentReports),
 	}
@@ -173,7 +158,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	sections, err := parseSectionsQuery(r.URL.Query().Get("sections"), sectionFlagsForRun)
+	sections, err := parseSectionsQuery(r.URL.Query().Get("sections"))
 	if err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return
@@ -234,81 +219,6 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 	}
 	h.writeReportResponse(w, format, data, filename, correlationID, rc.TranscriptTruncation)
 	auditRec.AddMeta("truncated", rc.TranscriptTruncation.Hit)
-	auditRec.Success()
-}
-
-// exportPlaybook is the handler for GET /playbooks/{id}/report?format=md|html.
-func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playbookID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-Id")
-	correlationID := correlationFromRequest(r)
-	format := r.URL.Query().Get("format")
-	logger := c.logger.
-		WithField("correlation_id", correlationID).
-		WithField("export_kind", "playbook").
-		WithField("export_format", format)
-
-	if !h.reportsEnabled() {
-		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "not found", nil)
-		return
-	}
-
-	auditRec := newExportAuditRecord(r, userID, "playbook", playbookID, format)
-	defer h.pluginAPI.Audit.Record(auditRec)
-	if format != formatMarkdown && format != formatHTML {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "format must be md or html", nil)
-		return
-	}
-
-	sections, err := parseSectionsQuery(r.URL.Query().Get("sections"), sectionFlagsForPlaybook)
-	if err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
-		return
-	}
-	model.AddEventParameterToAuditRec(auditRec, "sections", sectionsToList(sections))
-
-	pb, pbErr := h.playbookService.Get(playbookID)
-	if pbErr != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "not found", pbErr)
-		return
-	}
-	if permErr := h.permissions.PlaybookViewWithPlaybook(userID, pb); permErr != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "not found", permErr)
-		return
-	}
-	hasPlaybookManage := h.permissions.PlaybookManageProperties(userID, pb) == nil
-
-	ctx, cancel := context.WithTimeout(r.Context(), exportRequestTimeout)
-	defer cancel()
-	if !h.acquireRenderSlot(ctx) {
-		w.Header().Set("Retry-After", strconv.Itoa(exportRetryAfterSeconds))
-		h.HandleErrorWithCode(w, logger, http.StatusTooManyRequests, "rate limited", nil)
-		return
-	}
-	defer h.releaseRenderSlot()
-
-	pc, _, asmErr := h.reportService.AssemblePlaybookReportContext(ctx, pb.ID, userID, sections, hasPlaybookManage)
-	if asmErr != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
-		return
-	}
-
-	filename := reportFilename(pc.Playbook.Title, "playbook-"+pb.ID, pc.GeneratedAtMillis)
-
-	view := report.BuildPlaybook(pc, h.reportOptions(userID, nil))
-	var data []byte
-	var renderErr error
-	if format == formatMarkdown {
-		data = markdown_writer.RenderPlaybookMarkdown(view)
-	} else {
-		data, renderErr = html_writer.RenderPlaybookHTML(view, html_writer.Options{PageSize: "A4"})
-	}
-	if renderErr != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", renderErr)
-		return
-	}
-	h.writeReportResponse(w, format, data, filename, correlationID, report.Truncation{})
 	auditRec.Success()
 }
 
@@ -408,32 +318,21 @@ func newExportAuditRecord(r *http.Request, userID, kind, id, format string) *mod
 
 // ---- helpers (file-scoped, no receiver) ----
 
-// sectionFlagsForRun and sectionFlagsForPlaybook are the per-surface section
-// catalogs used by parseSectionsQuery.
-var (
-	sectionFlagsForRun = map[string]func(*report.SectionFlags){
-		"summary":    func(s *report.SectionFlags) { s.ExecutiveSummary = true },
-		"timeline":   func(s *report.SectionFlags) { s.Timeline = true },
-		"updates":    func(s *report.SectionFlags) { s.StatusUpdates = true },
-		"tasks":      func(s *report.SectionFlags) { s.Checklists = true },
-		"retro":      func(s *report.SectionFlags) { s.Retrospective = true },
-		"transcript": func(s *report.SectionFlags) { s.Transcript = true },
-	}
-	sectionFlagsForPlaybook = map[string]func(*report.SectionFlags){
-		"overview": func(s *report.SectionFlags) { s.PlaybookOverview = true },
-		"tasks":    func(s *report.SectionFlags) { s.PlaybookChecklistTemplates = true },
-		"settings": func(s *report.SectionFlags) { s.PlaybookSettings = true },
-	}
-)
+// sectionFlags maps each ?sections= token to the section it selects.
+var sectionFlags = map[string]func(*report.SectionFlags){
+	"summary":    func(s *report.SectionFlags) { s.ExecutiveSummary = true },
+	"timeline":   func(s *report.SectionFlags) { s.Timeline = true },
+	"updates":    func(s *report.SectionFlags) { s.StatusUpdates = true },
+	"tasks":      func(s *report.SectionFlags) { s.Checklists = true },
+	"retro":      func(s *report.SectionFlags) { s.Retrospective = true },
+	"transcript": func(s *report.SectionFlags) { s.Transcript = true },
+}
 
 // parseSectionsQuery interprets the ?sections= query param. Empty/missing
-// returns the default set for the surface; an unknown token returns an error.
-func parseSectionsQuery(raw string, catalog map[string]func(*report.SectionFlags)) (report.SectionFlags, error) {
+// returns the default set; an unknown token returns an error.
+func parseSectionsQuery(raw string) (report.SectionFlags, error) {
 	if raw == "" {
-		if _, runSurface := catalog["timeline"]; runSurface {
-			return report.DefaultRunSections(), nil
-		}
-		return report.DefaultPlaybookSections(), nil
+		return report.DefaultRunSections(), nil
 	}
 	var s report.SectionFlags
 	for tok := range strings.SplitSeq(raw, ",") {
@@ -441,7 +340,7 @@ func parseSectionsQuery(raw string, catalog map[string]func(*report.SectionFlags
 		if tok == "" {
 			continue
 		}
-		setter, ok := catalog[tok]
+		setter, ok := sectionFlags[tok]
 		if !ok {
 			return report.SectionFlags{}, errors.Errorf("unknown section token %q", tok)
 		}
@@ -465,9 +364,6 @@ func sectionsToList(s report.SectionFlags) []string {
 	add("tasks", s.Checklists)
 	add("retro", s.Retrospective)
 	add("transcript", s.Transcript)
-	add("playbook_overview", s.PlaybookOverview)
-	add("playbook_tasks", s.PlaybookChecklistTemplates)
-	add("playbook_settings", s.PlaybookSettings)
 	sort.Strings(out)
 	return out
 }
@@ -542,7 +438,7 @@ func collapseUnderscores(s string) string {
 
 // reportFilename names a report file, without an extension, after its title
 // and generation time in UTC: <title>_<YYYY-MM-DDTHH-MM>. The time keeps
-// repeated exports of the same run or playbook apart.
+// repeated exports of the same run apart.
 func reportFilename(title, fallback string, generatedAtMs int64) string {
 	generatedAt := time.Now()
 	if generatedAtMs > 0 {

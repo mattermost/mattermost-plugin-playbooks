@@ -27,7 +27,7 @@ jest.mock('react-redux', () => ({
     useSelector: () => ({timezone: {useAutomaticTimezone: 'false', manualTimezone: 'Europe/Berlin', automaticTimezone: ''}}),
 }));
 
-import ExportOptionsModal, {SectionFlags, Surface} from './export_options_modal';
+import ExportOptionsModal, {SectionFlags} from './export_options_modal';
 
 const wrap = (ui: React.ReactNode) => (
     <IntlProvider
@@ -42,7 +42,6 @@ const findCheckboxes = (instance: renderer.ReactTestInstance) =>
     instance.findAllByType('input').filter((n) => n.props.type === 'checkbox');
 
 type RenderOverrides = Partial<{
-    surface: Surface;
     defaults: SectionFlags;
     channelExportAvailable: boolean;
 }>;
@@ -54,7 +53,6 @@ const render = (overrides: RenderOverrides = {}) => {
     act(() => {
         tree = renderer.create(wrap(
             <ExportOptionsModal
-                surface={overrides.surface ?? 'run'}
                 defaults={overrides.defaults ?? {}}
                 onConfirm={onConfirm}
                 onCancel={onCancel}
@@ -70,15 +68,15 @@ describe('ExportOptionsModal', () => {
         capturedHandleConfirm = undefined;
     });
 
-    it('renders 6 toggles for run surface, all checked by default', () => {
-        const {tree} = render({surface: 'run'});
+    it('renders 6 toggles, all checked by default', () => {
+        const {tree} = render();
         const checkboxes = findCheckboxes(tree.root);
         expect(checkboxes).toHaveLength(6);
         expect(checkboxes.every((c) => c.props.checked)).toBe(true);
     });
 
     it('always includes the executive summary and status updates', () => {
-        const {tree} = render({surface: 'run', defaults: {executiveSummary: false, statusUpdates: false}});
+        const {tree} = render({defaults: {executiveSummary: false, statusUpdates: false}});
         for (const key of ['executiveSummary', 'statusUpdates']) {
             const input = tree.root.findByProps({'data-testid': `section-toggle-${key}`}).findByType('input');
             expect(input.props.checked).toBe(true);
@@ -88,14 +86,8 @@ describe('ExportOptionsModal', () => {
         expect(timeline.props.disabled).toBeFalsy();
     });
 
-    it('renders 3 toggles for playbook surface', () => {
-        const {tree} = render({surface: 'playbook'});
-        const checkboxes = findCheckboxes(tree.root);
-        expect(checkboxes).toHaveLength(3);
-    });
-
     it('toggling a section flips its checked state', () => {
-        const {tree} = render({surface: 'run'});
+        const {tree} = render();
         const transcript = tree.root.findByProps({'data-testid': 'section-toggle-transcript'});
         const input = transcript.findByType('input');
         expect(input.props.checked).toBe(true);
@@ -107,14 +99,14 @@ describe('ExportOptionsModal', () => {
     });
 
     it("offers the user's own time zone first and every IANA time zone", () => {
-        const {tree} = render({surface: 'run'});
+        const {tree} = render();
         const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
         expect(select.props.value).toEqual({value: '', label: 'Europe/Berlin (your time zone)'});
         expect(select.props.options).toContainEqual({value: 'America/New_York', label: 'America/New York'});
     });
 
     it('shows a clock next to the picked time zone but not in the list', () => {
-        const {tree} = render({surface: 'run'});
+        const {tree} = render();
         const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
         const option = {value: 'Asia/Karachi', label: 'Asia/Karachi'};
         expect(select.props.formatOptionLabel(option, {context: 'menu'})).toBe('Asia/Karachi');
@@ -127,13 +119,8 @@ describe('ExportOptionsModal', () => {
         expect(JSON.stringify(value.toJSON())).toContain('Asia/Karachi');
     });
 
-    it('has no time zone field on playbook surface', () => {
-        const {tree} = render({surface: 'playbook'});
-        expect(tree.root.findAllByProps({'data-testid': 'time-zone-field'})).toHaveLength(0);
-    });
-
     it('onConfirm receives the picked time zone', () => {
-        const {tree, onConfirm} = render({surface: 'run'});
+        const {tree, onConfirm} = render();
         const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
         act(() => {
             select.props.onChange({value: 'Asia/Karachi', label: 'Asia/Karachi'});
@@ -146,22 +133,17 @@ describe('ExportOptionsModal', () => {
     });
 
     it('hides channel-export hint when unavailable', () => {
-        const {tree} = render({surface: 'run', channelExportAvailable: false});
+        const {tree} = render({channelExportAvailable: false});
         expect(tree.root.findAllByProps({'data-testid': 'channel-export-hint'})).toHaveLength(0);
     });
 
-    it('shows channel-export hint when available on run surface', () => {
-        const {tree} = render({surface: 'run', channelExportAvailable: true});
+    it('shows channel-export hint when available', () => {
+        const {tree} = render({channelExportAvailable: true});
         expect(tree.root.findAllByProps({'data-testid': 'channel-export-hint'}).length).toBeGreaterThan(0);
     });
 
-    it('does not show channel-export hint on playbook surface', () => {
-        const {tree} = render({surface: 'playbook', channelExportAvailable: true});
-        expect(tree.root.findAllByProps({'data-testid': 'channel-export-hint'})).toHaveLength(0);
-    });
-
     it('defaults to pdf format with the pdf button selected', () => {
-        const {tree} = render({surface: 'run'});
+        const {tree} = render();
         const pdfBtn = tree.root.findByProps({'data-testid': 'format-button-pdf'});
         const htmlBtn = tree.root.findByProps({'data-testid': 'format-button-html'});
         expect(pdfBtn.props.selected).toBe(true);
@@ -169,7 +151,7 @@ describe('ExportOptionsModal', () => {
     });
 
     it('shows the browser-print hint for pdf and hides it for html', () => {
-        const {tree} = render({surface: 'run'});
+        const {tree} = render();
         expect(tree.root.findAllByProps({'data-testid': 'format-hint'}).length).toBeGreaterThan(0);
 
         const htmlBtn = tree.root.findByProps({'data-testid': 'format-button-html'});
@@ -180,7 +162,7 @@ describe('ExportOptionsModal', () => {
     });
 
     it('onConfirm receives sections, the pdf format, and transcript mode by default', () => {
-        const {onConfirm} = render({surface: 'run'});
+        const {onConfirm} = render();
 
         act(() => {
             capturedHandleConfirm?.();
@@ -190,7 +172,7 @@ describe('ExportOptionsModal', () => {
     });
 
     it('onConfirm receives the html format when HTML is selected', () => {
-        const {tree, onConfirm} = render({surface: 'run'});
+        const {tree, onConfirm} = render();
         const htmlBtn = tree.root.findByProps({'data-testid': 'format-button-html'});
         act(() => {
             htmlBtn.props.onClick();
@@ -203,7 +185,7 @@ describe('ExportOptionsModal', () => {
     });
 
     it('onConfirm receives the md format when Markdown is selected', () => {
-        const {tree, onConfirm} = render({surface: 'run'});
+        const {tree, onConfirm} = render();
         const mdBtn = tree.root.findByProps({'data-testid': 'format-button-md'});
         act(() => {
             mdBtn.props.onClick();
@@ -217,17 +199,8 @@ describe('ExportOptionsModal', () => {
         expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'md', {transcriptMode: 'threaded', timeZone: ''});
     });
 
-    it('onConfirm receives no run options for a playbook', () => {
-        const {onConfirm} = render({surface: 'playbook'});
-        act(() => {
-            capturedHandleConfirm?.();
-        });
-
-        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'pdf', {});
-    });
-
     it('disables confirm while the export runs', async () => {
-        const {onConfirm} = render({surface: 'run'});
+        const {onConfirm} = render();
         let finish!: () => void;
         onConfirm.mockReturnValue(new Promise<void>((resolve) => {
             finish = resolve;
@@ -245,13 +218,8 @@ describe('ExportOptionsModal', () => {
         expect(capturedConfirmDisabled).toBe(false);
     });
 
-    it('matches snapshot for run surface', () => {
-        const {tree} = render({surface: 'run'});
-        expect(tree.toJSON()).toMatchSnapshot();
-    });
-
-    it('matches snapshot for playbook surface', () => {
-        const {tree} = render({surface: 'playbook'});
+    it('matches snapshot', () => {
+        const {tree} = render();
         expect(tree.toJSON()).toMatchSnapshot();
     });
 });

@@ -18,9 +18,4 @@ func TestGolden(t *testing.T) {
 			reporttest.AssertGolden(t, tc.Name+".md", RenderRunMarkdown(tc.Report()), *update)
 		})
 	}
-	for _, tc := range reporttest.PlaybookScenarios() {
-		t.Run(tc.Name, func(t *testing.T) {
-			reporttest.AssertGolden(t, tc.Name+".md", RenderPlaybookMarkdown(tc.Report()), *update)
-		})
-	}
 }

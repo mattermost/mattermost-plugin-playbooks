@@ -840,9 +840,6 @@ export type ReportSections = {
     checklists?: boolean;
     retrospective?: boolean;
     transcript?: boolean;
-    playbookOverview?: boolean;
-    playbookChecklistTemplates?: boolean;
-    playbookSettings?: boolean;
 };
 
 export class ReportExportError extends Error {
@@ -873,9 +870,6 @@ const SECTION_KEY_TO_PARAM: Record<keyof ReportSections, string> = {
     checklists: 'tasks',
     retrospective: 'retro',
     transcript: 'transcript',
-    playbookOverview: 'overview',
-    playbookChecklistTemplates: 'tasks',
-    playbookSettings: 'settings',
 };
 
 const sectionsToQueryString = (sections: ReportSections): string => {
@@ -897,7 +891,7 @@ const parseFilenameFromDisposition = (disposition: string | null, fallback: stri
 
 export type TranscriptMode = 'threaded' | 'chronological';
 
-// RunReportOptions are the export options only run reports have.
+// RunReportOptions are the run report's transcript layout and time zone.
 export type RunReportOptions = {
     transcriptMode?: TranscriptMode;
 
@@ -905,7 +899,7 @@ export type RunReportOptions = {
     timeZone?: string;
 };
 
-const fetchReport = async (path: string, format: ReportFormat, sections: ReportSections, {transcriptMode, timeZone}: RunReportOptions = {}): Promise<ReportExport> => {
+export const exportRunReport = async (runID: string, format: ReportFormat, sections: ReportSections, {transcriptMode, timeZone}: RunReportOptions = {}): Promise<ReportExport> => {
     const serverFormat = format === 'md' ? 'md' : 'html';
     const params = new URLSearchParams({format: serverFormat});
     const list = sectionsToQueryString(sections);
@@ -921,7 +915,7 @@ const fetchReport = async (path: string, format: ReportFormat, sections: ReportS
 
     // The intent is recorded in the server's audit log for HTML exports.
     const headers: Record<string, string> = serverFormat === 'html' ? {'X-Playbooks-Export-Intent': format === 'pdf' ? 'print' : 'download'} : {};
-    const resp = await fetch(`${apiUrl}${path}?${params}`, Client4.getOptions({method: 'GET', headers}));
+    const resp = await fetch(`${apiUrl}/runs/${runID}/report?${params}`, Client4.getOptions({method: 'GET', headers}));
     if (!resp.ok) {
         let message = resp.statusText;
         try {
@@ -938,14 +932,6 @@ const fetchReport = async (path: string, format: ReportFormat, sections: ReportS
         truncated: resp.headers.get('X-Playbooks-Report-Truncated') === 'true',
     };
 };
-
-export function exportRunReport(runID: string, format: ReportFormat, sections: ReportSections, options?: RunReportOptions): Promise<ReportExport> {
-    return fetchReport(`/runs/${runID}/report`, format, sections, options);
-}
-
-export function exportPlaybookReport(playbookID: string, format: ReportFormat, sections: ReportSections): Promise<ReportExport> {
-    return fetchReport(`/playbooks/${playbookID}/report`, format, sections);
-}
 
 // saveReport downloads the report, or for PDF opens the browser's print dialog on it.
 export function saveReport(report: ReportExport, format: ReportFormat): void {

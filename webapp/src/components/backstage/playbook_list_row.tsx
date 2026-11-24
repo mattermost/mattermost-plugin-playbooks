@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {Fragment, useMemo, useState} from 'react';
+import React, {Fragment, useMemo} from 'react';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -15,7 +15,6 @@ import {
     DotsVerticalIcon,
     ExportVariantIcon,
     EyeOutlineIcon,
-    FileTextOutlineIcon,
     PencilOutlineIcon,
     PlayOutlineIcon,
     RestoreIcon,
@@ -28,10 +27,9 @@ import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
-import {isCurrentUserAdmin, selectReportsEnabled} from 'src/selectors';
+import {isCurrentUserAdmin} from 'src/selectors';
 import {Playbook} from 'src/types/playbook';
 import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
-
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import DotMenu, {
     DotMenuButton,
@@ -40,7 +38,6 @@ import DotMenu, {
     iconSplitStyling,
 } from 'src/components/dot_menu';
 import {createPlaybookRun, playbookExportProps} from 'src/client';
-import ExportOptionsModal, {ExportFormat, SectionFlags, useReportExport} from 'src/components/export_options_modal';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
@@ -136,14 +133,6 @@ const PlaybookListRow = (props: Props) => {
     const {formatMessage} = useIntl();
 
     const {join, leave} = usePlaybookMembership(props.playbook.id, currentUser.id);
-    const [showReportModal, setShowReportModal] = useState(false);
-    const exportReport = useReportExport();
-    const reportsEnabled = useAppSelector(selectReportsEnabled);
-
-    const onReportConfirm = async (sections: SectionFlags, format: ExportFormat) => {
-        await exportReport({kind: 'playbook', id: props.playbook.id}, sections, format);
-        setShowReportModal(false);
-    };
 
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
@@ -189,7 +178,7 @@ const PlaybookListRow = (props: Props) => {
     }
 
     const [exportHref, exportFilename] = playbookExportProps(props.playbook);
-    const row = (
+    return (
         <PlaybookItem
             key={props.playbook.id}
             onClick={props.onClick}
@@ -308,14 +297,6 @@ const PlaybookListRow = (props: Props) => {
                         <ExportVariantIcon size={18}/>
                         <FormattedMessage defaultMessage='Export'/>
                     </DropdownMenuItemStyled>
-                    {reportsEnabled && (
-                        <DropdownMenuItem
-                            onClick={() => setShowReportModal(true)}
-                        >
-                            <FileTextOutlineIcon size={18}/>
-                            <FormattedMessage defaultMessage='Export report'/>
-                        </DropdownMenuItem>
-                    )}
                     {currentUserPlaybookMember && (
                         <>
                             <div className='MenuGroup menu-divider'/>
@@ -365,23 +346,6 @@ const PlaybookListRow = (props: Props) => {
                 </DotMenu>
             </ActionCol>
         </PlaybookItem>
-    );
-
-    // The modal renders in a portal, but React still bubbles its clicks to the
-    // component that renders it. Keep it outside PlaybookItem, whose onClick
-    // opens the playbook.
-    return (
-        <>
-            {row}
-            {showReportModal && (
-                <ExportOptionsModal
-                    surface='playbook'
-                    defaults={{}}
-                    onConfirm={onReportConfirm}
-                    onCancel={() => setShowReportModal(false)}
-                />
-            )}
-        </>
     );
 };
 

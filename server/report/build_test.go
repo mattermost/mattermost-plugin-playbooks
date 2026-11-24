@@ -121,43 +121,9 @@ func TestBuildRun(t *testing.T) {
 	})
 }
 
-func TestBuildPlaybook(t *testing.T) {
-	t.Run("checklist templates count their tasks", func(t *testing.T) {
-		pc := PlaybookRenderContext{ChecklistTemplates: []RenderChecklist{
-			{Title: "One", Items: []RenderChecklistItem{{Title: "a"}}},
-			{Items: []RenderChecklistItem{{Title: "a"}, {Title: "b"}}},
-		}}
-		cls := BuildPlaybook(pc, testOptions()).Checklists.Checklists
-		assert.Equal(t, "1 task", cls[0].Progress)
-		assert.Equal(t, "Checklist 2", cls[1].Title)
-		assert.Equal(t, "2 tasks", cls[1].Progress)
-	})
-
-	t.Run("members the requester cannot see are unknown users", func(t *testing.T) {
-		pc := PlaybookRenderContext{
-			Members:   []RenderPlaybookMember{{UserID: "u8", DisplayName: "Eve Elsewhere", Roles: []string{"playbook_admin", "custom"}}},
-			Resolvers: ResolverTable{Users: map[string]RenderUser{}},
-		}
-		assert.Equal(t, []Member{{Name: "Unknown user", Roles: "Admin, custom"}}, BuildPlaybook(pc, testOptions()).Members.Members)
-	})
-}
-
 func TestTrimBody(t *testing.T) {
 	assert.Equal(t, "", trimBody(" \n\t\n"))
 	assert.Equal(t, "text", trimBody("\n\ntext  \n"))
 	assert.Equal(t, "    code", trimBody("\n  \n    code\n"))
 	assert.Equal(t, "a\n\n  b", trimBody("a\n\n  b\n\n"))
-}
-
-func TestBuildPlaybookMetricTarget(t *testing.T) {
-	pc := PlaybookRenderContext{
-		Sections: SectionFlags{PlaybookSettings: true},
-		RetrospectiveConfig: RenderRetrospectiveConfig{Metrics: []RenderMetric{
-			{Title: "Unset", Type: "integer"},
-			{Title: "Zero", Type: "integer", HasTarget: true},
-		}},
-	}
-	r := BuildPlaybook(pc, testOptions())
-	assert.Equal(t, "integer", r.Retrospective.Metrics[0].Value)
-	assert.Equal(t, "integer, target 0", r.Retrospective.Metrics[1].Value)
 }

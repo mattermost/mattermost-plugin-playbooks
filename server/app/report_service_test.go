@@ -5,7 +5,6 @@ package app
 
 import (
 	"context"
-	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -28,49 +27,6 @@ func newTestReportService(api *plugintest.API) *ReportService {
 		pluginAPI: client,
 		config:    DefaultReportConfig(),
 	}
-}
-
-func TestReportServiceWebhookRedaction(t *testing.T) {
-	t.Run("masks path and query when manage denied", func(t *testing.T) {
-		out := redactWebhooks([]string{"https://hooks.slack.com/services/T0/B0/XXX?token=secret"}, false)
-		require.Len(t, out, 1)
-		require.Equal(t, "https://hooks.slack.com/****", out[0].HostMasked)
-		require.Empty(t, out[0].Full)
-	})
-
-	t.Run("returns Full only when manage granted", func(t *testing.T) {
-		raw := "https://hooks.example.com/path?token=t"
-		out := redactWebhooks([]string{raw}, true)
-		require.Len(t, out, 1)
-		require.Equal(t, "https://hooks.example.com/****", out[0].HostMasked)
-		require.Equal(t, raw, out[0].Full)
-	})
-
-	t.Run("strips userinfo before masking", func(t *testing.T) {
-		out := redactWebhooks([]string{"https://user:pass@hooks.example.com/p"}, true)
-		require.Len(t, out, 1)
-		require.Equal(t, "https://hooks.example.com/****", out[0].HostMasked)
-		require.NotContains(t, out[0].Full, "user:pass")
-		require.NotContains(t, out[0].Full, "@hooks.example.com")
-	})
-
-	t.Run("host-only URL masks without trailing slash", func(t *testing.T) {
-		out := redactWebhooks([]string{"https://hooks.example.com"}, false)
-		require.Len(t, out, 1)
-		require.Equal(t, "https://hooks.example.com", out[0].HostMasked)
-	})
-
-	t.Run("empty strings are dropped", func(t *testing.T) {
-		out := redactWebhooks([]string{"", "  "}, false)
-		require.Empty(t, out)
-	})
-
-	t.Run("invalid URL yields masked placeholder", func(t *testing.T) {
-		out := redactWebhooks([]string{"://broken"}, false)
-		require.Len(t, out, 1)
-		require.Equal(t, "****", out[0].HostMasked)
-		require.Empty(t, out[0].Full)
-	})
 }
 
 func TestReportServiceDedupNonEmpty(t *testing.T) {
@@ -203,7 +159,7 @@ func TestReportServiceTaskStateUsers(t *testing.T) {
 }
 
 func TestReportServiceMetricsFromConfigs(t *testing.T) {
-	t.Run("playbook configs apply value overrides", func(t *testing.T) {
+	t.Run("configs join the run's values", func(t *testing.T) {
 		cfg := []PlaybookMetricConfig{
 			{ID: "m1", Title: "Resolution", Type: MetricTypeDuration, Target: null.IntFrom(60)},
 			{ID: "m2", Title: "Spend", Type: MetricTypeCurrency},
@@ -213,14 +169,13 @@ func TestReportServiceMetricsFromConfigs(t *testing.T) {
 		require.Equal(t, "duration", out[0].Type)
 		require.True(t, out[0].HasValue)
 		require.Equal(t, int64(42), out[0].Value)
-		require.Equal(t, int64(60), out[0].Target)
 		require.Equal(t, "currency", out[1].Type)
 		require.False(t, out[1].HasValue)
 	})
 
 	t.Run("run metric values join to playbook configs by id and preserve null vs zero", func(t *testing.T) {
 		// Mirrors the production path: playbook metric configs supply
-		// labels/types/targets; run-side values come in via the lookup
+		// labels and types; run-side values come in via the lookup
 		// map. A nil-valued run-side metric stays HasValue=false; a
 		// zero-valued one stays HasValue=true.
 		cfg := []PlaybookMetricConfig{
@@ -335,16 +290,6 @@ func TestReportServiceContextSanitizationInvariant(t *testing.T) {
 		},
 	}
 	requireNoRawModelTypes(t, reflect.ValueOf(rc))
-
-	pc := report.PlaybookRenderContext{
-		Playbook: report.RenderPlaybook{ID: "pb1"},
-		Members:  []report.RenderPlaybookMember{{UserID: "u1"}},
-		WebhooksOnCreation: []report.RenderWebhook{
-			{HostMasked: "https://example.com/****"},
-		},
-		BroadcastChannels: []report.RenderChannel{{ChannelID: "c1"}},
-	}
-	requireNoRawModelTypes(t, reflect.ValueOf(pc))
 }
 
 func requireNoRawModelTypes(t *testing.T, v reflect.Value) {
@@ -498,30 +443,6 @@ func TestReportServiceBuildResolverTableChannelAllowed(t *testing.T) {
 	require.Equal(t, channelID, got.ChannelID)
 	require.Equal(t, "ops-room", got.Name)
 	require.Equal(t, "Ops Room", got.DisplayName)
-}
-
-func TestReportServiceBroadcastChannels(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
-	requester := model.NewId()
-	readable := model.NewId()
-	private := model.NewId()
-	missing := model.NewId()
-
-	api.On("GetChannel", readable).Return(&model.Channel{Id: readable, Name: "incidents", DisplayName: "Incidents", Type: model.ChannelTypeOpen}, nil)
-	api.On("GetChannel", private).Return(&model.Channel{Id: private, Name: "secret-ops", DisplayName: "Secret Ops", Type: model.ChannelTypePrivate}, nil)
-	api.On("GetChannel", missing).Return(nil, model.NewAppError("GetChannel", "not_found", nil, "", http.StatusNotFound))
-	api.On("HasPermissionToChannel", requester, readable, model.PermissionReadChannel).Return(true)
-	api.On("HasPermissionToChannel", requester, private, model.PermissionReadChannel).Return(false)
-
-	got := svc.broadcastChannels(requester, []string{readable, private, missing})
-	require.Equal(t, []report.RenderChannel{
-		{ChannelID: readable, Name: "incidents", DisplayName: "Incidents", Type: string(model.ChannelTypeOpen)},
-		{ChannelID: private},
-		{ChannelID: missing},
-	}, got)
 }
 
 func TestReportServiceBuildResolverTableFileDenied(t *testing.T) {

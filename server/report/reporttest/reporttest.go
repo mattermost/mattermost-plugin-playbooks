@@ -87,18 +87,6 @@ func (s RunScenario) Report() *report.RunReport {
 	return report.BuildRun(s.Context, s.Options)
 }
 
-// PlaybookScenario is a named playbook report input.
-type PlaybookScenario struct {
-	Name    string
-	Context report.PlaybookRenderContext
-	Options report.Options
-}
-
-// Report builds the scenario's report.
-func (s PlaybookScenario) Report() *report.PlaybookReport {
-	return report.BuildPlaybook(s.Context, s.Options)
-}
-
 func users() map[string]report.RenderUser {
 	return map[string]report.RenderUser{
 		"u1": {UserID: "u1", DisplayName: "Alice Admin", Username: "alice"},
@@ -211,10 +199,10 @@ func TypicalRun() report.RenderContext {
 			Body:        "## What went well\n- Quick paging",
 			PublishedMs: Base + 2*hour + 30*minute,
 			Metrics: []report.RenderMetric{
-				{ID: "m1", Title: "Time to detect", Description: "Measured from\nalert to ack", Type: "duration", Target: 5 * minute, Value: 3 * minute, HasValue: true},
-				{ID: "m2", Title: "Cost", Type: "currency", Target: 100000, Value: 12345, HasValue: true},
-				{ID: "m3", Title: "Customers affected", Type: "integer", Target: 0, Value: 7, HasValue: true},
-				{ID: "m4", Title: "Time to resolve", Type: "duration", Target: hour},
+				{ID: "m1", Title: "Time to detect", Description: "Measured from\nalert to ack", Type: "duration", Value: 3 * minute, HasValue: true},
+				{ID: "m2", Title: "Cost", Type: "currency", Value: 12345, HasValue: true},
+				{ID: "m3", Title: "Customers affected", Type: "integer", Value: 7, HasValue: true},
+				{ID: "m4", Title: "Time to resolve", Type: "duration"},
 				{ID: "m5", Title: "Time to escalate", Type: "duration", HasValue: true},
 			},
 		},
@@ -271,106 +259,5 @@ func RedactedRun() report.RenderContext {
 		},
 		Resolvers:         report.ResolverTable{Users: users()},
 		GeneratedAtMillis: GeneratedAt,
-	}
-}
-
-// PlaybookScenarios returns the playbook report scenarios the golden tests
-// render.
-func PlaybookScenarios() []PlaybookScenario {
-	// Only the task templates were selected.
-	tasks := TypicalPlaybook()
-	tasks.Sections = report.SectionFlags{PlaybookChecklistTemplates: true}
-
-	en := Options("en", time.UTC)
-	return []PlaybookScenario{
-		{"playbook_typical", TypicalPlaybook(), en},
-		{"playbook_empty", report.PlaybookRenderContext{
-			Playbook:          report.RenderPlaybook{ID: "pb2"},
-			Sections:          report.DefaultPlaybookSections(),
-			GeneratedAtMillis: GeneratedAt,
-		}, en},
-		{"playbook_redacted", RedactedPlaybook(), en},
-		{"playbook_sections", tasks, en},
-	}
-}
-
-// TypicalPlaybook is a public playbook with every section filled in.
-func TypicalPlaybook() report.PlaybookRenderContext {
-	return report.PlaybookRenderContext{
-		Sections: report.DefaultPlaybookSections(),
-		Playbook: report.RenderPlaybook{
-			ID:          "pb1",
-			Title:       "Sev1 *Incident* Response",
-			Description: "Standard response **playbook**. Ask @alice.",
-			Public:      true,
-			TeamID:      "t1",
-		},
-		Members: []report.RenderPlaybookMember{
-			{UserID: "u1", DisplayName: "Alice Admin", Roles: []string{"playbook_admin", "playbook_member"}},
-			{UserID: "u2", DisplayName: "Bob Builder", Roles: []string{"playbook_member"}},
-			{UserID: "u3", DisplayName: "Carol Chen"},
-		},
-		ChecklistTemplates: []report.RenderChecklist{
-			{
-				Title: "Triage",
-				Items: []report.RenderChecklistItem{
-					{Title: "Acknowledge alert", AssigneeID: "u1", DueAtMs: Base + hour},
-					{Title: "Verify **scope**", Description: "Check dashboards\nand logs.", Command: "/dash open"},
-				},
-			},
-			{Items: []report.RenderChecklistItem{{Title: "Untitled list task"}}},
-			{Title: "Empty list"},
-		},
-		StatusUpdateConfig: report.RenderStatusUpdateConfig{
-			Enabled:  true,
-			Template: "**What's the latest?**",
-			Cadence:  "Every 30 minutes",
-		},
-		RetrospectiveConfig: report.RenderRetrospectiveConfig{
-			Enabled:         true,
-			Template:        "## Retro",
-			ReminderCadence: "After resolution",
-			Metrics: []report.RenderMetric{
-				{ID: "m1", Title: "Time to detect", Description: "From alert to ack", Type: "duration", Target: 5 * minute, HasTarget: true},
-				{ID: "m2", Title: "Cost", Type: "currency", Target: 100000, HasTarget: true},
-				{ID: "m3", Title: "Customers affected", Type: "integer", Target: 10, HasTarget: true},
-				{ID: "m4", Title: "Time to escalate", Type: "duration"},
-			},
-		},
-		BroadcastChannels: []report.RenderChannel{
-			{ChannelID: "c1", Name: "incidents", DisplayName: "Incidents", Type: "O"},
-			{ChannelID: "c2", Name: "leadership", DisplayName: "Leadership", Type: "P"},
-		},
-		WebhooksOnCreation: []report.RenderWebhook{
-			{Full: "https://hooks.example.com/abc", HostMasked: "https://hooks.example.com/****"},
-		},
-		WebhooksOnStatus: []report.RenderWebhook{
-			{HostMasked: "https://hooks.example.com/****"},
-		},
-		SignalKeywords:    []string{"sev1", "out`age"},
-		Resolvers:         report.ResolverTable{Users: users()},
-		GeneratedAtMillis: GeneratedAt,
-	}
-}
-
-// RedactedPlaybook is a private playbook with members, channels and
-// webhooks the requester cannot fully see, and partial settings.
-func RedactedPlaybook() report.PlaybookRenderContext {
-	return report.PlaybookRenderContext{
-		Sections: report.DefaultPlaybookSections(),
-		Playbook: report.RenderPlaybook{ID: "pb3", Title: "Access requests"},
-		Members: []report.RenderPlaybookMember{
-			{UserID: "u4", DisplayName: "Dana Display", Roles: []string{"playbook_admin"}},
-			{UserID: "u8", DisplayName: "Eve Elsewhere", Roles: []string{"playbook_member"}},
-			{UserID: "u9"},
-		},
-		StatusUpdateConfig: report.RenderStatusUpdateConfig{Cadence: "Every day"},
-		RetrospectiveConfig: report.RenderRetrospectiveConfig{
-			Metrics: []report.RenderMetric{{ID: "m1", Title: "Requests handled", Type: "integer", Target: 3, HasTarget: true}},
-		},
-		BroadcastChannels:  []report.RenderChannel{{ChannelID: "c9"}},
-		WebhooksOnCreation: []report.RenderWebhook{{}, {HostMasked: "https://hooks.example.com/****"}},
-		Resolvers:          report.ResolverTable{Users: users()},
-		GeneratedAtMillis:  GeneratedAt,
 	}
 }

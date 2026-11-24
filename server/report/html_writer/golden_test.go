@@ -22,11 +22,4 @@ func TestGolden(t *testing.T) {
 			reporttest.AssertGolden(t, tc.Name+".html", out, *update)
 		})
 	}
-	for _, tc := range reporttest.PlaybookScenarios() {
-		t.Run(tc.Name, func(t *testing.T) {
-			out, err := RenderPlaybookHTML(tc.Report(), Options{PageSize: "A4"})
-			require.NoError(t, err)
-			reporttest.AssertGolden(t, tc.Name+".html", out, *update)
-		})
-	}
 }

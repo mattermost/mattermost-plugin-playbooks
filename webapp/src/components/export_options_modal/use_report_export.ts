@@ -4,10 +4,8 @@
 import {useIntl} from 'react-intl';
 
 import {
-    ReportExport,
     ReportFormat,
     RunReportOptions,
-    exportPlaybookReport,
     exportRunReport,
     saveReport,
 } from 'src/client';
@@ -16,23 +14,16 @@ import {ToastStyle} from 'src/components/backstage/toast';
 
 import type {SectionFlags} from './export_options_modal';
 
-export type ReportTarget = {kind: 'run' | 'playbook'; id: string};
-
-// useReportExport returns a function that exports a run or playbook report and saves it.
+// useReportExport returns a function that exports a run report and saves it.
 // A truncated transcript and failures are reported in a toast, so the returned promise
 // always resolves.
 export const useReportExport = () => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
 
-    return async ({kind, id}: ReportTarget, sections: SectionFlags, format: ReportFormat, runOptions?: RunReportOptions) => {
+    return async (runID: string, sections: SectionFlags, format: ReportFormat, options: RunReportOptions) => {
         try {
-            let report: ReportExport;
-            if (kind === 'run') {
-                report = await exportRunReport(id, format, sections, runOptions);
-            } else {
-                report = await exportPlaybookReport(id, format, sections);
-            }
+            const report = await exportRunReport(runID, format, sections, options);
             if (report.truncated) {
                 addToast({
                     content: formatMessage({defaultMessage: 'The transcript was truncated due to size limits.'}),

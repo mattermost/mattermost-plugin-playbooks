@@ -1,10 +1,9 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// Package report holds the sanitized DTOs (RenderContext,
-// PlaybookRenderContext, RenderUser, RenderChannel, etc.) that ReportService
-// assembles, and BuildRun / BuildPlaybook, which turn them into a single
-// translated, display-ready view model (RunReport, PlaybookReport) in the
+// Package report holds the sanitized DTOs (RenderContext, RenderUser,
+// RenderChannel, etc.) that ReportService assembles, and BuildRun, which
+// turns them into a translated, display-ready view model (RunReport) in the
 // requester's language and time zone. The package is intentionally pure: it
 // depends on no other plugin package (no server/app, no pluginapi, no
 // net/http).

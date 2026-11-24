@@ -16,16 +16,10 @@ import (
 //go:embed templates/run_report.html.tmpl
 var runReportTmpl string
 
-//go:embed templates/playbook_report.html.tmpl
-var playbookReportTmpl string
-
 //go:embed templates/_styles.html.tmpl
 var stylesTmpl string
 
-var (
-	runTemplate      = parseTemplate("run_report", runReportTmpl)
-	playbookTemplate = parseTemplate("playbook_report", playbookReportTmpl)
-)
+var runTemplate = parseTemplate("run_report", runReportTmpl)
 
 // Options controls per-document presentation knobs that are independent of
 // the report content.
@@ -38,7 +32,7 @@ type Options struct {
 
 // document is the template data: the report plus presentation knobs.
 type document struct {
-	Report   any
+	Report   *report.RunReport
 	PageSize string
 	FontCSS  template.CSS
 }
@@ -53,13 +47,7 @@ func RenderRunHTML(r *report.RunReport, opts Options) ([]byte, error) {
 	return execute(runTemplate, newDocument(r, opts))
 }
 
-// RenderPlaybookHTML renders r to a complete self-contained HTML document.
-// See RenderRunHTML for shared output guarantees.
-func RenderPlaybookHTML(r *report.PlaybookReport, opts Options) ([]byte, error) {
-	return execute(playbookTemplate, newDocument(r, opts))
-}
-
-func newDocument(r any, opts Options) document {
+func newDocument(r *report.RunReport, opts Options) document {
 	return document{
 		Report:   r,
 		PageSize: pageSize(opts.PageSize),

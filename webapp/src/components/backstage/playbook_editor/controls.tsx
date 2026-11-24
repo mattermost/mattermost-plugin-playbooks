@@ -2,12 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {
-    PropsWithChildren,
-    useEffect,
-    useMemo,
-    useState,
-} from 'react';
+import React, {PropsWithChildren, useEffect, useMemo} from 'react';
 
 import {Link} from 'react-router-dom';
 
@@ -17,7 +12,6 @@ import {
     CloseIcon,
     ContentCopyIcon,
     ExportVariantIcon,
-    FileTextOutlineIcon,
     LinkVariantIcon,
     LockOutlineIcon,
     PencilOutlineIcon,
@@ -35,7 +29,6 @@ import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
-import {selectReportsEnabled} from 'src/selectors';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {
@@ -55,7 +48,6 @@ import {
     playbookExportProps,
     restorePlaybook,
 } from 'src/client';
-import ExportOptionsModal, {ExportFormat, SectionFlags, useReportExport} from 'src/components/export_options_modal';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
@@ -378,16 +370,8 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEd
 
     const refreshLHS = useLHSRefresh();
     const {add: addToast} = useToaster();
-    const [showReportModal, setShowReportModal] = useState(false);
-    const exportReport = useReportExport();
-    const reportsEnabled = useAppSelector(selectReportsEnabled);
 
     const currentUserId = useAppSelector(getCurrentUserId);
-
-    const onReportConfirm = async (sections: SectionFlags, format: ExportFormat) => {
-        await exportReport({kind: 'playbook', id: playbook.id}, sections, format);
-        setShowReportModal(false);
-    };
 
     const archived = playbook.delete_at !== 0;
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
@@ -458,14 +442,6 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEd
                     <ExportVariantIcon size={18}/>
                     <FormattedMessage defaultMessage='Export'/>
                 </DropdownMenuItemStyled>
-                {reportsEnabled && (
-                    <DropdownMenuItem
-                        onClick={() => setShowReportModal(true)}
-                    >
-                        <FileTextOutlineIcon size={18}/>
-                        <FormattedMessage defaultMessage='Export report'/>
-                    </DropdownMenuItem>
-                )}
                 {isEligibleToMakePrivate && (
                     <DropdownMenuItemStyled
                         role={'button'}
@@ -529,14 +505,6 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch, canEd
             {confirmArchiveModal}
             {confirmRestoreModal}
             {confirmConvertPrivateModal}
-            {showReportModal && (
-                <ExportOptionsModal
-                    surface='playbook'
-                    defaults={{}}
-                    onConfirm={onReportConfirm}
-                    onCancel={() => setShowReportModal(false)}
-                />
-            )}
         </>
     );
 };

@@ -13,8 +13,6 @@ import type {ReportFormat, RunReportOptions} from 'src/client';
 import GenericModal from 'src/components/widgets/generic_modal';
 import {StyledSelect} from 'src/components/backstage/styles';
 
-export type Surface = 'run' | 'playbook';
-
 export type ExportFormat = ReportFormat;
 
 export type TranscriptMode = 'threaded' | 'chronological';
@@ -26,17 +24,13 @@ export type SectionFlags = {
     checklists?: boolean;
     retrospective?: boolean;
     transcript?: boolean;
-    playbookOverview?: boolean;
-    playbookChecklistTemplates?: boolean;
-    playbookSettings?: boolean;
 };
 
 export type ExportOptionsModalProps = {
-    surface: Surface;
     defaults: SectionFlags;
 
     // onConfirm runs the export. The modal stays open, showing "Exporting…", until the
-    // returned promise settles; the caller closes it. runOptions is only set for runs.
+    // returned promise settles; the caller closes it.
     onConfirm: (sections: SectionFlags, format: ExportFormat, runOptions: RunReportOptions) => Promise<void>;
     onCancel: () => void;
     channelExportAvailable?: boolean;
@@ -52,7 +46,7 @@ type ToggleRow = {
 
 type TimeZoneOption = {value: string; label: string};
 
-const RUN_DEFAULTS: SectionFlags = {
+const DEFAULT_SECTIONS: SectionFlags = {
     executiveSummary: true,
     timeline: true,
     statusUpdates: true,
@@ -61,21 +55,9 @@ const RUN_DEFAULTS: SectionFlags = {
     transcript: true,
 };
 
-const PLAYBOOK_DEFAULTS: SectionFlags = {
-    playbookOverview: true,
-    playbookChecklistTemplates: true,
-    playbookSettings: true,
-};
-
-export const DEFAULT_SECTIONS = {
-    run: RUN_DEFAULTS,
-    playbook: PLAYBOOK_DEFAULTS,
-};
-
-const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExportAvailable = false}: ExportOptionsModalProps) => {
+const ExportOptionsModal = ({defaults, onConfirm, onCancel, channelExportAvailable = false}: ExportOptionsModalProps) => {
     const {formatMessage} = useIntl();
-    const baseDefaults = surface === 'run' ? RUN_DEFAULTS : PLAYBOOK_DEFAULTS;
-    const [sections, setSections] = useState<SectionFlags>({...baseDefaults, ...defaults});
+    const [sections, setSections] = useState<SectionFlags>({...DEFAULT_SECTIONS, ...defaults});
     const [format, setFormat] = useState<ExportFormat>('pdf');
     const [transcriptMode, setTranscriptMode] = useState<TranscriptMode>('threaded');
 
@@ -95,23 +77,19 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
     const confirm = async () => {
         setExporting(true);
         try {
-            await onConfirm(sections, format, surface === 'run' ? {transcriptMode, timeZone} : {});
+            await onConfirm(sections, format, {transcriptMode, timeZone});
         } finally {
             setExporting(false);
         }
     };
 
-    const rows: ToggleRow[] = surface === 'run' ? [
+    const rows: ToggleRow[] = [
         {key: 'executiveSummary', label: formatMessage({defaultMessage: 'Executive summary'}), locked: true},
         {key: 'statusUpdates', label: formatMessage({defaultMessage: 'Status updates'}), locked: true},
         {key: 'timeline', label: formatMessage({defaultMessage: 'Timeline'})},
         {key: 'retrospective', label: formatMessage({defaultMessage: 'Retrospective'})},
         {key: 'checklists', label: formatMessage({defaultMessage: 'Task outline'})},
         {key: 'transcript', label: formatMessage({defaultMessage: 'Complete chat history'})},
-    ] : [
-        {key: 'playbookOverview', label: formatMessage({defaultMessage: 'Overview'})},
-        {key: 'playbookChecklistTemplates', label: formatMessage({defaultMessage: 'Tasks'})},
-        {key: 'playbookSettings', label: formatMessage({defaultMessage: 'Settings & automations'})},
     ];
 
     const toggle = (key: keyof SectionFlags) => {
@@ -122,12 +100,10 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
 
     const confirmText = exporting ? <FormattedMessage defaultMessage='Exporting…'/> : <FormattedMessage defaultMessage='Export'/>;
 
-    const headerText = surface === 'run' ? formatMessage({defaultMessage: 'Export run report'}) : formatMessage({defaultMessage: 'Export playbook report'});
-
     return (
         <GenericModal
             id='export-options-modal'
-            modalHeaderText={headerText}
+            modalHeaderText={formatMessage({defaultMessage: 'Export run report'})}
             show={true}
             onHide={onCancel}
             handleCancel={onCancel}
@@ -193,7 +169,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                         </ToggleLabel>
                     ))}
                 </Toggles>
-                {surface === 'run' && sections.transcript && (
+                {sections.transcript && (
                     <TranscriptModeBox data-testid='transcript-mode-box'>
                         <TranscriptModeLabel>
                             <FormattedMessage defaultMessage='Transcript layout'/>
@@ -230,24 +206,22 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                         </TranscriptModeRadio>
                     </TranscriptModeBox>
                 )}
-                {surface === 'run' && (
-                    <TimeZoneField data-testid='time-zone-field'>
-                        <TimeZoneLabel id='export-time-zone-label'>
-                            <FormattedMessage defaultMessage='Time zone:'/>
-                        </TimeZoneLabel>
-                        <StyledSelect
-                            aria-labelledby='export-time-zone-label'
-                            options={timeZoneOptions}
-                            value={timeZoneOptions.find((o) => o.value === timeZone)}
-                            onChange={(option: TimeZoneOption | null) => setTimeZone(option?.value ?? '')}
-                            formatOptionLabel={formatTimeZoneOption}
-                            menuPlacement='auto'
-                            menuPortalTarget={document.body}
-                            styles={{menuPortal: (base: object) => ({...base, zIndex: 10000})}}
-                        />
-                    </TimeZoneField>
-                )}
-                {surface === 'run' && channelExportAvailable && (
+                <TimeZoneField data-testid='time-zone-field'>
+                    <TimeZoneLabel id='export-time-zone-label'>
+                        <FormattedMessage defaultMessage='Time zone:'/>
+                    </TimeZoneLabel>
+                    <StyledSelect
+                        aria-labelledby='export-time-zone-label'
+                        options={timeZoneOptions}
+                        value={timeZoneOptions.find((o) => o.value === timeZone)}
+                        onChange={(option: TimeZoneOption | null) => setTimeZone(option?.value ?? '')}
+                        formatOptionLabel={formatTimeZoneOption}
+                        menuPlacement='auto'
+                        menuPortalTarget={document.body}
+                        styles={{menuPortal: (base: object) => ({...base, zIndex: 10000})}}
+                    />
+                </TimeZoneField>
+                {channelExportAvailable && (
                     <ChannelExportHint data-testid='channel-export-hint'>
                         <FormattedMessage defaultMessage="Need a CSV transcript? Use channel-export's /export slash command in this run's channel."/>
                     </ChannelExportHint>

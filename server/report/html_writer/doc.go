@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 // Package html_writer renders a complete self-contained HTML report from a
-// report.RunReport or report.PlaybookReport. The output is served
-// from the /report?format=html endpoint; the client downloads it or browser-prints
-// it to PDF.
+// report.RunReport. The output is served from the /report?format=html
+// endpoint; the client downloads it or browser-prints it to PDF.
 package html_writer //nolint:staticcheck

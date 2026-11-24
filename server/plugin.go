@@ -288,7 +288,6 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 		p.permissions,
 		p.playbookRunService,
-		p.playbookService,
 		reportSvc,
 	))
 
