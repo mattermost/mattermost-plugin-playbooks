@@ -80,9 +80,13 @@ th { background: #f8f9fb; font-weight: 600; }
 .stat-card__hint  { font-size: 11px; color: #72767d; margin-top: 2px; }
 
  
-.card { border: 1px solid #e0e0e0; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
-.card__header { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #1e1f22; }
-.card__header span { font-weight: 400; color: #72767d; margin-left: 8px; }
+.status-update { margin: 16px 0 36px; break-inside: avoid; }
+.status-update__body { color: #3f4350; }
+.status-update__body > :first-child { margin-top: 0; }
+.status-update__body h1, .status-update__body h2, .status-update__body h3,
+.status-update__body h4, .status-update__body h5, .status-update__body h6 { font-size: 15px; font-weight: 600; margin: 12px 0 4px; padding: 0; border: none; color: #1e1f22; }
+.status-update__byline { margin-top: 12px; font-size: 13px; color: #1e1f22; }
+.status-update__byline span { margin-left: 8px; color: #72767d; }
 
  
 .boxed-md { background: #f8f9fb; border-left: 3px solid #d8d8d8; border-radius: 0 4px 4px 0; padding: 12px 16px; margin: 8px 0; }
@@ -149,7 +153,7 @@ th { background: #f8f9fb; font-weight: 600; }
   .cover { min-height: 240mm; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0; border-bottom: none; break-after: page; }
   .section { break-before: page; }
   .section > h2:first-child { margin-top: 0; }
-  .card, .boxed-md, .transcript-thread { break-inside: avoid; }
+  .boxed-md, .transcript-thread { break-inside: avoid; }
 }
 </style>
 
@@ -206,21 +210,21 @@ th { background: #f8f9fb; font-weight: 600; }
 
   <section class="section">
   <h2>Status updates</h2>
-  <div class="card">
-    <div class="card__header">Alice Admin<span>November 14, 2023, 10:18 PM UTC</span></div>
-    <div class="boxed-md"><p>Investigating. cc @here</p>
+  <div class="status-update">
+    <div class="status-update__body"><p>Investigating. cc @here</p>
 </div>
+    <div class="status-update__byline">Alice Admin<span>November 14, 2023, 10:18 PM UTC</span></div>
   </div>
   
-  <div class="card">
-    <div class="card__header">Bob Builder<span>November 14, 2023, 10:58 PM UTC</span></div>
-    <div class="boxed-md"><p>Mitigated; <strong>monitoring</strong>.</p>
+  <div class="status-update">
+    <div class="status-update__body"><p>Mitigated; <strong>monitoring</strong>.</p>
 </div>
+    <div class="status-update__byline">Bob Builder<span>November 14, 2023, 10:58 PM UTC</span></div>
   </div>
   
-  <div class="card">
-    <div class="card__header">Carol Chen<span>November 15, 2023, 12:13 AM UTC</span></div>
+  <div class="status-update">
     <p class="muted">No message.</p>
+    <div class="status-update__byline">Carol Chen<span>November 15, 2023, 12:13 AM UTC</span></div>
   </div>
   
   </section>

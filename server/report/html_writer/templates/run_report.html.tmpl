@@ -57,9 +57,9 @@ code, pre { font-family: var(--font-mono); }
   <section class="section">
   <h2>{{.StatusUpdates.Title}}</h2>
   {{- range .StatusUpdates.Updates}}
-  <div class="card">
-    <div class="card__header">{{.Author}}<span>{{.Date}}</span></div>
-    {{if .Body}}<div class="boxed-md">{{markdown .Body}}</div>{{else}}<p class="muted">{{$.StatusUpdates.NoMessage}}</p>{{end}}
+  <div class="status-update">
+    {{if .Body}}<div class="status-update__body">{{markdown .Body}}</div>{{else}}<p class="muted">{{$.StatusUpdates.NoMessage}}</p>{{end}}
+    <div class="status-update__byline">{{.Author}}<span>{{.Date}}</span></div>
   </div>
   {{else}}<p class="muted">{{.StatusUpdates.Empty}}</p>{{end}}
   </section>
