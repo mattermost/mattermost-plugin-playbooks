@@ -280,7 +280,17 @@ func collectRunUserIDs(run *PlaybookRun) []string {
 
 // buildStatusUpdates assembles the chronological status post stream. Post
 // bodies are fetched on demand because StatusPost only persists the postID.
+// The playbooks bot posts every update, so the author comes from the
+// update's status_updated timeline event, or else from the post's
+// authorUsername prop.
 func (s *ReportService) buildStatusUpdates(run *PlaybookRun) []report.RenderStatusUpdate {
+	authors := make(map[string]string)
+	for _, ev := range run.TimelineEvents {
+		if ev.EventType == StatusUpdated && ev.PostID != "" {
+			authors[ev.PostID] = ev.SubjectUserID
+		}
+	}
+
 	out := make([]report.RenderStatusUpdate, 0, len(run.StatusPosts))
 	for _, sp := range run.StatusPosts {
 		if sp.DeleteAt != 0 {
@@ -288,11 +298,17 @@ func (s *ReportService) buildStatusUpdates(run *PlaybookRun) []report.RenderStat
 		}
 		post, err := s.pluginAPI.Post.GetPost(sp.ID)
 		if err != nil || post == nil {
-			out = append(out, report.RenderStatusUpdate{CreateAt: sp.CreateAt})
+			out = append(out, report.RenderStatusUpdate{AuthorID: authors[sp.ID], CreateAt: sp.CreateAt})
 			continue
 		}
+		authorID := authors[sp.ID]
+		if username, _ := post.GetProp("authorUsername").(string); authorID == "" && username != "" {
+			if user, err := s.pluginAPI.User.GetByUsername(username); err == nil && user != nil {
+				authorID = user.Id
+			}
+		}
 		out = append(out, report.RenderStatusUpdate{
-			AuthorID: post.UserId,
+			AuthorID: authorID,
 			CreateAt: sp.CreateAt,
 			Message:  post.Message,
 		})

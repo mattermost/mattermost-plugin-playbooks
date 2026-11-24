@@ -102,6 +102,38 @@ func TestReportServiceTaskStateUsers(t *testing.T) {
 	})
 }
 
+func TestReportServiceBuildStatusUpdates(t *testing.T) {
+	api := &plugintest.API{}
+	defer api.AssertExpectations(t)
+	botID, aliceID, bobID := model.NewId(), model.NewId(), model.NewId()
+
+	// The playbooks bot posts every update; the author is in the timeline
+	// event or, failing that, the authorUsername prop.
+	api.On("GetPost", "p1").Return(&model.Post{Id: "p1", UserId: botID, Message: "first", Props: model.StringInterface{"authorUsername": "bob"}}, nil)
+	api.On("GetPost", "p2").Return(&model.Post{Id: "p2", UserId: botID, Message: "second", Props: model.StringInterface{"authorUsername": "bob"}}, nil)
+	api.On("GetPost", "p3").Return(nil, model.NewAppError("GetPost", "not_found", nil, "", 404))
+	api.On("GetUserByUsername", "bob").Return(&model.User{Id: bobID, Username: "bob"}, nil)
+
+	run := &PlaybookRun{
+		StatusPosts: []StatusPost{
+			{ID: "p1", CreateAt: 10},
+			{ID: "p2", CreateAt: 20},
+			{ID: "p3", CreateAt: 30},
+			{ID: "deleted", CreateAt: 40, DeleteAt: 50},
+		},
+		TimelineEvents: []TimelineEvent{
+			{EventType: StatusUpdated, PostID: "p1", SubjectUserID: aliceID},
+			{EventType: StatusUpdated, PostID: "p3", SubjectUserID: aliceID},
+		},
+	}
+
+	require.Equal(t, []report.RenderStatusUpdate{
+		{AuthorID: aliceID, CreateAt: 10, Message: "first"},
+		{AuthorID: bobID, CreateAt: 20, Message: "second"},
+		{AuthorID: aliceID, CreateAt: 30},
+	}, newTestReportService(api).buildStatusUpdates(run))
+}
+
 func TestReportServiceBuildRetrospective(t *testing.T) {
 	run := &PlaybookRun{
 		Retrospective: "done",
