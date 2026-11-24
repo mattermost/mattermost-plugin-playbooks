@@ -102,9 +102,8 @@ func (s *ReportService) AssembleRunReportContext(
 	if sections.Timeline {
 		rc.TimelineEvents = buildTimelineEvents(run)
 	}
-	if sections.Checklists {
-		rc.Checklists = buildChecklists(run.Checklists, taskStateUsers(run.TimelineEvents))
-	}
+	// The summary counts the tasks even when the task outline is left out.
+	rc.Checklists = buildChecklists(run.Checklists, taskStateUsers(run.TimelineEvents))
 	// The metrics are the headline figures even when the retrospective
 	// section is left out.
 	if run.RetrospectiveEnabled {
@@ -274,6 +273,9 @@ func (s *ReportService) fetchTranscript(ctx context.Context, channelID string, s
 			return posts, report.Truncation{Hit: true, Reason: "timeout"}, err
 		}
 		list, err := s.pluginAPI.Post.GetPostsForChannel(channelID, page, transcriptPageSize)
+		if err != nil && ctx.Err() != nil {
+			return posts, report.Truncation{Hit: true, Reason: "timeout"}, ctx.Err()
+		}
 		if err != nil {
 			return posts, report.Truncation{}, errors.Wrap(err, "failed to fetch channel posts")
 		}

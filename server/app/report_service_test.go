@@ -281,6 +281,20 @@ func TestReportServiceBuildAttributes(t *testing.T) {
 	}, attrs, "hidden, deleted and blank when_set attributes are left out; always ones stay")
 }
 
+func TestReportServiceCountsTasksWithoutTheTaskOutline(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("GetConfig").Return(&model.Config{})
+	run := &PlaybookRun{Checklists: []Checklist{{Title: "Triage", Items: []ChecklistItem{
+		{Title: "a", State: ChecklistItemStateClosed},
+		{Title: "b"},
+	}}}}
+
+	rc, err := newTestReportService(api).AssembleRunReportContext(context.Background(), run, "u1", report.SectionFlags{ExecutiveSummary: true})
+	require.NoError(t, err)
+	require.False(t, rc.Sections.Checklists)
+	require.Len(t, rc.Checklists, 1, "the summary counts the tasks")
+}
+
 func TestReportServiceLeavesOutDisabledRetrospective(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("GetConfig").Return(&model.Config{})
@@ -478,6 +492,20 @@ func TestReportServiceFetchTranscript(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, report.Truncation{Hit: true, Reason: "bytes"}, truncation)
 		require.Len(t, posts, int(maxTranscriptBytes/(1024*1024)))
+	})
+
+	t.Run("a fetch that fails after the context ended is a timeout", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		api := &plugintest.API{}
+		api.On("GetPostsForChannel", channelID, 0, transcriptPageSize).Return(pages(1)).Once()
+		api.On("GetPostsForChannel", channelID, 1, transcriptPageSize).Run(func(mock.Arguments) { cancel() }).
+			Return(nil, model.NewAppError("GetPostsForChannel", "canceled", nil, "", 500))
+
+		posts, truncation, err := newTestReportService(api).fetchTranscript(ctx, channelID, 0, 0)
+		require.ErrorIs(t, err, context.Canceled)
+		require.Equal(t, report.Truncation{Hit: true, Reason: "timeout"}, truncation)
+		require.Len(t, posts, transcriptPageSize)
 	})
 
 	t.Run("stops when the context ends", func(t *testing.T) {

@@ -76,7 +76,8 @@ type RenderContext struct {
 	// TimelineEvents are the run's audit timeline, in chronological order.
 	TimelineEvents []RenderTimelineEvent
 
-	// Checklists are the run's checklists, in stable order.
+	// Checklists are the run's checklists, in stable order. The summary
+	// counts their tasks even when the task outline is left out.
 	Checklists []RenderChecklist
 
 	// Retrospective is the run's retrospective body and metrics. Its metric
