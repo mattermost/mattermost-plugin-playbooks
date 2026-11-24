@@ -20,8 +20,8 @@ func renderRun(rc report.RenderContext) string {
 
 func TestRenderRunMarkdown_ResolverDenyPaths(t *testing.T) {
 	rc := reporttest.TypicalRun()
-	// Wipe resolvers so every lookup goes through the deny path.
-	rc.Resolvers = report.ResolverTable{Users: map[string]report.RenderUser{}}
+	// Drop every user so each lookup goes through the deny path.
+	rc.Users = map[string]report.RenderUser{}
 	rc.Owner = report.RenderUser{UserID: "uX"}
 
 	got := renderRun(rc)
@@ -48,16 +48,11 @@ func TestRenderRunMarkdown_PlainTextEscapedBodiesVerbatim(t *testing.T) {
 
 func TestRenderRunMarkdown_PlainHeadlineEscaped(t *testing.T) {
 	rc := reporttest.TypicalRun()
-	rc.Resolvers.Users["u1"] = report.RenderUser{UserID: "u1", DisplayName: "[Mallory](https://example.com)"}
+	rc.Users["u1"] = report.RenderUser{UserID: "u1", DisplayName: "[Mallory](https://example.com)"}
 	opts := reporttest.Options("en", time.UTC)
 	opts.NameFormat = model.ShowFullName
 
 	got := string(RenderRunMarkdown(report.BuildRun(rc, opts)))
 
 	require.Contains(t, got, `\[Mallory\](https://example.com) created this run`)
-}
-
-func TestRenderRunMarkdown_SystemMessagesFilteredFromTranscript(t *testing.T) {
-	got := renderRun(reporttest.TypicalRun())
-	require.NotContains(t, got, "joined the channel", "system messages must be filtered out")
 }

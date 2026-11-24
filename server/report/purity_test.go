@@ -15,10 +15,9 @@ import (
 )
 
 // TestPackagePurity asserts that no .go file under server/report directly
-// imports server/app, pluginapi, or net/http. This enforces plan §3.6.7
-// (resolver layering — pre-resolution table) at the source level, so a
-// future commit can't add a direct import that would let arbitrary I/O
-// escape the renderer's trust boundary.
+// imports server/app, pluginapi, or net/http, so a future commit can't add a
+// direct import that would let arbitrary I/O escape the renderer's trust
+// boundary: the report only sees what ReportService assembled.
 func TestPackagePurity(t *testing.T) {
 	root := "."
 
@@ -49,7 +48,7 @@ func TestPackagePurity(t *testing.T) {
 			path := strings.Trim(imp.Path.Value, `"`)
 			for _, bad := range forbidden {
 				require.NotEqualf(t, bad, path,
-					"%s directly imports forbidden path %q — plan §3.6.7 violation", f, bad)
+					"%s directly imports forbidden path %q", f, bad)
 			}
 		}
 	}

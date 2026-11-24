@@ -3,13 +3,49 @@
 
 package report
 
-import "github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
+// RenderUser carries only the display fields the report writers need —
+// never emails, never auth fields, never anything raw from model.User.
+type RenderUser struct {
+	UserID string
+	// DisplayName is the user's full name, or their username when they have
+	// no name set.
+	DisplayName string
+	Username    string
+	Nickname    string
+}
 
-// RenderUser and ResolverTable live in the coretypes sub-package; callers
-// use them as report.RenderUser and report.ResolverTable.
-type (
-	RenderUser    = coretypes.RenderUser
-	ResolverTable = coretypes.ResolverTable
+// Checklist item states and run statuses, as the app layer stores them. The
+// report cannot import server/app, so a test pins these to its values.
+const (
+	ChecklistItemStateClosed  = "closed"
+	ChecklistItemStateSkipped = "skipped"
+
+	RunStatusInProgress = "InProgress"
+	RunStatusFinished   = "Finished"
+)
+
+// TranscriptMode controls how transcript posts are laid out.
+//
+// Threaded (default): roots in root-CreateAt order, each followed by its
+// replies; replies whose root is outside the transcript collect under a
+// separate "orphan replies" heading.
+//
+// Chronological: posts in strict CreateAt order; each reply names the
+// author it replies to, or says its parent is not in the transcript.
+type TranscriptMode string
+
+const (
+	TranscriptModeThreaded      TranscriptMode = "threaded"
+	TranscriptModeChronological TranscriptMode = "chronological"
+)
+
+// Reasons a requested transcript is empty, so the report can say why.
+const (
+	// TranscriptOmittedNotMember: the requester is not a member of the run's
+	// channel, so no posts were fetched.
+	TranscriptOmittedNotMember = "not-member"
+	// TranscriptOmittedNoChannel: the run has no channel.
+	TranscriptOmittedNoChannel = "no-channel"
 )
 
 // RenderContext is the sanitized input to RenderRun. All fields are
@@ -50,24 +86,21 @@ type RenderContext struct {
 	// the requester is a member of the run's channel; empty otherwise.
 	Transcript []RenderPost
 
-	// TranscriptTruncation records whether the transcript was truncated by
-	// the post cap or the byte cap (set during rendering).
+	// TranscriptTruncation records whether the transcript was cut short by
+	// the post cap or the byte cap.
 	TranscriptTruncation Truncation
-
-	// TranscriptMode controls how transcript posts are collated when the
-	// section is rendered. Empty defaults to threaded.
-	TranscriptMode coretypes.TranscriptMode
 
 	// TranscriptOmittedReason carries the data-layer's explanation when
 	// rc.Transcript is empty AND the caller requested the transcript
-	// section. See coretypes for the constants. Empty string means either
+	// section. See the TranscriptOmitted constants. Empty string means either
 	// the section was not requested OR posts were fetched normally (the
 	// renderer distinguishes those by looking at len(Transcript) and the
 	// caller's section flags as appropriate).
 	TranscriptOmittedReason string
 
-	// Resolvers holds the users the report names.
-	Resolvers ResolverTable
+	// Users holds the users the report names; a user missing from it, or
+	// without a name, is shown as an unknown user.
+	Users map[string]RenderUser
 
 	// GeneratedAtMillis is the wall-clock time when assembly completed
 	// (injected for deterministic golden tests).
@@ -76,19 +109,16 @@ type RenderContext struct {
 
 // RenderRun is the run's identity and headline state.
 type RenderRun struct {
-	ID            string
 	Name          string
 	Summary       string // markdown body
 	Status        string // "InProgress" | "Finished"
 	StartTimeMs   int64
 	EndTimeMs     int64 // 0 if still in progress
-	PlaybookID    string
 	PlaybookTitle string
 }
 
 // RenderStatusUpdate is one status post in a run's update stream.
 type RenderStatusUpdate struct {
-	PostID   string
 	AuthorID string
 	CreateAt int64
 	Message  string // markdown body
@@ -113,7 +143,7 @@ type RenderChecklist struct {
 // RenderChecklistItem is one task in a checklist.
 type RenderChecklistItem struct {
 	Title   string
-	State   string // "Closed" | "Skipped" | "" (open)
+	State   string // ChecklistItemStateClosed, ChecklistItemStateSkipped, or open
 	StateMs int64
 	// StateUserID is the user who closed or skipped the task; empty when the
 	// task is open or the run's timeline does not say who changed it.
@@ -132,7 +162,6 @@ type RenderRetrospective struct {
 
 // RenderMetric is one configured metric (with optional measured value).
 type RenderMetric struct {
-	ID          string
 	Title       string
 	Description string // markdown body
 	Type        string // "duration" | "currency" | "integer"
@@ -147,15 +176,12 @@ type RenderPost struct {
 	CreateAt int64
 	Message  string // markdown body
 	RootID   string // empty if not a reply
-	Type     string // post type — used to filter system noise
 }
 
 // Truncation records whether a section was truncated by a cap.
 type Truncation struct {
 	Hit    bool
 	Reason string // "posts" | "bytes" | ""
-	Posts  int    // posts actually included
-	Bytes  int64  // bytes written before truncation (if Reason == "bytes")
 }
 
 // SectionFlags selects which sections are included in a render.

@@ -877,7 +877,6 @@ const sectionsToQueryString = (sections: ReportSections): string => {
     return keys
         .filter((k) => sections[k])
         .map((k) => SECTION_KEY_TO_PARAM[k])
-        .filter(Boolean)
         .join(',');
 };
 
@@ -917,13 +916,7 @@ export const exportRunReport = async (runID: string, format: ReportFormat, secti
     const headers: Record<string, string> = serverFormat === 'html' ? {'X-Playbooks-Export-Intent': format === 'pdf' ? 'print' : 'download'} : {};
     const resp = await fetch(`${apiUrl}/runs/${runID}/report?${params}`, Client4.getOptions({method: 'GET', headers}));
     if (!resp.ok) {
-        let message = resp.statusText;
-        try {
-            const body = await resp.json();
-            message = body?.error || message;
-        } catch {
-            // body wasn't JSON; keep statusText
-        }
+        const message = (await parseErrorResponse(resp)) || resp.statusText;
         throw new ReportExportError(resp.status, message, resp.headers.get('X-Request-ID'));
     }
     return {
@@ -990,15 +983,6 @@ function printReport({content, filename}: ReportExport) {
     }, {once: true});
     frame.srcdoc = content;
     document.body.appendChild(frame);
-}
-
-export async function fetchChannelExportAvailable(): Promise<boolean> {
-    try {
-        const data = await doGet<{available: boolean}>(`${apiUrl}/integrations/channel-export-available`);
-        return Boolean(data?.available);
-    } catch {
-        return false;
-    }
 }
 
 export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {

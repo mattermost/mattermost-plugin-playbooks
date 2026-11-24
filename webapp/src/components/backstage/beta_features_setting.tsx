@@ -107,7 +107,7 @@ const BetaFeaturesSetting = ({id, value, disabled, onChange, setSaveNeeded}: Pro
                                     {formatMessage({defaultMessage: 'Reports'})}
                                 </FeatureName>
                                 <FeatureHelp>
-                                    {formatMessage({defaultMessage: 'Let users export runs and playbooks as PDF, HTML or Markdown reports.'})}
+                                    {formatMessage({defaultMessage: 'Let users export runs as PDF, HTML or Markdown reports.'})}
                                 </FeatureHelp>
                             </FeatureCopy>
                         </CheckboxLabel>

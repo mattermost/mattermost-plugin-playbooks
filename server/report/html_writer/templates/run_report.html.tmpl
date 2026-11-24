@@ -1,16 +1,24 @@
 <!doctype html>
-<html lang="{{.Report.Lang}}">
+<html lang="{{.Lang}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
-  <title>{{.Report.Title}}</title>
-  <style>{{.FontCSS}}</style>
+  <title>{{.Title}}</title>
+  <style>
+:root {
+  --font-sans:  -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono:  "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
+                Courier, monospace;
+}
+body { font-family: var(--font-sans); }
+code, pre { font-family: var(--font-mono); }
+</style>
   {{template "_styles" .}}
 </head>
 <body>
-  {{- with .Report}}
   <section class="cover">
     <h1 class="cover__title">{{.Title}}</h1>
     <p class="cover__kind">{{.Kind}}</p>
@@ -50,7 +58,7 @@
   {{- range .StatusUpdates.Updates}}
   <div class="card">
     <div class="card__header">{{.Author}}<span>{{.Date}}</span></div>
-    {{if .Body}}<div class="boxed-md">{{markdown .Body}}</div>{{else}}<p class="muted">{{$.Report.StatusUpdates.NoMessage}}</p>{{end}}
+    {{if .Body}}<div class="boxed-md">{{markdown .Body}}</div>{{else}}<p class="muted">{{$.StatusUpdates.NoMessage}}</p>{{end}}
   </div>
   {{else}}<p class="muted">{{.StatusUpdates.Empty}}</p>{{end}}
   </section>
@@ -153,7 +161,6 @@
   {{- if .Footer}}
   <hr class="divider">
   <p class="muted">{{.Footer}}</p>
-  {{- end}}
   {{- end}}
 </body>
 </html>

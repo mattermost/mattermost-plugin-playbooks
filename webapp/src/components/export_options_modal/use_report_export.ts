@@ -5,14 +5,13 @@ import {useIntl} from 'react-intl';
 
 import {
     ReportFormat,
+    ReportSections,
     RunReportOptions,
     exportRunReport,
     saveReport,
 } from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-
-import type {SectionFlags} from './export_options_modal';
 
 // useReportExport returns a function that exports a run report and saves it.
 // A truncated transcript and failures are reported in a toast, so the returned promise
@@ -21,7 +20,7 @@ export const useReportExport = () => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
 
-    return async (runID: string, sections: SectionFlags, format: ReportFormat, options: RunReportOptions) => {
+    return async (runID: string, sections: ReportSections, format: ReportFormat, options: RunReportOptions) => {
         try {
             const report = await exportRunReport(runID, format, sections, options);
             if (report.truncated) {

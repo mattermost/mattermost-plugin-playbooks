@@ -11,8 +11,6 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 func TestMain(m *testing.M) {
@@ -31,7 +29,7 @@ const testStart int64 = 1_700_000_000_000 // 2023-11-14 22:13:20 UTC
 func TestBuildRun(t *testing.T) {
 	t.Run("an in-progress run lasts until the report was generated", func(t *testing.T) {
 		rc := RenderContext{
-			Run:               RenderRun{Status: coretypes.RunStatusInProgress, StartTimeMs: testStart},
+			Run:               RenderRun{Status: RunStatusInProgress, StartTimeMs: testStart},
 			GeneratedAtMillis: testStart + (90 * time.Minute).Milliseconds(),
 		}
 		r := BuildRun(rc, testOptions())
@@ -69,8 +67,8 @@ func TestBuildRun(t *testing.T) {
 		}
 		assert.Equal(t, "Transcript truncated (1 post shown).", BuildRun(rc, testOptions()).Transcript.Truncated)
 
-		rc.TranscriptTruncation.Posts = 5000
-		assert.Equal(t, "Transcript truncated (5000 posts shown).", BuildRun(rc, testOptions()).Transcript.Truncated)
+		rc.Transcript = append(rc.Transcript, RenderPost{PostID: "p2", AuthorID: "u1", Message: "there"})
+		assert.Equal(t, "Transcript truncated (2 posts shown).", BuildRun(rc, testOptions()).Transcript.Truncated)
 	})
 
 	t.Run("unassigned is only shown alongside a due date or command", func(t *testing.T) {
@@ -87,14 +85,14 @@ func TestBuildRun(t *testing.T) {
 	t.Run("closed and skipped tasks say who changed them and when", func(t *testing.T) {
 		rc := RenderContext{
 			Checklists: []RenderChecklist{{Items: []RenderChecklistItem{
-				{Title: "checked", State: coretypes.ChecklistItemStateClosed, StateMs: testStart, StateUserID: "u1"},
-				{Title: "checked, by whom unknown", State: coretypes.ChecklistItemStateClosed, StateMs: testStart},
-				{Title: "skipped", State: coretypes.ChecklistItemStateSkipped, StateMs: testStart, StateUserID: "u1"},
-				{Title: "skipped, by whom unknown", State: coretypes.ChecklistItemStateSkipped, StateMs: testStart},
+				{Title: "checked", State: ChecklistItemStateClosed, StateMs: testStart, StateUserID: "u1"},
+				{Title: "checked, by whom unknown", State: ChecklistItemStateClosed, StateMs: testStart},
+				{Title: "skipped", State: ChecklistItemStateSkipped, StateMs: testStart, StateUserID: "u1"},
+				{Title: "skipped, by whom unknown", State: ChecklistItemStateSkipped, StateMs: testStart},
 				{Title: "open", StateMs: testStart, StateUserID: "u1"},
-				{Title: "closed at an unknown time", State: coretypes.ChecklistItemStateClosed, StateUserID: "u1"},
+				{Title: "closed at an unknown time", State: ChecklistItemStateClosed, StateUserID: "u1"},
 			}}},
-			Resolvers: ResolverTable{Users: map[string]RenderUser{"u1": {UserID: "u1", Username: "alice"}}},
+			Users: map[string]RenderUser{"u1": {UserID: "u1", Username: "alice"}},
 		}
 		var got []string
 		for _, it := range BuildRun(rc, testOptions()).Tasks.Checklists[0].Items {

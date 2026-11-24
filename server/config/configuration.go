@@ -45,7 +45,7 @@ type Configuration struct {
 // BetaFeaturesConfig stores per-feature beta toggles from the System Console accordion.
 type BetaFeaturesConfig struct {
 	TaskRequirements bool `json:"task_requirements"`
-	// Reports enables exporting runs and playbooks as HTML, Markdown or PDF.
+	// Reports enables exporting runs as HTML, Markdown or PDF.
 	Reports bool `json:"reports"`
 }
 

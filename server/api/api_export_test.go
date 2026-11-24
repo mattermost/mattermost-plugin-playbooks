@@ -4,8 +4,6 @@
 package api
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -111,20 +109,6 @@ func TestExport_ReportFilename(t *testing.T) {
 	generatedAt := time.Date(2026, 11, 23, 14, 5, 0, 0, time.UTC).UnixMilli()
 	assert.Equal(t, "Database_outage_2026-11-23T14-05", reportFilename("Database outage", "run-abc", generatedAt))
 	assert.Equal(t, "run-abc_2026-11-23T14-05", reportFilename("", "run-abc", generatedAt))
-	assert.Regexp(t, `^run-abc_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}$`, reportFilename("", "run-abc", 0))
-}
-
-func TestExport_CorrelationFromRequest(t *testing.T) {
-	t.Run("echo X-Request-ID", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Header.Set("X-Request-ID", "abc-123")
-		assert.Equal(t, "abc-123", correlationFromRequest(req))
-	})
-	t.Run("generate when missing", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		got := correlationFromRequest(req)
-		assert.NotEmpty(t, got)
-	})
 }
 
 func TestExport_CollapseUnderscores(t *testing.T) {

@@ -148,15 +148,14 @@ func writeFooter(b *bytes.Buffer, footer string) {
 	b.WriteString("_\n")
 }
 
-// writeMetrics writes a bold "Metrics" line and one bullet per metric, with
-// format laying out the metric's title and value.
-func writeMetrics(b *bytes.Buffer, title string, metrics []report.Metric, format string) {
+// writeMetrics writes a bold "Metrics" line and one bullet per metric.
+func writeMetrics(b *bytes.Buffer, title string, metrics []report.Metric) {
 	if len(metrics) == 0 {
 		return
 	}
 	fmt.Fprintf(b, "**%s**\n\n", escapeText(title))
 	for _, m := range metrics {
-		fmt.Fprintf(b, format, escapeText(m.Title), escapeText(m.Value))
+		fmt.Fprintf(b, "- **%s** — %s\n", escapeText(m.Title), escapeText(m.Value))
 		writeIndentedText(b, m.Description)
 	}
 	b.WriteString("\n")
@@ -213,11 +212,7 @@ func writeChecklists(b *bytes.Buffer, s report.ChecklistSection) {
 			}
 			if it.Description != "" {
 				b.WriteString("\n")
-				for ln := range strings.SplitSeq(it.Description, "\n") {
-					b.WriteString("    ")
-					b.WriteString(ln)
-					b.WriteString("\n")
-				}
+				writeLines(b, it.Description, "    ")
 			}
 		}
 		b.WriteString("\n")
@@ -234,8 +229,13 @@ func writeQuotedPost(b *bytes.Buffer, header string, body string, bodyPrefix str
 		return
 	}
 	// bodyPrefix is a quote marker and the space after it, then the indent.
-	for ln := range strings.SplitSeq(closeFences(body, len(bodyPrefix)-len("> ")), "\n") {
-		b.WriteString(bodyPrefix)
+	writeLines(b, closeFences(body, len(bodyPrefix)-len("> ")), bodyPrefix)
+}
+
+// writeLines writes each line of text after prefix.
+func writeLines(b *bytes.Buffer, text, prefix string) {
+	for ln := range strings.SplitSeq(text, "\n") {
+		b.WriteString(prefix)
 		b.WriteString(ln)
 		b.WriteString("\n")
 	}

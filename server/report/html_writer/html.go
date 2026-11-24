@@ -19,70 +19,25 @@ var runReportTmpl string
 //go:embed templates/_styles.html.tmpl
 var stylesTmpl string
 
-var runTemplate = parseTemplate("run_report", runReportTmpl)
-
-// Options controls per-document presentation knobs that are independent of
-// the report content.
-type Options struct {
-	// PageSize controls the @page CSS size. "A4" and "Letter" are
-	// recognized; any other value passes through verbatim. Empty defaults
-	// to "Letter".
-	PageSize string
-}
-
-// document is the template data: the report plus presentation knobs.
-type document struct {
-	Report   *report.RunReport
-	PageSize string
-	FontCSS  template.CSS
-}
+// runTemplate is the run report template with the shared _styles partial.
+var runTemplate = template.Must(template.Must(template.New("run_report").Funcs(template.FuncMap{
+	"markdown":       markdownToHTML,
+	"markdownInline": markdownInlineToHTML,
+}).Parse(stylesTmpl)).Parse(runReportTmpl))
 
 // RenderRunHTML renders r to a complete self-contained HTML document.
 //
 // The output embeds a strict Content-Security-Policy that forbids all
 // scripts and disallows network fetches; styles, images and fonts are
-// limited to what the document embeds. The client downloads the document or
-// browser-prints it to PDF.
-func RenderRunHTML(r *report.RunReport, opts Options) ([]byte, error) {
-	return execute(runTemplate, newDocument(r, opts))
-}
-
-func newDocument(r *report.RunReport, opts Options) document {
-	return document{
-		Report:   r,
-		PageSize: pageSize(opts.PageSize),
-		FontCSS:  template.CSS(systemFontCSS()), //nolint:gosec
-	}
-}
-
-func execute(tmpl *template.Template, data any) ([]byte, error) {
+// limited to what the document embeds. Fonts come from the OS, so no font
+// files are bundled. The client downloads the document or browser-prints it
+// to PDF.
+func RenderRunHTML(r *report.RunReport) ([]byte, error) {
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return nil, fmt.Errorf("html_writer: execute %s template: %w", tmpl.Name(), err)
+	if err := runTemplate.Execute(&buf, r); err != nil {
+		return nil, fmt.Errorf("html_writer: execute run report template: %w", err)
 	}
 	return buf.Bytes(), nil
-}
-
-// parseTemplate parses the main template plus the shared _styles partial.
-func parseTemplate(name, body string) *template.Template {
-	t := template.New(name).Funcs(template.FuncMap{
-		"markdown":       markdownToHTML,
-		"markdownInline": markdownInlineToHTML,
-	})
-	template.Must(t.Parse(stylesTmpl))
-	return template.Must(t.Parse(body))
-}
-
-// pageSize normalizes the @page size hint.
-func pageSize(s string) string {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "a4":
-		return "A4"
-	case "letter", "":
-		return "Letter"
-	default:
-		return s
-	}
 }
 
 // markdownInlineToHTML renders a single-line title via the same sanitizer

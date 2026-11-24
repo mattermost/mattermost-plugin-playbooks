@@ -39,7 +39,21 @@ func markdownToHTML(md string) template.HTML {
 	// whitespace is trimmed.
 	src := strings.TrimRightFunc(md, unicode.IsSpace)
 
-	gm := goldmark.New(
+	var buf bytes.Buffer
+	if err := markdown.Convert([]byte(src), &buf); err != nil {
+		// Goldmark conversion errors are exceedingly rare for in-memory
+		// input. Fall back to escaped plain text rather than propagating
+		// the error to the caller — the report should still render.
+		return template.HTML(template.HTMLEscapeString(src)) //nolint:gosec
+	}
+
+	return template.HTML(sanitizer.SanitizeBytes(buf.Bytes())) //nolint:gosec
+}
+
+// markdown and sanitizer are built once: both are safe for concurrent use,
+// and building them costs far more than converting a message.
+var (
+	markdown = goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
@@ -49,19 +63,8 @@ func markdownToHTML(md string) template.HTML {
 			html.WithHardWraps(),
 		),
 	)
-
-	var buf bytes.Buffer
-	if err := gm.Convert([]byte(src), &buf); err != nil {
-		// Goldmark conversion errors are exceedingly rare for in-memory
-		// input. Fall back to escaped plain text rather than propagating
-		// the error to the caller — the report should still render.
-		return template.HTML(template.HTMLEscapeString(src)) //nolint:gosec
-	}
-
-	policy := htmlSanitizerPolicy()
-	clean := policy.SanitizeBytes(buf.Bytes())
-	return template.HTML(clean) //nolint:gosec
-}
+	sanitizer = htmlSanitizerPolicy()
+)
 
 // htmlSanitizerPolicy returns the bluemonday policy used to scrub goldmark
 // output before it lands in a template. UGCPolicy is the well-known

@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 // AssertGolden compares got with testdata/name, or rewrites the file when
@@ -100,17 +99,18 @@ func users() map[string]report.RenderUser {
 // RunScenarios returns the run report scenarios the golden tests render.
 func RunScenarios() []RunScenario {
 	chronological := TypicalRun()
-	chronological.Run.Status = coretypes.RunStatusInProgress
+	chronological.Run.Status = report.RunStatusInProgress
 	chronological.Run.EndTimeMs = 0
-	chronological.TranscriptMode = coretypes.TranscriptModeChronological
+	chronologicalOptions := Options("de", time.FixedZone("CET", 60*60))
+	chronologicalOptions.TranscriptMode = report.TranscriptModeChronological
 
 	truncated := TypicalRun()
 	truncated.Transcript = truncated.Transcript[:3]
-	truncated.TranscriptTruncation = report.Truncation{Hit: true, Reason: "posts", Posts: 3}
+	truncated.TranscriptTruncation = report.Truncation{Hit: true, Reason: "posts"}
 
 	omitted := TypicalRun()
 	omitted.Transcript = nil
-	omitted.TranscriptOmittedReason = coretypes.TranscriptOmittedNotMember
+	omitted.TranscriptOmittedReason = report.TranscriptOmittedNotMember
 
 	// Only the executive summary, status updates and tasks were selected.
 	sections := TypicalRun()
@@ -122,7 +122,7 @@ func RunScenarios() []RunScenario {
 	return []RunScenario{
 		{"run_typical", TypicalRun(), en},
 		{"run_empty", report.RenderContext{
-			Run:               report.RenderRun{ID: "run2", Status: coretypes.RunStatusInProgress},
+			Run:               report.RenderRun{Status: report.RunStatusInProgress},
 			Sections:          report.DefaultRunSections(),
 			GeneratedAtMillis: GeneratedAt,
 		}, en},
@@ -130,7 +130,7 @@ func RunScenarios() []RunScenario {
 		{"run_redacted", RedactedRun(), byUsername},
 		// Shown in another language and time zone; strings without a
 		// translation fall back to English.
-		{"run_chronological", chronological, Options("de", time.FixedZone("CET", 60*60))},
+		{"run_chronological", chronological, chronologicalOptions},
 		{"run_truncated", truncated, en},
 		{"run_transcript_omitted", omitted, en},
 		{"run_sections", sections, en},
@@ -142,13 +142,11 @@ func TypicalRun() report.RenderContext {
 	return report.RenderContext{
 		Sections: AllRunSections(),
 		Run: report.RenderRun{
-			ID:            "run1",
 			Name:          "Database outage #42",
 			Summary:       "Primary DB failed over. **Resolved** by @alice.\n\n- Replica promoted\n- Traffic drained",
-			Status:        coretypes.RunStatusFinished,
+			Status:        report.RunStatusFinished,
 			StartTimeMs:   Base,
 			EndTimeMs:     Base + 2*hour + 15*minute,
-			PlaybookID:    "pb1",
 			PlaybookTitle: "Sev1 *Incident* Response",
 		},
 		Owner: report.RenderUser{UserID: "u1", DisplayName: "Alice Admin", Username: "alice"},
@@ -158,9 +156,9 @@ func TypicalRun() report.RenderContext {
 			{UserID: "u3", DisplayName: "Carol Chen", Username: "carol"},
 		},
 		StatusUpdates: []report.RenderStatusUpdate{
-			{PostID: "p1", AuthorID: "u1", CreateAt: Base + 5*minute, Message: "Investigating. cc @here"},
-			{PostID: "p2", AuthorID: "u2", CreateAt: Base + 45*minute, Message: "Mitigated; **monitoring**."},
-			{PostID: "p3", AuthorID: "u3", CreateAt: Base + 2*hour},
+			{AuthorID: "u1", CreateAt: Base + 5*minute, Message: "Investigating. cc @here"},
+			{AuthorID: "u2", CreateAt: Base + 45*minute, Message: "Mitigated; **monitoring**."},
+			{AuthorID: "u3", CreateAt: Base + 2*hour},
 		},
 		TimelineEvents: []report.RenderTimelineEvent{
 			{EventType: "incident_created", CreateAt: Base, CreatorID: "u1"},
@@ -175,10 +173,10 @@ func TypicalRun() report.RenderContext {
 			{
 				Title: "Initial response",
 				Items: []report.RenderChecklistItem{
-					{Title: "Page on-call", State: coretypes.ChecklistItemStateClosed, StateMs: Base + 10*minute, StateUserID: "u1", AssigneeID: "u1"},
+					{Title: "Page on-call", State: report.ChecklistItemStateClosed, StateMs: Base + 10*minute, StateUserID: "u1", AssigneeID: "u1"},
 					// Skipped by a user the timeline doesn't name.
-					{Title: "Open war room", State: coretypes.ChecklistItemStateSkipped, StateMs: Base + 11*minute},
-					{Title: "Notify **stakeholders**", State: coretypes.ChecklistItemStateInProgress, AssigneeID: "u2", DueAtMs: Base + hour},
+					{Title: "Open war room", State: report.ChecklistItemStateSkipped, StateMs: Base + 11*minute},
+					{Title: "Notify **stakeholders**", State: "in_progress", AssigneeID: "u2", DueAtMs: Base + hour},
 					{
 						Title:       "Postmortem doc",
 						DueAtMs:     Base + 26*hour,
@@ -191,28 +189,27 @@ func TypicalRun() report.RenderContext {
 			{
 				Title: "Wrap-up",
 				Items: []report.RenderChecklistItem{
-					{Title: "Close incident", State: coretypes.ChecklistItemStateClosed, StateMs: Base + 2*hour, StateUserID: "u2", AssigneeID: "u3"},
+					{Title: "Close incident", State: report.ChecklistItemStateClosed, StateMs: Base + 2*hour, StateUserID: "u2", AssigneeID: "u3"},
 				},
 			},
 		},
 		Retrospective: report.RenderRetrospective{
 			Body: "## What went well\n- Quick paging",
 			Metrics: []report.RenderMetric{
-				{ID: "m1", Title: "Time to detect", Description: "Measured from\nalert to ack", Type: "duration", Value: 3 * minute, HasValue: true},
-				{ID: "m2", Title: "Cost", Type: "currency", Value: 12345, HasValue: true},
-				{ID: "m3", Title: "Customers affected", Type: "integer", Value: 7, HasValue: true},
-				{ID: "m4", Title: "Time to resolve", Type: "duration"},
-				{ID: "m5", Title: "Time to escalate", Type: "duration", HasValue: true},
+				{Title: "Time to detect", Description: "Measured from\nalert to ack", Type: "duration", Value: 3 * minute, HasValue: true},
+				{Title: "Cost", Type: "currency", Value: 12345, HasValue: true},
+				{Title: "Customers affected", Type: "integer", Value: 7, HasValue: true},
+				{Title: "Time to resolve", Type: "duration"},
+				{Title: "Time to escalate", Type: "duration", HasValue: true},
 			},
 		},
 		Transcript: []report.RenderPost{
 			{PostID: "tp1", AuthorID: "u1", CreateAt: Base + 2*minute, Message: "Looking into it. @channel"},
 			{PostID: "tp3", AuthorID: "u3", CreateAt: Base + 4*minute, Message: "Dashboards are red:\n\n```\nerror rate 40%\n```"},
 			{PostID: "tp2", AuthorID: "u2", CreateAt: Base + 6*minute, Message: "Same here.", RootID: "tp1"},
-			{PostID: "sys1", AuthorID: "u2", CreateAt: Base + 7*minute, Message: "bob joined the channel", Type: "system_join_channel"},
 			{PostID: "tp4", AuthorID: "u3", CreateAt: Base + 8*minute, Message: "Following up on the earlier thread.", RootID: "missing"},
 		},
-		Resolvers:         report.ResolverTable{Users: users()},
+		Users:             users(),
 		GeneratedAtMillis: GeneratedAt,
 	}
 }
@@ -223,9 +220,8 @@ func RedactedRun() report.RenderContext {
 	return report.RenderContext{
 		Sections: AllRunSections(),
 		Run: report.RenderRun{
-			ID:          "run3",
 			Name:        "Login failures",
-			Status:      coretypes.RunStatusInProgress,
+			Status:      report.RunStatusInProgress,
 			StartTimeMs: Base,
 		},
 		Owner: report.RenderUser{UserID: "u9"},
@@ -235,8 +231,8 @@ func RedactedRun() report.RenderContext {
 			{UserID: "u9"},
 		},
 		StatusUpdates: []report.RenderStatusUpdate{
-			{PostID: "p1", AuthorID: "u4", CreateAt: Base + 5*minute, Message: "Checking the identity provider."},
-			{PostID: "p2", AuthorID: "u9", CreateAt: Base + 10*minute, Message: "Rolled back the config."},
+			{AuthorID: "u4", CreateAt: Base + 5*minute, Message: "Checking the identity provider."},
+			{AuthorID: "u9", CreateAt: Base + 10*minute, Message: "Rolled back the config."},
 		},
 		TimelineEvents: []report.RenderTimelineEvent{
 			{EventType: "incident_created", CreateAt: Base, CreatorID: "u4"},
@@ -248,7 +244,7 @@ func RedactedRun() report.RenderContext {
 				Title: "Triage",
 				Items: []report.RenderChecklistItem{
 					{Title: "Check IdP", AssigneeID: "u4"},
-					{Title: "Check certificates", State: coretypes.ChecklistItemStateSkipped, StateMs: Base + 6*minute, StateUserID: "u9", AssigneeID: "u9"},
+					{Title: "Check certificates", State: report.ChecklistItemStateSkipped, StateMs: Base + 6*minute, StateUserID: "u9", AssigneeID: "u9"},
 				},
 			},
 		},
@@ -256,7 +252,7 @@ func RedactedRun() report.RenderContext {
 			{PostID: "tp1", AuthorID: "u4", CreateAt: Base + 2*minute, Message: "Seeing 500s from SSO."},
 			{PostID: "tp2", AuthorID: "u9", CreateAt: Base + 3*minute, Message: "Confirmed.", RootID: "tp1"},
 		},
-		Resolvers:         report.ResolverTable{Users: users()},
+		Users:             users(),
 		GeneratedAtMillis: GeneratedAt,
 	}
 }

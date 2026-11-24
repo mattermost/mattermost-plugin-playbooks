@@ -21,6 +21,8 @@ type Options struct {
 	// model.ShowUsername, model.ShowNicknameFullName and model.ShowFullName;
 	// empty means model.ShowUsername.
 	NameFormat string
+	// TranscriptMode lays out the transcript; empty means threaded.
+	TranscriptMode TranscriptMode
 }
 
 // RunReport is a run report ready to print: every string is translated and

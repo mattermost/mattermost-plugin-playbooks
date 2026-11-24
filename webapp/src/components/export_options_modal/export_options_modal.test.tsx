@@ -26,7 +26,7 @@ jest.mock('src/components/widgets/generic_modal', () => {
 
 jest.mock('react-redux', () => ({
     ...jest.requireActual('react-redux'),
-    useSelector: () => ({timezone: {useAutomaticTimezone: 'false', manualTimezone: 'Europe/Berlin', automaticTimezone: ''}}),
+    useSelector: () => 'Europe/Berlin',
 }));
 
 import ExportOptionsModal from './export_options_modal';

@@ -20,20 +20,8 @@ func buildRun(rc report.RenderContext) *report.RunReport {
 	return report.BuildRun(rc, reporttest.Options("en", time.UTC))
 }
 
-func TestRenderRunHTML_PageSize(t *testing.T) {
-	r := buildRun(reporttest.TypicalRun())
-
-	out, err := RenderRunHTML(r, Options{})
-	require.NoError(t, err)
-	assert.Contains(t, string(out), "size: Letter")
-
-	out, err = RenderRunHTML(r, Options{PageSize: "a4"})
-	require.NoError(t, err)
-	assert.Contains(t, string(out), "size: A4")
-}
-
 func TestRenderRunHTML_Lang(t *testing.T) {
-	out, err := RenderRunHTML(report.BuildRun(reporttest.TypicalRun(), reporttest.Options("pt-BR", time.UTC)), Options{})
+	out, err := RenderRunHTML(report.BuildRun(reporttest.TypicalRun(), reporttest.Options("pt-BR", time.UTC)))
 	require.NoError(t, err)
 	assert.Contains(t, string(out), `<html lang="pt-BR">`)
 }
@@ -49,7 +37,7 @@ func TestRenderRunHTML_MaliciousMarkdownNeutralized(t *testing.T) {
 	rc.Retrospective.Body = `<iframe src="http://evil.example"></iframe>`
 	rc.Retrospective.Metrics[0].Description = `<script>steal()</script>`
 
-	out, err := RenderRunHTML(buildRun(rc), Options{})
+	out, err := RenderRunHTML(buildRun(rc))
 	require.NoError(t, err)
 	require.True(t, utf8.Valid(out))
 	lower := strings.ToLower(string(out))

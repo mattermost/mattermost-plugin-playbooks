@@ -16,116 +16,63 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
-// ReportConfig is the caps used during report assembly.
-type ReportConfig struct {
-	MaxRunReportPosts int
-	MaxRunReportBytes int64
-}
+// Transcript caps: a transcript stops at whichever it reaches first, and the
+// report says it was cut short.
+const (
+	maxTranscriptPosts       = 5000
+	maxTranscriptBytes int64 = 50 * 1024 * 1024
+	transcriptPageSize       = 200
+)
 
-// DefaultReportConfig returns the caps every report uses.
-func DefaultReportConfig() ReportConfig {
-	return ReportConfig{
-		MaxRunReportPosts: 5000,
-		MaxRunReportBytes: 50 * 1024 * 1024,
-	}
-}
-
-// ReportService orchestrates assembly of the sanitized RenderContext for
-// the renderer. All permission scoping happens here; the writers only turn
-// the data into HTML or Markdown.
+// ReportService assembles the sanitized RenderContext for the renderer. The
+// writers only turn the data into HTML or Markdown.
 type ReportService struct {
-	runService         PlaybookRunService
-	playbookService    PlaybookService
-	permissionsService *PermissionsService
-	pluginAPI          *pluginapi.Client
-	config             ReportConfig
+	playbookService PlaybookService
+	pluginAPI       *pluginapi.Client
 }
 
 // NewReportService constructs a ReportService.
-func NewReportService(
-	runService PlaybookRunService,
-	playbookService PlaybookService,
-	permissionsService *PermissionsService,
-	pluginAPI *pluginapi.Client,
-) *ReportService {
+func NewReportService(playbookService PlaybookService, pluginAPI *pluginapi.Client) *ReportService {
 	return &ReportService{
-		runService:         runService,
-		playbookService:    playbookService,
-		permissionsService: permissionsService,
-		pluginAPI:          pluginAPI,
-		config:             DefaultReportConfig(),
+		playbookService: playbookService,
+		pluginAPI:       pluginAPI,
 	}
 }
 
-// channelPostsIterOpts configures channelPostsIterator behavior.
-type channelPostsIterOpts struct {
-	includeSystem bool
-	pageSize      int
-	throttle      time.Duration
-}
-
-// postIterator yields the next batch of posts; returns an empty slice when
-// the underlying channel is exhausted or a stop condition fires.
-type postIterator func(ctx context.Context) ([]report.RenderPost, error)
-
-// AssembleRunReportContext builds the sanitized RenderContext for a run.
+// AssembleRunReportContext builds the sanitized RenderContext for a run. The
+// caller must have checked that userID can view the run; the transcript is
+// only included when userID is a member of the run's channel.
 func (s *ReportService) AssembleRunReportContext(
 	ctx context.Context,
-	runID string,
+	run *PlaybookRun,
 	userID string,
 	sections report.SectionFlags,
 ) (report.RenderContext, error) {
-	if err := s.permissionsService.RunView(userID, runID); err != nil {
-		return report.RenderContext{}, err
-	}
-
-	run, err := s.runService.GetPlaybookRun(runID)
-	if err != nil {
-		return report.RenderContext{}, errors.Wrap(err, "failed to load run")
-	}
-
 	rc := report.RenderContext{
 		Sections: sections,
 		Run: report.RenderRun{
-			ID:          run.ID,
 			Name:        run.Name,
 			Summary:     run.Summary,
 			Status:      run.CurrentStatus,
 			StartTimeMs: run.CreateAt,
 			EndTimeMs:   run.EndAt,
-			PlaybookID:  run.PlaybookID,
 		},
 	}
 
-	// playbook holds the parent template if we can fetch it — used for
-	// PlaybookTitle and the retrospective metric config join.
+	// The playbook gives the report its title and the retrospective metrics'
+	// titles and types.
 	var playbook *Playbook
 	if run.PlaybookID != "" {
-		if pb, perr := s.playbookService.Get(run.PlaybookID); perr == nil {
+		if pb, err := s.playbookService.Get(run.PlaybookID); err == nil {
 			playbook = &pb
 			rc.Run.PlaybookTitle = pb.Title
 		}
 	}
 
-	userIDs := collectRunUserIDs(run)
-	userCache := s.batchResolveUsers(userIDs)
-
-	rc.Owner = userCache[run.OwnerUserID]
-	rc.Participants = make([]report.RenderUser, 0, len(run.ParticipantIDs))
-	for _, pid := range run.ParticipantIDs {
-		rc.Participants = append(rc.Participants, userCache[pid])
-	}
-
 	if sections.StatusUpdates {
 		rc.StatusUpdates = s.buildStatusUpdates(run)
-		for _, su := range rc.StatusUpdates {
-			if _, ok := userCache[su.AuthorID]; !ok && su.AuthorID != "" {
-				userCache[su.AuthorID] = s.resolveUser(su.AuthorID)
-			}
-		}
 	}
 	if sections.Timeline {
 		rc.TimelineEvents = buildTimelineEvents(run)
@@ -144,182 +91,94 @@ func (s *ReportService) AssembleRunReportContext(
 	if sections.Transcript {
 		switch run.ChannelID {
 		case "":
-			rc.TranscriptOmittedReason = coretypes.TranscriptOmittedNoChannel
+			rc.TranscriptOmittedReason = report.TranscriptOmittedNoChannel
 		default:
-			if _, mErr := s.pluginAPI.Channel.GetMember(run.ChannelID, userID); mErr != nil {
-				rc.TranscriptOmittedReason = coretypes.TranscriptOmittedNotMember
+			if _, err := s.pluginAPI.Channel.GetMember(run.ChannelID, userID); err != nil {
+				rc.TranscriptOmittedReason = report.TranscriptOmittedNotMember
 			} else {
-				iter := s.channelPostsIterator(run.ChannelID, run.CreateAt, run.EndAt, channelPostsIterOpts{
-					includeSystem: false,
-					pageSize:      200,
-					throttle:      20 * time.Millisecond,
-				})
-				transcript, tErr := drainTranscript(ctx, iter, s.config.MaxRunReportPosts, s.config.MaxRunReportBytes)
-				if tErr != nil && !errors.Is(tErr, context.Canceled) {
-					return report.RenderContext{}, errors.Wrap(tErr, "failed to assemble transcript")
+				posts, truncation, err := s.fetchTranscript(ctx, run.ChannelID, run.CreateAt, run.EndAt)
+				if err != nil && !errors.Is(err, context.Canceled) {
+					return report.RenderContext{}, errors.Wrap(err, "failed to assemble transcript")
 				}
-				rc.Transcript = transcript.posts
-				rc.TranscriptTruncation = transcript.truncation
-
-				for _, p := range rc.Transcript {
-					if _, ok := userCache[p.AuthorID]; !ok && p.AuthorID != "" {
-						userCache[p.AuthorID] = s.resolveUser(p.AuthorID)
-					}
-				}
+				rc.Transcript = posts
+				rc.TranscriptTruncation = truncation
 			}
 		}
 	}
 
-	rc.Resolvers = report.ResolverTable{Users: knownUsers(userCache)}
+	userIDs := collectRunUserIDs(run)
+	for _, su := range rc.StatusUpdates {
+		userIDs = append(userIDs, su.AuthorID)
+	}
+	for _, p := range rc.Transcript {
+		userIDs = append(userIDs, p.AuthorID)
+	}
+	rc.Users = s.batchResolveUsers(userIDs)
+	rc.Owner = rc.Users[run.OwnerUserID]
+	rc.Participants = make([]report.RenderUser, 0, len(run.ParticipantIDs))
+	for _, id := range run.ParticipantIDs {
+		rc.Participants = append(rc.Participants, rc.Users[id])
+	}
+
 	rc.GeneratedAtMillis = time.Now().UnixMilli()
 	return rc, nil
 }
 
-// knownUsers is the users the run's assembly loaded (owner, participants,
-// timeline actors, assignees, status and post authors), without the ones
-// that could not be loaded, which the report shows as unknown users.
-func knownUsers(userCache map[string]report.RenderUser) map[string]report.RenderUser {
-	users := make(map[string]report.RenderUser, len(userCache))
-	for id, u := range userCache {
-		if u.DisplayName != "" || u.Username != "" {
-			users[id] = u
-		}
-	}
-	return users
-}
-
-// channelPostsIterator returns a paging iterator over a channel's posts,
-// filtered to (startMs, endMs] and excluding post-edit duplicates. Each call
-// returns the next page; an empty slice indicates exhaustion. The caller is
-// responsible for tracking the byte-cap (caps span pages).
-func (s *ReportService) channelPostsIterator(channelID string, startMs, endMs int64, opts channelPostsIterOpts) postIterator {
-	if opts.pageSize <= 0 {
-		opts.pageSize = 200
-	}
-	if opts.throttle <= 0 {
-		opts.throttle = 20 * time.Millisecond
-	}
-
-	page := 0
-	first := true
-	seen := make(map[string]struct{})
-	exhausted := false
-
-	// Each call reads pages until one has posts in the window, since a page
-	// can hold only posts from after the run ended.
-	return func(ctx context.Context) ([]report.RenderPost, error) {
-		for !exhausted {
-			if ctx.Err() != nil {
-				return nil, ctx.Err()
-			}
-
-			if !first {
-				select {
-				case <-ctx.Done():
-					return nil, ctx.Err()
-				case <-time.After(opts.throttle):
-				}
-			}
-			first = false
-
-			postList, err := s.pluginAPI.Post.GetPostsForChannel(channelID, page, opts.pageSize)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to fetch channel posts")
-			}
-			page++
-
-			if postList == nil || len(postList.Order) == 0 {
-				exhausted = true
-				break
-			}
-
-			out := make([]report.RenderPost, 0, len(postList.Order))
-			for _, id := range postList.Order {
-				post := postList.Posts[id]
-				if post == nil {
-					continue
-				}
-				if _, dup := seen[post.Id]; dup {
-					continue
-				}
-				seen[post.Id] = struct{}{}
-
-				if post.OriginalId != "" {
-					continue
-				}
-				if !opts.includeSystem && post.Type != "" {
-					continue
-				}
-				if endMs > 0 && post.CreateAt > endMs {
-					continue
-				}
-				if startMs > 0 && post.CreateAt < startMs {
-					exhausted = true
-					continue
-				}
-
-				out = append(out, report.RenderPost{
-					PostID:   post.Id,
-					AuthorID: post.UserId,
-					CreateAt: post.CreateAt,
-					Message:  post.Message,
-					RootID:   post.RootId,
-					Type:     post.Type,
-				})
-			}
-			if len(out) > 0 {
-				return out, nil
-			}
-		}
-		return nil, nil
-	}
-}
-
-type transcriptDrain struct {
-	posts      []report.RenderPost
-	truncation report.Truncation
-}
-
-// drainTranscript consumes the iterator into a slice, enforcing the post-cap
-// and the byte-cap (counted in message bytes).
-func drainTranscript(ctx context.Context, iter postIterator, maxPosts int, maxBytes int64) (transcriptDrain, error) {
+// fetchTranscript reads a channel's posts from the run's window,
+// (startMs, endMs], newest first, leaving out system messages and edit
+// history. It stops at the transcript caps and says so in the Truncation.
+// When ctx ends it returns the posts read so far with ctx's error.
+func (s *ReportService) fetchTranscript(ctx context.Context, channelID string, startMs, endMs int64) ([]report.RenderPost, report.Truncation, error) {
 	var (
-		out      []report.RenderPost
-		bytesSum int64
+		posts []report.RenderPost
+		bytes int64
 	)
-	for {
-		batch, err := iter(ctx)
+	seen := make(map[string]bool)
+	for page := 0; ; page++ {
+		if err := ctx.Err(); err != nil {
+			return posts, report.Truncation{}, err
+		}
+		list, err := s.pluginAPI.Post.GetPostsForChannel(channelID, page, transcriptPageSize)
 		if err != nil {
-			return transcriptDrain{posts: out}, err
+			return posts, report.Truncation{}, errors.Wrap(err, "failed to fetch channel posts")
 		}
-		if len(batch) == 0 {
-			return transcriptDrain{posts: out, truncation: report.Truncation{Posts: len(out)}}, nil
+		if list == nil || len(list.Order) == 0 {
+			return posts, report.Truncation{}, nil
 		}
-		for _, p := range batch {
-			if maxPosts > 0 && len(out) >= maxPosts {
-				return transcriptDrain{
-					posts: out,
-					truncation: report.Truncation{
-						Hit:    true,
-						Reason: "posts",
-						Posts:  len(out),
-					},
-				}, nil
+
+		// Pages run newest first, so a post from before the run is the last
+		// page to read.
+		lastPage := false
+		for _, id := range list.Order {
+			post := list.Posts[id]
+			if post == nil || seen[post.Id] {
+				continue
 			}
-			postBytes := int64(len(p.Message))
-			if maxBytes > 0 && bytesSum+postBytes > maxBytes {
-				return transcriptDrain{
-					posts: out,
-					truncation: report.Truncation{
-						Hit:    true,
-						Reason: "bytes",
-						Posts:  len(out),
-						Bytes:  bytesSum,
-					},
-				}, nil
+			seen[post.Id] = true
+			if post.OriginalId != "" || post.Type != "" || (endMs > 0 && post.CreateAt > endMs) {
+				continue
 			}
-			bytesSum += postBytes
-			out = append(out, p)
+			if post.CreateAt < startMs {
+				lastPage = true
+				continue
+			}
+
+			if len(posts) >= maxTranscriptPosts {
+				return posts, report.Truncation{Hit: true, Reason: "posts"}, nil
+			}
+			if bytes += int64(len(post.Message)); bytes > maxTranscriptBytes {
+				return posts, report.Truncation{Hit: true, Reason: "bytes"}, nil
+			}
+			posts = append(posts, report.RenderPost{
+				PostID:   post.Id,
+				AuthorID: post.UserId,
+				CreateAt: post.CreateAt,
+				Message:  post.Message,
+				RootID:   post.RootId,
+			})
+		}
+		if lastPage {
+			return posts, report.Truncation{}, nil
 		}
 	}
 }
@@ -384,35 +243,19 @@ func renderUserFromModel(u *model.User) report.RenderUser {
 	}
 }
 
-// collectRunUserIDs gathers every user identifier referenced by the run's
-// owner, participants, timeline subjects/creators, and assignees.
+// collectRunUserIDs lists the users the run names: its owner, participants,
+// timeline subjects and creators, and assignees. It may repeat a user.
 func collectRunUserIDs(run *PlaybookRun) []string {
-	seen := make(map[string]struct{})
-	add := func(id string) {
-		if id == "" {
-			return
-		}
-		seen[id] = struct{}{}
-	}
-	add(run.OwnerUserID)
-	add(run.ReporterUserID)
-	for _, p := range run.ParticipantIDs {
-		add(p)
-	}
+	ids := append([]string{run.OwnerUserID}, run.ParticipantIDs...)
 	for _, ev := range run.TimelineEvents {
-		add(ev.SubjectUserID)
-		add(ev.CreatorUserID)
+		ids = append(ids, ev.SubjectUserID, ev.CreatorUserID)
 	}
 	for _, cl := range run.Checklists {
 		for _, item := range cl.Items {
-			add(item.AssigneeID)
+			ids = append(ids, item.AssigneeID)
 		}
 	}
-	out := make([]string, 0, len(seen))
-	for id := range seen {
-		out = append(out, id)
-	}
-	return out
+	return ids
 }
 
 // buildStatusUpdates assembles the chronological status post stream. Post
@@ -425,14 +268,10 @@ func (s *ReportService) buildStatusUpdates(run *PlaybookRun) []report.RenderStat
 		}
 		post, err := s.pluginAPI.Post.GetPost(sp.ID)
 		if err != nil || post == nil {
-			out = append(out, report.RenderStatusUpdate{
-				PostID:   sp.ID,
-				CreateAt: sp.CreateAt,
-			})
+			out = append(out, report.RenderStatusUpdate{CreateAt: sp.CreateAt})
 			continue
 		}
 		out = append(out, report.RenderStatusUpdate{
-			PostID:   sp.ID,
 			AuthorID: post.UserId,
 			CreateAt: sp.CreateAt,
 			Message:  post.Message,
@@ -515,50 +354,29 @@ func buildChecklists(in []Checklist, stateUsers map[string]string) []report.Rend
 	return out
 }
 
-// buildRetrospective composes the retrospective DTO for the run renderer.
-// metricConfigs is the parent playbook's metric configuration (Title,
-// Description, Type); the run-side instance values come from
-// run.MetricsData. When metricConfigs is empty (the playbook was deleted or
-// could not be loaded), there is no metric left to show: a value without
-// its title or type would be meaningless in the report.
+// buildRetrospective joins the run's metric values to the playbook's metric
+// configs, which give each metric its title, description and type. Without
+// the configs (the playbook was deleted or could not be loaded) there is no
+// metric to show: a value without its title or type means nothing.
 func buildRetrospective(run *PlaybookRun, metricConfigs []PlaybookMetricConfig) report.RenderRetrospective {
-	return report.RenderRetrospective{
-		Body:    run.Retrospective,
-		Metrics: metricsFromConfigs(metricConfigs, runMetricValueLookup(run)),
-	}
-}
-
-// runMetricValueLookup builds the metric-ID → value map for joining a run
-// instance's persisted values against the parent playbook's metric configs.
-func runMetricValueLookup(run *PlaybookRun) map[string]int64 {
-	out := make(map[string]int64, len(run.MetricsData))
+	values := make(map[string]int64, len(run.MetricsData))
 	for _, md := range run.MetricsData {
 		if md.Value.Valid {
-			out[md.MetricConfigID] = md.Value.Int64
+			values[md.MetricConfigID] = md.Value.Int64
 		}
 	}
-	return out
-}
-
-// metricsFromConfigs maps the parent playbook's metric configs into the
-// renderer DTO, joining the run's values (metricID → value) from
-// runMetricValueLookup.
-func metricsFromConfigs(configs []PlaybookMetricConfig, values map[string]int64) []report.RenderMetric {
-	out := make([]report.RenderMetric, 0, len(configs))
-	for _, m := range configs {
-		rm := report.RenderMetric{
-			ID:          m.ID,
+	metrics := make([]report.RenderMetric, 0, len(metricConfigs))
+	for _, m := range metricConfigs {
+		value, ok := values[m.ID]
+		metrics = append(metrics, report.RenderMetric{
 			Title:       m.Title,
 			Description: m.Description,
 			Type:        metricTypeFromConfig(m.Type),
-		}
-		if val, ok := values[m.ID]; ok {
-			rm.Value = val
-			rm.HasValue = true
-		}
-		out = append(out, rm)
+			Value:       value,
+			HasValue:    ok,
+		})
 	}
-	return out
+	return report.RenderRetrospective{Body: run.Retrospective, Metrics: metrics}
 }
 
 func metricTypeFromConfig(t string) string {

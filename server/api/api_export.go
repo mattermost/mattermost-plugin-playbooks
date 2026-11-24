@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -26,7 +25,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/html_writer"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/report/markdown_writer"
 )
@@ -42,7 +40,7 @@ const (
 	maxConcurrentReports = 4
 
 	// filenameMaxLen bounds the ASCII portion of the Content-Disposition
-	// filename per plan §6.4 D5.
+	// filename.
 	filenameMaxLen = 80
 
 	// exportIntentHeader is the optional client-supplied hint recorded in
@@ -51,45 +49,20 @@ const (
 	exportIntentHeader = "X-Playbooks-Export-Intent"
 )
 
-// ReportService is the contract the app-layer ReportService satisfies. It is
-// declared here as an interface so this handler can be exercised in isolation.
-type ReportService interface {
-	AssembleRunReportContext(ctx context.Context, runID, userID string, sections report.SectionFlags) (report.RenderContext, error)
-}
-
-// ExportHandler owns the GET /runs/{id}/report?format=md|html endpoint. The HTML is downloaded directly, or browser-printed to PDF by
-// the client. Permission gating, CSRF validation, concurrency throttling,
-// filename safety, audit logging, and atomic buffer-then-write all live here.
+// ExportHandler owns the GET /runs/{id}/report?format=md|html endpoint. The
+// HTML is downloaded directly, or browser-printed to PDF by the client.
+// Permission gating, concurrency throttling, filename safety and audit
+// logging live here.
 type ExportHandler struct {
 	*ErrorHandler
 	pluginAPI          *pluginapi.Client
 	config             config.Service
 	permissions        *app.PermissionsService
 	playbookRunService app.PlaybookRunService
-	reportService      ReportService
+	reportService      *app.ReportService
 
 	// renderSem bounds concurrent renders.
 	renderSem chan struct{}
-}
-
-// registeredExportHandler holds the active ExportHandler used by the route
-// registration shim invoked from playbook_runs.go.
-var (
-	exportHandlerMu         sync.RWMutex
-	registeredExportHandler *ExportHandler
-)
-
-// RegisterExportHandler is called once at plugin startup (from plugin.go).
-func RegisterExportHandler(h *ExportHandler) {
-	exportHandlerMu.Lock()
-	defer exportHandlerMu.Unlock()
-	registeredExportHandler = h
-}
-
-func currentExportHandler() *ExportHandler {
-	exportHandlerMu.RLock()
-	defer exportHandlerMu.RUnlock()
-	return registeredExportHandler
 }
 
 // Report formats, selected with the ?format= query parameter.
@@ -98,28 +71,16 @@ const (
 	formatHTML     = "html"
 )
 
-// registerRunExportRoute mounts the run report endpoint on the per-run
-// subrouter when the ExportHandler is available.
-func registerRunExportRoute(runRouter *mux.Router) {
-	runRouter.HandleFunc("/report", withContext(func(c *Context, w http.ResponseWriter, r *http.Request) {
-		h := currentExportHandler()
-		if h == nil {
-			HandleErrorWithCode(c.logger, w, http.StatusNotFound, "not found", nil)
-			return
-		}
-		h.exportRun(c, w, r)
-	})).Methods(http.MethodGet)
-}
-
-// NewExportHandler wires the export handler.
+// NewExportHandler mounts the run report endpoint on router.
 func NewExportHandler(
+	router *mux.Router,
 	pluginAPI *pluginapi.Client,
 	cfg config.Service,
 	permissions *app.PermissionsService,
 	playbookRunService app.PlaybookRunService,
-	reportService ReportService,
+	reportService *app.ReportService,
 ) *ExportHandler {
-	return &ExportHandler{
+	handler := &ExportHandler{
 		ErrorHandler:       &ErrorHandler{},
 		pluginAPI:          pluginAPI,
 		config:             cfg,
@@ -128,6 +89,8 @@ func NewExportHandler(
 		reportService:      reportService,
 		renderSem:          make(chan struct{}, maxConcurrentReports),
 	}
+	router.HandleFunc("/runs/{id:[A-Za-z0-9]+}/report", withContext(handler.exportRun)).Methods(http.MethodGet)
+	return handler
 }
 
 // exportRun is the handler for GET /runs/{id}/report?format=md|html.
@@ -135,10 +98,8 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 	vars := mux.Vars(r)
 	runID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-Id")
-	correlationID := correlationFromRequest(r)
 	format := r.URL.Query().Get("format")
 	logger := c.logger.
-		WithField("correlation_id", correlationID).
 		WithField("export_kind", "run").
 		WithField("export_format", format)
 
@@ -183,37 +144,41 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), exportRequestTimeout)
-	defer cancel()
-	if !h.acquireRenderSlot(ctx) {
+	select {
+	case h.renderSem <- struct{}{}:
+		defer func() { <-h.renderSem }()
+	default:
 		w.Header().Set("Retry-After", strconv.Itoa(exportRetryAfterSeconds))
 		h.HandleErrorWithCode(w, logger, http.StatusTooManyRequests, "rate limited", nil)
 		return
 	}
-	defer h.releaseRenderSlot()
 
-	rc, asmErr := h.reportService.AssembleRunReportContext(ctx, run.ID, userID, sections)
+	ctx, cancel := context.WithTimeout(r.Context(), exportRequestTimeout)
+	defer cancel()
+	rc, asmErr := h.reportService.AssembleRunReportContext(ctx, run, userID, sections)
 	if asmErr != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", asmErr)
 		return
 	}
-	rc.TranscriptMode = parseTranscriptMode(r.URL.Query().Get("transcript_mode"))
 
 	filename := reportFilename(rc.Run.Name, "run-"+run.ID, rc.GeneratedAtMillis)
 
-	view := report.BuildRun(rc, h.reportOptions(userID, location))
+	opts := h.reportOptions(userID, location)
+	opts.TranscriptMode = parseTranscriptMode(r.URL.Query().Get("transcript_mode"))
+	view := report.BuildRun(rc, opts)
 	var data []byte
 	var renderErr error
 	if format == formatMarkdown {
 		data = markdown_writer.RenderRunMarkdown(view)
 	} else {
-		data, renderErr = html_writer.RenderRunHTML(view, html_writer.Options{PageSize: "A4"})
+		data, renderErr = html_writer.RenderRunHTML(view)
 	}
 	if renderErr != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "render failed", renderErr)
 		return
 	}
-	h.writeReportResponse(w, format, data, filename, correlationID, rc.TranscriptTruncation)
+	requestID, _ := r.Context().Value(requestIDContextKey).(string)
+	h.writeReportResponse(w, format, data, filename, requestID, rc.TranscriptTruncation)
 	auditRec.AddMeta("truncated", rc.TranscriptTruncation.Hit)
 	auditRec.Success()
 }
@@ -224,7 +189,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 // downloads it or, for HTML, browser-prints it to PDF. Browsers never render
 // an attachment, so the headers only guard against sniffing and caching; the
 // HTML report carries its own Content-Security-Policy for when it's opened.
-func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string, data []byte, filename string, correlationID string, trunc report.Truncation) {
+func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string, data []byte, filename string, requestID string, trunc report.Truncation) {
 	contentType := "text/html; charset=utf-8"
 	if format == formatMarkdown {
 		contentType = "text/markdown; charset=utf-8"
@@ -234,8 +199,8 @@ func (h *ExportHandler) writeReportResponse(w http.ResponseWriter, format string
 	w.Header().Set("Content-Disposition", buildContentDisposition(filename, format))
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if correlationID != "" {
-		w.Header().Set("X-Request-ID", correlationID)
+	if requestID != "" {
+		w.Header().Set("X-Request-ID", requestID)
 	}
 	if trunc.Hit {
 		w.Header().Set("X-Playbooks-Report-Truncated", "true")
@@ -272,26 +237,6 @@ func (h *ExportHandler) reportOptions(userID string, location *time.Location) re
 		nameFormat = *cfg.TeamSettings.TeammateNameDisplay
 	}
 	return report.Options{T: i18n.GetUserTranslations(locale), Locale: locale, Location: location, NameFormat: nameFormat}
-}
-
-// acquireRenderSlot returns true when the request obtains a slot; false on
-// saturation (caller should respond 429).
-func (h *ExportHandler) acquireRenderSlot(ctx context.Context) bool {
-	select {
-	case h.renderSem <- struct{}{}:
-		return true
-	case <-ctx.Done():
-		return false
-	default:
-		return false
-	}
-}
-
-func (h *ExportHandler) releaseRenderSlot() {
-	select {
-	case <-h.renderSem:
-	default:
-	}
 }
 
 // ---- audit ----
@@ -367,12 +312,12 @@ func sectionsToList(s report.SectionFlags) []string {
 // parseTranscriptMode normalizes the ?transcript_mode= query param. Unknown
 // or empty values resolve to threaded — the safer default since orphan
 // replies are signaled explicitly rather than silently promoted.
-func parseTranscriptMode(raw string) coretypes.TranscriptMode {
-	switch coretypes.TranscriptMode(raw) {
-	case coretypes.TranscriptModeChronological:
-		return coretypes.TranscriptModeChronological
+func parseTranscriptMode(raw string) report.TranscriptMode {
+	switch report.TranscriptMode(raw) {
+	case report.TranscriptModeChronological:
+		return report.TranscriptModeChronological
 	default:
-		return coretypes.TranscriptModeThreaded
+		return report.TranscriptModeThreaded
 	}
 }
 
@@ -402,8 +347,6 @@ func safeFilename(raw, fallback string) string {
 			r >= '0' && r <= '9',
 			r == '.', r == '_', r == '-':
 			ascii = append(ascii, r)
-		case r == ' ':
-			ascii = append(ascii, '_')
 		default:
 			ascii = append(ascii, '_')
 		}
@@ -436,11 +379,7 @@ func collapseUnderscores(s string) string {
 // and generation time in UTC: <title>_<YYYY-MM-DDTHH-MM>. The time keeps
 // repeated exports of the same run apart.
 func reportFilename(title, fallback string, generatedAtMs int64) string {
-	generatedAt := time.Now()
-	if generatedAtMs > 0 {
-		generatedAt = time.UnixMilli(generatedAtMs)
-	}
-	return safeFilename(title, fallback) + "_" + generatedAt.UTC().Format("2006-01-02T15-04")
+	return safeFilename(title, fallback) + "_" + time.UnixMilli(generatedAtMs).UTC().Format("2006-01-02T15-04")
 }
 
 // buildContentDisposition returns an RFC 6266 attachment Content-Disposition
@@ -448,13 +387,4 @@ func reportFilename(title, fallback string, generatedAtMs int64) string {
 func buildContentDisposition(name, ext string) string {
 	encoded := url.PathEscape(name)
 	return fmt.Sprintf(`attachment; filename="%s.%s"; filename*=UTF-8''%s.%s`, name, ext, encoded, ext)
-}
-
-// correlationFromRequest reuses the request's X-Request-ID when present, or
-// generates a fresh one.
-func correlationFromRequest(r *http.Request) string {
-	if id := r.Header.Get("X-Request-ID"); id != "" {
-		return id
-	}
-	return model.NewId()
 }

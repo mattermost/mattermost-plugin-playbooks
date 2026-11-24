@@ -13,7 +13,7 @@ import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import {useTextOverflow} from 'src/hooks';
+import {useExportLogAvailable, useTextOverflow} from 'src/hooks';
 import {useCanModifyRun} from 'src/hooks/run_permissions';
 import Dropdown from 'src/components/dropdown';
 import {DropdownMenu, TitleButton} from 'src/components/dot_menu';
@@ -34,8 +34,8 @@ import RunActionsModal from 'src/components/run_actions_modal';
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible, selectReportsEnabled} from 'src/selectors';
 
-import ExportOptionsModal, {ExportFormat, SectionFlags, useReportExport} from 'src/components/export_options_modal';
-import type {RunReportOptions} from 'src/client';
+import ExportOptionsModal, {useReportExport} from 'src/components/export_options_modal';
+import type {ReportFormat, ReportSections, RunReportOptions} from 'src/client';
 
 import {
     CopyRunLinkMenuItem,
@@ -81,6 +81,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const [showRunActionsFromMenu, setShowRunActionsFromMenu] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const exportReport = useReportExport();
+    const channelExportAvailable = useExportLogAvailable();
     const reportsEnabled = useAppSelector(selectReportsEnabled);
     const titleTextRef = useRef<HTMLSpanElement>(null);
     const isTitleOverflowing = useTextOverflow(titleTextRef);
@@ -223,11 +224,12 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
             {leaveRunConfirmModal}
             {showReportModal && (
                 <ExportOptionsModal
-                    onConfirm={async (sections: SectionFlags, format: ExportFormat, runOptions: RunReportOptions) => {
+                    onConfirm={async (sections: ReportSections, format: ReportFormat, runOptions: RunReportOptions) => {
                         await exportReport(playbookRun.id, sections, format, runOptions);
                         setShowReportModal(false);
                     }}
                     onCancel={() => setShowReportModal(false)}
+                    channelExportAvailable={channelExportAvailable}
                 />
             )}
         </>

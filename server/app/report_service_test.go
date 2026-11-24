@@ -5,12 +5,12 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
 
@@ -23,10 +23,7 @@ import (
 
 func newTestReportService(api *plugintest.API) *ReportService {
 	client := pluginapi.NewClient(api, &plugintest.Driver{})
-	return &ReportService{
-		pluginAPI: client,
-		config:    DefaultReportConfig(),
-	}
+	return &ReportService{pluginAPI: client}
 }
 
 func TestReportServiceRenderUserFromModel(t *testing.T) {
@@ -52,22 +49,14 @@ func TestReportServiceCollectRunUserIDs(t *testing.T) {
 		ParticipantIDs: []string{"p1", "p2", "owner"},
 		TimelineEvents: []TimelineEvent{
 			{SubjectUserID: "subj", CreatorUserID: "creator"},
-			{DeleteAt: 0, SubjectUserID: ""},
 		},
 		Checklists: []Checklist{
-			{Items: []ChecklistItem{{AssigneeID: "assignee"}, {AssigneeID: ""}}},
+			{Items: []ChecklistItem{{AssigneeID: "assignee"}}},
 		},
 	}
-	got := collectRunUserIDs(run)
-	want := map[string]struct{}{
-		"owner": {}, "reporter": {}, "p1": {}, "p2": {},
-		"subj": {}, "creator": {}, "assignee": {},
-	}
-	require.Len(t, got, len(want))
-	for _, id := range got {
-		_, ok := want[id]
-		require.Truef(t, ok, "unexpected user id %q", id)
-	}
+	require.ElementsMatch(t,
+		[]string{"owner", "p1", "p2", "owner", "subj", "creator", "assignee"},
+		collectRunUserIDs(run))
 }
 
 func TestReportServiceTaskStateUsers(t *testing.T) {
@@ -104,120 +93,46 @@ func TestReportServiceTaskStateUsers(t *testing.T) {
 	require.Empty(t, items[2].StateUserID)
 }
 
-func TestReportServiceMetricsFromConfigs(t *testing.T) {
-	t.Run("configs join the run's values", func(t *testing.T) {
-		cfg := []PlaybookMetricConfig{
-			{ID: "m1", Title: "Resolution", Type: MetricTypeDuration, Target: null.IntFrom(60)},
-			{ID: "m2", Title: "Spend", Type: MetricTypeCurrency},
-		}
-		out := metricsFromConfigs(cfg, map[string]int64{"m1": 42})
-		require.Len(t, out, 2)
-		require.Equal(t, "duration", out[0].Type)
-		require.True(t, out[0].HasValue)
-		require.Equal(t, int64(42), out[0].Value)
-		require.Equal(t, "currency", out[1].Type)
-		require.False(t, out[1].HasValue)
-	})
-
-	t.Run("run metric values join to playbook configs by id and preserve null vs zero", func(t *testing.T) {
-		// Mirrors the production path: playbook metric configs supply
-		// labels and types; run-side values come in via the lookup
-		// map. A nil-valued run-side metric stays HasValue=false; a
-		// zero-valued one stays HasValue=true.
-		cfg := []PlaybookMetricConfig{
-			{ID: "m1", Title: "Time to detect", Type: MetricTypeDuration},
-			{ID: "m2", Title: "Customer impact", Type: MetricTypeInteger},
-		}
-		values := map[string]int64{"m1": 0} // m2 missing → no value
-		out := metricsFromConfigs(cfg, values)
-		require.Len(t, out, 2)
-		require.Equal(t, "Time to detect", out[0].Title)
-		require.True(t, out[0].HasValue)
-		require.Equal(t, int64(0), out[0].Value)
-		require.Equal(t, "Customer impact", out[1].Title)
-		require.False(t, out[1].HasValue)
-	})
-}
-
-func TestReportServiceDrainTranscript(t *testing.T) {
-	makePosts := func(n int, msgSize int) []report.RenderPost {
-		out := make([]report.RenderPost, n)
-		for i := range out {
-			out[i] = report.RenderPost{
-				PostID:  "p",
-				Message: strings.Repeat("x", msgSize),
-			}
-		}
-		return out
+func TestReportServiceBuildRetrospective(t *testing.T) {
+	run := &PlaybookRun{
+		Retrospective: "done",
+		MetricsData: []RunMetricData{
+			{MetricConfigID: "m1", Value: null.IntFrom(0)},
+			{MetricConfigID: "m2", Value: null.Int{}},
+			{MetricConfigID: "gone", Value: null.IntFrom(5)},
+		},
+	}
+	cfg := []PlaybookMetricConfig{
+		{ID: "m1", Title: "Time to detect", Type: MetricTypeDuration, Target: null.IntFrom(60)},
+		{ID: "m2", Title: "Spend", Type: MetricTypeCurrency},
+		{ID: "m3", Title: "Customers affected", Type: MetricTypeInteger},
 	}
 
-	t.Run("stops on post cap", func(t *testing.T) {
-		called := 0
-		iter := func(ctx context.Context) ([]report.RenderPost, error) {
-			called++
-			if called > 3 {
-				return nil, nil
-			}
-			return makePosts(2, 4), nil
-		}
-		got, err := drainTranscript(context.Background(), iter, 4, 0)
-		require.NoError(t, err)
-		require.True(t, got.truncation.Hit)
-		require.Equal(t, "posts", got.truncation.Reason)
-		require.Len(t, got.posts, 4)
+	t.Run("configs join the run's values and keep zero apart from unset", func(t *testing.T) {
+		retro := buildRetrospective(run, cfg)
+		require.Equal(t, "done", retro.Body)
+		require.Equal(t, []report.RenderMetric{
+			{Title: "Time to detect", Type: "duration", Value: 0, HasValue: true},
+			{Title: "Spend", Type: "currency"},
+			{Title: "Customers affected", Type: "integer"},
+		}, retro.Metrics)
 	})
 
-	t.Run("stops on byte cap", func(t *testing.T) {
-		called := 0
-		iter := func(ctx context.Context) ([]report.RenderPost, error) {
-			called++
-			if called > 1 {
-				return nil, nil
-			}
-			return makePosts(5, 100), nil
-		}
-		got, err := drainTranscript(context.Background(), iter, 0, 250)
-		require.NoError(t, err)
-		require.True(t, got.truncation.Hit)
-		require.Equal(t, "bytes", got.truncation.Reason)
-		require.Len(t, got.posts, 2)
-	})
-
-	t.Run("returns normally when exhausted", func(t *testing.T) {
-		called := 0
-		iter := func(ctx context.Context) ([]report.RenderPost, error) {
-			called++
-			if called == 1 {
-				return makePosts(2, 4), nil
-			}
-			return nil, nil
-		}
-		got, err := drainTranscript(context.Background(), iter, 100, 100*1024)
-		require.NoError(t, err)
-		require.False(t, got.truncation.Hit)
-		require.Len(t, got.posts, 2)
-	})
-
-	t.Run("propagates iterator error", func(t *testing.T) {
-		sentinel := errors.New("boom")
-		iter := func(ctx context.Context) ([]report.RenderPost, error) {
-			return nil, sentinel
-		}
-		_, err := drainTranscript(context.Background(), iter, 100, 100)
-		require.ErrorIs(t, err, sentinel)
+	t.Run("no metrics without the playbook's configs", func(t *testing.T) {
+		require.Empty(t, buildRetrospective(run, nil).Metrics)
 	})
 }
 
 // TestReportServiceContextSanitizationInvariant walks the assembled context
 // via reflection and asserts that no raw model.User / model.Post /
 // model.Channel value can sneak through. This is the security backstop for
-// the renderer's trust boundary (plan §3.6.7).
+// the renderer's trust boundary.
 func TestReportServiceContextSanitizationInvariant(t *testing.T) {
 	rc := report.RenderContext{
 		Owner:        report.RenderUser{UserID: "u1"},
 		Participants: []report.RenderUser{{UserID: "u2"}},
 		StatusUpdates: []report.RenderStatusUpdate{
-			{PostID: "p1", AuthorID: "u1", Message: "hi"},
+			{AuthorID: "u1", Message: "hi"},
 		},
 		TimelineEvents: []report.RenderTimelineEvent{{EventType: "incident_created"}},
 		Checklists: []report.RenderChecklist{
@@ -227,9 +142,7 @@ func TestReportServiceContextSanitizationInvariant(t *testing.T) {
 		Transcript: []report.RenderPost{
 			{PostID: "p2"},
 		},
-		Resolvers: report.ResolverTable{
-			Users: map[string]report.RenderUser{"u1": {UserID: "u1"}},
-		},
+		Users: map[string]report.RenderUser{"u1": {UserID: "u1"}},
 	}
 	requireNoRawModelTypes(t, reflect.ValueOf(rc))
 }
@@ -295,114 +208,109 @@ func TestReportServiceBatchResolveUsers(t *testing.T) {
 	require.Equal(t, "bob", out[uid2].DisplayName)
 }
 
-func TestReportServiceChannelPostsIteratorFiltersAndDedups(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
+func TestReportServiceFetchTranscript(t *testing.T) {
 	channelID := model.NewId()
 	userID := model.NewId()
 
-	api.On("GetPostsForChannel", channelID, 0, 200).Return(&model.PostList{
-		Order: []string{"keep", "edit", "system", "after", "before", "dup1", "dup2"},
-		Posts: map[string]*model.Post{
-			"keep":   {Id: "keep", UserId: userID, Message: "hello", CreateAt: 50},
-			"edit":   {Id: "edit", UserId: userID, Message: "edited", OriginalId: "old", CreateAt: 50},
-			"system": {Id: "system", UserId: userID, Message: "joined", Type: "system_join_channel", CreateAt: 50},
-			"after":  {Id: "after", UserId: userID, Message: "future", CreateAt: 200},
-			"before": {Id: "before", UserId: userID, Message: "past", CreateAt: 5},
-			"dup1":   {Id: "dupshared", UserId: userID, Message: "dup", CreateAt: 50},
-			"dup2":   {Id: "dupshared", UserId: userID, Message: "dup", CreateAt: 50},
-		},
-	}, nil)
+	t.Run("filters and dedups", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("GetPostsForChannel", channelID, 0, transcriptPageSize).Return(&model.PostList{
+			Order: []string{"keep", "edit", "system", "after", "before", "dup1", "dup2"},
+			Posts: map[string]*model.Post{
+				"keep":   {Id: "keep", UserId: userID, Message: "hello", CreateAt: 50},
+				"edit":   {Id: "edit", UserId: userID, Message: "edited", OriginalId: "old", CreateAt: 50},
+				"system": {Id: "system", UserId: userID, Message: "joined", Type: "system_join_channel", CreateAt: 50},
+				"after":  {Id: "after", UserId: userID, Message: "future", CreateAt: 200},
+				"before": {Id: "before", UserId: userID, Message: "past", CreateAt: 5},
+				"dup1":   {Id: "dupshared", UserId: userID, Message: "dup", CreateAt: 50},
+				"dup2":   {Id: "dupshared", UserId: userID, Message: "dup", CreateAt: 50},
+			},
+		}, nil)
 
-	iter := svc.channelPostsIterator(channelID, 10, 100, channelPostsIterOpts{
-		pageSize: 200,
-		throttle: time.Millisecond,
+		posts, truncation, err := newTestReportService(api).fetchTranscript(context.Background(), channelID, 10, 100)
+		require.NoError(t, err)
+		require.False(t, truncation.Hit)
+		require.Len(t, posts, 2)
+		require.Equal(t, "keep", posts[0].PostID)
+		require.Equal(t, "dupshared", posts[1].PostID)
 	})
 
-	got, err := iter(context.Background())
-	require.NoError(t, err)
-	require.Len(t, got, 2)
-	require.Equal(t, "keep", got[0].PostID)
-	require.Equal(t, "dupshared", got[1].PostID)
-}
+	t.Run("reads past pages from after the run", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		// The newest page holds only posts from after the run ended.
+		api.On("GetPostsForChannel", channelID, 0, transcriptPageSize).Return(&model.PostList{
+			Order: []string{"later1", "later2"},
+			Posts: map[string]*model.Post{
+				"later1": {Id: "later1", UserId: userID, CreateAt: 300},
+				"later2": {Id: "later2", UserId: userID, CreateAt: 200},
+			},
+		}, nil)
+		api.On("GetPostsForChannel", channelID, 1, transcriptPageSize).Return(&model.PostList{
+			Order: []string{"during", "before"},
+			Posts: map[string]*model.Post{
+				"during": {Id: "during", UserId: userID, CreateAt: 50},
+				"before": {Id: "before", UserId: userID, CreateAt: 5},
+			},
+		}, nil)
 
-func TestReportServiceChannelPostsIteratorSkipsPagesAfterTheRun(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
-	channelID := model.NewId()
-	userID := model.NewId()
-
-	// The newest page holds only posts from after the run ended.
-	api.On("GetPostsForChannel", channelID, 0, 2).Return(&model.PostList{
-		Order: []string{"later1", "later2"},
-		Posts: map[string]*model.Post{
-			"later1": {Id: "later1", UserId: userID, CreateAt: 300},
-			"later2": {Id: "later2", UserId: userID, CreateAt: 200},
-		},
-	}, nil)
-	api.On("GetPostsForChannel", channelID, 1, 2).Return(&model.PostList{
-		Order: []string{"during", "before"},
-		Posts: map[string]*model.Post{
-			"during": {Id: "during", UserId: userID, CreateAt: 50},
-			"before": {Id: "before", UserId: userID, CreateAt: 5},
-		},
-	}, nil)
-
-	iter := svc.channelPostsIterator(channelID, 10, 100, channelPostsIterOpts{
-		pageSize: 2,
-		throttle: time.Millisecond,
+		posts, _, err := newTestReportService(api).fetchTranscript(context.Background(), channelID, 10, 100)
+		require.NoError(t, err)
+		require.Len(t, posts, 1)
+		require.Equal(t, "during", posts[0].PostID)
 	})
 
-	got, err := iter(context.Background())
-	require.NoError(t, err)
-	require.Len(t, got, 1)
-	require.Equal(t, "during", got[0].PostID)
+	t.Run("an empty page ends the transcript", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+		api.On("GetPostsForChannel", channelID, 0, transcriptPageSize).Return(&model.PostList{}, nil)
 
-	got, err = iter(context.Background())
-	require.NoError(t, err)
-	require.Empty(t, got)
-}
-
-func TestReportServiceChannelPostsIteratorEmptyPageExhausts(t *testing.T) {
-	api := &plugintest.API{}
-	defer api.AssertExpectations(t)
-
-	svc := newTestReportService(api)
-	channelID := model.NewId()
-
-	api.On("GetPostsForChannel", channelID, 0, 200).Return(&model.PostList{
-		Order: nil,
-		Posts: map[string]*model.Post{},
-	}, nil)
-
-	iter := svc.channelPostsIterator(channelID, 0, 0, channelPostsIterOpts{
-		pageSize: 200,
-		throttle: time.Millisecond,
-	})
-	got, err := iter(context.Background())
-	require.NoError(t, err)
-	require.Empty(t, got)
-
-	got2, err := iter(context.Background())
-	require.NoError(t, err)
-	require.Empty(t, got2)
-}
-
-func TestReportServiceChannelPostsIteratorRespectsContext(t *testing.T) {
-	api := &plugintest.API{}
-	svc := newTestReportService(api)
-
-	iter := svc.channelPostsIterator(model.NewId(), 0, 0, channelPostsIterOpts{
-		pageSize: 200,
-		throttle: 50 * time.Millisecond,
+		posts, truncation, err := newTestReportService(api).fetchTranscript(context.Background(), channelID, 0, 0)
+		require.NoError(t, err)
+		require.False(t, truncation.Hit)
+		require.Empty(t, posts)
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	_, err := iter(ctx)
-	require.ErrorIs(t, err, context.Canceled)
+	// pages returns full pages of posts with messages of size bytes, newest
+	// first, all inside the run.
+	pages := func(size int) func(string, int, int) (*model.PostList, *model.AppError) {
+		message := strings.Repeat("x", size)
+		return func(_ string, page, perPage int) (*model.PostList, *model.AppError) {
+			list := model.NewPostList()
+			for i := range perPage {
+				id := fmt.Sprintf("p%d-%d", page, i)
+				list.AddPost(&model.Post{Id: id, UserId: userID, Message: message, CreateAt: int64(1_000_000 - page*perPage - i)})
+				list.AddOrder(id)
+			}
+			return list, nil
+		}
+	}
+
+	t.Run("stops at the post cap", func(t *testing.T) {
+		api := &plugintest.API{}
+		api.On("GetPostsForChannel", channelID, mock.Anything, transcriptPageSize).Return(pages(1))
+
+		posts, truncation, err := newTestReportService(api).fetchTranscript(context.Background(), channelID, 0, 0)
+		require.NoError(t, err)
+		require.Equal(t, report.Truncation{Hit: true, Reason: "posts"}, truncation)
+		require.Len(t, posts, maxTranscriptPosts)
+	})
+
+	t.Run("stops at the byte cap", func(t *testing.T) {
+		api := &plugintest.API{}
+		api.On("GetPostsForChannel", channelID, mock.Anything, transcriptPageSize).Return(pages(1024 * 1024))
+
+		posts, truncation, err := newTestReportService(api).fetchTranscript(context.Background(), channelID, 0, 0)
+		require.NoError(t, err)
+		require.Equal(t, report.Truncation{Hit: true, Reason: "bytes"}, truncation)
+		require.Len(t, posts, int(maxTranscriptBytes/(1024*1024)))
+	})
+
+	t.Run("stops when the context ends", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, _, err := newTestReportService(&plugintest.API{}).fetchTranscript(ctx, channelID, 0, 0)
+		require.ErrorIs(t, err, context.Canceled)
+	})
 }

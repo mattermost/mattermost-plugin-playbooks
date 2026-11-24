@@ -14,8 +14,6 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
-
-	"github.com/mattermost/mattermost-plugin-playbooks/server/report/coretypes"
 )
 
 // builder carries what every part of a report is built with.
@@ -23,11 +21,11 @@ type builder struct {
 	T          i18n.TranslateFunc
 	loc        *time.Location
 	nameFormat string
-	rt         ResolverTable
+	users      map[string]RenderUser
 }
 
-func newBuilder(rt ResolverTable, opts Options) *builder {
-	return &builder{T: opts.T, loc: cmp.Or(opts.Location, time.UTC), nameFormat: opts.NameFormat, rt: rt}
+func newBuilder(users map[string]RenderUser, opts Options) *builder {
+	return &builder{T: opts.T, loc: cmp.Or(opts.Location, time.UTC), nameFormat: opts.NameFormat, users: users}
 }
 
 // lang turns a Mattermost locale such as "pt-BR" or "zh_Hans" into a BCP 47
@@ -38,7 +36,7 @@ func lang(locale string) string {
 
 // BuildRun turns rc into a translated, display-ready run report.
 func BuildRun(rc RenderContext, opts Options) *RunReport {
-	b := newBuilder(rc.Resolvers, opts)
+	b := newBuilder(rc.Users, opts)
 	T := b.T
 
 	r := &RunReport{
@@ -52,9 +50,9 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 
 	switch rc.Run.Status {
 	case "":
-	case coretypes.RunStatusInProgress:
+	case RunStatusInProgress:
 		r.Status, r.StatusKind = Field{T("app.report.run.status"), T("app.report.run.status.in_progress")}, StatusInProgress
-	case coretypes.RunStatusFinished:
+	case RunStatusFinished:
 		r.Status, r.StatusKind = Field{T("app.report.run.status"), T("app.report.run.status.finished")}, StatusFinished
 	default:
 		r.Status, r.StatusKind = Field{T("app.report.run.status"), rc.Run.Status}, StatusOther
@@ -131,7 +129,7 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 		})
 	}
 
-	r.Transcript = b.transcript(rc)
+	r.Transcript = b.transcript(rc, opts.TranscriptMode)
 
 	r.Timeline.Omitted = !rc.Sections.Timeline
 	r.Tasks.Omitted = !rc.Sections.Checklists
@@ -157,8 +155,8 @@ func (b *builder) checklist(cl RenderChecklist, index int) Checklist {
 
 	for _, it := range cl.Items {
 		item := ChecklistItem{
-			Done:        it.State == coretypes.ChecklistItemStateClosed,
-			Skipped:     it.State == coretypes.ChecklistItemStateSkipped,
+			Done:        it.State == ChecklistItemStateClosed,
+			Skipped:     it.State == ChecklistItemStateSkipped,
 			Title:       it.Title,
 			Command:     it.Command,
 			Description: trimBody(it.Description),
@@ -188,13 +186,13 @@ func (b *builder) completed(it RenderChecklistItem) string {
 		args["User"] = b.userName(it.StateUserID)
 	}
 	switch {
-	case it.State == coretypes.ChecklistItemStateClosed && it.StateUserID != "":
+	case it.State == ChecklistItemStateClosed && it.StateUserID != "":
 		return b.T("app.report.checklist.checked_off_by", args)
-	case it.State == coretypes.ChecklistItemStateClosed:
+	case it.State == ChecklistItemStateClosed:
 		return b.T("app.report.checklist.checked_off", args)
-	case it.State == coretypes.ChecklistItemStateSkipped && it.StateUserID != "":
+	case it.State == ChecklistItemStateSkipped && it.StateUserID != "":
 		return b.T("app.report.checklist.skipped_by", args)
-	case it.State == coretypes.ChecklistItemStateSkipped:
+	case it.State == ChecklistItemStateSkipped:
 		return b.T("app.report.checklist.skipped", args)
 	default:
 		return ""
@@ -206,32 +204,25 @@ func (b *builder) completed(it RenderChecklistItem) string {
 func countDone(items []RenderChecklistItem) (int, int) {
 	done := 0
 	for _, it := range items {
-		if it.State == coretypes.ChecklistItemStateClosed || it.State == coretypes.ChecklistItemStateSkipped {
+		if it.State == ChecklistItemStateClosed || it.State == ChecklistItemStateSkipped {
 			done++
 		}
 	}
 	return done, len(items)
 }
 
-func (b *builder) transcript(rc RenderContext) TranscriptSection {
+func (b *builder) transcript(rc RenderContext, mode TranscriptMode) TranscriptSection {
 	T := b.T
 	s := TranscriptSection{
 		Section:       Section{Title: T("app.report.run.transcript.title")},
-		Chronological: rc.TranscriptMode == coretypes.TranscriptModeChronological,
+		Chronological: mode == TranscriptModeChronological,
 	}
 
-	// System messages (posts with a type) are left out.
-	posts := make([]RenderPost, 0, len(rc.Transcript))
-	for _, p := range rc.Transcript {
-		if p.Type == "" {
-			posts = append(posts, p)
-		}
-	}
-
+	posts := rc.Transcript
 	switch {
-	case len(rc.Transcript) == 0 && rc.TranscriptOmittedReason == coretypes.TranscriptOmittedNotMember:
+	case len(rc.Transcript) == 0 && rc.TranscriptOmittedReason == TranscriptOmittedNotMember:
 		s.Empty = T("app.report.run.transcript.not_member")
-	case len(rc.Transcript) == 0 && rc.TranscriptOmittedReason == coretypes.TranscriptOmittedNoChannel:
+	case len(rc.Transcript) == 0 && rc.TranscriptOmittedReason == TranscriptOmittedNoChannel:
 		s.Empty = T("app.report.run.transcript.no_channel")
 	default:
 		// Either the section was not requested or the channel had no posts
@@ -273,10 +264,7 @@ func (b *builder) transcript(rc RenderContext) TranscriptSection {
 	}
 
 	if rc.TranscriptTruncation.Hit {
-		count := rc.TranscriptTruncation.Posts
-		if count == 0 {
-			count = len(posts)
-		}
+		count := len(posts)
 		s.Truncated = T("app.report.run.transcript.truncated", count, map[string]any{"Count": count})
 	}
 	return s
@@ -300,10 +288,10 @@ func trimBody(s string) string {
 	return s
 }
 
-// userName shows a user from the resolver table as the server's name
+// userName shows one of the report's users as the server's name
 // format says, or as an unknown user when the requester cannot see them.
 func (b *builder) userName(id string) string {
-	if u, ok := b.rt.Users[id]; ok && id != "" {
+	if u, ok := b.users[id]; ok && id != "" {
 		if name := b.displayName(u); name != "" {
 			return name
 		}
@@ -312,7 +300,7 @@ func (b *builder) userName(id string) string {
 }
 
 // inlineUserName shows a user the caller already resolved, falling back to
-// the resolver table.
+// the report's users.
 func (b *builder) inlineUserName(u RenderUser) string {
 	if name := b.displayName(u); name != "" {
 		return name

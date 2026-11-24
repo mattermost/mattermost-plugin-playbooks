@@ -24,7 +24,7 @@ import "sort"
 // missing, instead of the orphan reply being silently promoted to a root.
 //
 // CollateThreads is the canonical model for the Threaded transcript mode
-// (coretypes.TranscriptModeThreaded) and is used by BuildRun. The
+// (TranscriptModeThreaded) and is used by BuildRun. The
 // Chronological mode bypasses this function and emits
 // posts in pure CreateAt order with ↳ indicators.
 func CollateThreads(posts []RenderPost) (threads [][]RenderPost, orphans []RenderPost) {

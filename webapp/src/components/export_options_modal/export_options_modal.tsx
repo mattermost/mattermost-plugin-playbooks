@@ -5,38 +5,29 @@ import React, {useMemo, useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
-import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-import {getUserCurrentTimezone} from 'mattermost-redux/utils/timezone_utils';
+import {getCurrentTimezone} from 'mattermost-redux/selectors/entities/timezone';
 import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
-import type {ReportFormat, RunReportOptions} from 'src/client';
+import type {
+    ReportFormat,
+    ReportSections,
+    RunReportOptions,
+    TranscriptMode,
+} from 'src/client';
 import GenericModal from 'src/components/widgets/generic_modal';
 import {StyledSelect} from 'src/components/backstage/styles';
-
-export type ExportFormat = ReportFormat;
-
-export type TranscriptMode = 'threaded' | 'chronological';
-
-export type SectionFlags = {
-    executiveSummary?: boolean;
-    timeline?: boolean;
-    statusUpdates?: boolean;
-    checklists?: boolean;
-    retrospective?: boolean;
-    transcript?: boolean;
-};
 
 export type ExportOptionsModalProps = {
 
     // onConfirm runs the export. The modal stays open, showing "Exporting…", until the
     // returned promise settles; the caller closes it.
-    onConfirm: (sections: SectionFlags, format: ExportFormat, runOptions: RunReportOptions) => Promise<void>;
+    onConfirm: (sections: ReportSections, format: ReportFormat, runOptions: RunReportOptions) => Promise<void>;
     onCancel: () => void;
     channelExportAvailable?: boolean;
 };
 
 type ToggleRow = {
-    key: keyof SectionFlags;
+    key: keyof ReportSections;
     label: React.ReactNode;
 
     // A locked section is always part of the report.
@@ -45,7 +36,7 @@ type ToggleRow = {
 
 type TimeZoneOption = {value: string; label: string};
 
-const DEFAULT_SECTIONS: SectionFlags = {
+const DEFAULT_SECTIONS: ReportSections = {
     executiveSummary: true,
     timeline: true,
     statusUpdates: true,
@@ -56,22 +47,19 @@ const DEFAULT_SECTIONS: SectionFlags = {
 
 const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false}: ExportOptionsModalProps) => {
     const {formatMessage} = useIntl();
-    const [sections, setSections] = useState<SectionFlags>(DEFAULT_SECTIONS);
-    const [format, setFormat] = useState<ExportFormat>('pdf');
+    const [sections, setSections] = useState<ReportSections>(DEFAULT_SECTIONS);
+    const [format, setFormat] = useState<ReportFormat>('pdf');
     const [transcriptMode, setTranscriptMode] = useState<TranscriptMode>('threaded');
 
     // An empty time zone means the user's own, which the server uses by default.
     const [timeZone, setTimeZone] = useState('');
     const [exporting, setExporting] = useState(false);
 
-    const currentUser = useSelector(getCurrentUser);
-    const timeZoneOptions = useMemo<TimeZoneOption[]>(() => {
-        const userTimeZone = getUserCurrentTimezone(currentUser?.timezone);
-        return [
-            {value: '', label: formatMessage({defaultMessage: '{timeZone} (your time zone)'}, {timeZone: timeZoneLabel(userTimeZone)})},
-            ...Intl.supportedValuesOf('timeZone').map((tz) => ({value: tz, label: timeZoneLabel(tz)})),
-        ];
-    }, [currentUser?.timezone, formatMessage]);
+    const userTimeZone = useSelector(getCurrentTimezone);
+    const timeZoneOptions = useMemo<TimeZoneOption[]>(() => [
+        {value: '', label: formatMessage({defaultMessage: '{timeZone} (your time zone)'}, {timeZone: timeZoneLabel(userTimeZone)})},
+        ...Intl.supportedValuesOf('timeZone').map((tz) => ({value: tz, label: timeZoneLabel(tz)})),
+    ], [userTimeZone, formatMessage]);
 
     // A running export closes the dialog when it finishes, so the dialog
     // stays until then; otherwise it could close one opened in the meantime.
@@ -99,11 +87,9 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
         {key: 'transcript', label: formatMessage({defaultMessage: 'Complete chat history'})},
     ];
 
-    const toggle = (key: keyof SectionFlags) => {
+    const toggle = (key: keyof ReportSections) => {
         setSections((prev) => ({...prev, [key]: !prev[key]}));
     };
-
-    const anySelected = rows.some((r) => r.locked || sections[r.key]);
 
     const confirmText = exporting ? <FormattedMessage defaultMessage='Exporting…'/> : <FormattedMessage defaultMessage='Export'/>;
 
@@ -118,7 +104,7 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
             autoCloseOnConfirmButton={false}
             confirmButtonText={confirmText}
             cancelButtonText={<FormattedMessage defaultMessage='Cancel'/>}
-            isConfirmDisabled={!anySelected || exporting}
+            isConfirmDisabled={exporting}
             showCancel={true}
         >
             <Body>

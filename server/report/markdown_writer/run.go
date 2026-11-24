@@ -54,11 +54,7 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 				}
 				fmt.Fprintf(&b, "- **%s** · _%s_ — %s\n", escapeText(ev.Date), escapeText(ev.TypeLabel), headline)
 				if ev.Detail != "" {
-					for ln := range strings.SplitSeq(ev.Detail, "\n") {
-						b.WriteString("  ")
-						b.WriteString(ln)
-						b.WriteString("\n")
-					}
+					writeLines(&b, ev.Detail, "  ")
 				}
 			}
 			b.WriteString("\n")
@@ -71,7 +67,7 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 			writeEmpty(&b, r.Retrospective.Empty)
 		}
 		writeBody(&b, r.Retrospective.Body)
-		writeMetrics(&b, r.Retrospective.MetricsTitle, r.Retrospective.Metrics, "- **%s** — %s\n")
+		writeMetrics(&b, r.Retrospective.MetricsTitle, r.Retrospective.Metrics)
 	}
 
 	if !r.Tasks.Omitted {

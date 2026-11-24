@@ -3,4 +3,4 @@
 
 export {default} from './export_options_modal';
 export {useReportExport} from './use_report_export';
-export type {ExportFormat, ExportOptionsModalProps, SectionFlags, TranscriptMode} from './export_options_modal';
+export type {ExportOptionsModalProps} from './export_options_modal';

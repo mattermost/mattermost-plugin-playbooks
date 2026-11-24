@@ -12,18 +12,16 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
-// resolverWithAlice returns a resolver table that maps "u1" -> alice for
-// actor-resolution paths.
-func resolverWithAlice() ResolverTable {
-	return ResolverTable{
-		Users: map[string]RenderUser{
-			"u1": {UserID: "u1", Username: "alice", DisplayName: "Alice Admin"},
-		},
+// resolverWithAlice returns the users for actor-resolution paths: "u1" is
+// alice.
+func resolverWithAlice() map[string]RenderUser {
+	return map[string]RenderUser{
+		"u1": {UserID: "u1", Username: "alice", DisplayName: "Alice Admin"},
 	}
 }
 
 // formatEvent builds one timeline line in English, in UTC.
-func formatEvent(ev RenderTimelineEvent, rt ResolverTable) TimelineEvent {
+func formatEvent(ev RenderTimelineEvent, rt map[string]RenderUser) TimelineEvent {
 	return newBuilder(rt, testOptions()).timelineEvent(ev)
 }
 
@@ -275,7 +273,7 @@ func TestTimelineEvent_UnknownEventType(t *testing.T) {
 
 func TestUserName(t *testing.T) {
 	rt := resolverWithAlice()
-	rt.Users["u4"] = RenderUser{UserID: "u4", DisplayName: "Dana Display"}
+	rt["u4"] = RenderUser{UserID: "u4", DisplayName: "Dana Display"}
 	b := newBuilder(rt, testOptions())
 	require.Equal(t, "alice", b.userName("u1"))
 	require.Equal(t, "Dana Display", b.userName("u4"), "a user without a username shows by display name")
@@ -284,12 +282,12 @@ func TestUserName(t *testing.T) {
 }
 
 func TestUserName_NameFormat(t *testing.T) {
-	rt := ResolverTable{Users: map[string]RenderUser{
+	rt := map[string]RenderUser{
 		"u1": {UserID: "u1", Username: "alice", DisplayName: "Alice Admin", Nickname: "Ali"},
 		"u2": {UserID: "u2", Username: "bob", DisplayName: "Bob Builder"},
 		// renderUserFromModel falls back to the username for users without a name.
 		"u3": {UserID: "u3", Username: "carol", DisplayName: "carol"},
-	}}
+	}
 	for format, want := range map[string][]string{
 		"":                         {"alice", "bob", "carol"},
 		model.ShowUsername:         {"alice", "bob", "carol"},
@@ -345,7 +343,7 @@ func TestTimelineEvent_UnknownJSONDetailsSuppressed(t *testing.T) {
 func TestTimelineEvent_HeadlineNeverEmpty(t *testing.T) {
 	// Every known event type with no summary and no actor must still produce
 	// a non-empty Headline.
-	rt := ResolverTable{Users: map[string]RenderUser{}}
+	rt := map[string]RenderUser{}
 	types := []string{
 		"incident_created", "task_state_modified", "status_updated",
 		"status_update_requested", "owner_changed", "assignee_changed",
@@ -382,7 +380,7 @@ func TestParseTaskStateDetails_Robustness(t *testing.T) {
 }
 
 func TestTimelineEvent_HeadlineKind(t *testing.T) {
-	rt := ResolverTable{Users: map[string]RenderUser{"u1": {UserID: "u1", DisplayName: "[Mallory](https://example.com)"}}}
+	rt := map[string]RenderUser{"u1": {UserID: "u1", DisplayName: "[Mallory](https://example.com)"}}
 	opts := testOptions()
 	opts.NameFormat = model.ShowFullName
 

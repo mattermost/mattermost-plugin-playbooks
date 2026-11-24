@@ -17,7 +17,7 @@ var update = flag.Bool("update", false, "rewrite the golden files in testdata")
 func TestGolden(t *testing.T) {
 	for _, tc := range reporttest.RunScenarios() {
 		t.Run(tc.Name, func(t *testing.T) {
-			out, err := RenderRunHTML(tc.Report(), Options{PageSize: "A4"})
+			out, err := RenderRunHTML(tc.Report())
 			require.NoError(t, err)
 			reporttest.AssertGolden(t, tc.Name+".html", out, *update)
 		})
