@@ -51,7 +51,7 @@ _No tasks._
   From alert to ack
 - **Cost** (currency, target 1000.00)
 - **Customers affected** (integer, target 10)
-- **Time to escalate** (duration, target 0s)
+- **Time to escalate** (duration)
 
 ## Automations
 

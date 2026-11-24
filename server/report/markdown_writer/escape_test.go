@@ -57,3 +57,25 @@ func TestEscapeText(t *testing.T) {
 		})
 	}
 }
+
+func TestCloseFences(t *testing.T) {
+	cases := []struct {
+		name, in, want string
+	}{
+		{"no fence", "hello", "hello"},
+		{"closed fence", "```\ncode\n```", "```\ncode\n```"},
+		{"open backtick fence", "```go\ncode", "```go\ncode\n```"},
+		{"open tilde fence", "~~~~\ncode\n~~~", "~~~~\ncode\n~~~\n~~~~"},
+		{"longer closing fence", "```\ncode\n`````", "```\ncode\n`````"},
+		{"other fence char does not close", "```\n~~~", "```\n~~~\n```"},
+		{"closing fence with info string does not close", "```\n``` go", "```\n``` go\n```"},
+		{"inline code is not a fence", "```a` b", "```a` b"},
+		{"indented code is not a fence", "    ```", "    ```"},
+		{"two fences", "```\na\n```\n~~~\nb", "```\na\n```\n~~~\nb\n~~~"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, closeFences(tc.in))
+		})
+	}
+}

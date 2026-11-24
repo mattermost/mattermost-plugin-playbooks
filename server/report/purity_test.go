@@ -6,6 +6,7 @@ package report
 import (
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -27,28 +28,21 @@ func TestPackagePurity(t *testing.T) {
 		"net/http",
 	}
 
-	files, err := filepath.Glob(filepath.Join(root, "**/*.go"))
+	var files []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go") {
+			files = append(files, path)
+		}
+		return nil
+	})
 	require.NoError(t, err)
-
-	roots, err := filepath.Glob(filepath.Join(root, "*.go"))
-	require.NoError(t, err)
-	files = append(files, roots...)
-
-	mdFiles, err := filepath.Glob(filepath.Join(root, "markdown/*.go"))
-	require.NoError(t, err)
-	mmFiles, err := filepath.Glob(filepath.Join(root, "markdown/mattermost/*.go"))
-	require.NoError(t, err)
-	coreFiles, err := filepath.Glob(filepath.Join(root, "coretypes/*.go"))
-	require.NoError(t, err)
-	files = append(files, mdFiles...)
-	files = append(files, mmFiles...)
-	files = append(files, coreFiles...)
+	require.NotEmpty(t, files)
 
 	fset := token.NewFileSet()
 	for _, f := range files {
-		if strings.HasSuffix(f, "_test.go") {
-			continue
-		}
 		src, err := parser.ParseFile(fset, f, nil, parser.ImportsOnly)
 		require.NoError(t, err, "parsing %s", f)
 		for _, imp := range src.Imports {

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
+
+	"github.com/stretchr/testify/require"
 )
 
 // TestMarkdownToHTML_XSSCorpus walks a corpus of historically dangerous
@@ -76,9 +78,7 @@ func TestMarkdownToHTML_XSSCorpus(t *testing.T) {
 			got := string(markdownToHTML(tc.in))
 			lower := strings.ToLower(got)
 			for _, forbidden := range tc.mustNotContain {
-				if strings.Contains(lower, strings.ToLower(forbidden)) {
-					t.Fatalf("output contains forbidden substring %q\n--- output ---\n%s", forbidden, got)
-				}
+				require.NotContainsf(t, lower, strings.ToLower(forbidden), "--- output ---\n%s", got)
 			}
 		})
 	}
@@ -127,15 +127,18 @@ func TestMarkdownToHTML_PositiveFormatting(t *testing.T) {
 			in:          "> quoted",
 			mustContain: []string{"<blockquote>", "quoted"},
 		},
+		{
+			name:        "leading indent is an indented code block",
+			in:          "\n    indented",
+			mustContain: []string{"<pre><code>indented"},
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := string(markdownToHTML(tc.in))
 			for _, want := range tc.mustContain {
-				if !strings.Contains(got, want) {
-					t.Fatalf("output missing expected substring %q\n--- output ---\n%s", want, got)
-				}
+				require.Containsf(t, got, want, "--- output ---\n%s", got)
 			}
 		})
 	}
@@ -145,10 +148,7 @@ func TestMarkdownToHTML_PositiveFormatting(t *testing.T) {
 // fragment rather than a stray <p></p>.
 func TestMarkdownToHTML_EmptyInput(t *testing.T) {
 	for _, in := range []string{"", "   ", "\n\n"} {
-		got := string(markdownToHTML(in))
-		if got != "" {
-			t.Fatalf("expected empty output for input %q, got %q", in, got)
-		}
+		require.Emptyf(t, string(markdownToHTML(in)), "input %q", in)
 	}
 }
 
@@ -162,8 +162,6 @@ func TestMarkdownToHTML_ValidUTF8(t *testing.T) {
 	}
 	for _, in := range inputs {
 		got := []byte(markdownToHTML(in))
-		if !utf8.Valid(got) {
-			t.Fatalf("non-UTF-8 output for input %q: %x", in, got)
-		}
+		require.Truef(t, utf8.Valid(got), "non-UTF-8 output for input %q: %x", in, got)
 	}
 }

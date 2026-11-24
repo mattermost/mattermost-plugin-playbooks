@@ -29,7 +29,7 @@ const (
 type taskStateDetails struct {
 	Task   string `json:"task"`
 	Item   string `json:"item"`
-	Action string `json:"action"` // "check" | "uncheck" | "skip" | "restore"
+	Action string `json:"action"` // "check" | "uncheck" | "skip" | "restore" | "requirements_updated"
 }
 
 // parseTaskStateDetails interprets the Details JSON for TaskStateModified
@@ -192,6 +192,8 @@ func (b *builder) taskHeadline(td taskStateDetails, args map[string]any) string 
 			return T("app.report.timeline.task.skipped_a_task", args)
 		case "restore":
 			return T("app.report.timeline.task.restored_a_task", args)
+		case "requirements_updated":
+			return T("app.report.timeline.task.requirements_updated_a_task", args)
 		default:
 			return T("app.report.timeline.task.updated_a_task", args)
 		}
@@ -205,6 +207,8 @@ func (b *builder) taskHeadline(td taskStateDetails, args map[string]any) string 
 		return T("app.report.timeline.task.skipped", args)
 	case "restore":
 		return T("app.report.timeline.task.restored", args)
+	case "requirements_updated":
+		return T("app.report.timeline.task.requirements_updated", args)
 	default:
 		return T("app.report.timeline.task.updated", args)
 	}

@@ -141,3 +141,23 @@ func TestBuildPlaybook(t *testing.T) {
 		assert.Equal(t, []Member{{Name: "Unknown user", Roles: "Admin, custom"}}, BuildPlaybook(pc, testOptions()).Members.Members)
 	})
 }
+
+func TestTrimBody(t *testing.T) {
+	assert.Equal(t, "", trimBody(" \n\t\n"))
+	assert.Equal(t, "text", trimBody("\n\ntext  \n"))
+	assert.Equal(t, "    code", trimBody("\n  \n    code\n"))
+	assert.Equal(t, "a\n\n  b", trimBody("a\n\n  b\n\n"))
+}
+
+func TestBuildPlaybookMetricTarget(t *testing.T) {
+	pc := PlaybookRenderContext{
+		Sections: SectionFlags{PlaybookSettings: true},
+		RetrospectiveConfig: RenderRetrospectiveConfig{Metrics: []RenderMetric{
+			{Title: "Unset", Type: "integer"},
+			{Title: "Zero", Type: "integer", HasTarget: true},
+		}},
+	}
+	r := BuildPlaybook(pc, testOptions())
+	assert.Equal(t, "integer", r.Retrospective.Metrics[0].Value)
+	assert.Equal(t, "integer, target 0", r.Retrospective.Metrics[1].Value)
+}

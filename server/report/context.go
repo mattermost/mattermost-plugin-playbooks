@@ -211,6 +211,7 @@ type RenderMetric struct {
 	Description string // markdown body
 	Type        string // "duration" | "currency" | "integer"
 	Target      int64  // type-dependent units
+	HasTarget   bool   // distinguishes a target of 0 from no target
 	Value       int64  // for run instances; zero for playbook templates
 	HasValue    bool   // distinguishes "0" from "not set"
 }

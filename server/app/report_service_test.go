@@ -5,6 +5,7 @@ package app
 
 import (
 	"context"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -361,9 +362,7 @@ func requireNoRawModelTypes(t *testing.T, v reflect.Value) {
 			return
 		}
 		typeName := v.Type().String()
-		if forbidden[typeName] {
-			t.Fatalf("forbidden raw model type %q found in render context", typeName)
-		}
+		require.Falsef(t, forbidden[typeName], "forbidden raw model type %q found in render context", typeName)
 		switch v.Kind() {
 		case reflect.Pointer, reflect.Interface:
 			if !v.IsNil() {
@@ -501,6 +500,30 @@ func TestReportServiceBuildResolverTableChannelAllowed(t *testing.T) {
 	require.Equal(t, "Ops Room", got.DisplayName)
 }
 
+func TestReportServiceBroadcastChannels(t *testing.T) {
+	api := &plugintest.API{}
+	defer api.AssertExpectations(t)
+
+	svc := newTestReportService(api)
+	requester := model.NewId()
+	readable := model.NewId()
+	private := model.NewId()
+	missing := model.NewId()
+
+	api.On("GetChannel", readable).Return(&model.Channel{Id: readable, Name: "incidents", DisplayName: "Incidents", Type: model.ChannelTypeOpen}, nil)
+	api.On("GetChannel", private).Return(&model.Channel{Id: private, Name: "secret-ops", DisplayName: "Secret Ops", Type: model.ChannelTypePrivate}, nil)
+	api.On("GetChannel", missing).Return(nil, model.NewAppError("GetChannel", "not_found", nil, "", http.StatusNotFound))
+	api.On("HasPermissionToChannel", requester, readable, model.PermissionReadChannel).Return(true)
+	api.On("HasPermissionToChannel", requester, private, model.PermissionReadChannel).Return(false)
+
+	got := svc.broadcastChannels(requester, []string{readable, private, missing})
+	require.Equal(t, []report.RenderChannel{
+		{ChannelID: readable, Name: "incidents", DisplayName: "Incidents", Type: string(model.ChannelTypeOpen)},
+		{ChannelID: private},
+		{ChannelID: missing},
+	}, got)
+}
+
 func TestReportServiceBuildResolverTableFileDenied(t *testing.T) {
 	api := &plugintest.API{}
 	defer api.AssertExpectations(t)
@@ -588,6 +611,45 @@ func TestReportServiceChannelPostsIteratorFiltersAndDedups(t *testing.T) {
 	require.Len(t, got, 2)
 	require.Equal(t, "keep", got[0].PostID)
 	require.Equal(t, "dupshared", got[1].PostID)
+}
+
+func TestReportServiceChannelPostsIteratorSkipsPagesAfterTheRun(t *testing.T) {
+	api := &plugintest.API{}
+	defer api.AssertExpectations(t)
+
+	svc := newTestReportService(api)
+	channelID := model.NewId()
+	userID := model.NewId()
+
+	// The newest page holds only posts from after the run ended.
+	api.On("GetPostsForChannel", channelID, 0, 2).Return(&model.PostList{
+		Order: []string{"later1", "later2"},
+		Posts: map[string]*model.Post{
+			"later1": {Id: "later1", UserId: userID, CreateAt: 300},
+			"later2": {Id: "later2", UserId: userID, CreateAt: 200},
+		},
+	}, nil)
+	api.On("GetPostsForChannel", channelID, 1, 2).Return(&model.PostList{
+		Order: []string{"during", "before"},
+		Posts: map[string]*model.Post{
+			"during": {Id: "during", UserId: userID, CreateAt: 50},
+			"before": {Id: "before", UserId: userID, CreateAt: 5},
+		},
+	}, nil)
+
+	iter := svc.channelPostsIterator(channelID, 10, 100, channelPostsIterOpts{
+		pageSize: 2,
+		throttle: time.Millisecond,
+	})
+
+	got, err := iter(context.Background())
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	require.Equal(t, "during", got[0].PostID)
+
+	got, err = iter(context.Background())
+	require.NoError(t, err)
+	require.Empty(t, got)
 }
 
 func TestReportServiceChannelPostsIteratorEmptyPageExhausts(t *testing.T) {

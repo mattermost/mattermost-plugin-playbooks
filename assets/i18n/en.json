@@ -574,6 +574,14 @@
     "translation": "{{.Actor}} checked a task"
   },
   {
+    "id": "app.report.timeline.task.requirements_updated",
+    "translation": "{{.Actor}} updated requirements for task '{{.Item}}'"
+  },
+  {
+    "id": "app.report.timeline.task.requirements_updated_a_task",
+    "translation": "{{.Actor}} updated requirements for a task"
+  },
+  {
     "id": "app.report.timeline.task.restored",
     "translation": "{{.Actor}} restored task '{{.Item}}'"
   },

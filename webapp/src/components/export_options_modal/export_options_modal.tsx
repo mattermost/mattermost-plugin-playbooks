@@ -143,6 +143,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                     <FormatButton
                         data-testid='format-button-pdf'
                         selected={format === 'pdf'}
+                        aria-pressed={format === 'pdf'}
                         onClick={() => setFormat('pdf')}
                     >
                         <i className='icon icon-file-pdf-outline'/>
@@ -151,6 +152,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                     <FormatButton
                         data-testid='format-button-html'
                         selected={format === 'html'}
+                        aria-pressed={format === 'html'}
                         onClick={() => setFormat('html')}
                     >
                         <i className='icon icon-code-tags'/>
@@ -159,6 +161,7 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                     <FormatButton
                         data-testid='format-button-md'
                         selected={format === 'md'}
+                        aria-pressed={format === 'md'}
                         onClick={() => setFormat('md')}
                     >
                         <i className='icon icon-file-text-outline'/>

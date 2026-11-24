@@ -13,6 +13,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
       ref={null}
     >
       <button
+        aria-pressed={true}
         className="FormatButton-jpoeiq kywyMA"
         data-testid="format-button-pdf"
         onClick={[Function]}
@@ -25,6 +26,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
         PDF
       </button>
       <button
+        aria-pressed={false}
         className="FormatButton-jpoeiq fCAij"
         data-testid="format-button-html"
         onClick={[Function]}
@@ -37,6 +39,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
         HTML
       </button>
       <button
+        aria-pressed={false}
         className="FormatButton-jpoeiq fCAij"
         data-testid="format-button-md"
         onClick={[Function]}
@@ -126,6 +129,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       ref={null}
     >
       <button
+        aria-pressed={true}
         className="FormatButton-jpoeiq kywyMA"
         data-testid="format-button-pdf"
         onClick={[Function]}
@@ -138,6 +142,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
         PDF
       </button>
       <button
+        aria-pressed={false}
         className="FormatButton-jpoeiq fCAij"
         data-testid="format-button-html"
         onClick={[Function]}
@@ -150,6 +155,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
         HTML
       </button>
       <button
+        aria-pressed={false}
         className="FormatButton-jpoeiq fCAij"
         data-testid="format-button-md"
         onClick={[Function]}

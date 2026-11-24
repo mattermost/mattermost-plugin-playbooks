@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"html/template"
 	"strings"
+	"unicode"
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
@@ -32,10 +33,12 @@ import (
 // rendering (mentions, channel links, emoji) ships in a follow-up (see plan
 // §3.6.6 polish item).
 func markdownToHTML(md string) template.HTML {
-	src := strings.TrimSpace(md)
-	if src == "" {
+	if strings.TrimSpace(md) == "" {
 		return ""
 	}
+	// Leading spaces can start an indented code block, so only trailing
+	// whitespace is trimmed.
+	src := strings.TrimRightFunc(md, unicode.IsSpace)
 
 	gm := goldmark.New(
 		goldmark.WithExtensions(extension.GFM),

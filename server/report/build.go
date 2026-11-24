@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
@@ -92,7 +93,7 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 
 	r.Summary = BodySection{
 		Section: Section{Title: T("app.report.run.summary.title"), Empty: T("app.report.run.summary.empty")},
-		Body:    strings.TrimSpace(rc.Run.Summary),
+		Body:    trimBody(rc.Run.Summary),
 	}
 
 	r.Timeline.Section = Section{Title: T("app.report.run.timeline.title"), Empty: T("app.report.run.timeline.empty")}
@@ -115,7 +116,7 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 
 	r.Retrospective = RetrospectiveSection{
 		Section:      Section{Title: T("app.report.run.retrospective.title"), Empty: T("app.report.run.retrospective.empty")},
-		Body:         strings.TrimSpace(rc.Retrospective.Body),
+		Body:         trimBody(rc.Retrospective.Body),
 		MetricsTitle: T("app.report.metrics.title"),
 	}
 	for _, m := range rc.Retrospective.Metrics {
@@ -126,7 +127,7 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 		r.Retrospective.Metrics = append(r.Retrospective.Metrics, Metric{
 			Title:       m.Title,
 			Value:       value,
-			Description: strings.TrimSpace(m.Description),
+			Description: trimBody(m.Description),
 		})
 	}
 
@@ -162,7 +163,7 @@ func BuildPlaybook(pc PlaybookRenderContext, opts Options) *PlaybookReport {
 
 	r.Description = BodySection{
 		Section: Section{Title: T("app.report.playbook.description.title"), Empty: T("app.report.playbook.description.empty")},
-		Body:    strings.TrimSpace(pc.Playbook.Description),
+		Body:    trimBody(pc.Playbook.Description),
 	}
 
 	// Members go through the resolver table only, so a member the requester
@@ -185,7 +186,7 @@ func BuildPlaybook(pc PlaybookRenderContext, opts Options) *PlaybookReport {
 	r.StatusUpdates = SettingsSection{
 		Section:  Section{Title: T("app.report.playbook.status_updates.title"), Empty: T("app.report.playbook.status_updates.empty")},
 		Meta:     b.settingsMeta(su.Enabled, su.Cadence),
-		Template: strings.TrimSpace(su.Template),
+		Template: trimBody(su.Template),
 	}
 	r.StatusUpdates.Configured = su.Enabled || r.StatusUpdates.Template != "" || su.Cadence != ""
 
@@ -193,18 +194,22 @@ func BuildPlaybook(pc PlaybookRenderContext, opts Options) *PlaybookReport {
 	r.Retrospective = SettingsSection{
 		Section:      Section{Title: T("app.report.playbook.retrospective.title"), Empty: T("app.report.playbook.retrospective.empty")},
 		Meta:         b.settingsMeta(retro.Enabled, retro.ReminderCadence),
-		Template:     strings.TrimSpace(retro.Template),
+		Template:     trimBody(retro.Template),
 		MetricsTitle: T("app.report.metrics.title"),
 	}
 	r.Retrospective.Configured = retro.Enabled || r.Retrospective.Template != "" || retro.ReminderCadence != "" || len(retro.Metrics) > 0
 	for _, m := range retro.Metrics {
-		r.Retrospective.Metrics = append(r.Retrospective.Metrics, Metric{
-			Title: m.Title,
-			Value: T("app.report.metric.type_and_target", map[string]any{
-				"Type":   b.metricType(m.Type),
+		value := b.metricType(m.Type)
+		if m.HasTarget {
+			value = T("app.report.metric.type_and_target", map[string]any{
+				"Type":   value,
 				"Target": b.metricValue(m.Type, m.Target),
-			}),
-			Description: strings.TrimSpace(m.Description),
+			})
+		}
+		r.Retrospective.Metrics = append(r.Retrospective.Metrics, Metric{
+			Title:       m.Title,
+			Value:       value,
+			Description: trimBody(m.Description),
 		})
 	}
 
@@ -304,7 +309,7 @@ func (b *builder) checklist(cl RenderChecklist, index int, isTemplate bool) Chec
 			Skipped:     it.State == coretypes.ChecklistItemStateSkipped,
 			Title:       it.Title,
 			Command:     it.Command,
-			Description: strings.TrimSpace(it.Description),
+			Description: trimBody(it.Description),
 		}
 		// Playbook templates have no assignee or due date of their own.
 		if !isTemplate {
@@ -429,7 +434,21 @@ func (b *builder) transcript(rc RenderContext) TranscriptSection {
 }
 
 func (b *builder) post(authorID string, createAt int64, message string) Post {
-	return Post{Author: b.userName(authorID), Date: b.date(createAt), Body: strings.TrimSpace(message)}
+	return Post{Author: b.userName(authorID), Date: b.date(createAt), Body: trimBody(message)}
+}
+
+// trimBody drops a Markdown body's leading blank lines and trailing
+// whitespace. Leading spaces on the first line stay, since they can start
+// an indented code block.
+func trimBody(s string) string {
+	if strings.TrimSpace(s) == "" {
+		return ""
+	}
+	s = strings.TrimRightFunc(s, unicode.IsSpace)
+	if i := strings.LastIndexByte(s[:len(s)-len(strings.TrimLeftFunc(s, unicode.IsSpace))], '\n'); i >= 0 {
+		s = s[i+1:]
+	}
+	return s
 }
 
 // userName shows a user from the resolver table as the server's name

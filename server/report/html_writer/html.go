@@ -102,7 +102,7 @@ func pageSize(s string) string {
 // strip that wrapper so the result inlines cleanly into headings and task
 // titles.
 func markdownInlineToHTML(md string) template.HTML {
-	full := string(markdownToHTML(md))
+	full := string(markdownToHTML(strings.TrimSpace(md)))
 	full = strings.TrimSpace(full)
 	full = strings.TrimPrefix(full, "<p>")
 	full = strings.TrimSuffix(full, "</p>")

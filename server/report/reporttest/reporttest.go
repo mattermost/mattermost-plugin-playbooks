@@ -117,6 +117,7 @@ func RunScenarios() []RunScenario {
 	chronological.TranscriptMode = coretypes.TranscriptModeChronological
 
 	truncated := TypicalRun()
+	truncated.Transcript = truncated.Transcript[:3]
 	truncated.TranscriptTruncation = report.Truncation{Hit: true, Reason: "posts", Posts: 3}
 
 	omitted := TypicalRun()
@@ -330,9 +331,9 @@ func TypicalPlaybook() report.PlaybookRenderContext {
 			Template:        "## Retro",
 			ReminderCadence: "After resolution",
 			Metrics: []report.RenderMetric{
-				{ID: "m1", Title: "Time to detect", Description: "From alert to ack", Type: "duration", Target: 5 * minute},
-				{ID: "m2", Title: "Cost", Type: "currency", Target: 100000},
-				{ID: "m3", Title: "Customers affected", Type: "integer", Target: 10},
+				{ID: "m1", Title: "Time to detect", Description: "From alert to ack", Type: "duration", Target: 5 * minute, HasTarget: true},
+				{ID: "m2", Title: "Cost", Type: "currency", Target: 100000, HasTarget: true},
+				{ID: "m3", Title: "Customers affected", Type: "integer", Target: 10, HasTarget: true},
 				{ID: "m4", Title: "Time to escalate", Type: "duration"},
 			},
 		},
@@ -365,7 +366,7 @@ func RedactedPlaybook() report.PlaybookRenderContext {
 		},
 		StatusUpdateConfig: report.RenderStatusUpdateConfig{Cadence: "Every day"},
 		RetrospectiveConfig: report.RenderRetrospectiveConfig{
-			Metrics: []report.RenderMetric{{ID: "m1", Title: "Requests handled", Type: "integer", Target: 3}},
+			Metrics: []report.RenderMetric{{ID: "m1", Title: "Requests handled", Type: "integer", Target: 3, HasTarget: true}},
 		},
 		BroadcastChannels:  []report.RenderChannel{{ChannelID: "c9"}},
 		WebhooksOnCreation: []report.RenderWebhook{{}, {HostMasked: "https://hooks.example.com/****"}},

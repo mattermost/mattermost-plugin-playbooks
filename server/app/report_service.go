@@ -165,6 +165,11 @@ func (s *ReportService) AssembleRunReportContext(
 
 	if sections.StatusUpdates {
 		rc.StatusUpdates = s.buildStatusUpdates(run)
+		for _, su := range rc.StatusUpdates {
+			if _, ok := userCache[su.AuthorID]; !ok && su.AuthorID != "" {
+				userCache[su.AuthorID] = s.resolveUser(su.AuthorID)
+			}
+		}
 	}
 	if sections.Timeline {
 		rc.TimelineEvents = buildTimelineEvents(run)
@@ -317,19 +322,7 @@ func (s *ReportService) AssemblePlaybookReportContext(
 		Metrics:         metricsFromConfigs(pb.Metrics, nil),
 	}
 
-	pc.BroadcastChannels = make([]report.RenderChannel, 0, len(pb.BroadcastChannelIDs))
-	for _, cid := range pb.BroadcastChannelIDs {
-		if ch, cErr := s.pluginAPI.Channel.Get(cid); cErr == nil {
-			pc.BroadcastChannels = append(pc.BroadcastChannels, report.RenderChannel{
-				ChannelID:   ch.Id,
-				Name:        ch.Name,
-				DisplayName: ch.DisplayName,
-				Type:        string(ch.Type),
-			})
-		} else {
-			pc.BroadcastChannels = append(pc.BroadcastChannels, report.RenderChannel{ChannelID: cid})
-		}
-	}
+	pc.BroadcastChannels = s.broadcastChannels(userID, pb.BroadcastChannelIDs)
 
 	pc.WebhooksOnCreation = redactWebhooks(pb.WebhookOnCreationURLs, hasPlaybookManage)
 	pc.WebhooksOnStatus = redactWebhooks(pb.WebhookOnStatusUpdateURLs, hasPlaybookManage)
@@ -346,6 +339,27 @@ func (s *ReportService) AssemblePlaybookReportContext(
 
 	pc.GeneratedAtMillis = time.Now().UnixMilli()
 	return pc, ResolverStats{}, nil
+}
+
+// broadcastChannels names each broadcast channel the requester can read.
+// Playbook viewers may not be able to read every one, and the others keep
+// only their ID.
+func (s *ReportService) broadcastChannels(userID string, channelIDs []string) []report.RenderChannel {
+	out := make([]report.RenderChannel, 0, len(channelIDs))
+	for _, cid := range channelIDs {
+		ch, err := s.pluginAPI.Channel.Get(cid)
+		if err != nil || !s.pluginAPI.User.HasPermissionToChannel(userID, cid, model.PermissionReadChannel) {
+			out = append(out, report.RenderChannel{ChannelID: cid})
+			continue
+		}
+		out = append(out, report.RenderChannel{
+			ChannelID:   ch.Id,
+			Name:        ch.Name,
+			DisplayName: ch.DisplayName,
+			Type:        string(ch.Type),
+		})
+	}
+	return out
 }
 
 // channelPostsIterator returns a paging iterator over a channel's posts,
@@ -365,71 +379,74 @@ func (s *ReportService) channelPostsIterator(channelID string, startMs, endMs in
 	seen := make(map[string]struct{})
 	exhausted := false
 
+	// Each call reads pages until one has posts in the window, since a page
+	// can hold only posts from after the run ended.
 	return func(ctx context.Context) ([]report.RenderPost, error) {
-		if exhausted {
-			return nil, nil
-		}
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-
-		if !first {
-			select {
-			case <-ctx.Done():
+		for !exhausted {
+			if ctx.Err() != nil {
 				return nil, ctx.Err()
-			case <-time.After(opts.throttle):
 			}
-		}
-		first = false
 
-		postList, err := s.pluginAPI.Post.GetPostsForChannel(channelID, page, opts.pageSize)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to fetch channel posts")
-		}
-		page++
+			if !first {
+				select {
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				case <-time.After(opts.throttle):
+				}
+			}
+			first = false
 
-		if postList == nil || len(postList.Order) == 0 {
-			exhausted = true
-			return nil, nil
-		}
+			postList, err := s.pluginAPI.Post.GetPostsForChannel(channelID, page, opts.pageSize)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to fetch channel posts")
+			}
+			page++
 
-		out := make([]report.RenderPost, 0, len(postList.Order))
-		for _, id := range postList.Order {
-			post := postList.Posts[id]
-			if post == nil {
-				continue
-			}
-			if _, dup := seen[post.Id]; dup {
-				continue
-			}
-			seen[post.Id] = struct{}{}
-
-			if post.OriginalId != "" {
-				continue
-			}
-			if !opts.includeSystem && post.Type != "" {
-				continue
-			}
-			if endMs > 0 && post.CreateAt > endMs {
-				continue
-			}
-			if startMs > 0 && post.CreateAt < startMs {
+			if postList == nil || len(postList.Order) == 0 {
 				exhausted = true
-				continue
+				break
 			}
 
-			out = append(out, report.RenderPost{
-				PostID:   post.Id,
-				AuthorID: post.UserId,
-				CreateAt: post.CreateAt,
-				Message:  post.Message,
-				RootID:   post.RootId,
-				Type:     post.Type,
-				Files:    filesFromPost(s.pluginAPI, post),
-			})
-		}
+			out := make([]report.RenderPost, 0, len(postList.Order))
+			for _, id := range postList.Order {
+				post := postList.Posts[id]
+				if post == nil {
+					continue
+				}
+				if _, dup := seen[post.Id]; dup {
+					continue
+				}
+				seen[post.Id] = struct{}{}
 
-		return out, nil
+				if post.OriginalId != "" {
+					continue
+				}
+				if !opts.includeSystem && post.Type != "" {
+					continue
+				}
+				if endMs > 0 && post.CreateAt > endMs {
+					continue
+				}
+				if startMs > 0 && post.CreateAt < startMs {
+					exhausted = true
+					continue
+				}
+
+				out = append(out, report.RenderPost{
+					PostID:   post.Id,
+					AuthorID: post.UserId,
+					CreateAt: post.CreateAt,
+					Message:  post.Message,
+					RootID:   post.RootId,
+					Type:     post.Type,
+					Files:    filesFromPost(s.pluginAPI, post),
+				})
+			}
+			if len(out) > 0 {
+				return out, nil
+			}
+		}
+		return nil, nil
 	}
 }
 
@@ -784,7 +801,7 @@ func buildTimelineEvents(run *PlaybookRun) []report.RenderTimelineEvent {
 		}
 		out = append(out, report.RenderTimelineEvent{
 			EventType: string(ev.EventType),
-			CreateAt:  ev.CreateAt,
+			CreateAt:  cmp.Or(ev.EventAt, ev.CreateAt),
 			Summary:   ev.Summary,
 			Details:   ev.Details,
 			SubjectID: ev.SubjectUserID,
@@ -854,9 +871,9 @@ func buildChecklists(in []Checklist, stateUsers map[string]string) []report.Rend
 // buildRetrospective composes the retrospective DTO for the run renderer.
 // metricConfigs is the parent playbook's metric configuration (Title,
 // Description, Type, Target); the run-side instance values come from
-// run.MetricsData. When metricConfigs is nil/empty (orphaned run with a
-// deleted playbook, or the caller couldn't fetch), the function still emits
-// value-only entries so the renderer can show numbers — labels stay blank.
+// run.MetricsData. When metricConfigs is empty (the playbook was deleted or
+// could not be loaded), there is no metric left to show: a value without
+// its title or type would be meaningless in the report.
 func buildRetrospective(run *PlaybookRun, metricConfigs []PlaybookMetricConfig) report.RenderRetrospective {
 	return report.RenderRetrospective{
 		Body:        run.Retrospective,
@@ -884,16 +901,13 @@ func runMetricValueLookup(run *PlaybookRun) map[string]int64 {
 func metricsFromConfigs(configs []PlaybookMetricConfig, valueOverrides map[string]int64) []report.RenderMetric {
 	out := make([]report.RenderMetric, 0, len(configs))
 	for _, m := range configs {
-		var target int64
-		if m.Target.Valid {
-			target = m.Target.Int64
-		}
 		rm := report.RenderMetric{
 			ID:          m.ID,
 			Title:       m.Title,
 			Description: m.Description,
 			Type:        metricTypeFromConfig(m.Type),
-			Target:      target,
+			Target:      m.Target.Int64,
+			HasTarget:   m.Target.Valid,
 		}
 		if val, ok := valueOverrides[m.ID]; ok {
 			rm.Value = val

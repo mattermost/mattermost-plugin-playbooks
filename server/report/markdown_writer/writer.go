@@ -98,8 +98,43 @@ func writeBody(b *bytes.Buffer, body string) {
 	if body == "" {
 		return
 	}
-	b.WriteString(body)
+	b.WriteString(closeFences(body))
 	b.WriteString("\n\n")
+}
+
+// closeFences closes a fenced code block that body leaves open. Mattermost
+// ends it with the message, but in the report it would run on into
+// everything that follows.
+func closeFences(body string) string {
+	var fence string
+	for ln := range strings.SplitSeq(body, "\n") {
+		trimmed := strings.TrimLeft(ln, " ")
+		if len(ln)-len(trimmed) > 3 {
+			continue
+		}
+		if fence == "" {
+			if f := fenceRun(trimmed); len(f) >= 3 && (f[0] == '~' || !strings.Contains(trimmed[len(f):], "`")) {
+				fence = f
+			}
+			continue
+		}
+		if f := fenceRun(trimmed); f != "" && f[0] == fence[0] && len(f) >= len(fence) && strings.TrimSpace(trimmed[len(f):]) == "" {
+			fence = ""
+		}
+	}
+	if fence == "" {
+		return body
+	}
+	return body + "\n" + fence
+}
+
+// fenceRun returns the run of backticks or tildes that s starts with.
+func fenceRun(s string) string {
+	if s == "" || (s[0] != '`' && s[0] != '~') {
+		return ""
+	}
+	n := len(s) - len(strings.TrimLeft(s, s[:1]))
+	return s[:n]
 }
 
 // writeFooter writes the trailing horizontal rule + generated-at line.
@@ -197,7 +232,7 @@ func writeQuotedPost(b *bytes.Buffer, header string, body string, bodyPrefix str
 	if body == "" {
 		return
 	}
-	for ln := range strings.SplitSeq(body, "\n") {
+	for ln := range strings.SplitSeq(closeFences(body), "\n") {
 		b.WriteString(bodyPrefix)
 		b.WriteString(ln)
 		b.WriteString("\n")

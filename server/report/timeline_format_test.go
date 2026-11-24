@@ -224,14 +224,15 @@ func TestTimelineEvent_TaskStateModified_ParsesJSON(t *testing.T) {
 func TestTimelineEvent_TaskStateModified_AllActionVerbs(t *testing.T) {
 	rt := resolverWithAlice()
 	for action, verb := range map[string]string{
-		"check":   "checked",
-		"uncheck": "unchecked",
-		"skip":    "skipped",
-		"restore": "restored",
+		"check":                "checked",
+		"uncheck":              "unchecked",
+		"skip":                 "skipped",
+		"restore":              "restored",
+		"requirements_updated": "updated requirements for",
 	} {
 		ev := RenderTimelineEvent{
 			EventType: "task_state_modified",
-			Details:   `{"item":"T","action":"` + action + `"}`,
+			Details:   `{"task":"T","action":"` + action + `"}`,
 			SubjectID: "u1",
 		}
 		f := formatEvent(ev, rt)

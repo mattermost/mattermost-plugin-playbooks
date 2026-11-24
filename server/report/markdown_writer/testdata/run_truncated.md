@@ -92,13 +92,6 @@ _No tasks._
 > error rate 40%
 > ```
 
-**Orphan replies**
-
-_Parent message is outside this transcript._
-
-> ↳ **Carol Chen** — November 14, 2023, 10:21 PM UTC
->   Following up on the earlier thread.
-
 > _Transcript truncated (3 posts shown)._
 
 ---
