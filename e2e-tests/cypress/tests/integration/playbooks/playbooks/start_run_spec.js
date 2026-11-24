@@ -9,7 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
-const RUN_NAME_MAX_LENGTH = 64;
+const RUN_NAME_MAX_LENGTH = 100;
 
 describe('playbooks > start a run', {testIsolation: true}, () => {
     let testTeam;

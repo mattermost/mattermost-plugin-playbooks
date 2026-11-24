@@ -950,7 +950,7 @@ describe('RunPlaybookModal — template mode', () => {
     });
 
     describe('namePreviewTooLong', () => {
-        it('shows error and disables confirm button when resolved name exceeds 64 chars', () => {
+        it('shows error and disables confirm button when resolved name exceeds the max length', () => {
             // Includes {SEQ} so the run name contains a token and the resolved preview is
             // computed and checked against the length limit (locked is set in the outer
             // beforeEach; this describe block doesn't need the checkbox, just the resolution).
@@ -979,9 +979,8 @@ describe('RunPlaybookModal — template mode', () => {
         it('shows unlocked copy when override is allowed and the resolved preview is too long', () => {
             // The raw typed name is short (freeNameValid would pass on its own), but the property
             // value it references is long enough that the resolved preview exceeds the limit —
-            // this must still block submission, since the channel display name is silently
-            // truncated to 64 runes server-side while the run's stored name is not, and that
-            // divergence is exactly what the "exceeds" warning is telling the user about.
+            // this must still block submission, since the resolved name is what the backend receives
+            // as the run name and it must fit within RUN_NAME_MAX_LENGTH.
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
             mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: false, id}]);
@@ -1008,7 +1007,28 @@ describe('RunPlaybookModal — template mode', () => {
             expect(btn.props.disabled).toBe(true);
         });
 
-        it('shows error and disables confirm button for a locked literal template with no token that exceeds 64 chars', () => {
+        it('accepts a resolved preview of exactly 100 chars when override is allowed', () => {
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
+            mockUseRestPlaybook.mockImplementation((id: string) => [{channel_name_template_locked: false, id}]);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'property-field-field-sev').props.onChange({target: {value: 'A'.repeat(100)}});
+            });
+            act(() => {
+                findNodeByTestId(component!.toJSON(), 'run-name-input').props.onChange({target: {value: '{Severity}'}});
+            });
+
+            expect(findNodeByTestId(component!.toJSON(), 'run-name-preview-error')).toBeNull();
+            expect(findNodeByTestId(component!.toJSON(), 'confirm-button').props.disabled).toBe(false);
+        });
+
+        it('shows error and disables confirm button for a locked literal template with no token that exceeds the max length', () => {
             // No {token} at all — the raw template text IS the final resolved value. Locked is
             // set in the outer beforeEach.
             const longLiteralTemplate = 'A'.repeat(RUN_NAME_MAX_LENGTH + 1);
@@ -1025,11 +1045,28 @@ describe('RunPlaybookModal — template mode', () => {
             });
             const json = toJson(component!);
 
-            expect(json).toContain('exceeds');
+            expect(json).toContain('The resolved run name exceeds the 100-character limit.');
 
             const btn = findNodeByTestId(component!.toJSON(), 'confirm-button');
             expect(btn).not.toBeNull();
             expect(btn.props.disabled).toBe(true);
+        });
+
+        it('accepts a locked literal template of exactly 100 chars', () => {
+            const pbMaxLiteral = {
+                ...basePlaybook,
+                channel_name_template: 'A'.repeat(100),
+                propertyFields: [],
+            };
+            mockUsePlaybook.mockReturnValue([pbMaxLiteral, {isFetching: false, error: undefined}]);
+
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            expect(findNodeByTestId(component!.toJSON(), 'run-name-preview-error')).toBeNull();
+            expect(findNodeByTestId(component!.toJSON(), 'confirm-button').props.disabled).toBe(false);
         });
     });
 
@@ -1161,5 +1198,61 @@ describe('RunPlaybookModal — no template (free-text mode)', () => {
         const nameInput = findNodeByTestId(tree, 'run-name-input');
         expect(nameInput.props['aria-describedby']).toBeUndefined();
         expect(toJson(component)).not.toContain('run-name-readonly-desc');
+    });
+
+    describe('run name length limit', () => {
+        const typeRunName = (component: renderer.ReactTestRenderer, value: string) => {
+            const nameInput = findNodeByTestId(component.toJSON(), 'run-name-input');
+            act(() => {
+                nameInput.props.onChange({target: {value}});
+            });
+        };
+
+        const renderModal = () => {
+            let component: renderer.ReactTestRenderer;
+            act(() => {
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
+            });
+            return component!;
+        };
+
+        it.each([
+            ['a 67-char name built from a prefix, ticket key and title', 'Technical Escalation: [INC-1234] Database connection pool exhausted'],
+            ['a name of exactly 100 chars', 'a'.repeat(100)],
+            ['a name of exactly 100 code points outside the BMP', '😀'.repeat(100)],
+        ])('accepts %s', (_, name) => {
+            const component = renderModal();
+            typeRunName(component, name);
+
+            expect(findNodeByTestId(component.toJSON(), 'run-name-error')).toBeNull();
+            expect(findNodeByTestId(component.toJSON(), 'confirm-button').props.disabled).toBe(false);
+        });
+
+        it('rejects a 101-char name with an error and clears it once shortened to 100', () => {
+            const component = renderModal();
+
+            typeRunName(component, 'a'.repeat(101));
+            const error = findNodeByTestId(component.toJSON(), 'run-name-error');
+            expect(error.children).toEqual(['The run name should not exceed 100 characters']);
+            expect(findNodeByTestId(component.toJSON(), 'confirm-button').props.disabled).toBe(true);
+
+            typeRunName(component, 'a'.repeat(100));
+            expect(findNodeByTestId(component.toJSON(), 'run-name-error')).toBeNull();
+            expect(findNodeByTestId(component.toJSON(), 'confirm-button').props.disabled).toBe(false);
+        });
+
+        it('submits the full 100-char name to the server', async () => {
+            mockCreatePlaybookRun.mockResolvedValue({id: 'run-1', channel_id: 'channel-new'});
+            const name = 'a'.repeat(100);
+            const component = renderModal();
+            typeRunName(component, name);
+
+            await act(async () => {
+                findNodeByTestId(component.toJSON(), 'confirm-button').props.onClick();
+            });
+
+            expect(mockCreatePlaybookRun).toHaveBeenCalledTimes(1);
+            expect(mockCreatePlaybookRun.mock.calls[0][3]).toBe(name);
+        });
     });
 });

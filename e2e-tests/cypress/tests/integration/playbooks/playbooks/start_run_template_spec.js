@@ -426,10 +426,10 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
             }).then((playbook) => {
                 longTemplatePlaybook = playbook;
 
-                // # 65-char template (plus {SEQ}) exceeds the 64-char run name limit. Includes a
+                // # 101-char template (plus {SEQ}) exceeds the 100-char run name limit. Includes a
                 // # valid variable and is locked (override not allowed) — a purely literal
                 // # template always allows override and would never hit this validation path.
-                cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'x'.repeat(65) + '{SEQ}', channel_name_template_locked: true});
+                cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'x'.repeat(101) + '{SEQ}', channel_name_template_locked: true});
             });
         });
 
@@ -439,13 +439,13 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
             }
         });
 
-        it('shows inline error and disables submit when resolved run name exceeds 64 characters', () => {
+        it('shows inline error and disables submit when resolved run name exceeds 100 characters', () => {
             cy.playbooksOpenRunModal(longTemplatePlaybook.id);
 
             cy.get('#root-portal.modal-open').within(() => {
-                // * Inline error mentions the 64-character limit
+                // * Inline error mentions the 100-character limit
                 cy.findByTestId('run-name-preview-error').should('be.visible');
-                cy.findByTestId('run-name-preview-error').should('contain', '64');
+                cy.findByTestId('run-name-preview-error').should('contain', '100-character limit');
 
                 // * Submit button is disabled
                 cy.findByTestId('modal-confirm-button').should('be.disabled');

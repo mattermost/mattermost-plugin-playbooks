@@ -68,7 +68,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                 />
             </StarButton>
 
-            <TextEdit
+            <RunNameTextEdit
                 disabled={playbookRun.current_status !== PlaybookRunStatus.InProgress}
                 placeholder={formatMessage({defaultMessage: 'Run name'})}
                 value={playbookRun.name}
@@ -115,7 +115,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                         />
                     </>
                 )}
-            </TextEdit>
+            </RunNameTextEdit>
             <ExpandRight/>
             <HeaderButton
                 tooltipId={'timeline-button-tooltip'}
@@ -161,10 +161,15 @@ const Container = styled.div`
     box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
 `;
 
+const RunNameTextEdit = styled(TextEdit)`
+    min-width: 0;
+`;
+
 const StyledCopyLink = styled(CopyLink)`
     display: grid;
     width: 28px;
     height: 28px;
+    flex-shrink: 0;
     border-radius: 4px;
     margin-left: 4px;
     font-size: 18px;

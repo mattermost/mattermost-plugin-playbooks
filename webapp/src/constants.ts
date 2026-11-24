@@ -11,7 +11,7 @@ export enum ErrorPageTypes {
 
 export const BACKSTAGE_LIST_PER_PAGE = 15;
 export const PROFILE_CHUNK_SIZE = 200;
-export const RUN_NAME_MAX_LENGTH = 64;
+export const RUN_NAME_MAX_LENGTH = 100;
 
 export enum AdminNotificationType {
     VIEW_TIMELINE = 'start_trial_to_view_timeline',

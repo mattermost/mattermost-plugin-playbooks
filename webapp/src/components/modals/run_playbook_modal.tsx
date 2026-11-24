@@ -598,9 +598,10 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
 
     const onRunNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        if (error && value.length <= RUN_NAME_MAX_LENGTH) {
+        const length = [...value].length;
+        if (error && length <= RUN_NAME_MAX_LENGTH) {
             setError('');
-        } else if (!error && value.length > RUN_NAME_MAX_LENGTH) {
+        } else if (!error && length > RUN_NAME_MAX_LENGTH) {
             setError(formatMessage({defaultMessage: 'The run name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
         }
 
