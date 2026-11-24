@@ -100,38 +100,25 @@ describe('ExportOptionsModal', () => {
         expect(updated.props.checked).toBe(false);
     });
 
-    it("offers the user's own time zone first and every IANA time zone", () => {
+    it("offers the user's own time zone, picked by default, or UTC", () => {
         const {tree} = render();
-        const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
-        expect(select.props.value).toEqual({value: '', label: 'Europe/Berlin (your time zone)'});
-        expect(select.props.options).toContainEqual({value: 'America/New_York', label: 'America/New York'});
+        const user = tree.root.findByProps({'data-testid': 'time-zone-user'});
+        const utc = tree.root.findByProps({'data-testid': 'time-zone-utc'});
+        expect(JSON.stringify(tree.toJSON())).toContain('Your time zone (Europe/Berlin)');
+        expect(user.findByType('input').props.checked).toBe(true);
+        expect(utc.findByType('input').props.checked).toBe(false);
     });
 
-    it('shows a clock next to the picked time zone but not in the list', () => {
-        const {tree} = render();
-        const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
-        const option = {value: 'Asia/Karachi', label: 'Asia/Karachi'};
-        expect(select.props.formatOptionLabel(option, {context: 'menu'})).toBe('Asia/Karachi');
-
-        let value!: renderer.ReactTestRenderer;
-        act(() => {
-            value = renderer.create(select.props.formatOptionLabel(option, {context: 'value'}));
-        });
-        expect(value.root.findAllByType('svg')).toHaveLength(1);
-        expect(JSON.stringify(value.toJSON())).toContain('Asia/Karachi');
-    });
-
-    it('onConfirm receives the picked time zone', () => {
+    it('onConfirm receives UTC when it is picked', () => {
         const {tree, onConfirm} = render();
-        const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
         act(() => {
-            select.props.onChange({value: 'Asia/Karachi', label: 'Asia/Karachi'});
+            tree.root.findByProps({'data-testid': 'time-zone-utc'}).findByType('input').props.onChange();
         });
         act(() => {
             capturedHandleConfirm?.();
         });
 
-        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'pdf', {transcriptMode: 'threaded', timeZone: 'Asia/Karachi'});
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'pdf', {transcriptMode: 'threaded', timeZone: 'UTC'});
     });
 
     it('hides channel-export hint when unavailable', () => {

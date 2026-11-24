@@ -1,12 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentTimezone} from 'mattermost-redux/selectors/entities/timezone';
-import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import type {
     ReportFormat,
@@ -15,7 +14,6 @@ import type {
     TranscriptMode,
 } from 'src/client';
 import GenericModal from 'src/components/widgets/generic_modal';
-import {StyledSelect} from 'src/components/backstage/styles';
 
 export type ExportOptionsModalProps = {
 
@@ -38,8 +36,6 @@ type ToggleRow = {
     locked?: boolean;
 };
 
-type TimeZoneOption = {value: string; label: string};
-
 const DEFAULT_SECTIONS: ReportSections = {
     executiveSummary: true,
     timeline: true,
@@ -60,10 +56,6 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
     const [exporting, setExporting] = useState(false);
 
     const userTimeZone = useSelector(getCurrentTimezone);
-    const timeZoneOptions = useMemo<TimeZoneOption[]>(() => [
-        {value: '', label: formatMessage({defaultMessage: '{timeZone} (your time zone)'}, {timeZone: timeZoneLabel(userTimeZone)})},
-        ...Intl.supportedValuesOf('timeZone').map((tz) => ({value: tz, label: timeZoneLabel(tz)})),
-    ], [userTimeZone, formatMessage]);
 
     // A running export closes the dialog when it finishes, so the dialog
     // stays until then; otherwise it could close one opened in the meantime.
@@ -204,20 +196,35 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
                         </TranscriptModeRadio>
                     </TranscriptModeBox>
                 )}
-                <TimeZoneField data-testid='time-zone-field'>
+                <TimeZoneField
+                    data-testid='time-zone-field'
+                    role='radiogroup'
+                    aria-labelledby='export-time-zone-label'
+                >
                     <TimeZoneLabel id='export-time-zone-label'>
-                        <FormattedMessage defaultMessage='Time zone:'/>
+                        <FormattedMessage defaultMessage='Time zone'/>
                     </TimeZoneLabel>
-                    <StyledSelect
-                        aria-labelledby='export-time-zone-label'
-                        options={timeZoneOptions}
-                        value={timeZoneOptions.find((o) => o.value === timeZone)}
-                        onChange={(option: TimeZoneOption | null) => setTimeZone(option?.value ?? '')}
-                        formatOptionLabel={formatTimeZoneOption}
-                        menuPlacement='auto'
-                        menuPortalTarget={document.body}
-                        styles={{menuPortal: (base: object) => ({...base, zIndex: 10000})}}
-                    />
+                    <TimeZoneRadio data-testid='time-zone-user'>
+                        <input
+                            type='radio'
+                            name='export-time-zone'
+                            checked={timeZone === ''}
+                            onChange={() => setTimeZone('')}
+                        />
+                        <FormattedMessage
+                            defaultMessage='Your time zone ({timeZone})'
+                            values={{timeZone: userTimeZone.replaceAll('_', ' ')}}
+                        />
+                    </TimeZoneRadio>
+                    <TimeZoneRadio data-testid='time-zone-utc'>
+                        <input
+                            type='radio'
+                            name='export-time-zone'
+                            checked={timeZone === 'UTC'}
+                            onChange={() => setTimeZone('UTC')}
+                        />
+                        <FormattedMessage defaultMessage='UTC'/>
+                    </TimeZoneRadio>
                 </TimeZoneField>
                 {channelExportAvailable && (
                     <ChannelExportHint data-testid='channel-export-hint'>
@@ -230,23 +237,6 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
 };
 
 export default ExportOptionsModal;
-
-// formatTimeZoneOption puts a clock in front of the picked time zone, but not in the list.
-const formatTimeZoneOption = (option: TimeZoneOption, {context}: {context: 'menu' | 'value'}) => {
-    if (context === 'menu') {
-        return option.label;
-    }
-    return (
-        <TimeZoneValue>
-            <ClockOutlineIcon size={18}/>
-            {option.label}
-        </TimeZoneValue>
-    );
-};
-
-// timeZoneLabel shows an IANA time zone name, such as America/New_York, as
-// "America/New York".
-const timeZoneLabel = (timeZone: string) => timeZone.replaceAll('_', ' ');
 
 const Body = styled.div`
     display: flex;
@@ -293,22 +283,28 @@ const TimeZoneField = styled.div`
     border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
 `;
 
-const TimeZoneValue = styled.span`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    svg {
-        flex-shrink: 0;
-        color: rgba(var(--center-channel-color-rgb), 0.64);
-    }
-`;
-
 const TimeZoneLabel = styled.span`
     color: var(--center-channel-color);
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
+`;
+
+const TimeZoneRadio = styled.label`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    color: var(--center-channel-color);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    cursor: pointer;
+
+    input[type='radio'] {
+        margin: 0;
+        cursor: pointer;
+    }
 `;
 
 const ChannelExportHint = styled.div`

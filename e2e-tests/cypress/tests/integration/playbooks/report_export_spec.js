@@ -68,9 +68,9 @@ describe('playbooks > report export', {testIsolation: true}, () => {
         cy.findByTestId('dropdownmenu').should('be.visible');
     };
 
-    // Opens "Export report" from the open menu, picks a format and optionally a time zone,
-    // then clicks Export.
-    const exportFromOpenMenu = (format, timeZone) => {
+    // Opens "Export report" from the open menu, picks a format and, when utc is set, UTC
+    // instead of the user's own time zone, then clicks Export.
+    const exportFromOpenMenu = (format, utc) => {
         cy.findByTestId('dropdownmenu').findByText('Export report').click();
 
         cy.get('#export-options-modal').should('be.visible').within(() => {
@@ -80,15 +80,12 @@ describe('playbooks > report export', {testIsolation: true}, () => {
             // # Pick the format
             cy.findByTestId(`format-button-${format}`).click();
             cy.findByTestId('format-hint').should('not.exist');
-        });
 
-        if (timeZone) {
-            // # Pick the time zone; its menu renders outside the modal. The picked
-            // value's clock icon covers the input, so open the select first.
-            cy.findByTestId('time-zone-field').find('.playbooks-rselect__control').click();
-            cy.focused().type(timeZone);
-            cy.get('.playbooks-rselect__option').contains(timeZone).click();
-        }
+            if (utc) {
+                // # Show times in UTC
+                cy.findByTestId('time-zone-utc').click();
+            }
+        });
 
         // # Export
         cy.get('#export-options-modal').findByTestId('modal-confirm-button').should('have.text', 'Export').click();
@@ -158,17 +155,17 @@ describe('playbooks > report export', {testIsolation: true}, () => {
         it('exports a run as HTML', () => {
             cy.intercept('GET', `/plugins/playbooks/api/v0/runs/${testRun.id}/report*`).as('runReport');
 
-            // # Open the run overview and export as HTML, with times in Karachi
+            // # Open the run overview and export as HTML, with times in UTC
             cy.playbooksVisitRun(testRun.id);
             openRunMenu();
-            exportFromOpenMenu('html', 'Asia/Karachi');
+            exportFromOpenMenu('html', true);
 
             // * The request succeeds with an HTML attachment named after the run
             assertReportResponse('@runReport', 'html').then((filename) => {
                 expect(filename).to.match(expectedFilename(runName, 'html'));
 
-                // * The request asks for the picked time zone
-                cy.get('@runReport').its('request.url').should('contain', 'time_zone=Asia%2FKarachi');
+                // * The request asks for UTC
+                cy.get('@runReport').its('request.url').should('contain', 'time_zone=UTC');
 
                 // * The modal closes once the report is saved
                 cy.get('#export-options-modal').should('not.exist');
@@ -178,8 +175,8 @@ describe('playbooks > report export', {testIsolation: true}, () => {
                     expect(html).to.match(/^<!DOCTYPE html>/i);
                     expect(html).to.contain(runName);
 
-                    // * Times are shown in the picked time zone
-                    expect(html).to.contain(' PKT');
+                    // * Times are shown in UTC
+                    expect(html).to.contain(' UTC');
                 });
             });
         });
