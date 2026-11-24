@@ -20,11 +20,6 @@ func resolverWithAlice() map[string]RenderUser {
 	}
 }
 
-// formatEvent builds one timeline line in English, in UTC.
-func formatEvent(ev RenderTimelineEvent, rt map[string]RenderUser) TimelineEvent {
-	return newBuilder(rt, testOptions()).timelineEvent(ev)
-}
-
 func TestTimelineEvent(t *testing.T) {
 	rt := map[string]RenderUser{
 		"u1": {UserID: "u1", Username: "alice", DisplayName: "Alice Admin"},
