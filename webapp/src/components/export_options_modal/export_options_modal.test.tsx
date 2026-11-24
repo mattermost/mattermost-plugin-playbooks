@@ -8,11 +8,13 @@ import {IntlProvider} from 'react-intl';
 // Track the most-recently rendered handleConfirm so tests can trigger it.
 let capturedHandleConfirm: (() => void) | undefined;
 let capturedConfirmDisabled: boolean | undefined;
+let capturedHandleCancel: (() => void) | undefined;
 
 jest.mock('src/components/widgets/generic_modal', () => {
     const ReactImpl = jest.requireActual('react');
-    const MockGenericModal = (props: {handleConfirm?: () => void; isConfirmDisabled?: boolean; children: React.ReactNode}) => {
+    const MockGenericModal = (props: {handleConfirm?: () => void; handleCancel?: () => void; isConfirmDisabled?: boolean; children: React.ReactNode}) => {
         capturedHandleConfirm = props.handleConfirm;
+        capturedHandleCancel = props.handleCancel;
         capturedConfirmDisabled = props.isConfirmDisabled;
         return ReactImpl.createElement('div', {'data-testid': 'mock-generic-modal'}, props.children);
     };
@@ -219,5 +221,29 @@ describe('ExportOptionsModal', () => {
     it('matches snapshot', () => {
         const {tree} = render();
         expect(tree.toJSON()).toMatchSnapshot();
+    });
+
+    it('cannot be dismissed while the export runs', async () => {
+        const {onConfirm, onCancel} = render();
+        let finish!: () => void;
+        onConfirm.mockReturnValue(new Promise<void>((resolve) => {
+            finish = resolve;
+        }));
+
+        act(() => {
+            capturedHandleConfirm?.();
+        });
+        act(() => {
+            capturedHandleCancel?.();
+        });
+        expect(onCancel).not.toHaveBeenCalled();
+
+        await act(async () => {
+            finish();
+        });
+        act(() => {
+            capturedHandleCancel?.();
+        });
+        expect(onCancel).toHaveBeenCalledTimes(1);
     });
 });

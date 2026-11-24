@@ -73,6 +73,14 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
         ];
     }, [currentUser?.timezone, formatMessage]);
 
+    // A running export closes the dialog when it finishes, so the dialog
+    // stays until then; otherwise it could close one opened in the meantime.
+    const cancel = () => {
+        if (!exporting) {
+            onCancel();
+        }
+    };
+
     const confirm = async () => {
         setExporting(true);
         try {
@@ -104,8 +112,8 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
             id='export-options-modal'
             modalHeaderText={formatMessage({defaultMessage: 'Export run report'})}
             show={true}
-            onHide={onCancel}
-            handleCancel={onCancel}
+            onHide={cancel}
+            handleCancel={cancel}
             handleConfirm={confirm}
             autoCloseOnConfirmButton={false}
             confirmButtonText={confirmText}
