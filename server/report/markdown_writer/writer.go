@@ -155,7 +155,7 @@ func writeMetrics(b *bytes.Buffer, title string, metrics []report.Metric) {
 	}
 	fmt.Fprintf(b, "**%s**\n\n", escapeText(title))
 	for _, m := range metrics {
-		fmt.Fprintf(b, "- **%s** — %s\n", escapeText(m.Title), escapeText(m.Value))
+		fmt.Fprintf(b, "- **%s**: %s\n", escapeText(m.Title), escapeText(m.Value))
 		writeIndentedText(b, m.Description)
 	}
 	b.WriteString("\n")
@@ -242,7 +242,7 @@ func writeLines(b *bytes.Buffer, text, prefix string) {
 }
 
 func postHeader(p report.Post, reply bool) string {
-	header := fmt.Sprintf("**%s** — %s", escapeText(p.Author), escapeText(p.Date))
+	header := fmt.Sprintf("**%s** · %s", escapeText(p.Author), escapeText(p.Date))
 	if reply {
 		header = "↳ " + header
 	}

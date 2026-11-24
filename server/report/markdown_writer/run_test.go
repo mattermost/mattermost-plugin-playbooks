@@ -27,10 +27,10 @@ func TestRenderRunMarkdown_ResolverDenyPaths(t *testing.T) {
 	got := renderRun(rc)
 
 	require.Contains(t, got, "**Owner**: Unknown user")
-	require.Contains(t, got, "### Unknown user — ")
+	require.Contains(t, got, "### Unknown user · ")
 	require.Contains(t, got, "- [x] Page on-call\n  *(Unknown user · Checked off by Unknown user on ")
-	require.Contains(t, got, "> **Unknown user** — ")
-	require.Contains(t, got, "> ↳ **Unknown user** — ")
+	require.Contains(t, got, "> **Unknown user** · ")
+	require.Contains(t, got, "> ↳ **Unknown user** · ")
 }
 
 func TestRenderRunMarkdown_PlainTextEscapedBodiesVerbatim(t *testing.T) {

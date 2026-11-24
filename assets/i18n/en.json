@@ -225,11 +225,11 @@
   },
   {
     "id": "app.report.run.transcript.no_channel",
-    "translation": "Transcript unavailable — this run has no associated channel."
+    "translation": "Transcript unavailable because this run has no channel."
   },
   {
     "id": "app.report.run.transcript.not_member",
-    "translation": "Transcript omitted — you are not a member of the run's channel."
+    "translation": "Transcript omitted because you are not a member of the run's channel."
   },
   {
     "id": "app.report.run.transcript.orphans_note",

@@ -2366,7 +2366,7 @@ paths:
         the requester to be a member of the run's channel.
 
         Response is always either a complete report OR a canonical JSON
-        error — never a partial document.
+        error, never a partial document.
 
         When a server-side cap (post count, byte budget or render timeout)
         is hit, the response is still 200 with a truncation note; the
@@ -2464,7 +2464,7 @@ paths:
                 $ref: "#/components/schemas/Error"
         404:
           description: |
-            Run not found OR not visible to the caller — existence is not
+            Run not found OR not visible to the caller; existence is not
             disclosed. Also returned when reports are disabled in the
             plugin config.
           content:

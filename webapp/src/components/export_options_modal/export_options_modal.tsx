@@ -139,7 +139,7 @@ const ExportOptionsModal = ({onConfirm, onCancel, channelExportAvailable = false
                 </FormatSelector>
                 {format === 'pdf' && (
                     <FormatHint data-testid='format-hint'>
-                        <FormattedMessage defaultMessage='Opens your browser print dialog — choose "Save as PDF".'/>
+                        <FormattedMessage defaultMessage='Choose "Save as PDF" in the print dialog that opens.'/>
                     </FormatHint>
                 )}
                 <Description>

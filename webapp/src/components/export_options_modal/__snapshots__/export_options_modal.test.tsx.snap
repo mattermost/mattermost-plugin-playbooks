@@ -57,7 +57,7 @@ exports[`ExportOptionsModal matches snapshot 1`] = `
       data-testid="format-hint"
       ref={null}
     >
-      Opens your browser print dialog — choose "Save as PDF".
+      Choose "Save as PDF" in the print dialog that opens.
     </p>
     <p
       className="Description-dTdaMR caPvRr"

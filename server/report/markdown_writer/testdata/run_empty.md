@@ -4,7 +4,7 @@
 
 _No summary._
 
-**Tasks**: 0/0  ·  **Updates**: 0  ·  **Participants**: 0  ·  **Duration**: —
+**Tasks**: 0/0  ·  **Updates**: 0  ·  **Participants**: 0  ·  **Duration**: \-
 
 **Status**: In Progress  ·  **Owner**: Unknown user
 

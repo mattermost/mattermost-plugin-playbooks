@@ -35,7 +35,7 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 		writeEmpty(&b, r.StatusUpdates.Empty)
 	}
 	for _, su := range r.StatusUpdates.Updates {
-		writeHeading(&b, 3, fmt.Sprintf("%s — %s", su.Author, su.Date))
+		writeHeading(&b, 3, fmt.Sprintf("%s · %s", su.Author, su.Date))
 		if su.Body == "" {
 			writeEmpty(&b, r.StatusUpdates.NoMessage)
 		}
@@ -52,7 +52,7 @@ func RenderRunMarkdown(r *report.RunReport) []byte {
 				if ev.PlainHeadline {
 					headline = escapeText(headline)
 				}
-				fmt.Fprintf(&b, "- **%s** · _%s_ — %s\n", escapeText(ev.Date), escapeText(ev.TypeLabel), headline)
+				fmt.Fprintf(&b, "- **%s** · _%s_: %s\n", escapeText(ev.Date), escapeText(ev.TypeLabel), headline)
 				if ev.Detail != "" {
 					writeLines(&b, closeFences(ev.Detail, 2), "  ")
 				}

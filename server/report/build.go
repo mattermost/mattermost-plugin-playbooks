@@ -72,7 +72,7 @@ func BuildRun(rc RenderContext, opts Options) *RunReport {
 		tasks,
 		{Label: T("app.report.run.stat.updates"), Value: strconv.Itoa(len(rc.StatusUpdates))},
 		{Label: T("app.report.run.stat.participants"), Value: strconv.Itoa(len(rc.Participants))},
-		{Label: T("app.report.run.stat.duration"), Value: cmp.Or(b.runDuration(rc), "—")},
+		{Label: T("app.report.run.stat.duration"), Value: cmp.Or(b.runDuration(rc), "-")},
 	}
 
 	r.Meta = []Field{{T("app.report.run.owner"), b.inlineUserName(rc.Owner)}}

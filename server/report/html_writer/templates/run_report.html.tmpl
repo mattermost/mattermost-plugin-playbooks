@@ -87,7 +87,7 @@ code, pre { font-family: var(--font-mono); }
   {{- if .Retrospective.Metrics}}
   <h3>{{.Retrospective.MetricsTitle}}</h3>
   {{- range .Retrospective.Metrics}}
-  <p><strong>{{.Title}}:</strong> {{.Value}}{{if .Description}} — <span class="muted">{{.Description}}</span>{{end}}</p>
+  <p><strong>{{.Title}}:</strong> {{.Value}}{{if .Description}} · <span class="muted">{{.Description}}</span>{{end}}</p>
   {{- end}}
   {{- end}}
   </section>

@@ -12,19 +12,19 @@ _No summary._
 
 ## Status updates
 
-### Dana Display — November 14, 2023, 10:18 PM UTC
+### Dana Display · November 14, 2023, 10:18 PM UTC
 
 Checking the identity provider.
 
-### Unknown user — November 14, 2023, 10:23 PM UTC
+### Unknown user · November 14, 2023, 10:23 PM UTC
 
 Rolled back the config.
 
 ## Timeline
 
-- **November 14, 2023, 10:13 PM UTC** · _Run created_ — Dana Display created this run
-- **November 14, 2023, 10:16 PM UTC** · _Task reassigned_ — Unknown user reassigned a task
-- **November 14, 2023, 10:17 PM UTC** · _Task updated_ — Unknown user restored task 'Check IdP'
+- **November 14, 2023, 10:13 PM UTC** · _Run created_: Dana Display created this run
+- **November 14, 2023, 10:16 PM UTC** · _Task reassigned_: Unknown user reassigned a task
+- **November 14, 2023, 10:17 PM UTC** · _Task updated_: Unknown user restored task 'Check IdP'
 
 ## Retrospective
 
@@ -41,9 +41,9 @@ _No retrospective._
 
 ## Chat history
 
-> **Dana Display** — November 14, 2023, 10:15 PM UTC
+> **Dana Display** · November 14, 2023, 10:15 PM UTC
 > Seeing 500s from SSO.
-> ↳ **Unknown user** — November 14, 2023, 10:16 PM UTC
+> ↳ **Unknown user** · November 14, 2023, 10:16 PM UTC
 >   Confirmed.
 
 ---

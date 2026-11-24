@@ -15,15 +15,15 @@ Primary DB failed over. **Resolved** by `@alice`.
 
 ## Status updates
 
-### Alice Admin — November 14, 2023, 10:18 PM UTC
+### Alice Admin · November 14, 2023, 10:18 PM UTC
 
 Investigating. cc `@here`
 
-### Bob Builder — November 14, 2023, 10:58 PM UTC
+### Bob Builder · November 14, 2023, 10:58 PM UTC
 
 Mitigated; **monitoring**.
 
-### Carol Chen — November 15, 2023, 12:13 AM UTC
+### Carol Chen · November 15, 2023, 12:13 AM UTC
 
 _No message._
 
