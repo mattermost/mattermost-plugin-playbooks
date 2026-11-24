@@ -27,6 +27,10 @@ type RenderContext struct {
 	// Run identifies the run being rendered.
 	Run RenderRun
 
+	// Sections are the sections the requester selected; the others are
+	// left out of the report.
+	Sections SectionFlags
+
 	// Owner is the run's owner. Zero value if the owner cannot be resolved
 	// (e.g., deleted user); rendered as "Unknown user" by the renderer.
 	Owner RenderUser
@@ -86,6 +90,7 @@ type RenderContext struct {
 // PlaybookRenderContext is the sanitized input to RenderPlaybook.
 type PlaybookRenderContext struct {
 	Playbook            RenderPlaybook
+	Sections            SectionFlags
 	Members             []RenderPlaybookMember
 	ChecklistTemplates  []RenderChecklist
 	StatusUpdateConfig  RenderStatusUpdateConfig
@@ -165,9 +170,12 @@ type RenderChecklist struct {
 
 // RenderChecklistItem is one task in a checklist.
 type RenderChecklistItem struct {
-	Title       string
-	State       string // "Closed" | "Skipped" | "" (open)
-	StateMs     int64
+	Title   string
+	State   string // "Closed" | "Skipped" | "" (open)
+	StateMs int64
+	// StateUserID is the user who closed or skipped the task; empty when the
+	// task is open or the run's timeline does not say who changed it.
+	StateUserID string
 	AssigneeID  string // empty if unassigned
 	DueAtMs     int64
 	Description string // markdown body
@@ -235,13 +243,13 @@ type Truncation struct {
 
 // SectionFlags selects which sections are included in a render.
 //
-// Run sections: Cover, ExecutiveSummary, Timeline, StatusUpdates, Checklists,
-// Retrospective, Transcript.
+// Run sections: ExecutiveSummary, Timeline, StatusUpdates, Checklists,
+// Retrospective, Transcript. The executive summary and status updates are
+// always included.
 //
 // Playbook sections: PlaybookOverview, PlaybookChecklistTemplates,
 // PlaybookSettings.
 type SectionFlags struct {
-	Cover            bool
 	ExecutiveSummary bool
 	Timeline         bool
 	StatusUpdates    bool
@@ -258,7 +266,6 @@ type SectionFlags struct {
 // everything except the transcript.
 func DefaultRunSections() SectionFlags {
 	return SectionFlags{
-		Cover:            true,
 		ExecutiveSummary: true,
 		Timeline:         true,
 		StatusUpdates:    true,

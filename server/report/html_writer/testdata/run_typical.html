@@ -46,6 +46,16 @@ th, td { border: 1px solid #e0e0e0; padding: 6px 10px; text-align: left; }
 th { background: #f8f9fb; font-weight: 600; }
 
  
+.cover { text-align: center; padding: 96px 0; margin-bottom: 8px; border-bottom: 1px solid #e0e0e0; }
+.cover__title { font-size: 32px; line-height: 1.25; margin-bottom: 0; }
+.cover__kind { font-size: 18px; font-weight: 600; color: #3f4350; margin: 12px 0; }
+.cover__date { color: #72767d; }
+
+ 
+.details { width: 100%; margin: 16px 0; }
+.details th { width: 30%; vertical-align: top; }
+
+ 
 .status-pill { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
 .status-pill--inprogress { background: #e8f4fd; color: #166aab; }
 .status-pill--finished   { background: #e8f5e8; color: #1f6b35; }
@@ -65,6 +75,7 @@ th { background: #f8f9fb; font-weight: 600; }
  
 .card { border: 1px solid #e0e0e0; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
 .card__header { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #1e1f22; }
+.card__header span { font-weight: 400; color: #72767d; margin-left: 8px; }
 
  
 .boxed-md { background: #f8f9fb; border-left: 3px solid #d8d8d8; border-radius: 0 4px 4px 0; padding: 12px 16px; margin: 8px 0; }
@@ -87,9 +98,9 @@ th { background: #f8f9fb; font-weight: 600; }
 .member-chip { background: #f0f0f0; border-radius: 12px; padding: 3px 10px; font-size: 13px; }
 
  
-.timeline-event { display: grid; grid-template-columns: 140px 140px 1fr; gap: 12px; margin: 8px 0; font-size: 13px; align-items: start; padding: 6px 0; border-top: 1px solid #f0f0f0; }
+.timeline-event { display: grid; grid-template-columns: 140px 1fr; gap: 12px; margin: 8px 0; font-size: 13px; align-items: start; padding: 6px 0; border-top: 1px solid #f0f0f0; }
 .timeline-event:first-of-type { border-top: none; }
-.timeline-event__date { color: #72767d; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.timeline-event__date { color: #72767d; font-size: 12px; margin-top: 2px; }
 .timeline-event__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #72767d; padding: 2px 8px; background: rgba(63, 67, 80, 0.06); border-radius: 12px; text-align: center; align-self: start; }
 .timeline-event__headline { color: #1e1f22; }
 .timeline-event__detail { color: #72767d; margin-top: 4px; font-size: 12px; }
@@ -123,7 +134,10 @@ th { background: #f8f9fb; font-weight: 600; }
  
 @media print {
   body { padding: 0; }
-  h2 { page-break-before: auto; }
+   
+  .cover { min-height: 240mm; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0; border-bottom: none; break-after: page; }
+  .section { break-before: page; }
+  .section > h2:first-child { margin-top: 0; }
   .card, .boxed-md, .transcript-thread { break-inside: avoid; }
   a[href]::after { content: " (" attr(href) ")"; font-size: 10px; color: #72767d; }
   a[href^="#"]::after { content: ""; }
@@ -132,8 +146,22 @@ th { background: #f8f9fb; font-weight: 600; }
 
 </head>
 <body>
-  <h1>Database outage #42</h1>
-  <span class="status-pill status-pill--finished">Finished</span>
+  <section class="cover">
+    <h1 class="cover__title">Database outage #42</h1>
+    <p class="cover__kind">Run report</p>
+    <span class="status-pill status-pill--finished">Finished</span>
+    <p class="cover__date">November 15, 2023, 1:13 AM UTC</p>
+  </section>
+
+  <section class="section">
+  <h2>Executive summary</h2>
+  <div class="boxed-md"><p>Primary DB failed over. <strong>Resolved</strong> by @alice.</p>
+<ul>
+<li>Replica promoted</li>
+<li>Traffic drained</li>
+</ul>
+</div>
+  
 
   <div class="stat-grid">
     <div class="stat-card">
@@ -158,114 +186,127 @@ th { background: #f8f9fb; font-weight: 600; }
     </div>
   </div>
 
-  <p class="meta-strip">
-    <strong>Owner:</strong> @alice · <strong>Started:</strong> 2023-11-14 22:13 · <strong>Ended:</strong> 2023-11-15 00:28 · <strong>Playbook:</strong> Sev1 *Incident* Response
-  </p>
-  <div class="member-grid">
-    <span class="member-chip">@alice</span><span class="member-chip">@bob</span><span class="member-chip">@carol</span>
-  </div>
+  <table class="details">
+    <tr><th>Owner</th><td>Alice Admin</td></tr>
+    <tr><th>Started</th><td>November 14, 2023, 10:13 PM UTC</td></tr>
+    <tr><th>Ended</th><td>November 15, 2023, 12:28 AM UTC</td></tr>
+    <tr><th>Playbook</th><td>Sev1 *Incident* Response</td></tr>
+    <tr><th>Participants</th><td>Alice Admin, Bob Builder, Carol Chen</td></tr>
+  </table>
+  </section>
 
-  <h2>Summary</h2>
-  <div class="boxed-md"><p>Primary DB failed over. <strong>Resolved</strong> by @alice.</p>
-<ul>
-<li>Replica promoted</li>
-<li>Traffic drained</li>
-</ul>
-</div>
-  
-
-  <h2>Timeline</h2>
-  <div class="timeline-event timeline-event--lifecycle">
-    <span class="timeline-event__date">2023-11-14 22:13</span>
-    <span class="timeline-event__label">Run created</span>
-    <div class="timeline-event__body">
-      <div class="timeline-event__headline">@alice created this run</div>
-      
-    </div>
-  </div>
-  
-  <div class="timeline-event timeline-event--tasks">
-    <span class="timeline-event__date">2023-11-14 22:23</span>
-    <span class="timeline-event__label">Task updated</span>
-    <div class="timeline-event__body">
-      <div class="timeline-event__headline">@alice checked task &#39;Page on-call&#39;</div>
-      
-    </div>
-  </div>
-  
-  <div class="timeline-event timeline-event--tasks">
-    <span class="timeline-event__date">2023-11-14 22:24</span>
-    <span class="timeline-event__label">Task updated</span>
-    <div class="timeline-event__body">
-      <div class="timeline-event__headline">@bob skipped a task</div>
-      
-    </div>
-  </div>
-  
-  <div class="timeline-event timeline-event--status">
-    <span class="timeline-event__date">2023-11-14 22:58</span>
-    <span class="timeline-event__label">Status update posted</span>
-    <div class="timeline-event__body">
-      <div class="timeline-event__headline">@bob posted a status update</div>
-      <div class="timeline-event__detail">Mitigated; monitoring.</div>
-    </div>
-  </div>
-  
-  <div class="timeline-event timeline-event--people">
-    <span class="timeline-event__date">2023-11-14 23:13</span>
-    <span class="timeline-event__label">Owner changed</span>
-    <div class="timeline-event__body">
-      <div class="timeline-event__headline">@bob changed owner</div>
-      
-    </div>
-  </div>
-  
-  <div class="timeline-event timeline-event--other">
-    <span class="timeline-event__date">2023-11-14 23:43</span>
-    <span class="timeline-event__label">Event</span>
-    <div class="timeline-event__body">
-      <div class="timeline-event__headline">Timeline event</div>
-      
-    </div>
-  </div>
-  
-  <div class="timeline-event timeline-event--lifecycle">
-    <span class="timeline-event__date">2023-11-15 00:28</span>
-    <span class="timeline-event__label">Run finished</span>
-    <div class="timeline-event__body">
-      <div class="timeline-event__headline">@alice marked this run finished</div>
-      
-    </div>
-  </div>
-  
-
-  <h2>Status Updates</h2>
+  <section class="section">
+  <h2>Status updates</h2>
   <div class="card">
-    <div class="card__header">@alice — 2023-11-14 22:18</div>
+    <div class="card__header">Alice Admin<span>November 14, 2023, 10:18 PM UTC</span></div>
     <div class="boxed-md"><p>Investigating. cc @here</p>
 </div>
   </div>
   
   <div class="card">
-    <div class="card__header">@bob — 2023-11-14 22:58</div>
+    <div class="card__header">Bob Builder<span>November 14, 2023, 10:58 PM UTC</span></div>
     <div class="boxed-md"><p>Mitigated; <strong>monitoring</strong>.</p>
 </div>
   </div>
   
   <div class="card">
-    <div class="card__header">@carol — 2023-11-15 00:13</div>
+    <div class="card__header">Carol Chen<span>November 15, 2023, 12:13 AM UTC</span></div>
     <p class="muted">No message.</p>
   </div>
   
-
-  <h2>Tasks</h2>
+  </section>
+  <section class="section">
+  <h2>Timeline</h2>
+  <div class="timeline-event timeline-event--lifecycle">
+    <span class="timeline-event__label">Run created</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Alice Admin created this run</div>
+      
+      <div class="timeline-event__date">November 14, 2023, 10:13 PM UTC</div>
+    </div>
+  </div>
+  
+  <div class="timeline-event timeline-event--tasks">
+    <span class="timeline-event__label">Task updated</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Alice Admin checked task &#39;Page on-call&#39;</div>
+      
+      <div class="timeline-event__date">November 14, 2023, 10:23 PM UTC</div>
+    </div>
+  </div>
+  
+  <div class="timeline-event timeline-event--tasks">
+    <span class="timeline-event__label">Task updated</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Bob Builder skipped a task</div>
+      
+      <div class="timeline-event__date">November 14, 2023, 10:24 PM UTC</div>
+    </div>
+  </div>
+  
+  <div class="timeline-event timeline-event--status">
+    <span class="timeline-event__label">Status update posted</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">@bob posted a status update</div>
+      <div class="timeline-event__detail">Mitigated; monitoring.</div>
+      <div class="timeline-event__date">November 14, 2023, 10:58 PM UTC</div>
+    </div>
+  </div>
+  
+  <div class="timeline-event timeline-event--people">
+    <span class="timeline-event__label">Owner changed</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Bob Builder changed owner</div>
+      
+      <div class="timeline-event__date">November 14, 2023, 11:13 PM UTC</div>
+    </div>
+  </div>
+  
+  <div class="timeline-event timeline-event--other">
+    <span class="timeline-event__label">Event</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Timeline event</div>
+      
+      <div class="timeline-event__date">November 14, 2023, 11:43 PM UTC</div>
+    </div>
+  </div>
+  
+  <div class="timeline-event timeline-event--lifecycle">
+    <span class="timeline-event__label">Run finished</span>
+    <div class="timeline-event__body">
+      <div class="timeline-event__headline">Alice Admin marked this run finished</div>
+      
+      <div class="timeline-event__date">November 15, 2023, 12:28 AM UTC</div>
+    </div>
+  </div>
+  
+  </section>
+  <section class="section">
+  <h2>Retrospective</h2>
+  <div class="boxed-md"><h2 id="what-went-well">What went well</h2>
+<ul>
+<li>Quick paging</li>
+</ul>
+</div>
+  
+  <h3>Metrics</h3>
+  <p><strong>Time to detect:</strong> 3m 0s — <span class="muted">Measured from
+alert to ack</span></p>
+  <p><strong>Cost:</strong> 123.45</p>
+  <p><strong>Customers affected:</strong> 7</p>
+  <p><strong>Time to resolve:</strong> not set</p>
+  <p><strong>Time to escalate:</strong> 0s</p>
+  </section>
+  <section class="section">
+  <h2>Task outline</h2>
   <h3>Initial response (2/4 · 50%)</h3>
   <div class="checklist">
     <div class="task">
       <input type="checkbox" checked disabled>
       <div class="task__body">
         <div class="task__title">Page on-call</div>
-        <div class="task__meta">@alice</div>
+        <div class="task__meta">Alice Admin</div>
+        <div class="task__meta">Checked off by Alice Admin on November 14, 2023, 10:23 PM UTC</div>
         
       </div>
     </div>
@@ -275,6 +316,7 @@ th { background: #f8f9fb; font-weight: 600; }
       <div class="task__body">
         <div class="task__title">Open war room</div>
         
+        <div class="task__meta">Skipped on November 14, 2023, 10:24 PM UTC</div>
         
       </div>
     </div>
@@ -283,7 +325,8 @@ th { background: #f8f9fb; font-weight: 600; }
       <input type="checkbox"  disabled>
       <div class="task__body">
         <div class="task__title">Notify <strong>stakeholders</strong></div>
-        <div class="task__meta">@bob · Due: 2023-11-14 23:13</div>
+        <div class="task__meta">Bob Builder · Due: November 14, 2023, 11:13 PM UTC</div>
+        
         
       </div>
     </div>
@@ -292,7 +335,8 @@ th { background: #f8f9fb; font-weight: 600; }
       <input type="checkbox"  disabled>
       <div class="task__body">
         <div class="task__title">Postmortem doc</div>
-        <div class="task__meta">Unassigned · Due: 2023-11-16 00:13 · <code class="task__meta-cmd">/postmortem create</code></div>
+        <div class="task__meta">Unassigned · Due: November 16, 2023, 12:13 AM UTC · <code class="task__meta-cmd">/postmortem create</code></div>
+        
         <div class="task__desc"><p>Write it up.<br>
 Share with @carol.</p>
 </div>
@@ -311,41 +355,29 @@ Share with @carol.</p>
       <input type="checkbox" checked disabled>
       <div class="task__body">
         <div class="task__title">Close incident</div>
-        <div class="task__meta">@carol</div>
+        <div class="task__meta">Carol Chen</div>
+        <div class="task__meta">Checked off by Bob Builder on November 15, 2023, 12:13 AM UTC</div>
         
       </div>
     </div>
     
   </div>
   
-
-  <h2>Retrospective</h2>
-  <div class="boxed-md"><h2 id="what-went-well">What went well</h2>
-<ul>
-<li>Quick paging</li>
-</ul>
-</div>
-  
-  <h3>Metrics</h3>
-  <p><strong>Time to detect:</strong> 3m 0s — <span class="muted">Measured from
-alert to ack</span></p>
-  <p><strong>Cost:</strong> 123.45</p>
-  <p><strong>Customers affected:</strong> 7</p>
-  <p><strong>Time to resolve:</strong> not set</p>
-  <p><strong>Time to escalate:</strong> 0s</p>
-  <h2>Transcript</h2>
+  </section>
+  <section class="section">
+  <h2>Chat history</h2>
     <div class="transcript-thread">
-      <div class="msg-header">@alice<span>2023-11-14 22:15</span></div>
+      <div class="msg-header">Alice Admin<span>November 14, 2023, 10:15 PM UTC</span></div>
       <div class="msg-body"><p>Looking into it. @channel</p>
 </div>
       <div class="transcript-reply">
-        <div class="msg-header">↳ @bob<span>2023-11-14 22:19</span></div>
+        <div class="msg-header">↳ Bob Builder<span>November 14, 2023, 10:19 PM UTC</span></div>
         <div class="msg-body"><p>Same here.</p>
 </div>
       </div>
     </div>
     <div class="transcript-thread">
-      <div class="msg-header">@carol<span>2023-11-14 22:17</span></div>
+      <div class="msg-header">Carol Chen<span>November 14, 2023, 10:17 PM UTC</span></div>
       <div class="msg-body"><p>Dashboards are red:</p>
 <pre><code>error rate 40%
 </code></pre>
@@ -354,11 +386,12 @@ alert to ack</span></p>
     <h3 class="transcript-orphans-heading">Orphan replies</h3>
     <p class="muted transcript-orphans-note">Parent message is outside this transcript.</p>
     <div class="transcript-reply transcript-reply--orphan">
-      <div class="msg-header">↳ @carol<span>2023-11-14 22:21</span></div>
+      <div class="msg-header">↳ Carol Chen<span>November 14, 2023, 10:21 PM UTC</span></div>
       <div class="msg-body"><p>Following up on the earlier thread.</p>
 </div>
     </div>
+  </section>
   <hr class="divider">
-  <p class="muted">Generated 2023-11-15 01:13 UTC.</p>
+  <p class="muted">Generated November 15, 2023, 1:13 AM UTC.</p>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Access requests
 
-**Visibility**: Private  ·  **Generated**: 2023-11-15 01:13
+**Visibility**: Private  ·  **Generated**: November 15, 2023, 1:13 AM UTC
 
 **Checklists**: 0  ·  **Members**: 3  ·  **Broadcasts**: 1  ·  **Webhooks**: 1
 
@@ -18,7 +18,7 @@ _No description._
 
 _No checklist templates._
 
-## Status Updates
+## Status updates
 
 **Enabled**: Disabled  ·  **Cadence**: Every day
 
@@ -50,4 +50,4 @@ _No signal keywords._
 
 ---
 
-_Generated 2023-11-15 01:13 UTC._
+_Generated November 15, 2023, 1:13 AM UTC._

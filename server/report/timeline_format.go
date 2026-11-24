@@ -4,6 +4,7 @@
 package report
 
 import (
+	"cmp"
 	"encoding/json"
 	"strings"
 )
@@ -23,7 +24,10 @@ const (
 )
 
 // taskStateDetails is the parsed shape of TaskStateModified's Details JSON.
+// The server records the task's title as "task"; Item reads the older
+// "item" key.
 type taskStateDetails struct {
+	Task   string `json:"task"`
 	Item   string `json:"item"`
 	Action string `json:"action"` // "check" | "uncheck" | "skip" | "restore"
 }
@@ -39,6 +43,7 @@ func parseTaskStateDetails(detailsJSON string) taskStateDetails {
 	if err := json.Unmarshal([]byte(s), &d); err != nil {
 		return taskStateDetails{}
 	}
+	d.Item = cmp.Or(d.Task, d.Item)
 	return d
 }
 

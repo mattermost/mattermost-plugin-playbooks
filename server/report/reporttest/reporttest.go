@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 
 	"github.com/stretchr/testify/assert"
@@ -54,12 +55,24 @@ var loadTranslations = sync.OnceValue(func() error {
 })
 
 // Options returns build options for locale and location, with the plugin's
-// translations loaded.
+// translations loaded and users shown by full name.
 func Options(locale string, location *time.Location) report.Options {
 	if err := loadTranslations(); err != nil {
 		panic(err)
 	}
-	return report.Options{T: i18n.GetUserTranslations(locale), Locale: locale, Location: location}
+	return report.Options{
+		T:          i18n.GetUserTranslations(locale),
+		Locale:     locale,
+		Location:   location,
+		NameFormat: model.ShowFullName,
+	}
+}
+
+// AllRunSections selects every run section, the transcript included.
+func AllRunSections() report.SectionFlags {
+	s := report.DefaultRunSections()
+	s.Transcript = true
+	return s
 }
 
 // RunScenario is a named run report input.
@@ -89,7 +102,7 @@ func (s PlaybookScenario) Report() *report.PlaybookReport {
 func users() map[string]report.RenderUser {
 	return map[string]report.RenderUser{
 		"u1": {UserID: "u1", DisplayName: "Alice Admin", Username: "alice"},
-		"u2": {UserID: "u2", DisplayName: "Bob Builder", Username: "bob"},
+		"u2": {UserID: "u2", DisplayName: "Bob Builder", Username: "bob", Nickname: "Bobby"},
 		"u3": {UserID: "u3", DisplayName: "Carol Chen", Username: "carol"},
 		// u4 has no username, as for a user the requester can only partly see.
 		"u4": {UserID: "u4", DisplayName: "Dana Display"},
@@ -110,25 +123,35 @@ func RunScenarios() []RunScenario {
 	omitted.Transcript = nil
 	omitted.TranscriptOmittedReason = coretypes.TranscriptOmittedNotMember
 
+	// Only the executive summary, status updates and tasks were selected.
+	sections := TypicalRun()
+	sections.Sections = report.SectionFlags{ExecutiveSummary: true, StatusUpdates: true, Checklists: true}
+
 	en := Options("en", time.UTC)
+	byUsername := en
+	byUsername.NameFormat = model.ShowUsername
 	return []RunScenario{
 		{"run_typical", TypicalRun(), en},
 		{"run_empty", report.RenderContext{
 			Run:               report.RenderRun{ID: "run2", Status: coretypes.RunStatusInProgress},
+			Sections:          report.DefaultRunSections(),
 			GeneratedAtMillis: GeneratedAt,
 		}, en},
-		{"run_redacted", RedactedRun(), en},
+		// Users are shown by username, or by name when they have none.
+		{"run_redacted", RedactedRun(), byUsername},
 		// Shown in another language and time zone; strings without a
 		// translation fall back to English.
 		{"run_chronological", chronological, Options("de", time.FixedZone("CET", 60*60))},
 		{"run_truncated", truncated, en},
 		{"run_transcript_omitted", omitted, en},
+		{"run_sections", sections, en},
 	}
 }
 
 // TypicalRun is a finished run with every section filled in.
 func TypicalRun() report.RenderContext {
 	return report.RenderContext{
+		Sections: AllRunSections(),
 		Run: report.RenderRun{
 			ID:            "run1",
 			Name:          "Database outage #42",
@@ -152,7 +175,7 @@ func TypicalRun() report.RenderContext {
 		},
 		TimelineEvents: []report.RenderTimelineEvent{
 			{EventType: "incident_created", CreateAt: Base, CreatorID: "u1"},
-			{EventType: "task_state_modified", CreateAt: Base + 10*minute, SubjectID: "u1", Details: `{"item":"Page on-call","action":"check"}`},
+			{EventType: "task_state_modified", CreateAt: Base + 10*minute, SubjectID: "u1", Details: `{"action":"check","task":"Page on-call","item_id":"i1"}`},
 			{EventType: "task_state_modified", CreateAt: Base + 11*minute, SubjectID: "u2", Details: `{"action":"skip"}`},
 			{EventType: "status_updated", CreateAt: Base + 45*minute, SubjectID: "u2", Summary: "@bob posted a status update", Details: "Mitigated; monitoring."},
 			{EventType: "owner_changed", CreateAt: Base + hour, SubjectID: "u2"},
@@ -163,8 +186,9 @@ func TypicalRun() report.RenderContext {
 			{
 				Title: "Initial response",
 				Items: []report.RenderChecklistItem{
-					{Title: "Page on-call", State: coretypes.ChecklistItemStateClosed, AssigneeID: "u1"},
-					{Title: "Open war room", State: coretypes.ChecklistItemStateSkipped},
+					{Title: "Page on-call", State: coretypes.ChecklistItemStateClosed, StateMs: Base + 10*minute, StateUserID: "u1", AssigneeID: "u1"},
+					// Skipped by a user the timeline doesn't name.
+					{Title: "Open war room", State: coretypes.ChecklistItemStateSkipped, StateMs: Base + 11*minute},
 					{Title: "Notify **stakeholders**", State: coretypes.ChecklistItemStateInProgress, AssigneeID: "u2", DueAtMs: Base + hour},
 					{
 						Title:       "Postmortem doc",
@@ -178,7 +202,7 @@ func TypicalRun() report.RenderContext {
 			{
 				Title: "Wrap-up",
 				Items: []report.RenderChecklistItem{
-					{Title: "Close incident", State: coretypes.ChecklistItemStateClosed, AssigneeID: "u3"},
+					{Title: "Close incident", State: coretypes.ChecklistItemStateClosed, StateMs: Base + 2*hour, StateUserID: "u2", AssigneeID: "u3"},
 				},
 			},
 		},
@@ -209,6 +233,7 @@ func TypicalRun() report.RenderContext {
 // fully resolve: unknown IDs and a user without a username.
 func RedactedRun() report.RenderContext {
 	return report.RenderContext{
+		Sections: AllRunSections(),
 		Run: report.RenderRun{
 			ID:          "run3",
 			Name:        "Login failures",
@@ -235,7 +260,7 @@ func RedactedRun() report.RenderContext {
 				Title: "Triage",
 				Items: []report.RenderChecklistItem{
 					{Title: "Check IdP", AssigneeID: "u4"},
-					{Title: "Check certificates", State: coretypes.ChecklistItemStateClosed, AssigneeID: "u9"},
+					{Title: "Check certificates", State: coretypes.ChecklistItemStateSkipped, StateMs: Base + 6*minute, StateUserID: "u9", AssigneeID: "u9"},
 				},
 			},
 		},
@@ -251,20 +276,27 @@ func RedactedRun() report.RenderContext {
 // PlaybookScenarios returns the playbook report scenarios the golden tests
 // render.
 func PlaybookScenarios() []PlaybookScenario {
+	// Only the task templates were selected.
+	tasks := TypicalPlaybook()
+	tasks.Sections = report.SectionFlags{PlaybookChecklistTemplates: true}
+
 	en := Options("en", time.UTC)
 	return []PlaybookScenario{
 		{"playbook_typical", TypicalPlaybook(), en},
 		{"playbook_empty", report.PlaybookRenderContext{
 			Playbook:          report.RenderPlaybook{ID: "pb2"},
+			Sections:          report.DefaultPlaybookSections(),
 			GeneratedAtMillis: GeneratedAt,
 		}, en},
 		{"playbook_redacted", RedactedPlaybook(), en},
+		{"playbook_sections", tasks, en},
 	}
 }
 
 // TypicalPlaybook is a public playbook with every section filled in.
 func TypicalPlaybook() report.PlaybookRenderContext {
 	return report.PlaybookRenderContext{
+		Sections: report.DefaultPlaybookSections(),
 		Playbook: report.RenderPlaybook{
 			ID:          "pb1",
 			Title:       "Sev1 *Incident* Response",
@@ -324,6 +356,7 @@ func TypicalPlaybook() report.PlaybookRenderContext {
 // webhooks the requester cannot fully see, and partial settings.
 func RedactedPlaybook() report.PlaybookRenderContext {
 	return report.PlaybookRenderContext{
+		Sections: report.DefaultPlaybookSections(),
 		Playbook: report.RenderPlaybook{ID: "pb3", Title: "Access requests"},
 		Members: []report.RenderPlaybookMember{
 			{UserID: "u4", DisplayName: "Dana Display", Roles: []string{"playbook_admin"}},

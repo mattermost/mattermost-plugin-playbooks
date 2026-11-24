@@ -1,6 +1,6 @@
 # (untitled playbook)
 
-**Visibility**: Private  ·  **Generated**: 2023-11-15 01:13
+**Visibility**: Private  ·  **Generated**: November 15, 2023, 1:13 AM UTC
 
 **Checklists**: 0  ·  **Members**: 0  ·  **Broadcasts**: 0  ·  **Webhooks**: 0
 
@@ -16,7 +16,7 @@ _No members._
 
 _No checklist templates._
 
-## Status Updates
+## Status updates
 
 _No status update configuration._
 
@@ -30,4 +30,4 @@ _No automations._
 
 ---
 
-_Generated 2023-11-15 01:13 UTC._
+_Generated November 15, 2023, 1:13 AM UTC._

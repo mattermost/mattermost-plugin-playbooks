@@ -834,7 +834,6 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
 };
 
 export type ReportSections = {
-    cover?: boolean;
     executiveSummary?: boolean;
     timeline?: boolean;
     statusUpdates?: boolean;
@@ -868,7 +867,6 @@ export type ReportExport = {
 };
 
 const SECTION_KEY_TO_PARAM: Record<keyof ReportSections, string> = {
-    cover: 'cover',
     executiveSummary: 'summary',
     timeline: 'timeline',
     statusUpdates: 'updates',
@@ -899,7 +897,15 @@ const parseFilenameFromDisposition = (disposition: string | null, fallback: stri
 
 export type TranscriptMode = 'threaded' | 'chronological';
 
-const fetchReport = async (path: string, format: ReportFormat, sections: ReportSections, transcriptMode?: TranscriptMode): Promise<ReportExport> => {
+// RunReportOptions are the export options only run reports have.
+export type RunReportOptions = {
+    transcriptMode?: TranscriptMode;
+
+    // timeZone is the IANA time zone the report's times are shown in; empty means the user's own.
+    timeZone?: string;
+};
+
+const fetchReport = async (path: string, format: ReportFormat, sections: ReportSections, {transcriptMode, timeZone}: RunReportOptions = {}): Promise<ReportExport> => {
     const serverFormat = format === 'md' ? 'md' : 'html';
     const params = new URLSearchParams({format: serverFormat});
     const list = sectionsToQueryString(sections);
@@ -908,6 +914,9 @@ const fetchReport = async (path: string, format: ReportFormat, sections: ReportS
     }
     if (transcriptMode && transcriptMode !== 'threaded') {
         params.set('transcript_mode', transcriptMode);
+    }
+    if (timeZone) {
+        params.set('time_zone', timeZone);
     }
 
     // The intent is recorded in the server's audit log for HTML exports.
@@ -930,8 +939,8 @@ const fetchReport = async (path: string, format: ReportFormat, sections: ReportS
     };
 };
 
-export function exportRunReport(runID: string, format: ReportFormat, sections: ReportSections, transcriptMode?: TranscriptMode): Promise<ReportExport> {
-    return fetchReport(`/runs/${runID}/report`, format, sections, transcriptMode);
+export function exportRunReport(runID: string, format: ReportFormat, sections: ReportSections, options?: RunReportOptions): Promise<ReportExport> {
+    return fetchReport(`/runs/${runID}/report`, format, sections, options);
 }
 
 export function exportPlaybookReport(playbookID: string, format: ReportFormat, sections: ReportSections): Promise<ReportExport> {

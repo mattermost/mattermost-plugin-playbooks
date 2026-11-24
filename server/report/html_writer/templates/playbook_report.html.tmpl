@@ -11,8 +11,18 @@
 </head>
 <body>
   {{- with .Report}}
-  <h1>{{.Title}}</h1>
-  <span class="status-pill status-pill--neutral">{{.Visibility}}</span>
+  <section class="cover">
+    <h1 class="cover__title">{{.Title}}</h1>
+    <p class="cover__kind">{{.Kind}}</p>
+    <span class="status-pill status-pill--neutral">{{.Visibility}}</span>
+    {{if .Generated}}<p class="cover__date">{{.Generated}}</p>{{end}}
+  </section>
+
+  {{- if not .Description.Omitted}}
+  <section class="section">
+  <h2>{{.Description.Title}}</h2>
+  {{if .Description.Body}}<div class="boxed-md">{{markdown .Description.Body}}</div>
+  {{else}}<p class="muted">{{.Description.Empty}}</p>{{end}}
 
   <div class="stat-grid">
     {{- range .Stats}}
@@ -23,21 +33,17 @@
     {{- end}}
   </div>
 
-  <p class="meta-strip">
-    {{range $i, $f := .Meta}}{{if $i}} · {{end}}<strong>{{$f.Label}}:</strong> {{$f.Value}}{{end}}
-  </p>
-
-  <h2>{{.Description.Title}}</h2>
-  {{if .Description.Body}}<div class="boxed-md">{{markdown .Description.Body}}</div>
-  {{else}}<p class="muted">{{.Description.Empty}}</p>{{end}}
-
-  <h2>{{.Members.Title}}</h2>
+  <h3>{{.Members.Title}}</h3>
   {{- if .Members.Members}}
   <div class="member-grid">
     {{range .Members.Members}}<span class="member-chip">{{.Name}}{{if .Roles}} ({{.Roles}}){{end}}</span>{{end}}
   </div>
   {{else}}<p class="muted">{{.Members.Empty}}</p>{{end}}
+  </section>
+  {{- end}}
 
+  {{- if not .Checklists.Omitted}}
+  <section class="section">
   <h2>{{.Checklists.Title}}</h2>
   {{- range .Checklists.Checklists}}
   <h3>{{.Title}} ({{.Progress}})</h3>
@@ -55,8 +61,11 @@
     {{- end}}
   </div>
   {{else}}<p class="muted">{{.Checklists.Empty}}</p>{{end}}
+  </section>
+  {{- end}}
 
-  {{- range .Settings}}
+  {{- range .Settings}}{{if not .Omitted}}
+  <section class="section">
   <h2>{{.Title}}</h2>
   {{- if .Configured}}
   <p class="meta-strip">
@@ -70,9 +79,11 @@
   {{- end}}
   {{- end}}
   {{else}}<p class="muted">{{.Empty}}</p>{{end}}
-  {{- end}}
+  </section>
+  {{- end}}{{end}}
 
-  {{- with .Automations}}
+  {{- with .Automations}}{{if not .Omitted}}
+  <section class="section">
   <h2>{{.Title}}</h2>
   {{- if .Configured}}
 
@@ -95,7 +106,8 @@
   {{- end}}
 
   {{else}}<p class="muted">{{.Empty}}</p>{{end}}
-  {{- end}}
+  </section>
+  {{- end}}{{end}}
 
   {{- if .Footer}}
   <hr class="divider">

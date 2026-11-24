@@ -2361,9 +2361,9 @@ paths:
       description: |
         Renders a report for the given playbook run in the requested format.
         Sections may be selected via the `sections` query parameter; omit it
-        for the default set (cover, summary, timeline, updates, checklists,
-        retro — but not transcript). The transcript section requires the
-        requester to be a member of the run's channel.
+        for the default set (everything but the transcript). The summary and
+        status updates are always included. The transcript section requires
+        the requester to be a member of the run's channel.
 
         Response is always either a complete report OR a canonical JSON
         error — never a partial document.
@@ -2399,11 +2399,12 @@ paths:
           required: false
           description: |
             Comma-separated list of section tokens to include. Allowed:
-            `cover`, `summary`, `timeline`, `updates`, `checklists`, `retro`,
-            `transcript`. Omit to use the server-configured default set.
+            `summary`, `timeline`, `updates`, `tasks`, `retro`, `transcript`.
+            `summary` and `updates` are always included. Omit for every
+            section but the transcript.
           schema:
             type: string
-            example: cover,summary,timeline,updates
+            example: timeline,tasks,retro
         - name: transcript_mode
           in: query
           required: false
@@ -2411,6 +2412,15 @@ paths:
           schema:
             type: string
             enum: [threaded, chronological]
+        - name: time_zone
+          in: query
+          required: false
+          description: |
+            IANA time zone every time in the report is shown in, such as
+            `Asia/Karachi`. Defaults to the requester's time zone.
+          schema:
+            type: string
+            example: Europe/Berlin
       responses:
         200:
           description: The report (atomic; full body buffered before any header is sent).
@@ -2447,7 +2457,7 @@ paths:
               schema:
                 type: string
         400:
-          description: Missing or unknown `format`, or an unknown section token in the `sections` query.
+          description: Missing or unknown `format`, an unknown section token in the `sections` query, or an unknown `time_zone`.
           content:
             application/json:
               schema:
@@ -2522,11 +2532,11 @@ paths:
           required: false
           description: |
             Comma-separated list of section tokens to include. Allowed:
-            `overview`, `checklists`, `settings`. Omit to use the full
+            `overview`, `tasks`, `settings`. Omit to use the full
             playbook section set.
           schema:
             type: string
-            example: overview,checklists
+            example: overview,tasks
       responses:
         200:
           description: The report (atomic; full body buffered before any header is sent).

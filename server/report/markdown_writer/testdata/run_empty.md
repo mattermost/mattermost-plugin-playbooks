@@ -1,33 +1,29 @@
 # (untitled run)
 
-**Status**: In Progress  ·  **Owner**: Unknown user
+## Executive summary
+
+_No summary._
 
 **Tasks**: 0/0  ·  **Updates**: 0  ·  **Participants**: 0  ·  **Duration**: —
 
-## Summary
+**Status**: In Progress  ·  **Owner**: Unknown user
 
-_No summary._
+## Status updates
+
+_No status updates._
 
 ## Timeline
 
 _No timeline events._
 
-## Status Updates
-
-_No status updates._
-
-## Tasks
-
-_No tasks._
-
 ## Retrospective
 
 _No retrospective._
 
-## Transcript
+## Task outline
 
-_No transcript._
+_No tasks._
 
 ---
 
-_Generated 2023-11-15 01:13 UTC._
+_Generated November 15, 2023, 1:13 AM UTC._

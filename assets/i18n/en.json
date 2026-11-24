@@ -4,6 +4,14 @@
     "translation": "Unable to execute command."
   },
   {
+    "id": "app.report.checklist.checked_off",
+    "translation": "Checked off on {{.Date}}"
+  },
+  {
+    "id": "app.report.checklist.checked_off_by",
+    "translation": "Checked off by {{.User}} on {{.Date}}"
+  },
+  {
     "id": "app.report.checklist.due",
     "translation": "Due: {{.Date}}"
   },
@@ -14,6 +22,14 @@
   {
     "id": "app.report.checklist.progress",
     "translation": "{{.Done}}/{{.Total}} · {{.Percent}}%"
+  },
+  {
+    "id": "app.report.checklist.skipped",
+    "translation": "Skipped on {{.Date}}"
+  },
+  {
+    "id": "app.report.checklist.skipped_by",
+    "translation": "Skipped by {{.User}} on {{.Date}}"
   },
   {
     "id": "app.report.checklist.task_count",
@@ -29,6 +45,10 @@
   {
     "id": "app.report.checklist.untitled",
     "translation": "Checklist {{.Number}}"
+  },
+  {
+    "id": "app.report.date",
+    "translation": "{{.Month}} {{.Day}}, {{.Year}}, {{.Hour12}}:{{.Minute}} {{.Period}} {{.Zone}}"
   },
   {
     "id": "app.report.duration.days_hours",
@@ -73,6 +93,54 @@
   {
     "id": "app.report.metrics.title",
     "translation": "Metrics"
+  },
+  {
+    "id": "app.report.month.april",
+    "translation": "April"
+  },
+  {
+    "id": "app.report.month.august",
+    "translation": "August"
+  },
+  {
+    "id": "app.report.month.december",
+    "translation": "December"
+  },
+  {
+    "id": "app.report.month.february",
+    "translation": "February"
+  },
+  {
+    "id": "app.report.month.january",
+    "translation": "January"
+  },
+  {
+    "id": "app.report.month.july",
+    "translation": "July"
+  },
+  {
+    "id": "app.report.month.june",
+    "translation": "June"
+  },
+  {
+    "id": "app.report.month.march",
+    "translation": "March"
+  },
+  {
+    "id": "app.report.month.may",
+    "translation": "May"
+  },
+  {
+    "id": "app.report.month.november",
+    "translation": "November"
+  },
+  {
+    "id": "app.report.month.october",
+    "translation": "October"
+  },
+  {
+    "id": "app.report.month.september",
+    "translation": "September"
   },
   {
     "id": "app.report.playbook.automations.empty",
@@ -125,6 +193,10 @@
   {
     "id": "app.report.playbook.generated",
     "translation": "Generated"
+  },
+  {
+    "id": "app.report.playbook.kind",
+    "translation": "Playbook report"
   },
   {
     "id": "app.report.playbook.members.empty",
@@ -188,7 +260,7 @@
   },
   {
     "id": "app.report.playbook.status_updates.title",
-    "translation": "Status Updates"
+    "translation": "Status updates"
   },
   {
     "id": "app.report.playbook.untitled",
@@ -217,6 +289,10 @@
   {
     "id": "app.report.run.ended",
     "translation": "Ended"
+  },
+  {
+    "id": "app.report.run.kind",
+    "translation": "Run report"
   },
   {
     "id": "app.report.run.owner",
@@ -284,7 +360,7 @@
   },
   {
     "id": "app.report.run.status_updates.title",
-    "translation": "Status Updates"
+    "translation": "Status updates"
   },
   {
     "id": "app.report.run.summary.empty",
@@ -292,7 +368,7 @@
   },
   {
     "id": "app.report.run.summary.title",
-    "translation": "Summary"
+    "translation": "Executive summary"
   },
   {
     "id": "app.report.run.tasks.empty",
@@ -300,7 +376,7 @@
   },
   {
     "id": "app.report.run.tasks.title",
-    "translation": "Tasks"
+    "translation": "Task outline"
   },
   {
     "id": "app.report.run.timeline.empty",
@@ -340,7 +416,7 @@
   },
   {
     "id": "app.report.run.transcript.title",
-    "translation": "Transcript"
+    "translation": "Chat history"
   },
   {
     "id": "app.report.run.transcript.truncated",

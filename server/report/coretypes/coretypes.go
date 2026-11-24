@@ -12,9 +12,12 @@ package coretypes
 // RenderUser carries only the display fields the report writers need —
 // never emails, never auth fields, never anything raw from model.User.
 type RenderUser struct {
-	UserID      string
+	UserID string
+	// DisplayName is the user's full name, or their username when they have
+	// no name set.
 	DisplayName string
 	Username    string
+	Nickname    string
 }
 
 // RenderChannel carries only display information for a channel.

@@ -34,12 +34,8 @@ import RunActionsModal from 'src/components/run_actions_modal';
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible, selectReportsEnabled} from 'src/selectors';
 
-import ExportOptionsModal, {
-    ExportFormat,
-    SectionFlags,
-    TranscriptMode,
-    useReportExport,
-} from 'src/components/export_options_modal';
+import ExportOptionsModal, {ExportFormat, SectionFlags, useReportExport} from 'src/components/export_options_modal';
+import type {RunReportOptions} from 'src/client';
 
 import {
     CopyRunLinkMenuItem,
@@ -229,8 +225,8 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 <ExportOptionsModal
                     surface='run'
                     defaults={{}}
-                    onConfirm={async (sections: SectionFlags, format: ExportFormat, transcriptMode: TranscriptMode) => {
-                        await exportReport({kind: 'run', id: playbookRun.id}, sections, format, transcriptMode);
+                    onConfirm={async (sections: SectionFlags, format: ExportFormat, runOptions: RunReportOptions) => {
+                        await exportReport({kind: 'run', id: playbookRun.id}, sections, format, runOptions);
                         setShowReportModal(false);
                     }}
                     onCancel={() => setShowReportModal(false)}

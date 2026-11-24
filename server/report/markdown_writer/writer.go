@@ -167,6 +167,9 @@ func writeChecklists(b *bytes.Buffer, s report.ChecklistSection) {
 			if it.Command != "" {
 				meta = append(meta, codeSpan(it.Command))
 			}
+			if it.Completed != "" {
+				meta = append(meta, escapeText(it.Completed))
+			}
 			if len(meta) > 0 {
 				b.WriteString("  *(")
 				b.WriteString(strings.Join(meta, " · "))

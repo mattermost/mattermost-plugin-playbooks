@@ -18,6 +18,10 @@ type Options struct {
 	Locale string
 	// Location is the time zone every time is shown in; nil means UTC.
 	Location *time.Location
+	// NameFormat is the server's teammate name display setting, one of
+	// model.ShowUsername, model.ShowNicknameFullName and model.ShowFullName;
+	// empty means model.ShowUsername.
+	NameFormat string
 }
 
 // RunReport is a run report ready to print: every string is translated and
@@ -30,6 +34,10 @@ type RunReport struct {
 	// Lang is the report's language, as a BCP 47 tag.
 	Lang  string
 	Title string
+	// Kind ("Run report") and Generated, when the report was generated,
+	// are shown on the cover page under the title.
+	Kind      string
+	Generated string
 	// Status is the run's status, with Kind one of StatusInProgress,
 	// StatusFinished or StatusOther. It is empty when the run has none.
 	Status     Field
@@ -54,8 +62,10 @@ type RunReport struct {
 
 // PlaybookReport is a playbook report ready to print. See RunReport.
 type PlaybookReport struct {
-	Lang  string
-	Title string
+	Lang      string
+	Title     string
+	Kind      string
+	Generated string
 	// Visibility is "Public" or "Private", translated.
 	Visibility string
 	Stats      []Stat
@@ -94,10 +104,11 @@ type Stat struct {
 }
 
 // Section is a titled part of a report. Empty is shown when it has nothing
-// to show.
+// to show. An omitted section was not selected and is left out entirely.
 type Section struct {
-	Title string
-	Empty string
+	Title   string
+	Empty   string
+	Omitted bool
 }
 
 // BodySection is a section holding one Markdown body.
@@ -171,6 +182,9 @@ type ChecklistItem struct {
 	// Due is "Due: <date>" or empty.
 	Due     string
 	Command string
+	// Completed says who checked off or skipped a run task and when; it is
+	// empty for open tasks and when that is unknown.
+	Completed string
 	// Description is Markdown.
 	Description string
 }

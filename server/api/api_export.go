@@ -178,7 +178,19 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
 		return
 	}
+	// The executive summary and status updates are part of every run report.
+	sections.ExecutiveSummary = true
+	sections.StatusUpdates = true
 	model.AddEventParameterToAuditRec(auditRec, "sections", sectionsToList(sections))
+
+	location, err := parseTimeZone(r.URL.Query().Get("time_zone"))
+	if err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+	if location != nil {
+		model.AddEventParameterToAuditRec(auditRec, "time_zone", location.String())
+	}
 
 	run, runErr := h.playbookRunService.GetPlaybookRun(runID)
 	if runErr != nil {
@@ -208,7 +220,7 @@ func (h *ExportHandler) exportRun(c *Context, w http.ResponseWriter, r *http.Req
 
 	filename := reportFilename(rc.Run.Name, "run-"+run.ID, rc.GeneratedAtMillis)
 
-	view := report.BuildRun(rc, h.reportOptions(userID))
+	view := report.BuildRun(rc, h.reportOptions(userID, location))
 	var data []byte
 	var renderErr error
 	if format == formatMarkdown {
@@ -284,7 +296,7 @@ func (h *ExportHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *htt
 
 	filename := reportFilename(pc.Playbook.Title, "playbook-"+pb.ID, pc.GeneratedAtMillis)
 
-	view := report.BuildPlaybook(pc, h.reportOptions(userID))
+	view := report.BuildPlaybook(pc, h.reportOptions(userID, nil))
 	var data []byte
 	var renderErr error
 	if format == formatMarkdown {
@@ -337,15 +349,23 @@ func (h *ExportHandler) reportsEnabled() bool {
 }
 
 // reportOptions loads the requester once to translate the report into their
-// language and show times in their time zone, falling back to English and
-// UTC.
-func (h *ExportHandler) reportOptions(userID string) report.Options {
-	locale, location := "en", time.UTC
+// language and show times in location, or in their own time zone when
+// location is nil, falling back to English and UTC. Users are named as the
+// server's teammate name display setting says.
+func (h *ExportHandler) reportOptions(userID string, location *time.Location) report.Options {
+	locale, userLocation := "en", time.UTC
 	if user, err := h.pluginAPI.User.Get(userID); err == nil && user != nil {
 		locale = cmp.Or(user.Locale, locale)
-		location = user.GetTimezoneLocation()
+		userLocation = user.GetTimezoneLocation()
 	}
-	return report.Options{T: i18n.GetUserTranslations(locale), Locale: locale, Location: location}
+	if location == nil {
+		location = userLocation
+	}
+	var nameFormat string
+	if cfg := h.pluginAPI.Configuration.GetConfig(); cfg != nil && cfg.TeamSettings.TeammateNameDisplay != nil {
+		nameFormat = *cfg.TeamSettings.TeammateNameDisplay
+	}
+	return report.Options{T: i18n.GetUserTranslations(locale), Locale: locale, Location: location, NameFormat: nameFormat}
 }
 
 // acquireRenderSlot returns true when the request obtains a slot; false on
@@ -392,7 +412,6 @@ func newExportAuditRecord(r *http.Request, userID, kind, id, format string) *mod
 // catalogs used by parseSectionsQuery.
 var (
 	sectionFlagsForRun = map[string]func(*report.SectionFlags){
-		"cover":      func(s *report.SectionFlags) { s.Cover = true },
 		"summary":    func(s *report.SectionFlags) { s.ExecutiveSummary = true },
 		"timeline":   func(s *report.SectionFlags) { s.Timeline = true },
 		"updates":    func(s *report.SectionFlags) { s.StatusUpdates = true },
@@ -440,7 +459,6 @@ func sectionsToList(s report.SectionFlags) []string {
 			out = append(out, name)
 		}
 	}
-	add("cover", s.Cover)
 	add("summary", s.ExecutiveSummary)
 	add("timeline", s.Timeline)
 	add("updates", s.StatusUpdates)
@@ -464,6 +482,21 @@ func parseTranscriptMode(raw string) coretypes.TranscriptMode {
 	default:
 		return coretypes.TranscriptModeThreaded
 	}
+}
+
+// parseTimeZone loads the IANA time zone named by the ?time_zone= query
+// param. Empty returns nil, meaning the requester's own time zone.
+func parseTimeZone(raw string) (*time.Location, error) {
+	if raw == "" {
+		return nil, nil
+	}
+	// time.LoadLocation takes "Local" as the server's time zone, which is
+	// not a time zone the client can mean.
+	location, err := time.LoadLocation(raw)
+	if err != nil || raw == "Local" {
+		return nil, errors.Errorf("unknown time zone %q", raw)
+	}
+	return location, nil
 }
 
 // safeFilename produces an RFC 6266-safe ASCII filename. The input is the

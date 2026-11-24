@@ -1,12 +1,16 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {getUserCurrentTimezone} from 'mattermost-redux/utils/timezone_utils';
 
-import type {ReportFormat} from 'src/client';
+import type {ReportFormat, RunReportOptions} from 'src/client';
 import GenericModal from 'src/components/widgets/generic_modal';
+import {StyledSelect} from 'src/components/backstage/styles';
 
 export type Surface = 'run' | 'playbook';
 
@@ -15,7 +19,6 @@ export type ExportFormat = ReportFormat;
 export type TranscriptMode = 'threaded' | 'chronological';
 
 export type SectionFlags = {
-    cover?: boolean;
     executiveSummary?: boolean;
     timeline?: boolean;
     statusUpdates?: boolean;
@@ -32,8 +35,8 @@ export type ExportOptionsModalProps = {
     defaults: SectionFlags;
 
     // onConfirm runs the export. The modal stays open, showing "Exporting…", until the
-    // returned promise settles; the caller closes it.
-    onConfirm: (sections: SectionFlags, format: ExportFormat, transcriptMode: TranscriptMode) => Promise<void>;
+    // returned promise settles; the caller closes it. runOptions is only set for runs.
+    onConfirm: (sections: SectionFlags, format: ExportFormat, runOptions: RunReportOptions) => Promise<void>;
     onCancel: () => void;
     channelExportAvailable?: boolean;
 };
@@ -41,16 +44,20 @@ export type ExportOptionsModalProps = {
 type ToggleRow = {
     key: keyof SectionFlags;
     label: React.ReactNode;
+
+    // A locked section is always part of the report.
+    locked?: boolean;
 };
 
+type TimeZoneOption = {value: string; label: string};
+
 const RUN_DEFAULTS: SectionFlags = {
-    cover: true,
     executiveSummary: true,
     timeline: true,
     statusUpdates: true,
     checklists: true,
     retrospective: true,
-    transcript: false,
+    transcript: true,
 };
 
 const PLAYBOOK_DEFAULTS: SectionFlags = {
@@ -70,25 +77,36 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
     const [sections, setSections] = useState<SectionFlags>({...baseDefaults, ...defaults});
     const [format, setFormat] = useState<ExportFormat>('pdf');
     const [transcriptMode, setTranscriptMode] = useState<TranscriptMode>('threaded');
+
+    // An empty time zone means the user's own, which the server uses by default.
+    const [timeZone, setTimeZone] = useState('');
     const [exporting, setExporting] = useState(false);
+
+    const currentUser = useSelector(getCurrentUser);
+    const timeZoneOptions = useMemo<TimeZoneOption[]>(() => {
+        const userTimeZone = getUserCurrentTimezone(currentUser?.timezone);
+        return [
+            {value: '', label: formatMessage({defaultMessage: '{timeZone} (your time zone)'}, {timeZone: timeZoneLabel(userTimeZone)})},
+            ...Intl.supportedValuesOf('timeZone').map((tz) => ({value: tz, label: timeZoneLabel(tz)})),
+        ];
+    }, [currentUser?.timezone, formatMessage]);
 
     const confirm = async () => {
         setExporting(true);
         try {
-            await onConfirm(sections, format, transcriptMode);
+            await onConfirm(sections, format, surface === 'run' ? {transcriptMode, timeZone} : {});
         } finally {
             setExporting(false);
         }
     };
 
     const rows: ToggleRow[] = surface === 'run' ? [
-        {key: 'cover', label: formatMessage({defaultMessage: 'Cover page'})},
-        {key: 'executiveSummary', label: formatMessage({defaultMessage: 'Executive summary'})},
+        {key: 'executiveSummary', label: formatMessage({defaultMessage: 'Executive summary'}), locked: true},
+        {key: 'statusUpdates', label: formatMessage({defaultMessage: 'Status updates'}), locked: true},
         {key: 'timeline', label: formatMessage({defaultMessage: 'Timeline'})},
-        {key: 'statusUpdates', label: formatMessage({defaultMessage: 'Status updates'})},
-        {key: 'checklists', label: formatMessage({defaultMessage: 'Tasks'})},
         {key: 'retrospective', label: formatMessage({defaultMessage: 'Retrospective'})},
-        {key: 'transcript', label: formatMessage({defaultMessage: 'Channel transcript'})},
+        {key: 'checklists', label: formatMessage({defaultMessage: 'Task outline'})},
+        {key: 'transcript', label: formatMessage({defaultMessage: 'Complete chat history'})},
     ] : [
         {key: 'playbookOverview', label: formatMessage({defaultMessage: 'Overview'})},
         {key: 'playbookChecklistTemplates', label: formatMessage({defaultMessage: 'Tasks'})},
@@ -99,14 +117,9 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
         setSections((prev) => ({...prev, [key]: !prev[key]}));
     };
 
-    const anySelected = rows.some((r) => sections[r.key]);
+    const anySelected = rows.some((r) => r.locked || sections[r.key]);
 
-    let confirmText = <FormattedMessage defaultMessage='Download'/>;
-    if (exporting) {
-        confirmText = <FormattedMessage defaultMessage='Exporting…'/>;
-    } else if (format === 'pdf') {
-        confirmText = <FormattedMessage defaultMessage='Print'/>;
-    }
+    const confirmText = exporting ? <FormattedMessage defaultMessage='Exporting…'/> : <FormattedMessage defaultMessage='Export'/>;
 
     const headerText = surface === 'run' ? formatMessage({defaultMessage: 'Export run report'}) : formatMessage({defaultMessage: 'Export playbook report'});
 
@@ -157,17 +170,19 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                     </FormatHint>
                 )}
                 <Description>
-                    <FormattedMessage defaultMessage='Select the sections to include in the export.'/>
+                    <FormattedMessage defaultMessage="Select what you'd like the export to include:"/>
                 </Description>
                 <Toggles>
                     {rows.map((row) => (
                         <ToggleLabel
                             key={row.key}
                             data-testid={`section-toggle-${row.key}`}
+                            locked={row.locked}
                         >
                             <input
                                 type='checkbox'
-                                checked={Boolean(sections[row.key])}
+                                checked={row.locked || Boolean(sections[row.key])}
+                                disabled={row.locked}
                                 onChange={() => toggle(row.key)}
                             />
                             <span>{row.label}</span>
@@ -211,6 +226,22 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
                         </TranscriptModeRadio>
                     </TranscriptModeBox>
                 )}
+                {surface === 'run' && (
+                    <TimeZoneField data-testid='time-zone-field'>
+                        <TimeZoneLabel id='export-time-zone-label'>
+                            <FormattedMessage defaultMessage='Time zone:'/>
+                        </TimeZoneLabel>
+                        <StyledSelect
+                            aria-labelledby='export-time-zone-label'
+                            options={timeZoneOptions}
+                            value={timeZoneOptions.find((o) => o.value === timeZone)}
+                            onChange={(option: TimeZoneOption | null) => setTimeZone(option?.value ?? '')}
+                            menuPlacement='auto'
+                            menuPortalTarget={document.body}
+                            styles={{menuPortal: (base: object) => ({...base, zIndex: 10000})}}
+                        />
+                    </TimeZoneField>
+                )}
                 {surface === 'run' && channelExportAvailable && (
                     <ChannelExportHint data-testid='channel-export-hint'>
                         <FormattedMessage defaultMessage="Need a CSV transcript? Use channel-export's /export slash command in this run's channel."/>
@@ -222,6 +253,10 @@ const ExportOptionsModal = ({surface, defaults, onConfirm, onCancel, channelExpo
 };
 
 export default ExportOptionsModal;
+
+// timeZoneLabel shows an IANA time zone name, such as America/New_York, as
+// "America/New York".
+const timeZoneLabel = (timeZone: string) => timeZone.replaceAll('_', ' ');
 
 const Body = styled.div`
     display: flex;
@@ -243,7 +278,7 @@ const Toggles = styled.div`
     gap: 8px;
 `;
 
-const ToggleLabel = styled.label`
+const ToggleLabel = styled.label<{locked?: boolean}>`
     display: flex;
     align-items: center;
     gap: 10px;
@@ -252,12 +287,27 @@ const ToggleLabel = styled.label`
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-    cursor: pointer;
+    cursor: ${({locked}) => (locked ? 'default' : 'pointer')};
 
     input[type='checkbox'] {
         margin: 0;
-        cursor: pointer;
+        cursor: inherit;
     }
+`;
+
+const TimeZoneField = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+`;
+
+const TimeZoneLabel = styled.span`
+    color: var(--center-channel-color);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
 `;
 
 const ChannelExportHint = styled.div`

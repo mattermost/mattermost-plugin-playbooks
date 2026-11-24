@@ -4,8 +4,11 @@
 package app
 
 import (
+	"cmp"
 	"context"
+	"encoding/json"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -106,6 +109,7 @@ func (s *ReportService) AssembleRunReportContext(
 	}
 
 	rc := report.RenderContext{
+		Sections: sections,
 		Run: report.RenderRun{
 			ID:          run.ID,
 			Name:        run.Name,
@@ -166,7 +170,7 @@ func (s *ReportService) AssembleRunReportContext(
 		rc.TimelineEvents = buildTimelineEvents(run)
 	}
 	if sections.Checklists {
-		rc.Checklists = buildChecklists(run.Checklists)
+		rc.Checklists = buildChecklists(run.Checklists, taskStateUsers(run.TimelineEvents))
 	}
 	if sections.Retrospective {
 		var metricConfigs []PlaybookMetricConfig
@@ -255,6 +259,7 @@ func (s *ReportService) AssemblePlaybookReportContext(
 	}
 
 	pc := report.PlaybookRenderContext{
+		Sections: sections,
 		Playbook: report.RenderPlaybook{
 			ID:          pb.ID,
 			Title:       pb.Title,
@@ -297,7 +302,7 @@ func (s *ReportService) AssemblePlaybookReportContext(
 		})
 	}
 
-	pc.ChecklistTemplates = buildChecklists(pb.Checklists)
+	pc.ChecklistTemplates = buildChecklists(pb.Checklists, nil)
 
 	pc.StatusUpdateConfig = report.RenderStatusUpdateConfig{
 		Enabled:  pb.StatusUpdateEnabled,
@@ -358,7 +363,6 @@ func (s *ReportService) channelPostsIterator(channelID string, startMs, endMs in
 	page := 0
 	first := true
 	seen := make(map[string]struct{})
-	usersCache := make(map[string]report.RenderUser)
 	exhausted := false
 
 	return func(ctx context.Context) ([]report.RenderPost, error) {
@@ -412,10 +416,6 @@ func (s *ReportService) channelPostsIterator(channelID string, startMs, endMs in
 			if startMs > 0 && post.CreateAt < startMs {
 				exhausted = true
 				continue
-			}
-
-			if _, ok := usersCache[post.UserId]; !ok && post.UserId != "" {
-				usersCache[post.UserId] = s.resolveUser(post.UserId)
 			}
 
 			out = append(out, report.RenderPost{
@@ -541,6 +541,7 @@ func renderUserFromModel(u *model.User) report.RenderUser {
 		UserID:      u.Id,
 		Username:    u.Username,
 		DisplayName: display,
+		Nickname:    strings.TrimSpace(u.Nickname),
 	}
 }
 
@@ -793,12 +794,42 @@ func buildTimelineEvents(run *PlaybookRun) []report.RenderTimelineEvent {
 	return out
 }
 
-func buildChecklists(in []Checklist) []report.RenderChecklist {
+// taskStateUsers maps each checklist item ID to the user who last checked
+// off or skipped it, read from the run's task_state_modified timeline
+// events. Unchecking or restoring an item clears its entry. Events recorded
+// before the item ID was stored in them are skipped.
+func taskStateUsers(events []TimelineEvent) map[string]string {
+	sorted := slices.Clone(events)
+	slices.SortStableFunc(sorted, func(a, b TimelineEvent) int { return cmp.Compare(a.CreateAt, b.CreateAt) })
+
+	users := make(map[string]string)
+	for _, ev := range sorted {
+		if ev.EventType != TaskStateModified || ev.DeleteAt != 0 {
+			continue
+		}
+		var details TaskStateModifiedDetails
+		if err := json.Unmarshal([]byte(ev.Details), &details); err != nil || details.ItemID == "" {
+			continue
+		}
+		switch details.Action {
+		case taskStateActionCheck, taskStateActionSkip:
+			users[details.ItemID] = ev.SubjectUserID
+		case taskStateActionUncheck, taskStateActionRestore:
+			delete(users, details.ItemID)
+		}
+	}
+	return users
+}
+
+// buildChecklists converts checklists for the report. stateUsers, from
+// taskStateUsers, names who closed or skipped each item; it is nil for
+// playbook templates.
+func buildChecklists(in []Checklist, stateUsers map[string]string) []report.RenderChecklist {
 	out := make([]report.RenderChecklist, 0, len(in))
 	for _, c := range in {
 		items := make([]report.RenderChecklistItem, 0, len(c.Items))
 		for _, it := range c.Items {
-			items = append(items, report.RenderChecklistItem{
+			item := report.RenderChecklistItem{
 				Title:       it.Title,
 				State:       it.State,
 				StateMs:     it.StateModified,
@@ -806,7 +837,11 @@ func buildChecklists(in []Checklist) []report.RenderChecklist {
 				DueAtMs:     it.DueDate,
 				Description: it.Description,
 				Command:     it.Command,
-			})
+			}
+			if it.State == ChecklistItemStateClosed || it.State == ChecklistItemStateSkipped {
+				item.StateUserID = stateUsers[it.ID]
+			}
+			items = append(items, item)
 		}
 		out = append(out, report.RenderChecklist{
 			Title: c.Title,

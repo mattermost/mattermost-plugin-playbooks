@@ -22,6 +22,11 @@ jest.mock('src/components/widgets/generic_modal', () => {
     };
 });
 
+jest.mock('react-redux', () => ({
+    ...jest.requireActual('react-redux'),
+    useSelector: () => ({timezone: {useAutomaticTimezone: 'false', manualTimezone: 'Europe/Berlin', automaticTimezone: ''}}),
+}));
+
 import ExportOptionsModal, {SectionFlags, Surface} from './export_options_modal';
 
 const wrap = (ui: React.ReactNode) => (
@@ -65,14 +70,22 @@ describe('ExportOptionsModal', () => {
         capturedHandleConfirm = undefined;
     });
 
-    it('renders 7 toggles for run surface with transcript off by default', () => {
+    it('renders 6 toggles for run surface, all checked by default', () => {
         const {tree} = render({surface: 'run'});
         const checkboxes = findCheckboxes(tree.root);
-        expect(checkboxes).toHaveLength(7);
-        const transcript = tree.root.findByProps({'data-testid': 'section-toggle-transcript'});
-        expect(transcript.findByType('input').props.checked).toBe(false);
-        const cover = tree.root.findByProps({'data-testid': 'section-toggle-cover'});
-        expect(cover.findByType('input').props.checked).toBe(true);
+        expect(checkboxes).toHaveLength(6);
+        expect(checkboxes.every((c) => c.props.checked)).toBe(true);
+    });
+
+    it('always includes the executive summary and status updates', () => {
+        const {tree} = render({surface: 'run', defaults: {executiveSummary: false, statusUpdates: false}});
+        for (const key of ['executiveSummary', 'statusUpdates']) {
+            const input = tree.root.findByProps({'data-testid': `section-toggle-${key}`}).findByType('input');
+            expect(input.props.checked).toBe(true);
+            expect(input.props.disabled).toBe(true);
+        }
+        const timeline = tree.root.findByProps({'data-testid': 'section-toggle-timeline'}).findByType('input');
+        expect(timeline.props.disabled).toBeFalsy();
     });
 
     it('renders 3 toggles for playbook surface', () => {
@@ -85,12 +98,37 @@ describe('ExportOptionsModal', () => {
         const {tree} = render({surface: 'run'});
         const transcript = tree.root.findByProps({'data-testid': 'section-toggle-transcript'});
         const input = transcript.findByType('input');
-        expect(input.props.checked).toBe(false);
+        expect(input.props.checked).toBe(true);
         act(() => {
             input.props.onChange();
         });
         const updated = tree.root.findByProps({'data-testid': 'section-toggle-transcript'}).findByType('input');
-        expect(updated.props.checked).toBe(true);
+        expect(updated.props.checked).toBe(false);
+    });
+
+    it("offers the user's own time zone first and every IANA time zone", () => {
+        const {tree} = render({surface: 'run'});
+        const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
+        expect(select.props.value).toEqual({value: '', label: 'Europe/Berlin (your time zone)'});
+        expect(select.props.options).toContainEqual({value: 'America/New_York', label: 'America/New York'});
+    });
+
+    it('has no time zone field on playbook surface', () => {
+        const {tree} = render({surface: 'playbook'});
+        expect(tree.root.findAllByProps({'data-testid': 'time-zone-field'})).toHaveLength(0);
+    });
+
+    it('onConfirm receives the picked time zone', () => {
+        const {tree, onConfirm} = render({surface: 'run'});
+        const select = tree.root.findByProps({'data-testid': 'time-zone-field'}).findByProps({'aria-labelledby': 'export-time-zone-label'});
+        act(() => {
+            select.props.onChange({value: 'Asia/Karachi', label: 'Asia/Karachi'});
+        });
+        act(() => {
+            capturedHandleConfirm?.();
+        });
+
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'pdf', {transcriptMode: 'threaded', timeZone: 'Asia/Karachi'});
     });
 
     it('hides channel-export hint when unavailable', () => {
@@ -134,7 +172,7 @@ describe('ExportOptionsModal', () => {
             capturedHandleConfirm?.();
         });
 
-        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'pdf', 'threaded');
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'pdf', {transcriptMode: 'threaded', timeZone: ''});
     });
 
     it('onConfirm receives the html format when HTML is selected', () => {
@@ -147,7 +185,7 @@ describe('ExportOptionsModal', () => {
             capturedHandleConfirm?.();
         });
 
-        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'html', 'threaded');
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'html', {transcriptMode: 'threaded', timeZone: ''});
     });
 
     it('onConfirm receives the md format when Markdown is selected', () => {
@@ -162,7 +200,16 @@ describe('ExportOptionsModal', () => {
             capturedHandleConfirm?.();
         });
 
-        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'md', 'threaded');
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'md', {transcriptMode: 'threaded', timeZone: ''});
+    });
+
+    it('onConfirm receives no run options for a playbook', () => {
+        const {onConfirm} = render({surface: 'playbook'});
+        act(() => {
+            capturedHandleConfirm?.();
+        });
+
+        expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), 'pdf', {});
     });
 
     it('disables confirm while the export runs', async () => {

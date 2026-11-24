@@ -167,6 +167,40 @@ func TestReportServiceCollectRunUserIDs(t *testing.T) {
 	}
 }
 
+func TestReportServiceTaskStateUsers(t *testing.T) {
+	event := func(at int64, userID, details string) TimelineEvent {
+		return TimelineEvent{EventType: TaskStateModified, CreateAt: at, SubjectUserID: userID, Details: details}
+	}
+	events := []TimelineEvent{
+		// Out of order on purpose: the later uncheck wins over the earlier check.
+		event(30, "u2", `{"action":"uncheck","task":"Reopened","item_id":"i2"}`),
+		event(10, "u1", `{"action":"check","task":"Page on-call","item_id":"i1"}`),
+		event(20, "u1", `{"action":"check","task":"Reopened","item_id":"i2"}`),
+		event(40, "u3", `{"action":"skip","task":"War room","item_id":"i3"}`),
+		event(50, "u2", `{"action":"check","task":"Page on-call","item_id":"i1"}`),
+		// No item ID, as recorded before item IDs were stored.
+		event(60, "u4", `{"action":"check","task":"Old"}`),
+		// Not a task event.
+		{EventType: OwnerChanged, CreateAt: 70, SubjectUserID: "u5", Details: `{"item_id":"i4","action":"check"}`},
+		// Deleted.
+		{EventType: TaskStateModified, CreateAt: 80, DeleteAt: 90, SubjectUserID: "u6", Details: `{"action":"check","item_id":"i5"}`},
+	}
+
+	require.Equal(t, map[string]string{"i1": "u2", "i3": "u3"}, taskStateUsers(events))
+
+	checklists := buildChecklists([]Checklist{{Items: []ChecklistItem{
+		{ID: "i1", Title: "Page on-call", State: ChecklistItemStateClosed, StateModified: 50},
+		{ID: "i3", Title: "War room", State: ChecklistItemStateSkipped, StateModified: 40},
+		// Open again, though an old entry names who closed it.
+		{ID: "i1", Title: "Copy", State: ChecklistItemStateOpen},
+	}}}, taskStateUsers(events))
+	items := checklists[0].Items
+	require.Equal(t, "u2", items[0].StateUserID)
+	require.Equal(t, int64(50), items[0].StateMs)
+	require.Equal(t, "u3", items[1].StateUserID)
+	require.Empty(t, items[2].StateUserID)
+}
+
 func TestReportServiceMetricsFromConfigs(t *testing.T) {
 	t.Run("playbook configs apply value overrides", func(t *testing.T) {
 		cfg := []PlaybookMetricConfig{
@@ -530,8 +564,6 @@ func TestReportServiceChannelPostsIteratorFiltersAndDedups(t *testing.T) {
 	svc := newTestReportService(api)
 	channelID := model.NewId()
 	userID := model.NewId()
-
-	api.On("GetUser", userID).Return(&model.User{Id: userID, Username: "alice"}, nil)
 
 	api.On("GetPostsForChannel", channelID, 0, 200).Return(&model.PostList{
 		Order: []string{"keep", "edit", "system", "after", "before", "dup1", "dup2"},

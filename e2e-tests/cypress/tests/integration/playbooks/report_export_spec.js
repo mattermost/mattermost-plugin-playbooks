@@ -80,20 +80,28 @@ describe('playbooks > report export', {testIsolation: true}, () => {
         cy.findByTestId('dropdownmenu').should('be.visible');
     };
 
-    // Opens "Export report" from the open menu, picks a format and clicks Download.
-    const exportFromOpenMenu = (format) => {
+    // Opens "Export report" from the open menu, picks a format and, for a run, optionally a
+    // time zone, then clicks Export.
+    const exportFromOpenMenu = (format, timeZone) => {
         cy.findByTestId('dropdownmenu').findByText('Export report').click();
 
         cy.get('#export-options-modal').should('be.visible').within(() => {
             // * PDF is the default format, which prints instead of downloading
             cy.findByTestId('format-hint').should('be.visible');
-            cy.findByTestId('modal-confirm-button').should('have.text', 'Print');
 
-            // # Pick the format and download
+            // # Pick the format
             cy.findByTestId(`format-button-${format}`).click();
             cy.findByTestId('format-hint').should('not.exist');
-            cy.findByTestId('modal-confirm-button').should('have.text', 'Download').click();
         });
+
+        if (timeZone) {
+            // # Pick the time zone; its menu renders outside the modal
+            cy.findByTestId('time-zone-field').find('input').type(timeZone);
+            cy.get('.playbooks-rselect__option').contains(timeZone).click();
+        }
+
+        // # Export
+        cy.get('#export-options-modal').findByTestId('modal-confirm-button').should('have.text', 'Export').click();
     };
 
     before(() => {
@@ -160,14 +168,17 @@ describe('playbooks > report export', {testIsolation: true}, () => {
         it('exports a run as HTML', () => {
             cy.intercept('GET', `/plugins/playbooks/api/v0/runs/${testRun.id}/report*`).as('runReport');
 
-            // # Open the run overview and export as HTML
+            // # Open the run overview and export as HTML, with times in Karachi
             cy.playbooksVisitRun(testRun.id);
             openRunMenu();
-            exportFromOpenMenu('html');
+            exportFromOpenMenu('html', 'Asia/Karachi');
 
             // * The request succeeds with an HTML attachment named after the run
             assertReportResponse('@runReport', 'html').then((filename) => {
                 expect(filename).to.match(expectedFilename(runName, 'html'));
+
+                // * The request asks for the picked time zone
+                cy.get('@runReport').its('request.url').should('contain', 'time_zone=Asia%2FKarachi');
 
                 // * The modal closes once the report is saved
                 cy.get('#export-options-modal').should('not.exist');
@@ -176,6 +187,9 @@ describe('playbooks > report export', {testIsolation: true}, () => {
                 readDownload(filename).then((html) => {
                     expect(html).to.match(/^<!DOCTYPE html>/i);
                     expect(html).to.contain(runName);
+
+                    // * Times are shown in the picked time zone
+                    expect(html).to.contain(' PKT');
                 });
             });
         });

@@ -6,7 +6,7 @@ import {useIntl} from 'react-intl';
 import {
     ReportExport,
     ReportFormat,
-    TranscriptMode,
+    RunReportOptions,
     exportPlaybookReport,
     exportRunReport,
     saveReport,
@@ -25,11 +25,11 @@ export const useReportExport = () => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
 
-    return async ({kind, id}: ReportTarget, sections: SectionFlags, format: ReportFormat, transcriptMode?: TranscriptMode) => {
+    return async ({kind, id}: ReportTarget, sections: SectionFlags, format: ReportFormat, runOptions?: RunReportOptions) => {
         try {
             let report: ReportExport;
             if (kind === 'run') {
-                report = await exportRunReport(id, format, sections, transcriptMode);
+                report = await exportRunReport(id, format, sections, runOptions);
             } else {
                 report = await exportPlaybookReport(id, format, sections);
             }

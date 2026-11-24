@@ -11,10 +11,19 @@
 </head>
 <body>
   {{- with .Report}}
-  <h1>{{.Title}}</h1>
-  {{- if .Status.Value}}
-  <span class="status-pill status-pill--{{.StatusKind}}">{{.Status.Value}}</span>
-  {{- end}}
+  <section class="cover">
+    <h1 class="cover__title">{{.Title}}</h1>
+    <p class="cover__kind">{{.Kind}}</p>
+    {{- if .Status.Value}}
+    <span class="status-pill status-pill--{{.StatusKind}}">{{.Status.Value}}</span>
+    {{- end}}
+    {{if .Generated}}<p class="cover__date">{{.Generated}}</p>{{end}}
+  </section>
+
+  <section class="section">
+  <h2>{{.Summary.Title}}</h2>
+  {{if .Summary.Body}}<div class="boxed-md">{{markdown .Summary.Body}}</div>
+  {{else}}<p class="muted">{{.Summary.Empty}}</p>{{end}}
 
   <div class="stat-grid">
     {{- range .Stats}}
@@ -26,40 +35,58 @@
     {{- end}}
   </div>
 
-  <p class="meta-strip">
-    {{range $i, $f := .Meta}}{{if $i}} · {{end}}<strong>{{$f.Label}}:</strong> {{$f.Value}}{{end}}
-  </p>
+  <table class="details">
+    {{- range .Meta}}
+    <tr><th>{{.Label}}</th><td>{{.Value}}</td></tr>
+    {{- end}}
+    {{- if .Participants}}
+    <tr><th>{{.ParticipantsLabel}}</th><td>{{range $i, $p := .Participants}}{{if $i}}, {{end}}{{$p}}{{end}}</td></tr>
+    {{- end}}
+  </table>
+  </section>
 
-  {{- if .Participants}}
-  <div class="member-grid">
-    {{range .Participants}}<span class="member-chip">{{.}}</span>{{end}}
+  <section class="section">
+  <h2>{{.StatusUpdates.Title}}</h2>
+  {{- range .StatusUpdates.Updates}}
+  <div class="card">
+    <div class="card__header">{{.Author}}<span>{{.Date}}</span></div>
+    {{if .Body}}<div class="boxed-md">{{markdown .Body}}</div>{{else}}<p class="muted">{{$.Report.StatusUpdates.NoMessage}}</p>{{end}}
   </div>
-  {{- end}}
+  {{else}}<p class="muted">{{.StatusUpdates.Empty}}</p>{{end}}
+  </section>
 
-  <h2>{{.Summary.Title}}</h2>
-  {{if .Summary.Body}}<div class="boxed-md">{{markdown .Summary.Body}}</div>
-  {{else}}<p class="muted">{{.Summary.Empty}}</p>{{end}}
-
+  {{- if not .Timeline.Omitted}}
+  <section class="section">
   <h2>{{.Timeline.Title}}</h2>
   {{- range .Timeline.Events}}
   <div class="timeline-event timeline-event--{{.Category}}">
-    <span class="timeline-event__date">{{.Date}}</span>
     <span class="timeline-event__label">{{.TypeLabel}}</span>
     <div class="timeline-event__body">
       <div class="timeline-event__headline">{{markdownInline .Headline}}</div>
       {{if .Detail}}<div class="timeline-event__detail">{{markdownInline .Detail}}</div>{{end}}
+      <div class="timeline-event__date">{{.Date}}</div>
     </div>
   </div>
   {{else}}<p class="muted">{{.Timeline.Empty}}</p>{{end}}
+  </section>
+  {{- end}}
 
-  <h2>{{.StatusUpdates.Title}}</h2>
-  {{- range .StatusUpdates.Updates}}
-  <div class="card">
-    <div class="card__header">{{.Author}} — {{.Date}}</div>
-    {{if .Body}}<div class="boxed-md">{{markdown .Body}}</div>{{else}}<p class="muted">{{$.Report.StatusUpdates.NoMessage}}</p>{{end}}
-  </div>
-  {{else}}<p class="muted">{{.StatusUpdates.Empty}}</p>{{end}}
+  {{- if not .Retrospective.Omitted}}
+  <section class="section">
+  <h2>{{.Retrospective.Title}}</h2>
+  {{if .Retrospective.Body}}<div class="boxed-md">{{markdown .Retrospective.Body}}</div>
+  {{else if not .Retrospective.Metrics}}<p class="muted">{{.Retrospective.Empty}}</p>{{end}}
+  {{- if .Retrospective.Metrics}}
+  <h3>{{.Retrospective.MetricsTitle}}</h3>
+  {{- range .Retrospective.Metrics}}
+  <p><strong>{{.Title}}:</strong> {{.Value}}{{if .Description}} — <span class="muted">{{.Description}}</span>{{end}}</p>
+  {{- end}}
+  {{- end}}
+  </section>
+  {{- end}}
 
+  {{- if not .Tasks.Omitted}}
+  <section class="section">
   <h2>{{.Tasks.Title}}</h2>
   {{- range .Tasks.Checklists}}
   <h3>{{.Title}} ({{.Progress}})</h3>
@@ -70,6 +97,7 @@
       <div class="task__body">
         <div class="task__title">{{markdownInline .Title}}</div>
         {{if or .Assignee .Due .Command}}<div class="task__meta">{{.Assignee}}{{if .Due}} · {{.Due}}{{end}}{{if .Command}} · <code class="task__meta-cmd">{{.Command}}</code>{{end}}</div>{{end}}
+        {{if .Completed}}<div class="task__meta">{{.Completed}}</div>{{end}}
         {{if .Description}}<div class="task__desc">{{markdown .Description}}</div>{{end}}
       </div>
     </div>
@@ -77,18 +105,11 @@
     {{- end}}
   </div>
   {{else}}<p class="muted">{{.Tasks.Empty}}</p>{{end}}
-
-  <h2>{{.Retrospective.Title}}</h2>
-  {{if .Retrospective.Body}}<div class="boxed-md">{{markdown .Retrospective.Body}}</div>
-  {{else if not .Retrospective.Metrics}}<p class="muted">{{.Retrospective.Empty}}</p>{{end}}
-  {{- if .Retrospective.Metrics}}
-  <h3>{{.Retrospective.MetricsTitle}}</h3>
-  {{- range .Retrospective.Metrics}}
-  <p><strong>{{.Title}}:</strong> {{.Value}}{{if .Description}} — <span class="muted">{{.Description}}</span>{{end}}</p>
-  {{- end}}
+  </section>
   {{- end}}
 
-  {{- with .Transcript}}
+  {{- with .Transcript}}{{if not .Omitted}}
+  <section class="section">
   <h2>{{.Title}}</h2>
   {{- if not .HasPosts}}
   <p class="muted">{{.Empty}}</p>
@@ -126,7 +147,8 @@
   {{- if .Truncated}}
   <p class="muted">{{.Truncated}}</p>
   {{- end}}
-  {{- end}}
+  </section>
+  {{- end}}{{end}}
 
   {{- if .Footer}}
   <hr class="divider">

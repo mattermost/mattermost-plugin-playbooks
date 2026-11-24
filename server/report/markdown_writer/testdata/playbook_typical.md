@@ -1,6 +1,6 @@
 # Sev1 \*Incident\* Response
 
-**Visibility**: Public  ·  **Generated**: 2023-11-15 01:13
+**Visibility**: Public  ·  **Generated**: November 15, 2023, 1:13 AM UTC
 
 **Checklists**: 3  ·  **Members**: 3  ·  **Broadcasts**: 2  ·  **Webhooks**: 2
 
@@ -10,9 +10,9 @@ Standard response **playbook**. Ask `@alice`.
 
 ## Members
 
-- `@alice` (Admin, Member)
-- `@bob` (Member)
-- `@carol`
+- Alice Admin (Admin, Member)
+- Bob Builder (Member)
+- Carol Chen
 
 ## Checklist Templates
 
@@ -33,7 +33,7 @@ Standard response **playbook**. Ask `@alice`.
 
 _No tasks._
 
-## Status Updates
+## Status updates
 
 **Enabled**: Enabled  ·  **Cadence**: Every 30 minutes
 
@@ -75,4 +75,4 @@ _No tasks._
 
 ---
 
-_Generated 2023-11-15 01:13 UTC._
+_Generated November 15, 2023, 1:13 AM UTC._

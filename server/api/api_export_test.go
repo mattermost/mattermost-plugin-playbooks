@@ -20,7 +20,6 @@ func TestExport_ParseSectionsQuery_Run(t *testing.T) {
 	t.Run("empty returns defaults without the transcript", func(t *testing.T) {
 		s, err := parseSectionsQuery("", sectionFlagsForRun)
 		require.NoError(t, err)
-		assert.True(t, s.Cover)
 		assert.True(t, s.ExecutiveSummary)
 		assert.True(t, s.Timeline)
 		assert.True(t, s.StatusUpdates)
@@ -30,24 +29,24 @@ func TestExport_ParseSectionsQuery_Run(t *testing.T) {
 	})
 
 	t.Run("explicit subset", func(t *testing.T) {
-		s, err := parseSectionsQuery("cover,summary", sectionFlagsForRun)
+		s, err := parseSectionsQuery("summary,tasks", sectionFlagsForRun)
 		require.NoError(t, err)
-		assert.True(t, s.Cover)
 		assert.True(t, s.ExecutiveSummary)
+		assert.True(t, s.Checklists)
 		assert.False(t, s.Timeline)
-		assert.False(t, s.Checklists)
+		assert.False(t, s.Transcript)
 	})
 
 	t.Run("unknown token is rejected", func(t *testing.T) {
-		_, err := parseSectionsQuery("cover,bogus", sectionFlagsForRun)
+		_, err := parseSectionsQuery("summary,bogus", sectionFlagsForRun)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "bogus")
 	})
 
 	t.Run("token whitespace and case", func(t *testing.T) {
-		s, err := parseSectionsQuery(" COVER , Timeline ", sectionFlagsForRun)
+		s, err := parseSectionsQuery(" RETRO , Timeline ", sectionFlagsForRun)
 		require.NoError(t, err)
-		assert.True(t, s.Cover)
+		assert.True(t, s.Retrospective)
 		assert.True(t, s.Timeline)
 	})
 }
@@ -77,11 +76,32 @@ func TestExport_ParseSectionsQuery_Playbook(t *testing.T) {
 
 func TestExport_SectionsToList_Sorted(t *testing.T) {
 	got := sectionsToList(report.SectionFlags{
-		Timeline:   true,
-		Cover:      true,
-		Transcript: true,
+		Transcript:       true,
+		Timeline:         true,
+		ExecutiveSummary: true,
 	})
-	assert.Equal(t, []string{"cover", "timeline", "transcript"}, got)
+	assert.Equal(t, []string{"summary", "timeline", "transcript"}, got)
+}
+
+func TestExport_ParseTimeZone(t *testing.T) {
+	t.Run("empty means the requester's own time zone", func(t *testing.T) {
+		location, err := parseTimeZone("")
+		require.NoError(t, err)
+		assert.Nil(t, location)
+	})
+
+	t.Run("IANA name", func(t *testing.T) {
+		location, err := parseTimeZone("Asia/Karachi")
+		require.NoError(t, err)
+		assert.Equal(t, "Asia/Karachi", location.String())
+	})
+
+	for _, raw := range []string{"Local", "Not/AZone", "../../etc/passwd", "/etc/localtime"} {
+		t.Run("rejects "+raw, func(t *testing.T) {
+			_, err := parseTimeZone(raw)
+			require.Error(t, err)
+		})
+	}
 }
 
 func TestExport_SafeFilename(t *testing.T) {

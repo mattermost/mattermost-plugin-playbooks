@@ -8,9 +8,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
-// resolverWithAlice returns a resolver table that maps "u1" -> @alice for
+// resolverWithAlice returns a resolver table that maps "u1" -> alice for
 // actor-resolution paths.
 func resolverWithAlice() ResolverTable {
 	return ResolverTable{
@@ -43,7 +45,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Run created",
 			wantCategory:     CategoryLifecycle,
 			wantHeadlineFull: "Run created",
-			wantHeadlineSub:  "@alice created this run",
+			wantHeadlineSub:  "alice created this run",
 		},
 		{
 			name: "status_updated", eventType: "status_updated",
@@ -51,7 +53,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Status update posted",
 			wantCategory:     CategoryStatus,
 			wantHeadlineFull: "alice posted an update",
-			wantHeadlineSub:  "@alice posted a status update",
+			wantHeadlineSub:  "alice posted a status update",
 		},
 		{
 			name: "status_update_requested", eventType: "status_update_requested",
@@ -59,7 +61,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Status update requested",
 			wantCategory:     CategoryStatus,
 			wantHeadlineFull: "requested",
-			wantHeadlineSub:  "@alice requested a status update",
+			wantHeadlineSub:  "alice requested a status update",
 		},
 		{
 			name: "owner_changed", eventType: "owner_changed",
@@ -67,7 +69,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Owner changed",
 			wantCategory:     CategoryPeople,
 			wantHeadlineFull: "@old to @new",
-			wantHeadlineSub:  "@alice changed owner",
+			wantHeadlineSub:  "alice changed owner",
 		},
 		{
 			name: "assignee_changed", eventType: "assignee_changed",
@@ -75,7 +77,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Task reassigned",
 			wantCategory:     CategoryPeople,
 			wantHeadlineFull: "task assigned",
-			wantHeadlineSub:  "@alice reassigned a task",
+			wantHeadlineSub:  "alice reassigned a task",
 		},
 		{
 			name: "ran_slash_command", eventType: "ran_slash_command",
@@ -83,7 +85,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Slash command",
 			wantCategory:     CategoryCommand,
 			wantHeadlineFull: "/run cmd",
-			wantHeadlineSub:  "@alice ran a slash command",
+			wantHeadlineSub:  "alice ran a slash command",
 		},
 		{
 			name: "event_from_post", eventType: "event_from_post",
@@ -91,7 +93,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Channel post",
 			wantCategory:     CategoryOther,
 			wantHeadlineFull: "user posted",
-			wantHeadlineSub:  "@alice posted in the channel",
+			wantHeadlineSub:  "alice posted in the channel",
 		},
 		{
 			name: "user_joined_left", eventType: "user_joined_left",
@@ -99,7 +101,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Channel membership",
 			wantCategory:     CategoryPeople,
 			wantHeadlineFull: "joined",
-			wantHeadlineSub:  "@alice joined or left",
+			wantHeadlineSub:  "alice joined or left",
 		},
 		{
 			name: "participants_changed", eventType: "participants_changed",
@@ -107,7 +109,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Participants changed",
 			wantCategory:     CategoryPeople,
 			wantHeadlineFull: "added bob",
-			wantHeadlineSub:  "@alice changed participants",
+			wantHeadlineSub:  "alice changed participants",
 		},
 		{
 			name: "published_retrospective", eventType: "published_retrospective",
@@ -115,7 +117,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Retrospective published",
 			wantCategory:     CategoryRetrospective,
 			wantHeadlineFull: "Published",
-			wantHeadlineSub:  "@alice published the retrospective",
+			wantHeadlineSub:  "alice published the retrospective",
 		},
 		{
 			name: "canceled_retrospective", eventType: "canceled_retrospective",
@@ -123,7 +125,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Retrospective canceled",
 			wantCategory:     CategoryRetrospective,
 			wantHeadlineFull: "Canceled",
-			wantHeadlineSub:  "@alice canceled the retrospective",
+			wantHeadlineSub:  "alice canceled the retrospective",
 		},
 		{
 			name: "run_finished", eventType: "run_finished",
@@ -131,7 +133,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Run finished",
 			wantCategory:     CategoryLifecycle,
 			wantHeadlineFull: "Finished",
-			wantHeadlineSub:  "@alice marked this run finished",
+			wantHeadlineSub:  "alice marked this run finished",
 		},
 		{
 			name: "run_restored", eventType: "run_restored",
@@ -139,7 +141,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Run restored",
 			wantCategory:     CategoryLifecycle,
 			wantHeadlineFull: "Restored",
-			wantHeadlineSub:  "@alice restored this run",
+			wantHeadlineSub:  "alice restored this run",
 		},
 		{
 			name: "status_update_snoozed", eventType: "status_update_snoozed",
@@ -147,7 +149,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Status updates snoozed",
 			wantCategory:     CategoryStatus,
 			wantHeadlineFull: "Snoozed 1h",
-			wantHeadlineSub:  "@alice snoozed status updates",
+			wantHeadlineSub:  "alice snoozed status updates",
 		},
 		{
 			name: "status_updates_enabled", eventType: "status_updates_enabled",
@@ -155,7 +157,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Status updates enabled",
 			wantCategory:     CategoryStatus,
 			wantHeadlineFull: "",
-			wantHeadlineSub:  "@alice enabled status updates",
+			wantHeadlineSub:  "alice enabled status updates",
 		},
 		{
 			name: "status_updates_disabled", eventType: "status_updates_disabled",
@@ -163,7 +165,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Status updates disabled",
 			wantCategory:     CategoryStatus,
 			wantHeadlineFull: "",
-			wantHeadlineSub:  "@alice disabled status updates",
+			wantHeadlineSub:  "alice disabled status updates",
 		},
 		{
 			name: "property_changed", eventType: "property_changed",
@@ -171,7 +173,7 @@ func TestTimelineEvent_PerType(t *testing.T) {
 			wantLabel:        "Property changed",
 			wantCategory:     CategoryOther,
 			wantHeadlineFull: "set priority",
-			wantHeadlineSub:  "@alice changed a property",
+			wantHeadlineSub:  "alice changed a property",
 		},
 	}
 
@@ -213,7 +215,7 @@ func TestTimelineEvent_TaskStateModified_ParsesJSON(t *testing.T) {
 	f := formatEvent(ev, rt)
 	require.Equal(t, "Task updated", f.TypeLabel)
 	require.Equal(t, CategoryTasks, f.Category)
-	require.Contains(t, f.Headline, "@alice")
+	require.Contains(t, f.Headline, "alice")
 	require.Contains(t, f.Headline, "checked")
 	require.Contains(t, f.Headline, "'Page on-call'")
 	require.Empty(t, f.Detail, "raw JSON details must not leak into Detail")
@@ -274,15 +276,41 @@ func TestUserName(t *testing.T) {
 	rt := resolverWithAlice()
 	rt.Users["u4"] = RenderUser{UserID: "u4", DisplayName: "Dana Display"}
 	b := newBuilder(rt, testOptions())
-	require.Equal(t, "@alice", b.userName("u1"))
+	require.Equal(t, "alice", b.userName("u1"))
 	require.Equal(t, "Dana Display", b.userName("u4"), "a user without a username shows by display name")
 	require.Equal(t, "Unknown user", b.userName("ghost"))
 	require.Equal(t, "Unknown user", b.userName(""))
 }
 
+func TestUserName_NameFormat(t *testing.T) {
+	rt := ResolverTable{Users: map[string]RenderUser{
+		"u1": {UserID: "u1", Username: "alice", DisplayName: "Alice Admin", Nickname: "Ali"},
+		"u2": {UserID: "u2", Username: "bob", DisplayName: "Bob Builder"},
+		// renderUserFromModel falls back to the username for users without a name.
+		"u3": {UserID: "u3", Username: "carol", DisplayName: "carol"},
+	}}
+	for format, want := range map[string][]string{
+		"":                         {"alice", "bob", "carol"},
+		model.ShowUsername:         {"alice", "bob", "carol"},
+		model.ShowFullName:         {"Alice Admin", "Bob Builder", "carol"},
+		model.ShowNicknameFullName: {"Ali", "Bob Builder", "carol"},
+	} {
+		opts := testOptions()
+		opts.NameFormat = format
+		b := newBuilder(rt, opts)
+		require.Equal(t, want, []string{b.userName("u1"), b.userName("u2"), b.userName("u3")}, "format %q", format)
+	}
+}
+
+func TestTimelineEvent_TaskStateModified_TaskKey(t *testing.T) {
+	// The server records the task title under "task".
+	ev := RenderTimelineEvent{EventType: "task_state_modified", Details: `{"action":"check","task":"Page on-call","item_id":"i1"}`, SubjectID: "u1"}
+	require.Equal(t, "alice checked task 'Page on-call'", formatEvent(ev, resolverWithAlice()).Headline)
+}
+
 func TestTimelineEvent_TaskStateModified_NoItem(t *testing.T) {
 	ev := RenderTimelineEvent{EventType: "task_state_modified", Details: `{"action":"skip"}`, SubjectID: "u1"}
-	require.Equal(t, "@alice skipped a task", formatEvent(ev, resolverWithAlice()).Headline)
+	require.Equal(t, "alice skipped a task", formatEvent(ev, resolverWithAlice()).Headline)
 }
 
 func TestTimelineEvent_PlainTextDetailsPassThrough(t *testing.T) {

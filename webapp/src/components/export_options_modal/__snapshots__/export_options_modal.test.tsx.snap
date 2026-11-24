@@ -60,14 +60,14 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
       className="Description-dTdaMR caPvRr"
       ref={null}
     >
-      Select the sections to include in the export.
+      Select what you'd like the export to include:
     </p>
     <div
       className="Toggles-hAkmHW UekAt"
       ref={null}
     >
       <label
-        className="ToggleLabel-biakKb mducf"
+        className="ToggleLabel-biakKb dckRqa"
         data-testid="section-toggle-playbookOverview"
         ref={null}
       >
@@ -81,7 +81,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
         </span>
       </label>
       <label
-        className="ToggleLabel-biakKb mducf"
+        className="ToggleLabel-biakKb dckRqa"
         data-testid="section-toggle-playbookChecklistTemplates"
         ref={null}
       >
@@ -95,7 +95,7 @@ exports[`ExportOptionsModal matches snapshot for playbook surface 1`] = `
         </span>
       </label>
       <label
-        className="ToggleLabel-biakKb mducf"
+        className="ToggleLabel-biakKb dckRqa"
         data-testid="section-toggle-playbookSettings"
         ref={null}
       >
@@ -173,33 +173,20 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
       className="Description-dTdaMR caPvRr"
       ref={null}
     >
-      Select the sections to include in the export.
+      Select what you'd like the export to include:
     </p>
     <div
       className="Toggles-hAkmHW UekAt"
       ref={null}
     >
       <label
-        className="ToggleLabel-biakKb mducf"
-        data-testid="section-toggle-cover"
-        ref={null}
-      >
-        <input
-          checked={true}
-          onChange={[Function]}
-          type="checkbox"
-        />
-        <span>
-          Cover page
-        </span>
-      </label>
-      <label
-        className="ToggleLabel-biakKb mducf"
+        className="ToggleLabel-biakKb bklqlK"
         data-testid="section-toggle-executiveSummary"
         ref={null}
       >
         <input
           checked={true}
+          disabled={true}
           onChange={[Function]}
           type="checkbox"
         />
@@ -208,7 +195,22 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
         </span>
       </label>
       <label
-        className="ToggleLabel-biakKb mducf"
+        className="ToggleLabel-biakKb bklqlK"
+        data-testid="section-toggle-statusUpdates"
+        ref={null}
+      >
+        <input
+          checked={true}
+          disabled={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Status updates
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb dckRqa"
         data-testid="section-toggle-timeline"
         ref={null}
       >
@@ -222,35 +224,7 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
         </span>
       </label>
       <label
-        className="ToggleLabel-biakKb mducf"
-        data-testid="section-toggle-statusUpdates"
-        ref={null}
-      >
-        <input
-          checked={true}
-          onChange={[Function]}
-          type="checkbox"
-        />
-        <span>
-          Status updates
-        </span>
-      </label>
-      <label
-        className="ToggleLabel-biakKb mducf"
-        data-testid="section-toggle-checklists"
-        ref={null}
-      >
-        <input
-          checked={true}
-          onChange={[Function]}
-          type="checkbox"
-        />
-        <span>
-          Tasks
-        </span>
-      </label>
-      <label
-        className="ToggleLabel-biakKb mducf"
+        className="ToggleLabel-biakKb dckRqa"
         data-testid="section-toggle-retrospective"
         ref={null}
       >
@@ -264,19 +238,220 @@ exports[`ExportOptionsModal matches snapshot for run surface 1`] = `
         </span>
       </label>
       <label
-        className="ToggleLabel-biakKb mducf"
-        data-testid="section-toggle-transcript"
+        className="ToggleLabel-biakKb dckRqa"
+        data-testid="section-toggle-checklists"
         ref={null}
       >
         <input
-          checked={false}
+          checked={true}
           onChange={[Function]}
           type="checkbox"
         />
         <span>
-          Channel transcript
+          Task outline
         </span>
       </label>
+      <label
+        className="ToggleLabel-biakKb dckRqa"
+        data-testid="section-toggle-transcript"
+        ref={null}
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Complete chat history
+        </span>
+      </label>
+    </div>
+    <div
+      className="TranscriptModeBox-llIIUD bRCZw"
+      data-testid="transcript-mode-box"
+      ref={null}
+    >
+      <div
+        className="TranscriptModeLabel-bNimWg cyVVtv"
+        ref={null}
+      >
+        Transcript layout
+      </div>
+      <label
+        className="TranscriptModeRadio-cMKQFf jXcoRb"
+        data-testid="transcript-mode-threaded"
+        ref={null}
+      >
+        <input
+          checked={true}
+          name="transcript-mode"
+          onChange={[Function]}
+          type="radio"
+          value="threaded"
+        />
+        <div>
+          <strong>
+            Grouped by thread
+          </strong>
+          <small>
+            Roots are top-level; replies appear directly under their root (Mattermost UI default).
+          </small>
+        </div>
+      </label>
+      <label
+        className="TranscriptModeRadio-cMKQFf jXcoRb"
+        data-testid="transcript-mode-chronological"
+        ref={null}
+      >
+        <input
+          checked={false}
+          name="transcript-mode"
+          onChange={[Function]}
+          type="radio"
+          value="chronological"
+        />
+        <div>
+          <strong>
+            Fully chronological
+          </strong>
+          <small>
+            Posts emit in strict timestamp order; replies carry a ↳ indicator.
+          </small>
+        </div>
+      </label>
+    </div>
+    <div
+      className="TimeZoneField-biMtdG hgUnen"
+      data-testid="time-zone-field"
+      ref={null}
+    >
+      <span
+        className="TimeZoneLabel-bisvyy dUeeyo"
+        id="export-time-zone-label"
+        ref={null}
+      >
+        Time zone:
+      </span>
+      <div
+        className="StyledSelect-cgphkM eJGAwu css-2b097c-container"
+        onKeyDown={[Function]}
+        ref={null}
+      >
+        <span
+          aria-atomic="false"
+          aria-live="polite"
+          aria-relevant="additions text"
+          className="css-1f43avz-a11yText-A11yText"
+          ref={null}
+        />
+        <div
+          className="playbooks-rselect__control css-yk16xz-control"
+          onMouseDown={[Function]}
+          onTouchEnd={[Function]}
+          ref={[Function]}
+        >
+          <div
+            className="playbooks-rselect__value-container playbooks-rselect__value-container--has-value css-g1d714-ValueContainer"
+            ref={null}
+          >
+            <div
+              className="playbooks-rselect__single-value css-1uccc91-singleValue"
+              ref={null}
+            >
+              Europe/Berlin (your time zone)
+            </div>
+            <div
+              className="css-b8ldur-Input"
+              ref={null}
+            >
+              <div
+                className="playbooks-rselect__input"
+                style={
+                  {
+                    "display": "inline-block",
+                  }
+                }
+              >
+                <input
+                  aria-autocomplete="list"
+                  aria-labelledby="export-time-zone-label"
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  disabled={false}
+                  id="react-select-15-input"
+                  onBlur={[Function]}
+                  onChange={[Function]}
+                  onFocus={[Function]}
+                  ref={[Function]}
+                  spellCheck="false"
+                  style={
+                    {
+                      "background": 0,
+                      "border": 0,
+                      "boxSizing": "content-box",
+                      "color": "inherit",
+                      "fontSize": "inherit",
+                      "label": "input",
+                      "opacity": 1,
+                      "outline": 0,
+                      "padding": 0,
+                      "width": "1px",
+                    }
+                  }
+                  tabIndex="0"
+                  type="text"
+                  value=""
+                />
+                <div
+                  ref={[Function]}
+                  style={
+                    {
+                      "height": 0,
+                      "left": 0,
+                      "overflow": "scroll",
+                      "position": "absolute",
+                      "top": 0,
+                      "visibility": "hidden",
+                      "whiteSpace": "pre",
+                    }
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          <div
+            className="playbooks-rselect__indicators css-1hb7zxy-IndicatorsContainer"
+            ref={null}
+          >
+            <span
+              className="playbooks-rselect__indicator-separator css-1okebmr-indicatorSeparator"
+              ref={null}
+            />
+            <div
+              aria-hidden="true"
+              className="playbooks-rselect__indicator playbooks-rselect__dropdown-indicator css-tlfecz-indicatorContainer"
+              onMouseDown={[Function]}
+              onTouchEnd={[Function]}
+              ref={null}
+            >
+              <svg
+                aria-hidden="true"
+                className="css-tj5bde-Svg"
+                focusable="false"
+                height={20}
+                ref={null}
+                viewBox="0 0 20 20"
+                width={20}
+              >
+                <path
+                  d="M4.516 7.548c0.436-0.446 1.043-0.481 1.576 0l3.908 3.747 3.908-3.747c0.533-0.481 1.141-0.446 1.574 0 0.436 0.445 0.408 1.197 0 1.615-0.406 0.418-4.695 4.502-4.695 4.502-0.217 0.223-0.502 0.335-0.787 0.335s-0.57-0.112-0.789-0.335c0 0-4.287-4.084-4.695-4.502s-0.436-1.17 0-1.615z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -46,13 +46,13 @@ func TestBuildRun(t *testing.T) {
 		opts := testOptions()
 		opts.Location = time.FixedZone("CET", 60*60)
 		r := BuildRun(rc, opts)
-		assert.Contains(t, r.Meta, Field{Label: "Started", Value: "2023-11-14 23:13"})
-		assert.Equal(t, "Generated 2023-11-14 23:13 CET.", r.Footer)
+		assert.Contains(t, r.Meta, Field{Label: "Started", Value: "November 14, 2023, 11:13 PM CET"})
+		assert.Equal(t, "Generated November 14, 2023, 11:13 PM CET.", r.Footer)
 	})
 
 	t.Run("no location means UTC", func(t *testing.T) {
 		r := BuildRun(RenderContext{GeneratedAtMillis: testStart}, Options{T: testOptions().T})
-		assert.Equal(t, "Generated 2023-11-14 22:13 UTC.", r.Footer)
+		assert.Equal(t, "Generated November 14, 2023, 10:13 PM UTC.", r.Footer)
 		assert.Equal(t, "en", r.Lang)
 	})
 
@@ -81,7 +81,43 @@ func TestBuildRun(t *testing.T) {
 		items := BuildRun(rc, testOptions()).Tasks.Checklists[0].Items
 		assert.Empty(t, items[0].Assignee)
 		assert.Equal(t, "Unassigned", items[1].Assignee)
-		assert.Equal(t, "Due: 2023-11-14 22:13", items[1].Due)
+		assert.Equal(t, "Due: November 14, 2023, 10:13 PM UTC", items[1].Due)
+	})
+
+	t.Run("closed and skipped tasks say who changed them and when", func(t *testing.T) {
+		rc := RenderContext{
+			Checklists: []RenderChecklist{{Items: []RenderChecklistItem{
+				{Title: "checked", State: coretypes.ChecklistItemStateClosed, StateMs: testStart, StateUserID: "u1"},
+				{Title: "checked, by whom unknown", State: coretypes.ChecklistItemStateClosed, StateMs: testStart},
+				{Title: "skipped", State: coretypes.ChecklistItemStateSkipped, StateMs: testStart, StateUserID: "u1"},
+				{Title: "skipped, by whom unknown", State: coretypes.ChecklistItemStateSkipped, StateMs: testStart},
+				{Title: "open", StateMs: testStart, StateUserID: "u1"},
+				{Title: "closed at an unknown time", State: coretypes.ChecklistItemStateClosed, StateUserID: "u1"},
+			}}},
+			Resolvers: ResolverTable{Users: map[string]RenderUser{"u1": {UserID: "u1", Username: "alice"}}},
+		}
+		var got []string
+		for _, it := range BuildRun(rc, testOptions()).Tasks.Checklists[0].Items {
+			got = append(got, it.Completed)
+		}
+		assert.Equal(t, []string{
+			"Checked off by alice on November 14, 2023, 10:13 PM UTC",
+			"Checked off on November 14, 2023, 10:13 PM UTC",
+			"Skipped by alice on November 14, 2023, 10:13 PM UTC",
+			"Skipped on November 14, 2023, 10:13 PM UTC",
+			"",
+			"",
+		}, got)
+	})
+
+	t.Run("unselected sections are omitted", func(t *testing.T) {
+		r := BuildRun(RenderContext{Sections: SectionFlags{ExecutiveSummary: true, StatusUpdates: true, Retrospective: true}}, testOptions())
+		assert.False(t, r.Summary.Omitted)
+		assert.False(t, r.StatusUpdates.Omitted)
+		assert.False(t, r.Retrospective.Omitted)
+		assert.True(t, r.Timeline.Omitted)
+		assert.True(t, r.Tasks.Omitted)
+		assert.True(t, r.Transcript.Omitted)
 	})
 }
 
