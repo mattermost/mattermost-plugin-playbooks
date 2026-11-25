@@ -710,6 +710,10 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 	if perPage < 0 {
 		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'per_page': it should be a positive number")
 	}
+	// Cap here. PlaybookFilterOptions.Validate also caps, but it rejects runs, last_run_at, and active_runs.
+	if perPage > app.PerPageDefault {
+		perPage = app.PerPageDefault
+	}
 
 	searchTerm := u.Query().Get("search_term")
 
