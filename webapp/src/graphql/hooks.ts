@@ -10,9 +10,10 @@ import {
     useQuery,
 } from '@apollo/client';
 
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
 import {
     AddPlaybookMemberDocument,
-    AddRunParticipantsDocument,
     PlaybookDocument,
     PlaybookLhsDocument,
     PlaybookPropertyDocument,
@@ -21,7 +22,6 @@ import {
     PlaybookQuery,
     PlaybookUpdates,
     RemovePlaybookMemberDocument,
-    RemoveRunParticipantsDocument,
     RhsRunsDocument,
     RunUpdates,
     SetRunPropertyValueDocument,
@@ -33,13 +33,18 @@ import {
     UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';
 
+import {playbookRunUpdated} from 'src/actions';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {
+    addRunParticipants,
     autoFollowPlaybook,
+    removeRunParticipants,
     setOwner,
     setPlaybookFavorite,
     setRunFavorite,
 } from 'src/client';
+import {useAppDispatch, useAppStore} from 'src/hooks/redux';
+import {myPlaybookRunsByTeam} from 'src/selectors';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
@@ -170,32 +175,50 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     return {join, leave};
 };
 
-export const useManageRunMembership = (runID?: string) => {
-    const [add] = useMutation(AddRunParticipantsDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-    });
+// user_removed can delete this channel from the run map before the request
+// returns. Dispatching the response would put that channel back.
+function selfRemovalClearedRunChannel(
+    state: Parameters<typeof getCurrentUserId>[0],
+    removedUserIDs: string[],
+    channelId: string,
+): boolean {
+    const currentUserId = getCurrentUserId(state);
+    if (!currentUserId || !channelId || !removedUserIDs.includes(currentUserId)) {
+        return false;
+    }
 
-    const [remove] = useMutation(RemoveRunParticipantsDocument, {
-        refetchQueries: [
-            PlaybookLhsDocument,
-        ],
-    });
+    const runsByTeam = myPlaybookRunsByTeam(state);
+    if (!runsByTeam) {
+        return true;
+    }
+
+    return !Object.values(runsByTeam).some((runs) => Boolean(runs?.[channelId]));
+}
+
+export const useManageRunMembership = (runID?: string) => {
+    const dispatch = useAppDispatch();
+    const store = useAppStore();
+    const refreshLHS = useLHSRefresh();
 
     const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
-        await add({variables: {runID: runID || '', userIDs: userIDs || [], forceAddToChannel: forceAddToChannel || false}});
-    }, [runID, add]);
+        const updated = await addRunParticipants(runID, userIDs, forceAddToChannel || false);
+        dispatch(playbookRunUpdated(updated));
+        refreshLHS();
+    }, [dispatch, refreshLHS, runID]);
 
     const removeFromRun = useCallback(async (userIDs?: string[]) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
         }
-        await remove({variables: {runID: runID || '', userIDs: userIDs || []}});
-    }, [runID, remove]);
+        const updated = await removeRunParticipants(runID, userIDs);
+        if (!selfRemovalClearedRunChannel(store.getState(), userIDs, updated.channel_id)) {
+            dispatch(playbookRunUpdated(updated));
+        }
+        refreshLHS();
+    }, [dispatch, refreshLHS, runID, store]);
 
     const changeRunOwner = useCallback(async (ownerID?: string) => {
         if (!runID || !ownerID) {
@@ -204,7 +227,8 @@ export const useManageRunMembership = (runID?: string) => {
 
         // Errors from setOwner propagate as a rejected Promise; callers must handle them.
         await setOwner(runID, ownerID);
-    }, [runID]);
+        refreshLHS();
+    }, [refreshLHS, runID]);
 
     return {addToRun, removeFromRun, changeRunOwner};
 };
