@@ -829,7 +829,7 @@ func (s *stubRunService) AddParticipants(string, []string, string, bool, bool) (
 func (s *stubRunService) GetPlaybookRunIDsForUser(string) ([]string, error) {
 	panic("stubRunService: GetPlaybookRunIDsForUser not implemented")
 }
-func (s *stubRunService) GraphqlUpdate(string, map[string]interface{}) error {
+func (s *stubRunService) GraphqlUpdate(string, string, map[string]interface{}) error {
 	panic("stubRunService: GraphqlUpdate not implemented")
 }
 func (s *stubRunService) MessageHasBeenPosted(*model.Post) {

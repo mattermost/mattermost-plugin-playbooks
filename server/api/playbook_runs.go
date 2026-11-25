@@ -318,7 +318,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	}
 
 	// Update using GraphqlUpdate
-	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
+	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, userID, fieldsToUpdate); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

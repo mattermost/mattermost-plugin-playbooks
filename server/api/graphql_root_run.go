@@ -230,7 +230,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		return "", err
 	}
 
-	if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
+	if err := c.playbookRunService.GraphqlUpdate(args.ID, userID, setmap); err != nil {
 		return "", err
 	}
 
