@@ -200,7 +200,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if err := h.validateMetrics(playbook); err != nil {
+	if err := h.validateMetrics(playbook, nil); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
@@ -263,7 +263,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if err = h.validateMetrics(playbook); err != nil {
+	if err = h.validateMetrics(playbook, oldPlaybook.Metrics); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
@@ -720,6 +720,11 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	if err := h.validateMetrics(playbook, nil); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
+		return
+	}
+
 	id, err := h.playbookService.Import(app.PlaybookImportData{
 		Playbook:   playbook,
 		Version:    importBlock.Version,
@@ -741,14 +746,26 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 	ReturnJSON(w, &result, http.StatusCreated)
 }
 
-func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
+// validateMetrics validates the metric configs of pb. existing holds the metrics already stored
+// for the playbook being updated; the store keeps the stored type for those, so only metrics
+// that are not among them need a valid type.
+func (h *PlaybookHandler) validateMetrics(pb app.Playbook, existing []app.PlaybookMetricConfig) error {
 	if len(pb.Metrics) > app.MaxMetricsPerPlaybook {
 		return errors.Errorf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook)
 	}
 
 	//check if titles are unique
 	titles := make(map[string]bool)
+	existingIDs := make(map[string]bool, len(existing))
+	for _, m := range existing {
+		existingIDs[m.ID] = true
+	}
 	for _, m := range pb.Metrics {
+		if m.ID == "" || !existingIDs[m.ID] {
+			if err := app.ValidateMetricType(m.Type); err != nil {
+				return err
+			}
+		}
 		if titles[m.Title] {
 			return errors.Errorf("metrics names must be unique")
 		}

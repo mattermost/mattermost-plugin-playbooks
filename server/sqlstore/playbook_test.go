@@ -13,6 +13,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
 
@@ -252,6 +253,165 @@ func TestGetPlaybook(t *testing.T) {
 		actual, err := playbookStore.Get(id)
 		require.NoError(t, err)
 		require.Equal(t, expected, actual)
+	})
+}
+
+func TestPlaybookStore_GetCorruptedRow(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	createPlaybook := func(t *testing.T) string {
+		pb := NewPBBuilder().
+			WithTitle("corrupted playbook").
+			WithTeamID(model.NewId()).
+			WithCreateAt(500).
+			WithChecklists([]int{1}).
+			ToPlaybook()
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+		return id
+	}
+
+	t.Run("unknown ChannelMode falls back to create_new_channel", func(t *testing.T) {
+		id := createPlaybook(t)
+
+		_, err := db.Exec("UPDATE IR_Playbook SET ChannelMode = 'not_a_mode' WHERE ID = $1", id)
+		require.NoError(t, err)
+
+		actual, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Equal(t, id, actual.ID)
+		require.Equal(t, "corrupted playbook", actual.Title)
+		require.Equal(t, app.PlaybookRunCreateNewChannel, actual.ChannelMode)
+	})
+
+	t.Run("invalid checklist item due dates are reset while valid fields are preserved", func(t *testing.T) {
+		id := createPlaybook(t)
+
+		checklistsJSON := `[{"id":"cl1","title":"checklist","items":[` +
+			`{"id":"i1","title":"fractional","due_date":1.5},` +
+			`{"id":"i2","title":"overflow","due_date":1e20},` +
+			`{"id":"i3","title":"valid","due_date":3600000}` +
+			`]}]`
+		_, err := db.Exec("UPDATE IR_Playbook SET ChecklistsJSON = $1 WHERE ID = $2", checklistsJSON, id)
+		require.NoError(t, err)
+
+		actual, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Len(t, actual.Checklists, 1)
+		require.Equal(t, "checklist", actual.Checklists[0].Title)
+		require.Len(t, actual.Checklists[0].Items, 3)
+
+		items := actual.Checklists[0].Items
+		require.Equal(t, "fractional", items[0].Title)
+		require.Equal(t, int64(0), items[0].DueDate)
+		require.Equal(t, "overflow", items[1].Title)
+		require.Equal(t, int64(0), items[1].DueDate)
+		require.Equal(t, "valid", items[2].Title)
+		require.Equal(t, int64(3600000), items[2].DueDate)
+	})
+
+	t.Run("stored ChannelMode values outside the enum fall back to create_new_channel", func(t *testing.T) {
+		testCases := []struct {
+			name        string
+			channelMode any
+		}{
+			{name: "NULL", channelMode: nil},
+			{name: "empty string", channelMode: ""},
+			{name: "different casing", channelMode: "LINK_EXISTING_CHANNEL"},
+			{name: "surrounding whitespace", channelMode: " link_existing_channel"},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				id := createPlaybook(t)
+
+				_, err := db.Exec("UPDATE IR_Playbook SET ChannelMode = $1 WHERE ID = $2", tc.channelMode, id)
+				require.NoError(t, err)
+
+				actual, err := playbookStore.Get(id)
+				require.NoError(t, err)
+				require.Equal(t, id, actual.ID)
+				require.Equal(t, app.PlaybookRunCreateNewChannel, actual.ChannelMode)
+			})
+		}
+	})
+
+	t.Run("invalid checklist item int64 fields are reset", func(t *testing.T) {
+		testCases := []struct {
+			name  string
+			field string
+			value string
+		}{
+			{name: "fractional state_modified", field: "state_modified", value: "1.5"},
+			{name: "fractional assignee_modified", field: "assignee_modified", value: "2.5"},
+			{name: "fractional command_last_run", field: "command_last_run", value: "3.5"},
+			{name: "fractional delete_at", field: "delete_at", value: "4.5"},
+			{name: "fractional update_at", field: "update_at", value: "5.5"},
+			{name: "due_date just above int64 max", field: "due_date", value: "9223372036854775808"},
+			{name: "due_date just below int64 min", field: "due_date", value: "-9223372036854775809"},
+			{name: "negative fractional due_date", field: "due_date", value: "-1.5"},
+			{name: "large negative due_date", field: "due_date", value: "-1e20"},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				id := createPlaybook(t)
+
+				checklistsJSON := fmt.Sprintf(
+					`[{"id":"cl1","title":"checklist","items":[{"id":"i1","title":"invalid","%s":%s},{"id":"i2","title":"valid","due_date":-3600000,"state_modified":42}]}]`,
+					tc.field, tc.value)
+				_, err := db.Exec("UPDATE IR_Playbook SET ChecklistsJSON = $1 WHERE ID = $2", checklistsJSON, id)
+				require.NoError(t, err)
+
+				actual, err := playbookStore.Get(id)
+				require.NoError(t, err)
+				require.Len(t, actual.Checklists, 1)
+				require.Len(t, actual.Checklists[0].Items, 2)
+
+				invalid := actual.Checklists[0].Items[0]
+				assert.Equal(t, "invalid", invalid.Title)
+				assert.Zero(t, invalid.StateModified)
+				assert.Zero(t, invalid.AssigneeModified)
+				assert.Zero(t, invalid.CommandLastRun)
+				assert.Zero(t, invalid.LastSkipped)
+				assert.Zero(t, invalid.UpdateAt)
+				assert.Zero(t, invalid.DueDate)
+
+				valid := actual.Checklists[0].Items[1]
+				assert.Equal(t, "valid", valid.Title)
+				assert.Equal(t, int64(-3600000), valid.DueDate)
+				assert.Equal(t, int64(42), valid.StateModified)
+			})
+		}
+	})
+
+	t.Run("unrepairable checklists JSON fails closed without panicking", func(t *testing.T) {
+		testCases := []struct {
+			name           string
+			checklistsJSON string
+		}{
+			{name: "top-level object instead of array", checklistsJSON: `{"items":[{"due_date":1.5}]}`},
+			{name: "items is not an array", checklistsJSON: `[{"title":"checklist","items":"oops"}]`},
+			{name: "item is not an object", checklistsJSON: `[{"title":"checklist","items":[1,{"title":"i","due_date":1.5}]}]`},
+			{name: "due_date is a string", checklistsJSON: `[{"title":"checklist","items":[{"title":"i","due_date":"1.5"}]}]`},
+			{name: "due_date is an object", checklistsJSON: `[{"title":"checklist","items":[{"title":"i","due_date":{"v":1}}]}]`},
+			{name: "checklist is not an object", checklistsJSON: `["checklist"]`},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				id := createPlaybook(t)
+
+				_, err := db.Exec("UPDATE IR_Playbook SET ChecklistsJSON = $1 WHERE ID = $2", tc.checklistsJSON, id)
+				require.NoError(t, err)
+
+				require.NotPanics(t, func() {
+					_, err = playbookStore.Get(id)
+				})
+				require.Error(t, err)
+			})
+		}
 	})
 }
 
