@@ -1017,3 +1017,65 @@ func TestPlaybookService_ValidateNewChannelOnlyMode(t *testing.T) {
 		assert.Equal(t, newPlaybookID, id)
 	})
 }
+
+func TestPlaybookService_GraphqlUpdateRecordsActingUser(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	playbookID := "pb-audit"
+	userID := "user-actor"
+	setmap := map[string]interface{}{
+		"Public":                            true,
+		"ConcatenatedWebhookOnCreationURLs": "https://example.com/hook",
+	}
+
+	newService := func(store *mock_app.MockPlaybookStore, auditRec *model.AuditRecord) app.PlaybookService {
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+		mockAuditor.EXPECT().
+			MakeAuditRecord("graphqlUpdatePlaybook", model.AuditStatusFail).
+			DoAndReturn(func(event, status string) *model.AuditRecord {
+				auditRec.EventName = event
+				auditRec.Status = status
+				return auditRec
+			})
+		mockAuditor.EXPECT().
+			LogAuditRec(auditRec)
+		return app.NewPlaybookService(store, nil, nil, mockAuditor, nil, nil, nil)
+	}
+
+	t.Run("success records the acting user", func(t *testing.T) {
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		auditRec := &model.AuditRecord{}
+		service := newService(mockStore, auditRec)
+
+		mockStore.EXPECT().
+			GraphqlUpdate(playbookID, gomock.Any()).
+			Return(nil)
+
+		err := service.GraphqlUpdate(playbookID, setmap, userID)
+		require.NoError(t, err)
+		assert.Equal(t, model.AuditStatusSuccess, auditRec.Status)
+		assert.Equal(t, userID, auditRec.EventData.Parameters["userID"])
+		assert.Equal(t, playbookID, auditRec.EventData.Parameters["playbookID"])
+		fields, ok := auditRec.EventData.Parameters["fieldsUpdated"].(string)
+		require.True(t, ok)
+		assert.Contains(t, fields, "Public")
+		assert.Contains(t, fields, "ConcatenatedWebhookOnCreationURLs")
+	})
+
+	t.Run("failure still records the acting user", func(t *testing.T) {
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		auditRec := &model.AuditRecord{}
+		service := newService(mockStore, auditRec)
+		storeErr := errors.New("store write failed")
+
+		mockStore.EXPECT().
+			GraphqlUpdate(playbookID, gomock.Any()).
+			Return(storeErr)
+
+		err := service.GraphqlUpdate(playbookID, map[string]interface{}{"Public": false}, userID)
+		require.ErrorIs(t, err, storeErr)
+		assert.Equal(t, model.AuditStatusFail, auditRec.Status)
+		assert.Equal(t, userID, auditRec.EventData.Parameters["userID"])
+		assert.Equal(t, storeErr.Error(), auditRec.Error.Description)
+	})
+}

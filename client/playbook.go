@@ -9,6 +9,75 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+// PlaybookUpdateOptions are the fields that can be partially updated via PATCH /playbooks/{id}.
+// Omitted (nil) fields are left unchanged. Mirrors GraphQL PlaybookUpdates plus the existing
+// REST-only fields (run_number_prefix and channel name template lock/template).
+type PlaybookUpdateOptions struct {
+	Title                                   *string                    `json:"title,omitempty"`
+	Description                             *string                    `json:"description,omitempty"`
+	Public                                  *bool                      `json:"public,omitempty"`
+	CreatePublicPlaybookRun                 *bool                      `json:"create_public_playbook_run,omitempty"`
+	ReminderMessageTemplate                 *string                    `json:"reminder_message_template,omitempty"`
+	ReminderTimerDefaultSeconds             *int64                     `json:"reminder_timer_default_seconds,omitempty"`
+	StatusUpdateEnabled                     *bool                      `json:"status_update_enabled,omitempty"`
+	InvitedUserIDs                          *[]string                  `json:"invited_user_ids,omitempty"`
+	InvitedGroupIDs                         *[]string                  `json:"invited_group_ids,omitempty"`
+	InviteUsersEnabled                      *bool                      `json:"invite_users_enabled,omitempty"`
+	DefaultOwnerID                          *string                    `json:"default_owner_id,omitempty"`
+	DefaultOwnerEnabled                     *bool                      `json:"default_owner_enabled,omitempty"`
+	BroadcastChannelIDs                     *[]string                  `json:"broadcast_channel_ids,omitempty"`
+	BroadcastEnabled                        *bool                      `json:"broadcast_enabled,omitempty"`
+	WebhookOnCreationURLs                   *[]string                  `json:"webhook_on_creation_urls,omitempty"`
+	WebhookOnCreationEnabled                *bool                      `json:"webhook_on_creation_enabled,omitempty"`
+	MessageOnJoin                           *string                    `json:"message_on_join,omitempty"`
+	MessageOnJoinEnabled                    *bool                      `json:"message_on_join_enabled,omitempty"`
+	RetrospectiveReminderIntervalSeconds    *int64                     `json:"retrospective_reminder_interval_seconds,omitempty"`
+	RetrospectiveTemplate                   *string                    `json:"retrospective_template,omitempty"`
+	RetrospectiveEnabled                    *bool                      `json:"retrospective_enabled,omitempty"`
+	WebhookOnStatusUpdateURLs               *[]string                  `json:"webhook_on_status_update_urls,omitempty"`
+	WebhookOnStatusUpdateEnabled            *bool                      `json:"webhook_on_status_update_enabled,omitempty"`
+	SignalAnyKeywords                       *[]string                  `json:"signal_any_keywords,omitempty"`
+	SignalAnyKeywordsEnabled                *bool                      `json:"signal_any_keywords_enabled,omitempty"`
+	CategorizeChannelEnabled                *bool                      `json:"categorize_channel_enabled,omitempty"`
+	CategoryName                            *string                    `json:"category_name,omitempty"`
+	RunSummaryTemplateEnabled               *bool                      `json:"run_summary_template_enabled,omitempty"`
+	RunSummaryTemplate                      *string                    `json:"run_summary_template,omitempty"`
+	ChannelNameTemplate                     *string                    `json:"channel_name_template,omitempty"`
+	ChannelNameTemplateLocked               *bool                      `json:"channel_name_template_locked,omitempty"`
+	CreateChannelMemberOnNewParticipant     *bool                      `json:"create_channel_member_on_new_participant,omitempty"`
+	RemoveChannelMemberOnRemovedParticipant *bool                      `json:"remove_channel_member_on_removed_participant,omitempty"`
+	ChannelID                               *string                    `json:"channel_id,omitempty"`
+	ChannelMode                             *string                    `json:"channel_mode,omitempty"`
+	RunNumberPrefix                         *string                    `json:"run_number_prefix,omitempty"`
+	Checklists                              *[]PlaybookChecklistUpdate `json:"checklists,omitempty"`
+}
+
+// PlaybookChecklistUpdate is a checklist payload for PATCH /playbooks/{id}.
+type PlaybookChecklistUpdate struct {
+	Title string                        `json:"title"`
+	Items []PlaybookChecklistItemUpdate `json:"items"`
+}
+
+// PlaybookChecklistItemUpdate is a checklist item payload for PATCH /playbooks/{id}.
+type PlaybookChecklistItemUpdate struct {
+	Title                   string             `json:"title"`
+	State                   string             `json:"state"`
+	StateModified           float64            `json:"state_modified"`
+	AssigneeID              string             `json:"assignee_id"`
+	AssigneeModified        float64            `json:"assignee_modified"`
+	AssigneeType            *string            `json:"assignee_type"`
+	AssigneePropertyFieldID *string            `json:"assignee_property_field_id"`
+	AssigneeOnlyComplete    *bool              `json:"assignee_only_complete"`
+	Command                 string             `json:"command"`
+	CommandLastRun          float64            `json:"command_last_run"`
+	Description             string             `json:"description"`
+	LastSkipped             float64            `json:"delete_at"`
+	DueDate                 float64            `json:"due_date"`
+	TaskActions             *[]TaskAction      `json:"task_actions"`
+	ConditionID             string             `json:"condition_id"`
+	Requirements            *[]TaskRequirement `json:"requirements"`
+}
+
 // Playbook represents the planning before a playbook run is initiated.
 type Playbook struct {
 	ID                                      string                 `json:"id"`
@@ -68,26 +137,26 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	ID                      string       `json:"id"`
-	Title                   string       `json:"title"`
-	State                   string       `json:"state"`
-	StateModified           int64        `json:"state_modified"`
-	AssigneeID              string       `json:"assignee_id"`
-	AssigneeModified        int64        `json:"assignee_modified"`
-	AssigneeType            string       `json:"assignee_type"`
-	AssigneePropertyFieldID string       `json:"assignee_property_field_id"`
-	AssigneeOnlyComplete    bool         `json:"assignee_only_complete"`
-	Command                 string       `json:"command"`
-	CommandLastRun          int64        `json:"command_last_run"`
-	Description             string       `json:"description"`
-	LastSkipped             int64        `json:"delete_at"`
-	DueDate                 int64        `json:"due_date"`
-	TaskActions             []TaskAction `json:"task_actions"`
+	ID                      string            `json:"id"`
+	Title                   string            `json:"title"`
+	State                   string            `json:"state"`
+	StateModified           int64             `json:"state_modified"`
+	AssigneeID              string            `json:"assignee_id"`
+	AssigneeModified        int64             `json:"assignee_modified"`
+	AssigneeType            string            `json:"assignee_type"`
+	AssigneePropertyFieldID string            `json:"assignee_property_field_id"`
+	AssigneeOnlyComplete    bool              `json:"assignee_only_complete"`
+	Command                 string            `json:"command"`
+	CommandLastRun          int64             `json:"command_last_run"`
+	Description             string            `json:"description"`
+	LastSkipped             int64             `json:"delete_at"`
+	DueDate                 int64             `json:"due_date"`
+	TaskActions             []TaskAction      `json:"task_actions"`
 	Requirements            []TaskRequirement `json:"requirements"`
-	ConditionID             string       `json:"condition_id"`
-	ConditionAction         string       `json:"condition_action"`
-	ConditionReason         string       `json:"condition_reason"`
-	UpdateAt                int64        `json:"update_at"`
+	ConditionID             string            `json:"condition_id"`
+	ConditionAction         string            `json:"condition_action"`
+	ConditionReason         string            `json:"condition_reason"`
+	UpdateAt                int64             `json:"update_at"`
 }
 
 // TaskRequirement is a labeled field that must be completed when checking off a task.
