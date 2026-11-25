@@ -188,6 +188,27 @@ func (s *PlaybookRunService) RemoveParticipants(ctx context.Context, playbookRun
 	return s.changeParticipants(ctx, http.MethodDelete, playbookRunID, PlaybookRunParticipantsOptions{UserIDs: userIDs})
 }
 
+// AddFavorite marks the playbook run as a favorite for the current user.
+func (s *PlaybookRunService) AddFavorite(ctx context.Context, playbookRunID string) error {
+	return s.setFavorite(ctx, http.MethodPut, playbookRunID)
+}
+
+// RemoveFavorite removes the playbook run from the current user's favorites.
+func (s *PlaybookRunService) RemoveFavorite(ctx context.Context, playbookRunID string) error {
+	return s.setFavorite(ctx, http.MethodDelete, playbookRunID)
+}
+
+func (s *PlaybookRunService) setFavorite(ctx context.Context, method, playbookRunID string) error {
+	favoriteURL := fmt.Sprintf("runs/%s/favorite", playbookRunID)
+	req, err := s.client.newAPIRequest(method, favoriteURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
 func (s *PlaybookRunService) changeParticipants(ctx context.Context, method, playbookRunID string, opts PlaybookRunParticipantsOptions) (*PlaybookRun, error) {
 	participantsURL := fmt.Sprintf("runs/%s/participants", playbookRunID)
 	req, err := s.client.newAPIRequest(method, participantsURL, opts)
