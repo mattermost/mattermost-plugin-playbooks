@@ -23,9 +23,7 @@ import {
     SetRunPropertyValueDocument,
     SetRunPropertyValueMutation,
     SetRunPropertyValueMutationVariables,
-    TaskActionUpdates,
     UpdatePlaybookDocument,
-    UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';
 
 import {playbookRunUpdated} from 'src/actions';
@@ -37,6 +35,7 @@ import {
     autoFollowPlaybook,
     removePlaybookMember,
     removeRunParticipants,
+    setChecklistItemTaskActions,
     setOwner,
     setPlaybookFavorite,
     setRunFavorite,
@@ -44,6 +43,7 @@ import {
 } from 'src/client';
 import {useAppDispatch, useAppStore} from 'src/hooks/redux';
 import {myPlaybookRunsByTeam} from 'src/selectors';
+import {TaskAction} from 'src/types/playbook';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
@@ -224,17 +224,12 @@ export const useManageRunMembership = (runID?: string) => {
 };
 
 export const useUpdateRunItemTaskActions = (runID?: string) => {
-    const [updateTaskActions] = useMutation(UpdateRunTaskActionsDocument, {
-        refetchQueries: [
-        ],
-    });
-
-    const updateRunTaskActions = useCallback(async (checklistNum: number, itemNum: number, taskActions: TaskActionUpdates[]) => {
+    const updateRunTaskActions = useCallback(async (checklistNum: number, itemNum: number, taskActions: TaskAction[]) => {
         if (!runID) {
             return;
         }
-        await updateTaskActions({variables: {runID, checklistNum, itemNum, taskActions}});
-    }, [runID, updateTaskActions]);
+        await setChecklistItemTaskActions(runID, checklistNum, itemNum, taskActions);
+    }, [runID]);
 
     return {updateRunTaskActions};
 };
