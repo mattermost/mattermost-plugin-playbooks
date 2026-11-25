@@ -319,7 +319,16 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
 	addToSetmap(setmap, "ChannelNameTemplateLocked", args.Updates.ChannelNameTemplateLocked)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
-	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
+	if args.Updates.ChannelMode != nil {
+		var channelMode app.ChannelPlaybookMode
+		if err := channelMode.UnmarshalText([]byte(*args.Updates.ChannelMode)); err != nil {
+			return "", errors.Wrapf(err, "invalid channel mode for playbook id: '%s'", args.ID)
+		}
+		if err := app.ValidateNewChannelOnlyMode(currentPlaybook.NewChannelOnly, channelMode); err != nil {
+			return "", err
+		}
+		setmap["ChannelMode"] = channelMode.String()
+	}
 
 	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {
@@ -330,6 +339,10 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
+		}
+		var decodedChecklists []app.Checklist
+		if err := json.Unmarshal(checklistsJSON, &decodedChecklists); err != nil {
+			return "", errors.Wrapf(err, "invalid checklist values in graphql json for playbook id: '%s'", args.ID)
 		}
 		setmap["ChecklistsJSON"] = checklistsJSON
 	}
@@ -435,6 +448,10 @@ func (r *PlaybookRootResolver) AddMetric(ctx context.Context, args struct {
 	}
 
 	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
+		return "", err
+	}
+
+	if err := app.ValidateMetricType(args.Type); err != nil {
 		return "", err
 	}
 
