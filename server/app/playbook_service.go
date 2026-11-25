@@ -858,13 +858,15 @@ func (s *playbookService) UpdateRunNumberPrefix(playbookID, prefix, userID strin
 }
 
 // GraphqlUpdate applies a partial field update using a setmap.
-func (s *playbookService) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+// userID is the acting user and is recorded on the audit record.
+func (s *playbookService) GraphqlUpdate(id string, setmap map[string]interface{}, userID string) error {
 	if len(setmap) == 0 {
 		return nil
 	}
 
 	auditRec := s.auditor.MakeAuditRecord("graphqlUpdatePlaybook", model.AuditStatusFail)
 	defer s.auditor.LogAuditRec(auditRec)
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "playbookID", id)
 
 	fieldNames := make([]string, 0, len(setmap))

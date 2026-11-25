@@ -97,7 +97,7 @@ func (s *allocPlaybookServiceStub) AddPlaybookMember(string, string, string) err
 func (s *allocPlaybookServiceStub) RemovePlaybookMember(string, string, string) error {
 	panic("not called")
 }
-func (s *allocPlaybookServiceStub) GraphqlUpdate(string, map[string]interface{}) error {
+func (s *allocPlaybookServiceStub) GraphqlUpdate(string, map[string]interface{}, string) error {
 	panic("not called")
 }
 func (s *allocPlaybookServiceStub) ValidateRunNumberPrefixUnique(string, string, string) error {

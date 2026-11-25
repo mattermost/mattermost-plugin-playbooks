@@ -544,8 +544,9 @@ type PlaybookService interface {
 	UpdateChannelNameTemplateLocked(playbookID string, locked bool, userID string) error
 
 	// GraphqlUpdate applies a partial field update using a setmap (same path as the
-	// GraphQL updatePlaybook mutation and PATCH /playbooks/{id}).
-	GraphqlUpdate(id string, setmap map[string]interface{}) error
+	// GraphQL updatePlaybook mutation and PATCH /playbooks/{id}). userID is the
+	// acting user and is recorded on the audit record.
+	GraphqlUpdate(id string, setmap map[string]interface{}, userID string) error
 
 	// ValidateRunNumberPrefixUnique returns ErrDuplicateEntry if prefix is already used by
 	// another active playbook on the team. Pass excludeID of the playbook being updated.

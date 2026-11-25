@@ -60,7 +60,7 @@ func (h *PlaybookHandler) patchPlaybook(c *Context, w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := h.playbookService.GraphqlUpdate(playbookID, setmap); err != nil {
+	if err := h.playbookService.GraphqlUpdate(playbookID, setmap, userID); err != nil {
 		h.handlePlaybookWriteError(w, c.logger, err)
 		return
 	}

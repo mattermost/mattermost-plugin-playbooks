@@ -931,7 +931,7 @@ func (s *stubPlaybookService) ReorderPropertyFields(string, string, int) ([]Prop
 func (s *stubPlaybookService) IncrementRunNumber(string) (int64, error) {
 	panic("stubPlaybookService: IncrementRunNumber not implemented")
 }
-func (s *stubPlaybookService) GraphqlUpdate(string, map[string]interface{}) error {
+func (s *stubPlaybookService) GraphqlUpdate(string, map[string]interface{}, string) error {
 	panic("stubPlaybookService: GraphqlUpdate not implemented")
 }
 func (s *stubPlaybookService) ValidateRunNumberPrefixUnique(string, string, string) error {
