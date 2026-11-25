@@ -23,7 +23,6 @@ import {PlaybookRun, PlaybookRunStatus, PlaybookRunType} from 'src/types/playboo
 
 import {useAppDispatch} from 'src/hooks/redux';
 
-import {PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {
     conditionCreated,
     conditionDeleted,
@@ -32,6 +31,7 @@ import {
 } from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {
+    PlaybookUpdateFields,
     clientAddChecklist,
     clientDeleteChecklist,
     clientMoveChecklist,
@@ -138,7 +138,7 @@ const ChecklistList = ({
             ...cl,
             items: cl.items.map(mapChecklistItemToInput),
         }));
-        const updates: PlaybookUpdates = {
+        const updates: PlaybookUpdateFields = {
             checklists: updatedChecklists,
         };
 
