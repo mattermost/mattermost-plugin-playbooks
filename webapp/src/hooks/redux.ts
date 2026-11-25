@@ -14,4 +14,6 @@ import type {Dispatch, Store} from 'src/types/store';
 // The `as Dispatch` is currently required because mattermost-redux messes with the type definition for useDispatch
 export const useAppDispatch = (useDispatch as UseDispatch).withTypes<Dispatch>();
 export const useAppSelector = useSelector.withTypes<GlobalState>();
-export const useAppStore = useStore.withTypes<Store>();
+
+// withTypes runs at import. Several suites mock react-redux without useStore.
+export const useAppStore = (): Store => useStore() as Store;
