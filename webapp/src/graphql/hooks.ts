@@ -10,6 +10,8 @@ import {
     useQuery,
 } from '@apollo/client';
 
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
 import {
     AddPlaybookMemberDocument,
     PlaybookDocument,
@@ -41,7 +43,8 @@ import {
     setPlaybookFavorite,
     setRunFavorite,
 } from 'src/client';
-import {useAppDispatch} from 'src/hooks/redux';
+import {useAppDispatch, useAppStore} from 'src/hooks/redux';
+import {myPlaybookRunsByTeam} from 'src/selectors';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
@@ -172,8 +175,29 @@ export const usePlaybookMembership = (playbookID?: string, userID?: string) => {
     return {join, leave};
 };
 
+// user_removed can delete this channel from the run map before the request
+// returns. Dispatching the response would put that channel back.
+function selfRemovalClearedRunChannel(
+    state: Parameters<typeof getCurrentUserId>[0],
+    removedUserIDs: string[],
+    channelId: string,
+): boolean {
+    const currentUserId = getCurrentUserId(state);
+    if (!currentUserId || !channelId || !removedUserIDs.includes(currentUserId)) {
+        return false;
+    }
+
+    const runsByTeam = myPlaybookRunsByTeam(state);
+    if (!runsByTeam) {
+        return true;
+    }
+
+    return !Object.values(runsByTeam).some((runs) => Boolean(runs?.[channelId]));
+}
+
 export const useManageRunMembership = (runID?: string) => {
     const dispatch = useAppDispatch();
+    const store = useAppStore();
     const refreshLHS = useLHSRefresh();
 
     const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {
@@ -190,9 +214,11 @@ export const useManageRunMembership = (runID?: string) => {
             return;
         }
         const updated = await removeRunParticipants(runID, userIDs);
-        dispatch(playbookRunUpdated(updated));
+        if (!selfRemovalClearedRunChannel(store.getState(), userIDs, updated.channel_id)) {
+            dispatch(playbookRunUpdated(updated));
+        }
         refreshLHS();
-    }, [dispatch, refreshLHS, runID]);
+    }, [dispatch, refreshLHS, runID, store]);
 
     const changeRunOwner = useCallback(async (ownerID?: string) => {
         if (!runID || !ownerID) {
