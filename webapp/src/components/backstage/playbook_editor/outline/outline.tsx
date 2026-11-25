@@ -29,7 +29,7 @@ import StatusUpdates from './section_status_updates';
 import SectionAdminSettings from './section_admin_settings';
 import Retrospective from './section_retrospective';
 import SectionTiming from './section_timing';
-import Actions from './section_actions';
+import Actions, {PhasesChange} from './section_actions';
 import ScrollNavBase from './scroll_nav';
 import Section from './section';
 
@@ -55,15 +55,16 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
     const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
     const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
     const effectiveOwnerGroupOnlyActions = ownerGroupOnlyActionsOverride ?? restPlaybook?.owner_group_only_actions;
-    const effectiveRestPlaybook = restPlaybook && effectiveOwnerGroupOnlyActions !== undefined ?
-        {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} :
-        restPlaybook;
+    const effectiveRestPlaybook = restPlaybook && effectiveOwnerGroupOnlyActions !== undefined ? {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} : restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
     const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
-    const [usePhasesOverride, setUsePhasesOverride] = useState<boolean | undefined>(undefined);
-    const savingUsePhases = useRef(false);
-    const effectiveUsePhases = usePhasesOverride ?? restPlaybook?.use_checklists_as_phases ?? false;
+    const [phasesOverride, setPhasesOverride] = useState<PhasesChange>({});
+    const effectivePhases = {
+        enabled: phasesOverride.phases_enabled ?? restPlaybook?.phases_enabled ?? false,
+        useTaskLists: phasesOverride.use_checklists_as_phases ?? restPlaybook?.use_checklists_as_phases ?? false,
+        custom: phasesOverride.custom_phases ?? restPlaybook?.custom_phases ?? [],
+    };
     const [bulkEditMode, setBulkEditMode] = useState(false);
     const latestToggleReq = useRef(0);
     const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
@@ -124,24 +125,25 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
             });
     };
 
-    const toggleUseChecklistsAsPhases = () => {
-        if (archived || !canEdit || !restPlaybook || savingUsePhases.current) {
+    const changePhases = (change: PhasesChange) => {
+        if (archived || !canEdit || !restPlaybook) {
             return;
         }
-        const prev = effectiveUsePhases;
-        setUsePhasesOverride(!prev);
-        savingUsePhases.current = true;
-        saveWithLatest(restPlaybook.id, (latest) => ({...latest, use_checklists_as_phases: !prev}))
+
+        // Turning phases on for the first time starts from the task lists, the common case.
+        const turnsOn = change.phases_enabled === true && !effectivePhases.enabled;
+        const applied: PhasesChange = turnsOn && !effectivePhases.useTaskLists && effectivePhases.custom.length === 0 && change.use_checklists_as_phases === undefined ? {...change, use_checklists_as_phases: true} : change;
+
+        setPhasesOverride((current) => ({...current, ...applied}));
+        saveWithLatest(restPlaybook.id, (latest) => ({...latest, ...applied}))
             .then(() => refetch())
             .catch(() => {
-                setUsePhasesOverride(prev);
+                setPhasesOverride({});
+                refetch();
                 toaster.add({
                     content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
                     toastStyle: ToastStyle.Failure,
                 });
-            })
-            .finally(() => {
-                savingUsePhases.current = false;
             });
     };
 
@@ -278,9 +280,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                         onClick={() => setBulkEditMode(!bulkEditMode)}
                     >
                         <i className={bulkEditMode ? 'icon icon-close' : 'icon icon-pencil-outline'}/>
-                        {bulkEditMode ?
-                            formatMessage({defaultMessage: 'Exit bulk edit'}) :
-                            formatMessage({defaultMessage: 'Bulk edit'})
+                        {bulkEditMode ? formatMessage({defaultMessage: 'Exit bulk edit'}) : formatMessage({defaultMessage: 'Bulk edit'})
                         }
                     </BulkEditButton>
                 )}
@@ -344,8 +344,8 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                     restPlaybook={restPlaybook}
                     autoArchiveChannel={effectiveAutoArchive}
                     onAutoArchiveChange={handleAutoArchiveChange}
-                    usePhases={effectiveUsePhases}
-                    onUsePhasesChange={restPlaybook ? toggleUseChecklistsAsPhases : undefined}
+                    phases={effectivePhases}
+                    onPhasesChange={restPlaybook ? changePhases : undefined}
                 />
             </Section>
             {showAdminSettings && (

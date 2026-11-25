@@ -54,11 +54,11 @@ describe('phaseDurations', () => {
         expect(Object.values(phaseDurations(events))).toEqual([2000]);
     });
 
-    it('gives nothing for a phase without a start, an instant phase, or invalid details', () => {
+    it('gives nothing for a phase without a start, one done within a second, or invalid details', () => {
         const events = [
             phaseEvent(TimelineEventType.PhaseDone, 'c1', 5000),
             phaseEvent(TimelineEventType.PhaseStarted, 'c2', 7000),
-            phaseEvent(TimelineEventType.PhaseDone, 'c2', 7000),
+            phaseEvent(TimelineEventType.PhaseDone, 'c2', 7400),
             phaseEvent(TimelineEventType.PhaseDone, 'c3', 9000, {details: 'not json'}),
         ];
 

@@ -34,6 +34,7 @@ export interface TimelineEvent {
     delete_at: number;
     summary: string;
     details: string;
+    subject_user_id: string;
 }
 
 interface RunChecklist {
@@ -46,13 +47,31 @@ export interface Run {
     id: string;
     name: string;
     owner_user_id: string;
+    create_at: number;
     channel_id: string;
     end_at: number;
     use_checklists_as_phases: boolean;
+    custom_phases?: Array<{id: string; title: string}>;
     checklists: RunChecklist[];
     phases?: RunPhase[];
     phase_override?: {checklist_id: string; set_by: string; set_at: number};
     timeline_events: TimelineEvent[];
+}
+
+export function phaseOf(run: Run, title: string): RunPhase {
+    const phase = run.phases?.find((candidate) => candidate.title === title);
+    if (!phase) {
+        throw new Error(`Run has no phase ${title}`);
+    }
+    return phase;
+}
+
+export function checklistId(run: Run, title: string): string {
+    const checklist = run.checklists.find((candidate) => candidate.title === title);
+    if (!checklist) {
+        throw new Error(`Run has no checklist ${title}`);
+    }
+    return checklist.id;
 }
 
 export async function createRun(page: Page, options: CreateRunOptions): Promise<Run> {
@@ -118,6 +137,17 @@ export function setRunPhase(page: Page, runId: string, checklistId: string) {
     return page.request.put(`${runsApi}/${runId}/phase`, {...requestedWith, data: {checklist_id: checklistId}});
 }
 
+// Moves a run with phases of its own to the next phase. Without a body the phase it leaves is
+// finished, the same as {close_current: true}.
+export function moveRunToNextPhase(page: Page, runId: string, body?: {close_current?: boolean}) {
+    return page.request.post(`${runsApi}/${runId}/phases/move`, {...requestedWith, ...(body === undefined ? {} : {data: body})});
+}
+
+// Marks a phase of a run with phases of its own done ('done') or reopens it ('started').
+export function setRunPhaseState(page: Page, runId: string, phaseId: string, state: string) {
+    return page.request.put(`${runsApi}/${runId}/phases/${phaseId}/state`, {...requestedWith, data: {state}});
+}
+
 export function moveChecklist(page: Page, runId: string, sourceIndex: number, destIndex: number) {
     return page.request.post(`${runsApi}/${runId}/checklists/move`, {
         ...requestedWith,
@@ -154,11 +184,16 @@ const phaseEventRank: Record<string, number> = {
     phase_reopened: 3,
 };
 
-// The phase events of a run, oldest first, as {type, title}.
-export function phaseEvents(run: Run): Array<{type: string; title: string}> {
+// The timeline events of a run that concern its phases, oldest first.
+export function phaseTimelineEvents(run: Run): TimelineEvent[] {
     return run.timeline_events.
         filter((event) => event.event_type.startsWith('phase_') || event.event_type === 'current_phase_changed').
-        sort((a, b) => (a.event_at - b.event_at) || (phaseEventRank[a.event_type] - phaseEventRank[b.event_type])).
+        sort((a, b) => (a.event_at - b.event_at) || (phaseEventRank[a.event_type] - phaseEventRank[b.event_type]));
+}
+
+// The phase events of a run, oldest first, as {type, title}.
+export function phaseEvents(run: Run): Array<{type: string; title: string}> {
+    return phaseTimelineEvents(run).
         map((event) => {
             const details = JSON.parse(event.details) as {title?: string; to_title?: string};
             return {type: event.event_type, title: details.title ?? details.to_title ?? ''};

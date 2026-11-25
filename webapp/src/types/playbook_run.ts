@@ -35,6 +35,9 @@ export interface PlaybookRun {
     status_update_enabled: boolean;
     use_checklists_as_phases?: boolean;
 
+    /** Set when the run has phases of its own, moved by people, instead of its task lists. */
+    custom_phases?: Array<{id: string, title: string}>;
+
     /** Computed by the server when use_checklists_as_phases is set. */
     phases?: RunPhase[];
 

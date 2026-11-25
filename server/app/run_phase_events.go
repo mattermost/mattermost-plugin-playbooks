@@ -228,19 +228,16 @@ func planPhaseEvents(phases []RunPhase, ledger phaseLedger, now int64) []planned
 // noticed. Runs that began before phase events existed are filled in the first time they are read.
 // The events are also added to run.TimelineEvents.
 func (s *PlaybookRunServiceImpl) recordPhaseEvents(run *PlaybookRun) bool {
-	if run == nil || !run.UseChecklistsAsPhases || run.EndAt > 0 {
+	if run == nil || !run.UsesPhases() || run.EndAt > 0 {
 		return false
 	}
 
 	logger := logrus.WithField("playbook_run_id", run.ID)
-	changes, err := s.store.GetChecklistItemStateChanges(run.ID)
+	phases, ledger, err := s.computeRunPhases(run)
 	if err != nil {
 		logger.WithError(err).Warn("failed to read state changes to record phases")
 		return false
 	}
-
-	ledger := ledgerFromEvents(run.TimelineEvents)
-	phases := ComputePhasesWithOverride(run.Checklists, changes, run.PhaseOverrideChecklistID, phaseMoves(run, ledger))
 	now := model.GetMillis()
 	planned := planPhaseEvents(phases, ledger, now)
 	if len(planned) == 0 {

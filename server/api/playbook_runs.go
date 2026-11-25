@@ -88,6 +88,8 @@ func NewPlaybookRunHandler(
 	// which is stricter than the checkEditPermissions middleware (RunManageProperties).
 	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/phase", withContext(handler.setPhase)).Methods(http.MethodPut)
+	playbookRunRouter.HandleFunc("/phases/move", withContext(handler.moveToNextPhase)).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/phases/{phaseID:[A-Za-z0-9]+}/state", withContext(handler.setPhaseState)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 
@@ -937,6 +939,80 @@ func (h *PlaybookRunHandler) setPhase(c *Context, w http.ResponseWriter, r *http
 			return
 		}
 		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+// handlePhaseError answers the errors a phase change can end in.
+func (h *PlaybookRunHandler) handlePhaseError(c *Context, w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, app.ErrPhasesNotEnabled), errors.Is(err, app.ErrPhaseNotFound), errors.Is(err, app.ErrPhaseTransition):
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+	case errors.Is(err, app.ErrPlaybookRunNotActive):
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+	case errors.Is(err, app.ErrPlaybookRunChanged):
+		h.HandleErrorWithCode(w, c.logger, http.StatusConflict, "the run's phases changed at the same time, try again", err)
+	default:
+		h.HandleError(w, c.logger, err)
+	}
+}
+
+// moveToNextPhase handles the POST /runs/{id}/phases/move endpoint: a run with phases of its own is
+// moved to the next one, finishing the phase it leaves unless close_current is false.
+func (h *PlaybookRunHandler) moveToNextPhase(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunSetPhase(userID, vars["id"])) {
+		return
+	}
+
+	params := struct {
+		CloseCurrent *bool `json:"close_current"`
+	}{}
+
+	// No body at all means the default. The length cannot be told from the request, which a plugin
+	// receives without one.
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil && !errors.Is(err, io.EOF) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "could not decode request body", err)
+		return
+	}
+	closeCurrent := params.CloseCurrent == nil || *params.CloseCurrent
+
+	if err := h.playbookRunService.MoveRunPhase(vars["id"], userID, closeCurrent); err != nil {
+		h.handlePhaseError(c, w, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+// setPhaseState handles the PUT /runs/{id}/phases/{phaseID}/state endpoint: a phase of a run with
+// phases of its own is marked done ("done") or reopened ("started").
+func (h *PlaybookRunHandler) setPhaseState(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunSetPhase(userID, vars["id"])) {
+		return
+	}
+
+	var params struct {
+		State string `json:"state"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "could not decode request body", err)
+		return
+	}
+	if params.State != "done" && params.State != "started" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, `state must be "done" or "started"`, errors.New("invalid phase state"))
+		return
+	}
+
+	if err := h.playbookRunService.SetRunPhaseDone(vars["id"], userID, vars["phaseID"], params.State == "done"); err != nil {
+		h.handlePhaseError(c, w, err)
 		return
 	}
 

@@ -91,8 +91,17 @@ type Playbook struct {
 
 	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
 
-	// UseChecklistsAsPhases shows the run's checklists as a phase timeline on the run page.
+	// PhasesEnabled shows a phase timeline on the run page. The phases are the run's task lists
+	// when UseChecklistsAsPhases is set, and CustomPhases otherwise.
+	PhasesEnabled bool `json:"phases_enabled" export:"phases_enabled"`
+
+	// UseChecklistsAsPhases makes each task list of a run a phase, moved by its tasks. It implies
+	// PhasesEnabled.
 	UseChecklistsAsPhases bool `json:"use_checklists_as_phases" export:"use_checklists_as_phases"`
+
+	// CustomPhases are the phases of a run when phases are enabled without task lists. Kept while
+	// the playbook uses task lists, so switching back finds them.
+	CustomPhases []CustomPhase `json:"custom_phases" export:"custom_phases"`
 
 	// PlaybookType is PlaybookTypeOperational or PlaybookTypeExercise. Exercise runs are left
 	// out of timing reports by default.
@@ -160,6 +169,9 @@ func (p Playbook) Clone() Playbook {
 	newPlaybook.Checklists = newChecklists
 	newPlaybook.Metrics = append([]PlaybookMetricConfig(nil), p.Metrics...)
 	newPlaybook.TimingMetrics = append([]TimingMetric(nil), p.TimingMetrics...)
+	if p.CustomPhases != nil {
+		newPlaybook.CustomPhases = append([]CustomPhase{}, p.CustomPhases...)
+	}
 	var newMembers []PlaybookMember
 	for _, m := range p.Members {
 		newMembers = append(newMembers, m.Clone())

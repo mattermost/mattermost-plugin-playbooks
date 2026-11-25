@@ -72,6 +72,7 @@ type sqlPlaybookRun struct {
 	app.PlaybookRun
 	ChecklistsJSON                        json.RawMessage
 	TimingMetricsJSON                     json.RawMessage
+	CustomPhasesJSON                      json.RawMessage
 	ConcatenatedInvitedUserIDs            string
 	ConcatenatedInvitedGroupIDs           string
 	ConcatenatedParticipantIDs            string
@@ -233,7 +234,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type",
 			"i.RunNumber", "i.SequentialID",
-			"i.ChannelCreatedByRun", "i.AutoArchivedChannel", "i.AutoArchiveChannel", "i.UseChecklistsAsPhases",
+			"i.ChannelCreatedByRun", "i.AutoArchivedChannel", "i.AutoArchiveChannel", "i.UseChecklistsAsPhases", "i.CustomPhasesJSON",
 			"i.PhaseOverrideChecklistID", "i.PhaseOverrideSetBy", "i.PhaseOverrideSetAt", "i.PhaseLedgerToken",
 			"i.TimingMetricsJSON", "i.Exercise").
 		Column(participantsCol).
@@ -551,6 +552,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"AutoArchivedChannel":                     rawPlaybookRun.AutoArchivedChannel,
 			"AutoArchiveChannel":                      rawPlaybookRun.AutoArchiveChannel,
 			"UseChecklistsAsPhases":                   rawPlaybookRun.UseChecklistsAsPhases,
+			"CustomPhasesJSON":                        rawPlaybookRun.CustomPhasesJSON,
 			"TimingMetricsJSON":                       rawPlaybookRun.TimingMetricsJSON,
 			"Exercise":                                rawPlaybookRun.Exercise,
 			// Preserved for backwards compatibility with v1.2
@@ -1360,6 +1362,12 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for playbook run id: %s", rawPlaybookRun.ID)
 	}
 
+	if len(rawPlaybookRun.CustomPhasesJSON) > 2 {
+		if err := json.Unmarshal(rawPlaybookRun.CustomPhasesJSON, &playbookRun.CustomPhases); err != nil {
+			return nil, errors.Wrapf(err, "failed to unmarshal custom phases json for playbook run id: %s", rawPlaybookRun.ID)
+		}
+	}
+
 	if len(rawPlaybookRun.TimingMetricsJSON) > 2 {
 		if err := json.Unmarshal(rawPlaybookRun.TimingMetricsJSON, &playbookRun.TimingMetrics); err != nil {
 			return nil, errors.Wrapf(err, "failed to unmarshal timing metrics json for playbook run id: %s", rawPlaybookRun.ID)
@@ -1844,10 +1852,16 @@ func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
 		return nil, errors.Wrapf(err, "failed to marshal timing metrics for playbook run id '%s'", playbookRun.ID)
 	}
 
+	customPhasesJSON, err := customPhasesToJSON(playbookRun.CustomPhases)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal custom phases for playbook run id '%s'", playbookRun.ID)
+	}
+
 	return &sqlPlaybookRun{
 		PlaybookRun:                           playbookRun,
 		ChecklistsJSON:                        checklistsJSON,
 		TimingMetricsJSON:                     timingMetricsJSON,
+		CustomPhasesJSON:                      customPhasesJSON,
 		ConcatenatedInvitedUserIDs:            strings.Join(playbookRun.InvitedUserIDs, ","),
 		ConcatenatedInvitedGroupIDs:           strings.Join(playbookRun.InvitedGroupIDs, ","),
 		ConcatenatedBroadcastChannelIDs:       strings.Join(playbookRun.BroadcastChannelIDs, ","),

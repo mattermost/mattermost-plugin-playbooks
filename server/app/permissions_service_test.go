@@ -611,6 +611,10 @@ func (s *stubRunService) PopulatePhases(*PlaybookRun) {}
 
 func (s *stubRunService) SetRunPhase(_, _, _ string) error { return nil }
 
+func (s *stubRunService) MoveRunPhase(_, _ string, _ bool) error { return nil }
+
+func (s *stubRunService) SetRunPhaseDone(_, _, _ string, _ bool) error { return nil }
+
 func (s *stubRunService) GetPlaybookRuns(RequesterInfo, PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
 	panic("stubRunService: GetPlaybookRuns not implemented")
 }

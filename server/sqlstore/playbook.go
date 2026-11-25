@@ -26,6 +26,7 @@ type sqlPlaybook struct {
 	app.Playbook
 	ChecklistsJSON                        json.RawMessage
 	TimingMetricsJSON                     json.RawMessage
+	CustomPhasesJSON                      json.RawMessage
 	ConcatenatedInvitedUserIDs            string
 	ConcatenatedInvitedGroupIDs           string
 	ConcatenatedSignalAnyKeywords         string
@@ -175,6 +176,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.NewChannelOnly",
 			"p.AutoArchiveChannel",
 			"p.UseChecklistsAsPhases",
+			"p.PhasesEnabled",
+			"p.CustomPhasesJSON",
 			"p.ChecklistsJSON",
 			"p.PlaybookType",
 			"p.TimingMetricsJSON",
@@ -295,6 +298,8 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"NewChannelOnly":        rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":    rawPlaybook.AutoArchiveChannel,
 			"UseChecklistsAsPhases": rawPlaybook.UseChecklistsAsPhases,
+			"PhasesEnabled":         rawPlaybook.PhasesEnabled,
+			"CustomPhasesJSON":      rawPlaybook.CustomPhasesJSON,
 			"PlaybookType":          rawPlaybook.PlaybookType,
 			"TimingMetricsJSON":     rawPlaybook.TimingMetricsJSON,
 		}))
@@ -757,6 +762,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"NewChannelOnly":                          rawPlaybook.NewChannelOnly,
 			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 			"UseChecklistsAsPhases":                   rawPlaybook.UseChecklistsAsPhases,
+			"PhasesEnabled":                           rawPlaybook.PhasesEnabled,
+			"CustomPhasesJSON":                        rawPlaybook.CustomPhasesJSON,
 			"PlaybookType":                            rawPlaybook.PlaybookType,
 			"TimingMetricsJSON":                       rawPlaybook.TimingMetricsJSON,
 		}).
@@ -1263,10 +1270,16 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 		return nil, errors.Wrapf(err, "failed to marshal timing metrics for playbook id: '%s'", playbook.ID)
 	}
 
+	customPhasesJSON, err := customPhasesToJSON(playbook.CustomPhases)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal custom phases for playbook id: '%s'", playbook.ID)
+	}
+
 	return &sqlPlaybook{
 		Playbook:                              playbook,
 		ChecklistsJSON:                        checklistsJSON,
 		TimingMetricsJSON:                     timingMetricsJSON,
+		CustomPhasesJSON:                      customPhasesJSON,
 		ConcatenatedInvitedUserIDs:            strings.Join(playbook.InvitedUserIDs, ","),
 		ConcatenatedInvitedGroupIDs:           strings.Join(playbook.InvitedGroupIDs, ","),
 		ConcatenatedSignalAnyKeywords:         strings.Join(playbook.SignalAnyKeywords, ","),
@@ -1288,6 +1301,15 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 		if err := json.Unmarshal(rawPlaybook.TimingMetricsJSON, &p.TimingMetrics); err != nil {
 			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal timing metrics json for playbook id: '%s'", p.ID)
 		}
+	}
+
+	if len(rawPlaybook.CustomPhasesJSON) > 2 {
+		if err := json.Unmarshal(rawPlaybook.CustomPhasesJSON, &p.CustomPhases); err != nil {
+			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal custom phases json for playbook id: '%s'", p.ID)
+		}
+	}
+	if p.CustomPhases == nil {
+		p.CustomPhases = []app.CustomPhase{}
 	}
 
 	p.InvitedUserIDs = []string(nil)
@@ -1505,6 +1527,13 @@ func withChecklistItemIDs(checklistsJSON []byte) ([]byte, error) {
 	}
 	app.EnsureChecklistItemIDs(checklists)
 	return json.Marshal(checklists)
+}
+
+func customPhasesToJSON(phases []app.CustomPhase) (json.RawMessage, error) {
+	if phases == nil {
+		phases = []app.CustomPhase{}
+	}
+	return json.Marshal(phases)
 }
 
 func timingMetricsToJSON(metrics []app.TimingMetric) (json.RawMessage, error) {

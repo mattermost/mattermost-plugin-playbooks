@@ -364,6 +364,24 @@ export async function setOwner(playbookRunId: string, ownerId: string) {
     }
 }
 
+// Moves a run with phases of its own to the next phase, finishing the one it leaves unless asked not to.
+export async function moveToNextPhase(playbookRunId: string, closeCurrent: boolean) {
+    try {
+        return await doPost(`${apiUrl}/runs/${playbookRunId}/phases/move`, JSON.stringify({close_current: closeCurrent}));
+    } catch (error) {
+        return {error};
+    }
+}
+
+// Marks a phase of a run with phases of its own done ("done"), or reopens it ("started").
+export async function setPhaseState(playbookRunId: string, phaseId: string, state: 'done' | 'started') {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/phases/${phaseId}/state`, JSON.stringify({state}));
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setRunPhase(playbookRunId: string, checklistId: string) {
     try {
         return await doPut(`${apiUrl}/runs/${playbookRunId}/phase`, JSON.stringify({checklist_id: checklistId}));

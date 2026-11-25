@@ -258,6 +258,10 @@ type PlaybookRun struct {
 	// page shows its checklists as a phase timeline.
 	UseChecklistsAsPhases bool `json:"use_checklists_as_phases"`
 
+	// CustomPhases are the run's phases when it was started with phases that are not task lists,
+	// copied from the playbook at run creation. Such a run is in manual mode from the start.
+	CustomPhases []CustomPhase `json:"custom_phases,omitempty"`
+
 	// TimingMetrics and Exercise are snapshotted from the playbook at run creation, so editing
 	// the playbook never changes the numbers of runs already started.
 	TimingMetrics []TimingMetric `json:"timing_metrics"`
@@ -285,6 +289,11 @@ type PlaybookRun struct {
 	// PhaseLedgerToken changes whenever phase events are written to the timeline, so that of several
 	// writers who saw the same gap only one fills it.
 	PhaseLedgerToken string `json:"-"`
+}
+
+// UsesPhases reports whether the run shows phases, either its task lists or its custom phases.
+func (r *PlaybookRun) UsesPhases() bool {
+	return r.UseChecklistsAsPhases || len(r.CustomPhases) > 0
 }
 
 func (r *PlaybookRun) ComputeTaskProgress() {
@@ -906,6 +915,7 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
 	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
 	newPlaybookRun.TimingMetrics = append([]TimingMetric(nil), r.TimingMetrics...)
+	newPlaybookRun.CustomPhases = append([]CustomPhase(nil), r.CustomPhases...)
 	newPlaybookRun.BroadcastChannelIDs = append([]string(nil), r.BroadcastChannelIDs...)
 
 	// Clear ItemsOrder to prevent data inconsistency, same as Checklist.Clone()
@@ -1033,7 +1043,11 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source str
 	}
 
 	r.CreateChannelMemberOnNewParticipant = playbook.CreateChannelMemberOnNewParticipant
-	r.UseChecklistsAsPhases = playbook.UseChecklistsAsPhases
+	r.UseChecklistsAsPhases = playbook.PhasesEnabled && playbook.UseChecklistsAsPhases
+	r.CustomPhases = nil
+	if playbook.PhasesEnabled && !playbook.UseChecklistsAsPhases {
+		r.CustomPhases = append([]CustomPhase(nil), playbook.CustomPhases...)
+	}
 	r.RemoveChannelMemberOnRemovedParticipant = playbook.RemoveChannelMemberOnRemovedParticipant
 
 	r.Type = RunTypePlaybook
@@ -1363,6 +1377,13 @@ type PlaybookRunService interface {
 	// SetRunPhase takes over the run's current phase: it becomes checklistID and stays wherever
 	// people last put it, since phases no longer move on their own. Permissions are checked by the caller.
 	SetRunPhase(playbookRunID, userID, checklistID string) error
+
+	// MoveRunPhase moves a run with phases of its own to the next one. The phase it leaves is
+	// finished unless closeCurrent is false. Permissions are checked by the caller.
+	MoveRunPhase(playbookRunID, userID string, closeCurrent bool) error
+
+	// SetRunPhaseDone marks a phase of a run with phases of its own done, or reopens it.
+	SetRunPhaseDone(playbookRunID, userID, phaseID string, done bool) error
 
 	// PopulatePhases fills in the run's computed Phases. It is not part of GetPlaybookRun so that
 	// GraphQL, which reads runs through it, is unaffected.

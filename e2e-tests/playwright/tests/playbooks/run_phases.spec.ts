@@ -11,6 +11,7 @@ import {loginAs, loginAsAdmin} from '../helpers/auth';
 import {uniqueSuffix} from '../helpers/client';
 import {archivePlaybook, createPlaybook, getPlaybook} from '../helpers/playbook';
 import {
+    checklistId,
     closeChecklist,
     createRun,
     deleteTimelineEvent,
@@ -19,12 +20,12 @@ import {
     graphqlQuery,
     moveChecklist,
     phaseEvents,
+    phaseOf,
     removeChecklist,
     restoreRun,
     setRunPhase,
     setTaskState,
     skipTask,
-    type Run,
 } from '../helpers/run';
 import {addUserToTeam, createTeam} from '../helpers/team';
 import {type SeededUser, createUser} from '../helpers/user';
@@ -104,25 +105,9 @@ test.describe('run phases', () => {
         return {playbook, run};
     }
 
-    function checklistId(run: Run, title: string): string {
-        const checklist = run.checklists.find((candidate) => candidate.title === title);
-        if (!checklist) {
-            throw new Error(`Run has no checklist ${title}`);
-        }
-        return checklist.id;
-    }
-
-    function phaseOf(run: Run, title: string) {
-        const phase = run.phases?.find((candidate) => candidate.title === title);
-        if (!phase) {
-            throw new Error(`Run has no phase ${title}`);
-        }
-        return phase;
-    }
-
     test.describe('playbook editor', () => {
         /**
-         * @objective Enable "Use task lists as phases" in the editor and keep it after a reload.
+         * @objective Activate phases in the editor, which uses the task lists as phases, and keep it after a reload.
          */
         test('persists the use task lists as phases toggle after reload', {tag: '@playbooks'}, async ({page}) => {
             const editor = new PlaybookEditorPage(page);
@@ -133,26 +118,32 @@ test.describe('run phases', () => {
             createdPlaybookIds.push(playbook.id);
             await editor.goto(seededData.teamName, playbook.id);
 
-            // * The toggle starts off
-            await expect(editor.usePhasesCheckbox).not.toBeChecked();
+            // * Phases start off, and the task lists toggle is not offered yet
+            await expect(editor.activatePhasesCheckbox).not.toBeChecked();
+            await expect(editor.usePhasesToggle).toHaveCount(0);
 
-            // # Turn it on
-            await editor.toggleUsePhases();
+            // # Activate phases
+            await editor.toggleActivatePhases();
 
-            // * The toggle is on and the playbook is saved with the setting
+            // * The task lists are used as phases and the playbook is saved with the settings
+            await expect(editor.activatePhasesCheckbox).toBeChecked();
             await expect(editor.usePhasesCheckbox).toBeChecked();
-            await expect.poll(async () => (await getPlaybook(page, playbook.id)).use_checklists_as_phases).toBe(true);
+            await expect.poll(async () => {
+                const saved = await getPlaybook(page, playbook.id);
+                return [saved.phases_enabled, saved.use_checklists_as_phases];
+            }).toEqual([true, true]);
 
-            // * The toggle is still on after a reload
+            // * Both toggles are still on after a reload
             await page.reload();
             await editor.title.waitFor();
+            await expect(editor.activatePhasesCheckbox).toBeChecked();
             await expect(editor.usePhasesCheckbox).toBeChecked();
         });
 
         /**
-         * @objective Toggling the phases setting only changes that setting.
+         * @objective Activating phases only changes the phase settings.
          */
-        test('does not change other playbook settings when toggling use task lists as phases', {tag: '@playbooks'}, async ({page}) => {
+        test('does not change other playbook settings when activating phases', {tag: '@playbooks'}, async ({page}) => {
             const editor = new PlaybookEditorPage(page);
 
             // # Open the outline of a playbook with some content
@@ -165,14 +156,15 @@ test.describe('run phases', () => {
             await editor.goto(seededData.teamName, playbook.id);
             const before = await getPlaybook(page, playbook.id);
 
-            // # Turn the setting on
-            await editor.toggleUsePhases();
+            // # Activate phases, which uses the task lists as phases
+            await editor.toggleActivatePhases();
             await expect.poll(async () => (await getPlaybook(page, playbook.id)).use_checklists_as_phases).toBe(true);
 
             // * Every other setting is exactly as before
             const after = await getPlaybook(page, playbook.id);
             const withoutChangedFields = (playbook: Record<string, unknown>) => {
                 const copy = {...playbook};
+                delete copy.phases_enabled;
                 delete copy.use_checklists_as_phases;
                 delete copy.update_at;
                 return copy;

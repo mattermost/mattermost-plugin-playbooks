@@ -13,7 +13,12 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
 import {playbookRunUpdated} from 'src/actions';
-import {fetchPlaybookRun, setRunPhase} from 'src/client';
+import {
+    fetchPlaybookRun,
+    moveToNextPhase,
+    setPhaseState,
+    setRunPhase,
+} from 'src/client';
 import {PlaybookRole} from 'src/types/permissions';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
@@ -118,7 +123,8 @@ const PlaybookRunDetails = () => {
     // Runs put into the store by websocket events or list fetches may lack the server-computed phases.
     const fetchingPhasesFor = useRef<string | null>(null);
     useEffect(() => {
-        if (!playbookRun?.use_checklists_as_phases || playbookRun.phases || !playbookRun.checklists.length || fetchingPhasesFor.current === playbookRun.id) {
+        const usesPhases = playbookRun?.use_checklists_as_phases || Boolean(playbookRun?.custom_phases?.length);
+        if (!playbookRun || !usesPhases || playbookRun.phases || fetchingPhasesFor.current === playbookRun.id) {
             return;
         }
         const runId = playbookRun.id;
@@ -131,7 +137,7 @@ const PlaybookRunDetails = () => {
                     fetchingPhasesFor.current = null;
                 }
             });
-    }, [dispatch, playbookRun?.id, playbookRun?.use_checklists_as_phases, playbookRun?.phases, playbookRun?.checklists.length]);
+    }, [dispatch, playbookRun?.id, playbookRun?.use_checklists_as_phases, playbookRun?.custom_phases, playbookRun?.phases]);
 
     useUpdateEffect(() => {
         resetFilters();
@@ -280,12 +286,19 @@ const PlaybookRunDetails = () => {
                 </Header>
                 <Main>
                     <Body>
-                        {playbookRun.use_checklists_as_phases && (
+                        {(playbookRun.use_checklists_as_phases || Boolean(playbookRun.custom_phases?.length)) && (
                             <PhaseTimeline
                                 phases={playbookRun.phases ?? []}
                                 override={playbookRun.phase_override}
+                                custom={!playbookRun.use_checklists_as_phases}
                                 onSetPhase={canSetPhase ? (checklistId) => {
                                     setRunPhase(playbookRun.id, checklistId);
+                                } : undefined}
+                                onMove={canSetPhase ? (closeCurrent) => {
+                                    moveToNextPhase(playbookRun.id, closeCurrent);
+                                } : undefined}
+                                onPhaseState={canSetPhase ? (phaseId, state) => {
+                                    setPhaseState(playbookRun.id, phaseId, state);
                                 } : undefined}
                             />
                         )}

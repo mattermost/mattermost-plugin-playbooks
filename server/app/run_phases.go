@@ -295,14 +295,29 @@ func earliest(current, candidate int64) int64 {
 	return current
 }
 
-// PopulatePhases fills in run.Phases when the run uses its checklists as phases, and clears them
-// otherwise. It first records any phase change in the timeline, which is where a phase's start and
-// end are read from. A failure to read the state changes only costs the timestamps.
+// computeRunPhases computes a run's phases and reads the ledger they are timed from. When the state
+// changes of a task list run cannot be read, the phases are still computed, without exact times, and
+// the error is returned too.
+func (s *PlaybookRunServiceImpl) computeRunPhases(run *PlaybookRun) ([]RunPhase, phaseLedger, error) {
+	ledger := ledgerFromEvents(run.TimelineEvents)
+	if !run.UseChecklistsAsPhases {
+		return ComputeCustomPhases(run.CustomPhases, ledger, run.CreateAt), ledger, nil
+	}
+
+	changes, err := s.store.GetChecklistItemStateChanges(run.ID)
+	phases := ComputePhasesWithOverride(run.Checklists, changes, run.PhaseOverrideChecklistID, phaseMoves(run, ledger))
+	applyLedger(phases, ledger)
+	return phases, ledger, err
+}
+
+// PopulatePhases fills in run.Phases when the run uses phases, and clears them otherwise. It first
+// records any phase change in the timeline, which is where a phase's start and end are read from.
+// A failure to read the state changes only costs the timestamps.
 func (s *PlaybookRunServiceImpl) PopulatePhases(run *PlaybookRun) {
 	if run == nil {
 		return
 	}
-	if !run.UseChecklistsAsPhases {
+	if !run.UsesPhases() {
 		run.Phases = nil
 		run.PhaseOverride = nil
 		return
@@ -310,19 +325,50 @@ func (s *PlaybookRunServiceImpl) PopulatePhases(run *PlaybookRun) {
 
 	s.recordPhaseEvents(run)
 
-	changes, err := s.store.GetChecklistItemStateChanges(run.ID)
+	phases, _, err := s.computeRunPhases(run)
 	if err != nil {
 		logrus.WithError(err).WithField("playbook_run_id", run.ID).Warn("failed to read state changes for run phases")
 	}
-	ledger := ledgerFromEvents(run.TimelineEvents)
-	phases := ComputePhasesWithOverride(run.Checklists, changes, run.PhaseOverrideChecklistID, phaseMoves(run, ledger))
-	applyLedger(phases, ledger)
 	run.Phases = capPhasesAtRunEnd(phases, run.EndAt)
 
 	run.PhaseOverride = nil
-	if run.PhaseOverrideChecklistID != "" {
+	if run.UseChecklistsAsPhases && run.PhaseOverrideChecklistID != "" {
 		run.PhaseOverride = &PhaseOverride{ChecklistID: run.PhaseOverrideChecklistID, SetBy: run.PhaseOverrideSetBy, SetAt: run.PhaseOverrideSetAt}
 	}
+}
+
+// ComputeCustomPhases maps a run's own phases to their status and times, which come from the
+// timeline alone since no task belongs to them. The run starts in the first phase. A phase is started
+// once the timeline says so and done when it says that. The current phase is the furthest one started,
+// which is where the run was last moved to.
+func ComputeCustomPhases(custom []CustomPhase, ledger phaseLedger, runCreatedAt int64) []RunPhase {
+	phases := make([]RunPhase, 0, len(custom))
+	for i, phase := range custom {
+		computed := RunPhase{ChecklistID: phase.ID, Title: phase.Title, Status: PhaseStatusNotStarted}
+		if entry, ok := ledger.entries[phase.ID]; ok {
+			computed.StartedAt = entry.startedAt
+			computed.Status = PhaseStatusStarted
+			if entry.doneAt > 0 {
+				computed.Status = PhaseStatusDone
+				computed.EndedAt = entry.doneAt
+			}
+		} else if i == 0 && runCreatedAt > 0 {
+			computed.StartedAt = runCreatedAt
+			computed.Status = PhaseStatusStarted
+		}
+		phases = append(phases, computed)
+	}
+
+	furthest := -1
+	for i, phase := range phases {
+		if phase.hasActivity() {
+			furthest = i
+		}
+	}
+	if furthest >= 0 {
+		phases[furthest].Current = true
+	}
+	return phases
 }
 
 // phaseDependentChanges are the changed fields that move a run's phases: its checklists, the end of
@@ -332,7 +378,7 @@ var phaseDependentChanges = []string{"checklists", "_checklist_deletes", "end_at
 // addPhasesToChanges resends the run's phases in an incremental update when something they derive
 // from changed. The state change log is only read then.
 func (s *PlaybookRunServiceImpl) addPhasesToChanges(run *PlaybookRun, changes map[string]interface{}) {
-	if run == nil || !run.UseChecklistsAsPhases {
+	if run == nil || !run.UsesPhases() {
 		return
 	}
 	if !slices.ContainsFunc(phaseDependentChanges, func(field string) bool { _, ok := changes[field]; return ok }) {

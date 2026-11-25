@@ -77,6 +77,10 @@ var ErrPhaseNotFound = errors.New("phase not found")
 // ErrPhasesReorder occurs when reordering the task lists of a run that uses them as phases.
 var ErrPhasesReorder = errors.New("the task lists of a run that uses phases cannot be reordered")
 
+// ErrPhaseTransition occurs when a phase change does not make sense, such as moving past the last
+// phase or finishing a phase that has not started.
+var ErrPhaseTransition = errors.New("invalid phase change")
+
 // ErrPhaseEventNotDeletable occurs when deleting a phase event, which the run's phases are read from.
 var ErrPhaseEventNotDeletable = errors.New("phase events cannot be deleted")
 

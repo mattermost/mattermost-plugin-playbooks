@@ -48,7 +48,9 @@ export const phaseDurations = (events: TimelineEvent[]): Record<string, number> 
             continue;
         }
         const duration = event.event_at - firstStart[checklistId];
-        if (duration > 0) {
+
+        // Under a second would read as "0s", which says nothing.
+        if (duration >= 1000) {
             durations[event.id] = duration;
         }
     }
