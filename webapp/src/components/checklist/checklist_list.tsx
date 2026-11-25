@@ -598,6 +598,9 @@ const ChecklistList = ({
         );
     }
 
+    // The order of the lists is the order of the run's phases, so it is not for people to change.
+    const listsAreFixed = Boolean(playbookRun?.use_checklists_as_phases);
+
     const keys = generateKeys(checklists.map((checklist, index) => checklist.title + index));
 
     const availableConditionsForBar = conditions.filter((condition) =>
@@ -626,11 +629,13 @@ const ChecklistList = ({
                                     key={keys[checklistIndex]}
                                     draggableId={checklist.title + checklistIndex}
                                     index={checklistIndex}
+                                    isDragDisabled={listsAreFixed}
                                 >
                                     {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => {
                                         const component = (
                                             <CollapsibleChecklist
                                                 draggableProvided={draggableProvided}
+                                                reorderable={!listsAreFixed}
                                                 title={checklist.title}
                                                 items={checklist.items}
                                                 index={checklistIndex}

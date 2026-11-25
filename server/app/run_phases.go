@@ -4,6 +4,8 @@
 package app
 
 import (
+	"slices"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,6 +21,27 @@ const (
 	// PhaseStatusSkipped is a phase whose tasks were all skipped. It lets the run move on but is
 	// not finished work, so it is kept apart from PhaseStatusDone.
 	PhaseStatusSkipped PhaseStatus = "skipped"
+)
+
+// PhaseOverride tells that a person took over the run's current phase, and who and when.
+type PhaseOverride struct {
+	ChecklistID string `json:"checklist_id"`
+	SetBy       string `json:"set_by"`
+	SetAt       int64  `json:"set_at"`
+}
+
+// PhaseEventDetails is the JSON payload of the phase_started, phase_done and phase_reopened timeline events.
+type PhaseEventDetails struct {
+	ChecklistID string `json:"checklist_id"`
+	Title       string `json:"title"`
+
+	// Source is phaseSourceAutomatic when the tasks moved the run, phaseSourceManual when a person did.
+	Source string `json:"source"`
+}
+
+const (
+	phaseSourceAutomatic = "automatic"
+	phaseSourceManual    = "manual"
 )
 
 // RunPhase is a checklist presented as a phase of the run. It is computed and never persisted.
@@ -39,10 +62,13 @@ type RunPhase struct {
 	// StartedAt is when the phase first had activity, 0 if it has not started.
 	StartedAt int64 `json:"started_at"`
 
-	// EndedAt is when the phase's last task was finished. A phase the run moved past with tasks
-	// still open ends when the next phase started, and one still active when the run ended ends
-	// then. 0 while the phase is active, in which case it has run from StartedAt until now.
+	// EndedAt is when the phase's last task was finished, or when the run ended if the phase was
+	// still going. Moving on to another phase does not end a phase. 0 while the phase is going, in
+	// which case it has run from StartedAt until now.
 	EndedAt int64 `json:"ended_at"`
+
+	// lastChangeAt is when anything last happened to one of the phase's tasks.
+	lastChangeAt int64
 }
 
 // ComputePhases maps each checklist to a phase. A phase is blocked if any task is blocked, done
@@ -57,6 +83,16 @@ type RunPhase struct {
 // StartedAt and EndedAt come from the task state changes (oldest first). A task with no recorded
 // change, such as one that moved before changes were recorded, falls back to its StateModified.
 func ComputePhases(checklists []Checklist, changes []ChecklistItemStateChange) []RunPhase {
+	return ComputePhasesWithOverride(checklists, changes, "", nil)
+}
+
+// ComputePhasesWithOverride is ComputePhases for a run whose current phase a person took over.
+// The phase named by overrideChecklistID is the current one whatever the tasks say, and statuses
+// and times are still computed. An override naming a checklist that no longer exists is ignored.
+//
+// moves are the times people started phases. Starting a phase counts as its start whatever
+// happened to its tasks.
+func ComputePhasesWithOverride(checklists []Checklist, changes []ChecklistItemStateChange, overrideChecklistID string, moves []phaseMove) []RunPhase {
 	byItem := make(map[string][]ChecklistItemStateChange)
 	for _, change := range changes {
 		byItem[change.ItemID] = append(byItem[change.ItemID], change)
@@ -66,8 +102,11 @@ func ComputePhases(checklists []Checklist, changes []ChecklistItemStateChange) [
 	for _, checklist := range checklists {
 		phases = append(phases, computePhase(checklist, byItem))
 	}
-	markCurrentPhase(phases)
-	endPhasesAtNextStart(phases)
+	startNextPhase(phases)
+	applyPhaseMoves(phases, moves)
+	if !markOverriddenPhase(phases, overrideChecklistID) {
+		markCurrentPhase(phases)
+	}
 	return phases
 }
 
@@ -77,15 +116,41 @@ func (p RunPhase) hasActivity() bool {
 	return p.Status == PhaseStatusStarted || p.Status == PhaseStatusBlocked || p.Status == PhaseStatusDone
 }
 
-func markCurrentPhase(phases []RunPhase) {
-	furthest := -1
+// markOverriddenPhase marks the phase a person chose as current, reporting whether it exists.
+func markOverriddenPhase(phases []RunPhase, checklistID string) bool {
+	if checklistID == "" {
+		return false
+	}
+	for i := range phases {
+		if phases[i].ChecklistID == checklistID {
+			phases[i].Current = true
+			return true
+		}
+	}
+	return false
+}
+
+// currentPhaseOf returns the phase marked current, or nil when there is none.
+func currentPhaseOf(phases []RunPhase) *RunPhase {
+	for i := range phases {
+		if phases[i].Current {
+			return &phases[i]
+		}
+	}
+	return nil
+}
+
+// automaticCurrent is the phase the tasks alone make current, along with the furthest phase where
+// work has started, -1 when there is none.
+func automaticCurrent(phases []RunPhase) (current, furthest int) {
+	furthest = -1
 	for i, phase := range phases {
 		if phase.hasActivity() {
 			furthest = i
 		}
 	}
 
-	current := furthest
+	current = furthest
 	if furthest == -1 || phases[furthest].Status == PhaseStatusDone {
 		for i := furthest + 1; i < len(phases); i++ {
 			if phases[i].Status != PhaseStatusSkipped {
@@ -94,25 +159,32 @@ func markCurrentPhase(phases []RunPhase) {
 			}
 		}
 	}
-	if current >= 0 {
-		phases[current].Current = true
+	return current, furthest
+}
+
+// startNextPhase starts each phase at the moment the run reached it: when the phase before it
+// (skipping skipped ones) was finished. That holds whoever is in charge of the current phase and
+// however late work in the phase began, so a phase finished long after the run reached it has run
+// since then.
+func startNextPhase(phases []RunPhase) {
+	previous := -1
+	for i := range phases {
+		if phases[i].Status == PhaseStatusSkipped {
+			continue
+		}
+		if previous >= 0 && phases[previous].Status == PhaseStatusDone && phases[previous].EndedAt > 0 {
+			phases[i].StartedAt = earliest(phases[i].StartedAt, phases[previous].EndedAt)
+			if phases[i].Status == PhaseStatusNotStarted {
+				phases[i].Status = PhaseStatusStarted
+			}
+		}
+		previous = i
 	}
 }
 
-// endPhasesAtNextStart stops the clock of a phase the run moved past while it still had open
-// tasks, at the moment the next phase to start did.
-func endPhasesAtNextStart(phases []RunPhase) {
-	for i := range phases {
-		if phases[i].StartedAt == 0 || phases[i].EndedAt != 0 {
-			continue
-		}
-		var next int64
-		for _, later := range phases[i+1:] {
-			next = earliest(next, later.StartedAt)
-		}
-		if next > 0 {
-			phases[i].EndedAt = max(next, phases[i].StartedAt)
-		}
+func markCurrentPhase(phases []RunPhase) {
+	if current, _ := automaticCurrent(phases); current >= 0 {
+		phases[current].Current = true
 	}
 }
 
@@ -122,7 +194,8 @@ func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateCha
 	var (
 		total, finished, closed int
 		blocked, started        bool
-		firstActive             int64 // earliest moment any task became in progress, closed or blocked
+		worked                  bool  // something other than skipping happened to a task
+		firstActive             int64 // earliest moment anything happened to any task
 		lastFinished            int64 // latest moment a task was finished
 	)
 	for _, item := range checklist.Items {
@@ -132,6 +205,11 @@ func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateCha
 		total++
 
 		itemChanges := byItem[item.ID]
+		if len(itemChanges) > 0 {
+			phase.lastChangeAt = max(phase.lastChangeAt, itemChanges[len(itemChanges)-1].ChangedAt)
+		} else {
+			phase.lastChangeAt = max(phase.lastChangeAt, item.StateModified)
+		}
 		switch item.State {
 		case ChecklistItemStateBlocked:
 			blocked = true
@@ -146,42 +224,48 @@ func computePhase(checklist Checklist, byItem map[string][]ChecklistItemStateCha
 		if item.State == ChecklistItemStateInProgress || item.State == ChecklistItemStateClosed {
 			started = true
 		}
-		if item.State == ChecklistItemStateInProgress || item.State == ChecklistItemStateClosed || item.State == ChecklistItemStateBlocked {
-			firstActive = earliest(firstActive, firstActiveAt(itemChanges, item.StateModified))
+		firstActive = earliest(firstActive, firstTouchedAt(itemChanges, item))
+		for _, change := range itemChanges {
+			if change.ToState != ChecklistItemStateSkipped {
+				worked = true
+			}
 		}
 	}
 
 	phase.TasksTotal = total
 	phase.TasksOpen = total - finished
 
+	phase.StartedAt = firstActive
 	switch {
 	case blocked:
 		phase.Status = PhaseStatusBlocked
-		phase.StartedAt = firstActive
 	case total > 0 && finished == total && closed == 0:
+		// Skipping is not work: a skipped phase has no time, and its tasks never start the next one.
 		phase.Status = PhaseStatusSkipped
+		phase.StartedAt = 0
 	case total > 0 && finished == total:
 		phase.Status = PhaseStatusDone
 		phase.EndedAt = lastFinished
-		phase.StartedAt = firstActive
 		if phase.StartedAt == 0 {
 			phase.StartedAt = lastFinished
 		}
-	case started:
+	case started || worked:
+		// Anything but skipping started the phase, even if it left the task open again.
 		phase.Status = PhaseStatusStarted
-		phase.StartedAt = firstActive
 	}
 	return phase
 }
 
-// firstActiveAt is when a task first became in progress, closed or blocked, falling back to fallback.
-func firstActiveAt(changes []ChecklistItemStateChange, fallback int64) int64 {
-	for _, change := range changes {
-		if change.ToState == ChecklistItemStateInProgress || change.ToState == ChecklistItemStateClosed || change.ToState == ChecklistItemStateBlocked {
-			return change.ChangedAt
-		}
+// firstTouchedAt is when anything first happened to a task: its first recorded state change, or its
+// StateModified when it moved before changes were recorded. 0 for a task nobody touched.
+func firstTouchedAt(changes []ChecklistItemStateChange, item ChecklistItem) int64 {
+	if len(changes) > 0 {
+		return changes[0].ChangedAt
 	}
-	return fallback
+	if item.State == "" || item.State == ChecklistItemStateOpen {
+		return 0
+	}
+	return item.StateModified
 }
 
 // lastChangeInto is when a task last moved into state, falling back to fallback.
@@ -206,32 +290,46 @@ func earliest(current, candidate int64) int64 {
 }
 
 // PopulatePhases fills in run.Phases when the run uses its checklists as phases, and clears them
-// otherwise. A failure to read the state changes only costs the timestamps.
+// otherwise. It first records any phase change in the timeline, which is where a phase's start and
+// end are read from. A failure to read the state changes only costs the timestamps.
 func (s *PlaybookRunServiceImpl) PopulatePhases(run *PlaybookRun) {
 	if run == nil {
 		return
 	}
 	if !run.UseChecklistsAsPhases {
 		run.Phases = nil
+		run.PhaseOverride = nil
 		return
 	}
+
+	s.recordPhaseEvents(run)
 
 	changes, err := s.store.GetChecklistItemStateChanges(run.ID)
 	if err != nil {
 		logrus.WithError(err).WithField("playbook_run_id", run.ID).Warn("failed to read state changes for run phases")
 	}
-	run.Phases = capPhasesAtRunEnd(ComputePhases(run.Checklists, changes), run.EndAt)
+	ledger := ledgerFromEvents(run.TimelineEvents)
+	phases := ComputePhasesWithOverride(run.Checklists, changes, run.PhaseOverrideChecklistID, phaseMoves(run, ledger))
+	applyLedger(phases, ledger)
+	run.Phases = capPhasesAtRunEnd(phases, run.EndAt)
+
+	run.PhaseOverride = nil
+	if run.PhaseOverrideChecklistID != "" {
+		run.PhaseOverride = &PhaseOverride{ChecklistID: run.PhaseOverrideChecklistID, SetBy: run.PhaseOverrideSetBy, SetAt: run.PhaseOverrideSetAt}
+	}
 }
 
-// addPhasesToChanges resends the run's phases in an incremental update, but only when its
-// checklists changed, since phases derive from them. The state change log is only read then.
+// phaseDependentChanges are the changed fields that move a run's phases: its checklists, the end of
+// the run, which stops the timers of the phases still going, and the timeline their times come from.
+var phaseDependentChanges = []string{"checklists", "_checklist_deletes", "end_at", "current_status", "timeline_events"}
+
+// addPhasesToChanges resends the run's phases in an incremental update when something they derive
+// from changed. The state change log is only read then.
 func (s *PlaybookRunServiceImpl) addPhasesToChanges(run *PlaybookRun, changes map[string]interface{}) {
 	if run == nil || !run.UseChecklistsAsPhases {
 		return
 	}
-	_, checklistsChanged := changes["checklists"]
-	_, checklistsDeleted := changes["_checklist_deletes"]
-	if !checklistsChanged && !checklistsDeleted {
+	if !slices.ContainsFunc(phaseDependentChanges, func(field string) bool { _, ok := changes[field]; return ok }) {
 		return
 	}
 

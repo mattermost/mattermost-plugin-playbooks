@@ -47,6 +47,11 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
         }, {});
 
         Promise.all(events.map(async (event) => {
+            // Phase moves the tasks caused have no person behind them.
+            if (!event.subject_user_id) {
+                return {...event, status_delete_at: 0, subject_display_name: ''} as TimelineEvent;
+            }
+
             let user = selectUser(event.subject_user_id);
 
             if (!user) {
@@ -70,6 +75,13 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
     return [filteredEvents];
 };
 
+const PHASE_EVENT_TYPES = [
+    TimelineEventType.PhaseStarted,
+    TimelineEventType.PhaseDone,
+    TimelineEventType.PhaseReopened,
+    TimelineEventType.CurrentPhaseChanged,
+];
+
 const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
     if (filter.all) {
         return true;
@@ -81,6 +93,9 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
         TimelineEventType.RunFinished,
         TimelineEventType.RunRestored,
     ];
+    if (PHASE_EVENT_TYPES.includes(eventType as TimelineEventType)) {
+        return filterRecord[TimelineEventType.PhaseStarted];
+    }
     return filterRecord[eventType] || (filterRecord[TimelineEventType.StatusUpdated] && statusUpdateTypes.includes(eventType as TimelineEventType));
 };
 
@@ -114,6 +129,12 @@ export const useFilter = () => {
             display: formatMessage({defaultMessage: 'Role changes'}),
             value: TimelineEventType.OwnerChanged,
             selected: eventsFilter.owner_changed,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: formatMessage({defaultMessage: 'Phase changes'}),
+            value: TimelineEventType.PhaseStarted,
+            selected: eventsFilter.phase_started,
             disabled: eventsFilter.all,
         },
         {

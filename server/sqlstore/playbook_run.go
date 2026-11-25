@@ -234,6 +234,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type",
 			"i.RunNumber", "i.SequentialID",
 			"i.ChannelCreatedByRun", "i.AutoArchivedChannel", "i.AutoArchiveChannel", "i.UseChecklistsAsPhases",
+			"i.PhaseOverrideChecklistID", "i.PhaseOverrideSetBy", "i.PhaseOverrideSetAt", "i.PhaseLedgerToken",
 			"i.TimingMetricsJSON", "i.Exercise").
 		Column(participantsCol).
 		From("IR_Incident AS i")
@@ -728,6 +729,40 @@ func (s *playbookRunStore) GetChecklistItemStateChanges(playbookRunID string) ([
 		return nil, errors.Wrapf(err, "failed to get checklist item state changes for run with id '%s'", playbookRunID)
 	}
 	return changes, nil
+}
+
+// SetPhaseOverride pins the run's current phase. It does not bump UpdateAt: concurrent task
+// changes are unaffected by it and must not be told the run changed.
+func (s *playbookRunStore) SetPhaseOverride(playbookRunID, checklistID, setByUserID string, setAt int64) error {
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(map[string]interface{}{
+			"PhaseOverrideChecklistID": checklistID,
+			"PhaseOverrideSetBy":       setByUserID,
+			"PhaseOverrideSetAt":       setAt,
+		}).
+		Where(sq.Eq{"ID": playbookRunID}))
+	if err != nil {
+		return errors.Wrapf(err, "failed to set the phase override of run with id '%s'", playbookRunID)
+	}
+	return nil
+}
+
+// CompareAndSetPhaseLedgerToken replaces the phase ledger token only if it still is expected, and
+// reports whether it did.
+func (s *playbookRunStore) CompareAndSetPhaseLedgerToken(playbookRunID, expected, next string) (bool, error) {
+	result, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		Set("PhaseLedgerToken", next).
+		Where(sq.Eq{"ID": playbookRunID, "PhaseLedgerToken": expected}))
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to record the phases of run with id '%s'", playbookRunID)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to record the phases of run with id '%s'", playbookRunID)
+	}
+	return affected > 0, nil
 }
 
 // GetChecklistItemStateChangesForRuns returns the state changes of each of the given runs, oldest

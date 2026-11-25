@@ -13,7 +13,8 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
 import {playbookRunUpdated} from 'src/actions';
-import {fetchPlaybookRun} from 'src/client';
+import {fetchPlaybookRun, setRunPhase} from 'src/client';
+import {PlaybookRole} from 'src/types/permissions';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {
@@ -106,6 +107,11 @@ const PlaybookRunDetails = () => {
     const role = playbookRun?.participant_ids.includes(myUser.id) || playbookRun?.owner_user_id === myUser.id ? Role.Participant : Role.Viewer;
 
     useEnsureProfiles(playbookRun?.participant_ids ?? []);
+
+    // Mirrors the server check (PermissionsService.RunSetPhase): the run owner or a playbook admin.
+    const canSetPhase = playbookRun?.owner_user_id === myUser.id || Boolean(playbook?.members?.some(
+        (m) => m.user_id === myUser.id && m.scheme_roles?.includes(PlaybookRole.Admin),
+    ));
 
     const RHS = useRHS(playbookRun);
 
@@ -275,7 +281,13 @@ const PlaybookRunDetails = () => {
                 <Main>
                     <Body>
                         {playbookRun.use_checklists_as_phases && (
-                            <PhaseTimeline phases={playbookRun.phases ?? []}/>
+                            <PhaseTimeline
+                                phases={playbookRun.phases ?? []}
+                                override={playbookRun.phase_override}
+                                onSetPhase={canSetPhase ? (checklistId) => {
+                                    setRunPhase(playbookRun.id, checklistId);
+                                } : undefined}
+                            />
                         )}
                         <Summary
                             id={PlaybookRunIDs.SectionSummary}

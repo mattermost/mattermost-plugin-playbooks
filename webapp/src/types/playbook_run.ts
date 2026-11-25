@@ -37,6 +37,9 @@ export interface PlaybookRun {
 
     /** Computed by the server when use_checklists_as_phases is set. */
     phases?: RunPhase[];
+
+    /** Set once a person took over the current phase; phases then never move on their own. */
+    phase_override?: PhaseOverride;
     broadcast_channel_ids: string[];
     status_update_broadcast_webhooks_enabled: boolean;
     webhook_on_status_update_urls: string[];
@@ -188,6 +191,12 @@ export function isRun(run: undefined | null | PlaybookRun | PlaybookRunConnectio
         return id != null && id.length > 0;
     }
     return false;
+}
+
+export interface PhaseOverride {
+    checklist_id: string;
+    set_by: string;
+    set_at: number;
 }
 
 export type PhaseStatus = 'not_started' | 'started' | 'done' | 'blocked' | 'skipped';

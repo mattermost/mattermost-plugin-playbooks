@@ -271,6 +271,20 @@ type PlaybookRun struct {
 	// Phases are computed from Checklists when UseChecklistsAsPhases is set; not persisted. They
 	// are only filled in on REST and websocket payloads, see PlaybookRunService.PopulatePhases.
 	Phases []RunPhase `json:"phases,omitempty"`
+
+	// PhaseOverride is set once a person took over the current phase: from then on phases never
+	// move on their own. It is filled in from the Phase* columns on REST and websocket payloads.
+	PhaseOverride *PhaseOverride `json:"phase_override,omitempty"`
+
+	// The persisted side of the manual phase override. They are written by dedicated store methods
+	// only, so a run update never overwrites them with a stale copy.
+	PhaseOverrideChecklistID string `json:"-"`
+	PhaseOverrideSetBy       string `json:"-"`
+	PhaseOverrideSetAt       int64  `json:"-"`
+
+	// PhaseLedgerToken changes whenever phase events are written to the timeline, so that of several
+	// writers who saw the same gap only one fills it.
+	PhaseLedgerToken string `json:"-"`
 }
 
 func (r *PlaybookRun) ComputeTaskProgress() {
@@ -1119,6 +1133,10 @@ const (
 	RetrospectiveEnabled   timelineEventType = "retrospective_enabled"
 	RetrospectiveDisabled  timelineEventType = "retrospective_disabled"
 	PropertyChanged        timelineEventType = "property_changed"
+	PhaseStarted           timelineEventType = "phase_started"
+	PhaseDone              timelineEventType = "phase_done"
+	PhaseReopened          timelineEventType = "phase_reopened"
+	CurrentPhaseChanged    timelineEventType = "current_phase_changed"
 )
 
 type TimelineEvent struct {
@@ -1341,6 +1359,10 @@ type PlaybookRunService interface {
 
 	// GetPlaybookRun gets a playbook run by ID with property fields and values. Returns error if it could not be found.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
+
+	// SetRunPhase takes over the run's current phase: it becomes checklistID and stays wherever
+	// people last put it, since phases no longer move on their own. Permissions are checked by the caller.
+	SetRunPhase(playbookRunID, userID, checklistID string) error
 
 	// PopulatePhases fills in the run's computed Phases. It is not part of GetPlaybookRun so that
 	// GraphQL, which reads runs through it, is unaffected.
@@ -1565,6 +1587,13 @@ type PlaybookRunStore interface {
 	// GetChecklistItemStateChanges returns every recorded checklist item state change for the
 	// run, oldest first.
 	GetChecklistItemStateChanges(playbookRunID string) ([]ChecklistItemStateChange, error)
+
+	// SetPhaseOverride pins the run's current phase to checklistID and records who did it.
+	SetPhaseOverride(playbookRunID, checklistID, setByUserID string, setAt int64) error
+
+	// CompareAndSetPhaseLedgerToken replaces the run's phase ledger token when it still is expected,
+	// reporting whether it did. It lets only one of several concurrent writers record phase events.
+	CompareAndSetPhaseLedgerToken(playbookRunID, expected, next string) (bool, error)
 
 	// GetChecklistItemStateChangesForRuns returns the state changes of each run, keyed by run ID.
 	GetChecklistItemStateChangesForRuns(playbookRunIDs []string) (map[string][]ChecklistItemStateChange, error)

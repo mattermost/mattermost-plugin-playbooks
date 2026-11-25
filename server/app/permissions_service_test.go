@@ -609,6 +609,8 @@ func (s *stubRunService) GetPlaybookRun(playbookRunID string) (*PlaybookRun, err
 
 func (s *stubRunService) PopulatePhases(*PlaybookRun) {}
 
+func (s *stubRunService) SetRunPhase(_, _, _ string) error { return nil }
+
 func (s *stubRunService) GetPlaybookRuns(RequesterInfo, PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
 	panic("stubRunService: GetPlaybookRuns not implemented")
 }
@@ -1978,4 +1980,55 @@ func TestRunToggleRetrospective(t *testing.T) {
 		svc := newPermSvc(api, run)
 		require.ErrorIs(t, svc.RunToggleRetrospective(outsider, run.ID), ErrNoPermissions)
 	})
+}
+
+func TestRunSetPhase(t *testing.T) {
+	const (
+		runID     = "run-setphase-id"
+		pbID      = "playbook-id-setphase"
+		ownerID   = "owner-user-id"
+		memberID  = "member-user-id"
+		pbAdminID = "playbook-admin-user-id"
+	)
+
+	pb := Playbook{
+		ID:     pbID,
+		TeamID: "team-1",
+		Members: []PlaybookMember{
+			{UserID: pbAdminID, SchemeRoles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
+			{UserID: memberID, SchemeRoles: []string{PlaybookRoleMember}},
+			{UserID: ownerID, SchemeRoles: []string{PlaybookRoleMember}},
+		},
+	}
+	run := &PlaybookRun{
+		ID: runID, PlaybookID: pbID, TeamID: "team-1", OwnerUserID: ownerID,
+		ParticipantIDs: []string{ownerID, memberID}, Type: RunTypePlaybook,
+	}
+
+	tests := []struct {
+		name          string
+		userID        string
+		shouldSucceed bool
+	}{
+		{"the run owner can", ownerID, true},
+		{"a playbook admin can, even when not a participant", pbAdminID, true},
+		{"a participant who is neither cannot", memberID, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := newPermissionsServiceForTest(
+				&stubRunService{run: run},
+				&stubPlaybookService{playbook: pb},
+				newPluginAPIAllowingAdmins(t),
+			)
+
+			err := svc.RunSetPhase(tt.userID, runID)
+			if tt.shouldSucceed {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.True(t, errors.Is(err, ErrNoPermissions), "got: %v", err)
+			}
+		})
+	}
 }

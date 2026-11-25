@@ -123,6 +123,12 @@ func (s *stubRunStoreGetOnly) UpdatePlaybookRunWithStateChanges(_ *PlaybookRun, 
 func (s *stubRunStoreGetOnly) GetChecklistItemStateChanges(_ string) ([]ChecklistItemStateChange, error) {
 	panic("not implemented")
 }
+func (s *stubRunStoreGetOnly) SetPhaseOverride(_, _, _ string, _ int64) error {
+	panic("not implemented")
+}
+func (s *stubRunStoreGetOnly) CompareAndSetPhaseLedgerToken(_, _, _ string) (bool, error) {
+	panic("not implemented")
+}
 func (s *stubRunStoreGetOnly) GetChecklistItemStateChangesForRuns(_ []string) (map[string][]ChecklistItemStateChange, error) {
 	panic("not implemented")
 }

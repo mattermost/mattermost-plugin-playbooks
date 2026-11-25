@@ -1,24 +1,65 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 import {Duration} from 'luxon';
 
-import {useNow} from 'src/hooks';
-import {formatDuration} from 'src/components/formatted_duration';
+import {getUser as getUserAction} from 'mattermost-redux/actions/users';
+import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import {PhaseStatus, RunPhase} from 'src/types/playbook_run';
+import {useNow} from 'src/hooks';
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
+import {formatDuration} from 'src/components/formatted_duration';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {PrimaryButton} from 'src/components/assets/buttons';
+
+import {PhaseOverride, PhaseStatus, RunPhase} from 'src/types/playbook_run';
 
 interface Props {
     id?: string;
     phases: RunPhase[];
+
+    /** Set once a person took over the current phase. */
+    override?: PhaseOverride;
+
+    /** Present when the viewer may take over the current phase. */
+    onSetPhase?: (checklistId: string) => void;
 }
 
-const PhaseTimeline = ({id, phases}: Props) => {
-    const {formatMessage} = useIntl();
-    const now = useNow(30000).valueOf();
+const ONE_MINUTE = 60 * 1000;
+
+// Seconds while under a minute, whole minutes after that.
+const roundedDuration = (millis: number) => {
+    const positive = Math.max(0, millis);
+    const rounded = positive < ONE_MINUTE ? Math.floor(positive / 1000) * 1000 : Math.floor(positive / ONE_MINUTE) * ONE_MINUTE;
+    return formatDuration(Duration.fromMillis(rounded), 'narrow');
+};
+
+const PhaseTimeline = ({id, phases, override, onSetPhase}: Props) => {
+    const {formatMessage, formatTime} = useIntl();
+    const dispatch = useAppDispatch();
+
+    // Only a time that is still running changes. Under a minute it ticks in seconds, so refresh every
+    // second; beyond that it changes by the minute and every few seconds is plenty. With nothing
+    // running, such as a finished run, there is nothing to refresh.
+    const wallNow = Date.now();
+    const running = phases.filter((phase) => phase.started_at && !phase.ended_at);
+    const underAMinute = running.some((phase) => wallNow - phase.started_at < ONE_MINUTE) || Boolean(override && wallNow - override.set_at < ONE_MINUTE);
+    let refreshInterval: number | null = null;
+    if (running.length > 0) {
+        refreshInterval = underAMinute ? 1000 : 5000;
+    }
+    const now = useNow(refreshInterval).valueOf();
+    const [pending, setPending] = useState<RunPhase | null>(null);
+    const setBy = useAppSelector((state) => (override ? getUser(state, override.set_by) : undefined));
+
+    useEffect(() => {
+        if (override?.set_by && !setBy) {
+            dispatch(getUserAction(override.set_by));
+        }
+    }, [dispatch, override?.set_by, setBy]);
 
     if (phases.length === 0) {
         return null;
@@ -26,11 +67,10 @@ const PhaseTimeline = ({id, phases}: Props) => {
 
     // How long the phase has taken: from its start until now, or until it was done.
     const elapsed = (phase: RunPhase) => {
-        if (!phase.started_at) {
+        if (!phase.started_at || phase.ended_at === phase.started_at) {
             return null;
         }
-        const millis = (phase.ended_at || now) - phase.started_at;
-        return formatDuration(Duration.fromMillis(Math.max(0, millis)), 'narrow');
+        return roundedDuration((phase.ended_at || now) - phase.started_at);
     };
 
     // A phase that has not started but is current is the one up next.
@@ -57,6 +97,40 @@ const PhaseTimeline = ({id, phases}: Props) => {
         return label;
     };
 
+    const currentIndex = phases.findIndex((phase) => phase.current);
+    const current = currentIndex >= 0 ? phases[currentIndex] : undefined;
+    const next = currentIndex >= 0 ? phases[currentIndex + 1] : undefined;
+
+    // The first takeover is permanent, so it is confirmed; moving a phase that is already manual is not.
+    const moveToNext = () => {
+        if (!onSetPhase || !next) {
+            return;
+        }
+        if (override) {
+            onSetPhase(next.checklist_id);
+            return;
+        }
+        setPending(next);
+    };
+
+    // How long the current phase has been going and, once a person took over, who set it and when.
+    const currentDetail = () => {
+        if (!current) {
+            return '';
+        }
+
+        const duration = elapsed(current);
+        const name = setBy ? `@${setBy.username}` : '';
+        const time = override ? formatTime(override.set_at) : '';
+        if (duration && override) {
+            return formatMessage({defaultMessage: 'for {duration}, set by {name} at {time}'}, {duration, name, time});
+        }
+        if (override) {
+            return formatMessage({defaultMessage: 'set by {name} at {time}'}, {name, time});
+        }
+        return duration ? formatMessage({defaultMessage: 'for {duration}'}, {duration}) : '';
+    };
+
     const ariaLabel = (phase: RunPhase) => {
         const label = formatMessage({defaultMessage: '{phase}: {status}'}, {phase: phase.title, status: statusLabel(phase)});
         if (phase.current && phase.status !== 'not_started') {
@@ -70,6 +144,25 @@ const PhaseTimeline = ({id, phases}: Props) => {
             id={id}
             data-testid='phase-timeline'
         >
+            {current && (
+                <Header>
+                    <Summary>
+                        <HeaderLabel>{formatMessage({defaultMessage: 'Phase'})}</HeaderLabel>
+                        <Chip data-testid='phase-timeline-current'>{current.title}</Chip>
+                        <Detail data-testid='phase-timeline-detail'>{currentDetail()}</Detail>
+                    </Summary>
+                    {onSetPhase && next && (
+                        <PrimaryButton
+                            size='sm'
+                            onClick={moveToNext}
+                            data-testid='phase-timeline-next'
+                        >
+                            {formatMessage({defaultMessage: 'Move to {phase}'}, {phase: next.title})}
+                            <i className='icon icon-arrow-right'/>
+                        </PrimaryButton>
+                    )}
+                </Header>
+            )}
             <Steps role='list'>
                 {phases.map((phase, i) => (
                     <Step
@@ -81,7 +174,7 @@ const PhaseTimeline = ({id, phases}: Props) => {
                         data-current={phase.current}
                     >
                         {i > 0 && (
-                            <Connector $done={phases[i - 1].status === 'done'}/>
+                            <Connector $color={connectorColor(phases[i - 1])}/>
                         )}
                         <Marker
                             $status={phase.status}
@@ -103,6 +196,22 @@ const PhaseTimeline = ({id, phases}: Props) => {
                     </Step>
                 ))}
             </Steps>
+            <ConfirmModal
+                show={pending !== null}
+                title={formatMessage({defaultMessage: 'Set the current phase manually?'})}
+                message={formatMessage(
+                    {defaultMessage: 'Phases will no longer move on their own for this run. From now on, only the run owner or a playbook admin can move it to another phase. Set the current phase to "{phase}"?'},
+                    {phase: pending?.title ?? ''},
+                )}
+                confirmButtonText={formatMessage({defaultMessage: 'Set current phase'})}
+                onConfirm={() => {
+                    if (pending) {
+                        onSetPhase?.(pending.checklist_id);
+                    }
+                    setPending(null);
+                }}
+                onCancel={() => setPending(null)}
+            />
         </Container>
     );
 };
@@ -169,6 +278,7 @@ const GREEN = 'var(--online-indicator)';
 const BLUE = 'var(--button-bg)';
 const RED = 'var(--dnd-indicator)';
 const GRAY = 'rgba(var(--center-channel-color-rgb), 0.24)';
+const GRAY_LINE = 'rgba(var(--center-channel-color-rgb), 0.16)';
 
 const markerColor = (status: PhaseStatus, current: boolean) => {
     switch (status) {
@@ -205,13 +315,25 @@ const Step = styled.div`
     align-items: center;
 `;
 
-const Connector = styled.div<{$done: boolean}>`
+const connectorColor = (previous: RunPhase) => {
+    if (previous.status === 'done') {
+        return GREEN;
+    }
+
+    // Started but the run moved on: the line carries the ring's color.
+    if (previous.status === 'started' && !previous.current) {
+        return BLUE;
+    }
+    return GRAY_LINE;
+};
+
+const Connector = styled.div<{$color: string}>`
     position: absolute;
     top: 11px;
     right: 50%;
     left: -50%;
     height: 2px;
-    background: ${({$done}) => ($done ? GREEN : 'rgba(var(--center-channel-color-rgb), 0.16)')};
+    background: ${({$color}) => $color};
 `;
 
 const Marker = styled.div<{$status: PhaseStatus, $current: boolean}>`
@@ -234,7 +356,7 @@ const Marker = styled.div<{$status: PhaseStatus, $current: boolean}>`
 
     /* Started, but the run has moved on: a ring with a faint fill, so it differs by shape and not only hue. */
     ${({$status, $current}) => $status === 'started' && !$current && css`
-        background: rgba(var(--button-bg-rgb), 0.16);
+        background: linear-gradient(rgba(var(--button-bg-rgb), 0.16), rgba(var(--button-bg-rgb), 0.16)), var(--center-channel-bg);
     `}
 
     /* Skipped: a dashed ring, clearly not finished work. */
@@ -271,6 +393,45 @@ const Label = styled.div<{$status: PhaseStatus, $current: boolean}>`
     ${({$status}) => $status === 'blocked' && css`
         color: ${RED};
     `}
+`;
+
+const Header = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 12px;
+`;
+
+const Summary = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+`;
+
+const HeaderLabel = styled.span`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+`;
+
+const Chip = styled.span`
+    padding: 4px 12px;
+    border: 1px solid rgba(var(--button-bg-rgb), 0.24);
+    border-radius: 4px;
+    background: rgba(var(--button-bg-rgb), 0.08);
+    color: var(--button-bg);
+    font-size: 14px;
+    font-weight: 600;
+`;
+
+const Detail = styled.span`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 14px;
 `;
 
 const Time = styled.div`

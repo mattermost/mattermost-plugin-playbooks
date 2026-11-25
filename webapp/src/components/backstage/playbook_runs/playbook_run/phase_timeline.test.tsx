@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import renderer from 'react-test-renderer';
+import renderer, {act} from 'react-test-renderer';
 
 import {RunPhase} from 'src/types/playbook_run';
 
@@ -20,8 +20,28 @@ jest.mock('react-intl', () => {
     };
 });
 
+const mockDispatch = jest.fn();
+jest.mock('src/hooks/redux', () => ({
+    useAppDispatch: () => mockDispatch,
+    useAppSelector: () => ({username: 'jane'}),
+}));
+
+jest.mock('mattermost-redux/actions/users', () => ({getUser: jest.fn()}));
+jest.mock('mattermost-redux/selectors/entities/users', () => ({getUser: jest.fn()}));
+
+jest.mock('src/components/widgets/confirmation_modal', () => (props: {show: boolean, message: string, onConfirm: () => void}) => (props.show ? (
+    <button
+        data-testid='confirm'
+        onClick={props.onConfirm}
+    >{props.message}</button>
+) : null));
+
+const mockUseNow = jest.fn();
 jest.mock('src/hooks', () => ({
-    useNow: () => ({valueOf: () => Date.UTC(2026, 0, 1, 18, 0)}),
+    useNow: (interval: number) => {
+        mockUseNow(interval);
+        return {valueOf: () => Date.UTC(2026, 0, 1, 18, 0)};
+    },
 }));
 
 const phase = (title: string, overrides: Partial<RunPhase> = {}): RunPhase => ({
@@ -113,6 +133,63 @@ describe('PhaseTimeline', () => {
         expect(text).not.toContain('ago');
     });
 
+    it('rounds to whole minutes, and shows seconds only under a minute', () => {
+        const text = JSON.stringify(render([
+            phase('A', {status: 'started', started_at: NOW - (95 * 1000)}),
+            phase('B', {status: 'started', started_at: NOW - (45 * 1000)}),
+            phase('C', {status: 'started', started_at: NOW - (((3 * 60) + 59) * 1000)}),
+        ]).toJSON());
+
+        expect(text).toContain('1m');
+        expect(text).toContain('45s');
+        expect(text).toContain('3m');
+        expect(text).not.toContain('1m, 35s');
+        expect(text).not.toContain('3m, 59s');
+    });
+
+    it('shows no time for a phase that started and ended at the same moment', () => {
+        const times = render([phase('A', {status: 'done', started_at: NOW - MINUTE, ended_at: NOW - MINUTE})])
+            .root.findAll((n) => n.type === 'div' && n.props.className?.includes('Time'));
+
+        expect(times.map((n) => n.children.length)).toEqual([0]);
+    });
+
+    describe('refreshing', () => {
+        beforeEach(() => {
+            mockUseNow.mockClear();
+            jest.spyOn(Date, 'now').mockReturnValue(NOW);
+        });
+        afterEach(() => jest.restoreAllMocks());
+
+        it('refreshes every second while a running time is under a minute', () => {
+            render([phase('A', {status: 'started', current: true, started_at: NOW - (20 * 1000)})]);
+
+            expect(mockUseNow).toHaveBeenLastCalledWith(1000);
+        });
+
+        it('refreshes every five seconds once times are in minutes', () => {
+            render([phase('A', {status: 'started', current: true, started_at: NOW - (5 * MINUTE)})]);
+
+            expect(mockUseNow).toHaveBeenLastCalledWith(5000);
+        });
+
+        it('does not tick for a finished phase', () => {
+            render([phase('A', {status: 'done', started_at: NOW - (30 * 1000), ended_at: NOW - (10 * 1000)})]);
+
+            expect(mockUseNow).toHaveBeenLastCalledWith(null);
+        });
+
+        it('does not refresh at all when every time is fixed', () => {
+            render([
+                phase('A', {status: 'done', started_at: NOW - (90 * MINUTE), ended_at: NOW - (60 * MINUTE)}),
+                phase('B', {status: 'started', started_at: NOW - (50 * MINUTE), ended_at: NOW - (20 * MINUTE)}),
+                phase('C'),
+            ]);
+
+            expect(mockUseNow).toHaveBeenLastCalledWith(null);
+        });
+    });
+
     it('shows no time for phases that have not started or were skipped', () => {
         const times = render([
             phase('A', {status: 'skipped'}),
@@ -120,5 +197,62 @@ describe('PhaseTimeline', () => {
         ]).root.findAll((n) => n.type === 'div' && n.props.className?.includes('Time'));
 
         expect(times.map((n) => n.children.length)).toEqual([0, 0]);
+    });
+
+    describe('the current phase header', () => {
+        const phases = [
+            phase('Triage', {status: 'done'}),
+            phase('Containment', {status: 'started', current: true, started_at: NOW - (185 * MINUTE)}),
+            phase('Eradication'),
+        ];
+        const tree = (root: renderer.ReactTestRenderer) => JSON.stringify(root.toJSON());
+        const mountWith = (props: Partial<React.ComponentProps<typeof PhaseTimeline>>, list: RunPhase[] = phases) => renderer.create(
+            <PhaseTimeline
+                phases={list}
+                {...props}
+            />,
+        );
+
+        it('names the current phase and how long it has been going', () => {
+            const root = mountWith({});
+
+            expect(root.root.findByProps({'data-testid': 'phase-timeline-current'})).toBeDefined();
+            expect(tree(root)).toContain('for 3h, 5m');
+        });
+
+        it('has no header when no phase is current', () => {
+            expect(mountWith({}, [phase('Triage', {status: 'skipped'})]).root.findAllByProps({'data-testid': 'phase-timeline-current'})).toHaveLength(0);
+        });
+
+        it('offers no button to someone who may not set the phase, and none on the last phase', () => {
+            expect(mountWith({}).root.findAllByProps({'data-testid': 'phase-timeline-next'})).toHaveLength(0);
+
+            const last = [phase('Triage', {status: 'done'}), phase('Closed', {status: 'started', current: true})];
+            expect(mountWith({onSetPhase: jest.fn()}, last).root.findAllByProps({'data-testid': 'phase-timeline-next'})).toHaveLength(0);
+        });
+
+        it('moves to the next phase, after confirming the first takeover since it is permanent', () => {
+            const onSetPhase = jest.fn();
+            const root = mountWith({onSetPhase});
+
+            const button = root.root.findByProps({'data-testid': 'phase-timeline-next'});
+            expect(tree(root)).toContain('Move to');
+            expect(tree(root)).toContain('Eradication');
+
+            act(() => button.props.onClick());
+            expect(onSetPhase).not.toHaveBeenCalled();
+
+            act(() => root.root.findByProps({'data-testid': 'confirm'}).props.onClick());
+            expect(onSetPhase).toHaveBeenCalledWith('eradication');
+        });
+
+        it('moves straight away once the phase is already manual, and says who set it and when', () => {
+            const onSetPhase = jest.fn();
+            const root = mountWith({onSetPhase, override: {checklist_id: 'containment', set_by: 'u1', set_at: NOW - (125 * MINUTE)}});
+
+            act(() => root.root.findByProps({'data-testid': 'phase-timeline-next'}).props.onClick());
+            expect(onSetPhase).toHaveBeenCalledWith('eradication');
+            expect(tree(root)).toContain('for 3h, 5m, set by @jane at 3:55 PM');
+        });
     });
 });

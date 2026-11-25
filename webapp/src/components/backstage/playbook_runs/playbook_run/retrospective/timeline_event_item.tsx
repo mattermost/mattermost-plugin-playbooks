@@ -17,7 +17,9 @@ import {useAppDispatch} from 'src/hooks/redux';
 import {useEnsureProfiles, useFormattedUsernames} from 'src/hooks';
 
 import {
+    CurrentPhaseChangedDetails,
     ParticipantsChangedDetails,
+    PhaseEventDetails,
     PropertyChangedDetails,
     TaskStateModifiedDetails,
     TimelineEvent,
@@ -239,6 +241,21 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: '{name} requested a status update'}, {name: event.subject_display_name});
         case TimelineEventType.OwnerChanged:
             return formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: event.summary});
+        case TimelineEventType.PhaseStarted: {
+            const {title: phase, source} = parsedDetails as PhaseEventDetails;
+            if (source === 'manual') {
+                return formatMessage({defaultMessage: '{user} started phase "{phase}"'}, {user: event.subject_display_name, phase});
+            }
+            return formatMessage({defaultMessage: 'Phase "{phase}" started'}, {phase});
+        }
+        case TimelineEventType.PhaseDone:
+            return formatMessage({defaultMessage: 'Phase "{phase}" done'}, {phase: (parsedDetails as PhaseEventDetails).title});
+        case TimelineEventType.PhaseReopened:
+            return formatMessage({defaultMessage: 'Phase "{phase}" reopened'}, {phase: (parsedDetails as PhaseEventDetails).title});
+        case TimelineEventType.CurrentPhaseChanged: {
+            const {from_title: from, to_title: to} = parsedDetails as CurrentPhaseChangedDetails;
+            return formatMessage({defaultMessage: '{user} moved the current phase from "{from}" to "{to}"'}, {user: event.subject_display_name, from, to});
+        }
         case TimelineEventType.TaskStateModified: {
             const user = event.subject_display_name;
             const {action, task: name, blocked_reason: blockedReason} = parsedDetails as TaskStateModifiedDetails;
@@ -375,6 +392,11 @@ const TimelineEventItem = (props: Props) => {
             return 'icon-clock-outline';
         case TimelineEventType.PropertyChanged:
             return 'icon-pencil-outline';
+        case TimelineEventType.PhaseStarted:
+        case TimelineEventType.PhaseDone:
+        case TimelineEventType.PhaseReopened:
+        case TimelineEventType.CurrentPhaseChanged:
+            return 'icon-flag-outline';
         default:
             return '';
         }

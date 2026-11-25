@@ -364,6 +364,14 @@ export async function setOwner(playbookRunId: string, ownerId: string) {
     }
 }
 
+export async function setRunPhase(playbookRunId: string, checklistId: string) {
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/phase`, JSON.stringify({checklist_id: checklistId}));
+    } catch (error) {
+        return {error};
+    }
+}
+
 async function putAssignee(playbookRunId: string, checklistNum: number, itemNum: number, body: Record<string, unknown>) {
     try {
         return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`, JSON.stringify(body));

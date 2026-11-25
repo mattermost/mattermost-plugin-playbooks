@@ -29,6 +29,9 @@ export interface Props {
     titleHelpText?: React.ReactNode;
     draggableProvided?: DraggableProvided;
     isChannelChecklist?: boolean;
+
+    /** False when the list's position carries meaning, such as a phase of the run. Defaults to true. */
+    reorderable?: boolean;
 }
 
 const CollapsibleChecklist = ({
@@ -43,6 +46,7 @@ const CollapsibleChecklist = ({
     onRenameChecklist,
     onDuplicateChecklist,
     onDeleteChecklist,
+    reorderable = true,
     titleHelpText,
     draggableProvided,
     isChannelChecklist,
@@ -136,7 +140,7 @@ const CollapsibleChecklist = ({
                 checklistIndex={index}
                 checklistTitle={title}
                 onRenameChecklist={() => setIsRenaming(true)}
-                dragHandleProps={draggableProvided?.dragHandleProps ?? undefined}
+                dragHandleProps={reorderable ? (draggableProvided?.dragHandleProps ?? undefined) : undefined}
                 isChecklistSkipped={isChecklistSkipped}
                 onDuplicateChecklist={() => onDuplicateChecklist(index)}
                 onDeleteChecklist={() => onDeleteChecklist(index)}

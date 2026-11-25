@@ -87,6 +87,7 @@ func NewPlaybookRunHandler(
 	// These routes perform their own per-handler permission check (RunFinish / RunChangeOwner)
 	// which is stricter than the checkEditPermissions middleware (RunManageProperties).
 	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/phase", withContext(handler.setPhase)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 
@@ -909,6 +910,39 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
 
+// setPhase handles the PUT /runs/{id}/phase endpoint: a person takes over the run's current phase.
+func (h *PlaybookRunHandler) setPhase(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunSetPhase(userID, vars["id"])) {
+		return
+	}
+
+	var params struct {
+		ChecklistID string `json:"checklist_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "could not decode request body", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetRunPhase(vars["id"], userID, params.ChecklistID); err != nil {
+		if errors.Is(err, app.ErrPhasesNotEnabled) || errors.Is(err, app.ErrPhaseNotFound) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
+		if errors.Is(err, app.ErrPlaybookRunNotActive) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+			return
+		}
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
 // updateStatusD handles the POST /runs/{id}/status endpoint, user has edit permissions
 func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
@@ -1329,6 +1363,10 @@ func (h *PlaybookRunHandler) removeTimelineEvent(c *Context, w http.ResponseWrit
 	eventID := vars["eventID"]
 
 	if err := h.playbookRunService.RemoveTimelineEvent(id, userID, eventID); err != nil {
+		if errors.Is(err, app.ErrPhaseEventNotDeletable) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1825,6 +1863,10 @@ func (h *PlaybookRunHandler) removeChecklist(c *Context, w http.ResponseWriter, 
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.RemoveChecklist(id, userID, checklistNum); err != nil {
+		if errors.Is(err, app.ErrPhasePinned) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -2195,6 +2237,10 @@ func (h *PlaybookRunHandler) moveChecklist(c *Context, w http.ResponseWriter, r 
 	}
 
 	if err := h.playbookRunService.MoveChecklist(id, userID, params.SourceChecklistIdx, params.DestChecklistIdx); err != nil {
+		if errors.Is(err, app.ErrPhasesReorder) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
