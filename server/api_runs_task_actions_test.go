@@ -120,4 +120,17 @@ func TestRunTaskActionsREST(t *testing.T) {
 		})
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
+
+	t.Run("negative checklist and item indices are rejected", func(t *testing.T) {
+		run := createRunWithItem(t)
+		actions := []client.TaskAction{
+			taskAction(`{"keywords":["one"], "user_ids":[]}`, `{"enabled":false}`),
+		}
+
+		err := e.PlaybooksClient.PlaybookRuns.SetTaskActions(context.Background(), run.ID, -1, 0, actions)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetTaskActions(context.Background(), run.ID, 0, -1, actions)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
 }

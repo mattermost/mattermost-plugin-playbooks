@@ -146,6 +146,15 @@ func NewPlaybookRunHandler(
 	registerChecklistItemRoutes(checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter())
 	registerChecklistItemRoutes(checklistRouter.PathPrefix("/items/{item:[0-9]+}").Subrouter())
 
+	// [0-9]+ does not match a leading minus. Accept it here so itemSetTaskActions
+	// can return 400 for a negative index.
+	for _, itemSegment := range []string{"item", "items"} {
+		playbookRunRouterAuthorized.HandleFunc(
+			"/checklists/{checklist:-?[0-9]+}/"+itemSegment+"/{item:-?[0-9]+}/task_actions",
+			withContext(handler.itemSetTaskActions),
+		).Methods(http.MethodPut)
+	}
+
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
 	retrospectiveRouter.HandleFunc("", withContext(handler.updateRetrospective)).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", withContext(handler.publishRetrospective)).Methods(http.MethodPost)
@@ -1859,9 +1868,17 @@ func (h *PlaybookRunHandler) itemSetTaskActions(c *Context, w http.ResponseWrite
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
+	if checklistNum < 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid checklist number", errors.New("invalid checklist number"))
+		return
+	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	if itemNum < 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid item number", errors.New("invalid item number"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
