@@ -4,7 +4,6 @@
 import {act, renderHook} from '@testing-library/react';
 
 import {playbookRunUpdated} from 'src/actions';
-import {RhsRunsDocument} from 'src/graphql/generated/graphql';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {useUpdateRun} from './hooks';
@@ -19,16 +18,10 @@ jest.mock('src/components/backstage/lhs_navigation', () => ({
     useLHSRefresh: () => mockRefreshLHS,
 }));
 
-const mockRefetchQueries = jest.fn();
-jest.mock('@apollo/client', () => {
-    const actual = jest.requireActual('@apollo/client');
-    return {
-        ...actual,
-        useApolloClient: () => ({
-            refetchQueries: (...args: unknown[]) => mockRefetchQueries(...args),
-        }),
-    };
-});
+const mockNotifyRHSRefresh = jest.fn();
+jest.mock('src/rhs_refresh', () => ({
+    notifyRHSRefresh: () => mockNotifyRHSRefresh(),
+}));
 
 const mockDispatch = jest.fn();
 jest.mock('src/hooks/redux', () => ({
@@ -38,11 +31,7 @@ jest.mock('src/hooks/redux', () => ({
 describe('useUpdateRun', () => {
     const updated = {id: 'run-1', name: 'Incident'} as PlaybookRun;
 
-    beforeEach(() => {
-        mockRefetchQueries.mockResolvedValue([]);
-    });
-
-    it('does not request, dispatch, refresh, or refetch without an id', async () => {
+    it('does not request, dispatch, or refresh without an id', async () => {
         const {result} = renderHook(() => useUpdateRun());
 
         await act(async () => {
@@ -52,10 +41,10 @@ describe('useUpdateRun', () => {
         expect(mockUpdatePlaybookRun).not.toHaveBeenCalled();
         expect(mockDispatch).not.toHaveBeenCalled();
         expect(mockRefreshLHS).not.toHaveBeenCalled();
-        expect(mockRefetchQueries).not.toHaveBeenCalled();
+        expect(mockNotifyRHSRefresh).not.toHaveBeenCalled();
     });
 
-    it('dispatches the updated run, refreshes the sidebar, and refetches RHS runs after success', async () => {
+    it('dispatches the updated run and refreshes the sidebar and RHS after success', async () => {
         mockUpdatePlaybookRun.mockResolvedValue(updated);
         const {result} = renderHook(() => useUpdateRun('run-1'));
         const updates = {name: 'Incident', summary: null};
@@ -67,13 +56,13 @@ describe('useUpdateRun', () => {
         expect(mockUpdatePlaybookRun).toHaveBeenCalledWith('run-1', updates);
         expect(mockDispatch).toHaveBeenCalledWith(playbookRunUpdated(updated));
         expect(mockRefreshLHS).toHaveBeenCalledTimes(1);
-        expect(mockRefetchQueries).toHaveBeenCalledWith({include: [RhsRunsDocument]});
+        expect(mockNotifyRHSRefresh).toHaveBeenCalledTimes(1);
         expect(mockUpdatePlaybookRun.mock.invocationCallOrder[0]).toBeLessThan(mockDispatch.mock.invocationCallOrder[0]);
         expect(mockDispatch.mock.invocationCallOrder[0]).toBeLessThan(mockRefreshLHS.mock.invocationCallOrder[0]);
-        expect(mockRefreshLHS.mock.invocationCallOrder[0]).toBeLessThan(mockRefetchQueries.mock.invocationCallOrder[0]);
+        expect(mockRefreshLHS.mock.invocationCallOrder[0]).toBeLessThan(mockNotifyRHSRefresh.mock.invocationCallOrder[0]);
     });
 
-    it('does not dispatch, refresh, or refetch when the update fails', async () => {
+    it('does not dispatch or refresh when the update fails', async () => {
         const failure = new Error('update failed');
         mockUpdatePlaybookRun.mockRejectedValue(failure);
         const {result} = renderHook(() => useUpdateRun('run-1'));
@@ -85,6 +74,6 @@ describe('useUpdateRun', () => {
         expect(mockUpdatePlaybookRun).toHaveBeenCalledWith('run-1', {name: 'Incident'});
         expect(mockDispatch).not.toHaveBeenCalled();
         expect(mockRefreshLHS).not.toHaveBeenCalled();
-        expect(mockRefetchQueries).not.toHaveBeenCalled();
+        expect(mockNotifyRHSRefresh).not.toHaveBeenCalled();
     });
 });
