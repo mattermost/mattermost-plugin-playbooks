@@ -11,6 +11,8 @@ export class PlaybookEditorPage {
     readonly titleEditInput: Locator;
     readonly descriptionEditInput: Locator;
     readonly saveButton: Locator;
+    readonly usePhasesToggle: Locator;
+    readonly usePhasesCheckbox: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -20,6 +22,8 @@ export class PlaybookEditorPage {
         this.titleEditInput = page.getByTestId('rendered-editable-text');
         this.descriptionEditInput = page.getByRole('textbox', {name: /Add a description/});
         this.saveButton = page.getByRole('button', {name: 'Save'});
+        this.usePhasesToggle = page.getByTestId('use-checklists-as-phases-toggle');
+        this.usePhasesCheckbox = this.usePhasesToggle.locator('input[type="checkbox"]');
     }
 
     async goto(teamName: string, playbookId: string) {
@@ -65,5 +69,9 @@ export class PlaybookEditorPage {
 
     async expectDescription(description: string) {
         await expect(this.description.getByText(description)).toBeVisible();
+    }
+
+    async toggleUsePhases() {
+        await this.usePhasesToggle.click();
     }
 }
