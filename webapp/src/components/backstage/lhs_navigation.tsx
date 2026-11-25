@@ -1,11 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useApolloClient} from '@apollo/client';
 import React from 'react';
 import styled from 'styled-components';
 
-import PlaybooksSidebar, {playbookLHSQueryDocument} from 'src/components/sidebar/playbooks_sidebar';
+import PlaybooksSidebar from 'src/components/sidebar/playbooks_sidebar';
 
 const LHSContainer = styled.div`
     display: flex;
@@ -22,16 +21,19 @@ const LHSNavigation = () => {
     );
 };
 
-export const useLHSRefresh = () => {
-    const apolloClient = useApolloClient();
+const lhsRefreshListeners = new Set<() => void>();
 
-    const refreshLists = () => {
-        apolloClient.refetchQueries({
-            include: [playbookLHSQueryDocument],
-        });
+export function subscribeLHSRefresh(listener: () => void): () => void {
+    lhsRefreshListeners.add(listener);
+    return () => {
+        lhsRefreshListeners.delete(listener);
     };
+}
 
-    return refreshLists;
+export const useLHSRefresh = () => {
+    return () => {
+        lhsRefreshListeners.forEach((listener) => listener());
+    };
 };
 
 export default LHSNavigation;

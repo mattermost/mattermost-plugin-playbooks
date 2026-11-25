@@ -15,8 +15,7 @@ import {DraftPlaybookWithChecklist, Playbook, emptyPlaybook} from 'src/types/pla
 import {PlaybookRole} from 'src/types/permissions';
 import {savePlaybook} from 'src/client';
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
-import {PlaybookLhsDocument} from 'src/graphql/generated/graphql';
-import {getPlaybooksGraphQLClient} from 'src/graphql_client';
+import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,
@@ -52,6 +51,7 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
     {urlOnly, onGo}: PlaybooksRoutingOptions<TParam> = {},
 ) {
     const currentUserId = useAppSelector(getCurrentUserId);
+    const refreshLHS = useLHSRefresh();
 
     return useMemo(() => {
         function go(path: string, p?: TParam) {
@@ -95,9 +95,7 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                     initialPlaybook.public = Boolean(params.public);
 
                     const data = await savePlaybook(initialPlaybook);
-                    getPlaybooksGraphQLClient().refetchQueries({
-                        include: [PlaybookLhsDocument],
-                    });
+                    refreshLHS();
                     return data?.id;
                 };
 
@@ -105,7 +103,7 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                 return go(`/playbooks/${playbookId}/outline`);
             },
         };
-    }, [onGo, urlOnly]);
+    }, [currentUserId, onGo, refreshLHS, urlOnly]);
 }
 
 const selectSiteName = (state: GlobalState) => getConfig(state).SiteName;

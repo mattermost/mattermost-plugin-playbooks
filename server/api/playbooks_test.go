@@ -4,6 +4,7 @@
 package api
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -187,4 +188,39 @@ func TestConvertRequestToPropertyField(t *testing.T) {
 
 func stringPtr(s string) *string {
 	return &s
+}
+
+func TestParseGetPlaybooksOptionsPerPage(t *testing.T) {
+	t.Run("per_page above the cap is clamped", func(t *testing.T) {
+		opts, err := parseGetPlaybooksOptions(mustPlaybooksURL(t, "/playbooks?per_page=5000&sort=runs"))
+		require.NoError(t, err)
+		require.Equal(t, app.PerPageDefault, opts.PerPage)
+		require.Equal(t, app.SortByRuns, opts.Sort)
+	})
+
+	t.Run("per_page at the cap is kept", func(t *testing.T) {
+		opts, err := parseGetPlaybooksOptions(mustPlaybooksURL(t, "/playbooks?per_page=1000&sort=last_run_at"))
+		require.NoError(t, err)
+		require.Equal(t, app.PerPageDefault, opts.PerPage)
+		require.Equal(t, app.SortByLastRunAt, opts.Sort)
+	})
+
+	t.Run("per_page below the cap is kept", func(t *testing.T) {
+		opts, err := parseGetPlaybooksOptions(mustPlaybooksURL(t, "/playbooks?per_page=10&sort=active_runs"))
+		require.NoError(t, err)
+		require.Equal(t, 10, opts.PerPage)
+		require.Equal(t, app.SortByActiveRuns, opts.Sort)
+	})
+
+	t.Run("negative per_page is rejected", func(t *testing.T) {
+		_, err := parseGetPlaybooksOptions(mustPlaybooksURL(t, "/playbooks?per_page=-1"))
+		require.Error(t, err)
+	})
+}
+
+func mustPlaybooksURL(t *testing.T, raw string) *url.URL {
+	t.Helper()
+	parsed, err := url.Parse(raw)
+	require.NoError(t, err)
+	return parsed
 }
