@@ -22,6 +22,7 @@ export type RunStatus = (typeof RunStatus)[keyof typeof RunStatus];
 
 /** Alias kept for call sites that already use PlaybookRunStatus. */
 export const PlaybookRunStatus = RunStatus;
+export type PlaybookRunStatus = RunStatus;
 
 export interface PlaybookRun {
     id: string;
