@@ -107,13 +107,26 @@ type phaseMove struct {
 	at          int64
 }
 
+// firstChecklistWithTasks is the first list a run can be in: an empty list has nothing to do, so the
+// run starts in the first one with a visible task.
+func firstChecklistWithTasks(checklists []Checklist) string {
+	for _, checklist := range checklists {
+		for _, item := range checklist.Items {
+			if item.ConditionAction != ConditionActionHidden {
+				return checklist.ID
+			}
+		}
+	}
+	return ""
+}
+
 // phaseMoves are the starts the tasks do not tell: the run starting in its first phase, and every
 // phase the timeline says started. A phase the run reached stays started when work in the phase
 // before it is reopened, so what the timeline recorded is not undone by the tasks.
 func phaseMoves(run *PlaybookRun, ledger phaseLedger) []phaseMove {
 	var moves []phaseMove
-	if len(run.Checklists) > 0 && run.CreateAt > 0 {
-		moves = append(moves, phaseMove{checklistID: run.Checklists[0].ID, at: run.CreateAt})
+	if first := firstChecklistWithTasks(run.Checklists); first != "" && run.CreateAt > 0 {
+		moves = append(moves, phaseMove{checklistID: first, at: run.CreateAt})
 	}
 	for checklistID, entry := range ledger.entries {
 		moves = append(moves, phaseMove{checklistID: checklistID, at: entry.startedAt})
@@ -147,11 +160,12 @@ func applyPhaseMoves(phases []RunPhase, moves []phaseMove) {
 }
 
 // applyLedger reads each phase's start and end from the timeline, where it has been recorded and
-// still agrees with the tasks about whether the phase is done. Otherwise the computed times stand.
+// still agrees with the tasks about whether the phase is done. Otherwise the computed times stand,
+// and a skipped phase never has a time.
 func applyLedger(phases []RunPhase, ledger phaseLedger) {
 	for i := range phases {
 		entry, ok := ledger.entries[phases[i].ChecklistID]
-		if !ok || (phases[i].Status == PhaseStatusDone) != (entry.doneAt > 0) {
+		if !ok || phases[i].Status == PhaseStatusSkipped || (phases[i].Status == PhaseStatusDone) != (entry.doneAt > 0) {
 			continue
 		}
 		phases[i].StartedAt = entry.startedAt

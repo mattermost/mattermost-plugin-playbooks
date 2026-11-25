@@ -28,6 +28,14 @@ export enum TimelineEventType {
     CurrentPhaseChanged = 'current_phase_changed',
 }
 
+// The events that record a run's phases. The phase bar is read from them, so they cannot be deleted.
+export const isPhaseEventType = (eventType: string) => [
+    TimelineEventType.PhaseStarted,
+    TimelineEventType.PhaseDone,
+    TimelineEventType.PhaseReopened,
+    TimelineEventType.CurrentPhaseChanged,
+].includes(eventType as TimelineEventType);
+
 export interface TimelineEvent {
     id: string;
     playbook_run_id: string;
@@ -44,6 +52,9 @@ export interface TimelineEvent {
 
     /** @remarks computed client-side */
     status_delete_at?: number;
+
+    /** @remarks computed client-side: how long a phase took, on its phase_done event */
+    phase_duration?: number;
 }
 
 export interface TimelineEventsFilter {

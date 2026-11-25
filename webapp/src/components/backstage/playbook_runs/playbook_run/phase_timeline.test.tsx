@@ -199,6 +199,15 @@ describe('PhaseTimeline', () => {
         expect(times.map((n) => n.children.length)).toEqual([0, 0]);
     });
 
+    it('shows no time for a skipped phase even if it carries a start', () => {
+        const times = render([
+            phase('A', {status: 'skipped', started_at: NOW - (30 * MINUTE), ended_at: NOW - (10 * MINUTE)}),
+            phase('B', {status: 'started', started_at: NOW - (30 * MINUTE)}),
+        ]).root.findAll((n) => n.type === 'div' && n.props.className?.includes('Time'));
+
+        expect(times.map((n) => n.children.length)).toEqual([0, 1]);
+    });
+
     describe('the current phase header', () => {
         const phases = [
             phase('Triage', {status: 'done'}),
@@ -217,7 +226,17 @@ describe('PhaseTimeline', () => {
             const root = mountWith({});
 
             expect(root.root.findByProps({'data-testid': 'phase-timeline-current'})).toBeDefined();
-            expect(tree(root)).toContain('for 3h, 5m');
+            expect(tree(root)).toContain('for 3h, 5m, moved automatically');
+        });
+
+        it('says the first phase started with the run, not that it was moved', () => {
+            const root = mountWith({}, [
+                phase('Triage', {status: 'started', current: true, started_at: NOW - (5 * MINUTE)}),
+                phase('Containment'),
+            ]);
+
+            expect(tree(root)).toContain('for 5m, started with the run');
+            expect(tree(root)).not.toContain('moved automatically');
         });
 
         it('has no header when no phase is current', () => {

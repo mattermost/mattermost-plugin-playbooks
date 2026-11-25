@@ -25,12 +25,13 @@ import {
     TimelineEvent,
     TimelineEventType,
     UserJoinedLeftDetails,
+    isPhaseEventType,
 } from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {browserHistory, formatText, messageHtmlToComponent} from 'src/webapp_globals';
-import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
+import FormattedDuration, {formatDuration, formatRoundedDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
@@ -248,8 +249,13 @@ const TimelineEventItem = (props: Props) => {
             }
             return formatMessage({defaultMessage: 'Phase "{phase}" started'}, {phase});
         }
-        case TimelineEventType.PhaseDone:
-            return formatMessage({defaultMessage: 'Phase "{phase}" done'}, {phase: (parsedDetails as PhaseEventDetails).title});
+        case TimelineEventType.PhaseDone: {
+            const phase = (parsedDetails as PhaseEventDetails).title;
+            if (event.phase_duration) {
+                return formatMessage({defaultMessage: 'Phase "{phase}" done in {duration}'}, {phase, duration: formatRoundedDuration(event.phase_duration)});
+            }
+            return formatMessage({defaultMessage: 'Phase "{phase}" done'}, {phase});
+        }
         case TimelineEventType.PhaseReopened:
             return formatMessage({defaultMessage: 'Phase "{phase}" reopened'}, {phase: (parsedDetails as PhaseEventDetails).title});
         case TimelineEventType.CurrentPhaseChanged: {
@@ -481,7 +487,7 @@ const TimelineEventItem = (props: Props) => {
                 )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(getSummary(props.event, parsedDetails), markdownOptions), true, messageHtmlToComponentOptions)}</SummaryDetail>
             </SummaryContainer>
-            {showMenu && props.editable &&
+            {showMenu && props.editable && !isPhaseEventType(props.event.event_type) &&
                 <StyledHoverMenu parent={props.parent}>
                     <HoverMenuButton
                         className={'icon-trash-can-outline icon-16 btn-icon'}

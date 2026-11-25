@@ -975,3 +975,90 @@ func TestAPhaseTheRunReachedStaysStartedWhenThePreviousOneIsReopened(t *testing.
 	assert.True(t, run.Phases[1].Current, "and stays the current one")
 	assert.False(t, run.Phases[0].Current)
 }
+
+func TestEmptyTaskListsAreGonePast(t *testing.T) {
+	list := func(id string, items ...ChecklistItem) Checklist {
+		return Checklist{ID: id, Title: id, Items: items}
+	}
+	populate := func(run *PlaybookRun, changes ...ChecklistItemStateChange) []RunPhase {
+		(&PlaybookRunServiceImpl{store: &phasesStore{changes: changes}}).PopulatePhases(run)
+		return run.Phases
+	}
+	phasesRunOf := func(checklists ...Checklist) *PlaybookRun {
+		return &PlaybookRun{ID: "run1", UseChecklistsAsPhases: true, CreateAt: 1000, Checklists: checklists}
+	}
+
+	t.Run("a run does not start in an empty first list", func(t *testing.T) {
+		phases := populate(phasesRunOf(list("empty"), list("one", phaseItem("a", ChecklistItemStateOpen, 0)), list("two", phaseItem("b", ChecklistItemStateOpen, 0))))
+
+		assert.Equal(t, PhaseStatusNotStarted, phases[0].Status)
+		assert.Zero(t, phases[0].StartedAt)
+		assert.False(t, phases[0].Current)
+		assert.Equal(t, PhaseStatusStarted, phases[1].Status)
+		assert.Equal(t, int64(1000), phases[1].StartedAt)
+		assert.True(t, phases[1].Current)
+	})
+
+	t.Run("an empty list after a done phase is passed over, and the one after it starts", func(t *testing.T) {
+		phases := populate(
+			phasesRunOf(list("one", phaseItem("a", ChecklistItemStateClosed, 1500)), list("empty"), list("two", phaseItem("b", ChecklistItemStateOpen, 0))),
+			phaseChange("a", ChecklistItemStateClosed, 1500),
+		)
+
+		assert.Equal(t, PhaseStatusNotStarted, phases[1].Status)
+		assert.Zero(t, phases[1].StartedAt)
+		assert.Zero(t, phases[1].EndedAt)
+		assert.False(t, phases[1].Current)
+		assert.Equal(t, PhaseStatusStarted, phases[2].Status)
+		assert.Equal(t, int64(1500), phases[2].StartedAt)
+		assert.True(t, phases[2].Current)
+	})
+
+	t.Run("a list whose only tasks are hidden counts as empty", func(t *testing.T) {
+		hidden := phaseItem("h", ChecklistItemStateOpen, 0)
+		hidden.ConditionAction = ConditionActionHidden
+
+		phases := populate(phasesRunOf(list("hidden", hidden), list("one", phaseItem("a", ChecklistItemStateOpen, 0))))
+
+		assert.Equal(t, PhaseStatusNotStarted, phases[0].Status)
+		assert.True(t, phases[1].Current)
+	})
+
+	t.Run("a playbook of only empty lists has no current phase and nothing running", func(t *testing.T) {
+		phases := populate(phasesRunOf(list("e1"), list("e2")))
+
+		for _, phase := range phases {
+			assert.Equal(t, PhaseStatusNotStarted, phase.Status)
+			assert.False(t, phase.Current)
+			assert.Zero(t, phase.StartedAt)
+		}
+	})
+
+	t.Run("no phase events are written for an empty list", func(t *testing.T) {
+		store := &phasesStore{}
+		run := phasesRunOf(list("empty"), list("one", phaseItem("a", ChecklistItemStateOpen, 0)))
+
+		require.True(t, (&PlaybookRunServiceImpl{store: store}).recordPhaseEvents(run))
+
+		require.Len(t, store.events, 1)
+		assert.JSONEq(t, `{"checklist_id":"one","title":"one","source":"automatic"}`, store.events[0].Details)
+	})
+}
+
+func TestASkippedPhaseNeverShowsATime(t *testing.T) {
+	// The run started in this phase, which was recorded, and then every task in it was skipped.
+	run := &PlaybookRun{
+		ID: "run1", UseChecklistsAsPhases: true, CreateAt: 1000, EndAt: 5000,
+		Checklists: []Checklist{
+			{ID: "c1", Title: "c1", Items: []ChecklistItem{phaseItem("a", ChecklistItemStateSkipped, 1200)}},
+			{ID: "c2", Title: "c2", Items: []ChecklistItem{phaseItem("b", ChecklistItemStateOpen, 0)}},
+		},
+		TimelineEvents: []TimelineEvent{phaseEvent(PhaseStarted, "c1", phaseSourceAutomatic, 1000)},
+	}
+
+	(&PlaybookRunServiceImpl{store: &phasesStore{changes: []ChecklistItemStateChange{phaseChange("a", ChecklistItemStateSkipped, 1200)}}}).PopulatePhases(run)
+
+	assert.Equal(t, PhaseStatusSkipped, run.Phases[0].Status)
+	assert.Zero(t, run.Phases[0].StartedAt, "it is not started, however the timeline began it")
+	assert.Zero(t, run.Phases[0].EndedAt, "so finishing the run has nothing to stop")
+}

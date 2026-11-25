@@ -140,6 +140,12 @@ func currentPhaseOf(phases []RunPhase) *RunPhase {
 	return nil
 }
 
+// passedOver is a phase the run goes past without being in it: one whose tasks were all skipped,
+// or a list without any task, which nothing can ever finish.
+func (p RunPhase) passedOver() bool {
+	return p.Status == PhaseStatusSkipped || p.TasksTotal == 0
+}
+
 // automaticCurrent is the phase the tasks alone make current, along with the furthest phase where
 // work has started, -1 when there is none.
 func automaticCurrent(phases []RunPhase) (current, furthest int) {
@@ -153,7 +159,7 @@ func automaticCurrent(phases []RunPhase) (current, furthest int) {
 	current = furthest
 	if furthest == -1 || phases[furthest].Status == PhaseStatusDone {
 		for i := furthest + 1; i < len(phases); i++ {
-			if phases[i].Status != PhaseStatusSkipped {
+			if !phases[i].passedOver() {
 				current = i
 				break
 			}
@@ -163,13 +169,13 @@ func automaticCurrent(phases []RunPhase) (current, furthest int) {
 }
 
 // startNextPhase starts each phase at the moment the run reached it: when the phase before it
-// (skipping skipped ones) was finished. That holds whoever is in charge of the current phase and
+// (skipping skipped and empty ones) was finished. That holds whoever is in charge of the current phase and
 // however late work in the phase began, so a phase finished long after the run reached it has run
 // since then.
 func startNextPhase(phases []RunPhase) {
 	previous := -1
 	for i := range phases {
-		if phases[i].Status == PhaseStatusSkipped {
+		if phases[i].passedOver() {
 			continue
 		}
 		if previous >= 0 && phases[previous].Status == PhaseStatusDone && phases[previous].EndedAt > 0 {

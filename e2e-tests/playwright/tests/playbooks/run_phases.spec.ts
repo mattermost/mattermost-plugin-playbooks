@@ -197,6 +197,9 @@ test.describe('run phases', () => {
             await expect(runPage.phases.currentChip).toHaveText('Triage');
             await expect(runPage.phases.nextButton).toHaveText('Move to Containment');
 
+            // * The first phase has been running since the run started, and nobody moved it
+            await expect(runPage.phases.detail).toHaveText(/^for \d+s, started with the run$/);
+
             // * The run exposes the same phases over REST
             const restRun = await getRun(page, run.id);
             expect(restRun.use_checklists_as_phases).toBe(true);
@@ -348,6 +351,71 @@ test.describe('run phases', () => {
                 {type: 'phase_done', title: 'Triage'},
                 {type: 'phase_started', title: 'Recovery'},
             ]);
+        });
+    });
+
+    test.describe('task lists without tasks', () => {
+        /**
+         * @objective A task list with no tasks is never started or current, and the run goes past it.
+         */
+        test('passes over empty task lists, at the start and in the middle', {tag: '@playbooks'}, async ({page}) => {
+            const runPage = new PlaybookRunPage(page);
+
+            // # Open a run whose first and third lists have no tasks
+            const {run} = await startRun(page, {
+                phases: true,
+                checklists: [
+                    {title: 'Intro', items: []},
+                    {title: 'Triage', items: [{title: 'Assess impact'}]},
+                    {title: 'Notes', items: []},
+                    {title: 'Recovery', items: [{title: 'Restore backups'}]},
+                ],
+            });
+            await runPage.goto(seededData.teamName, run.id);
+
+            // * The run starts in the first list that has a task, and the empty lists do not run
+            await expect.poll(() => runPage.phases.labels()).toEqual([
+                'Intro: Not started',
+                'Triage: In progress, current phase',
+                'Notes: Not started',
+                'Recovery: Not started',
+            ]);
+            const started = await getRun(page, run.id);
+            expect(phaseOf(started, 'Intro')).toMatchObject({status: 'not_started', started_at: 0, ended_at: 0, current: false});
+
+            // # Finish the only task of the second list
+            await setTaskState(page, run.id, 1, 0, 'closed');
+
+            // * The run goes past the empty list to the last one, which starts when the second was done
+            await expect.poll(() => runPage.phases.labels()).toEqual([
+                'Intro: Not started',
+                'Triage: Done',
+                'Notes: Not started',
+                'Recovery: In progress, current phase',
+            ]);
+            const restRun = await getRun(page, run.id);
+            expect(phaseOf(restRun, 'Notes')).toMatchObject({status: 'not_started', started_at: 0, ended_at: 0, current: false});
+            expect(phaseOf(restRun, 'Recovery').started_at).toBe(phaseOf(restRun, 'Triage').ended_at);
+            expect(phaseEvents(restRun)).toEqual([
+                {type: 'phase_started', title: 'Triage'},
+                {type: 'phase_done', title: 'Triage'},
+                {type: 'phase_started', title: 'Recovery'},
+            ]);
+        });
+
+        /**
+         * @objective A first phase whose tasks were all skipped has no time, not even after the run is finished.
+         */
+        test('gives a skipped first phase no time, also when the run is finished', {tag: '@playbooks'}, async ({page}) => {
+            // # Skip every task of the first list, then finish the run
+            const {run} = await startRun(page, {phases: true});
+            await skipTask(page, run.id, 0, 0);
+            await skipTask(page, run.id, 0, 1);
+            await finishRun(page, run.id);
+
+            // * The first phase is skipped and never had a time to stop
+            const restRun = await getRun(page, run.id);
+            expect(phaseOf(restRun, 'Triage')).toMatchObject({status: 'skipped', started_at: 0, ended_at: 0, current: false});
         });
     });
 
@@ -779,22 +847,22 @@ test.describe('run phases', () => {
             // # Open a run whose second phase is running
             const {run} = await startRunWithPhaseRunning(page);
             await runPage.goto(seededData.teamName, run.id);
-            await expect(runPage.phases.detail).toHaveText(/^for \d+s$/);
+            await expect(runPage.phases.detail).toHaveText(/^for \d+s, moved automatically$/);
             const runningTime = await runPage.phases.detail.textContent() ?? '';
 
             // * The time of the running phase advances (seconds under a minute, whole minutes after)
             await advanceClock(5 * 60 * 1000);
             await expect(runPage.phases.detail).not.toHaveText(runningTime);
-            await expect(runPage.phases.detail).toHaveText(/^for \d+m$/);
+            await expect(runPage.phases.detail).toHaveText(/^for \d+m, moved automatically$/);
 
             // # Finish the run and open it again
             await finishRun(page, run.id);
             const finished = await getRun(page, run.id);
             await runPage.goto(seededData.teamName, run.id);
-            await expect(runPage.phases.detail).toHaveText(/^for \d+s$/);
+            await expect(runPage.phases.detail).toHaveText(/^for \d+s, moved automatically$/);
             const stoppedTime = await runPage.phases.detail.textContent() ?? '';
             const elapsedSeconds = Math.floor((phaseOf(finished, 'Containment').ended_at - phaseOf(finished, 'Containment').started_at) / 1000);
-            expect(stoppedTime).toBe(`for ${elapsedSeconds}s`);
+            expect(stoppedTime).toBe(`for ${elapsedSeconds}s, moved automatically`);
 
             // * Ten minutes later the time of the finished run's phase is the same
             await advanceClock(10 * 60 * 1000);
@@ -824,12 +892,12 @@ test.describe('run phases', () => {
             await closeChecklist(page, run.id, 0, 2);
             await expect.poll(async () => phaseOf(await getRun(page, run.id), 'Containment').status).toBe('started');
             await runPage.goto(seededData.teamName, run.id);
-            await expect(runPage.phases.detail).toHaveText(/^for \d+s$/);
+            await expect(runPage.phases.detail).toHaveText(/^for \d+s, moved automatically$/);
 
             // # Finish the run while the page stays open
             await finishRun(page, run.id);
             const finished = phaseOf(await getRun(page, run.id), 'Containment');
-            const stoppedAt = `for ${Math.floor((finished.ended_at - finished.started_at) / 1000)}s`;
+            const stoppedAt = `for ${Math.floor((finished.ended_at - finished.started_at) / 1000)}s, moved automatically`;
 
             // * The shown time is the one the run finished with, and it no longer advances
             await expect(runPage.phases.detail).toHaveText(stoppedAt);
@@ -842,7 +910,7 @@ test.describe('run phases', () => {
 
             // * The time runs again
             await advanceClock(5 * 60 * 1000);
-            await expect(runPage.phases.detail).toHaveText(/^for \d+m$/);
+            await expect(runPage.phases.detail).toHaveText(/^for \d+m, moved automatically$/);
             await expect(runPage.phases.detail).not.toHaveText(stoppedAt);
         });
     });

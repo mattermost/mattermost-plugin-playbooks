@@ -108,7 +108,6 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	// Determine if incremental updates are enabled
 	if !s.configService.IsIncrementalUpdatesEnabled() {
 		if currentRun != nil {
-			currentRun = s.reconcilePhases(currentRun)
 			currentRun.ComputeTaskProgress()
 		}
 		// If incremental updates are disabled, fall back to the standard WS update
@@ -3371,7 +3370,9 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 	// Add current context to audit
 	checklistToRemove := playbookRunToModify.Checklists[checklistNumber]
 	if playbookRunToModify.PhaseOverrideChecklistID != "" && playbookRunToModify.PhaseOverrideChecklistID == checklistToRemove.ID {
-		return errors.Wrap(ErrPhasePinned, "move the phase to another task list first")
+		err := errors.Wrap(ErrPhasePinned, "move the phase to another task list first")
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", checklistToRemove.Title)
 	model.AddEventParameterToAuditRec(auditRec, "checklistItemCount", len(checklistToRemove.Items))
@@ -4708,7 +4709,6 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 		}
 	}
 
-	playbookRun = s.reconcilePhases(playbookRun)
 	s.PopulatePhases(playbookRun)
 
 	s.PublishRunEventToViewers(playbookRunUpdatedWSEvent, playbookRun, playbookRun, sendWSOptions.AdditionalUserIDs...)

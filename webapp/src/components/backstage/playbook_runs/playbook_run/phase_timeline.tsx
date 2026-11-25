@@ -4,14 +4,13 @@
 import React, {useEffect, useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
-import {Duration} from 'luxon';
 
 import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {useNow} from 'src/hooks';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
-import {formatDuration} from 'src/components/formatted_duration';
+import {formatRoundedDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {PrimaryButton} from 'src/components/assets/buttons';
 
@@ -29,13 +28,6 @@ interface Props {
 }
 
 const ONE_MINUTE = 60 * 1000;
-
-// Seconds while under a minute, whole minutes after that.
-const roundedDuration = (millis: number) => {
-    const positive = Math.max(0, millis);
-    const rounded = positive < ONE_MINUTE ? Math.floor(positive / 1000) * 1000 : Math.floor(positive / ONE_MINUTE) * ONE_MINUTE;
-    return formatDuration(Duration.fromMillis(rounded), 'narrow');
-};
 
 const PhaseTimeline = ({id, phases, override, onSetPhase}: Props) => {
     const {formatMessage, formatTime} = useIntl();
@@ -67,10 +59,10 @@ const PhaseTimeline = ({id, phases, override, onSetPhase}: Props) => {
 
     // How long the phase has taken: from its start until now, or until it was done.
     const elapsed = (phase: RunPhase) => {
-        if (!phase.started_at || phase.ended_at === phase.started_at) {
+        if (phase.status === 'skipped' || !phase.started_at || phase.ended_at === phase.started_at) {
             return null;
         }
-        return roundedDuration((phase.ended_at || now) - phase.started_at);
+        return formatRoundedDuration((phase.ended_at || now) - phase.started_at);
     };
 
     // A phase that has not started but is current is the one up next.
@@ -128,7 +120,13 @@ const PhaseTimeline = ({id, phases, override, onSetPhase}: Props) => {
         if (override) {
             return formatMessage({defaultMessage: 'set by {name} at {time}'}, {name, time});
         }
-        return duration ? formatMessage({defaultMessage: 'for {duration}'}, {duration}) : '';
+        if (!duration) {
+            return '';
+        }
+        if (currentIndex === 0) {
+            return formatMessage({defaultMessage: 'for {duration}, started with the run'}, {duration});
+        }
+        return formatMessage({defaultMessage: 'for {duration}, moved automatically'}, {duration});
     };
 
     const ariaLabel = (phase: RunPhase) => {

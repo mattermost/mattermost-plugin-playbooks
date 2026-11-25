@@ -27,6 +27,15 @@ interface DurationProps {
     truncate?: TruncateBehavior;
 }
 
+const ONE_MINUTE = 60 * 1000;
+
+/** A duration in seconds while under a minute, and in whole minutes after that. */
+export const formatRoundedDuration = (millis: number, style: FormatStyle = 'narrow') => {
+    const positive = Math.max(0, millis);
+    const rounded = positive < ONE_MINUTE ? Math.floor(positive / 1000) * 1000 : Math.floor(positive / ONE_MINUTE) * ONE_MINUTE;
+    return formatDuration(Duration.fromMillis(rounded), style);
+};
+
 const UNITS: DurationUnit[] = ['years', 'days', 'hours', 'minutes'];
 
 export const formatDuration = (value: Duration, style: FormatStyle = 'narrow', truncate: TruncateBehavior = 'none') => {

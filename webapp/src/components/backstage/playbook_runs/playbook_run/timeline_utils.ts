@@ -17,9 +17,43 @@ import {
     TimelineEventType,
     TimelineEventsFilter,
     TimelineEventsFilterDefault,
+    isPhaseEventType,
 } from 'src/types/rhs';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
+
+// How long each phase took, by the id of its phase_done event: from the first time the phase
+// started until it was done.
+export const phaseDurations = (events: TimelineEvent[]): Record<string, number> => {
+    const phaseOf = (event: TimelineEvent): string | undefined => {
+        try {
+            return (JSON.parse(event.details) as {checklist_id?: string}).checklist_id;
+        } catch {
+            return undefined;
+        }
+    };
+
+    const firstStart: Record<string, number> = {};
+    for (const event of events) {
+        const checklistId = phaseOf(event);
+        if (event.delete_at === 0 && event.event_type === TimelineEventType.PhaseStarted && checklistId) {
+            firstStart[checklistId] = Math.min(firstStart[checklistId] ?? event.event_at, event.event_at);
+        }
+    }
+
+    const durations: Record<string, number> = {};
+    for (const event of events) {
+        const checklistId = phaseOf(event);
+        if (event.event_type !== TimelineEventType.PhaseDone || !checklistId || firstStart[checklistId] === undefined) {
+            continue;
+        }
+        const duration = event.event_at - firstStart[checklistId];
+        if (duration > 0) {
+            durations[event.id] = duration;
+        }
+    }
+    return durations;
+};
 
 export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: TimelineEventsFilter) => {
     const dispatch = useAppDispatch();
@@ -46,10 +80,12 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
             return map;
         }, {});
 
+        const durations = phaseDurations(events);
+
         Promise.all(events.map(async (event) => {
             // Phase moves the tasks caused have no person behind them.
             if (!event.subject_user_id) {
-                return {...event, status_delete_at: 0, subject_display_name: ''} as TimelineEvent;
+                return {...event, status_delete_at: 0, subject_display_name: '', phase_duration: durations[event.id]} as TimelineEvent;
             }
 
             let user = selectUser(event.subject_user_id);
@@ -65,6 +101,7 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
                 ...event,
                 status_delete_at: statusDeleteAtByPostId[event.post_id] ?? 0,
                 subject_display_name: displayUsername(user, displayPreference),
+                phase_duration: durations[event.id],
             } as TimelineEvent;
         })).then((eventArray) => {
             eventArray.reverse();
@@ -74,13 +111,6 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
 
     return [filteredEvents];
 };
-
-const PHASE_EVENT_TYPES = [
-    TimelineEventType.PhaseStarted,
-    TimelineEventType.PhaseDone,
-    TimelineEventType.PhaseReopened,
-    TimelineEventType.CurrentPhaseChanged,
-];
 
 const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
     if (filter.all) {
@@ -93,7 +123,7 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
         TimelineEventType.RunFinished,
         TimelineEventType.RunRestored,
     ];
-    if (PHASE_EVENT_TYPES.includes(eventType as TimelineEventType)) {
+    if (isPhaseEventType(eventType)) {
         return filterRecord[TimelineEventType.PhaseStarted];
     }
     return filterRecord[eventType] || (filterRecord[TimelineEventType.StatusUpdated] && statusUpdateTypes.includes(eventType as TimelineEventType));
