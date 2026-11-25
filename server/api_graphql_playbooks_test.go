@@ -936,7 +936,6 @@ func TestUpdatePlaybook_PersistedValuesRemainReadable(t *testing.T) {
 	}
 }
 
-
 func TestUpdatePlaybook_ValueValidationDoesNotBypassPermissions(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1036,7 +1035,6 @@ func TestUpdatePlaybook_ValueValidationDoesNotBypassPermissions(t *testing.T) {
 		})
 	}
 }
-
 
 func TestAddMetric_PersistedValuesRemainReadable(t *testing.T) {
 	e := Setup(t)
@@ -1139,7 +1137,6 @@ func TestAddMetric_PersistedValuesRemainReadable(t *testing.T) {
 		})
 	}
 }
-
 
 func TestUpdatePlaybook_MetricTypeValidation(t *testing.T) {
 	e := Setup(t)
@@ -1407,4 +1404,3 @@ func TestCorruptedPlaybookRowRemainsUsable(t *testing.T) {
 		assert.Equal(t, int64(3600000), stored[0].Items[2].DueDate)
 	})
 }
-
