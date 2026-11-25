@@ -83,6 +83,7 @@ import UpdateRequestPost from 'src/components/update_request_post';
 
 import {RetrospectivePost} from './components/retrospective_post';
 
+import {publishEmbeddedChecklistApi, unpublishEmbeddedChecklistApi} from './embedded_checklist_api';
 import {setPlaybooksGraphQLClient} from './graphql_client';
 import {RHSTitlePlaceholder} from './rhs_title_remote_render';
 import {ApolloWrapper, makeGraphqlClient} from './graphql/apollo';
@@ -354,9 +355,12 @@ export default class Plugin {
 
         // publish templates
         store.dispatch(publishTemplates(PresetTemplates));
+
+        publishEmbeddedChecklistApi();
     }
 
     public uninitialize() {
+        unpublishEmbeddedChecklistApi();
         if (this.removeRHSListener) {
             this.removeRHSListener();
             delete this.removeRHSListener;
