@@ -4,15 +4,18 @@
 package sqlstore
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
 
@@ -1241,11 +1244,61 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	}, nil
 }
 
+var checklistItemInt64Fields = []string{
+	"state_modified",
+	"assignee_modified",
+	"command_last_run",
+	"delete_at",
+	"due_date",
+	"update_at",
+}
+
+// resetInvalidChecklistItemTimestamps zeroes checklist item numeric fields that cannot be
+// decoded into int64 (fractional or out of range), leaving all other values untouched.
+func resetInvalidChecklistItemTimestamps(checklistsJSON []byte) ([]byte, error) {
+	decoder := json.NewDecoder(bytes.NewReader(checklistsJSON))
+	decoder.UseNumber()
+
+	var checklists []map[string]any
+	if err := decoder.Decode(&checklists); err != nil {
+		return nil, err
+	}
+
+	for _, checklist := range checklists {
+		items, _ := checklist["items"].([]any)
+		for _, rawItem := range items {
+			item, ok := rawItem.(map[string]any)
+			if !ok {
+				continue
+			}
+			for _, field := range checklistItemInt64Fields {
+				number, ok := item[field].(json.Number)
+				if !ok {
+					continue
+				}
+				if _, err := strconv.ParseInt(number.String(), 10, 64); err != nil {
+					item[field] = 0
+				}
+			}
+		}
+	}
+
+	return json.Marshal(checklists)
+}
+
 func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	p := rawPlaybook.Playbook
 	if len(rawPlaybook.ChecklistsJSON) > 0 {
 		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
-			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+			repaired, repairErr := resetInvalidChecklistItemTimestamps(rawPlaybook.ChecklistsJSON)
+			if repairErr != nil {
+				return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+			}
+			p.Checklists = nil
+			if err2 := json.Unmarshal(repaired, &p.Checklists); err2 != nil {
+				return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+			}
+			logrus.WithError(err).WithField("playbook_id", p.ID).Warn("reset invalid checklist item timestamps while loading playbook")
 		}
 	}
 
