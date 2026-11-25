@@ -880,9 +880,6 @@ func (s *stubPlaybookService) Create(Playbook, string) (string, error) {
 func (s *stubPlaybookService) Import(PlaybookImportData, string) (string, error) {
 	panic("stubPlaybookService: Import not implemented")
 }
-func (s *stubPlaybookService) GetPlaybooks() ([]Playbook, error) {
-	panic("stubPlaybookService: GetPlaybooks not implemented")
-}
 func (s *stubPlaybookService) GetActivePlaybooks() ([]Playbook, error) {
 	panic("stubPlaybookService: GetActivePlaybooks not implemented")
 }

@@ -2549,7 +2549,7 @@ func TestNewChannelOnlyRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, updated.NewChannelOnly)
 
-	all, err := playbookStore.GetPlaybooks()
+	all, err := playbookStore.GetActivePlaybooks()
 	require.NoError(t, err)
 
 	found := false

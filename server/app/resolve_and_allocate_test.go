@@ -52,7 +52,6 @@ func (s *allocPlaybookServiceStub) GetPlaybookConditionsForExport(string) ([]Con
 func (s *allocPlaybookServiceStub) GetTeamPlaybookSchemeRoles(string) (PlaybookSchemeRoles, error) {
 	panic("not called")
 }
-func (s *allocPlaybookServiceStub) GetPlaybooks() ([]Playbook, error)       { panic("not called") }
 func (s *allocPlaybookServiceStub) GetActivePlaybooks() ([]Playbook, error) { panic("not called") }
 func (s *allocPlaybookServiceStub) GetPlaybooksForTeam(RequesterInfo, string, PlaybookFilterOptions) (GetPlaybooksResults, error) {
 	panic("not called")
