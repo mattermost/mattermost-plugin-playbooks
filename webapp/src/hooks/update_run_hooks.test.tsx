@@ -6,7 +6,7 @@ import {act, renderHook} from '@testing-library/react';
 import {playbookRunUpdated} from 'src/actions';
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {useUpdateRun} from './hooks';
+import {useUpdateRun} from './playbooks';
 
 const mockUpdatePlaybookRun = jest.fn();
 jest.mock('src/client', () => ({

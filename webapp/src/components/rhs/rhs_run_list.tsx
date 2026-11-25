@@ -26,7 +26,7 @@ import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import appBarIcon from 'src/components/assets/app-bar-icon.png';
-import {useUpdateRun} from 'src/graphql/hooks';
+import {useUpdateRun} from 'src/hooks/playbooks';
 import {createPlaybookRun} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {SemiBoldHeading} from 'src/styles/headings';

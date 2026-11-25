@@ -7,7 +7,7 @@ import React from 'react';
 import renderer from 'react-test-renderer';
 
 import {ToastStyle} from 'src/components/backstage/toast';
-import {useSetRunPropertyValue} from 'src/graphql/hooks';
+import {useSetRunPropertyValue} from 'src/hooks/playbooks';
 import manifest from 'src/manifest';
 import {PropertyField} from 'src/types/properties';
 
@@ -16,7 +16,7 @@ import RHSProperty from './rhs_property';
 const mockAddToast = jest.fn();
 const textPropertyHarness: {onValueChange?: (value: string | null) => Promise<void>} = {};
 
-jest.mock('src/graphql/hooks', () => ({
+jest.mock('src/hooks/playbooks', () => ({
     useSetRunPropertyValue: jest.fn(() => [jest.fn().mockResolvedValue(undefined)]),
 }));
 
@@ -185,7 +185,7 @@ describe('RHSProperty property value writes', () => {
     let fetchMock: jest.Mock;
 
     const useRealWriteHook = () => {
-        const actual = jest.requireActual('src/graphql/hooks') as {useSetRunPropertyValue: typeof useSetRunPropertyValue};
+        const actual = jest.requireActual('src/hooks/playbooks') as {useSetRunPropertyValue: typeof useSetRunPropertyValue};
         (useSetRunPropertyValue as unknown as jest.Mock).mockImplementation(actual.useSetRunPropertyValue);
     };
 

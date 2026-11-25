@@ -22,7 +22,7 @@ import SearchInput from 'src/components/backstage/search_input';
 
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-import {useManageRunMembership} from 'src/graphql/hooks';
+import {useManageRunMembership} from 'src/hooks/playbooks';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 

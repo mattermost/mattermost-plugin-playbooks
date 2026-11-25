@@ -16,7 +16,7 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
-import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/hooks/playbooks';
 import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';

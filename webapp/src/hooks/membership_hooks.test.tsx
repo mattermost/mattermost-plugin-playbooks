@@ -7,7 +7,7 @@ import {playbookRunUpdated} from 'src/actions';
 import manifest from 'src/manifest';
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {useManageRunMembership} from './hooks';
+import {useManageRunMembership} from './playbooks';
 
 const mockAddRunParticipants = jest.fn();
 const mockRemoveRunParticipants = jest.fn();
