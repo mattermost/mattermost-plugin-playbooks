@@ -67,4 +67,28 @@ func TestPlaybookMembersREST(t *testing.T) {
 		err := e.PlaybooksClient.Playbooks.AddMember(context.Background(), e.PrivatePlaybookNoMembers.ID, e.RegularUser.Id)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
+
+	t.Run("adding twice is idempotent", func(t *testing.T) {
+		require.False(t, hasMember(t, playbookID, e.RegularUser2.Id))
+
+		err := e.PlaybooksClient.Playbooks.AddMember(context.Background(), playbookID, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.Playbooks.AddMember(context.Background(), playbookID, e.RegularUser2.Id)
+		require.NoError(t, err)
+		require.True(t, hasMember(t, playbookID, e.RegularUser2.Id))
+
+		err = e.PlaybooksClient.Playbooks.RemoveMember(context.Background(), playbookID, e.RegularUser2.Id)
+		require.NoError(t, err)
+		require.False(t, hasMember(t, playbookID, e.RegularUser2.Id))
+	})
+
+	t.Run("archived playbook cannot be modified", func(t *testing.T) {
+		err := e.PlaybooksClient.Playbooks.AddMember(context.Background(), e.ArchivedPlaybook.ID, e.RegularUser2.Id)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		// RegularUser is a member, so this is self-leave. Archived is rejected before that shortcut.
+		err = e.PlaybooksClient.Playbooks.RemoveMember(context.Background(), e.ArchivedPlaybook.ID, e.RegularUser.Id)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
 }

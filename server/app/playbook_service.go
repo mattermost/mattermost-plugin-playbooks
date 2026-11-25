@@ -439,19 +439,39 @@ func (s *playbookService) AutoFollow(playbookID, userID string) error {
 	return nil
 }
 
-// AddPlaybookMember adds a user as a member to a playbook.
-func (s *playbookService) AddPlaybookMember(playbookID, memberID string) error {
+// AddPlaybookMember adds a user as a member to a playbook. userID is the acting user.
+func (s *playbookService) AddPlaybookMember(playbookID, memberID, userID string) error {
+	auditRec := s.auditor.MakeAuditRecord("addPlaybookMember", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbookID)
+	model.AddEventParameterToAuditRec(auditRec, "memberID", memberID)
+
 	if err := s.store.AddPlaybookMember(playbookID, memberID); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return errors.Wrap(err, "unable to add playbook member")
 	}
+
+	auditRec.Success()
 	return nil
 }
 
-// RemovePlaybookMember removes a user from a playbook.
-func (s *playbookService) RemovePlaybookMember(playbookID, memberID string) error {
+// RemovePlaybookMember removes a user from a playbook. userID is the acting user.
+func (s *playbookService) RemovePlaybookMember(playbookID, memberID, userID string) error {
+	auditRec := s.auditor.MakeAuditRecord("removePlaybookMember", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbookID)
+	model.AddEventParameterToAuditRec(auditRec, "memberID", memberID)
+
 	if err := s.store.RemovePlaybookMember(playbookID, memberID); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return errors.Wrap(err, "unable to remove playbook member")
 	}
+
+	auditRec.Success()
 	return nil
 }
 

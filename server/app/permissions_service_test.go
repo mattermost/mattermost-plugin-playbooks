@@ -934,10 +934,10 @@ func (s *stubPlaybookService) IncrementRunNumber(string) (int64, error) {
 func (s *stubPlaybookService) GraphqlUpdate(string, map[string]interface{}) error {
 	panic("stubPlaybookService: GraphqlUpdate not implemented")
 }
-func (s *stubPlaybookService) AddPlaybookMember(string, string) error {
+func (s *stubPlaybookService) AddPlaybookMember(string, string, string) error {
 	panic("stubPlaybookService: AddPlaybookMember not implemented")
 }
-func (s *stubPlaybookService) RemovePlaybookMember(string, string) error {
+func (s *stubPlaybookService) RemovePlaybookMember(string, string, string) error {
 	panic("stubPlaybookService: RemovePlaybookMember not implemented")
 }
 func (s *stubPlaybookService) AddMetric(string, PlaybookMetricConfig) error {

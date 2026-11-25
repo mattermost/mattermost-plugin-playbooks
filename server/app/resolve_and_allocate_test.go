@@ -91,10 +91,10 @@ func (s *allocPlaybookServiceStub) UpdateChannelNameTemplateLocked(string, bool,
 func (s *allocPlaybookServiceStub) UpdateRunNumberPrefix(string, string, string) error {
 	panic("not called")
 }
-func (s *allocPlaybookServiceStub) AddPlaybookMember(string, string) error {
+func (s *allocPlaybookServiceStub) AddPlaybookMember(string, string, string) error {
 	panic("not called")
 }
-func (s *allocPlaybookServiceStub) RemovePlaybookMember(string, string) error {
+func (s *allocPlaybookServiceStub) RemovePlaybookMember(string, string, string) error {
 	panic("not called")
 }
 

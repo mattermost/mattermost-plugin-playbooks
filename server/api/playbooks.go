@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -757,9 +758,16 @@ func (h *PlaybookHandler) addPlaybookMember(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	if err := h.playbookService.AddPlaybookMember(playbookID, memberUserID); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
+	// REST member add is idempotent: skip when the user is already a member.
+	// The store rejects a duplicate (PlaybookID, MemberID), which GraphQL still surfaces.
+	isMember := slices.ContainsFunc(currentPlaybook.Members, func(m app.PlaybookMember) bool {
+		return m.UserID == memberUserID
+	})
+	if !isMember {
+		if err := h.playbookService.AddPlaybookMember(playbookID, memberUserID, userID); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -789,7 +797,7 @@ func (h *PlaybookHandler) removePlaybookMember(c *Context, w http.ResponseWriter
 		}
 	}
 
-	if err := h.playbookService.RemovePlaybookMember(playbookID, memberUserID); err != nil {
+	if err := h.playbookService.RemovePlaybookMember(playbookID, memberUserID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

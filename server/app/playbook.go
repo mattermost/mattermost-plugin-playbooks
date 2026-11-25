@@ -508,11 +508,11 @@ type PlaybookService interface {
 	// Get top playbooks for users
 	GetTopPlaybooksForUser(teamID, userID string, opts *InsightsOpts) (*PlaybooksInsightsList, error)
 
-	// AddPlaybookMember adds a user as a member to a playbook
-	AddPlaybookMember(playbookID, memberID string) error
+	// AddPlaybookMember adds a user as a member to a playbook. userID is the acting user.
+	AddPlaybookMember(playbookID, memberID, userID string) error
 
-	// RemovePlaybookMember removes a user from a playbook
-	RemovePlaybookMember(playbookID, memberID string) error
+	// RemovePlaybookMember removes a user from a playbook. userID is the acting user.
+	RemovePlaybookMember(playbookID, memberID, userID string) error
 
 	// CreatePropertyField creates a property field for a playbook and bumps the playbook's updated_at
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)

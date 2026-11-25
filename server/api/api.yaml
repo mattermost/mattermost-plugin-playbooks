@@ -1904,6 +1904,7 @@ paths:
       description: |
         Adds the given user as a playbook member. Requires permission to manage playbook members
         (same as the GraphQL `addPlaybookMember` mutation). Archived playbooks cannot be modified.
+        Idempotent: succeeds with 204 if the user is already a member.
       operationId: addPlaybookMember
       security:
         - BearerAuth: []
@@ -1931,7 +1932,7 @@ paths:
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         204:
-          description: Member successfully added.
+          description: Member added, or already a member.
         400:
           $ref: "#/components/responses/400"
         403:
