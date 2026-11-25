@@ -48,6 +48,8 @@ type Plugin struct {
 	config               *config.ServiceImpl
 	playbookRunService   app.PlaybookRunService
 	playbookService      app.PlaybookService
+	playbookStore        app.PlaybookStore
+	statsStore           *sqlstore.StatsStore
 	permissions          *app.PermissionsService
 	channelActionService app.ChannelActionService
 	categoryService      app.CategoryService
@@ -164,7 +166,8 @@ func (p *Plugin) OnActivate() error {
 
 	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, sqlStore)
-	statsStore := sqlstore.NewStatsStore(apiClient, sqlStore)
+	p.playbookStore = playbookStore
+	p.statsStore = sqlstore.NewStatsStore(apiClient, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
@@ -259,7 +262,7 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, statsStore, p.playbookService, p.permissions, p.licenseChecker)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.statsStore, p.playbookService, p.permissions, p.licenseChecker)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config, p.playbookRunService, p.userInfoStore)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.playbookRunService, p.playbookService, keywordsThreadIgnorer, p.bot)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)

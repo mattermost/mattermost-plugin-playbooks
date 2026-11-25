@@ -45,7 +45,15 @@ func TestGenerateSupportData(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, manifest.Version, sp.Version)
+	assert.Empty(t, sp.Error)
+	assert.NotEmpty(t, sp.DatabaseSchemaVersion)
+	assert.Equal(t, sp.DatabaseSchemaLatestVersion, sp.DatabaseSchemaVersion)
 	assert.Equal(t, int64(4), sp.TotalPlaybooks)
 	assert.Equal(t, int64(3), sp.ActivePlaybooks)
 	assert.Equal(t, int64(1), sp.TotalPlaybookRuns)
+	assert.Equal(t, int64(1), sp.InProgressPlaybookRuns)
+	assert.Equal(t, int64(0), sp.FinishedPlaybookRuns)
+	// The basic run has at least its owner as a participant.
+	assert.GreaterOrEqual(t, sp.MaxParticipantsPerRun, int64(1))
+	assert.GreaterOrEqual(t, sp.AvgParticipantsPerRun, float64(1))
 }

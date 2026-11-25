@@ -506,6 +506,92 @@ func TestTotalPlaybooks(t *testing.T) {
 	})
 }
 
+func TestPlaybookRunCountsByStatus(t *testing.T) {
+	db := setupTestDB(t)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	statsStore := setupStatsStore(t, db)
+
+	t.Run("no runs", func(t *testing.T) {
+		counts, err := statsStore.PlaybookRunCountsByStatus()
+		require.NoError(t, err)
+		assert.Equal(t, PlaybookRunStatusCounts{}, counts)
+	})
+
+	for _, status := range []string{app.StatusInProgress, app.StatusInProgress, app.StatusFinished} {
+		_, err := playbookRunStore.CreatePlaybookRun(NewBuilder(t).WithCurrentStatus(status).ToPlaybookRun())
+		require.NoError(t, err)
+	}
+
+	t.Run("runs", func(t *testing.T) {
+		counts, err := statsStore.PlaybookRunCountsByStatus()
+		require.NoError(t, err)
+		assert.Equal(t, PlaybookRunStatusCounts{Total: 3, InProgress: 2, Finished: 1}, counts)
+	})
+}
+
+func TestChecklistItemsPerRun(t *testing.T) {
+	db := setupTestDB(t)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	statsStore := setupStatsStore(t, db)
+
+	t.Run("no runs", func(t *testing.T) {
+		stats, err := statsStore.ChecklistItemsPerRun()
+		require.NoError(t, err)
+		assert.Equal(t, PerRunStats{}, stats)
+	})
+
+	runs := []*app.PlaybookRun{
+		// No checklists: stored as JSON null.
+		NewBuilder(t).ToPlaybookRun(),
+		// A checklist without items: its items are stored as JSON null.
+		NewBuilder(t).WithChecklists([]int{0}).ToPlaybookRun(),
+		NewBuilder(t).WithChecklists([]int{1, 2}).ToPlaybookRun(),
+		NewBuilder(t).WithChecklists([]int{4, 0, 5}).ToPlaybookRun(),
+	}
+	for _, run := range runs {
+		_, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+	}
+
+	t.Run("runs", func(t *testing.T) {
+		stats, err := statsStore.ChecklistItemsPerRun()
+		require.NoError(t, err)
+		assert.Equal(t, int64(9), stats.Max)
+		assert.InDelta(t, 3.0, stats.Avg, 0.001) // (0 + 0 + 3 + 9) / 4
+	})
+}
+
+func TestParticipantsPerRun(t *testing.T) {
+	db := setupTestDB(t)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	statsStore := setupStatsStore(t, db)
+
+	t.Run("no runs", func(t *testing.T) {
+		stats, err := statsStore.ParticipantsPerRun()
+		require.NoError(t, err)
+		assert.Equal(t, PerRunStats{}, stats)
+	})
+
+	for _, numParticipants := range []int{1, 2, 6} {
+		run, err := playbookRunStore.CreatePlaybookRun(NewBuilder(t).ToPlaybookRun())
+		require.NoError(t, err)
+
+		var userIDs []string
+		for range numParticipants {
+			userIDs = append(userIDs, model.NewId())
+		}
+		err = playbookRunStore.AddParticipants(run.ID, userIDs)
+		require.NoError(t, err)
+	}
+
+	t.Run("runs", func(t *testing.T) {
+		stats, err := statsStore.ParticipantsPerRun()
+		require.NoError(t, err)
+		assert.Equal(t, int64(6), stats.Max)
+		assert.InDelta(t, 3.0, stats.Avg, 0.001) // (1 + 2 + 6) / 3
+	})
+}
+
 func TestMetricsStats(t *testing.T) {
 	teamID := model.NewId()
 
