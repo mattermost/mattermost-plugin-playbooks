@@ -301,8 +301,21 @@ type StatusUpdateOptions struct {
 
 // PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
 type PlaybookRunUpdateOptions struct {
-	Name    *string `json:"name,omitempty"`
-	Summary *string `json:"summary,omitempty"`
+	Name                                    *string   `json:"name,omitempty"`
+	Summary                                 *string   `json:"summary,omitempty"`
+	ChannelID                               *string   `json:"channel_id,omitempty"`
+	CreateChannelMemberOnNewParticipant     *bool     `json:"create_channel_member_on_new_participant,omitempty"`
+	RemoveChannelMemberOnRemovedParticipant *bool     `json:"remove_channel_member_on_removed_participant,omitempty"`
+	StatusUpdateBroadcastChannelsEnabled    *bool     `json:"status_update_broadcast_channels_enabled,omitempty"`
+	StatusUpdateBroadcastWebhooksEnabled    *bool     `json:"status_update_broadcast_webhooks_enabled,omitempty"`
+	BroadcastChannelIDs                     *[]string `json:"broadcast_channel_ids,omitempty"`
+	WebhookOnStatusUpdateURLs               *[]string `json:"webhook_on_status_update_urls,omitempty"`
+}
+
+// PlaybookRunParticipantsOptions are the users to add to or remove from a playbook run.
+type PlaybookRunParticipantsOptions struct {
+	UserIDs           []string `json:"user_ids"`
+	ForceAddToChannel bool     `json:"force_add_to_channel,omitempty"`
 }
 
 type RunMetricData struct {

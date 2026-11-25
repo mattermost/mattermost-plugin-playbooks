@@ -1964,7 +1964,8 @@ func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userI
 }
 
 // GraphqlUpdate updates fields based on a setmap.
-func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
+// userID is the acting user and is recorded on the audit record.
+func (s *PlaybookRunServiceImpl) GraphqlUpdate(id, userID string, setmap map[string]interface{}) error {
 	if len(setmap) == 0 {
 		return nil
 	}
@@ -1972,6 +1973,8 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	auditRec := plugin.MakeAuditRecord("graphqlUpdatePlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
+	auditRec.Actor.UserId = userID
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", id)
 
 	fieldNames := make([]string, 0, len(setmap))
@@ -4968,7 +4971,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	// Check if any user is the owner
 	for _, userID := range userIDs {
 		if playbookRun.OwnerUserID == userID {
-			return errors.New("owner user can't leave the run")
+			return errors.Wrap(ErrMalformedPlaybookRun, "owner user can't leave the run")
 		}
 	}
 

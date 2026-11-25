@@ -478,21 +478,22 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             });
         });
 
-        // # Visit playbook B's editor and intercept the debounced PATCH before typing
+        // # Visit playbook B's editor
         cy.then(() => cy.playbooksVisitEditor(playbookB.id, 'outline'));
-        cy.playbooksInterceptPatchPlaybook();
 
         // # Type the duplicate prefix — triggers the debounced save after 500 ms
         cy.findByTestId('channel-access-run-number-prefix').type(sharedPrefix);
-
-        // # Wait for the PATCH to complete (server returns 409)
-        cy.wait('@PatchPlaybook').its('response.statusCode').should('equal', 409);
 
         // * Error toast is shown explaining the conflict
         cy.findByText('Another active playbook in this team already uses that prefix.').should('be.visible');
 
         // * Input reverts to empty (playbook B had no prior prefix)
         cy.findByTestId('channel-access-run-number-prefix').should('have.value', '');
+
+        // * The conflicting prefix was not stored
+        cy.then(() => cy.apiGetPlaybook(playbookB.id)).then((pb) => {
+            expect(pb.run_number_prefix).to.equal('');
+        });
     });
 
     it('shows sequential ID next to playbook name in channel RHS', () => {

@@ -1,0 +1,39 @@
+name: e2e-freeze
+
+# The e2e suites are the behavioural contract for the GraphQL -> REST migration.
+# Changes to them need explicit sign-off via the e2e-change-approved label.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-freeze:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: "0"
+
+      - name: ci/check-e2e-changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'e2e-change-approved') }}
+        run: |
+          changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA" -- e2e-tests/ ':!e2e-tests/**/package-lock.json')
+          if [ -z "$changed" ]; then
+            echo "No e2e test changes."
+            exit 0
+          fi
+          echo "e2e test changes:"
+          echo "$changed"
+          if [ "$APPROVED" = "true" ]; then
+            echo "Approved via the e2e-change-approved label."
+            exit 0
+          fi
+          echo "::error::e2e tests are frozen. Add the e2e-change-approved label once a maintainer has reviewed these changes."
+          exit 1
