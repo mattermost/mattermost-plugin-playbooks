@@ -30,6 +30,7 @@ import {
     FetchPlaybooksReturn,
     Playbook,
     PlaybookWithChecklist,
+    TaskAction,
 } from 'src/types/playbook';
 import {AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
@@ -450,7 +451,7 @@ export async function setChecklistItemTaskActions(
     playbookRunId: string,
     checklistNum: number,
     itemNum: number,
-    taskActions: Array<{trigger: {type: string; payload: string}; actions: Array<{type: string; payload: string}>}>,
+    taskActions: TaskAction[],
 ) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/task_actions`, {
         method: 'PUT',

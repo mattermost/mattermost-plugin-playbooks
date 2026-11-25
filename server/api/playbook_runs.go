@@ -1880,6 +1880,10 @@ func (h *PlaybookRunHandler) itemSetTaskActions(c *Context, w http.ResponseWrite
 	}
 
 	if err := h.playbookRunService.SetTaskActionsToChecklistItem(id, userID, checklistNum, itemNum, params.TaskActions); err != nil {
+		if errors.Is(err, app.ErrMalformedPlaybookRun) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid task actions", err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

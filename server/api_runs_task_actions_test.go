@@ -19,7 +19,7 @@ func TestRunTaskActionsREST(t *testing.T) {
 	e.CreateBasic()
 	e.CreateGuest()
 
-	createRunWithItem := func(t *testing.T) *client.PlaybookRun {
+	createRunWithItem := func(t *testing.T, requirements ...client.TaskRequirement) *client.PlaybookRun {
 		t.Helper()
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Task actions run",
@@ -31,7 +31,10 @@ func TestRunTaskActionsREST(t *testing.T) {
 
 		err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
 			Title: "Checklist",
-			Items: []client.ChecklistItem{{Title: "Item"}},
+			Items: []client.ChecklistItem{{
+				Title:        "Item",
+				Requirements: requirements,
+			}},
 		})
 		require.NoError(t, err)
 
@@ -91,6 +94,29 @@ func TestRunTaskActionsREST(t *testing.T) {
 				Trigger: client.TriggerAction{Type: "not_a_real_trigger", Payload: `{}`},
 				Actions: []client.TriggerAction{{Type: string(app.MarkItemAsDoneActionType), Payload: `{"enabled":false}`}},
 			},
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("finished run is rejected", func(t *testing.T) {
+		run := createRunWithItem(t)
+		err := e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetTaskActions(context.Background(), run.ID, 0, 0, []client.TaskAction{
+			taskAction(`{"keywords":["one"], "user_ids":[]}`, `{"enabled":false}`),
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("requirements with enabled mark as done are rejected", func(t *testing.T) {
+		run := createRunWithItem(t, client.TaskRequirement{ID: "req-1", Label: "Ticket URL"})
+		edited, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, edited.Checklists[0].Items[0].Requirements, 1)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetTaskActions(context.Background(), run.ID, 0, 0, []client.TaskAction{
+			taskAction(`{"keywords":["one"], "user_ids":[]}`, `{"enabled":true}`),
 		})
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
