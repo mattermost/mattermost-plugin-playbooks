@@ -8,7 +8,7 @@ import {useIntl} from 'react-intl';
 import GenericModal, {InlineLabel, ModalSubheading} from 'src/components/widgets/generic_modal';
 import {BaseInput} from 'src/components/assets/inputs';
 import {useRun} from 'src/hooks';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRunType} from 'src/types/playbook_run';
 
 const ID = 'playbook_run_update';
 

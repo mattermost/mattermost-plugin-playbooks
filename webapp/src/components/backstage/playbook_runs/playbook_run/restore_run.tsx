@@ -3,10 +3,10 @@
 
 import {useIntl} from 'react-intl';
 
+import {PlaybookRun, PlaybookRunType} from 'src/types/playbook_run';
+
 import {useAppDispatch} from 'src/hooks/redux';
 
-import {PlaybookRun} from 'src/types/playbook_run';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {restoreRun} from 'src/client';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';

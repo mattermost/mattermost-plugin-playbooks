@@ -21,7 +21,8 @@ import {Mark, mark} from 'src/performance_telemetry';
 
 import {LHSPlaybookDotMenu} from 'src/components/backstage/lhs_playbook_dot_menu';
 import {LHSRunDotMenu} from 'src/components/backstage/lhs_run_dot_menu';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRunType as GraphQLPlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRunType} from 'src/types/playbook_run';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -63,7 +64,9 @@ const useLHSData = (teamID: string) => {
         variables: {
             userID: 'me',
             teamID,
-            types: [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist],
+
+            // GraphQL still types this variable with its generated enum until the LHS moves to REST.
+            types: [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist] as GraphQLPlaybookRunType[],
         },
         fetchPolicy: 'cache-and-network',
     });
