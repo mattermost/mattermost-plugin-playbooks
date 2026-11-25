@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback} from 'react';
 
 import {
     QueryResult,
@@ -27,7 +27,6 @@ import {
     addPlaybookMember,
     addRunParticipants,
     autoFollowPlaybook,
-    fetchPlaybookPropertyField,
     removePlaybookMember,
     removeRunParticipants,
     setChecklistItemTaskActions,
@@ -40,11 +39,8 @@ import {
 import {useAppDispatch, useAppStore} from 'src/hooks/redux';
 import {myPlaybookRunsByTeam} from 'src/selectors';
 import {TaskAction} from 'src/types/playbook';
-import {PropertyField} from 'src/types/properties';
 
 export type FullPlaybook = PlaybookQuery['playbook']
-
-export type PlaybookPropertyField = PropertyField | undefined
 
 export type Loaded<T> = Exclude<T, undefined | null>
 
@@ -231,77 +227,10 @@ export const useUpdateRunItemTaskActions = (runID?: string) => {
     return {updateRunTaskActions};
 };
 
-/**
- * Hook to fetch a single property field for a playbook via REST.
- * @returns Tuple of [data, status] where data is the property field or undefined
- */
-export const usePlaybookProperty = (
-    playbookID: string,
-    propertyID: string
-): [PlaybookPropertyField, {loading: boolean; error?: Error}] => {
-    const [field, setField] = useState<PropertyField | undefined>();
-    const [loading, setLoading] = useState(Boolean(playbookID && propertyID));
-    const [error, setError] = useState<Error | undefined>();
-
-    useEffect(() => {
-        let cancelled = false;
-        if (!playbookID || !propertyID) {
-            setField(undefined);
-            setLoading(false);
-            setError(undefined);
-            return undefined;
-        }
-
-        setLoading(true);
-        setError(undefined);
-        fetchPlaybookPropertyField(playbookID, propertyID)
-            .then((result) => {
-                if (cancelled) {
-                    return;
-                }
-                if (result) {
-                    setField(result);
-                } else {
-                    setField(undefined);
-                    setError(new Error('Property field not found'));
-                }
-                setLoading(false);
-            })
-            .catch((err) => {
-                if (cancelled) {
-                    return;
-                }
-                setField(undefined);
-                setError(err instanceof Error ? err : new Error(String(err)));
-                setLoading(false);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [playbookID, propertyID]);
-
-    return [field, {loading, error}];
-};
-
 export const useSetRunPropertyValue = () => {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<Error | undefined>();
+    const setRunPropertyValue = useCallback((runID: string, propertyFieldID: string, value: unknown) => (
+        setRunPropertyValueRequest(runID, propertyFieldID, value)
+    ), []);
 
-    const setRunPropertyValue = useCallback(async (runID: string, propertyFieldID: string, value: unknown) => {
-        setLoading(true);
-        setError(undefined);
-        try {
-            const data = await setRunPropertyValueRequest(runID, propertyFieldID, value);
-            setLoading(false);
-            return {data, errors: undefined as undefined};
-        } catch (err) {
-            const nextError = err instanceof Error ? err : new Error(String(err));
-            setError(nextError);
-            setLoading(false);
-            return {data: undefined, errors: [nextError]};
-        }
-    }, []);
-
-    return [setRunPropertyValue, {loading, error}] as const;
+    return [setRunPropertyValue] as const;
 };

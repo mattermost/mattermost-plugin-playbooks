@@ -8,36 +8,11 @@ import {GraphQLError} from 'graphql';
 
 import {PlaybookDocument, PropertyFieldType} from 'src/graphql/generated/graphql';
 
-import {usePlaybook, usePlaybookProperty} from './hooks';
-
-const mockFetchPlaybookPropertyField = jest.fn();
-jest.mock('src/client', () => ({
-    ...jest.requireActual('src/client'),
-    fetchPlaybookPropertyField: (...args: unknown[]) => mockFetchPlaybookPropertyField(...args),
-}));
+import {usePlaybook} from './hooks';
 
 describe('GraphQL Hooks Integration Tests', () => {
     const mockPlaybookID = 'playbook-123';
     const mockPropertyID = 'property-456';
-
-    const mockPropertyField = {
-        id: mockPropertyID,
-        name: 'Test Property',
-        type: PropertyFieldType.Select,
-        group_id: 'group-789',
-        attrs: {
-            visibility: 'always',
-            sort_order: 1,
-            options: [
-                {id: 'option-1', name: 'High', color: 'red'},
-                {id: 'option-2', name: 'Low', color: 'green'},
-            ],
-            parent_id: null,
-        },
-        create_at: 1234567890,
-        update_at: 1234567890,
-        delete_at: 0,
-    };
 
     const mockPlaybookWithPropertyFields = {
         id: mockPlaybookID,
@@ -381,60 +356,6 @@ describe('GraphQL Hooks Integration Tests', () => {
             });
 
             expect(result.current[1].loading).toBe(false);
-            expect(result.current[0]).toBeUndefined();
-            expect(result.current[1].error).toBeDefined();
-        });
-    });
-
-    describe('usePlaybookProperty REST', () => {
-        beforeEach(() => {
-            mockFetchPlaybookPropertyField.mockReset();
-        });
-
-        it('should handle successful fetch', async () => {
-            mockFetchPlaybookPropertyField.mockResolvedValue(mockPropertyField as any);
-
-            const {result} = renderHook(
-                () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
-            );
-
-            expect(result.current[1].loading).toBe(true);
-            expect(result.current[0]).toBeUndefined();
-
-            await waitFor(() => {
-                expect(result.current[1].loading).toBe(false);
-            });
-
-            expect(result.current[0]).toEqual(mockPropertyField);
-            expect(result.current[1].error).toBeUndefined();
-        });
-
-        it('should handle missing property', async () => {
-            mockFetchPlaybookPropertyField.mockResolvedValue(undefined);
-
-            const {result} = renderHook(
-                () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
-            );
-
-            await waitFor(() => {
-                expect(result.current[1].loading).toBe(false);
-            });
-
-            expect(result.current[0]).toBeUndefined();
-            expect(result.current[1].error).toBeDefined();
-        });
-
-        it('should handle network errors', async () => {
-            mockFetchPlaybookPropertyField.mockRejectedValue(new Error('Network error'));
-
-            const {result} = renderHook(
-                () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
-            );
-
-            await waitFor(() => {
-                expect(result.current[1].loading).toBe(false);
-            });
-
             expect(result.current[0]).toBeUndefined();
             expect(result.current[1].error).toBeDefined();
         });
