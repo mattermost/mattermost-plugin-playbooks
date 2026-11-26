@@ -30,6 +30,7 @@ import {
     FetchPlaybooksReturn,
     Playbook,
     PlaybookWithChecklist,
+    TaskAction,
 } from 'src/types/playbook';
 import {AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
@@ -444,6 +445,18 @@ export async function setAssigneeOnlyComplete(
     } catch (error) {
         return {error};
     }
+}
+
+export async function setChecklistItemTaskActions(
+    playbookRunId: string,
+    checklistNum: number,
+    itemNum: number,
+    taskActions: TaskAction[],
+) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/task_actions`, {
+        method: 'PUT',
+        body: JSON.stringify({task_actions: taskActions}),
+    });
 }
 
 export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number) {

@@ -1442,6 +1442,91 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /plugins/playbooks/api/v0/runs/{id}/checklists/{checklist}/item/{item}/task_actions:
+    put:
+      summary: Set task actions on a checklist item
+      description: |
+        Replaces the task actions on a checklist item. Requires permission to manage the run,
+        and the run must be active (same as the GraphQL `updateRunTaskActions` mutation).
+        At most 10 task actions are allowed; each trigger and action must be valid.
+      operationId: itemSetTaskActions
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook run.
+          example: 7l37isroz4e63giev62hs318bn
+          schema:
+            type: string
+        - name: checklist
+          in: path
+          required: true
+          description: Zero-based index of the checklist.
+          example: 0
+          schema:
+            type: integer
+        - name: item
+          in: path
+          required: true
+          description: Zero-based index of the checklist item.
+          example: 0
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - task_actions
+              properties:
+                task_actions:
+                  type: array
+                  maxItems: 10
+                  items:
+                    type: object
+                    required:
+                      - trigger
+                      - actions
+                    properties:
+                      trigger:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                          payload:
+                            type: string
+                      actions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                            payload:
+                              type: string
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/0/item/0/task_actions' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{"task_actions":[{"trigger":{"type":"keywords_by_users","payload":"{\"keywords\":[\"done\"],\"user_ids\":[]}"},"actions":[{"type":"mark_item_as_done","payload":"{\"enabled\":true}"}]}]}'
+      responses:
+        204:
+          description: Task actions successfully updated.
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
   /plugins/playbooks/api/v0/runs/{id}/checklists/{checklist}/item/{item}/run:
     put:
       summary: Run an item's slash command
