@@ -26,6 +26,10 @@ type stubConfigService struct {
 	incrementalUpdates      bool
 }
 
+func (s *stubConfigService) IsReportsEnabled() bool {
+	return false
+}
+
 func (s *stubConfigService) IsTaskRequirementsEnabled() bool {
 	return s.taskRequirementsEnabled
 }

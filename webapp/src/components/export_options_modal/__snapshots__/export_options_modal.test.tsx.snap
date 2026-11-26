@@ -1,0 +1,256 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ExportOptionsModal matches snapshot 1`] = `
+<div
+  data-testid="mock-generic-modal"
+>
+  <div
+    className="Body-jPQbxz gCtmSH"
+    ref={null}
+  >
+    <div
+      className="FormatSelector-fRuKVN frSyxO"
+      ref={null}
+    >
+      <button
+        aria-pressed={true}
+        className="FormatButton-jpoeiq kywyMA"
+        data-testid="format-button-pdf"
+        onClick={[Function]}
+        ref={null}
+        selected={true}
+      >
+        <i
+          className="icon icon-file-pdf-outline"
+        />
+        PDF
+      </button>
+      <button
+        aria-pressed={false}
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-html"
+        onClick={[Function]}
+        ref={null}
+        selected={false}
+      >
+        <i
+          className="icon icon-code-tags"
+        />
+        HTML
+      </button>
+      <button
+        aria-pressed={false}
+        className="FormatButton-jpoeiq fCAij"
+        data-testid="format-button-md"
+        onClick={[Function]}
+        ref={null}
+        selected={false}
+      >
+        <i
+          className="icon icon-file-text-outline"
+        />
+        Markdown
+      </button>
+    </div>
+    <p
+      className="FormatHint-lnvEeT kBHaCo"
+      data-testid="format-hint"
+      ref={null}
+    >
+      Choose "Save as PDF" in the print dialog that opens.
+    </p>
+    <p
+      className="Description-dTdaMR caPvRr"
+      ref={null}
+    >
+      Select what you'd like the export to include:
+    </p>
+    <div
+      className="Toggles-hAkmHW UekAt"
+      ref={null}
+    >
+      <label
+        className="ToggleLabel-biakKb bklqlK"
+        data-testid="section-toggle-executiveSummary"
+        ref={null}
+      >
+        <input
+          checked={true}
+          disabled={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Executive summary
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb bklqlK"
+        data-testid="section-toggle-statusUpdates"
+        ref={null}
+      >
+        <input
+          checked={true}
+          disabled={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Status updates
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb dckRqa"
+        data-testid="section-toggle-timeline"
+        ref={null}
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Timeline
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb dckRqa"
+        data-testid="section-toggle-retrospective"
+        ref={null}
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Retrospective
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb dckRqa"
+        data-testid="section-toggle-checklists"
+        ref={null}
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Task outline
+        </span>
+      </label>
+      <label
+        className="ToggleLabel-biakKb dckRqa"
+        data-testid="section-toggle-transcript"
+        ref={null}
+      >
+        <input
+          checked={true}
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span>
+          Complete chat history
+        </span>
+      </label>
+    </div>
+    <div
+      className="TranscriptModeBox-llIIUD bRCZw"
+      data-testid="transcript-mode-box"
+      ref={null}
+    >
+      <div
+        className="TranscriptModeLabel-bNimWg cyVVtv"
+        ref={null}
+      >
+        Transcript layout
+      </div>
+      <label
+        className="TranscriptModeRadio-cMKQFf jXcoRb"
+        data-testid="transcript-mode-threaded"
+        ref={null}
+      >
+        <input
+          checked={true}
+          name="transcript-mode"
+          onChange={[Function]}
+          type="radio"
+          value="threaded"
+        />
+        <div>
+          <strong>
+            Grouped by thread
+          </strong>
+          <small>
+            Roots are top-level; replies appear directly under their root (Mattermost UI default).
+          </small>
+        </div>
+      </label>
+      <label
+        className="TranscriptModeRadio-cMKQFf jXcoRb"
+        data-testid="transcript-mode-chronological"
+        ref={null}
+      >
+        <input
+          checked={false}
+          name="transcript-mode"
+          onChange={[Function]}
+          type="radio"
+          value="chronological"
+        />
+        <div>
+          <strong>
+            Fully chronological
+          </strong>
+          <small>
+            Posts emit in strict timestamp order; replies carry a ↳ indicator.
+          </small>
+        </div>
+      </label>
+    </div>
+    <div
+      aria-labelledby="export-time-zone-label"
+      className="TimeZoneField-biMtdG hgUnen"
+      data-testid="time-zone-field"
+      ref={null}
+      role="radiogroup"
+    >
+      <span
+        className="TimeZoneLabel-bisvyy dUeeyo"
+        id="export-time-zone-label"
+        ref={null}
+      >
+        Time zone
+      </span>
+      <label
+        className="TimeZoneRadio-jUJLQN hFDCmF"
+        data-testid="time-zone-user"
+        ref={null}
+      >
+        <input
+          checked={true}
+          name="export-time-zone"
+          onChange={[Function]}
+          type="radio"
+        />
+        Your time zone (Europe/Berlin)
+      </label>
+      <label
+        className="TimeZoneRadio-jUJLQN hFDCmF"
+        data-testid="time-zone-utc"
+        ref={null}
+      >
+        <input
+          checked={false}
+          name="export-time-zone"
+          onChange={[Function]}
+          type="radio"
+        />
+        UTC
+      </label>
+    </div>
+  </div>
+</div>
+`;

@@ -26,7 +26,9 @@ describe('playbooks > task requirements', {testIsolation: true}, () => {
             PluginSettings: {
                 Plugins: {
                     playbooks: {
-                        BetaFeatures: {
+
+                        // The key the System Console saves: the lowercased plugin.json key.
+                        betafeatures: {
                             task_requirements: true,
                         },
                     },

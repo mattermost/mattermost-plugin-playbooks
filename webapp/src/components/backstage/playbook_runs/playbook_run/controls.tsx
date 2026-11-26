@@ -6,6 +6,7 @@ import {
     BookOutlineIcon,
     BullhornOutlineIcon,
     CloseIcon,
+    FileTextOutlineIcon,
     FlagOutlineIcon,
     LightningBoltOutlineIcon,
     LinkVariantIcon,
@@ -241,6 +242,15 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
             exportAvailable={exportAvailable}
             onExportClick={onExportClick}
         />
+    );
+};
+
+export const ExportRunReportMenuItem = (props: {onClick: () => void}) => {
+    return (
+        <StyledDropdownMenuItem onClick={props.onClick}>
+            <FileTextOutlineIcon size={18}/>
+            <FormattedMessage defaultMessage='Export report'/>
+        </StyledDropdownMenuItem>
     );
 };
 

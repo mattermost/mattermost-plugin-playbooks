@@ -11,6 +11,7 @@ import (
 type GlobalSettings struct {
 	EnableExperimentalFeatures bool `json:"enable_experimental_features"`
 	EnableTaskRequirements     bool `json:"enable_task_requirements"`
+	EnableReports              bool `json:"enable_reports"`
 }
 
 // SettingsService handles communication with the settings related methods.

@@ -13,7 +13,7 @@ import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import {useTextOverflow} from 'src/hooks';
+import {useExportLogAvailable, useTextOverflow} from 'src/hooks';
 import {useCanModifyRun} from 'src/hooks/run_permissions';
 import Dropdown from 'src/components/dropdown';
 import {DropdownMenu, TitleButton} from 'src/components/dot_menu';
@@ -32,11 +32,15 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import RunActionsModal from 'src/components/run_actions_modal';
 import {hideRunActionsModal} from 'src/actions';
-import {isRunActionsModalVisible} from 'src/selectors';
+import {isRunActionsModalVisible, selectReportsEnabled} from 'src/selectors';
+
+import ExportOptionsModal, {useReportExport} from 'src/components/export_options_modal';
+import type {ReportFormat, ReportSections, RunReportOptions} from 'src/client';
 
 import {
     CopyRunLinkMenuItem,
     ExportChannelLogsMenuItem,
+    ExportRunReportMenuItem,
     FavoriteRunMenuItem,
     FinishRunMenuItem,
     LeaveRunMenuItem,
@@ -72,9 +76,13 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const currentUserId = useAppSelector(getCurrentUserId);
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const showRunActionsFromRedux = useAppSelector(isRunActionsModalVisible);
     const [showRunActionsFromMenu, setShowRunActionsFromMenu] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const exportReport = useReportExport();
+    const channelExportAvailable = useExportLogAvailable();
+    const reportsEnabled = useAppSelector(selectReportsEnabled);
     const titleTextRef = useRef<HTMLSpanElement>(null);
     const isTitleOverflowing = useTextOverflow(titleTextRef);
 
@@ -161,6 +169,11 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                         channelId={playbookRun.channel_id}
                         setShowModal={setShowExportModal}
                     />
+                    {reportsEnabled && (
+                        <ExportRunReportMenuItem
+                            onClick={() => setShowReportModal(true)}
+                        />
+                    )}
                     <SaveAsPlaybookMenuItem
                         playbookRun={playbookRun}
                     />
@@ -209,6 +222,17 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 }}
             />
             {leaveRunConfirmModal}
+            {showReportModal && (
+                <ExportOptionsModal
+                    onConfirm={async (sections: ReportSections, format: ReportFormat, runOptions: RunReportOptions) => {
+                        await exportReport(playbookRun.id, sections, format, runOptions);
+                        setShowReportModal(false);
+                    }}
+                    onCancel={() => setShowReportModal(false)}
+                    channelExportAvailable={channelExportAvailable}
+                    retrospectiveEnabled={playbookRun.retrospective_enabled}
+                />
+            )}
         </>
     );
 };

@@ -833,6 +833,158 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
     return [href, filename];
 };
 
+export type ReportSections = {
+    executiveSummary?: boolean;
+    timeline?: boolean;
+    statusUpdates?: boolean;
+    checklists?: boolean;
+    retrospective?: boolean;
+    transcript?: boolean;
+};
+
+export class ReportExportError extends Error {
+    status: number;
+    requestId: string | null;
+
+    constructor(status: number, message: string, requestId: string | null) {
+        super(message);
+        this.name = 'ReportExportError';
+        this.status = status;
+        this.requestId = requestId;
+    }
+}
+
+// ReportFormat is what the user picks. PDF is the HTML report, printed by the browser.
+export type ReportFormat = 'md' | 'html' | 'pdf';
+
+export type ReportExport = {
+    content: string;
+    filename: string;
+    truncated: boolean;
+};
+
+const SECTION_KEY_TO_PARAM: Record<keyof ReportSections, string> = {
+    executiveSummary: 'summary',
+    timeline: 'timeline',
+    statusUpdates: 'updates',
+    checklists: 'tasks',
+    retrospective: 'retro',
+    transcript: 'transcript',
+};
+
+const sectionsToQueryString = (sections: ReportSections): string => {
+    const keys = Object.keys(sections) as (keyof ReportSections)[];
+    return keys
+        .filter((k) => sections[k])
+        .map((k) => SECTION_KEY_TO_PARAM[k])
+        .join(',');
+};
+
+const parseFilenameFromDisposition = (disposition: string | null, fallback: string): string => {
+    if (!disposition) {
+        return fallback;
+    }
+    const match = (/filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/i).exec(disposition);
+    return match?.[1] ? decodeURIComponent(match[1]) : fallback;
+};
+
+export type TranscriptMode = 'threaded' | 'chronological';
+
+// RunReportOptions are the run report's transcript layout and time zone.
+export type RunReportOptions = {
+    transcriptMode?: TranscriptMode;
+
+    // timeZone is the IANA time zone the report's times are shown in; empty means the user's own.
+    timeZone?: string;
+};
+
+export const exportRunReport = async (runID: string, format: ReportFormat, sections: ReportSections, {transcriptMode, timeZone}: RunReportOptions = {}): Promise<ReportExport> => {
+    const serverFormat = format === 'md' ? 'md' : 'html';
+    const params = new URLSearchParams({format: serverFormat});
+    const list = sectionsToQueryString(sections);
+    if (list) {
+        params.set('sections', list);
+    }
+    if (transcriptMode && transcriptMode !== 'threaded') {
+        params.set('transcript_mode', transcriptMode);
+    }
+    if (timeZone) {
+        params.set('time_zone', timeZone);
+    }
+
+    // The intent is recorded in the server's audit log for HTML exports.
+    const headers: Record<string, string> = serverFormat === 'html' ? {'X-Playbooks-Export-Intent': format === 'pdf' ? 'print' : 'download'} : {};
+    const resp = await fetch(`${apiUrl}/runs/${runID}/report?${params}`, Client4.getOptions({method: 'GET', headers}));
+    if (!resp.ok) {
+        const message = (await parseErrorResponse(resp)) || resp.statusText;
+        throw new ReportExportError(resp.status, message, resp.headers.get('X-Request-ID'));
+    }
+    return {
+        content: await resp.text(),
+        filename: parseFilenameFromDisposition(resp.headers.get('Content-Disposition'), `report.${serverFormat}`),
+        truncated: resp.headers.get('X-Playbooks-Report-Truncated') === 'true',
+    };
+};
+
+// saveReport downloads the report, or for PDF opens the browser's print dialog on it.
+export function saveReport(report: ReportExport, format: ReportFormat): void {
+    if (format === 'pdf') {
+        printReport(report);
+    } else {
+        downloadReport(report);
+    }
+}
+
+// Revoking the object URL synchronously after click() can cancel the download in some browsers.
+const REVOKE_OBJECT_URL_DELAY_MS = 40 * 1000;
+
+function downloadReport({content, filename}: ReportExport) {
+    const href = URL.createObjectURL(new Blob([content]));
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(href), REVOKE_OBJECT_URL_DELAY_MS);
+}
+
+// The frame and the page title of the last print, cleaned up on the next one in case afterprint
+// never fired.
+let printFrame: HTMLIFrameElement | undefined;
+let pageTitle: string | undefined;
+
+function endPrint() {
+    printFrame?.remove();
+    printFrame = undefined;
+    if (pageTitle !== undefined) {
+        document.title = pageTitle;
+        pageTitle = undefined;
+    }
+}
+
+// printReport prints the HTML report from a hidden iframe, so popup blockers can't interfere.
+// The report is static HTML with no scripts, so the iframe gets only what print() needs: same
+// origin so this page can call print() on it, and modals so the print dialog may open.
+// Chrome suggests the PDF file name from the page title, so the title is the report's file
+// name while printing.
+function printReport({content, filename}: ReportExport) {
+    endPrint();
+    const frame = document.createElement('iframe');
+    printFrame = frame;
+    frame.setAttribute('sandbox', 'allow-modals allow-same-origin');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = 'position: fixed; right: 0; bottom: 0; width: 0; height: 0; border: 0;';
+    frame.addEventListener('load', () => {
+        frame.contentWindow?.addEventListener('afterprint', endPrint);
+        pageTitle = document.title;
+        document.title = filename.replace(/\.[^.]*$/, '');
+        frame.contentWindow?.print();
+    }, {once: true});
+    frame.srcdoc = content;
+    document.body.appendChild(frame);
+}
+
 export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
     const queryParams = qs.stringify({
         time_range: timeRange,

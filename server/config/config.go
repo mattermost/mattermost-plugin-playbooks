@@ -49,4 +49,7 @@ type Service interface {
 
 	// IsTaskRequirementsEnabled returns true when the task requirements beta feature is enabled.
 	IsTaskRequirementsEnabled() bool
+
+	// IsReportsEnabled returns true when the reports beta feature is enabled.
+	IsReportsEnabled() bool
 }

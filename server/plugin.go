@@ -276,6 +276,15 @@ func (p *Plugin) OnActivate() error {
 		},
 	)
 
+	api.NewExportHandler(
+		p.handler.APIRouter,
+		pluginAPIClient,
+		p.config,
+		p.permissions,
+		p.playbookRunService,
+		app.NewReportService(p.playbookService, p.propertyService, pluginAPIClient),
+	)
+
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
 	if flag != nil {

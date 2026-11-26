@@ -62,7 +62,8 @@
         "display_name": "Beta Features",
         "help_text": "Opt-in beta features. Expand the section to enable individual features.",
         "default": {
-          "task_requirements": false
+          "task_requirements": false,
+          "reports": false
         }
       }
     ]

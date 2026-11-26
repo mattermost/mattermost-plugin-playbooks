@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'none'; object-src 'none'; connect-src 'none'; worker-src 'none'; media-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>Database outage #42</title>
+  <style>
+:root {
+  --font-sans:  "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono:  "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
+                Courier, monospace;
+}
+body { font-family: var(--font-sans); }
+h1, h2 { font-family: Metropolis, var(--font-sans); }
+code, pre { font-family: var(--font-mono); }
+</style>
+  
+<style>
+ 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-size: 14px; line-height: 1.5; color: #1e1f22; background: #fff; padding: 24px; }
+
+ 
+@page {
+  size: A4;
+  margin: 30mm 16mm 20mm;
+  @top-left { content: "Database outage #42"; vertical-align: bottom; margin-bottom: 8mm; padding-bottom: 3mm; border-bottom: 1px solid #e0e0e0; font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; font-size: 9pt; color: #72767d; }
+  @top-center { content: ""; vertical-align: bottom; margin-bottom: 8mm; border-bottom: 1px solid #e0e0e0; }
+  @top-right { content: "Run report"; vertical-align: bottom; margin-bottom: 8mm; padding-bottom: 3mm; border-bottom: 1px solid #e0e0e0; font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; font-size: 9pt; color: #72767d; }
+  @bottom-center { content: counter(page); vertical-align: top; padding-top: 6mm; font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; font-size: 9pt; color: #72767d; }
+}
+@page :first {
+  @top-left { content: ""; border: none; }
+  @top-center { content: ""; border: none; }
+  @top-right { content: ""; border: none; }
+  @bottom-center { content: ""; }
+}
+
+ 
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+h2 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; border-bottom: 1px solid #e0e0e0; padding-bottom: 6px; }
+ 
+.section > h2 { font-size: 28px; line-height: 1.3; color: #3f4350; margin: 40px 0 20px; padding: 0; border: none; }
+h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
+p { margin: 8px 0; }
+a { color: #166aab; text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul, ol { margin: 8px 0 8px 24px; }
+li { margin: 2px 0; }
+code { font-family: var(--font-mono); font-size: 13px; background: #f0f0f0; border-radius: 3px; padding: 1px 5px; }
+pre { font-family: var(--font-mono); font-size: 12px; background: #f0f0f0; border-radius: 4px; padding: 10px 12px; overflow-x: auto; margin: 8px 0; }
+pre code { background: transparent; padding: 0; }
+blockquote { border-left: 3px solid #d8d8d8; padding: 4px 12px; margin: 8px 0; color: #4f5660; }
+table { border-collapse: collapse; margin: 8px 0; }
+th, td { border: 1px solid #e0e0e0; padding: 6px 10px; text-align: left; }
+th { background: #f8f9fb; font-weight: 600; }
+
+ 
+.cover { text-align: center; padding: 96px 0; margin-bottom: 8px; border-bottom: 1px solid #e0e0e0; }
+.cover__title { font-size: 32px; line-height: 1.25; margin-bottom: 0; }
+.cover__kind { font-size: 18px; font-weight: 600; color: #3f4350; margin: 12px 0; }
+.cover__date { color: #72767d; }
+
+ 
+.summary { color: #3f4350; }
+.summary > :first-child { margin-top: 0; }
+.details { margin: 24px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; break-inside: avoid; }
+.details__title { padding: 10px 20px; background: #1e325c; color: #fff; font-weight: 600; text-align: center; }
+.details table { width: 100%; margin: 0; }
+.details th, .details td { padding: 8px 20px; border: none; vertical-align: top; }
+.details th { width: 40%; background: #f8f9fb; border-right: 1px solid #e0e0e0; color: #1e1f22; }
+.details tr:first-child > * { padding-top: 14px; }
+.details tr:last-child > * { padding-bottom: 14px; }
+.details a { color: #1c58d9; }
+
+ 
+.status-pill { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.status-pill--inprogress { background: #e8f4fd; color: #166aab; }
+.status-pill--finished   { background: #e8f5e8; color: #1f6b35; }
+.status-pill--neutral    { background: #f0f0f0; color: #4f5660; }
+
+ 
+ 
+.stat-grid { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; grid-template-rows: repeat(3, auto); margin: 24px 0; }
+.stat-card { display: grid; grid-row: span 3; grid-template-rows: subgrid; padding: 0 20px; border-left: 1px solid #e0e0e0; }
+.stat-card:first-child { padding-left: 0; border-left: none; }
+.stat-card__label { align-self: end; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .5px; color: #72767d; }
+.stat-card__value { font-size: 28px; font-weight: 600; margin-top: 4px; color: #3f4350; }
+.stat-card__hint  { font-size: 11px; color: #72767d; margin-top: 2px; }
+
+ 
+.status-update { margin: 16px 0 36px; break-inside: avoid; }
+.status-update__body { color: #3f4350; }
+.status-update__body > :first-child { margin-top: 0; }
+.status-update__body h1, .status-update__body h2, .status-update__body h3,
+.status-update__body h4, .status-update__body h5, .status-update__body h6 { font-size: 15px; font-weight: 600; margin: 12px 0 4px; padding: 0; border: none; color: #1e1f22; }
+.status-update__byline { margin-top: 12px; font-size: 13px; color: #1e1f22; }
+.status-update__byline span { margin-left: 8px; color: #72767d; }
+
+ 
+.boxed-md { background: #f8f9fb; border-left: 3px solid #d8d8d8; border-radius: 0 4px 4px 0; padding: 12px 16px; margin: 8px 0; }
+.boxed-md > :first-child { margin-top: 0; }
+.boxed-md > :last-child { margin-bottom: 0; }
+
+ 
+.checklist { border: 1px solid #e0e0e0; border-radius: 6px; margin: 16px 0; }
+.checklist__header { margin: 0; padding: 12px 20px; background: #f8f9fb; border-bottom: 1px solid #e0e0e0; border-radius: 6px 6px 0 0; font-size: 16px; font-weight: 600; color: #3f4350; break-after: avoid; }
+.checklist__header span { margin-left: 8px; font-size: 13px; font-weight: 400; color: #72767d; }
+.checklist__body { padding: 8px 20px; }
+.checklist__body > .muted { margin: 8px 0; }
+.task { display: flex; align-items: flex-start; gap: 12px; margin: 12px 0; break-inside: avoid; }
+.task__check { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; border: 1px solid rgba(63, 67, 80, 0.32); border-radius: 3px; background: #fff; }
+.task__check--done { border-color: #1c58d9; background: #1c58d9; }
+.task__check svg { width: 12px; height: 12px; }
+.task--skipped .task__title { text-decoration: line-through; color: #72767d; }
+.task__body { flex: 1; min-width: 0; }
+.task__title { font-size: 14px; color: #1e1f22; }
+.task__meta { font-size: 13px; color: #72767d; margin-top: 6px; }
+.task__meta-cmd { font-family: var(--font-mono); font-size: 12px; background: rgba(63, 67, 80, 0.06); color: #1e1f22; border-radius: 3px; padding: 1px 5px; }
+.task__desc { font-size: 13px; color: #3f4350; margin-top: 4px; }
+.task__desc ul, .task__desc ol { margin: 4px 0 4px 18px; }
+
+ 
+.timeline { padding: 6px 20px; border: 1px solid #e0e0e0; border-radius: 8px; }
+.timeline-event { display: flex; align-items: center; gap: 14px; padding: 10px 0; break-inside: avoid; }
+.timeline-event__icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: rgba(28, 88, 217, 0.08); }
+.timeline-event__icon svg { width: 16px; height: 16px; fill: #1c58d9; }
+.timeline-event__body { flex: 1; min-width: 0; }
+.timeline-event__headline { color: #1e1f22; }
+.timeline-event__detail { margin-top: 2px; font-size: 13px; color: #3f4350; }
+.timeline-event__date { margin-top: 2px; font-size: 13px; color: #72767d; }
+
+ 
+.transcript-thread { border-left: 3px solid #e0e0e0; padding-left: 12px; margin: 12px 0; }
+.transcript-reply  { border-left: 3px solid #f0f0f0; padding-left: 10px; margin: 8px 0 8px 16px; }
+.transcript-reply--orphan { border-left-color: #f4cb47; }
+.transcript-orphans-heading { font-size: 13px; font-weight: 600; color: #72767d; margin: 20px 0 4px; }
+.transcript-orphans-note { font-size: 12px; margin: 0 0 8px; }
+.msg-header { font-size: 12px; font-weight: 600; color: #1e1f22; margin-bottom: 4px; }
+.msg-header span  { font-weight: 400; color: #72767d; margin-left: 6px; }
+.msg-body { font-size: 13px; }
+.msg-body > :first-child { margin-top: 0; }
+.msg-body > :last-child { margin-bottom: 0; }
+
+ 
+.divider { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+
+ 
+.muted { color: #72767d; font-style: italic; font-size: 13px; margin: 8px 0; }
+
+ 
+@media print {
+   
+  body { padding: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+   
+  .cover { min-height: 240mm; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0; border-bottom: none; break-after: page; }
+  .section { break-before: page; }
+  .section > h2:first-child { margin-top: 0; }
+  .boxed-md, .transcript-thread { break-inside: avoid; }
+}
+</style>
+
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+    <symbol id="icon-lifecycle" viewBox="0 0 24 24"><path d="M21,11C21,16.55 17.16,21.74 12,23C6.84,21.74 3,16.55 3,11V5L12,1L21,5V11M12,21C15.75,20 19,15.54 19,11.22V6.3L12,3.18L5,6.3V11.22C5,15.54 8.25,20 12,21M11,7H13V13H11V7M11,15H13V17H11V15Z"/></symbol>
+    <symbol id="icon-status" viewBox="0 0 24 24"><path d="M12.4,6l0.4,2H18v6h-3.4l-0.4-2H7V6H12.4 M14,4H5v17h2v-7h5.6l0.4,2h7V6h-5.6"/></symbol>
+    <symbol id="icon-update" viewBox="0 0 24 24"><path d="M21,10.12H14.22L16.96,7.3C14.23,4.6 9.81,4.5 7.08,7.2C4.35,9.91 4.35,14.28 7.08,17C9.81,19.7 14.23,19.7 16.96,17C18.32,15.65 19,14.08 19,12.1H21C21,14.08 20.12,16.65 18.36,18.39C14.85,21.87 9.15,21.87 5.64,18.39C2.14,14.92 2.11,9.28 5.62,5.81C9.13,2.34 14.76,2.34 18.27,5.81L21,3V10.12M12.5,8V12.25L16,14.33L15.28,15.54L11,13V8H12.5Z"/></symbol>
+    <symbol id="icon-tasks" viewBox="0 0 24 24"><path d="M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z"/></symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z"/></symbol>
+    <symbol id="icon-people" viewBox="0 0 24 24"><path d="M19.2,15.9L16,14c0.2-0.3,0.5-0.6,0.7-1c0.8-1.4,1.3-3.2,1.3-5c0-3.6-2.4-6-6-6S6,4.4,6,8c0,1.8,0.5,3.6,1.3,5.1c0.2,0.4,0.4,0.7,0.7,1L4.8,16C3.7,16.4,3,17.6,3,18.8C3,20.6,4.4,22,6.2,22h11.6c1.8,0,3.2-1.4,3.2-3.2 C21,17.6,20.3,16.4,19.2,15.9z M8,8c0-2.8,1.8-4,4-4s4,1.2,4,4c0,1.8-0.6,3.8-1.8,5c-0.6,0.6-1.3,1-2.2,1s-1.6-0.4-2.2-1 C8.6,11.8,8,9.8,8,8z M17.8,20H6.2C5.5,20,5,19.5,5,18.8c0-0.5,0.3-0.9,0.7-1.1l3.9-2.3c0.8,0.4,1.6,0.6,2.4,0.6s1.6-0.2,2.3-0.6 l3.9,2.3c0.4,0.2,0.7,0.6,0.7,1.1C19,19.5,18.5,20,17.8,20z"/></symbol>
+    <symbol id="icon-cancel" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12C4,13.85 4.63,15.55 5.68,16.91L16.91,5.68C15.55,4.63 13.85,4 12,4M12,20A8,8 0 0,0 20,12C20,10.15 19.37,8.45 18.32,7.09L7.09,18.32C8.45,19.37 10.15,20 12,20Z"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><path d="M12,20c4.4,0,8-3.6,8-8s-3.6-8-8-8s-8,3.6-8,8S7.6,20,12,20 M12,2c5.5,0,10,4.5,10,10s-4.5,10-10,10S2,17.5,2,12S6.5,2,12,2 M15.535,16.949L11,12.414V7h2v4.586l3.949,3.949L15.535,16.949z"/></symbol>
+  </svg>
+  <section class="cover">
+    <h1 class="cover__title">Database outage #42</h1>
+    <p class="cover__kind">Run report</p>
+    <span class="status-pill status-pill--finished">Finished</span>
+    <p class="cover__date">November 15, 2023, 1:13 AM UTC</p>
+  </section>
+
+  <section class="section">
+  <h2>Executive summary</h2>
+  <div class="summary"><p>Primary DB failed over. <strong>Resolved</strong> by @alice.</p>
+<ul>
+<li>Replica promoted</li>
+<li>Traffic drained</li>
+</ul>
+</div>
+  
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-card__label">Time to detect</div>
+      <div class="stat-card__value">3m 0s</div>
+      
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Cost</div>
+      <div class="stat-card__value">12345</div>
+      
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Customers affected</div>
+      <div class="stat-card__value">7</div>
+      
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Time to escalate</div>
+      <div class="stat-card__value">0s</div>
+      
+    </div>
+  </div>
+
+  <div class="details">
+    <div class="details__title">Run details</div>
+    <table>
+      <tr><th>Started</th><td>November 14, 2023, 10:13 PM UTC</td></tr>
+      <tr><th>Ended</th><td>November 15, 2023, 12:28 AM UTC</td></tr>
+      <tr><th>Owner</th><td>Alice Admin</td></tr>
+      <tr><th>Participants</th><td>Alice Admin, Bob Builder, Carol Chen</td></tr>
+      <tr><th>Severity</th><td>Sev 2</td></tr>
+      <tr><th>Users affected</th><td>Alfred Morrison (Marketing), Jane Smith (Sales)</td></tr>
+      <tr><th>Responders</th><td>Bob Builder, Carol Chen</td></tr>
+      <tr><th>Detected</th><td>November 14, 2023</td></tr>
+      <tr><th>Customer ticket</th><td>Not set</td></tr>
+      <tr><th>Channel</th><td><a href="https://chat.example.com/ops/channels/database-outage-42">Database outage (42)</a></td></tr>
+      <tr><th>Playbook</th><td><a href="https://chat.example.com/playbooks/playbooks/pb1">Sev1 *Incident* Response</a></td></tr>
+    </table>
+  </div>
+  </section>
+
+  <section class="section">
+  <h2>Status updates</h2>
+  <div class="status-update">
+    <div class="status-update__body"><p>Investigating. cc @here</p>
+</div>
+    <div class="status-update__byline">Alice Admin<span>November 14, 2023, 10:18 PM UTC</span></div>
+  </div>
+  
+  <div class="status-update">
+    <div class="status-update__body"><p>Mitigated; <strong>monitoring</strong>.</p>
+</div>
+    <div class="status-update__byline">Bob Builder<span>November 14, 2023, 10:58 PM UTC</span></div>
+  </div>
+  
+  <div class="status-update">
+    <p class="muted">No message.</p>
+    <div class="status-update__byline">Carol Chen<span>November 15, 2023, 12:13 AM UTC</span></div>
+  </div>
+  
+  </section>
+  <section class="section">
+  <h2>Timeline</h2>
+  <div class="timeline">
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-lifecycle"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Run started by Alice Admin</div>
+        <div class="timeline-event__date">November 14, 2023, 10:13 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-people"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">alice added @carol to the run</div>
+        <div class="timeline-event__date">November 14, 2023, 10:14 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-edit"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Alice Admin set Severity to Sev 2</div>
+        <div class="timeline-event__date">November 14, 2023, 10:15 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-tasks"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Alice Admin checked off checklist item &#34;Page on-call&#34;</div>
+        <div class="timeline-event__date">November 14, 2023, 10:23 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-tasks"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Bob Builder skipped a checklist item</div>
+        <div class="timeline-event__date">November 14, 2023, 10:24 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-edit"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Assignee Changed</div>
+        <div class="timeline-event__detail">Alice Admin changed assignee of checklist item <strong>Notify stakeholders</strong> from <strong>No Assignee</strong> to @bob</div>
+        <div class="timeline-event__date">November 14, 2023, 10:33 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-status"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Bob Builder posted a status update</div>
+        <div class="timeline-event__date">November 14, 2023, 10:58 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-edit"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Owner changed from @alice to @bob</div>
+        <div class="timeline-event__date">November 14, 2023, 11:13 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Timeline event</div>
+        <div class="timeline-event__date">November 14, 2023, 11:43 PM UTC</div>
+      </div>
+    </div>
+    <div class="timeline-event">
+      <span class="timeline-event__icon"><svg aria-hidden="true"><use href="#icon-lifecycle"/></svg></span>
+      <div class="timeline-event__body">
+        <div class="timeline-event__headline">Run finished by Alice Admin</div>
+        <div class="timeline-event__date">November 15, 2023, 12:28 AM UTC</div>
+      </div>
+    </div>
+  </div>
+  </section>
+  <section class="section">
+  <h2>Retrospective</h2>
+  <div class="boxed-md"><h2 id="what-went-well">What went well</h2>
+<ul>
+<li>Quick paging</li>
+</ul>
+</div>
+  
+  <h3>Metrics</h3>
+  <p><strong>Time to detect:</strong> 3m 0s · <span class="muted">Measured from
+alert to ack</span></p>
+  <p><strong>Cost:</strong> 12345</p>
+  <p><strong>Customers affected:</strong> 7</p>
+  <p><strong>Time to resolve:</strong> not set</p>
+  <p><strong>Time to escalate:</strong> 0s</p>
+  </section>
+  <section class="section">
+  <h2>Task outline</h2>
+  <div class="checklist">
+    <h3 class="checklist__header">Initial response <span>2/4 · 50%</span></h3>
+    <div class="checklist__body">
+    <div class="task">
+      <span class="task__check task__check--done" role="checkbox" aria-checked="true" aria-disabled="true" aria-labelledby="task-0-0"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="task__body">
+        <div class="task__title" id="task-0-0">Page on-call</div>
+        
+        <div class="task__meta">Assigned to Alice Admin</div>
+        <div class="task__meta">Checked off by Alice Admin on November 14, 2023, 10:23 PM UTC</div>
+      </div>
+    </div>
+    
+    <div class="task task--skipped">
+      <span class="task__check" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="task-0-1"></span>
+      <div class="task__body">
+        <div class="task__title" id="task-0-1">Open war room</div>
+        
+        
+        <div class="task__meta">Skipped on November 14, 2023, 10:24 PM UTC</div>
+      </div>
+    </div>
+    
+    <div class="task">
+      <span class="task__check" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="task-0-2"></span>
+      <div class="task__body">
+        <div class="task__title" id="task-0-2">Notify <strong>stakeholders</strong></div>
+        
+        <div class="task__meta">Assigned to Bob Builder · Due: November 14, 2023, 11:13 PM UTC</div>
+        
+      </div>
+    </div>
+    
+    <div class="task">
+      <span class="task__check" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="task-0-3"></span>
+      <div class="task__body">
+        <div class="task__title" id="task-0-3">Postmortem doc</div>
+        <div class="task__desc"><p>Write it up.<br>
+Share with @carol.</p>
+</div>
+        <div class="task__meta">Unassigned · Due: November 16, 2023, 12:13 AM UTC · <code class="task__meta-cmd">/postmortem create</code></div>
+        
+      </div>
+    </div>
+    
+    </div>
+  </div>
+  
+  <div class="checklist">
+    <h3 class="checklist__header">Checklist 2 <span>0/0 · 0%</span></h3>
+    <div class="checklist__body"><p class="muted">No tasks.</p>
+    </div>
+  </div>
+  
+  <div class="checklist">
+    <h3 class="checklist__header">Wrap-up <span>1/1 · 100%</span></h3>
+    <div class="checklist__body">
+    <div class="task">
+      <span class="task__check task__check--done" role="checkbox" aria-checked="true" aria-disabled="true" aria-labelledby="task-2-0"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="task__body">
+        <div class="task__title" id="task-2-0">Close incident</div>
+        
+        <div class="task__meta">Assigned to Carol Chen</div>
+        <div class="task__meta">Checked off by Bob Builder on November 15, 2023, 12:13 AM UTC</div>
+      </div>
+    </div>
+    
+    </div>
+  </div>
+  
+  </section>
+  <section class="section">
+  <h2>Chat history</h2>
+    <div class="transcript-thread">
+      <div class="msg-header">Alice Admin<span>November 14, 2023, 10:15 PM UTC</span></div>
+      <div class="msg-body"><p>Looking into it. @channel</p>
+</div>
+      <div class="transcript-reply">
+        <div class="msg-header">↳ Bob Builder<span>November 14, 2023, 10:19 PM UTC</span></div>
+        <div class="msg-body"><p>Same here.</p>
+</div>
+      </div>
+    </div>
+    <div class="transcript-thread">
+      <div class="msg-header">Carol Chen<span>November 14, 2023, 10:17 PM UTC</span></div>
+      <div class="msg-body"><p>Dashboards are red:</p>
+<pre><code>error rate 40%
+</code></pre>
+</div>
+    </div>
+    <h3 class="transcript-orphans-heading">Orphan replies</h3>
+    <p class="muted transcript-orphans-note">Parent message is outside this transcript.</p>
+    <div class="transcript-reply transcript-reply--orphan">
+      <div class="msg-header">↳ Carol Chen<span>November 14, 2023, 10:21 PM UTC</span></div>
+      <div class="msg-body"><p>Following up on the earlier thread.</p>
+</div>
+    </div>
+  </section>
+  <hr class="divider">
+  <p class="muted">Generated November 15, 2023, 1:13 AM UTC.</p>
+</body>
+</html>

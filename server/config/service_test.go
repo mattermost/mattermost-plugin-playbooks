@@ -92,6 +92,27 @@ func TestReconcileLegacyConfigKeys(t *testing.T) {
 		assert.NotContains(t, saved, "EnableIncrementalUpdates")
 	})
 
+	t.Run("keeps the console's beta features over the plugin's", func(t *testing.T) {
+		t.Parallel()
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		api.On("GetPluginConfig").Return(map[string]any{
+			"betafeatures": map[string]any{"reports": true, "task_requirements": false},
+			"BetaFeatures": map[string]any{"reports": false, "task_requirements": false},
+		})
+
+		var saved map[string]any
+		api.On("SavePluginConfig", mock.Anything).Run(func(args mock.Arguments) {
+			saved = args.Get(0).(map[string]any)
+		}).Return((*model.AppError)(nil))
+
+		require.NoError(t, newServiceWithAPI(api).reconcileLegacyConfigKeys())
+
+		assert.Equal(t, map[string]any{"reports": true, "task_requirements": false}, saved["betafeatures"])
+		assert.NotContains(t, saved, "BetaFeatures")
+	})
+
 	t.Run("does not persist when there is nothing to reconcile", func(t *testing.T) {
 		t.Parallel()
 		api := &plugintest.API{}
