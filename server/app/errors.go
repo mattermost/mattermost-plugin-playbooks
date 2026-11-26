@@ -68,6 +68,25 @@ var ErrInternalPrecondition = errors.New("internal precondition violated")
 // ErrPropertyFieldNotOnRun occurs when a property field does not belong to the specified run.
 var ErrPropertyFieldNotOnRun = errors.New("property field does not belong to run")
 
+// ErrPhasesNotEnabled occurs when a phase is set on a run that does not use its task lists as phases.
+var ErrPhasesNotEnabled = errors.New("phases are not enabled for this run")
+
+// ErrPhaseNotFound occurs when a phase is set to a task list the run does not have.
+var ErrPhaseNotFound = errors.New("phase not found")
+
+// ErrPhasesReorder occurs when reordering the task lists of a run that uses them as phases.
+var ErrPhasesReorder = errors.New("the task lists of a run that uses phases cannot be reordered")
+
+// ErrPhaseTransition occurs when a phase change does not make sense, such as moving past the last
+// phase or finishing a phase that has not started.
+var ErrPhaseTransition = errors.New("invalid phase change")
+
+// ErrPhaseEventNotDeletable occurs when deleting a phase event, which the run's phases are read from.
+var ErrPhaseEventNotDeletable = errors.New("phase events cannot be deleted")
+
+// ErrPhasePinned occurs when removing the task list a person set the run's current phase to.
+var ErrPhasePinned = errors.New("the run's current phase is set to this task list")
+
 // ErrInvalidOwner occurs when the proposed new owner is not a member of the run's team or channel.
 var ErrInvalidOwner = errors.New("invalid owner")
 

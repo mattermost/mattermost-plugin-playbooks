@@ -29,7 +29,7 @@ import StatusUpdates from './section_status_updates';
 import SectionAdminSettings from './section_admin_settings';
 import Retrospective from './section_retrospective';
 import SectionTiming from './section_timing';
-import Actions from './section_actions';
+import Actions, {PhasesChange} from './section_actions';
 import ScrollNavBase from './scroll_nav';
 import Section from './section';
 
@@ -55,12 +55,16 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
     const [ownerGroupOnlyActionsOverride, setOwnerGroupOnlyActionsOverride] = useState<boolean | undefined>(undefined);
     const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
     const effectiveOwnerGroupOnlyActions = ownerGroupOnlyActionsOverride ?? restPlaybook?.owner_group_only_actions;
-    const effectiveRestPlaybook = restPlaybook && effectiveOwnerGroupOnlyActions !== undefined ?
-        {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} :
-        restPlaybook;
+    const effectiveRestPlaybook = restPlaybook && effectiveOwnerGroupOnlyActions !== undefined ? {...restPlaybook, owner_group_only_actions: effectiveOwnerGroupOnlyActions} : restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
     const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
+    const [phasesOverride, setPhasesOverride] = useState<PhasesChange>({});
+    const effectivePhases = {
+        enabled: phasesOverride.phases_enabled ?? restPlaybook?.phases_enabled ?? false,
+        useTaskLists: phasesOverride.use_checklists_as_phases ?? restPlaybook?.use_checklists_as_phases ?? false,
+        custom: phasesOverride.custom_phases ?? restPlaybook?.custom_phases ?? [],
+    };
     const [bulkEditMode, setBulkEditMode] = useState(false);
     const latestToggleReq = useRef(0);
     const [newChannelOnlyOverride, setNewChannelOnlyOverride] = useState<boolean | undefined>(undefined);
@@ -69,6 +73,21 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
     const [timingOverride, setTimingOverride] = useState<{playbookType: PlaybookType, timingMetrics: TimingMetric[]} | undefined>(undefined);
     const playbookType = timingOverride?.playbookType ?? restPlaybook?.playbook_type ?? PlaybookType.Operational;
     const timingMetrics = timingOverride?.timingMetrics ?? restPlaybook?.timing_metrics ?? [];
+
+    // Settings are saved by fetching the latest playbook and PUTting it whole, so two saves in
+    // flight at once could each overwrite the other's change. Run them one after another.
+    const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+    const saveWithLatest = (playbookId: string, change: (latest: PlaybookWithChecklist) => PlaybookWithChecklist) => {
+        const save = () => clientFetchPlaybook(playbookId).then((latest) => {
+            if (!latest) {
+                throw new Error('Unable to fetch latest playbook before save');
+            }
+            return savePlaybook(change(latest));
+        });
+        const next = saveQueue.current.then(save, save);
+        saveQueue.current = next.catch(() => undefined);
+        return next;
+    };
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -90,13 +109,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         }
         setNewChannelOnlyOverride(new_channel_only);
         savingNewChannelOnly.current = true;
-        clientFetchPlaybook(restPlaybook.id)
-            .then((latest) => {
-                if (!latest) {
-                    throw new Error('Unable to fetch latest playbook before save');
-                }
-                return savePlaybook({...latest, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : latest.channel_mode});
-            })
+        saveWithLatest(restPlaybook.id, (latest) => ({...latest, new_channel_only, channel_mode: new_channel_only ? 'create_new_channel' : latest.channel_mode}))
             .then(() => {
                 refetch();
             })
@@ -109,6 +122,28 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
             })
             .finally(() => {
                 savingNewChannelOnly.current = false;
+            });
+    };
+
+    const changePhases = (change: PhasesChange) => {
+        if (archived || !canEdit || !restPlaybook) {
+            return;
+        }
+
+        // Turning phases on for the first time starts from the task lists, the common case.
+        const turnsOn = change.phases_enabled === true && !effectivePhases.enabled;
+        const applied: PhasesChange = turnsOn && !effectivePhases.useTaskLists && effectivePhases.custom.length === 0 && change.use_checklists_as_phases === undefined ? {...change, use_checklists_as_phases: true} : change;
+
+        setPhasesOverride((current) => ({...current, ...applied}));
+        saveWithLatest(restPlaybook.id, (latest) => ({...latest, ...applied}))
+            .then(() => refetch())
+            .catch(() => {
+                setPhasesOverride({});
+                refetch();
+                toaster.add({
+                    content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
             });
     };
 
@@ -130,13 +165,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                 updated.auto_archive_channel === false &&
                 restPlaybook?.channel_mode === 'link_existing_channel';
             setAutoArchiveOverride(updated.auto_archive_channel);
-            clientFetchPlaybook(playbook.id)
-                .then((latest) => {
-                    if (!latest) {
-                        throw new Error('Unable to fetch latest playbook before save');
-                    }
-                    return savePlaybook({...latest, auto_archive_channel: updated.auto_archive_channel});
-                })
+            saveWithLatest(playbook.id, (latest) => ({...latest, auto_archive_channel: updated.auto_archive_channel}))
                 .then(() => refetch())
                 .catch(() => {
                     if (!isForcedLinkedReset) {
@@ -167,13 +196,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         const reqID = latestToggleReq.current;
         const prev = effectiveAdminOnlyEdit;
         setAdminOnlyEditOverride(value);
-        clientFetchPlaybook(playbook.id)
-            .then((latest) => {
-                if (!latest) {
-                    throw new Error('Unable to fetch latest playbook before save');
-                }
-                return savePlaybook({...latest, admin_only_edit: value});
-            })
+        saveWithLatest(playbook.id, (latest) => ({...latest, admin_only_edit: value}))
             .then(() => refetch())
             .catch(() => {
                 if (reqID === latestToggleReq.current) {
@@ -194,11 +217,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
         setIsSavingOwnerGroupOnlyActions(true);
         setOwnerGroupOnlyActionsOverride(updated.owner_group_only_actions);
         try {
-            const latest = await clientFetchPlaybook(restPlaybook.id);
-            if (!latest) {
-                throw new Error('Unable to fetch latest playbook before save');
-            }
-            await savePlaybook({...latest, owner_group_only_actions: updated.owner_group_only_actions});
+            await saveWithLatest(restPlaybook.id, (latest) => ({...latest, owner_group_only_actions: updated.owner_group_only_actions}));
         } catch {
             setOwnerGroupOnlyActionsOverride(prev);
             toaster.add({
@@ -261,9 +280,7 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                         onClick={() => setBulkEditMode(!bulkEditMode)}
                     >
                         <i className={bulkEditMode ? 'icon icon-close' : 'icon icon-pencil-outline'}/>
-                        {bulkEditMode ?
-                            formatMessage({defaultMessage: 'Exit bulk edit'}) :
-                            formatMessage({defaultMessage: 'Bulk edit'})
+                        {bulkEditMode ? formatMessage({defaultMessage: 'Exit bulk edit'}) : formatMessage({defaultMessage: 'Bulk edit'})
                         }
                     </BulkEditButton>
                 )}
@@ -327,6 +344,8 @@ const Outline = ({playbook, refetch, canEdit = true, adminOnlyEdit, showAdminSet
                     restPlaybook={restPlaybook}
                     autoArchiveChannel={effectiveAutoArchive}
                     onAutoArchiveChange={handleAutoArchiveChange}
+                    phases={effectivePhases}
+                    onPhasesChange={restPlaybook ? changePhases : undefined}
                 />
             </Section>
             {showAdminSettings && (

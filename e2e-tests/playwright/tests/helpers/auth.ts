@@ -10,6 +10,12 @@ import {requestedWith} from './client';
 // are authenticated. Used to test as a non-admin user without driving the
 // Mattermost login UI.
 export async function loginAs(page: Page, loginId: string, password: string) {
+    // Servers that enable the desktop landing page send a first visit there instead of to the
+    // requested page. Mark it as already seen.
+    await page.context().addInitScript(() => {
+        window.localStorage.setItem('__landingPageSeen__', 'true');
+    });
+
     const response = await page.request.post('/api/v4/users/login', {
         ...requestedWith,
         data: {login_id: loginId, password},

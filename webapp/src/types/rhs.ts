@@ -21,8 +21,20 @@ export enum TimelineEventType {
     StatusUpdatesDisabled = 'status_updates_disabled',
     RetrospectiveEnabled = 'retrospective_enabled',
     RetrospectiveDisabled = 'retrospective_disabled',
-    PropertyChanged = 'property_changed'
+    PropertyChanged = 'property_changed',
+    PhaseStarted = 'phase_started',
+    PhaseDone = 'phase_done',
+    PhaseReopened = 'phase_reopened',
+    CurrentPhaseChanged = 'current_phase_changed',
 }
+
+// The events that record a run's phases. The phase bar is read from them, so they cannot be deleted.
+export const isPhaseEventType = (eventType: string) => [
+    TimelineEventType.PhaseStarted,
+    TimelineEventType.PhaseDone,
+    TimelineEventType.PhaseReopened,
+    TimelineEventType.CurrentPhaseChanged,
+].includes(eventType as TimelineEventType);
 
 export interface TimelineEvent {
     id: string;
@@ -40,6 +52,9 @@ export interface TimelineEvent {
 
     /** @remarks computed client-side */
     status_delete_at?: number;
+
+    /** @remarks computed client-side: how long a phase took, on its phase_done event */
+    phase_duration?: number;
 }
 
 export interface TimelineEventsFilter {
@@ -51,6 +66,7 @@ export interface TimelineEventsFilter {
     assignee_changed: boolean;
     ran_slash_command: boolean;
     user_joined_left: boolean;
+    phase_started: boolean;
 }
 
 export const TimelineEventsFilterDefault = {
@@ -62,6 +78,7 @@ export const TimelineEventsFilterDefault = {
     assignee_changed: false,
     ran_slash_command: false,
     user_joined_left: false,
+    phase_started: true,
 };
 
 export interface ParticipantsChangedDetails {
@@ -95,4 +112,17 @@ export interface PropertyChangedDetails {
     new_value: string | string[];
     old_value_display: string | null;
     new_value_display: string | null;
+}
+
+export interface PhaseEventDetails {
+    checklist_id: string;
+    title: string;
+    source: 'automatic' | 'manual';
+}
+
+export interface CurrentPhaseChangedDetails {
+    from_checklist_id: string;
+    from_title: string;
+    to_checklist_id: string;
+    to_title: string;
 }

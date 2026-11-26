@@ -509,13 +509,21 @@ export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | strin
     return displayNames || [];
 }
 
-export function useNow(refreshIntervalMillis = 1000) {
+// useNow returns the current time, refreshed every refreshIntervalMillis. Pass null to stop refreshing.
+export function useNow(refreshIntervalMillis: number | null = 1000) {
     const [now, setNow] = useState(DateTime.now());
 
     useEffect(() => {
+        if (refreshIntervalMillis === null) {
+            return undefined;
+        }
+
         const tick = () => {
             setNow(DateTime.now());
         };
+
+        // Catch up after having been paused.
+        tick();
         const timerId = setInterval(tick, refreshIntervalMillis);
 
         return () => {

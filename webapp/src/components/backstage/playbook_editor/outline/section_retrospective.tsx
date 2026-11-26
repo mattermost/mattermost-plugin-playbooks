@@ -12,7 +12,7 @@ import {SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
 import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
 import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 import MarkdownEdit from 'src/components/markdown_edit';
-import {savePlaybook} from 'src/client';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import RetrospectiveIntervalSelector from 'src/components/backstage/playbook_editor/outline/inputs/retrospective_interval_selector';
 
 export interface EditingMetric {
@@ -95,7 +95,16 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
                     playbook={convertToPlaybookWithChecklist(playbook, propertyFields || [])} // TODO reduce prop scope to min-essentials
                     setPlaybook={async (update) => {
                         const playbookWithChecklist = convertToPlaybookWithChecklist(playbook, propertyFields || []);
-                        await savePlaybook({...playbook, ...typeof update === 'function' ? update(playbookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
+
+                        // Run the updater before anything is awaited: Metrics reads values the updater sets
+                        // (the new metric count) right after calling setPlaybook.
+                        const updated = typeof update === 'function' ? update(playbookWithChecklist) : update;
+
+                        // The GraphQL playbook lacks REST-only settings (e.g. auto_archive_channel), so
+                        // start from the REST playbook or saving would reset them. If it cannot be
+                        // fetched, save as before rather than failing the edit.
+                        const latest = await clientFetchPlaybook(playbook.id).catch(() => undefined);
+                        await savePlaybook({...latest, ...playbook, ...updated}); // TODO replace with graphql / useUpdatePlaybook
                         refetch();
                     }}
                     curEditingMetric={curEditingMetric}

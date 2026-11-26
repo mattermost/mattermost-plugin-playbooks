@@ -33,6 +33,16 @@ export interface PlaybookRun {
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
     status_update_enabled: boolean;
+    use_checklists_as_phases?: boolean;
+
+    /** Set when the run has phases of its own, moved by people, instead of its task lists. */
+    custom_phases?: Array<{id: string, title: string}>;
+
+    /** Computed by the server when use_checklists_as_phases is set. */
+    phases?: RunPhase[];
+
+    /** Set once a person took over the current phase; phases then never move on their own. */
+    phase_override?: PhaseOverride;
     broadcast_channel_ids: string[];
     status_update_broadcast_webhooks_enabled: boolean;
     webhook_on_status_update_urls: string[];
@@ -184,4 +194,31 @@ export function isRun(run: undefined | null | PlaybookRun | PlaybookRunConnectio
         return id != null && id.length > 0;
     }
     return false;
+}
+
+export interface PhaseOverride {
+    checklist_id: string;
+    set_by: string;
+    set_at: number;
+}
+
+export type PhaseStatus = 'not_started' | 'started' | 'done' | 'blocked' | 'skipped';
+
+export interface RunPhase {
+    checklist_id: string;
+    title: string;
+    status: PhaseStatus;
+
+    /** Where the run is: the furthest phase with work started, or the one up next. At most one. */
+    current: boolean;
+
+    /** Visible tasks not yet closed or skipped, and all visible tasks. */
+    tasks_open: number;
+    tasks_total: number;
+
+    /** Epoch millis of the phase's first activity; 0 when it has not started. */
+    started_at: number;
+
+    /** Epoch millis when the phase was done; 0 while it is still active. */
+    ended_at: number;
 }

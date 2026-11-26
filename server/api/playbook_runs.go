@@ -87,6 +87,9 @@ func NewPlaybookRunHandler(
 	// These routes perform their own per-handler permission check (RunFinish / RunChangeOwner)
 	// which is stricter than the checkEditPermissions middleware (RunManageProperties).
 	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/phase", withContext(handler.setPhase)).Methods(http.MethodPut)
+	playbookRunRouter.HandleFunc("/phases/move", withContext(handler.moveToNextPhase)).Methods(http.MethodPost)
+	playbookRunRouter.HandleFunc("/phases/{phaseID:[A-Za-z0-9]+}/state", withContext(handler.setPhaseState)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 
@@ -257,6 +260,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
+	h.playbookRunService.PopulatePhases(playbookRun)
 	h.playbookRunService.PublishRunEventToViewers(app.PlaybookRunCreatedWSEvent, map[string]interface{}{"playbook_run": playbookRun}, playbookRun)
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
@@ -412,6 +416,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	// Delay sending the websocket message because the front end may try to change to the newly created
 	// channel, and the server may respond with a "channel not found" error. This happens in e2e tests,
 	// and possibly in the wild.
+	h.playbookRunService.PopulatePhases(playbookRun)
 	go func() {
 		time.Sleep(1 * time.Second) // arbitrary 1 second magic number
 
@@ -713,6 +718,7 @@ func (h *PlaybookRunHandler) getPlaybookRun(c *Context, w http.ResponseWriter, r
 		h.HandleError(w, c.logger, err)
 		return
 	}
+	h.playbookRunService.PopulatePhases(playbookRunToGet)
 
 	ReturnJSON(w, playbookRunToGet, http.StatusOK)
 }
@@ -900,6 +906,113 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 			return
 		}
 		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+// setPhase handles the PUT /runs/{id}/phase endpoint: a person takes over the run's current phase.
+func (h *PlaybookRunHandler) setPhase(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunSetPhase(userID, vars["id"])) {
+		return
+	}
+
+	var params struct {
+		ChecklistID string `json:"checklist_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "could not decode request body", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetRunPhase(vars["id"], userID, params.ChecklistID); err != nil {
+		if errors.Is(err, app.ErrPhasesNotEnabled) || errors.Is(err, app.ErrPhaseNotFound) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
+		if errors.Is(err, app.ErrPlaybookRunNotActive) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+			return
+		}
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+// handlePhaseError answers the errors a phase change can end in.
+func (h *PlaybookRunHandler) handlePhaseError(c *Context, w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, app.ErrPhasesNotEnabled), errors.Is(err, app.ErrPhaseNotFound), errors.Is(err, app.ErrPhaseTransition):
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+	case errors.Is(err, app.ErrPlaybookRunNotActive):
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot modify a finished run", err)
+	case errors.Is(err, app.ErrPlaybookRunChanged):
+		h.HandleErrorWithCode(w, c.logger, http.StatusConflict, "the run's phases changed at the same time, try again", err)
+	default:
+		h.HandleError(w, c.logger, err)
+	}
+}
+
+// moveToNextPhase handles the POST /runs/{id}/phases/move endpoint: a run with phases of its own is
+// moved to the next one, finishing the phase it leaves unless close_current is false.
+func (h *PlaybookRunHandler) moveToNextPhase(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunSetPhase(userID, vars["id"])) {
+		return
+	}
+
+	params := struct {
+		CloseCurrent *bool `json:"close_current"`
+	}{}
+
+	// No body at all means the default. The length cannot be told from the request, which a plugin
+	// receives without one.
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil && !errors.Is(err, io.EOF) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "could not decode request body", err)
+		return
+	}
+	closeCurrent := params.CloseCurrent == nil || *params.CloseCurrent
+
+	if err := h.playbookRunService.MoveRunPhase(vars["id"], userID, closeCurrent); err != nil {
+		h.handlePhaseError(c, w, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+// setPhaseState handles the PUT /runs/{id}/phases/{phaseID}/state endpoint: a phase of a run with
+// phases of its own is marked done ("done") or reopened ("started").
+func (h *PlaybookRunHandler) setPhaseState(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunSetPhase(userID, vars["id"])) {
+		return
+	}
+
+	var params struct {
+		State string `json:"state"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "could not decode request body", err)
+		return
+	}
+	if params.State != "done" && params.State != "started" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, `state must be "done" or "started"`, errors.New("invalid phase state"))
+		return
+	}
+
+	if err := h.playbookRunService.SetRunPhaseDone(vars["id"], userID, vars["phaseID"], params.State == "done"); err != nil {
+		h.handlePhaseError(c, w, err)
 		return
 	}
 
@@ -1326,6 +1439,10 @@ func (h *PlaybookRunHandler) removeTimelineEvent(c *Context, w http.ResponseWrit
 	eventID := vars["eventID"]
 
 	if err := h.playbookRunService.RemoveTimelineEvent(id, userID, eventID); err != nil {
+		if errors.Is(err, app.ErrPhaseEventNotDeletable) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1822,6 +1939,10 @@ func (h *PlaybookRunHandler) removeChecklist(c *Context, w http.ResponseWriter, 
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.RemoveChecklist(id, userID, checklistNum); err != nil {
+		if errors.Is(err, app.ErrPhasePinned) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -2192,6 +2313,10 @@ func (h *PlaybookRunHandler) moveChecklist(c *Context, w http.ResponseWriter, r 
 	}
 
 	if err := h.playbookRunService.MoveChecklist(id, userID, params.SourceChecklistIdx, params.DestChecklistIdx); err != nil {
+		if errors.Is(err, app.ErrPhasesReorder) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

@@ -1858,6 +1858,57 @@ var migrations = []Migration{
 			return backfillPlaybookChecklistItemIDs(e)
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.71.0"),
+		toVersion:   semver.MustParse("0.72.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Playbook", "UseChecklistsAsPhases", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column UseChecklistsAsPhases to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "UseChecklistsAsPhases", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column UseChecklistsAsPhases to IR_Incident")
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.72.0"),
+		toVersion:   semver.MustParse("0.73.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			for _, column := range []struct{ name, definition string }{
+				{"PhaseOverrideChecklistID", "VARCHAR(64) NOT NULL DEFAULT ''"},
+				{"PhaseOverrideSetBy", "VARCHAR(64) NOT NULL DEFAULT ''"},
+				{"PhaseOverrideSetAt", "BIGINT NOT NULL DEFAULT 0"},
+				{"PhaseLedgerToken", "VARCHAR(64) NOT NULL DEFAULT ''"},
+			} {
+				if err := addColumnToPGTable(e, "IR_Incident", column.name, column.definition); err != nil {
+					return errors.Wrapf(err, "failed adding column %s to IR_Incident", column.name)
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.73.0"),
+		toVersion:   semver.MustParse("0.74.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Playbook", "PhasesEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column PhasesEnabled to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "CustomPhasesJSON", "JSON NOT NULL DEFAULT '[]'"); err != nil {
+				return errors.Wrapf(err, "failed adding column CustomPhasesJSON to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "CustomPhasesJSON", "JSON NOT NULL DEFAULT '[]'"); err != nil {
+				return errors.Wrapf(err, "failed adding column CustomPhasesJSON to IR_Incident")
+			}
+
+			// Playbooks that used their task lists as phases have phases enabled.
+			if _, err := e.Exec("UPDATE IR_Playbook SET PhasesEnabled = UseChecklistsAsPhases"); err != nil {
+				return errors.Wrapf(err, "failed enabling phases on playbooks that use task lists as phases")
+			}
+			return nil
+		},
+	},
 }
 
 // backfillPlaybookChecklistItemIDs gives existing playbook tasks the stable IDs timing metrics

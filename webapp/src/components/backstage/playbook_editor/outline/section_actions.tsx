@@ -20,6 +20,7 @@ import {
     AccountPlusOutlineIcon,
     CheckCircleOutlineIcon,
     PlayIcon,
+    TimelineTextOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
 import {useAppDispatch} from 'src/hooks/redux';
@@ -32,7 +33,8 @@ import {
     updatePlaybookRunNumberPrefix,
 } from 'src/client';
 import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
-import {PlaybookWithChecklist} from 'src/types/playbook';
+import {CustomPhase, PlaybookWithChecklist} from 'src/types/playbook';
+import CustomPhasesEditor from 'src/components/backstage/playbook_editor/outline/custom_phases_editor';
 import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
@@ -61,9 +63,18 @@ interface Props {
     restPlaybook?: PlaybookWithChecklist;
     autoArchiveChannel: boolean;
     onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
+    phases?: {enabled: boolean, useTaskLists: boolean, custom: CustomPhase[]};
+    onPhasesChange?: (change: PhasesChange) => void;
 }
 
-const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange}: Props) => {
+// What a change to the phase settings can set.
+export interface PhasesChange {
+    phases_enabled?: boolean;
+    use_checklists_as_phases?: boolean;
+    custom_phases?: CustomPhase[];
+}
+
+const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, onNewChannelOnlyChange, restPlaybook: restPlaybookProp, autoArchiveChannel, onAutoArchiveChange, phases = {enabled: false, useTaskLists: false, custom: []}, onPhasesChange}: Props) => {
     const [restPlaybookLocal] = useRestPlaybook(playbook.id);
     const restPlaybook = restPlaybookProp ?? restPlaybookLocal;
     const [fieldNames, setFieldNames] = useState<string[] | undefined>(undefined);
@@ -388,6 +399,60 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                 </Setting>
             </StyledSection>
 
+            {onPhasesChange && (
+                <StyledSection>
+                    <StyledSectionTitle>
+                        <TimelineTextOutlineIcon
+                            size={22}
+                            aria-hidden={true}
+                        />
+                        <FormattedMessage defaultMessage='Run phases'/>
+                    </StyledSectionTitle>
+                    <Setting id={'activate-phases'}>
+                        <AutomationTitle>
+                            <div data-testid='activate-phases-toggle'>
+                                <Toggle
+                                    disabled={disabled}
+                                    isChecked={phases.enabled}
+                                    onChange={() => onPhasesChange({phases_enabled: !phases.enabled})}
+                                >
+                                    <FormattedMessage defaultMessage='Activate phases'/>
+                                </Toggle>
+                            </div>
+                        </AutomationTitle>
+                    </Setting>
+                    {phases.enabled && (
+                        <Setting id={'use-checklists-as-phases'}>
+                            <AutomationTitle>
+                                <div data-testid='use-checklists-as-phases-toggle'>
+                                    <Toggle
+                                        disabled={disabled}
+                                        isChecked={phases.useTaskLists}
+                                        onChange={() => onPhasesChange({use_checklists_as_phases: !phases.useTaskLists})}
+                                    >
+                                        <FormattedMessage defaultMessage='Use task lists as phases'/>
+                                    </Toggle>
+                                </div>
+                            </AutomationTitle>
+                            <PhasesHint>
+                                {phases.useTaskLists ? (
+                                    <FormattedMessage defaultMessage='Each task list of a run is a phase. Phases move on as their tasks are done.'/>
+                                ) : (
+                                    <FormattedMessage defaultMessage='Add the phases of your runs below, in order. They are moved by hand on the run page.'/>
+                                )}
+                            </PhasesHint>
+                        </Setting>
+                    )}
+                    {phases.enabled && !phases.useTaskLists && (
+                        <CustomPhasesEditor
+                            phases={phases.custom}
+                            disabled={disabled}
+                            onChange={(custom) => onPhasesChange({custom_phases: custom})}
+                        />
+                    )}
+                </StyledSection>
+            )}
+
             <StyledSection>
                 <StyledSectionTitle>
                     <AccountPlusOutlineIcon size={22}/>
@@ -462,6 +527,12 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
 };
 
 export default LegacyActionsEdit;
+
+const PhasesHint = styled.div`
+    margin-top: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 12px;
+`;
 
 const StyledSection = styled(Section)`
     padding: 2rem;

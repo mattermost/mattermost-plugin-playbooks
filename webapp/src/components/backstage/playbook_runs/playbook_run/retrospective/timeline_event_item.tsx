@@ -17,18 +17,21 @@ import {useAppDispatch} from 'src/hooks/redux';
 import {useEnsureProfiles, useFormattedUsernames} from 'src/hooks';
 
 import {
+    CurrentPhaseChangedDetails,
     ParticipantsChangedDetails,
+    PhaseEventDetails,
     PropertyChangedDetails,
     TaskStateModifiedDetails,
     TimelineEvent,
     TimelineEventType,
     UserJoinedLeftDetails,
+    isPhaseEventType,
 } from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {browserHistory, formatText, messageHtmlToComponent} from 'src/webapp_globals';
-import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
+import FormattedDuration, {formatDuration, formatRoundedDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
@@ -239,6 +242,26 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: '{name} requested a status update'}, {name: event.subject_display_name});
         case TimelineEventType.OwnerChanged:
             return formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: event.summary});
+        case TimelineEventType.PhaseStarted: {
+            const {title: phase, source} = parsedDetails as PhaseEventDetails;
+            if (source === 'manual') {
+                return formatMessage({defaultMessage: '{user} started phase "{phase}"'}, {user: event.subject_display_name, phase});
+            }
+            return formatMessage({defaultMessage: 'Phase "{phase}" started'}, {phase});
+        }
+        case TimelineEventType.PhaseDone: {
+            const phase = (parsedDetails as PhaseEventDetails).title;
+            if (event.phase_duration) {
+                return formatMessage({defaultMessage: 'Phase "{phase}" done in {duration}'}, {phase, duration: formatRoundedDuration(event.phase_duration)});
+            }
+            return formatMessage({defaultMessage: 'Phase "{phase}" done'}, {phase});
+        }
+        case TimelineEventType.PhaseReopened:
+            return formatMessage({defaultMessage: 'Phase "{phase}" reopened'}, {phase: (parsedDetails as PhaseEventDetails).title});
+        case TimelineEventType.CurrentPhaseChanged: {
+            const {from_title: from, to_title: to} = parsedDetails as CurrentPhaseChangedDetails;
+            return formatMessage({defaultMessage: '{user} moved the current phase from "{from}" to "{to}"'}, {user: event.subject_display_name, from, to});
+        }
         case TimelineEventType.TaskStateModified: {
             const user = event.subject_display_name;
             const {action, task: name, blocked_reason: blockedReason} = parsedDetails as TaskStateModifiedDetails;
@@ -375,6 +398,11 @@ const TimelineEventItem = (props: Props) => {
             return 'icon-clock-outline';
         case TimelineEventType.PropertyChanged:
             return 'icon-pencil-outline';
+        case TimelineEventType.PhaseStarted:
+        case TimelineEventType.PhaseDone:
+        case TimelineEventType.PhaseReopened:
+        case TimelineEventType.CurrentPhaseChanged:
+            return 'icon-flag-outline';
         default:
             return '';
         }
@@ -459,7 +487,7 @@ const TimelineEventItem = (props: Props) => {
                 )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(getSummary(props.event, parsedDetails), markdownOptions), true, messageHtmlToComponentOptions)}</SummaryDetail>
             </SummaryContainer>
-            {showMenu && props.editable &&
+            {showMenu && props.editable && !isPhaseEventType(props.event.event_type) &&
                 <StyledHoverMenu parent={props.parent}>
                     <HoverMenuButton
                         className={'icon-trash-can-outline icon-16 btn-icon'}

@@ -254,6 +254,14 @@ type PlaybookRun struct {
 	// behaviour reflects the setting at start time and avoids a DB lookup on every finish.
 	AutoArchiveChannel bool `json:"-"`
 
+	// UseChecklistsAsPhases is snapshotted from the playbook at run creation. When set, the run
+	// page shows its checklists as a phase timeline.
+	UseChecklistsAsPhases bool `json:"use_checklists_as_phases"`
+
+	// CustomPhases are the run's phases when it was started with phases that are not task lists,
+	// copied from the playbook at run creation. Such a run is in manual mode from the start.
+	CustomPhases []CustomPhase `json:"custom_phases,omitempty"`
+
 	// TimingMetrics and Exercise are snapshotted from the playbook at run creation, so editing
 	// the playbook never changes the numbers of runs already started.
 	TimingMetrics []TimingMetric `json:"timing_metrics"`
@@ -263,6 +271,29 @@ type PlaybookRun struct {
 	// excluded; Skipped items count as completed. See ComputeTaskProgress.
 	TaskTotal     int `json:"task_total"`
 	TaskCompleted int `json:"task_completed"`
+
+	// Phases are computed from Checklists when UseChecklistsAsPhases is set; not persisted. They
+	// are only filled in on REST and websocket payloads, see PlaybookRunService.PopulatePhases.
+	Phases []RunPhase `json:"phases,omitempty"`
+
+	// PhaseOverride is set once a person took over the current phase: from then on phases never
+	// move on their own. It is filled in from the Phase* columns on REST and websocket payloads.
+	PhaseOverride *PhaseOverride `json:"phase_override,omitempty"`
+
+	// The persisted side of the manual phase override. They are written by dedicated store methods
+	// only, so a run update never overwrites them with a stale copy.
+	PhaseOverrideChecklistID string `json:"-"`
+	PhaseOverrideSetBy       string `json:"-"`
+	PhaseOverrideSetAt       int64  `json:"-"`
+
+	// PhaseLedgerToken changes whenever phase events are written to the timeline, so that of several
+	// writers who saw the same gap only one fills it.
+	PhaseLedgerToken string `json:"-"`
+}
+
+// UsesPhases reports whether the run shows phases, either its task lists or its custom phases.
+func (r *PlaybookRun) UsesPhases() bool {
+	return r.UseChecklistsAsPhases || len(r.CustomPhases) > 0
 }
 
 func (r *PlaybookRun) ComputeTaskProgress() {
@@ -884,6 +915,7 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
 	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
 	newPlaybookRun.TimingMetrics = append([]TimingMetric(nil), r.TimingMetrics...)
+	newPlaybookRun.CustomPhases = append([]CustomPhase(nil), r.CustomPhases...)
 	newPlaybookRun.BroadcastChannelIDs = append([]string(nil), r.BroadcastChannelIDs...)
 
 	// Clear ItemsOrder to prevent data inconsistency, same as Checklist.Clone()
@@ -1011,6 +1043,11 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source str
 	}
 
 	r.CreateChannelMemberOnNewParticipant = playbook.CreateChannelMemberOnNewParticipant
+	r.UseChecklistsAsPhases = playbook.PhasesEnabled && playbook.UseChecklistsAsPhases
+	r.CustomPhases = nil
+	if playbook.PhasesEnabled && !playbook.UseChecklistsAsPhases {
+		r.CustomPhases = append([]CustomPhase(nil), playbook.CustomPhases...)
+	}
 	r.RemoveChannelMemberOnRemovedParticipant = playbook.RemoveChannelMemberOnRemovedParticipant
 
 	r.Type = RunTypePlaybook
@@ -1110,6 +1147,10 @@ const (
 	RetrospectiveEnabled   timelineEventType = "retrospective_enabled"
 	RetrospectiveDisabled  timelineEventType = "retrospective_disabled"
 	PropertyChanged        timelineEventType = "property_changed"
+	PhaseStarted           timelineEventType = "phase_started"
+	PhaseDone              timelineEventType = "phase_done"
+	PhaseReopened          timelineEventType = "phase_reopened"
+	CurrentPhaseChanged    timelineEventType = "current_phase_changed"
 )
 
 type TimelineEvent struct {
@@ -1333,6 +1374,21 @@ type PlaybookRunService interface {
 	// GetPlaybookRun gets a playbook run by ID with property fields and values. Returns error if it could not be found.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
 
+	// SetRunPhase takes over the run's current phase: it becomes checklistID and stays wherever
+	// people last put it, since phases no longer move on their own. Permissions are checked by the caller.
+	SetRunPhase(playbookRunID, userID, checklistID string) error
+
+	// MoveRunPhase moves a run with phases of its own to the next one. The phase it leaves is
+	// finished unless closeCurrent is false. Permissions are checked by the caller.
+	MoveRunPhase(playbookRunID, userID string, closeCurrent bool) error
+
+	// SetRunPhaseDone marks a phase of a run with phases of its own done, or reopens it.
+	SetRunPhaseDone(playbookRunID, userID, phaseID string, done bool) error
+
+	// PopulatePhases fills in the run's computed Phases. It is not part of GetPlaybookRun so that
+	// GraphQL, which reads runs through it, is unaffected.
+	PopulatePhases(run *PlaybookRun)
+
 	// SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
 	SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
 
@@ -1552,6 +1608,13 @@ type PlaybookRunStore interface {
 	// GetChecklistItemStateChanges returns every recorded checklist item state change for the
 	// run, oldest first.
 	GetChecklistItemStateChanges(playbookRunID string) ([]ChecklistItemStateChange, error)
+
+	// SetPhaseOverride pins the run's current phase to checklistID and records who did it.
+	SetPhaseOverride(playbookRunID, checklistID, setByUserID string, setAt int64) error
+
+	// CompareAndSetPhaseLedgerToken replaces the run's phase ledger token when it still is expected,
+	// reporting whether it did. It lets only one of several concurrent writers record phase events.
+	CompareAndSetPhaseLedgerToken(playbookRunID, expected, next string) (bool, error)
 
 	// GetChecklistItemStateChangesForRuns returns the state changes of each run, keyed by run ID.
 	GetChecklistItemStateChangesForRuns(playbookRunIDs []string) (map[string][]ChecklistItemStateChange, error)

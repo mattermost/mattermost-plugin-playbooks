@@ -245,6 +245,11 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	if err := playbook.NormalizePhases(); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
 	app.CleanUpChecklists(playbook.Checklists)
 
 	if err := validatePreAssignment(playbook); err != nil {
@@ -326,6 +331,19 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 	if _, ok := rawFields["timing_metrics"]; !ok {
 		playbook.TimingMetrics = oldPlaybook.TimingMetrics
+	}
+	if _, ok := rawFields["use_checklists_as_phases"]; !ok {
+		playbook.UseChecklistsAsPhases = oldPlaybook.UseChecklistsAsPhases
+	}
+	if _, ok := rawFields["phases_enabled"]; !ok {
+		playbook.PhasesEnabled = oldPlaybook.PhasesEnabled
+	}
+	if _, ok := rawFields["custom_phases"]; !ok {
+		playbook.CustomPhases = oldPlaybook.CustomPhases
+	}
+	if err = playbook.NormalizePhases(); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		return
 	}
 
 	if err = h.validateMetrics(playbook); err != nil {

@@ -127,9 +127,9 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 			logger.WithError(err).Error("failed to get current state of playbook run")
 			return
 		}
-	} else {
-		currentRun.ComputeTaskProgress()
 	}
+	currentRun = s.reconcilePhases(currentRun)
+	currentRun.ComputeTaskProgress()
 
 	if previousRun != nil {
 		previousRun.ComputeTaskProgress()
@@ -141,6 +141,8 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		// No changes detected, nothing to send
 		return
 	}
+
+	s.addPhasesToChanges(currentRun, changedFields)
 
 	// Extract checklist deletes from changed fields
 	var checklistDeletes []string
@@ -764,6 +766,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, *event)
 
+	// The run starts in its first phase.
+	s.recordPhaseEvents(playbookRun)
+
 	//auto-follow playbook run
 	if pb != nil {
 		var autoFollows []string
@@ -1133,6 +1138,13 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	event, err := s.store.GetTimelineEvent(playbookRunID, eventID)
 	if err != nil {
 		err := errors.Wrapf(err, "failed to retrieve timeline event (eventID: %s) for removal from run (runID: %s)", eventID, playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
+	// The run's phases are read from their events, so they stay.
+	if isPhaseEvent(event.EventType) {
+		err := errors.Wrapf(ErrPhaseEventNotDeletable, "eventID: %s", eventID)
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -3357,6 +3369,11 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 
 	// Add current context to audit
 	checklistToRemove := playbookRunToModify.Checklists[checklistNumber]
+	if playbookRunToModify.PhaseOverrideChecklistID != "" && playbookRunToModify.PhaseOverrideChecklistID == checklistToRemove.ID {
+		err := errors.Wrap(ErrPhasePinned, "move the phase to another task list first")
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
 	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", checklistToRemove.Title)
 	model.AddEventParameterToAuditRec(auditRec, "checklistItemCount", len(checklistToRemove.Items))
 	model.AddEventParameterToAuditRec(auditRec, "currentChecklistCount", len(playbookRunToModify.Checklists))
@@ -3844,6 +3861,10 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, sourceChecklistIdx)
 	if err != nil {
 		return err
+	}
+
+	if playbookRunToModify.UseChecklistsAsPhases {
+		return ErrPhasesReorder
 	}
 
 	if destChecklistIdx < 0 || destChecklistIdx >= len(playbookRunToModify.Checklists) {
@@ -4687,6 +4708,8 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 			return
 		}
 	}
+
+	s.PopulatePhases(playbookRun)
 
 	s.PublishRunEventToViewers(playbookRunUpdatedWSEvent, playbookRun, playbookRun, sendWSOptions.AdditionalUserIDs...)
 }

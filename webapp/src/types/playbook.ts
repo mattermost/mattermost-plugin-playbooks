@@ -7,6 +7,12 @@ import {PlaybookType, TimingMetric} from 'src/types/timing_metrics';
 
 export {MetricType};
 
+// A phase a playbook defines by name, instead of using its task lists as phases.
+export interface CustomPhase {
+    id: string;
+    title: string;
+}
+
 export interface Playbook {
     id: string;
     title: string;
@@ -73,6 +79,9 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_id: string;
     new_channel_only: boolean;
     auto_archive_channel: boolean;
+    phases_enabled?: boolean;
+    use_checklists_as_phases?: boolean;
+    custom_phases?: CustomPhase[];
 
     playbook_type?: PlaybookType;
     timing_metrics?: TimingMetric[];

@@ -985,6 +985,22 @@ func (p *PermissionsService) RunRestore(userID, runID string) error {
 	return err
 }
 
+// RunSetPhase checks whether userID can take over the current phase of runID. For now that is the
+// run owner or an admin of the run's playbook. It is the one place to change who may do so.
+func (p *PermissionsService) RunSetPhase(userID, runID string) error {
+	run, playbook, err := p.loadRunAndPlaybook(runID)
+	if err != nil && run == nil {
+		return err
+	}
+	if run.OwnerUserID == userID {
+		return nil
+	}
+	if playbook != nil && p.IsPlaybookAdmin(userID, *playbook) {
+		return nil
+	}
+	return errors.Wrapf(ErrNoPermissions, "only the run owner or a playbook admin can set the phase of run %s", runID)
+}
+
 // RunChangeOwner checks if the user can change the owner of a run.
 // When OwnerGroupOnlyActions is set, playbook admins may change ownership even without
 // being a run participant, enabling handoffs when the original owner is unavailable.

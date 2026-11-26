@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 import {useUpdateEffect} from 'react-use';
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -12,6 +12,14 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
+import {playbookRunUpdated} from 'src/actions';
+import {
+    fetchPlaybookRun,
+    moveToNextPhase,
+    setPhaseState,
+    setRunPhase,
+} from 'src/client';
+import {PlaybookRole} from 'src/types/permissions';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {
@@ -32,6 +40,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
+import PhaseTimeline from './phase_timeline';
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
 import Checklists from './checklists';
@@ -104,7 +113,31 @@ const PlaybookRunDetails = () => {
 
     useEnsureProfiles(playbookRun?.participant_ids ?? []);
 
+    // Mirrors the server check (PermissionsService.RunSetPhase): the run owner or a playbook admin.
+    const canSetPhase = playbookRun?.owner_user_id === myUser.id || Boolean(playbook?.members?.some(
+        (m) => m.user_id === myUser.id && m.scheme_roles?.includes(PlaybookRole.Admin),
+    ));
+
     const RHS = useRHS(playbookRun);
+
+    // Runs put into the store by websocket events or list fetches may lack the server-computed phases.
+    const fetchingPhasesFor = useRef<string | null>(null);
+    useEffect(() => {
+        const usesPhases = playbookRun?.use_checklists_as_phases || Boolean(playbookRun?.custom_phases?.length);
+        if (!playbookRun || !usesPhases || playbookRun.phases || fetchingPhasesFor.current === playbookRun.id) {
+            return;
+        }
+        const runId = playbookRun.id;
+        fetchingPhasesFor.current = runId;
+        fetchPlaybookRun(runId)
+            .then((run) => dispatch(playbookRunUpdated(run)))
+            .catch(() => undefined)
+            .finally(() => {
+                if (fetchingPhasesFor.current === runId) {
+                    fetchingPhasesFor.current = null;
+                }
+            });
+    }, [dispatch, playbookRun?.id, playbookRun?.use_checklists_as_phases, playbookRun?.custom_phases, playbookRun?.phases]);
 
     useUpdateEffect(() => {
         resetFilters();
@@ -253,6 +286,22 @@ const PlaybookRunDetails = () => {
                 </Header>
                 <Main>
                     <Body>
+                        {(playbookRun.use_checklists_as_phases || Boolean(playbookRun.custom_phases?.length)) && (
+                            <PhaseTimeline
+                                phases={playbookRun.phases ?? []}
+                                override={playbookRun.phase_override}
+                                custom={!playbookRun.use_checklists_as_phases}
+                                onSetPhase={canSetPhase ? (checklistId) => {
+                                    setRunPhase(playbookRun.id, checklistId);
+                                } : undefined}
+                                onMove={canSetPhase ? (closeCurrent) => {
+                                    moveToNextPhase(playbookRun.id, closeCurrent);
+                                } : undefined}
+                                onPhaseState={canSetPhase ? (phaseId, state) => {
+                                    setPhaseState(playbookRun.id, phaseId, state);
+                                } : undefined}
+                            />
+                        )}
                         <Summary
                             id={PlaybookRunIDs.SectionSummary}
                             playbookRun={playbookRun}
