@@ -30,7 +30,6 @@ import {isCurrentUserAdmin} from 'src/selectors';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
 import {useAllowPlaybookAttributes} from 'src/hooks/license';
-import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {PlaybookRole} from 'src/types/permissions';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
@@ -54,8 +53,9 @@ const PlaybookEditor = () => {
     const dispatch = useAppDispatch();
     const {path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
+    // usePlaybook is REST-backed and includes fields that previously required a
+    // separate useRestPlaybook fetch (admin_only_edit, new_channel_only, etc.).
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
-    const [restPlaybook] = useRestPlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
@@ -82,12 +82,12 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
-    const playbookAdminRole = restPlaybook?.default_playbook_admin_role || PlaybookRole.Admin;
+    const playbookAdminRole = playbook?.default_playbook_admin_role || PlaybookRole.Admin;
     const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(playbookAdminRole) ?? false;
     const showAdminSettings = isSystemAdmin || isPlaybookAdmin;
 
-    const adminOnlyEdit = restPlaybook?.admin_only_edit ?? false;
-    const canEdit = restPlaybook != null && (!adminOnlyEdit || isPlaybookAdmin || isSystemAdmin);
+    const adminOnlyEdit = playbook?.admin_only_edit ?? false;
+    const canEdit = playbook != null && (!adminOnlyEdit || isPlaybookAdmin || isSystemAdmin);
 
     if (error) {
         // not found
@@ -305,7 +305,7 @@ const PlaybookEditor = () => {
                         canEdit={canEdit}
                         adminOnlyEdit={adminOnlyEdit}
                         showAdminSettings={showAdminSettings}
-                        restPlaybook={restPlaybook ?? undefined}
+                        restPlaybook={playbook}
                     />
                 </Route>
                 <Route

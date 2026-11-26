@@ -45,7 +45,7 @@ interface Task {
 
 interface Props {
     playbook: PlaybookWithChecklist | DraftPlaybookWithChecklist;
-    setPlaybook: React.Dispatch<React.SetStateAction<PlaybookWithChecklist | DraftPlaybookWithChecklist>>;
+    setPlaybook: (update: React.SetStateAction<PlaybookWithChecklist | DraftPlaybookWithChecklist>) => void | Promise<void>;
     setChangesMade?: (b: boolean) => void;
     curEditingMetric: EditingMetric | null;
     setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;
@@ -124,6 +124,11 @@ const Metrics = ({
 
         if (curEditingMetric) {
             const metric = {...curEditingMetric.metric, target};
+
+            // Kick off the persisted update immediately; section_retrospective serializes
+            // concurrent savePlaybook calls against an optimistic ref so a follow-up
+            // delete/add cannot wipe this save. Do not await here — the next edit UI
+            // must open synchronously for typing (e2e and UX).
             setPlaybook((pb) => {
                 const metrics = [...pb.metrics];
                 metrics.splice(curEditingMetric.index, 1, metric);

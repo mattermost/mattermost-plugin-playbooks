@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
@@ -42,7 +42,7 @@ const convertToPlaybookWithChecklist = (playbook: FullPlaybook, propertyFields: 
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
-    refetch: () => void;
+    refetch: () => void | Promise<void>;
     canEdit?: boolean;
 }
 
@@ -54,6 +54,19 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
     const propertyFields = usePlaybookAttributes(playbook.id);
     const archived = playbook.delete_at !== 0;
     const inputsDisabled = !playbook.retrospective_enabled || archived || !canEdit;
+
+    // Keep the latest playbook (including optimistic metric edits) so chained
+    // savePlaybook calls do not race and overwrite each other with stale metrics.
+    const playbookRef = useRef(playbook);
+    const saveChainRef = useRef(Promise.resolve());
+    const pendingSavesRef = useRef(0);
+    useEffect(() => {
+        // Skip prop sync while saves (and their awaited refetches) are in flight so
+        // an older in-flight response cannot clobber newer optimistic metrics.
+        if (pendingSavesRef.current === 0) {
+            playbookRef.current = playbook;
+        }
+    }, [playbook]);
 
     if (!retrospectiveAccess) {
         return null;
@@ -93,10 +106,28 @@ const SectionRetrospective = ({playbook, refetch, canEdit = true}: Props) => {
                 </BackstageSubheader>
                 <Metrics
                     playbook={convertToPlaybookWithChecklist(playbook, propertyFields || [])} // TODO reduce prop scope to min-essentials
-                    setPlaybook={async (update) => {
-                        const playbookWithChecklist = convertToPlaybookWithChecklist(playbook, propertyFields || []);
-                        await savePlaybook({...playbook, ...typeof update === 'function' ? update(playbookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
-                        refetch();
+                    setPlaybook={(update) => {
+                        // Apply the update to the optimistic ref synchronously so a follow-up
+                        // delete/add sees the new metrics list, then serialize the PUTs.
+                        const current = convertToPlaybookWithChecklist(playbookRef.current, propertyFields || []);
+                        const next = typeof update === 'function' ? update(current) : {...current, ...update};
+                        playbookRef.current = {...playbookRef.current, ...next};
+                        const snapshot = {...playbookRef.current};
+
+                        const run = async () => {
+                            pendingSavesRef.current += 1;
+                            try {
+                                await savePlaybook(snapshot); // TODO replace with graphql / useUpdatePlaybook
+                                // Only refetch after a successful PUT, and await it so the
+                                // next queued save sees server-assigned metric IDs.
+                                await refetch();
+                            } finally {
+                                pendingSavesRef.current -= 1;
+                            }
+                        };
+                        const chained = saveChainRef.current.then(run, run);
+                        saveChainRef.current = chained.then(() => undefined, () => undefined);
+                        return chained;
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}

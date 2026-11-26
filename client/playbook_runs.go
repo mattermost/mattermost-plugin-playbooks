@@ -307,6 +307,10 @@ func (s *PlaybookRunService) RenameChecklist(ctx context.Context, playbookRunID 
 // SetTaskActions replaces the task actions on a checklist item.
 func (s *PlaybookRunService) SetTaskActions(ctx context.Context, playbookRunID string, checklistNumber, itemNumber int, taskActions []TaskAction) error {
 	taskActionsURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/task_actions", playbookRunID, checklistNumber, itemNumber)
+	// Normalize nil to an empty slice so clearing actions sends [] (required field), not null.
+	if taskActions == nil {
+		taskActions = []TaskAction{}
+	}
 	req, err := s.client.newAPIRequest(http.MethodPut, taskActionsURL, struct {
 		TaskActions []TaskAction `json:"task_actions"`
 	}{TaskActions: taskActions})
