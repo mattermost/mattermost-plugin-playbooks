@@ -66,6 +66,9 @@ type PlaybookRun struct {
 	SequentialID                            string          `json:"sequential_id"`
 	TaskTotal                               int             `json:"task_total"`
 	TaskCompleted                           int             `json:"task_completed"`
+	IsFavorite                              bool            `json:"is_favorite"`
+	Followers                               []string        `json:"followers,omitempty"`
+	PlaybookTitle                           string          `json:"playbook_title,omitempty"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the
@@ -231,7 +234,7 @@ type PlaybookRunListOptions struct {
 	ParticipantID string `url:"participant_id,omitempty"`
 
 	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter). Specify "me" for current user.
-	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+	ParticipantOrFollowerID string `url:"participant_or_follower_id,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
@@ -267,6 +270,30 @@ type PlaybookRunListOptions struct {
 	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
 	// This is sent as the "since" URL parameter.
 	ActivitySince int64 `url:"since,omitempty"`
+
+	// IncludeFavorites expands participant_or_follower_id filtering to also include favorited runs.
+	IncludeFavorites bool `url:"include_favorites,omitempty"`
+
+	// SkipExtras omits timeline events, status posts, and metrics from list results.
+	SkipExtras bool `url:"skip_extras,omitempty"`
+
+	// SkipChecklists omits checklist payloads after computing task progress.
+	SkipChecklists bool `url:"skip_checklists,omitempty"`
+
+	// Types filters by run type (playbook, channelChecklist).
+	Types []string `url:"types,omitempty"`
+
+	// OmitEnded returns only active runs when true.
+	OmitEnded bool `url:"omit_ended,omitempty"`
+
+	// IncludeFavorite attaches is_favorite on each item.
+	IncludeFavorite bool `url:"include_favorite,omitempty"`
+
+	// IncludeFollowers attaches followers on each item.
+	IncludeFollowers bool `url:"include_followers,omitempty"`
+
+	// IncludePlaybookTitle attaches playbook_title on each item.
+	IncludePlaybookTitle bool `url:"include_playbook_title,omitempty"`
 }
 
 // PlaybookRunList contains the paginated result.

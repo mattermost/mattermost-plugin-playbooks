@@ -1422,6 +1422,31 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 	return followers, nil
 }
 
+func (s *playbookRunStore) GetFollowersForRuns(playbookRunIDs []string) (map[string][]string, error) {
+	result := make(map[string][]string, len(playbookRunIDs))
+	if len(playbookRunIDs) == 0 {
+		return result, nil
+	}
+
+	query := s.queryBuilder.
+		Select("IncidentID", "UserID").
+		From("IR_Run_Participants").
+		Where(sq.And{sq.Eq{"IsFollower": true}, sq.Eq{"IncidentID": playbookRunIDs}})
+
+	var rows []struct {
+		IncidentID string
+		UserID     string
+	}
+	if err := s.store.selectBuilder(s.store.db, &rows, query); err != nil {
+		return nil, errors.Wrap(err, "failed to get followers for runs")
+	}
+
+	for _, row := range rows {
+		result[row.IncidentID] = append(result[row.IncidentID], row.UserID)
+	}
+	return result, nil
+}
+
 // Get number of active runs.
 func (s *playbookRunStore) GetRunsActiveTotal() (int64, error) {
 	var count int64
