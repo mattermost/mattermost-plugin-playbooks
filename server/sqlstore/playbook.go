@@ -1308,10 +1308,6 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal custom phases json for playbook id: '%s'", p.ID)
 		}
 	}
-	if p.CustomPhases == nil {
-		p.CustomPhases = []app.CustomPhase{}
-	}
-
 	p.InvitedUserIDs = []string(nil)
 	if rawPlaybook.ConcatenatedInvitedUserIDs != "" {
 		p.InvitedUserIDs = strings.Split(rawPlaybook.ConcatenatedInvitedUserIDs, ",")

@@ -230,6 +230,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	if old.Members == nil {
 		old.Members = []PlaybookMember{}
 	}
+	if old.CustomPhases == nil {
+		old.CustomPhases = []CustomPhase{}
+	}
 	if old.Metrics == nil {
 		old.Metrics = []PlaybookMetricConfig{}
 	}
