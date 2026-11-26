@@ -77,20 +77,12 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
             cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
 
-            // # Intercept the REST PATCH so we can wait for the save before asserting server state
-            cy.playbooksInterceptPatchPlaybook();
-
             // # Check the lock box
             cy.findByTestId('channel-access-run-name-template-locked').click();
             cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
 
-            // # Wait for the save to reach the server before asserting persisted state
-            cy.wait('@PatchPlaybook');
-
             // * Persisted server-side
-            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
-                expect(pb.channel_name_template_locked).to.equal(true);
-            });
+            cy.apiWaitForPlaybook(testPlaybook.id, (pb) => pb.channel_name_template_locked === true, 'Lock was not saved');
 
             // * Survives reload
             cy.reload();
@@ -118,14 +110,10 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
             cy.findByTestId('channel-access-run-name-template-locked').find('input').should('not.be.checked');
 
-            cy.playbooksInterceptPatchPlaybook();
             cy.findByTestId('channel-access-run-name-template-locked').click();
             cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
-            cy.wait('@PatchPlaybook');
 
-            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
-                expect(pb.channel_name_template_locked).to.equal(true);
-            });
+            cy.apiWaitForPlaybook(testPlaybook.id, (pb) => pb.channel_name_template_locked === true, 'Lock was not saved');
 
             cy.reload();
             cy.findByTestId('channel-access-run-name-template-locked').find('input').should('be.checked');
@@ -142,9 +130,6 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * Prefix is loaded from server
             cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
 
-            // # Intercept the REST PATCH for the template save
-            cy.playbooksInterceptPatchPlaybook();
-
             // # Type the template and dismiss the autocomplete dropdown
             cy.findByTestId('channel-access-run-name-template-input').type(`${TOKEN_SEQ} - Incident-Report`, {parseSpecialCharSequences: false});
             cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
@@ -155,7 +140,11 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             cy.findByTestId('channel-access-run-name-template-preview').should('contain', 'Incident-Report');
 
             // # Wait for the debounced template save before reloading
-            cy.wait('@PatchPlaybook');
+            cy.apiWaitForPlaybook(
+                testPlaybook.id,
+                (pb) => pb.channel_name_template === `${TOKEN_SEQ} - Incident-Report`,
+                'Run name template was not saved',
+            );
             cy.reload();
 
             // * Both values survive reload — confirms both were persisted server-side
@@ -164,13 +153,10 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         });
     });
 
-    it('preserves UI-typed prefix after a later template edit triggers a GraphQL refetch', () => {
-        // Regression: run_number_prefix is REST-only (not in the GraphQL Playbook schema),
-        // and the REST playbook hook does not refetch after a successful PATCH. A later edit
-        // that triggers updatePlaybook (e.g. typing in the channel name template) refetches
-        // PlaybookDocument and recomputes the merged playbook source; if the stale
-        // REST-fetched prefix were used, useProxyState would sync the prefix field back to
-        // the old value and silently wipe what the user typed.
+    it('preserves UI-typed prefix after a later template edit triggers a playbook refetch', () => {
+        // Regression: a later edit (e.g. typing in the channel name template) refetches the
+        // playbook and recomputes the editor's source; if a stale prefix were used, the
+        // prefix field would sync back to the old value and silently wipe what the user typed.
 
         // # Visit the editor with a playbook that has no saved prefix yet
         cy.playbooksVisitEditor(testPlaybook.id, 'outline');
@@ -178,32 +164,28 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // * Prefix field is empty initially
         cy.findByTestId('channel-access-run-number-prefix').should('have.value', '');
 
-        // # Intercept REST PATCH so we can wait for the debounced prefix save
-        cy.playbooksInterceptPatchPlaybook();
-
         // # Type the prefix in the UI (not via API — the bug requires UI-initiated save
         // # so that restPlaybook becomes stale relative to the just-saved value)
         cy.findByTestId('channel-access-run-number-prefix').type('INC');
 
-        // # Wait for the debounced PATCH to land server-side
-        cy.wait('@PatchPlaybook').its('response.statusCode').should('be.oneOf', [200, 204]);
+        // # Wait for the debounced prefix save to land server-side
+        cy.apiWaitForPlaybook(testPlaybook.id, (pb) => pb.run_number_prefix === 'INC', 'Prefix was not saved');
 
         // * Prefix is still visible after save
         cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
 
-        // # Now type in the template field. This triggers updatePlaybook (GraphQL) which
-        // # refetches PlaybookDocument and recomputes the merged playbook source.
+        // # Now type in the template field, which saves and refetches the playbook
         cy.findByTestId('channel-access-run-name-template-input').type(`${TOKEN_SEQ} - Incident`, {parseSpecialCharSequences: false});
         cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
 
-        // # Wait for the REST template save. The proxy state's GraphQL updatePlaybook fires
-        // # from the same 500ms debounce, so by the time PATCH responds the mutation has
-        // # been sent. We then wait for the Apollo refetch + re-render cycle to complete —
-        // # the bug (if present) wipes the prefix during this window, so the assertion
-        // # below would catch it on retry.
-        cy.wait('@PatchPlaybook').its('response.statusCode').should('be.oneOf', [200, 204]);
+        // # Wait for the template save to be stored
+        cy.apiWaitForPlaybook(
+            testPlaybook.id,
+            (pb) => pb.channel_name_template === `${TOKEN_SEQ} - Incident`,
+            'Run name template was not saved',
+        );
 
-        // * The prefix MUST NOT disappear from the input after the GraphQL refetch
+        // * The prefix MUST NOT disappear from the input after the refetch
         cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
 
         // * Preview reflects the still-present prefix (would show bare '00001' style if prefix were wiped)
@@ -343,9 +325,6 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * Verify initial content is loaded from API
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
 
-            // # Intercept the REST PATCH so we can wait for the debounced template save
-            cy.playbooksInterceptPatchPlaybook();
-
             // # Click the insert variable button
             cy.findByTestId('channel-access-run-name-template-insert-variable').click();
 
@@ -360,13 +339,8 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * The template input should now have the second suggestion appended (OWNER)
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');
 
-            // # Wait for the debounced save to reach the server
-            cy.wait('@PatchPlaybook');
-
             // * Assert via API that the {OWNER} token was persisted
-            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
-                expect(pb.channel_name_template).to.include('{OWNER}');
-            });
+            cy.apiWaitForPlaybook(testPlaybook.id, (pb) => pb.channel_name_template.includes('{OWNER}'), 'Template token was not saved');
         });
     });
 
@@ -376,9 +350,6 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             cy.playbooksVisitEditor(testPlaybook.id, 'outline');
 
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
-
-            // # Intercept the REST PATCH so we can wait for the debounced template save
-            cy.playbooksInterceptPatchPlaybook();
 
             // # Click the insert variable button
             cy.findByTestId('channel-access-run-name-template-insert-variable').click();
@@ -395,10 +366,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');
 
             // * Assert via API that the {OWNER} token was persisted
-            cy.wait('@PatchPlaybook');
-            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
-                expect(pb.channel_name_template).to.include('{OWNER}');
-            });
+            cy.apiWaitForPlaybook(testPlaybook.id, (pb) => pb.channel_name_template.includes('{OWNER}'), 'Template token was not saved');
         });
     });
 

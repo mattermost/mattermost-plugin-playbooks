@@ -417,29 +417,11 @@ describe('runs > run details page > status update > template token preview', {te
     });
 
     it('shows "Resolves to:" for property field token after value is set', () => {
-        // # Get the run-scoped Zone field id and set its value via GraphQL
-        cy.request({
-            headers: {'X-Requested-With': 'XMLHttpRequest'},
-            url: `/plugins/playbooks/api/v0/runs/${testRun.id}/property_fields`,
-            method: 'GET',
-        }).then((response) => {
-            const zoneField = response.body.find((f) => f.name === 'Zone');
+        // # Set Zone = Alpha on the run
+        cy.apiGetRunPropertyFields(testRun.id).then((fields) => {
+            const zoneField = fields.find((f) => f.name === 'Zone');
             const alphaOptionId = zoneField.attrs.options.find((o) => o.name === 'Alpha').id;
-
-            // # Set Zone = Alpha via GraphQL mutation
-            const mutation = `mutation SetZone($runID: String!, $fieldID: String!, $value: JSON) {
-                setRunPropertyValue(runID: $runID, propertyFieldID: $fieldID, value: $value)
-            }`;
-            cy.request({
-                headers: {'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json'},
-                url: '/plugins/playbooks/api/v0/query',
-                method: 'POST',
-                body: {
-                    operationName: 'SetZone',
-                    query: mutation,
-                    variables: {runID: testRun.id, fieldID: zoneField.id, value: alphaOptionId},
-                },
-            });
+            cy.apiSetRunPropertyValue(testRun.id, zoneField.id, alphaOptionId);
         });
 
         // # Reload the run page so the modal picks up the new value

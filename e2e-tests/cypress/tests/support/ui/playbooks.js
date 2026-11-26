@@ -277,52 +277,6 @@ Cypress.Commands.add('playbooksVisitRun', (runId) => {
 });
 
 /**
- * Register an intercept alias for a named GraphQL mutation on the Playbooks query endpoint.
- * Does NOT mock the response — only tags the request so cy.wait('@operationName') can block
- * until the server responds. This is the standard sync mechanism for debounced mutations.
- *
- * Usage:
- *   cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
- *   // ... trigger UI action ...
- *   cy.wait('@UpdatePlaybook');
- *
- * @param {String} operationName - The GraphQL operation name (used as the cy.wait alias)
- */
-Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
-    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
-        if (req.body && req.body.operationName === operationName) {
-            req.alias = operationName;
-        }
-    });
-});
-
-/**
- * Register an intercept alias for the REST PUT /playbooks/:id endpoint.
- * Use when waiting for the debounced playbook save triggered by editor changes.
- *
- * Usage:
- *   cy.playbooksInterceptUpdatePlaybook();
- *   // ... trigger UI action ...
- *   cy.wait('@UpdatePlaybook');
- */
-Cypress.Commands.add('playbooksInterceptUpdatePlaybook', () => {
-    cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*').as('UpdatePlaybook');
-});
-
-/**
- * Register an intercept alias for the REST PATCH /playbooks/:id endpoint.
- * Use when waiting for the debounced channel_name_template save triggered by editor changes.
- *
- * Usage:
- *   cy.playbooksInterceptPatchPlaybook();
- *   // ... trigger UI action ...
- *   cy.wait('@PatchPlaybook');
- */
-Cypress.Commands.add('playbooksInterceptPatchPlaybook', () => {
-    cy.intercept('PATCH', '/plugins/playbooks/api/v0/playbooks/*').as('PatchPlaybook');
-});
-
-/**
  * Assert the run finish confirmation modal is visible and confirm it.
  * The modal h1 must contain "Confirm finish".
  */
@@ -448,14 +402,6 @@ Cypress.Commands.add('playbooksConfirmFinishModal', () => {
     cy.get('#confirmModal').should('not.exist');
 });
 
-Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
-    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
-        if (req.body && req.body.operationName === operationName) {
-            req.alias = operationName;
-        }
-    });
-});
-
 Cypress.Commands.add('playbooksOpenTaskAssigneeEditor', (playbookId, taskTitle) => {
     cy.visit('/playbooks/playbooks/' + playbookId + '/outline');
     cy.get('#checklists').within(() => {
@@ -534,8 +480,6 @@ Cypress.Commands.add('playbooksFinishRunViaRHS', (teamName, run) => {
 Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value, {type = 'select'} = {}) => {
     const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
 
-    cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
-
     cy.findByTestId(testId).within(() => {
         cy.findByTestId('property-value').click();
     });
@@ -548,11 +492,11 @@ Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value, {typ
         cy.contains('.property-select__option', value).click();
     }
 
-    cy.wait('@SetRunPropertyValue');
-
-    // Confirm the UI reflects the saved value before returning. This ensures
-    // the re-render triggered by the mutation has settled, preventing DOM
-    // detachment when callers chain multiple property sets sequentially.
+    // Confirm both the stored value and the re-rendered UI before returning, so
+    // chained property sets don't race the save or act on detached DOM.
+    cy.playbooksGetRunIdFromUrl().then((runId) => {
+        cy.apiWaitForRunPropertyValue(runId, propertyName, value);
+    });
     cy.findByTestId(testId).should('contain', value);
 });
 

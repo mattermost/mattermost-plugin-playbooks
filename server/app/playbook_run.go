@@ -1506,8 +1506,8 @@ type PlaybookRunService interface {
 	// GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
 	GetPlaybookRunIDsForUser(userID string) ([]string, error)
 
-	// GraphqlUpdate taking a setmap for graphql
-	GraphqlUpdate(id string, setmap map[string]interface{}) error
+	// GraphqlUpdate updates fields from a setmap. userID is recorded as the acting user.
+	GraphqlUpdate(id, userID string, setmap map[string]interface{}) error
 
 	// ToggleRetrospectiveEnabled enables or disables the retrospective for the run.
 	ToggleRetrospectiveEnabled(playbookRunID, userID string, enabled bool) error

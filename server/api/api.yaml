@@ -577,6 +577,35 @@ paths:
                   type: string
                   description: The new summary of the playbook run. Can be empty to clear the summary.
                   example: "## Incident Summary\n\nResolved the server outage."
+                channel_id:
+                  type: string
+                  description: |
+                    Move the run to this channel. The user needs permission to manage the channel's properties,
+                    or read access for direct and group messages. Playbook runs can't move to direct or group
+                    messages, and team channels must belong to the run's team.
+                  example: 2xmsb3rcatd6igygkeqq74wwwy
+                create_channel_member_on_new_participant:
+                  type: boolean
+                  description: Add new participants to the run's channel.
+                remove_channel_member_on_removed_participant:
+                  type: boolean
+                  description: Remove participants from the run's channel when they leave the run.
+                status_update_broadcast_channels_enabled:
+                  type: boolean
+                  description: Broadcast status updates to the broadcast channels.
+                status_update_broadcast_webhooks_enabled:
+                  type: boolean
+                  description: Send status updates to the status update webhooks.
+                broadcast_channel_ids:
+                  type: array
+                  description: Channels that receive status updates. The user must be able to post in any channel being added.
+                  items:
+                    type: string
+                webhook_on_status_update_urls:
+                  type: array
+                  description: HTTP or HTTPS URLs that receive status updates. At most 64.
+                  items:
+                    type: string
       x-codeSamples:
         - lang: curl
           source: |
@@ -820,6 +849,109 @@ paths:
       responses:
         200:
           description: Owner successfully changed.
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/runs/{id}/participants:
+    post:
+      summary: Add participants to a playbook run
+      description: |
+        Users who can view the run can add themselves. Adding anyone else requires permission to manage the run,
+        and the run must not be finished. Users who aren't on the run's team are skipped.
+      operationId: addPlaybookRunParticipants
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the playbook run.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: ["hx7fqtqxp7nn8129t7e505ls6s"]
+                force_add_to_channel:
+                  type: boolean
+                  description: Add the users to the run's channel even if the run doesn't add new participants to the channel.
+              required:
+                - user_ids
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/participants' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -d '{"user_ids": ["hx7fqtqxp7nn8129t7e505ls6s"]}'
+      responses:
+        200:
+          description: Participants added. Returns the updated playbook run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaybookRun"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      summary: Remove participants from a playbook run
+      description: |
+        Users who can view the run can remove themselves. Removing anyone else requires permission to manage the run,
+        and the run must not be finished. Removed users also stop following the run.
+      operationId: removePlaybookRunParticipants
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the playbook run.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: ["hx7fqtqxp7nn8129t7e505ls6s"]
+              required:
+                - user_ids
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/participants' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -d '{"user_ids": ["hx7fqtqxp7nn8129t7e505ls6s"]}'
+      responses:
+        200:
+          description: Participants removed. Returns the updated playbook run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaybookRun"
         400:
           $ref: "#/components/responses/400"
         403:
