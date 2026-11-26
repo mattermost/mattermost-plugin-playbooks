@@ -298,10 +298,6 @@ func (s *playbookService) Get(id string) (Playbook, error) {
 	return s.store.Get(id)
 }
 
-func (s *playbookService) GetPlaybooks() ([]Playbook, error) {
-	return s.store.GetPlaybooks()
-}
-
 func (s *playbookService) GetActivePlaybooks() ([]Playbook, error) {
 	return s.store.GetActivePlaybooks()
 }

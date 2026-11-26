@@ -424,22 +424,6 @@ func (p *playbookStore) GetActivePlaybooks() ([]app.Playbook, error) {
 	return playbooks, nil
 }
 
-// GetPlaybooks retrieves all playbooks, even deleted ones.
-// Members are not retrieved for this as the query would be large and we don't need it for this for now.
-func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
-	var playbooks []app.Playbook
-	err := p.store.selectBuilder(p.store.db, &playbooks,
-		selectAllPlaybooks(p.store.builder),
-	)
-	if err == sql.ErrNoRows {
-		return nil, errors.Wrap(app.ErrNotFound, "no playbooks found")
-	} else if err != nil {
-		return nil, errors.Wrap(err, "failed to get playbooks")
-	}
-
-	return playbooks, nil
-}
-
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	// Check that you are a playbook member or there are no restrictions.

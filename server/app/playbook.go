@@ -482,9 +482,6 @@ type PlaybookService interface {
 	// GetPlaybookConditionsForExport retrieves all conditions for a playbook for export purposes.
 	GetPlaybookConditionsForExport(playbookID string) ([]Condition, error)
 
-	// GetPlaybooks retrieves all playbooks
-	GetPlaybooks() ([]Playbook, error)
-
 	// GetActivePlaybooks retrieves all active playbooks
 	GetActivePlaybooks() ([]Playbook, error)
 
@@ -559,9 +556,6 @@ type PlaybookStore interface {
 
 	// Create creates a new playbook
 	Create(playbook Playbook) (string, error)
-
-	// GetPlaybooks retrieves all playbooks
-	GetPlaybooks() ([]Playbook, error)
 
 	// GetActivePlaybooks retrieves all active playbooks
 	GetActivePlaybooks() ([]Playbook, error)

@@ -222,21 +222,6 @@ func (mr *MockPlaybookStoreMockRecorder) GetPlaybookIDsForUser(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybookIDsForUser", reflect.TypeOf((*MockPlaybookStore)(nil).GetPlaybookIDsForUser), arg0, arg1)
 }
 
-// GetPlaybooks mocks base method.
-func (m *MockPlaybookStore) GetPlaybooks() ([]app.Playbook, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPlaybooks")
-	ret0, _ := ret[0].([]app.Playbook)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPlaybooks indicates an expected call of GetPlaybooks.
-func (mr *MockPlaybookStoreMockRecorder) GetPlaybooks() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooks", reflect.TypeOf((*MockPlaybookStore)(nil).GetPlaybooks))
-}
-
 // GetPlaybooksActiveTotal mocks base method.
 func (m *MockPlaybookStore) GetPlaybooksActiveTotal() (int64, error) {
 	m.ctrl.T.Helper()

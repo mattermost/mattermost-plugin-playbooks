@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
@@ -91,6 +92,89 @@ func (s *StatsStore) TotalPlaybookRuns() (int, error) {
 	}
 
 	return total, nil
+}
+
+// PlaybookRunStatusCounts holds the total number of playbook runs and the number per status.
+type PlaybookRunStatusCounts struct {
+	Total      int64
+	InProgress int64
+	Finished   int64
+}
+
+// PlaybookRunCountsByStatus returns the number of playbook runs in the server, in total and per status.
+func (s *StatsStore) PlaybookRunCountsByStatus() (PlaybookRunStatusCounts, error) {
+	query := s.store.builder.
+		Select("COUNT(*) AS Total").
+		Column(sq.Expr("COUNT(CASE WHEN i.CurrentStatus = ? THEN 1 END) AS InProgress", app.StatusInProgress)).
+		Column(sq.Expr("COUNT(CASE WHEN i.CurrentStatus = ? THEN 1 END) AS Finished", app.StatusFinished)).
+		From("IR_Incident AS i")
+
+	var counts PlaybookRunStatusCounts
+	if err := s.store.getBuilder(s.store.db, &counts, query); err != nil {
+		return PlaybookRunStatusCounts{}, errors.Wrap(err, "failed to count playbook runs by status")
+	}
+
+	return counts, nil
+}
+
+// SchemaVersion returns the schema version of the plugin's database tables.
+func (s *StatsStore) SchemaVersion() (string, error) {
+	version, err := s.store.GetCurrentVersion()
+	if err != nil {
+		return "", err
+	}
+
+	return version.String(), nil
+}
+
+// PerRunStats holds the maximum and average of a value measured per playbook run.
+type PerRunStats struct {
+	Max int64
+	Avg float64
+}
+
+// ChecklistItemsPerRun returns the maximum and average number of checklist items per playbook run.
+func (s *StatsStore) ChecklistItemsPerRun() (PerRunStats, error) {
+	// ChecklistsJSON, and the items of a checklist, are stored as JSON null when empty,
+	// and the JSON array functions fail on anything but an array.
+	itemsPerRun := s.store.builder.
+		Select(`(
+			SELECT COALESCE(SUM(CASE WHEN json_typeof(c->'items') = 'array' THEN json_array_length(c->'items') ELSE 0 END), 0)
+			FROM json_array_elements(CASE WHEN json_typeof(i.ChecklistsJSON) = 'array' THEN i.ChecklistsJSON ELSE '[]'::json END) AS c
+		) AS NumItems`).
+		From("IR_Incident AS i")
+
+	query := s.store.builder.
+		Select("COALESCE(MAX(NumItems), 0) AS Max", "COALESCE(AVG(NumItems), 0) AS Avg").
+		FromSelect(itemsPerRun, "per_run")
+
+	var stats PerRunStats
+	if err := s.store.getBuilder(s.store.db, &stats, query); err != nil {
+		return PerRunStats{}, errors.Wrap(err, "failed to get checklist items per run")
+	}
+
+	return stats, nil
+}
+
+// ParticipantsPerRun returns the maximum and average number of participants per playbook run,
+// over the runs that have at least one participant.
+func (s *StatsStore) ParticipantsPerRun() (PerRunStats, error) {
+	participantsPerRun := s.store.builder.
+		Select("COUNT(*) AS NumParticipants").
+		From("IR_Run_Participants").
+		Where(sq.Eq{"IsParticipant": true}).
+		GroupBy("IncidentID")
+
+	query := s.store.builder.
+		Select("COALESCE(MAX(NumParticipants), 0) AS Max", "COALESCE(AVG(NumParticipants), 0) AS Avg").
+		FromSelect(participantsPerRun, "per_run")
+
+	var stats PerRunStats
+	if err := s.store.getBuilder(s.store.db, &stats, query); err != nil {
+		return PerRunStats{}, errors.Wrap(err, "failed to get participants per run")
+	}
+
+	return stats, nil
 }
 
 func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
