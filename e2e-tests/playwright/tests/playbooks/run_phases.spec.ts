@@ -925,12 +925,6 @@ test.describe('run phases', () => {
             const body = await response.json();
             expect(body.errors).toHaveLength(1);
             expect(body.data?.run).toBeFalsy();
-
-            // * The schema has no phases field on a run
-            const schemaResponse = await graphqlQuery(page, '{__type(name: "Run") {fields {name}}}');
-            const fieldNames = ((await schemaResponse.json()).data.__type.fields as Array<{name: string}>).map((field) => field.name);
-            expect(fieldNames).toContain('checklists');
-            expect(fieldNames).not.toContain('phases');
         });
     });
 });

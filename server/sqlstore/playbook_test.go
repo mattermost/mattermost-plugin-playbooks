@@ -197,6 +197,7 @@ func TestGetPlaybook(t *testing.T) {
 		require.NoError(t, err)
 		expected := pb02.Clone()
 		expected.ID = id
+		expected.CustomPhases = []app.CustomPhase{}
 
 		actual, err := playbookStore.Get(id)
 		require.NoError(t, err)

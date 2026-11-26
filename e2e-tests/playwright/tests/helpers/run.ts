@@ -171,8 +171,9 @@ export async function restoreRun(page: Page, runId: string) {
     await expectOk(await page.request.put(`${runsApi}/${runId}/restore`, requestedWith), `Unable to restore run ${runId}`);
 }
 
+// Servers that are not in developer mode only accept named operations and refuse introspection.
 export function graphqlQuery(page: Page, query: string) {
-    return page.request.post('/plugins/playbooks/api/v0/query', {...requestedWith, data: {query}});
+    return page.request.post('/plugins/playbooks/api/v0/query', {...requestedWith, data: {query: `query PhasesE2E ${query}`, operationName: 'PhasesE2E'}});
 }
 
 // Events written at the same moment have no recorded order, so they are put in the order things
