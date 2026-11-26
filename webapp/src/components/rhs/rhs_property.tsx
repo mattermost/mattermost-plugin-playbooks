@@ -28,20 +28,14 @@ const RHSProperty = (props: Props) => {
     const [setRunPropertyValue] = useSetRunPropertyValue();
     const addToast = useToaster().add;
     const {formatMessage} = useIntl();
-    const handleValueChange = useCallback((newValue: string | string[] | null): Promise<void> => {
+    const handleValueChange = useCallback(async (newValue: string | string[] | null): Promise<void> => {
         const fallbackMessage = formatMessage({id: 'playbooks.rhs_property.update_error', defaultMessage: 'Failed to update property value.'});
-        return setRunPropertyValue(props.runID, props.field.id, newValue).then(
-            (result) => {
-                if (result.errors?.length) {
-                    addToast({content: fallbackMessage, toastStyle: ToastStyle.Failure});
-                    throw new Error(fallbackMessage);
-                }
-            },
-            () => {
-                addToast({content: fallbackMessage, toastStyle: ToastStyle.Failure});
-                throw new Error(fallbackMessage);
-            },
-        );
+        try {
+            await setRunPropertyValue(props.runID, props.field.id, newValue);
+        } catch {
+            addToast({content: fallbackMessage, toastStyle: ToastStyle.Failure});
+            throw new Error(fallbackMessage);
+        }
     }, [setRunPropertyValue, props.runID, props.field.id, addToast, formatMessage]);
 
     const renderPropertyComponent = () => {

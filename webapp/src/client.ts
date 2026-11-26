@@ -41,7 +41,7 @@ import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 import {Category} from './types/category';
 import {InsightsResponse} from './types/insights';
 import {Condition} from './types/conditions';
-import {PropertyField, PropertyFieldInput} from './types/properties';
+import {PropertyField, PropertyFieldInput, PropertyValue} from './types/properties';
 
 let siteURL = '';
 let basePath = '';
@@ -1186,6 +1186,10 @@ export async function fetchPlaybookPropertyFields(playbookId: string, updatedSin
         return [];
     }
     return data;
+}
+
+export async function setRunPropertyValue(runId: string, propertyFieldId: string, value: unknown) {
+    return doPut<PropertyValue>(`${apiUrl}/runs/${runId}/property_fields/${propertyFieldId}/value`, JSON.stringify({value}));
 }
 
 export async function createPlaybookPropertyField(playbookId: string, propertyField: PropertyFieldInput): Promise<PropertyField> {

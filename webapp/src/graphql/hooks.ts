@@ -14,15 +14,9 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {
     PlaybookDocument,
-    PlaybookPropertyDocument,
-    PlaybookPropertyQuery,
-    PlaybookPropertyQueryVariables,
     PlaybookQuery,
     PlaybookUpdates,
     RhsRunsDocument,
-    SetRunPropertyValueDocument,
-    SetRunPropertyValueMutation,
-    SetRunPropertyValueMutationVariables,
     UpdatePlaybookDocument,
 } from 'src/graphql/generated/graphql';
 
@@ -39,6 +33,7 @@ import {
     setOwner,
     setPlaybookFavorite,
     setRunFavorite,
+    setRunPropertyValue as setRunPropertyValueRequest,
     updatePlaybookRun,
 } from 'src/client';
 import {useAppDispatch, useAppStore} from 'src/hooks/redux';
@@ -46,8 +41,6 @@ import {myPlaybookRunsByTeam} from 'src/selectors';
 import {TaskAction} from 'src/types/playbook';
 
 export type FullPlaybook = PlaybookQuery['playbook']
-
-export type PlaybookPropertyField = PlaybookPropertyQuery['playbookProperty']
 
 export type Loaded<T> = Exclude<T, undefined | null>
 
@@ -234,48 +227,10 @@ export const useUpdateRunItemTaskActions = (runID?: string) => {
     return {updateRunTaskActions};
 };
 
-/**
- * Hook to fetch a single property field for a playbook
- * @param playbookID - The ID of the playbook
- * @param propertyID - The ID of the property field
- * @returns Tuple of [data, queryResult] where data is the property field or undefined
- */
-export const usePlaybookProperty = (
-    playbookID: string,
-    propertyID: string
-): [PlaybookPropertyField, QueryResult<PlaybookPropertyQuery, PlaybookPropertyQueryVariables>] => {
-    const result = useQuery(PlaybookPropertyDocument, {
-        variables: {
-            playbookID,
-            propertyID,
-        },
-        fetchPolicy: 'cache-first',
-        errorPolicy: 'all', // Allow partial data and errors to be returned
-    });
-
-    return [result.data?.playbookProperty ?? undefined, result] as const;
-};
-
 export const useSetRunPropertyValue = () => {
-    const [innerSetRunPropertyValue, result] = useMutation<
-        SetRunPropertyValueMutation,
-        SetRunPropertyValueMutationVariables
-    >(SetRunPropertyValueDocument, {
-        errorPolicy: 'all',
-    });
+    const setRunPropertyValue = useCallback((runID: string, propertyFieldID: string, value: unknown) => (
+        setRunPropertyValueRequest(runID, propertyFieldID, value)
+    ), []);
 
-    const setRunPropertyValue = useCallback(
-        (runID: string, propertyFieldID: string, value: any) => {
-            return innerSetRunPropertyValue({
-                variables: {
-                    runID,
-                    propertyFieldID,
-                    value,
-                },
-            });
-        },
-        [innerSetRunPropertyValue]
-    );
-
-    return [setRunPropertyValue, result] as const;
+    return [setRunPropertyValue] as const;
 };

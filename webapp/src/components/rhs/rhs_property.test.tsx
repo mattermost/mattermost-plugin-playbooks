@@ -6,16 +6,22 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
 
+import {ToastStyle} from 'src/components/backstage/toast';
+import {useSetRunPropertyValue} from 'src/graphql/hooks';
+import manifest from 'src/manifest';
 import {PropertyField} from 'src/types/properties';
 
 import RHSProperty from './rhs_property';
 
+const mockAddToast = jest.fn();
+const textPropertyHarness: {onValueChange?: (value: string | null) => Promise<void>} = {};
+
 jest.mock('src/graphql/hooks', () => ({
-    useSetRunPropertyValue: jest.fn(() => [jest.fn().mockResolvedValue({errors: []})]),
+    useSetRunPropertyValue: jest.fn(() => [jest.fn().mockResolvedValue(undefined)]),
 }));
 
 jest.mock('src/components/backstage/toast_banner', () => ({
-    useToaster: jest.fn(() => ({add: jest.fn()})),
+    useToaster: () => ({add: mockAddToast}),
 }));
 
 jest.mock('react-intl', () => {
@@ -29,12 +35,15 @@ jest.mock('react-intl', () => {
 
 jest.mock('./properties/property_text', () => ({
     __esModule: true,
-    default: (props: {readOnly?: boolean}) => (
-        <div
-            data-testid='mock-text-property'
-            data-readonly={props.readOnly}
-        />
-    ),
+    default: (props: {readOnly?: boolean; onValueChange?: (value: string | null) => Promise<void>}) => {
+        textPropertyHarness.onValueChange = props.onValueChange;
+        return (
+            <div
+                data-testid='mock-text-property'
+                data-readonly={props.readOnly}
+            />
+        );
+    },
 }));
 
 jest.mock('./properties/property_select', () => ({
@@ -166,5 +175,79 @@ describe('RHSProperty', () => {
         );
         const instance = component.root;
         expect(instance.findByProps({'data-testid': 'mock-text-property'}).props['data-readonly']).toBe(true);
+    });
+});
+
+describe('RHSProperty property value writes', () => {
+    const originalFetch = global.fetch;
+    const runID = 'run-1';
+    const fieldID = 'field-1';
+    let fetchMock: jest.Mock;
+
+    const useRealWriteHook = () => {
+        const actual = jest.requireActual('src/graphql/hooks') as {useSetRunPropertyValue: typeof useSetRunPropertyValue};
+        (useSetRunPropertyValue as unknown as jest.Mock).mockImplementation(actual.useSetRunPropertyValue);
+    };
+
+    beforeEach(() => {
+        useRealWriteHook();
+        mockAddToast.mockClear();
+        fetchMock = jest.fn();
+        global.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    afterEach(() => {
+        (useSetRunPropertyValue as unknown as jest.Mock).mockReset();
+        (useSetRunPropertyValue as unknown as jest.Mock).mockImplementation(() => [jest.fn().mockResolvedValue(undefined)]);
+        global.fetch = originalFetch;
+    });
+
+    const renderTextProperty = () => {
+        renderer.create(
+            <RHSProperty
+                field={makeField('text')}
+                runID={runID}
+            />,
+        );
+    };
+
+    it('sends PUT /runs/{id}/property_fields/{fieldID}/value with {value}', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            headers: {get: () => 'application/json'},
+            json: async () => ({field_id: fieldID, value: 'hello'}),
+        });
+
+        renderTextProperty();
+        await textPropertyHarness.onValueChange?.('hello');
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, options] = fetchMock.mock.calls[0];
+        expect(url).toBe(`/plugins/${manifest.id}/api/v0/runs/${runID}/property_fields/${fieldID}/value`);
+        expect(options.method).toBe('PUT');
+        expect(options.body).toBe(JSON.stringify({value: 'hello'}));
+        expect(mockAddToast).not.toHaveBeenCalled();
+    });
+
+    it('shows the failure toast when the property update request fails', async () => {
+        fetchMock.mockResolvedValue({
+            ok: false,
+            status: 500,
+            headers: {get: () => 'application/json'},
+            json: async () => ({error: 'nope'}),
+        });
+
+        renderTextProperty();
+        await expect(textPropertyHarness.onValueChange?.('hello')).rejects.toThrow('Failed to update property value.');
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, options] = fetchMock.mock.calls[0];
+        expect(url).toBe(`/plugins/${manifest.id}/api/v0/runs/${runID}/property_fields/${fieldID}/value`);
+        expect(options.method).toBe('PUT');
+        expect(options.body).toBe(JSON.stringify({value: 'hello'}));
+        expect(mockAddToast).toHaveBeenCalledWith({
+            content: 'Failed to update property value.',
+            toastStyle: ToastStyle.Failure,
+        });
     });
 });
